@@ -1,7 +1,7 @@
 #+title: ELOT template file
 #+subtitle: Blank file for writing an OWL ontology
 #+author: i-am-the-author
-#+date: WIP (version of 2024-03-03 17:03)
+#+date: WIP (version of 2024-03-03 17:19)
 
 # Q2 2023: To export with abbreviated/more readable annotation
 #   property names, use (org-export-to-file 'ELOT-latex "ELOT.tex").
@@ -160,6 +160,10 @@ Datatype: xsd:boolean
 	 :END:
 *** ex:C1
  - rdfs:label :: hello
+ #+begin_src omn
+Class: ex:C1
+  SubClassOf: ex:r only ex:C2
+ #+end_src
 *** ex:C2
 ** Object properties (individual-to-individual relations)
 	 :PROPERTIES:
