@@ -1,0 +1,691 @@
+#+title: ELOT template file
+#+subtitle: Blank file for writing an OWL ontology
+#+author: i-am-the-author
+#+date: WIP (version of 2024-03-03 17:03)
+
+# Q2 2023: To export with abbreviated/more readable annotation
+#   property names, use (org-export-to-file 'ELOT-latex "ELOT.tex").
+#   See section "Exporting with replacements of description list tags".
+#   To export to TeX: (org-export-to-file 'ELOT-latex "ELOT.tex")
+
+# Before tangling to ontology, remember
+# - org-babel-lob-ingest this file
+# - M-x normal-mode to read all local definitions
+
+# allow for export even when link targets are in a :noexport: section
+# #+OPTIONS: broken-links:mark
+#+OPTIONS: broken-links:t
+#+BIND: org-latex-default-figure-position "H"
+
+# hide TODO status in headings
+#+OPTIONS: todo:nil
+# hide completion "cookies" like "[4/4]"
+#+OPTIONS: stat:nil
+
+#+latex: \listoffigures
+#+latex: \listoftables
+#+TOC: listings
+
+* Ontology Resources
+	:PROPERTIES:
+	 :ID:       ELOT-resource-hierarchy
+	:header-args:omn: :tangle ./ELOT.omn :noweb yes
+	:header-args:emacs-lisp: :tangle no :wrap "SRC omn" :exports results
+	:header-args: :padline yes
+	:END:
+<<ELOT-entities>>
+** Declarations
+:PROPERTIES:
+:custom_id: sec:declarations
+:END:
+*** Comment at top of file
+#+begin_src omn
+  ##
+  ## This is an ELOT template ontology
+  ## This document is in OWL 2 Manchester Syntax, see https://www.w3.org/TR/owl2-manchester-syntax/
+  ##
+#+end_src
+*** Prefixes
+<<sec:prefixes>>
+# Note that for any annotation property used in description lists 
+# to annotate resources, the prefix has to be included in a LINK
+# declaration in section Prefixes under Setup for org-mode. Otherwise
+# the description entry won't be exported to the ontology.
+
+The ontology document in OWL employs the namespace prefixes of listing
+[[listing:prefixes]].
+
+#+name: listing:prefixes
+#+attr_latex: 
+#+caption: IDO OWL ontology prefixes
+#+BEGIN_SRC omn
+  Prefix: ex: <http://example.org/>
+  Prefix: owl: <http://www.w3.org/2002/07/owl#>
+  Prefix: rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+  Prefix: xml: <http://www.w3.org/XML/1998/namespace>
+  Prefix: xsd: <http://www.w3.org/2001/XMLSchema#>
+  Prefix: rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+  Prefix: skos: <http://www.w3.org/2004/02/skos/core#>
+  Prefix: pav: <http://purl.org/pav/>
+  Prefix: obo: <http://purl.obolibrary.org/obo/>
+  Prefix: dol: <http://www.loa-cnr.it/ontologies/DOLCE-Lite.owl#>
+  Prefix: ssn: <http://www.w3.org/ns/ssn/>
+  Prefix: time: <http://www.w3.org/2006/time#>
+  Prefix: om: <http://www.ontology-of-units-of-measure.org/resource/om-2/>
+  Prefix: foaf: <http://xmlns.com/foaf/0.1/>
+  Prefix: dc: <http://purl.org/dc/elements/1.1/>
+  Prefix: dcterms: <http://purl.org/dc/terms/>
+  Prefix: dcmitype: <http://purl.org/dc/dcmitype/>
+  Prefix: prov: <http://www.w3.org/ns/prov#>
+  Prefix: iof-av: <https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/>
+#+END_SRC
+*** Ontology
+<<sec:ontology-declaration>>
+#+name: listing:elot-ontology-declare
+#+attr_latex: :options float
+#+caption: OWL ontology declaration
+#+BEGIN_SRC omn :noweb yes
+  Ontology: <http://example.org/elot-template> <http://example.org/elot-template/0.0>
+       # Import: <https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/>
+       Annotations: rdfs:label "ELOT template ontology",
+         dcterms:title "Industrial Data Ontology",
+         owl:versionInfo "0.0 start of ELOT",
+         pav:lastUpdateOn "<<current-datetime()>>"^^xsd:dateTime ,
+         dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/>,
+         dcterms:creator <https://orcid.org/0000-0002-7167-7321>,
+         # not issued yet dcterms:issued "2021-08-06"^^xsd:date,
+         dcterms:modified "<<current-date()>>"^^xsd:date,
+         dcterms:publisher <https://example.org>,
+         dc:rights "Copyright info here",
+         rdfs:comment "The ELOT template ontology is a template",
+         dcterms:description "The ELOT template ontology is a template"
+#+END_SRC
+
+# optionally add a link to documentation of the ontology with
+# foaf:isPrimaryTopicOf
+
+#+latex: \clearpage\newpage
+*** Data type declarations                                         :noexport:
+#+BEGIN_SRC omn 
+## Data type declarations
+Datatype: xsd:dateTime
+
+Datatype: xsd:date
+
+Datatype: xsd:boolean
+#+END_SRC
+
+#+latex: \clearpage
+*** Class declarations																						 :noexport:
+#+BEGIN_SRC omn  
+  ## Class declarations
+
+  <<resource-declarations(hierarchy="ELOT-class-hierarchy", owl-type="Class", owl-relation="SubClassOf")>>
+#+END_SRC
+*** Object property declarations																	 :noexport:
+#+BEGIN_SRC omn 
+  ## Object property declarations
+
+  <<resource-declarations(hierarchy="ELOT-object-property-hierarchy", owl-type="ObjectProperty")>>
+#+END_SRC
+*** Data property declarations																		 :noexport:
+#+BEGIN_SRC omn 
+  ## Data property declarations
+
+  <<resource-declarations(hierarchy="ELOT-data-property-hierarchy", owl-type="DataProperty")>>
+#+END_SRC
+*** Annotation property declarations															 :noexport:
+#+BEGIN_SRC omn 
+  ## Annotation property declarations
+
+  <<resource-declarations(hierarchy="ELOT-annotation-property-hierarchy", owl-type="AnnotationProperty")>>
+#+END_SRC
+*** Ontology hierarchy																						 :noexport:
+#+BEGIN_SRC omn 
+  ## Resource taxonomies
+  <<resource-taxonomy(hierarchy="ELOT-class-hierarchy", owl-type="Class", owl-relation="SubClassOf")>>
+
+  <<resource-taxonomy(hierarchy="ELOT-object-property-hierarchy", owl-type="ObjectProperty", owl-relation="SubPropertyOf")>>
+
+  <<resource-taxonomy(hierarchy="ELOT-data-property-hierarchy", owl-type="DataProperty", owl-relation="SubPropertyOf")>>
+
+  <<resource-taxonomy(hierarchy="ELOT-annotation-property-hierarchy", owl-type="AnnotationProperty", owl-relation="SubPropertyOf")>>
+
+#+END_SRC
+** Classes
+	 :PROPERTIES:
+	 :ID:       ELOT-class-hierarchy
+	 :custom_id:       ELOT-class-hierarchy
+	 :resourcedefs: yes
+	 :END:
+*** ex:C1
+ - rdfs:label :: hello
+*** ex:C2
+** Object properties (individual-to-individual relations)
+	 :PROPERTIES:
+	 :ID:       ELOT-object-property-hierarchy
+	 :custom_id:       ELOT-object-property-hierarchy
+	 :resourcedefs: yes
+	 :END:
+#+BEGIN_SRC omn :exports none
+## Object property details
+#+END_SRC
+*** ex:r
+*** ex:s
+** Data properties (individual-to-value relations)
+	 :PROPERTIES:
+	 :ID:       ELOT-data-property-hierarchy
+	 :custom_id:       ELOT-data-property-hierarchy
+	 :resourcedefs: yes
+	 :END:
+#+BEGIN_SRC omn :exports none
+## Data property details
+#+END_SRC
+*** ex:v
+** Annotation properties (informative-only relations)
+	 :PROPERTIES:
+	 :ID:       ELOT-annotation-property-hierarchy
+	 :custom_id:       ELOT-annotation-property-hierarchy
+	 :resourcedefs: yes
+	 :END:
+#+BEGIN_SRC omn :exports none
+## Annotation property details
+#+END_SRC
+*** dcterms:title
+*** owl:versionInfo
+*** pav:lastUpdateOn
+*** dcterms:license
+*** dcterms:creator
+*** dcterms:modified
+*** dcterms:publisher
+*** dc:rights
+*** dcterms:description
+* Bibliography                                                       :ignore:
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+
+#+latex: \bibliographystyle{plain}
+# to cite all entries
+#+latex: \nocite{*}
+#+latex: \bibliography{ELOT}
+
+* Sections for use during development                     :noexport:
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+** ELOT How-to                                                     :noexport:
+Write the content of the ontology into this org-mode file. Then, call
+M-x =org-babel-tangle= (C-c C-v t), to output the ontology file [[./ELOT.omn]].
+
+ - Prefixes and ontology declaration go in [[Declarations]].
+ - Outline headers in [[Classes]], [[Object properties]], [[Data properties]], and
+	 [[Annotation properties]] define resources.
+	 - Add =omn= source blocks anywhere in the outlines for various special
+		 constraints and annotations
+
+To create a PDF file, use the regular org-mode export facility, but
+for a better look: =(org-export-to-file 'ELOT-latex "ELOT.tex")=, see [[file:elot-lob.org::exporting-dlists][exporting-dlists]].
+
+** Overview of progress (using org-ql)
+*** Classes                                                        :noexport:
+#+name: ql-overview-class
+#+header: :exports results :eval no-export 
+#+begin_src emacs-lisp :colnames '(Class "nat lang" "example" "restriction" "source" "rdfs:comment" "rdfs:seeAlso")
+  (mapcar (lambda (x) (-replace nil "" x)) ;; avoid seeing "nil"
+    (org-ql-query
+      :select '(list (substring-no-properties (concat "[[*" (org-get-heading-nocookie t t) "][" (org-get-heading t t) "]]"))
+                     (rifle :regexps '("iof-av:naturalLanguageDefinition"))
+                     (rifle :regexps '("skos:example"))
+                     (src :lang "omn")
+                     (rifle :regexps '("lis:equivalent"))
+                     (rifle :regexps '("rdfs:comment"))
+                     (rifle :regexps '("rdfs:seeAlso"))
+                     )
+      :narrow t
+      :where '(and (heading-regexp "[_[:alnum:]]*:") (ancestors (property "ID" "ELOT-class-hierarchy"))))
+  )
+#+end_src
+
+#+ATTR_LATEX: :environment longtable :font \footnotesize :width \pagewidth
+#+RESULTS: ql-overview-class
+| Class                                           | nat lang | example | restriction | source | rdfs:comment | rdfs:seeAlso |
+|-------------------------------------------------+----------+---------+-------------+--------+--------------+--------------|
+| [[*lis:Object][lis:Object [4/4]]]                                | t        | t       | t           |        | t            | t            |
+| [[*lis:FunctionalObject][lis:FunctionalObject [4/4]]]                      | t        | t       | t           |        | t            | t            |
+| [[*lis:System][lis:System [4/4]]]                                | t        | t       | t           |        | t            | t            |
+| [[*lis:PhysicalObject][lis:PhysicalObject [4/4]]]                        | t        | t       |             |        | t            | t            |
+| [[*lis:InanimatePhysicalObject][lis:InanimatePhysicalObject [4/4]]]               | t        | t       |             |        | t            | t            |
+| [[*lis:Stream][lis:Stream [4/4]]]                                | t        | t       |             |        | t            | t            |
+| [[*MateriallyClassifiedObject (lis:Compound)][MateriallyClassifiedObject (lis:Compound) [4/4]]] | t        | t       | t           |        | t            | t            |
+| [[*lis:Feature][lis:Feature [4/4]]]                               | t        | t       |             |        |              | t            |
+| [[*lis:Phase][lis:Phase [4/4]]]                                 | t        | t       | t           |        | t            | t            |
+| [[*lis:Organism][lis:Organism [4/4]]]                              | t        | t       |             |        |              | t            |
+| [[*lis:Person][lis:Person [4/4]]]                                | t        | t       |             |        |              | t            |
+| [[*lis:Artefact][lis:Artefact [4/4]]]                              | t        | t       | t           |        | t            | t            |
+| [[*COMMENT lis:PhysicalArtefact][COMMENT lis:PhysicalArtefact [4/4]]]              | t        | t       | t           |        | t            |              |
+| [[*COMMENT lis:SoftwareArtefact][COMMENT lis:SoftwareArtefact [4/4]]]              | t        | t       | t           |        |              | t            |
+| [[*lis:InformationObject][lis:InformationObject [4/4]]]                     | t        | t       |             |        | t            | t            |
+| [[*lis:QualityDatum][lis:QualityDatum [4/4]]]                          | t        | t       | t           |        | t            | t            |
+| [[*lis:ScalarQuantityDatum][lis:ScalarQuantityDatum [4/4]]]                   | t        | t       | t           |        | t            | t            |
+| [[*lis:UnitOfMeasure][lis:UnitOfMeasure [4/4]]]                         | t        | t       |             |        | t            | t            |
+| [[*lis:Scale][lis:Scale [4/4]]]                                 | t        | t       |             |        | t            | t            |
+| [[*lis:Organization][lis:Organization [4/4]]]                          | t        | t       |             |        |              | t            |
+| [[*lis:Location][lis:Location [4/4]]]                              | t        | t       | t           |        |              | t            |
+| [[*lis:Site][lis:Site [4/4]]]                                  | t        | t       |             |        | t            | t            |
+| [[*lis:SpatialLocation][lis:SpatialLocation [4/4]]]                       | t        | t       |             |        | t            | t            |
+| [[*lis:PointInSpace][lis:PointInSpace [4/4]]]                          | t        | t       |             |        |              |              |
+| [[*lis:LineInSpace][lis:LineInSpace [4/4]]]                           | t        | t       |             |        |              |              |
+| [[*lis:PlaneInSpace][lis:PlaneInSpace [4/4]]]                          | t        | t       |             |        |              |              |
+| [[*lis:VolumeInSpace][lis:VolumeInSpace [4/4]]]                         | t        | t       |             |        |              |              |
+| [[*lis:Dependent][lis:Dependent [4/4]]]                             | t        | t       | t           |        | t            | t            |
+| [[*lis:Potential][lis:Potential [4/4]]]                             | t        | t       |             |        | t            | t            |
+| [[*lis:Disposition][lis:Disposition [4/4]]]                           | t        | t       |             |        | t            | t            |
+| [[*lis:Capability][lis:Capability [4/4]]]                            | t        | t       |             |        | t            | t            |
+| [[*lis:Function][lis:Function [4/4]]]                              | t        | t       |             |        | t            | t            |
+| [[*lis:Role][lis:Role [4/4]]]                                  | t        | t       | t           |        | t            | t            |
+| [[*lis:Interest][lis:Interest [4/4]]]                              | t        | t       |             |        |              |              |
+| [[*lis:Quality][lis:Quality [4/4]]]                               | t        | t       |             |        | t            | t            |
+| [[*lis:PhysicalQuantity][lis:PhysicalQuantity [4/4]]]                      | t        | t       |             |        | t            | t            |
+| [[*lis:ShapeQuality][lis:ShapeQuality [4/4]]]                          | t        | t       |             |        |              |              |
+| [[*lis:MaterialCompositionQuality][lis:MaterialCompositionQuality [4/4]]]            | t        | t       |             |        |              |              |
+| [[*lis:PhaseQuality][lis:PhaseQuality [4/4]]]                          | t        | t       |             |        | t            |              |
+| [[*lis:Temporal][lis:Temporal [4/4]]]                              | t        | t       | t           |        | t            | t            |
+| [[*lis:Activity][lis:Activity [4/4]]]                              | t        | t       | t           |        | t            | t            |
+| [[*lis:ActivityProfile][lis:ActivityProfile [4/4]]]                       | t        | t       | t           |        | t            |              |
+| [[*lis:Event][lis:Event [4/4]]]                                 | t        | t       | t           |        | t            | t            |
+| [[*lis:SpatiotemporalRegion][lis:SpatiotemporalRegion [4/4]]]                  | t        | t       |             |        | t            | t            |
+| [[*lis:TemporalRegion][lis:TemporalRegion [4/4]]]                        | t        | t       |             |        | t            | t            |
+| [[*lis:InstantRegion][lis:InstantRegion [4/4]]]                         | t        | t       |             |        | t            | t            |
+| [[*lis:Instant][lis:Instant [4/4]]]                               | t        | t       |             |        | t            | t            |
+| [[*lis:IntervalRegion][lis:IntervalRegion [4/4]]]                        | t        | t       |             |        | t            | t            |
+| [[*lis:Interval][lis:Interval [4/4]]]                              | t        | t       |             |        | t            | t            |
+| [[*lis:Specified][lis:Specified [4/4]]]                             | t        | t       |             |        | t            | t            |
+| [[*COMMENT lis:SpecifiedObject][COMMENT lis:SpecifiedObject [6/6]]]               | t        | t       | t           |        |              | t            |
+| [[*lis:Actual][lis:Actual [4/4]]]                                | t        | t       |             |        |              |              |
+| [[*COMMENT lis:InstalledObject][COMMENT lis:InstalledObject [5/5]]]               | t        | t       | t           |        |              | t            |
+\newpage
+*** Object properties                                              :noexport:
+Note that for relations defined as inverses, we avoid duplication of
+annotations by annotating only one direction, and giving
+cross-references.
+
+TODO. Clean up, so either only "hasNnn" properties carry inverse
+axioms, or none. E.g. for "functionalPartOf".
+
+# The following helper function pushes all the inverses to the bottom of
+# the table, so it's easier to see the ones that need work.
+#+name: mysort
+#+begin_src emacs-lisp :var tbl="" cols="" sortcol="" :eval no-export :exports none
+  (cons cols
+      (cons 'hline
+            (--sort (string-lessp (nth sortcol it) (nth sortcol other))
+            tbl)))
+#+end_src
+
+#+name: ql-overview-op
+#+header: :exports results :eval no-export
+#+header: :post mysort(tbl=*this*, sortcol=7, cols='("Object Property" "nat lang" "example" "restriction" "source" "rdfs:comment" "rdfs:seeAlso" "inverse")) 
+#+begin_src emacs-lisp  
+  (mapcar (lambda (x) (-replace nil "" x)) ;; avoid seeing "nil"
+    (org-ql-query
+      :select '(list (substring-no-properties (concat "[[*" (org-get-heading-nocookie t t) "][" (org-get-heading t t) "]]"))
+                     (rifle :regexps '("iof-av:naturalLanguageDefinition"))
+                     (rifle :regexps '("skos:example"))
+                     (src :lang "omn")
+                     (rifle :regexps '("lis:equivalent"))
+                     (rifle :regexps '("rdfs:comment"))
+                     (rifle :regexps '("rdfs:seeAlso"))
+                     (rifle :regexps '("InverseOf:"))
+                     )
+      :narrow t
+      :where '(and (heading-regexp "[_[:alnum:]]*:") (ancestors (property "ID" "ELOT-object-property-hierarchy"))))
+  )
+#+end_src
+
+#+ATTR_LATEX: :environment longtable :font \footnotesize :width \pagewidth
+#+RESULTS: ql-overview-op
+| Object Property                             | nat lang | example | restriction | source | rdfs:comment | rdfs:seeAlso | inverse |
+|---------------------------------------------+----------+---------+-------------+--------+--------------+--------------+---------|
+| [[*lis:hasPart][lis:hasPart [5/5]]]                           | t        | t       |             |        | t            | t            |         |
+| [[*lis:hasArrangedPart][lis:hasArrangedPart [5/5]]]                   | t        | t       | t           |        | t            | t            |         |
+| [[*lis:hasFeature][lis:hasFeature [5/5]]]                        | t        | t       | t           |        | t            | t            |         |
+| [[*lis:hasAssembledPart][lis:hasAssembledPart [5/5]]]                  | t        | t       |             |        |              | t            |         |
+| [[*lis:hasFunctionalPart][lis:hasFunctionalPart [5/5]]]                 | t        | t       | t           |        |              | t            |         |
+| [[*lis:hasMaterialPart][lis:hasMaterialPart [5/5]]]                   | t        | t       | t           |        |              | t            |         |
+| [[*lis:hasTemporalPart][lis:hasTemporalPart [3/4]]]                   | t        | t       | t           |        |              | t            |         |
+| [[*lis:hasActivityPart][lis:hasActivityPart [4/4]]]                   | t        | t       | t           |        | t            | t            |         |
+| [[*lis:hasActivityBound][lis:hasActivityBound [4/4]]]                  | t        | t       | t           |        |              | t            |         |
+| [[*lis:hasBeginning][lis:hasBeginning [4/4]]]                      | t        | t       |             |        | t            | t            |         |
+| [[*lis:hasEnding][lis:hasEnding [5/5]]]                         | t        | t       |             |        | t            | t            |         |
+| [[*lis:hasActivityProfile][lis:hasActivityProfile [5/5]]]                | t        | t       | t           |        | t            | t            |         |
+| [[*lis:hasSubLocation][lis:hasSubLocation [4/4]]]                    | t        | t       | t           |        |              | t            |         |
+| [[*lis:hasContentPart][lis:hasContentPart [4/4]]]                    | t        | t       | t           |        | t            | t            |         |
+| [[*lis:datumUOM][lis:datumUOM [5/5]]]                          | t        | t       | t           |        | t            | t            |         |
+| [[*lis:hasQuality][lis:hasQuality [5/5]]]                        | t        | t       | t           |        | t            | t            |         |
+| [[*lis:hasPhysicalQuantity][lis:hasPhysicalQuantity [4/4]]]               | t        | t       | t           |        |              | t            |         |
+| [[*lis:hasParticipant][lis:hasParticipant [5/5]]]                    | t        | t       | t           |        | t            | t            |         |
+| [[*lis:hasActiveParticipant][lis:hasActiveParticipant [5/5]]]              | t        | t       |             |        |              | t            |         |
+| [[*lis:hasPassiveParticipant][lis:hasPassiveParticipant [5/5]]]             | t        | t       |             |        |              | t            |         |
+| [[*lis:creates][lis:creates [5/5]]]                           | t        | t       |             |        | t            | t            |         |
+| [[*lis:hasPrimaryParticipant][lis:hasPrimaryParticipant [5/5]]]             | t        | t       |             |        |              | t            |         |
+| [[*lis:hasPotential][lis:hasPotential [5/5]]]                      | t        | t       | t           |        | t            | t            |         |
+| [[*lis:hasDisposition][lis:hasDisposition [4/4]]]                    | t        | t       | t           |        | t            | t            |         |
+| [[*lis:hasCapability][lis:hasCapability [4/4]]]                     | t        | t       | t           |        | t            | t            |         |
+| [[*lis:hasFunction][lis:hasFunction [4/4]]]                       | t        | t       | t           |        | t            | t            |         |
+| [[*lis:hasRole][lis:hasRole [4/4]]]                           | t        | t       | t           |        | t            | t            |         |
+| [[*lis:hasInterest][lis:hasInterest [4/4]]]                       | t        | t       | t           |        | t            | t            |         |
+| [[*COMMENT lis:approves][COMMENT lis:approves [1/1]]]                  |          |         |             |        | t            | t            |         |
+| [[*lis:realizedIn][lis:realizedIn [5/5]]]                        | t        | t       | t           |        | t            | t            |         |
+| [[*lis:profileOfQuality][lis:profileOfQuality [4/4]]]                  | t        | t       | t           |        |              | t            |         |
+| [[*lis:connectedTo][lis:connectedTo [5/5]]]                       | t        | t       | t           |        | t            | t            |         |
+| [[*lis:directlyConnectedTo][lis:directlyConnectedTo [4/4]]]               | t        | t       | t           |        |              | t            |         |
+| [[*lis:locatedRelativeTo][lis:locatedRelativeTo [4/4]]]                 | t        | t       | t           |        | t            | t            |         |
+| [[*lis:contains][lis:contains [4/4]]]                          | t        | t       | t           |        | t            | t            |         |
+| [[*lis:residesIn][lis:residesIn [5/5]]]                         | t        | t       | t           |        |              | t            |         |
+| [[*lis:hasSpatialExtent][lis:hasSpatialExtent [4/4]]]                  | t        | t       | t           |        | t            | t            |         |
+| [[*lis:occursRelativeTo][lis:occursRelativeTo [5/5]]]                  | t        | t       | t           |        | t            | t            |         |
+| [[*lis:hasTemporalExtent][lis:hasTemporalExtent [5/5]]]                 | t        | t       | t           |        | t            | t            |         |
+| [[*lis:hasSpatiotemporalExtent][lis:hasSpatiotemporalExtent [5/5]]]           | t        | t       | t           |        | t            | t            |         |
+| [[*lis:before][lis:before [5/5]]]                            | t        | t       |             |        | t            | t            |         |
+| [[*COMMENT lis:causes][COMMENT lis:causes]]                          | t        | t       | t           |        | t            | t            |         |
+| [[*lis:siteOf][lis:siteOf [5/5]]]                            | t        | t       | t           |        | t            | t            |         |
+| [[*lis:isAbout][lis:isAbout [5/5]]]                           | t        | t       | t           |        | t            | t            |         |
+| [[*COMMENT lis:representedBy][COMMENT lis:representedBy [1/1]]]             |          |         | t           |        | t            | t            |         |
+| [[*lis:qualityQuantifiedAs][lis:qualityQuantifiedAs [4/4]]]               | t        | t       | t           |        | t            | t            |         |
+| [[*lis:hasQualityQuantifiedAs][lis:hasQualityQuantifiedAs [4/4]]]            | t        | t       | t           |        |              | t            |         |
+| [[*lis:hasParticipantQualityQuantifiedAs][lis:hasParticipantQualityQuantifiedAs [5/5]]] | t        | t       | t           |        |              | t            |         |
+| [[*lis:profileQuantityDatum][lis:profileQuantityDatum [4/4]]]              | t        | t       | t           |        | t            | t            |         |
+| [[*lis:concretizes][lis:concretizes [5/5]]]                       | t        | t       | t           |        | t            | t            |         |
+| [[*lis:implements][lis:implements [5/5]]]                        | t        | t       | t           |        |              | t            |         |
+| [[*lis:partOf][lis:partOf [3/3]]]                            |          |         | t           |        |              | t            | t       |
+| [[*lis:functionalPartOf][lis:functionalPartOf [3/3]]]                  |          |         | t           |        |              | t            | t       |
+| [[*lis:arrangedPartOf][lis:arrangedPartOf [3/3]]]                    |          |         | t           |        |              | t            | t       |
+| [[*lis:featureOf][lis:featureOf [3/3]]]                         |          |         | t           |        |              | t            | t       |
+| [[*lis:assembledPartOf][lis:assembledPartOf [3/3]]]                   |          |         | t           |        |              | t            | t       |
+| [[*lis:materialPartOf][lis:materialPartOf [3/3]]]                    |          |         | t           |        |              | t            | t       |
+| [[*lis:temporalPartOf][lis:temporalPartOf [3/3]]]                    |          |         | t           |        |              | t            | t       |
+| [[*lis:activityPartOf][lis:activityPartOf [3/3]]]                    |          |         | t           |        |              | t            | t       |
+| [[*lis:activityBoundOf][lis:activityBoundOf [3/3]]]                   |          |         | t           |        |              | t            | t       |
+| [[*lis:begins][lis:begins [3/3]]]                            |          |         | t           |        |              | t            | t       |
+| [[*lis:ends][lis:ends [3/3]]]                              |          |         | t           |        |              | t            | t       |
+| [[*lis:activityProfileOf][lis:activityProfileOf [3/3]]]                 |          |         | t           |        |              | t            | t       |
+| [[*lis:subLocationOf][lis:subLocationOf [3/3]]]                     |          |         | t           |        |              | t            | t       |
+| [[*lis:contentPartOf][lis:contentPartOf]]                           |          |         | t           |        |              | t            | t       |
+| [[*lis:uomOfDatum][lis:uomOfDatum [3/3]]]                        |          |         | t           |        | t            | t            | t       |
+| [[*lis:qualityOf][lis:qualityOf [3/3]]]                         |          |         | t           |        |              | t            | t       |
+| [[*lis:physicalQuantityOf][lis:physicalQuantityOf [3/3]]]                |          |         | t           |        |              | t            | t       |
+| [[*lis:participantIn][lis:participantIn [3/3]]]                     |          |         | t           |        |              | t            | t       |
+| [[*lis:activeParticipantIn][lis:activeParticipantIn [3/3]]]               |          |         | t           |        |              | t            | t       |
+| [[*lis:passiveParticipantIn][lis:passiveParticipantIn [3/3]]]              |          |         | t           |        |              | t            | t       |
+| [[*lis:createdBy][lis:createdBy [3/3]]]                         |          |         | t           |        |              | t            | t       |
+| [[*lis:primaryParticipantIn][lis:primaryParticipantIn [3/3]]]              |          |         | t           |        |              | t            | t       |
+| [[*lis:potentialOf][lis:potentialOf [3/3]]]                       |          |         | t           |        | t            | t            | t       |
+| [[*lis:dispositionOf][lis:dispositionOf [3/3]]]                     |          |         | t           |        |              | t            | t       |
+| [[*lis:capabilityOf][lis:capabilityOf [3/3]]]                      |          |         | t           |        |              | t            | t       |
+| [[*lis:functionOf][lis:functionOf [3/3]]]                        |          |         | t           |        |              | t            | t       |
+| [[*lis:roleOf][lis:roleOf [3/3]]]                            |          |         | t           |        | t            | t            | t       |
+| [[*lis:interestOf][lis:interestOf]]                              |          |         | t           |        |              | t            | t       |
+| [[*COMMENT lis:approvedBy][COMMENT lis:approvedBy [1/1]]]                |          |         | t           |        |              | t            | t       |
+| [[*lis:realizes][lis:realizes [3/3]]]                          |          |         | t           |        | t            | t            | t       |
+| [[*lis:qualityProfiledIn][lis:qualityProfiledIn [3/3]]]                 |          |         | t           |        |              | t            | t       |
+| [[*lis:containedBy][lis:containedBy [3/3]]]                       |          |         | t           |        |              | t            | t       |
+| [[*lis:hasResident][lis:hasResident [3/3]]]                       |          |         | t           |        |              | t            | t       |
+| [[*lis:spatialExtentOf][lis:spatialExtentOf [3/3]]]                   |          |         | t           |        |              | t            | t       |
+| [[*lis:temporalExtentOf][lis:temporalExtentOf [3/3]]]                  |          |         | t           |        |              | t            | t       |
+| [[*lis:spatiotemporalExtentOf][lis:spatiotemporalExtentOf [3/3]]]            |          |         | t           |        |              | t            | t       |
+| [[*lis:after][lis:after [3/3]]]                             |          |         | t           |        | t            | t            | t       |
+| [[*COMMENT lis:causedBy][COMMENT lis:causedBy [3/3]]]                  |          |         | t           |        | t            | t            | t       |
+| [[*lis:occursIn][lis:occursIn [3/3]]]                          |          |         | t           |        | t            | t            | t       |
+| [[*COMMENT lis:represents][COMMENT lis:represents [3/3]]]                |          |         | t           |        | t            | t            | t       |
+| [[*lis:quantifiesQuality][lis:quantifiesQuality [3/3]]]                 |          |         | t           |        |              | t            | t       |
+| [[*lis:quantifiesQualityOf][lis:quantifiesQualityOf [3/3]]]               |          |         | t           |        |              | t            | t       |
+| [[*lis:quantifiesQualityOfParticipantIn][lis:quantifiesQualityOfParticipantIn [3/3]]]  |          |         | t           |        |              | t            | t       |
+| [[*lis:quantityDatumOfProfile][lis:quantityDatumOfProfile [3/3]]]            |          |         | t           |        |              | t            | t       |
+| [[*lis:representedIn][lis:representedIn [3/3]]]                     |          |         | t           |        |              | t            | t       |
+| [[*lis:concretizedBy][lis:concretizedBy [3/3]]]                     |          |         | t           |        |              | t            | t       |
+| [[*lis:implementedBy][lis:implementedBy [3/3]]]                     |          |         | t           |        |              | t            | t       |
+
+\newpage
+*** Data properties                                                :noexport:
+#+name: ql-overview-dp
+#+header: :exports results :eval no-export
+#+begin_src emacs-lisp :colnames '("Data Property" "nat lang" "example" "restriction" "source" "rdfs:comment" "rdfs:seeAlso") 
+  (mapcar (lambda (x) (-replace nil "" x)) ;; avoid seeing "nil"
+    (org-ql-query
+      :select '(list (substring-no-properties (concat "[[*" (org-get-heading-nocookie t t) "][" (org-get-heading t t) "]]"))
+                     (rifle :regexps '("iof-av:naturalLanguageDefinition"))
+                     (rifle :regexps '("skos:example"))
+                     (src :lang "omn")
+                     (rifle :regexps '("lis:equivalent"))
+                     (rifle :regexps '("rdfs:comment"))
+                     (rifle :regexps '("rdfs:seeAlso"))
+                     )
+      :narrow t
+      :where '(and (heading-regexp "[_[:alnum:]]*:") (ancestors (property "ID" "ELOT-data-property-hierarchy"))))
+  )
+#+end_src
+
+#+ATTR_LATEX: :environment longtable :font \footnotesize :width \pagewidth
+#+RESULTS: ql-overview-dp
+| Data Property                  | nat lang | example | restriction | source | rdfs:comment | rdfs:seeAlso |
+|--------------------------------+----------+---------+-------------+--------+--------------+--------------|
+| [[*lis:datumValue][lis:datumValue [4/4]]]           | t        | t       | t           |        | t            | t            |
+| [[*lis:qualityQuantityValue][lis:qualityQuantityValue [3/3]]] | t        | t       | t           |        |              |              |
+| [[*lis:timestamp][lis:timestamp [0/0]]]            |          |         | t           |        | t            |              |
+| [[*lis:approvedOn][lis:approvedOn [1/1]]]           |          |         |             |        | t            |              |
+\newpage
+*** Annotation properties                                          :noexport:
+#+name: ql-overview-ap
+#+header: :exports results :eval no-export
+#+begin_src emacs-lisp :colnames '("Annotation Property" "nat lang" "rdfs:comment" "rdfs:seeAlso" "rdfs:isDefinedBy") 
+  (mapcar (lambda (x) (-replace nil "" x)) ;; avoid seeing "nil" 
+    (org-ql-query
+      :select '(list (substring-no-properties (concat "[[*" (org-get-heading t t) "][" (org-get-heading t t) "]]"))
+                     (rifle :regexps '("iof-av:naturalLanguageDefinition"))
+                     (rifle :regexps '("rdfs:comment"))
+                     (rifle :regexps '("rdfs:seeAlso"))
+                     (rifle :regexps '("rdfs:isDefinedBy"))
+                     )
+      :narrow t
+      :where '(and (heading-regexp "[_[:alnum:]]*:") (ancestors (property "ID" "ELOT-annotation-property-hierarchy"))))
+  )
+#+end_src
+
+#+ATTR_LATEX: :environment longtable :font \footnotesize :width \pagewidth
+#+RESULTS: ql-overview-ap
+| Annotation Property                        | nat lang | rdfs:comment | rdfs:seeAlso | rdfs:isDefinedBy |
+|--------------------------------------------+----------+--------------+--------------+------------------|
+| [[*rdfs:comment][rdfs:comment]]                               |          | t            |              | t                |
+| [[*rdfs:label][rdfs:label]]                                 |          |              |              | t                |
+| [[*skos:prefLabel][skos:prefLabel]]                             |          | t            |              | t                |
+| [[*skos:altLabel][skos:altLabel]]                              |          | t            |              | t                |
+| [[*iof-av:synonym][iof-av:synonym]]                             |          |              |              | t                |
+| [[*see also (rdfs:seeAlso)][see also (rdfs:seeAlso)]]                    |          |              | t            | t                |
+| [[*rdfs:isDefinedBy][rdfs:isDefinedBy]]                           |          |              | t            | t                |
+| [[*lis:originatesFrom][lis:originatesFrom]]                         |          | t            |              |                  |
+| [[*lis:transformedFrom][lis:transformedFrom]]                        |          | t            |              |                  |
+| [[*lis:mergedFrom][lis:mergedFrom]]                             |          | t            |              |                  |
+| [[*lis:splitFrom][lis:splitFrom]]                              |          | t            |              |                  |
+| [[*lis:relatedEntity][lis:relatedEntity]]                          |          | t            |              |                  |
+| [[*lis:relatedEntityISO15926][lis:relatedEntityISO15926]]                  |          | t            |              |                  |
+| [[*lis:remodelsEntity][lis:remodelsEntity]]                         |          | t            |              |                  |
+| [[*lis:remodelsEntityISO15926][lis:remodelsEntityISO15926]]                 |          | t            |              |                  |
+| [[*lis:equivalentEntity][lis:equivalentEntity]]                       |          | t            |              |                  |
+| [[*lis:equivalentEntityISO15926][lis:equivalentEntityISO15926]]               |          | t            |              |                  |
+| [[*lis:deprecatedEntity][lis:deprecatedEntity]]                       |          | t            |              |                  |
+| [[*lis:deprecatedEntityISO15926][lis:deprecatedEntityISO15926]]               |          | t            |              |                  |
+| [[*iof-av:isPrimitive][iof-av:isPrimitive]]                         |          |              |              | t                |
+| [[*skos:note][skos:note]]                                  |          | t            |              | t                |
+| [[*skos:definition][skos:definition]]                            |          | t            |              | t                |
+| [[*iof-av:naturalLanguageDefinition][iof-av:naturalLanguageDefinition]]           | t        |              |              | t                |
+| [[*iof-av:firstOrderLogicDefinition][iof-av:firstOrderLogicDefinition]]           |          |              |              | t                |
+| [[*iof-av:semiFormalNaturalLanguageDefinition][iof-av:semiFormalNaturalLanguageDefinition]] |          |              |              | t                |
+| [[*skos:example][skos:example]]                               |          | t            |              | t                |
+| [[*iof-av:explanatoryNote][iof-av:explanatoryNote]]                     |          |              |              | t                |
+| [[*skos:scopeNote][skos:scopeNote]]                             |          |              |              | t                |
+| [[*iof-av:usageNote][iof-av:usageNote]]                           |          |              |              | t                |
+| [[*iof-av:primitiveRationale][iof-av:primitiveRationale]]                  |          |              |              | t                |
+| [[*iof-av:semiFormalNaturalLanguageAxiom][iof-av:semiFormalNaturalLanguageAxiom]]      |          |              |              | t                |
+| [[*pav:previousVersion][pav:previousVersion]]                        |          |              |              | t                |
+| [[*pav:derivedFrom][pav:derivedFrom]]                            |          |              |              | t                |
+| [[*pav:lastUpdateOn][pav:lastUpdateOn]]                           |          |              |              | t                |
+| [[*dcterms:source][dcterms:source]]                             |          |              |              | t                |
+| [[*iof-av:adaptedFrom][iof-av:adaptedFrom]]                         |          |              |              | t                |
+| [[*iof-av:directSource][iof-av:directSource]]                        |          |              |              | t                |
+| [[*dcterms:title][dcterms:title]]                              |          |              |              | t                |
+| [[*dcterms:license][dcterms:license]]                            |          |              |              | t                |
+| [[*dcterms:description][dcterms:description]]                        |          |              |              | t                |
+| [[*dcterms:issued][dcterms:issued]]                             |          |              |              | t                |
+| [[*dcterms:contributor][dcterms:contributor]]                        |          |              |              | t                |
+| [[*dcterms:creator][dcterms:creator]]                            |          |              |              | t                |
+| [[*pav:createdBy][pav:createdBy]]                              |          |              |              | t                |
+| [[*pav:contributedBy][pav:contributedBy]]                          |          |              |              | t                |
+| [[*dcterms:modified][dcterms:modified]]                           |          |              |              | t                |
+| [[*dcterms:publisher][dcterms:publisher]]                          |          |              |              | t                |
+| [[*dc:rights][dc:rights]]                                  |          |              |              | t                |
+| [[*foaf:isPrimaryTopicOf][foaf:isPrimaryTopicOf]]                      |          |              |              | t                |
+\newpage
+* Scratchpad																											 :noexport:
+* Setup for org-mode																							 :noexport:
+	:PROPERTIES:
+	:VISIBILITY: folded
+	:END:
+** Prefixes
+For a resource definition with annotations, only description list
+items with "known" prefixes are tangled to the ontology. That is, for
+an annotation property /abc:myAnnotation/ the prefix /abc/ must be
+included in the following list.
+#+LINK: ex http://example.org/
+#+LINK: obo http://purl.obolibrary.org/obo/
+#+LINK: dol http://www.loa-cnr.it/ontologies/DOLCE-Lite.owl#
+#+LINK: ssn http://www.w3.org/ns/ssn/
+#+LINK: time http://www.w3.org/2006/time#
+#+LINK: om http://www.ontology-of-units-of-measure.org/resource/om-2/
+#+LINK: rdl http://example.org/rdl/
+#+LINK: skos http://www.w3.org/2004/02/skos/core#
+#+LINK: pav http://purl.org/pav/
+#+LINK: prov http://www.w3.org/ns/prov#
+#+LINK: foaf http://xmlns.com/foaf/0.1/
+#+LINK: dc http://purl.org/dc/elements/1.1/
+#+LINK: dcterms http://purl.org/dc/terms/
+#+LINK: dcmitype http://purl.org/dc/dcmitype/
+#+LINK: owl http://www.w3.org/2002/07/owl#
+#+LINK: rdf http://www.w3.org/1999/02/22-rdf-syntax-ns#
+#+LINK: xml http://www.w3.org/XML/1998/namespace
+#+LINK: xsd http://www.w3.org/2001/XMLSchema#
+#+LINK: rdfs http://www.w3.org/2000/01/rdf-schema#
+#+LINK: iof-av https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/
+** Export
+#+LATEX_CLASS: book
+#+LATEX_CLASS_OPTIONS: [11pt,a4paper,appendixprefix,numbers=noenddot,twoside=false]
+#+LaTeX_HEADER: \sloppy
+#+LaTeX_HEADER: \tolerance=1600
+#+LaTeX_HEADER: \hbadness=10000 % less warnings
+#+LATEX_HEADER: \usepackage[british]{babel}
+#+LaTeX_HEADER: \usepackage[toc,page]{appendix}
+#+LaTeX_HEADER: \usepackage{textcomp}
+#+LaTeX_HEADER: \usepackage{float}
+# #+LaTeX_HEADER: \renewcommand\appendixname{Annex}
+#+LaTeX_HEADER: \usepackage[a4paper,left=3cm,right=2cm,top=2.5cm,bottom=2.5cm]{geometry}
+#+LaTeX_HEADER: \usepackage{scrhack}
+#+LaTeX_HEADER: \usepackage{fontspec}\setmainfont[Ligatures={TeX,Common}]{Cambria}
+#+LaTeX_HEADER: \setmonofont{Courier New}
+#+LaTeX_HEADER: \addtokomafont{disposition}{\rmfamily} % headers in serif
+#+LATEX_HEADER: \newenvironment{note}{\par\noindent\small\ignorespaces}{\par}
+#+LaTeX_HEADER: \setparsizes{0.0em}{6pt plus 0.1\baselineskip}{1.0em plus 1.0fil}
+#+LaTeX_HEADER: \usepackage{array}\newcolumntype{H}{@{}>{\lrbox0}l<{\endlrbox}}
+#+LaTeX_HEADER: \hypersetup{pdfborder=0 0 0}
+#+LaTeX_HEADER: \setcounter{tocdepth}{1}
+#+LaTeX_HEADER: \setcounter{secnumdepth}{5}
+# setup for paragraphs
+#+LaTeX_HEADER: \RedeclareSectionCommand[runin=false,afterskip=0pt,afterindent=false]{paragraph}
+#+LaTeX_HEADER: \renewcommand\othersectionlevelsformat[3]{\makebox[0pt][r]{#3\autodot\enskip}}
+#+LaTeX_HEADER: \renewcommand\sectionformat{\makebox[0pt][r]{\thesection\autodot\enskip}}
+#+LaTeX_HEADER: \renewcommand\subsectionformat{\makebox[0pt][r]{\thesubsection\autodot\enskip}}
+#+LaTeX_HEADER: \renewcommand\subsubsectionformat{\makebox[0pt][r]{\thesubsubsection\autodot\enskip}}
+#+LaTeX_HEADER: \renewcommand\paragraphformat{\makebox[0pt][r]{\theparagraph\autodot\enskip}}
+#+LANGUAGE:  en
+#+LaTeX_HEADER: \frenchspacing
+#+EXPORT_EXCLUDE_TAGS: noexport
+#+OPTIONS: tags:nil
+# allow underscores in export, number really deep (increase "7" if
+# needed). Update for WD 2020-09-18 to number to 7 levels deep 
+#+OPTIONS: ^:{} H:8 num:8
+#+OPTIONS: TOC: 3
+#+LaTeX_HEADER: \usepackage{listings,xcolor}
+#+LaTeX_HEADER: \usepackage{rotating}
+#+LATEX_HEADER_EXTRA: \usepackage{svg}
+#+LaTeX_HEADER: \lstdefinelanguage{omn}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
+#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
+#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
+#+LaTeX_HEADER: \lstdefinelanguage{ttl}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
+#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
+#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
+#+LaTeX_HEADER: \lstdefinelanguage{ttlnocomment}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
+#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
+#+LaTeX_HEADER:   tabsize=2,columns=fullflexible,}  % this could be improved...
+#+LaTeX_HEADER: \lstdefinelanguage{sparql}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
+#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
+#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
+#+LaTeX_HEADER: \lstdefinelanguage{stottr}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
+#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
+#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
+#+LaTeX_HEADER: \lstdefinelanguage{json}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
+#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
+#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
+#+LaTeX_HEADER: \usepackage{enumitem} \setlist[description]{font=\normalfont\itshape\space}
+** Local variables for this org file
+# commenting out latex-filter-headline-dots
+# org-export-filter-headline-functions: (latex-filter-headline-dot)
+
+#+STARTUP: hideblocks
+# Local Variables:
+# mode: org
+# org-confirm-babel-evaluate: nil
+# org-babel-default-inline-header-args: ((:exports . "code"))
+# org-latex-src-block-backend: listings
+# org-latex-classes: (("book" "\\documentclass[11pt]{scrbook}" ontology-resource-section))
+# org-latex-prefer-user-labels: t
+# eval: (progn
+# (org-babel-lob-ingest "elot-lob.org")
+# (org-sbe defun-desc-lists) ;helper functions
+# (org-sbe defun-puri) ;helper functions
+# (org-sbe defun-resource-headings) ;helper functions
+# (org-sbe defun-resource-declaration) ;helper functions
+# (org-sbe defun-class-patterns) ;helper functions
+# (org-sbe defun-resource-taxonomy) ;helper functions
+# (org-sbe defun-latex-export) ;helper functions
+# (org-sbe defun-get-heading-nocookie) ;helper functions
+# (org-sbe defun-get-description-entry) ;helper functions
+# (org-sbe defun-ELOT-latex-derived-backend) ;helper functions
+# (defun ask-user-about-supersession-threat (fn) "nothing")  ; allow open omn file
+# )
+# eval: (setq-local org-latex-image-default-scale .8)
+# eval: (setq-local org-babel-default-header-args:sparql 
+# '((:results . "table replace")
+#   (:exports . "code")
+#   (:format . "text/tab-separated-values")
+#   (:noweb . "yes")
+#   (:url . "http://localhost:3030/NOTINUSE")))
+# time-stamp-line-limit: 1000
+# time-stamp-format: "%Y-%m-%d %H:%M"
+# time-stamp-active: t
+# time-stamp-start: "(version of "
+# time-stamp-end: ")"
+# eval: (add-hook 'before-save-hook #'time-stamp)
+# End:
+** OTTR support -- may be added to ELOT later
+
+The following may be added later to the =Local Variables:= block,
+to support emacs-ottr-toolkit for OTTR templates, good for creating
+individuals from tables.
+# stottr-dir: "./stottr"
+# bottr-dir: "./bottr"
+# docttr-dir: "./docttr"
+# data-dir: "./data"
+# eval: (org-babel-load-file (concat emacs-ottr-toolkit-root "ottr-extra.org"))
+# eval: (org-babel-lob-ingest (concat emacs-ottr-toolkit-root "ottr-lob.org"))
+# eval: (setq-local org-babel-default-header-args:stottr
+# '((:comments . "link")
+#   ))

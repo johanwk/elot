@@ -1,0 +1,5 @@
+#+title: Emacs Literate Ontology Tool (ELOT)
+
+* What
+This repository contains a template for writing OWL ontologies as
+org-mode documents, with supporting functions and scripts.

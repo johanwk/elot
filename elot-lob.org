@@ -1,0 +1,774 @@
+* Helper functions for ELOT                                        :noexport:
+** elisp functions
+*** Get description lists into lisp lists
+#+name: defun-desc-lists
+#+BEGIN_SRC emacs-lisp :results silent
+  (defun org-elt-exists (x elt)
+    (org-element-map x elt #'identity))
+  (defun org-elt-item-tag-str (x)
+    "for an item in an org-element-map, return the item tag"
+    (if (org-element-property :tag x)
+        (substring-no-properties (org-element-interpret-data (org-element-property :tag x)))))
+  (defun org-elt-item-pars-str (x)
+    "for an item in an org-element map, return the paragraphs as one string"
+    (replace-regexp-in-string "\\([^
+  ]\\)\n[ \t]*" "\\1 "
+   (s-trim (apply 'concat
+                  (org-element-map x '(paragraph plain-list)
+                    (lambda (y) (substring-no-properties 
+                                 (org-element-interpret-data y)))
+                    nil nil 'plain-list)))))
+  (defun org-elt-item-str (x)
+    (list (org-elt-item-tag-str x) (org-elt-item-pars-str x)))
+  (defun org-descriptions-in-section-helper ()
+    (org-element-map (org-element-parse-buffer) 'item
+      (lambda (y) (if (org-element-property :tag y)
+                      (append (org-elt-item-str y)
+                              (if (org-elt-exists (cdr y) 'item)
+                                  (org-element-map (cdr y) 'item
+                                    (lambda (z) (if (org-element-property :tag z)
+                                                    (org-elt-item-str z))) nil nil 'item))
+                              ))) nil nil 'item))
+
+  (defun org-descriptions-in-section ()
+    "return any description list items in current section as a list of strings"
+    (interactive)
+                                          ; narrow our area of interest to the current section, before any subsection
+    (let ((section-begin) (section-end))
+      (save-restriction 
+        (save-excursion
+          (unless (org-at-heading-p) (org-previous-visible-heading 1))
+          (setq section-begin (org-element-property :contents-begin (org-element-at-point)))
+          (outline-next-heading)
+          (setq section-end (point))
+          (if (or (null section-begin) (<= section-end section-begin))
+              nil ; maybe this outline section is empty
+            (progn
+              (narrow-to-region section-begin section-end)
+                                          ; return all paragraphs--description items as pairs in a list
+              (org-descriptions-in-section-helper)))))))
+
+  (defun org-subsection-descriptions ()
+    "return a plist for the outline at point, of headlines paired with plists of description-list items and values."
+    (save-restriction
+      (save-excursion
+        (unless (org-at-heading-p) (org-previous-visible-heading 1)) ; ensure we are at a heading
+        (org-narrow-to-subtree)
+        (outline-next-heading)  ; don't include the section that has the target property id itself
+        (let (ret)
+          (while (let ((heading (substring-no-properties (org-get-heading nil t)))
+                       (descriptions (org-descriptions-in-section)))
+                   (unless (or (s-contains? "COMMENT" heading)
+                               (member "nodeclare" (org-get-tags (point) t)))
+                     (setq ret
+                           (cons
+                            (if descriptions
+                                (list heading descriptions)
+                              (list heading))
+                            ret)))
+                   (outline-next-heading)))
+          (nreverse ret)))))
+#+END_SRC
+
+*** puri expansion
+#+name: defun-puri
+#+BEGIN_SRC emacs-lisp :results silent
+  (defconst puri-re "^\\([-a-z_A-Z0-9]*\\):\\([a-z_A-Z0-9-.]+\\)$")
+
+  (defun unprefix-uri (puri abbrev-alist)
+   "Replace prefix in puri with full form from abbrev-alist, if there's a match."
+   (if (eq abbrev-alist nil) puri
+     (if (string-match puri-re puri)
+         (let* ((this-prefix (match-string-no-properties 1 puri))
+                (this-localname (match-string-no-properties 2 puri))
+                (this-ns (cdr (assoc this-prefix abbrev-alist))))
+           (if this-ns
+               (concat "<" this-ns this-localname ">")
+             puri))
+       puri)))
+
+  (defun annotation-string-or-uri (str)
+    "str is wanted as an annotation value in Manchester Syntax. Expand uri, or return number, or wrap in quotes."
+    ; maybe this entry contains string representation of meta-annotations, remove them
+    (setq str (replace-regexp-in-string " - [^ ]+ ::.*$" "" str))
+     (cond (; a number -- return the string
+            (string-match "^[[:digit:]]+[.]?[[:digit:]]*$" str)
+            (concat "  " str))
+           (; a bare URI, which org-mode wraps in double brackets -- wrap in angles
+            (string-match "^[[][[]\\(http[^ ]*\\)[]][]]$" str)
+            (concat "  <" (match-string 1 str) ">"))
+          (; true -- make it an explicit boolean
+            (string-match "true" str) " \"true\"^^xsd:boolean")
+          (; false -- make it an explicit boolean
+            (string-match "false" str) " \"false\"^^xsd:boolean")
+          (; not a puri -- normal string, wrap in quotes
+           (equal str (unprefix-uri str org-link-abbrev-alist-local))
+           ; escape all quotes with \", note this gives invalid results if some are already escaped
+           (concat "  \"" (replace-regexp-in-string "\"" "\\\\\"" str) "\""))
+          (; else, a puri -- wrap in angles
+           t (concat "  " (unprefix-uri str org-link-abbrev-alist-local)))))
+#+END_SRC
+*** Use section headings as ontology resources
+=org-list-siblings= returns a tree of headline strings that matches the
+outline at point. 
+
+=org-subsection-descriptions= returns a list for the outline at point,
+of headlines paired with lists of item-value pairs from description
+lists. We use nested lists in order to allow for annotation of
+annotations in a future improved version, from sub-items.
+#+name: defun-resource-headings
+#+BEGIN_SRC emacs-lisp :results silent
+    ; http://stackoverflow.com/questions/17179911/emacs-org-mode-tree-to-list
+    (defun org-list-siblings ()
+      "List siblings in current buffer starting at point.
+      Note, you can always (goto-char (point-min)) to collect all siblings."
+      (interactive)
+      (let (ret)
+        (unless (org-at-heading-p) 
+          (org-forward-heading-same-level nil t))
+        (while (progn
+                 (unless (looking-at "[*]* *COMMENT")
+                   (setq ret
+                         (if (member "nodeclare" (org-get-tags (point) t)) ; tagged to be skipped, proceed down
+                             (cons (save-excursion
+                                             (when (org-goto-first-child)
+                                               (org-list-siblings))) ret)
+                           (cons (append (list
+                                            ; the nil t arguments for tags yes, todos no, todos no, priorities no
+                                            (substring-no-properties (org-get-heading nil t t t)))
+                                           (save-excursion
+                                             (when (org-goto-first-child)
+                                               (org-list-siblings))))
+                                   ret))))
+                 (org-goto-sibling)))
+        (nreverse ret)))
+
+    (defun entity-from-header (str)
+      "Get an entity from a header string.
+    The headers can be of two kinds. With prefix 'abc',
+     - abc:MyClassName
+     - my class name (abc:MyClassName)
+
+    Maybe also with tags :hello: on the right. Return abc:MyClassName in both cases."
+      (if (string-match "(\\([-_[:alnum:]]*:[-_[:alnum:]]+\\))" str) ; the resource id is in parentheses
+          (match-string 1 str)
+        (if (string-match "^\\([-_[:alnum:]]*:[-_[:alnum:]]+\\)" str) ; return string up to whitespace
+            (match-string 1 str)
+          (concat "Malformed_" str))))
+#+END_SRC
+*** Write entity declarations
+#+name: defun-resource-declaration
+#+BEGIN_SRC emacs-lisp :results silent
+  (defun omn-declare (str owl-type)
+     "Given a string STR and an OWL type owl-type, write a Manchester Syntax entity declaration. Add rdfs:label annotation. If a parenthesis is given, use that as resource id."
+    ; check whether we have a label and a resource in parentheses
+     (let* ((suri (entity-from-header str))
+            ;; (prefix (if (string-match "\\(.*\\):\\(.*\\)" suri)
+            ;;             (match-string 1 suri) ""))
+            ;; (localname (if (string= prefix "") suri (match-string 2 suri)))
+            ;; (label (if (string-match "\\(.+\\) (.*)" str)
+            ;;            (match-string 1 str) localname))
+            )
+       (concat owl-type ": " suri)))
+       ;;               "\n    Annotations: rdfs:label \"" label "\"")))
+
+  (defun annotation-entries (l &optional sep)
+    "l is a list of puri--string pairs, each perhaps with a trailing list of similar, meta-annotation pairs. sep is 2 x indent blanks"
+    (let ((indent (make-string (if sep (* 2 sep) 6) ?\ ))
+          ;; l-uri-entries is the description list after purging any
+          ;; items that have a prefix that isn't included as a LINK
+          ;; entry, which goes into org-link-abbrev-alist-local. Note
+          ;; that expanded URIs in brackets <...> are let through.
+          (l-uri-entries
+           (cl-remove-if (lambda (x) (string-equal (car x)
+                                                   (unprefix-uri (car x) org-link-abbrev-alist-local)))
+              l)))
+    (if (atom l) "\n"
+      (concat "\n" indent "Annotations: " 
+              (mapconcat (lambda (y)
+                           (concat
+                            (if (consp (caddr y)) ; we have meta-annotations
+                                (concat (annotation-entries (cddr y) 4) "\n " indent))
+                            (car y)
+                            (annotation-string-or-uri (cadr y))))
+                         l-uri-entries
+                         (concat ",\n " indent))))))
+
+  (defun omn-annotate (l)
+    (let* ((str (car l))
+           (suri (entity-from-header str))
+           (prefix (if (string-match "\\(.*\\):\\(.*\\)" suri)
+                       (match-string 1 suri) ""))
+           (localname (if (string= prefix "") suri (match-string 2 suri)))
+           (label (if (string-match "\\(.+\\) (.*)" str)
+                      (match-string 1 str) localname))
+           (resource-annotations
+            (cons (list "rdfs:label" label) (cadr l))))
+      (annotation-entries resource-annotations)))
+
+  (defun resource-declarations (l owl-type)
+    "Take a possibly list of identifiers with annotations, declare to be of owl-type."
+    (mapconcat
+     (lambda (x) 
+       (concat
+        (omn-declare (car x) owl-type)
+        ; if annotations, add to the annotation block that has been started with rdfs:label
+        ;(if (cdr x) (annotation-entries (cadr x)))))
+        (omn-annotate x)))
+     l "\n"))
+
+  (defun resource-declarations-from-header (header-id owl-type)
+    "HEADER-ID is an org location id, OWL-TYPE is Class, etc."
+    (save-excursion
+      (org-id-goto header-id)
+      (let ((entity-l (org-subsection-descriptions)))
+        (resource-declarations entity-l owl-type))))
+;(cdr (org-subsection-descriptions))))
+#+END_SRC
+*** Write typical class patterns
+**** one-of
+It's common to say a class is a subclass of the union of immediate
+subclasses. The function =class-oneof-from-header= is intended to be
+used in =resource-taxonomy-from-l=. 
+
+It's common to say a set of immediate subclasses are disjoint. The
+function =class-disjoint-from-header= is intended to be used in
+=resource-taxonomy-from-l=.
+#+name: defun-class-patterns
+#+BEGIN_SRC emacs-lisp
+  (defun class-oneof-from-header (l)
+    "L a list of class resources like ((super (((sub) (sub) ... (sub)))))."
+    (let ((owl-type "Class") (owl-subclause "SubClassOf"))
+      (concat "\n" owl-type ": " (entity-from-header (car l))
+              "\n    " owl-subclause ": "
+              (mapconcat (lambda (x)
+                           (entity-from-header (car x)))
+                         (cdr l) " or "))))
+
+  (defun class-disjoint-from-header (l)
+    "L a list of class resources like ((super (((sub) (sub) ... (sub)))))."
+      (concat "\nDisjointClasses: "
+              "\n    "
+              (mapconcat (lambda (x)
+                           (entity-from-header (car x)))
+                         (cdr l) ", ")))
+#+END_SRC
+*** Write entity taxonomy
+#+name: defun-resource-taxonomy
+#+BEGIN_SRC emacs-lisp :results silent
+  (defun org-tags-in-string (str)
+    "Return list of any tags in org-mode :asdf:lksjdf: from STR"
+    (if (string-match ".*\\W+:\\(.*\\):" str)
+        (split-string (match-string 1 str) ":")))
+
+  (defun resource-taxonomy-from-l (l owl-type owl-subclause)
+    (if (listp (car l))
+        (mapconcat (lambda (x) (resource-taxonomy-from-l x owl-type owl-subclause)) l "")
+      (if (and (stringp (car l)) (stringp (caadr l)))
+          (concat 
+            ;simple subclass clauses
+            (mapconcat (lambda (x)
+                        (concat "\n" owl-type ": "
+                                (entity-from-header (car x))
+                                "\n    " owl-subclause ": "
+                                (entity-from-header (car l))))
+                      (cdr l) "")
+            ;one-of pattern
+            (if (member "oneof" (org-tags-in-string (car l))) (class-oneof-from-header l))
+            ;disjoint pattern
+            (if (member "disjoint" (org-tags-in-string (car l))) (class-disjoint-from-header l))
+            (resource-taxonomy-from-l (cdr l) owl-type owl-subclause)))))
+
+  (defun resource-taxonomy-from-header (header-id owl-type owl-relation)
+    "HEADER-ID is an org location id, OWL-TYPE is Class, etc., OWL-RELATION is SubClassOf, etc."
+    (save-excursion
+      (org-id-goto header-id)
+      (org-goto-first-child)
+      (let ((hierarchy-l (org-list-siblings)))
+        (resource-taxonomy-from-l hierarchy-l owl-type owl-relation))))
+#+END_SRC
+*** Headings in LaTeX export
+We format headings with indentation to match the subtype level in the
+ontology: for each level down we add a full stop and a space.
+
+# Consider using a different symbol, for instance the unicode ↳, in latex-filter-headline-dots
+
+#+name: defun-latex-export
+#+BEGIN_SRC emacs-lisp
+  ;; (defun ontology-resource-section (level numbered-p)
+  ;;   (if numbered-p
+  ;;       (if (= 1 level) "\\section{%s}" 
+  ;;          (if (= 2 level) "\\subsection{%s}" "\\subsubsection{%s}"))
+  ;;    "\\subsubsection*{%s}"))
+  (defun ontology-resource-section (level numbered-p)
+    (if numbered-p
+        (if (= 1 level) "\\chapter{%s}" 
+          (if (= 2 level) "\\section{%s}"
+            (if (= 3 level) "\\subsection{%s}" 
+              "\\subsubsection{%s}")))
+            ;;     (if (= 5 level) "\\paragraph{%s}"
+            ;;          "\\subparagraph{%s}")))))
+      (if (= 1 level) "\\addchap{%s}"  ; Koma-script command, see https://tex.stackexchange.com/questions/193767/how-to-use-unnumbered-chapters-with-koma-script/193799#193799
+        (if (= 2 level) "\\addsec{%s}"
+          (if (= 3 level) "\\subsection*{%s}"
+             "\\subsubsection*{%s}")))
+          ;;     (if (= 5 level) "\\paragraph*{%s}"
+          ;;       "\\subparagraph{%s}")))))))
+      ))
+
+  (defun latex-filter-headline-dots (text backend info)
+    "Ensure dots in headlines."
+    (when (org-export-derived-backend-p backend 'latex)
+      (let* ((prop-point (next-property-change 0 text))
+             (this-element (plist-get (text-properties-at prop-point text) :parent))
+             (this-element-level (org-element-property :level this-element))
+             (resourcedef-p (org-export-get-node-property :RESOURCEDEFS this-element t)))
+        (when (and resourcedef-p (> this-element-level 2))
+          (string-match "section\\(.?\\){" text)
+          (replace-match (concat "section\\1{\\\\itshape{}" 
+           (apply 'concat (make-list (- this-element-level 3) ".\\\\space{}")))
+                         nil nil text)
+          ))))
+#+END_SRC
+*** For use in org-ql
+**** Get headings without cookies
+The function =org-get-heading= will include "cookies" that track task
+completion in the text. So we get "lis:Dependent [4/4]" instead of just
+"lis:Dependent". The following strips off the cookie.
+#+name: defun-get-heading-nocookie
+#+begin_src emacs-lisp
+  (defun org-get-heading-nocookie (&optional no-tags no-todo no-priority no-comment)
+    (replace-regexp-in-string " \\[[[:digit:]/%]+\\]$" ""
+                              (org-get-heading no-tags no-todo no-priority no-comment)))
+#+end_src
+**** Get text of description list entry
+#+name:defun-get-description-entry
+#+begin_src emacs-lisp
+(defun org-get-description-entry (tag)
+  (save-excursion
+    (if (search-forward-regexp tag nil t)
+        (let* ((element (org-element-at-point))
+               (beg (org-element-property :contents-begin element))
+               (end (org-element-property :contents-end element))
+               (entry-text (buffer-substring-no-properties beg end)))
+           (replace-regexp-in-string "\n\s*" " " entry-text)))))
+#+end_src
+*** Exporting with replacements of description list tags
+<<exporting-dlists>>
+Execute export with "special formatting" with
+: (org-export-to-file 'ELOT-latex "ELOT.tex")
+
+#+name: defun-ELOT-latex-derived-backend
+#+begin_src emacs-lisp
+    ;; see https://emacs.stackexchange.com/questions/55231/org-mode-export-html-add-name-attirbute-to-checkbox-input
+    (org-export-define-derived-backend 'ELOT-latex 'latex
+      :translate-alist '((item . my-item-translator)))
+    (defvar item-process nil)
+
+    (defun my-item-translator (item c info)
+      (let* ((item-tag-maybe (car (org-element-property :tag item)))
+             (item-tag-stringp (stringp item-tag-maybe))
+             (item-tag (if item-tag-stringp (substring-no-properties item-tag-maybe) item-tag-maybe)))
+        (if (and item-tag-stringp (string= item-tag "item-translate-start")) (setq item-process t))
+        (if (and item-tag-stringp (string= item-tag "item-translate-stop")) (setq item-process nil))
+      (when (and item-process item-tag-stringp)
+        (progn
+          ;(message (substring-no-properties item-tag))
+          (setf (plist-get (cadr item) :checkbox) nil)  ; set checkbox here
+          (let ((tag-mapped (assoc item-tag (quote
+  (("iof-av:isPrimitive" . "primitive?")
+   ("iof-av:naturalLanguageDefinition" . "definition")
+   ("iof-av:primitiveRationale" . "why primitive")
+   ("iof-av:usageNote" . "usage note")
+   ("owl:deprecated" . "deprecated?")
+   ("rdfs:seeAlso" . "see also")
+   ("skos:example" . "example")
+   ("skos:scopeNote" . "scope note")
+   ("skos:altLabel" . "alternative label")
+   ("iof-av:explanatoryNote" . "explanatory note")
+   ("rdfs:comment" . "comment")
+   ("rdfs:isDefinedBy" . "defined by")
+   ("iof-av:firstOrderLogicDefinition" . "first-order logic definition")
+   ("iof‑av:semiFormalNaturalLanguageDefinition" . "semi-formal definition")
+   ("iof-av:semiFormalNaturalLanguageAxiom" . "semi-formal axiom")
+   ("iof-av:adaptedFrom" . "adapted from")
+   ("iof-av:synonym" . "synonym"))
+                                           ))))
+              (if tag-mapped
+                  (setf (plist-get (cadr item) :tag) (cdr tag-mapped)))
+              )))
+      (unless (and item-tag-stringp
+                   (or (string= item-tag "item-translate-start") (string= item-tag "item-translate-stop")))
+        (org-latex-item item c info))))
+#+end_src
+
+#+RESULTS: defun-ELOT-latex-derived-backend
+: my-item-translator
+
+#+name: item-tag-name-map
+| annotation property                        | entry text                   |
+|--------------------------------------------+------------------------------|
+| iof-av:isPrimitive                         | primitive?                   |
+| iof-av:naturalLanguageDefinition           | definition                   |
+| iof-av:primitiveRationale                  | why primitive                |
+| iof-av:usageNote                           | usage note                   |
+| owl:deprecated                             | deprecated?                  |
+| rdfs:seeAlso                               | see also                     |
+| skos:example                               | example                      |
+| skos:scopeNote                             | scope note                   |
+| skos:altLabel                              | alternative label            |
+| iof-av:explanatoryNote                     | explanatory note             |
+| rdfs:comment                               | comment                      |
+| rdfs:isDefinedBy                           | defined by                   |
+| lis:relatedEntityISO15926                  | related in ISO 15926         |
+| lis:equivalentEntityISO15926               | equivalent in ISO 15926      |
+| lis:deprecatedEntityISO15926               | deprecated ISO 15926         |
+| lis:remodelsEntityISO15926                 | remodels ISO 15926           |
+| iof-av:firstOrderLogicDefinition           | first-order logic definition |
+| iof‑av:semiFormalNaturalLanguageDefinition | semi-formal definition       |
+| iof-av:semiFormalNaturalLanguageAxiom      | semi-formal axiom            |
+| iof-av:adaptedFrom                         | adapted from                 |
+| iof-av:synonym                             | synonym                      |
+
+#+begin_src emacs-lisp :var tagmap=item-tag-name-map :results code :tangle no
+(mapcar (lambda (x) (cons (car x) (cadr x))) tagmap)
+#+end_src
+
+#+RESULTS:
+#+begin_src emacs-lisp
+(("iof-av:isPrimitive" . "primitive?")
+ ("iof-av:naturalLanguageDefinition" . "definition")
+ ("iof-av:primitiveRationale" . "why primitive")
+ ("iof-av:usageNote" . "usage note")
+ ("owl:deprecated" . "deprecated?")
+ ("rdfs:seeAlso" . "see also")
+ ("skos:example" . "example")
+ ("skos:scopeNote" . "scope note")
+ ("skos:altLabel" . "alternative label")
+ ("iof-av:explanatoryNote" . "explanatory note")
+ ("rdfs:comment" . "comment")
+ ("rdfs:isDefinedBy" . "defined by")
+ ("lis:relatedEntityISO15926" . "related in ISO 15926")
+ ("lis:equivalentEntityISO15926" . "equivalent in ISO 15926")
+ ("lis:deprecatedEntityISO15926" . "deprecated ISO 15926")
+ ("lis:remodelsEntityISO15926" . "remodels ISO 15926")
+ ("iof-av:firstOrderLogicDefinition" . "first-order logic definition")
+ ("iof‑av:semiFormalNaturalLanguageDefinition" . "semi-formal definition")
+ ("iof-av:semiFormalNaturalLanguageAxiom" . "semi-formal axiom")
+ ("iof-av:adaptedFrom" . "adapted from")
+ ("iof-av:synonym" . "synonym"))
+#+end_src
+
+To to find the positions where we start and end the tag
+replacements. /But/, this isn't usable, because the tangled ontology
+content influences position numbers /at export/.
+#+begin_src emacs-lisp :tangle no
+  (save-excursion
+    (beginning-of-buffer)
+    (search-forward-regexp "* IDO Entities")
+    (let* ((entry (org-element-at-point))
+           (start (org-element-property :begin entry))
+           (end (org-element-property :end entry)))
+      (cons start end)))
+#+end_src
+
+#+RESULTS:
+: (35634 . 204383)
+
+** org source blocks
+*** Resource declarations (exctracted from outlines)
+#+name: resource-declarations
+#+BEGIN_SRC emacs-lisp :var hierarchy="ELOT-class-hierarchy" :var owl-type="Class" :wrap "SRC omn" 
+		(resource-declarations-from-header hierarchy owl-type)
+#+END_SRC
+*** Resource taxonomies (exctracted from outlines)
+#+name: resource-taxonomy
+#+BEGIN_SRC emacs-lisp :var hierarchy="ELOT-class-hierarchy" :var owl-type="Class" :var owl-relation="SubClassOf" :wrap "SRC omn" 
+(resource-taxonomy-from-header hierarchy owl-type owl-relation)
+#+END_SRC
+
+#+RESULTS: resource-taxonomy
+#+begin_SRC omn
+
+Class: lis:Artefact
+    SubClassOf: lis:Object
+Class: lis:System
+    SubClassOf: lis:Object
+Class: lis:FunctionalObject
+    SubClassOf: lis:Object
+Class: lis:PhysicalObject
+    SubClassOf: lis:Object
+Class: lis:InformationObject
+    SubClassOf: lis:Object
+Class: lis:Organization
+    SubClassOf: lis:Object
+Class: lis:Location
+    SubClassOf: lis:Object
+Class: lis:PhysicalArtefact
+    SubClassOf: lis:Artefact
+Class: lis:SoftwareArtefact
+    SubClassOf: lis:Artefact
+Class: lis:InanimatePhysicalObject
+    SubClassOf: lis:PhysicalObject
+Class: lis:Compound
+    SubClassOf: lis:PhysicalObject
+Class: lis:Feature
+    SubClassOf: lis:PhysicalObject
+Class: lis:Phase
+    SubClassOf: lis:PhysicalObject
+Class: lis:Organism
+    SubClassOf: lis:PhysicalObject
+Class: lis:Stream
+    SubClassOf: lis:InanimatePhysicalObject
+Class: lis:Person
+    SubClassOf: lis:Organism
+Class: lis:QualityDatum
+    SubClassOf: lis:InformationObject
+Class: lis:UnitOfMeasure
+    SubClassOf: lis:InformationObject
+Class: lis:ScalarQuantityDatum
+    SubClassOf: lis:QualityDatum
+Class: lis:Scale
+    SubClassOf: lis:UnitOfMeasure
+Class: lis:Site
+    SubClassOf: lis:Location
+Class: lis:SpatialLocation
+    SubClassOf: lis:Location
+Class: lis:PointInSpace
+    SubClassOf: lis:SpatialLocation
+Class: lis:LineInSpace
+    SubClassOf: lis:SpatialLocation
+Class: lis:PlaneInSpace
+    SubClassOf: lis:SpatialLocation
+Class: lis:VolumeInSpace
+    SubClassOf: lis:SpatialLocation
+Class: lis:Potential
+    SubClassOf: lis:Dependent
+Class: lis:Quality
+    SubClassOf: lis:Dependent
+Class: lis:Disposition
+    SubClassOf: lis:Potential
+Class: lis:Role
+    SubClassOf: lis:Potential
+Class: lis:Interest
+    SubClassOf: lis:Potential
+Class: lis:Capability
+    SubClassOf: lis:Disposition
+Class: lis:Function
+    SubClassOf: lis:Capability
+Class: lis:PhysicalQuantity
+    SubClassOf: lis:Quality
+Class: lis:ShapeQuality
+    SubClassOf: lis:Quality
+Class: lis:MaterialCompositionQuality
+    SubClassOf: lis:Quality
+Class: lis:PhaseQuality
+    SubClassOf: lis:Quality
+Class: lis:Activity
+    SubClassOf: lis:Temporal
+Class: lis:SpatiotemporalRegion
+    SubClassOf: lis:Temporal
+Class: lis:TemporalRegion
+    SubClassOf: lis:Temporal
+Class: lis:ActivityProfile
+    SubClassOf: lis:Activity
+Class: lis:Event
+    SubClassOf: lis:Activity
+Class: lis:InstantRegion
+    SubClassOf: lis:TemporalRegion
+Class: lis:IntervalRegion
+    SubClassOf: lis:TemporalRegion
+Class: lis:Instant
+    SubClassOf: lis:InstantRegion
+Class: lis:Interval
+    SubClassOf: lis:IntervalRegion
+Class: lis:SpecifiedObject
+    SubClassOf: lis:Specified
+Class: lis:InstalledObject
+    SubClassOf: lis:Actual
+#+end_SRC
+
+*** Dates for insertion into ontology on save
+#+name: current-date
+#+begin_src emacs-lisp :exports none
+(format-time-string "%Y-%m-%d")
+#+end_src
+
+#+name: current-datetime
+#+begin_src emacs-lisp :exports none
+  (format-time-string "%Y-%m-%dT%H:%M:%SZ" nil t)
+#+end_src
+*** Diagrams with rdfpuml
+**** Config for rdfpuml colours and directions
+#+name: rdfpuml-config
+#+begin_src ttl
+# customization
+@prefix puml: <http://plantuml.com/ontology#> .
+owl:Class      puml:stereotype "(C,Orange)".
+rdfs:subClassOf puml:arrow puml:up-tri .
+rdfs:subPropertyOf puml:arrow puml:up-tri .
+owl:Restriction      puml:stereotype "(C,Orange)".
+owl:ObjectProperty      puml:stereotype "(O,LightBlue)".
+owl:DatatypeProperty      puml:stereotype "(D,LightGreen)".
+owl:NamedIndividual      puml:stereotype "(i,White)".
+owl:Axiom      puml:stereotype "(X,LightYellow)".
+owl:annotatedSource puml:arrow puml:gray .
+owl:annotatedProperty puml:arrow puml:gray .
+owl:annotatedTarget puml:arrow puml:gray .
+rdf:in puml:arrow puml:up .
+rdfs:domain puml:arrow puml:left-gray .
+rdfs:range puml:arrow puml:right-gray .
+owl:onProperty puml:arrow puml:up .
+owl:someValuesFrom puml:arrow puml:right .
+owl:allValuesFrom puml:arrow puml:right .
+owl:equivalentClass puml:arrow puml:left-none .
+owl:equivalentProperty puml:arrow puml:left-none .
+#+end_src
+
+To make the =lis:hasPart= diagram more compact, make =rdfs:domain= and
+=rdfs:range= point downwards with this alternative configuration.
+#+name: rdfpuml-config-rangedomaindown
+#+begin_src ttl :noweb yes
+<<rdfpuml-config>>
+rdfs:domain puml:arrow puml:down .
+rdfs:range puml:arrow puml:down .
+#+end_src
+
+Another alternative, making range point down, but not domain.
+#+name: rdfpuml-config-rangedown
+#+begin_src ttl :noweb yes
+<<rdfpuml-config>>
+rdfs:range puml:arrow puml:down .
+#+end_src
+**** PDF or SVG images?
+When exporting to a PDF document, it's much easier to use PDF. Support
+for SVG in LaTeX is not great.
+
+On the other hand, inclusion in MS Word or export to HTML calls for
+SVGs. Conversion is described in 
+**** rdfpuml-block will read a ttl block and output a diagram
+Warnings. This script block is set up with /hardcoded paths/ to
+ - call on Strawberry Perl (a perl implementation for Windows)
+ - find rdfpuml (see https://github.com/VladimirAlexiev/rdf2rml)
+
+Also note *prefixes* go in file =prefixes.ttl= so rdfpuml finds them.
+#+name: rdfpuml-block
+#+header: :var ttlblock="example-ttl" :var config="" :var mydir=(concat (eval default-directory) "images/") :var format="svg" :var addtext="" :var addtextend="" :cache yes :eval never-export
+#+begin_src emacs-lisp :results file :dir ~ 
+  (let* ((puml-command 
+          (concat "LC_ALL=C /cygdrive/c/opt/strawberry/perl/bin/perl -C -S "
+                  (expand-file-name "~/bin/rdf2rml/bin/rdfpuml.pl")))
+         (ttl (concat
+               (eval `(org-sbe ,ttlblock))
+               (eval `(org-sbe ,config))))
+         (tmp-graphic-file (concat "tmp-rdfpuml." format))
+         (result-graphic-file (concat mydir ttlblock "." format))
+         )
+    (progn
+      (f-write-text ttl 'utf-8 "tmp-rdfpuml.ttl")
+      (message (concat "Wrote source block \"" ttlblock "\" to file:" (shell-command-to-string (concat "wc " "tmp-rdfpuml.ttl"))))
+      (shell-command-to-string 
+       (concat puml-command " tmp-rdfpuml.ttl"))
+      (message (concat "Executed rdfpuml on ttl to create plantuml file:" (shell-command-to-string (concat "wc " "tmp-rdfpuml.puml"))))
+      (message (concat puml-command " tmp-rdfpuml.ttl"))
+      (unless (string= addtext "") 
+        (shell-command-to-string (concat "sed -i '2i " addtext "' tmp-rdfpuml.puml")))
+      (unless (string= addtextend "") 
+        (shell-command-to-string (concat "sed -i '0,/@enduml/s/@enduml/" addtextend "\\n&/' tmp-rdfpuml.puml")))
+      (shell-command "sed -i 's/ : rdfs:\\(subClassOf\\|subPropertyOf\\)//g' tmp-rdfpuml.puml") ;; more compact diagram
+      (shell-command-to-string (concat "java -jar " org-plantuml-jar-path " -t" format " tmp-rdfpuml.puml"))
+      (message (concat "Executed plantuml to create " format " file:" (shell-command-to-string (concat "wc " tmp-graphic-file))))
+      (message (concat "java -jar " org-plantuml-jar-path " -t" format " tmp-rdfpuml.puml"))
+      (f-move tmp-graphic-file result-graphic-file)
+      ;(f-delete "tmp-rdfpuml.ttl")
+      ;(f-delete "tmp-rdfpuml.puml")
+      result-graphic-file
+      ))
+#+end_src
+
+#+RESULTS[fd2e7835ef9c2388a22067ffadf7e94d13a5052f]: rdfpuml-block
+[[file:images/example-ttl.svg]]
+
+**** Test ttl block
+#+name: example-ttl
+#+BEGIN_SRC ttl :exports none
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ex:    <http://example.org/> .
+
+ex:House  a         ex:Classifier ;
+        rdfs:label  "House" .
+
+ex:ArchitecturalTerms
+        skos:member  ex:House .
+
+#+END_SRC
+To get the ttl block to process correctly: add this to startup.
+#+begin_src emacs-lisp
+(defun org-babel-execute:passthrough (body params) body)
+(unless (fboundp 'org-babel-execute:ttl)                
+  (defalias 'org-babel-execute:ttl 'org-babel-execute:passthrough))
+#+end_src
+**** Test run
+#+call: rdfpuml-block(ttlblock="example-ttl", config="rdfpuml-config", format="png") :dir ~ :cache yes
+
+#+RESULTS[5c2001466d943d4188759afde0d6f6e5a23fd62e]:
+[[file:example-ttl.png]]
+
+**** Use sparql as ttl source
+Querying a local Fuseki endpoint. Note that this isn't going to be
+useful if the Turtle data comes from template expansions.
+#+name: fuseki-for-rdfpuml-ttl
+#+begin_src sparql :url http://localhost:3030/ELOT/sparql :wrap "src ttl" :results output code :cache yes
+  PREFIX owl: <http://www.w3.org/2002/07/owl#>
+  PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+  construct { ?x rdfs:subClassOf ?z
+  }{
+    ?x a owl:Class ; rdfs:subClassOf ?z
+  } limit 2
+#+end_src
+
+#+RESULTS:
+#+begin_src ttl
+@prefix :         <http://example.org/elot-template#> .
+@prefix dc:       <http://purl.org/dc/elements/1.1/> .
+@prefix dcmitype: <http://purl.org/dc/dcmitype/> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix dol:      <http://www.loa-cnr.it/ontologies/DOLCE-Lite.owl#> .
+@prefix foaf:     <http://xmlns.com/foaf/0.1/> .
+@prefix iof-av:   <https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/> .
+@prefix lis:      <http://rds.posccaesar.org/ontology/lis14/rdl/> .
+@prefix obo:      <http://purl.obolibrary.org/obo/> .
+@prefix om:       <http://www.ontology-of-units-of-measure.org/resource/om-2/> .
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix pav:      <http://purl.org/pav/> .
+@prefix prov:     <http://www.w3.org/ns/prov#> .
+@prefix rdf:      <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:     <http://www.w3.org/2004/02/skos/core#> .
+@prefix ssn:      <http://www.w3.org/ns/ssn/> .
+@prefix time:     <http://www.w3.org/2006/time#> .
+@prefix xml:      <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+
+lis:MaterialCompositionQuality
+        rdfs:subClassOf  lis:Quality .
+
+lis:Organism  rdfs:subClassOf  lis:PhysicalObject .
+#+end_src
+
+The =ttlblock= argument can point to a named query.
+#+call: rdfpuml-block(ttlblock="fuseki-for-rdfpuml-ttl", config="rdfpuml-config", format="pdf") :dir ~ :cache yes
+
+#+ATTR_LATEX: :width 8cm
+#+RESULTS[fa175dd1ac5b97a422a799a4e749956f0e116096]:
+[[file:fuseki-for-rdfpuml-ttl.pdf]]
+
+*** Kill prefixes in Turtle output
+This is useful when there's too many prefix definitions
+#+name: kill-prefixes
+#+begin_src emacs-lisp :var data=""
+  (replace-regexp-in-string "^[[:blank:]]*[@]*prefix.*:.*\n" "" data)
+#+end_src
+
