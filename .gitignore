@@ -281,7 +281,7 @@ TSWLatexianTemp*
 
 # auto folder when using emacs and auctex
 ./auto/*
-*.el
+# johanwk we need elisp files for this repo *.el
 
 # expex forward references with \gathertags
 *-tags.tex
