@@ -3,3 +3,18 @@
 * What
 This repository contains a template for writing OWL ontologies as
 org-mode documents, with supporting functions and scripts.
+
+Started 2024-03-03.
+
+* Quick start
+
+For a minimal check that ontology can be exported and documents can be
+produced:
+ - Use a recent Emacs version (current latest version is 29.2.1)
+ - Start Emacs with the init file [[elot-init.el]]. This minmal startup
+   file has no conveniences, it's intended only for testing.
+ - Open [[elot-template.org]]
+ - Export to ontology [[ELOT.omn]] by M-x /org-babel-tangle/, keybinding
+   =C-c C-v t=. Open the ontology in Protégé to check it's OK.
+ - Export to a document by M-x /org-export-dispatch/, keybinding =C-c
+   C-e=. Choose your format from the menu.
