@@ -1,7 +1,7 @@
 #+title: ELOT template file
 #+subtitle: Blank file for writing an OWL ontology
 #+author: i-am-the-author
-#+date: WIP (version of 2024-03-20 19:29)
+#+date: WIP (version of 2024-03-20 19:38)
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 
 # Q2 2023: To export with abbreviated/more readable annotation
@@ -44,10 +44,8 @@
 #+end_src
 ** Prefixes
 <<sec:prefixes>>
-# Note that for any annotation property used in description lists 
-# to annotate resources, the prefix has to be included in a LINK
-# declaration in section Prefixes under Setup for org-mode. Otherwise
-# the description entry won't be exported to the ontology.
+# For annotation property used in description lists to annotate
+# resources, the prefix has to be included in the following table.
 
 The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
 
@@ -74,41 +72,6 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 | dcmitype: | http://purl.org/dc/dcmitype/                                                   |
 | prov:     | http://www.w3.org/ns/prov#                                                     |
 | iof-av:   | https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/ |
-*** source blocks for prefixes                                     :noexport:
-:PROPERTIES:
-:header-args:omn: :tangle no
-:END:
-#+name: sparql-prefixes
-#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
-  (mapconcat (lambda (row) (format "PREFIX %-5s <%s>" (car row) (cadr row)))
-             prefixes "\n")
-#+end_src
-
-#+name: omn-prefixes
-#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
-  (mapconcat (lambda (row) (format "Prefix: %-5s <%s>" (car row) (cadr row)))
-             prefixes "\n")
-#+end_src
-
-#+name: ttl-prefixes
-#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
-  (mapconcat (lambda (row) (format "@prefix %-5s <%s> ." (car row) (cadr row)))
-             prefixes "\n")
-#+end_src
-
-#+name: update-link-abbrev
-#+begin_src emacs-lisp :var prefixes=prefix-table[] :exports none
-  (setq org-link-abbrev-alist-local 
-    (mapcar (lambda (x) 
-              (cons (replace-regexp-in-string ":" "" (car x)) (cadr x)))
-            prefixes))
-#+end_src
-
-#+RESULTS: update-link-abbrev
-#+begin_SRC omn
-((ex . http://example.org/) (owl . http://www.w3.org/2002/07/owl#) (rdf . http://www.w3.org/1999/02/22-rdf-syntax-ns#) (xml . http://www.w3.org/XML/1998/namespace) (xsd . http://www.w3.org/2001/XMLSchema#) (rdfs . http://www.w3.org/2000/01/rdf-schema#) (skos . http://www.w3.org/2004/02/skos/core#) (pav . http://purl.org/pav/) (obo . http://purl.obolibrary.org/obo/) (dol . http://www.loa-cnr.it/ontologies/DOLCE-Lite.owl#) (ssn . http://www.w3.org/ns/ssn/) (time . http://www.w3.org/2006/time#) (om . http://www.ontology-of-units-of-measure.org/resource/om-2/) (foaf . http://xmlns.com/foaf/0.1/) (dc . http://purl.org/dc/elements/1.1/) (dcterms . http://purl.org/dc/terms/) (dcmitype . http://purl.org/dc/dcmitype/) (prov . http://www.w3.org/ns/prov#) (iof-av . https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/))
-#+end_SRC
-
 ** Declarations                                                    :noexport:
 :PROPERTIES:
 :custom_id: sec:declarations
@@ -612,6 +575,41 @@ Class: x:a
 	:PROPERTIES:
 	:VISIBILITY: folded
 	:END:
+** Source blocks for prefixes                                      :noexport:
+:PROPERTIES:
+:header-args:omn: :tangle no
+:END:
+#+name: sparql-prefixes
+#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+  (mapconcat (lambda (row) (format "PREFIX %-5s <%s>" (car row) (cadr row)))
+             prefixes "\n")
+#+end_src
+
+#+name: omn-prefixes
+#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+  (mapconcat (lambda (row) (format "Prefix: %-5s <%s>" (car row) (cadr row)))
+             prefixes "\n")
+#+end_src
+
+#+name: ttl-prefixes
+#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+  (mapconcat (lambda (row) (format "@prefix %-5s <%s> ." (car row) (cadr row)))
+             prefixes "\n")
+#+end_src
+
+#+name: update-link-abbrev
+#+begin_src emacs-lisp :var prefixes=prefix-table[] :exports none
+  (setq org-link-abbrev-alist-local 
+    (mapcar (lambda (x) 
+              (cons (replace-regexp-in-string ":" "" (car x)) (cadr x)))
+            prefixes))
+#+end_src
+
+#+RESULTS: update-link-abbrev
+#+begin_SRC omn
+((ex . http://example.org/) (owl . http://www.w3.org/2002/07/owl#) (rdf . http://www.w3.org/1999/02/22-rdf-syntax-ns#) (xml . http://www.w3.org/XML/1998/namespace) (xsd . http://www.w3.org/2001/XMLSchema#) (rdfs . http://www.w3.org/2000/01/rdf-schema#) (skos . http://www.w3.org/2004/02/skos/core#) (pav . http://purl.org/pav/) (obo . http://purl.obolibrary.org/obo/) (dol . http://www.loa-cnr.it/ontologies/DOLCE-Lite.owl#) (ssn . http://www.w3.org/ns/ssn/) (time . http://www.w3.org/2006/time#) (om . http://www.ontology-of-units-of-measure.org/resource/om-2/) (foaf . http://xmlns.com/foaf/0.1/) (dc . http://purl.org/dc/elements/1.1/) (dcterms . http://purl.org/dc/terms/) (dcmitype . http://purl.org/dc/dcmitype/) (prov . http://www.w3.org/ns/prov#) (iof-av . https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/))
+#+end_SRC
+
 ** Export
 #+LATEX_CLASS: book
 #+LATEX_CLASS_OPTIONS: [11pt,a4paper,appendixprefix,numbers=noenddot,twoside=false]
