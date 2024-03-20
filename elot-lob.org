@@ -4,7 +4,7 @@
 :header-args: :tangle ./elot.el :comments link
 :END:
 *** Header for the elisp file
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :comments nil
 ;;; elot.el --- Helper functions for Emacs Literate Ontology Tool (ELOT)
 
 ;; Copyright (C) 2024 Johan W. Klüwer
