@@ -1,7 +1,7 @@
 #+title: ELOT template file
 #+subtitle: Blank file for writing an OWL ontology
 #+author: i-am-the-author
-#+date: WIP (version of 2024-03-20 19:42)
+#+date: WIP (version of 2024-03-20 20:29)
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 
 # Q2 2023: To export with abbreviated/more readable annotation
@@ -678,20 +678,10 @@ axioms, or none. E.g. for "functionalPartOf".
 # org-latex-prefer-user-labels: t
 # eval: (progn
 # (org-babel-lob-ingest "elot-lob.org")
-# (org-sbe defun-desc-lists) ;helper functions
-# (org-sbe defun-puri) ;helper functions
-# (org-sbe defun-resource-headings) ;helper functions
-# (org-sbe defun-resource-declaration) ;helper functions
-# (org-sbe defun-class-patterns) ;helper functions
-# (org-sbe defun-resource-taxonomy) ;helper functions
-# (org-sbe defun-latex-export) ;helper functions
-# (org-sbe defun-get-heading-nocookie) ;helper functions
-# (org-sbe defun-get-description-entry) ;helper functions
-# (org-sbe defun-ELOT-latex-derived-backend) ;helper functions
-# (defun ask-user-about-supersession-threat (fn) "nothing")  ; allow open omn file
+# (load (expand-file-name "./elot.el"))
 # (org-babel-ref-resolve "update-link-abbrev")
+# (setq-local org-latex-image-default-scale .8)
 # )
-# eval: (setq-local org-latex-image-default-scale .8)
 # eval: (setq-local org-babel-default-header-args:sparql 
 # '((:results . "table replace")
 #   (:exports . "code")
