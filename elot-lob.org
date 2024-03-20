@@ -91,16 +91,31 @@
     "str is wanted as an annotation value in Manchester Syntax. Expand uri, or return number, or wrap in quotes."
     ; maybe this entry contains string representation of meta-annotations, remove them
     (setq str (replace-regexp-in-string " - [^ ]+ ::.*$" "" str))
+    ;; maybe there's macros in the string, expand them
+    (if (string-match "{{{.+}}}" str)
+      (let ((omt org-macro-templates))
+        (with-temp-buffer 
+          (insert str) (org-macro-replace-all omt) 
+          (setq str (buffer-string)))))
      (cond (; a number -- return the string
             (string-match "^[[:digit:]]+[.]?[[:digit:]]*$" str)
             (concat "  " str))
            (; a bare URI, which org-mode wraps in double brackets -- wrap in angles
-            (string-match "^[[][[]\\(http[^ ]*\\)[]][]]$" str)
+            (string-match "^[[][[]\\(https?[^ ]*\\)[]][]]$" str)
             (concat "  <" (match-string 1 str) ">"))
+           (; a bare URI, but no double brackets -- wrap in angles
+            (string-match "^\\(https?[^ ]*\\)$" str)
+            (concat "  <" (match-string 1 str) ">"))
+           (; a bare URI, in angles
+            (string-match "^<\\(https?[^ ]*\\)>$" str)
+            (concat "  " (match-string 1 str)))
           (; true -- make it an explicit boolean
             (string-match "true" str) " \"true\"^^xsd:boolean")
           (; false -- make it an explicit boolean
             (string-match "false" str) " \"false\"^^xsd:boolean")
+          (; string with datatype -- return unchanged
+            (string-match "^\".*\"^^[-_[:alnum:]]*:[-_[:alnum:]]+$" str)
+            (concat "  " str))
           (; not a puri -- normal string, wrap in quotes
            (equal str (unprefix-uri str org-link-abbrev-alist-local))
            ; escape all quotes with \", note this gives invalid results if some are already escaped
@@ -123,43 +138,45 @@ lists. We use nested lists in order to allow for annotation of
 annotations in a future improved version, from sub-items.
 #+name: defun-resource-headings
 #+BEGIN_SRC emacs-lisp :results silent
-    ; http://stackoverflow.com/questions/17179911/emacs-org-mode-tree-to-list
-    (defun org-list-siblings ()
-      "List siblings in current buffer starting at point.
-      Note, you can always (goto-char (point-min)) to collect all siblings."
-      (interactive)
-      (let (ret)
-        (unless (org-at-heading-p) 
-          (org-forward-heading-same-level nil t))
-        (while (progn
-                 (unless (looking-at "[*]* *COMMENT")
-                   (setq ret
-                         (if (member "nodeclare" (org-get-tags (point) t)) ; tagged to be skipped, proceed down
-                             (cons (save-excursion
-                                             (when (org-goto-first-child)
-                                               (org-list-siblings))) ret)
-                           (cons (append (list
-                                            ; the nil t arguments for tags yes, todos no, todos no, priorities no
-                                            (substring-no-properties (org-get-heading nil t t t)))
-                                           (save-excursion
-                                             (when (org-goto-first-child)
-                                               (org-list-siblings))))
-                                   ret))))
-                 (org-goto-sibling)))
-        (nreverse ret)))
+  ; http://stackoverflow.com/questions/17179911/emacs-org-mode-tree-to-list
+  (defun org-list-siblings ()
+    "List siblings in current buffer starting at point.
+    Note, you can always (goto-char (point-min)) to collect all siblings."
+    (interactive)
+    (let (ret)
+      (unless (org-at-heading-p) 
+        (org-forward-heading-same-level nil t))
+      (while (progn
+               (unless (looking-at "[*]* *COMMENT")
+                 (setq ret
+                       (if (member "nodeclare" (org-get-tags (point) t)) ; tagged to be skipped, proceed down
+                           (cons (save-excursion
+                                           (when (org-goto-first-child)
+                                             (org-list-siblings))) ret)
+                         (cons (append (list
+                                          ; the nil t arguments for tags yes, todos no, todos no, priorities no
+                                          (substring-no-properties (org-get-heading nil t t t)))
+                                         (save-excursion
+                                           (when (org-goto-first-child)
+                                             (org-list-siblings))))
+                                 ret))))
+               (org-goto-sibling)))
+      (nreverse ret)))
 
-    (defun entity-from-header (str)
-      "Get an entity from a header string.
-    The headers can be of two kinds. With prefix 'abc',
-     - abc:MyClassName
-     - my class name (abc:MyClassName)
+  (defun entity-from-header (str)
+    "Get an entity from a header string.
+  The headers can be of two kinds. With prefix 'abc',
+   - abc:MyClassName
+   - my class name (abc:MyClassName)
 
-    Maybe also with tags :hello: on the right. Return abc:MyClassName in both cases."
-      (if (string-match "(\\([-_[:alnum:]]*:[-_[:alnum:]]+\\))" str) ; the resource id is in parentheses
+  Maybe also with tags :hello: on the right. Return abc:MyClassName in both cases."
+    (if (string-match "(\\([-_[:alnum:]]*:[-_[:alnum:]]+\\))" str) ; the resource id is in parentheses
+        (match-string 1 str)
+      (if (string-match "^\\([-_[:alnum:]]*:[-_[:alnum:]]+\\)" str) ; return string up to whitespace
           (match-string 1 str)
-        (if (string-match "^\\([-_[:alnum:]]*:[-_[:alnum:]]+\\)" str) ; return string up to whitespace
+        (if (string-match "(\\([-_[:alnum:]]*:[-_[:alnum:]]+ [-_[:alnum:]]*:[-_/.[:alnum:]]+\\))" str) ; two ids in parentheses, for ontology
             (match-string 1 str)
-          (concat "Malformed_" str))))
+          (concat "Malformed_" str)))))
 #+END_SRC
 *** Write entity declarations
 #+name: defun-resource-declaration
@@ -204,7 +221,7 @@ annotations in a future improved version, from sub-items.
     (let ((indent (make-string 2 ?\ ))
           (l-omn-entries
            (cl-remove-if-not (lambda (x) (member (car x)
-                               '("Characteristics" "Domain" "Range" "SubClassOf" "SubPropertyOf" "EquivalentTo" "DisjointWith" "InverseOf" "SubPropertyChain")))
+                               '("Characteristics" "Domain" "Range" "SubClassOf" "SubPropertyOf" "EquivalentTo" "DisjointWith" "InverseOf" "SubPropertyChain" "Import")))
                              l)))
       (if (atom l) "\n"
         (concat "\n" indent
@@ -213,7 +230,10 @@ annotations in a future improved version, from sub-items.
                             (car y) ": "
                             (if (consp (caddr y)) ; we have meta-annotations
                                 (concat (annotation-entries (cddr y) 4) "\n " indent))
-                            (omn-restriction-string (cadr y))))
+                            (if (string-equal (car y) "Import") ; ontology import special case
+                                (annotation-string-or-uri (cadr y))
+                            (omn-restriction-string (cadr y)))
+                            ))
                          l-omn-entries
                          (concat "\n" indent))))))
 
