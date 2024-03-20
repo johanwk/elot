@@ -107,6 +107,11 @@
            (concat "  \"" (replace-regexp-in-string "\"" "\\\\\"" str) "\""))
           (; else, a puri -- wrap in angles
            t (concat "  " (unprefix-uri str org-link-abbrev-alist-local)))))
+
+  (defun omn-restriction-string (str)
+    "str is wanted as OMN value. Strip any meta-annotations. Otherwise return unchanged."
+    (setq str (replace-regexp-in-string " - [^ ]+ ::.*$" "" str))
+    str)
 #+END_SRC
 *** Use section headings as ontology resources
 =org-list-siblings= returns a tree of headline strings that matches the
@@ -194,6 +199,24 @@ annotations in a future improved version, from sub-items.
                          l-uri-entries
                          (concat ",\n " indent))))))
 
+  (defun restriction-entries (l)
+    "l is a list of puri--string pairs, except we'll pick up Manchester Syntax vocabulary and use as such"
+    (let ((indent (make-string 2 ?\ ))
+          (l-omn-entries
+           (cl-remove-if-not (lambda (x) (member (car x)
+                               '("Characteristics" "Domain" "Range" "SubClassOf" "SubPropertyOf" "EquivalentTo" "DisjointWith" "InverseOf" "SubPropertyChain")))
+                             l)))
+      (if (atom l) "\n"
+        (concat "\n" indent
+              (mapconcat (lambda (y)
+                           (concat
+                            (car y) ": "
+                            (if (consp (caddr y)) ; we have meta-annotations
+                                (concat (annotation-entries (cddr y) 4) "\n " indent))
+                            (omn-restriction-string (cadr y))))
+                         l-omn-entries
+                         (concat "\n" indent))))))
+
   (defun omn-annotate (l)
     (let* ((str (car l))
            (suri (entity-from-header str))
@@ -206,6 +229,9 @@ annotations in a future improved version, from sub-items.
             (cons (list "rdfs:label" label) (cadr l))))
       (annotation-entries resource-annotations)))
 
+  (defun omn-restrict (l)
+    (restriction-entries (cadr l)))
+
   (defun resource-declarations (l owl-type)
     "Take a possibly list of identifiers with annotations, declare to be of owl-type."
     (mapconcat
@@ -213,8 +239,9 @@ annotations in a future improved version, from sub-items.
        (concat
         (omn-declare (car x) owl-type)
         ; if annotations, add to the annotation block that has been started with rdfs:label
-        ;(if (cdr x) (annotation-entries (cadr x)))))
-        (omn-annotate x)))
+        (omn-annotate x)
+        (omn-restrict x)
+        ))
      l "\n"))
 
   (defun resource-declarations-from-header (header-id owl-type)
@@ -223,7 +250,7 @@ annotations in a future improved version, from sub-items.
       (org-id-goto header-id)
       (let ((entity-l (org-subsection-descriptions)))
         (resource-declarations entity-l owl-type))))
-;(cdr (org-subsection-descriptions))))
+  ;;(cdr (org-subsection-descriptions))))
 #+END_SRC
 *** Write typical class patterns
 **** one-of
