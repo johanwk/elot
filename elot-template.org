@@ -1,7 +1,7 @@
 #+title: ELOT template file
 #+subtitle: Blank file for writing an OWL ontology
 #+author: i-am-the-author
-#+date: WIP (version of 2024-03-20 11:43)
+#+date: WIP (version of 2024-03-20 18:45)
 
 # Q2 2023: To export with abbreviated/more readable annotation
 #   property names, use (org-export-to-file 'ELOT-latex "ELOT.tex").
@@ -34,18 +34,14 @@
 	:header-args: :padline yes
 	:END:
 <<ELOT-entities>>
-** Declarations
-:PROPERTIES:
-:custom_id: sec:declarations
-:END:
-*** Comment at top of file
+** Comment at top of file                                          :noexport:
 #+begin_src omn
   ##
   ## This is an ELOT template ontology
   ## This document is in OWL 2 Manchester Syntax, see https://www.w3.org/TR/owl2-manchester-syntax/
   ##
 #+end_src
-*** Prefixes
+** Prefixes
 <<sec:prefixes>>
 # Note that for any annotation property used in description lists 
 # to annotate resources, the prefix has to be included in a LINK
@@ -79,32 +75,14 @@ The ontology document in OWL employs the namespace prefixes of listing
   Prefix: prov: <http://www.w3.org/ns/prov#>
   Prefix: iof-av: <https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/>
 #+END_SRC
-*** Ontology
-<<sec:ontology-declaration>>
-#+name: listing:elot-ontology-declare
-#+attr_latex: :options float
-#+caption: OWL ontology declaration
-#+BEGIN_SRC omn :noweb yes
-  Ontology: <http://example.org/elot-template> <http://example.org/elot-template/0.0>
-       # Import: <https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/>
-       Annotations: rdfs:label "ELOT template ontology",
-         dcterms:title "Industrial Data Ontology",
-         owl:versionInfo "0.0 start of ELOT",
-         pav:lastUpdateOn "<<current-datetime()>>"^^xsd:dateTime ,
-         dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/>,
-         dcterms:creator <https://orcid.org/0000-0002-7167-7321>,
-         # not issued yet dcterms:issued "2021-08-06"^^xsd:date,
-         dcterms:modified "<<current-date()>>"^^xsd:date,
-         dcterms:publisher <https://example.org>,
-         dc:rights "Copyright info here",
-         rdfs:comment "The ELOT template ontology is a template",
-         dcterms:description "The ELOT template ontology is a template"
-#+END_SRC
-
-# optionally add a link to documentation of the ontology with
-# foaf:isPrimaryTopicOf
-
-#+latex: \clearpage\newpage
+** Declarations                                                    :noexport:
+:PROPERTIES:
+:custom_id: sec:declarations
+:END:
+*** Ontology declaration                                           :noexport:
+#+begin_src omn
+  <<resource-declarations(hierarchy="ELOT-ontology-declaration", owl-type="Ontology", owl-relation="")>>
+#+end_src
 *** Data type declarations                                         :noexport:
 #+BEGIN_SRC omn 
 ## Data type declarations
@@ -152,6 +130,29 @@ Datatype: xsd:boolean
   <<resource-taxonomy(hierarchy="ELOT-annotation-property-hierarchy", owl-type="AnnotationProperty", owl-relation="SubPropertyOf")>>
 
 #+END_SRC
+** Ontology
+	 :PROPERTIES:
+	 :ID:       ELOT-ontology-declaration
+	 :custom_id:       ELOT-ontology-declaration
+	 :resourcedefs: yes
+	 :END:
+<<sec:ontology-declaration>>
+*** ELOT template ontology (ex:elot-template ex:elot-template/0.0)
+# - Import :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/
+ - owl:versionInfo :: 0.0 start of ELOT
+ - dcterms:title :: ELOT template ontology
+ - owl:versionInfo :: 0.0 start of ELOT
+ - pav:lastUpdateOn :: {{{modification-time("%Y-%m-%dT%H:%M:%SZ",t)}}}^^xsd:dateTime
+ - dcterms:license :: [[https://creativecommons.org/licenses/by-sa/4.0/]]
+ - dcterms:creator :: https://orcid.org/0000-0002-7167-7321
+ - dcterms:modified ::  {{{modification-time("%Y-%m-%d",t)}}}^^xsd:date
+ - dcterms:publisher :: https://example.org
+ - dc:rights :: Copyright info here
+ - rdfs:comment :: The ELOT template ontology is a template
+ - dcterms:description :: The ELOT template ontology is a template
+# - # :: not issued yet dcterms:issued "2021-08-06"^^xsd:date
+
+#+latex: \clearpage\newpage
 ** Classes
 	 :PROPERTIES:
 	 :ID:       ELOT-class-hierarchy
@@ -218,7 +219,7 @@ Datatype: xsd:boolean
 *** dcterms:publisher
 *** dc:rights
 *** dcterms:description
-* Bibliography                                                       :ignore:
+* Bibliography
 :PROPERTIES:
 :UNNUMBERED: t
 :END:
