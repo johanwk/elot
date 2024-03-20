@@ -1,5 +1,36 @@
 * Helper functions for ELOT                                        :noexport:
 ** elisp functions
+:PROPERTIES:
+:header-args: :tangle ./elot.el
+:END:
+*** Header for the elisp file
+#+begin_src emacs-lisp
+;;; elot.el --- Helper functions for Emacs Literate Ontology Tool (ELOT)
+
+;; Copyright (C) 2024 Johan W. Klüwer
+
+;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
+;; URL: https://github.com/johanwk/elot
+;; Version: 0.0
+;; Package-Requires: ((emacs "29.2") ... and many more ...)
+;; Keywords: Org, ontology
+
+;;; Commentary:
+
+;; This package is for authoring OWL ontologies using org-mode.
+
+;;;; Installation
+
+;; Install the packages ... .  Then put this file in your `load-path', and put this in
+;; your init file:
+
+;;   (require 'elot)
+
+;;;; Usage
+
+;; ... create a new file, use Yankpad to insert a template ontology ...
+
+#+end_src
 *** Get description lists into lisp lists
 #+name: defun-desc-lists
 #+BEGIN_SRC emacs-lisp :results silent
@@ -467,22 +498,18 @@ Execute export with "special formatting" with
 | iof-av:explanatoryNote                     | explanatory note             |
 | rdfs:comment                               | comment                      |
 | rdfs:isDefinedBy                           | defined by                   |
-| lis:relatedEntityISO15926                  | related in ISO 15926         |
-| lis:equivalentEntityISO15926               | equivalent in ISO 15926      |
-| lis:deprecatedEntityISO15926               | deprecated ISO 15926         |
-| lis:remodelsEntityISO15926                 | remodels ISO 15926           |
 | iof-av:firstOrderLogicDefinition           | first-order logic definition |
 | iof‑av:semiFormalNaturalLanguageDefinition | semi-formal definition       |
 | iof-av:semiFormalNaturalLanguageAxiom      | semi-formal axiom            |
 | iof-av:adaptedFrom                         | adapted from                 |
 | iof-av:synonym                             | synonym                      |
 
-#+begin_src emacs-lisp :var tagmap=item-tag-name-map :results code :tangle no
+#+begin_src emacs-lisp :var tagmap=item-tag-name-map :results code :tangle no :wrap "src emacs-lisp :tangle no"
 (mapcar (lambda (x) (cons (car x) (cadr x))) tagmap)
 #+end_src
 
 #+RESULTS:
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 (("iof-av:isPrimitive" . "primitive?")
  ("iof-av:naturalLanguageDefinition" . "definition")
  ("iof-av:primitiveRationale" . "why primitive")
@@ -495,10 +522,6 @@ Execute export with "special formatting" with
  ("iof-av:explanatoryNote" . "explanatory note")
  ("rdfs:comment" . "comment")
  ("rdfs:isDefinedBy" . "defined by")
- ("lis:relatedEntityISO15926" . "related in ISO 15926")
- ("lis:equivalentEntityISO15926" . "equivalent in ISO 15926")
- ("lis:deprecatedEntityISO15926" . "deprecated ISO 15926")
- ("lis:remodelsEntityISO15926" . "remodels ISO 15926")
  ("iof-av:firstOrderLogicDefinition" . "first-order logic definition")
  ("iof‑av:semiFormalNaturalLanguageDefinition" . "semi-formal definition")
  ("iof-av:semiFormalNaturalLanguageAxiom" . "semi-formal axiom")
@@ -522,6 +545,14 @@ content influences position numbers /at export/.
 #+RESULTS:
 : (35634 . 204383)
 
+*** Passthrough execute for ttl blocks
+To get the ttl block to process correctly, for rdfpuml use.
+#+begin_src emacs-lisp
+(defun org-babel-execute:passthrough (body params) body)
+(unless (fboundp 'org-babel-execute:ttl)                
+  (defalias 'org-babel-execute:ttl 'org-babel-execute:passthrough))
+#+end_src
+
 ** org source blocks
 *** Resource declarations (exctracted from outlines)
 #+name: resource-declarations
@@ -533,108 +564,6 @@ content influences position numbers /at export/.
 #+BEGIN_SRC emacs-lisp :var hierarchy="ELOT-class-hierarchy" :var owl-type="Class" :var owl-relation="SubClassOf" :wrap "SRC omn" 
 (resource-taxonomy-from-header hierarchy owl-type owl-relation)
 #+END_SRC
-
-#+RESULTS: resource-taxonomy
-#+begin_SRC omn
-
-Class: lis:Artefact
-    SubClassOf: lis:Object
-Class: lis:System
-    SubClassOf: lis:Object
-Class: lis:FunctionalObject
-    SubClassOf: lis:Object
-Class: lis:PhysicalObject
-    SubClassOf: lis:Object
-Class: lis:InformationObject
-    SubClassOf: lis:Object
-Class: lis:Organization
-    SubClassOf: lis:Object
-Class: lis:Location
-    SubClassOf: lis:Object
-Class: lis:PhysicalArtefact
-    SubClassOf: lis:Artefact
-Class: lis:SoftwareArtefact
-    SubClassOf: lis:Artefact
-Class: lis:InanimatePhysicalObject
-    SubClassOf: lis:PhysicalObject
-Class: lis:Compound
-    SubClassOf: lis:PhysicalObject
-Class: lis:Feature
-    SubClassOf: lis:PhysicalObject
-Class: lis:Phase
-    SubClassOf: lis:PhysicalObject
-Class: lis:Organism
-    SubClassOf: lis:PhysicalObject
-Class: lis:Stream
-    SubClassOf: lis:InanimatePhysicalObject
-Class: lis:Person
-    SubClassOf: lis:Organism
-Class: lis:QualityDatum
-    SubClassOf: lis:InformationObject
-Class: lis:UnitOfMeasure
-    SubClassOf: lis:InformationObject
-Class: lis:ScalarQuantityDatum
-    SubClassOf: lis:QualityDatum
-Class: lis:Scale
-    SubClassOf: lis:UnitOfMeasure
-Class: lis:Site
-    SubClassOf: lis:Location
-Class: lis:SpatialLocation
-    SubClassOf: lis:Location
-Class: lis:PointInSpace
-    SubClassOf: lis:SpatialLocation
-Class: lis:LineInSpace
-    SubClassOf: lis:SpatialLocation
-Class: lis:PlaneInSpace
-    SubClassOf: lis:SpatialLocation
-Class: lis:VolumeInSpace
-    SubClassOf: lis:SpatialLocation
-Class: lis:Potential
-    SubClassOf: lis:Dependent
-Class: lis:Quality
-    SubClassOf: lis:Dependent
-Class: lis:Disposition
-    SubClassOf: lis:Potential
-Class: lis:Role
-    SubClassOf: lis:Potential
-Class: lis:Interest
-    SubClassOf: lis:Potential
-Class: lis:Capability
-    SubClassOf: lis:Disposition
-Class: lis:Function
-    SubClassOf: lis:Capability
-Class: lis:PhysicalQuantity
-    SubClassOf: lis:Quality
-Class: lis:ShapeQuality
-    SubClassOf: lis:Quality
-Class: lis:MaterialCompositionQuality
-    SubClassOf: lis:Quality
-Class: lis:PhaseQuality
-    SubClassOf: lis:Quality
-Class: lis:Activity
-    SubClassOf: lis:Temporal
-Class: lis:SpatiotemporalRegion
-    SubClassOf: lis:Temporal
-Class: lis:TemporalRegion
-    SubClassOf: lis:Temporal
-Class: lis:ActivityProfile
-    SubClassOf: lis:Activity
-Class: lis:Event
-    SubClassOf: lis:Activity
-Class: lis:InstantRegion
-    SubClassOf: lis:TemporalRegion
-Class: lis:IntervalRegion
-    SubClassOf: lis:TemporalRegion
-Class: lis:Instant
-    SubClassOf: lis:InstantRegion
-Class: lis:Interval
-    SubClassOf: lis:IntervalRegion
-Class: lis:SpecifiedObject
-    SubClassOf: lis:Specified
-Class: lis:InstalledObject
-    SubClassOf: lis:Actual
-#+end_SRC
-
 *** Dates for insertion into ontology on save
 #+name: current-date
 #+begin_src emacs-lisp :exports none
