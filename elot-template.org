@@ -1,7 +1,7 @@
 #+title: ELOT template file
 #+subtitle: Blank file for writing an OWL ontology
 #+author: i-am-the-author
-#+date: WIP (version of 2024-03-03 17:52)
+#+date: WIP (version of 2024-03-20 11:43)
 
 # Q2 2023: To export with abbreviated/more readable annotation
 #   property names, use (org-export-to-file 'ELOT-latex "ELOT.tex").
@@ -161,15 +161,24 @@ Datatype: xsd:boolean
 *** I'm C1 (ex:C1)
  - rdfs:comment :: The class label may be entered as a heading, with
    the URI in parentheses.
- #+begin_src omn
-Class: ex:C1
-  SubClassOf: ex:r only ex:C2
- #+end_src
+ - rdfs:seeAlso :: rdl:sdf
+   - rdfs:comment :: lksjd
+ - SubClassOf :: ex:r only ex:C2
+   - rdfs:comment :: describe the restriction
+ - SubClassOf :: ex:C3
+ - SubClassOf :: ex:C4
+#  #+begin_src omn
+# Class: ex:C1
+#   SubClassOf: ex:r only ex:C2
+#  #+end_src
 *** ex:C2                                                    :oneof:disjoint:
  - rdfs:comment :: This class uses the org-mode properties "oneof" and
    "disjoint" to easily add disjointness axioms.
 **** ex:C2a
 **** ex:C2b
+**** ex:C2c
+*** ex:C3
+*** ex:C4
 ** Object properties (individual-to-individual relations)
 	 :PROPERTIES:
 	 :ID:       ELOT-object-property-hierarchy
@@ -556,6 +565,10 @@ axioms, or none. E.g. for "functionalPartOf".
 | [[*foaf:isPrimaryTopicOf][foaf:isPrimaryTopicOf]]                      |          |              |              | t                |
 \newpage
 * Scratchpad																											 :noexport:
+#+begin_src omn
+Class: x:a
+  SubClassOf: obo:BFO_0000050 some x:b
+#+end_src
 * Setup for org-mode																							 :noexport:
 	:PROPERTIES:
 	:VISIBILITY: folded
