@@ -1,7 +1,8 @@
 #+title: ELOT template file
 #+subtitle: Blank file for writing an OWL ontology
 #+author: i-am-the-author
-#+date: WIP (version of 2024-03-20 18:45)
+#+date: WIP (version of 2024-03-20 19:03)
+#+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 
 # Q2 2023: To export with abbreviated/more readable annotation
 #   property names, use (org-export-to-file 'ELOT-latex "ELOT.tex").
@@ -24,7 +25,7 @@
 
 #+latex: \listoffigures
 #+latex: \listoftables
-#+TOC: listings
+# #+TOC: listings
 
 * Ontology Resources
 	:PROPERTIES:
@@ -48,37 +49,57 @@
 # declaration in section Prefixes under Setup for org-mode. Otherwise
 # the description entry won't be exported to the ontology.
 
-The ontology document in OWL employs the namespace prefixes of listing
-[[listing:prefixes]].
+The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
 
-#+name: listing:prefixes
-#+attr_latex: 
-#+caption: IDO OWL ontology prefixes
-#+BEGIN_SRC omn
-  Prefix: ex: <http://example.org/>
-  Prefix: owl: <http://www.w3.org/2002/07/owl#>
-  Prefix: rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-  Prefix: xml: <http://www.w3.org/XML/1998/namespace>
-  Prefix: xsd: <http://www.w3.org/2001/XMLSchema#>
-  Prefix: rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-  Prefix: skos: <http://www.w3.org/2004/02/skos/core#>
-  Prefix: pav: <http://purl.org/pav/>
-  Prefix: obo: <http://purl.obolibrary.org/obo/>
-  Prefix: dol: <http://www.loa-cnr.it/ontologies/DOLCE-Lite.owl#>
-  Prefix: ssn: <http://www.w3.org/ns/ssn/>
-  Prefix: time: <http://www.w3.org/2006/time#>
-  Prefix: om: <http://www.ontology-of-units-of-measure.org/resource/om-2/>
-  Prefix: foaf: <http://xmlns.com/foaf/0.1/>
-  Prefix: dc: <http://purl.org/dc/elements/1.1/>
-  Prefix: dcterms: <http://purl.org/dc/terms/>
-  Prefix: dcmitype: <http://purl.org/dc/dcmitype/>
-  Prefix: prov: <http://www.w3.org/ns/prov#>
-  Prefix: iof-av: <https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/>
-#+END_SRC
+#+name: prefix-table
+#+caption: OWL ontology prefixes
+| prefix    | uri                                                                            |
+|-----------+--------------------------------------------------------------------------------|
+| ex:       | http://example.org/                                                            |
+| owl:      | http://www.w3.org/2002/07/owl#                                                 |
+| rdf:      | http://www.w3.org/1999/02/22-rdf-syntax-ns#                                    |
+| xml:      | http://www.w3.org/XML/1998/namespace                                           |
+| xsd:      | http://www.w3.org/2001/XMLSchema#                                              |
+| rdfs:     | http://www.w3.org/2000/01/rdf-schema#                                          |
+| skos:     | http://www.w3.org/2004/02/skos/core#                                           |
+| pav:      | http://purl.org/pav/                                                           |
+| obo:      | http://purl.obolibrary.org/obo/                                                |
+| dol:      | http://www.loa-cnr.it/ontologies/DOLCE-Lite.owl#                               |
+| ssn:      | http://www.w3.org/ns/ssn/                                                      |
+| time:     | http://www.w3.org/2006/time#                                                   |
+| om:       | http://www.ontology-of-units-of-measure.org/resource/om-2/                     |
+| foaf:     | http://xmlns.com/foaf/0.1/                                                     |
+| dc:       | http://purl.org/dc/elements/1.1/                                               |
+| dcterms:  | http://purl.org/dc/terms/                                                      |
+| dcmitype: | http://purl.org/dc/dcmitype/                                                   |
+| prov:     | http://www.w3.org/ns/prov#                                                     |
+| iof-av:   | https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/ |
+
+#+name: sparql-prefixes
+#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+  (mapconcat (lambda (row) (format "PREFIX %-5s <%s>" (car row) (cadr row)))
+             prefixes "\n")
+#+end_src
+
+#+name: omn-prefixes
+#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+  (mapconcat (lambda (row) (format "Prefix: %-5s <%s>" (car row) (cadr row)))
+             prefixes "\n")
+#+end_src
+
+#+name: ttl-prefixes
+#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+  (mapconcat (lambda (row) (format "@prefix %-5s <%s> ." (car row) (cadr row)))
+             prefixes "\n")
+#+end_src
 ** Declarations                                                    :noexport:
 :PROPERTIES:
 :custom_id: sec:declarations
 :END:
+*** Prefix block
+#+begin_src omn
+<<omn-prefixes()>>
+#+end_src
 *** Ontology declaration                                           :noexport:
 #+begin_src omn
   <<resource-declarations(hierarchy="ELOT-ontology-declaration", owl-type="Ontology", owl-relation="")>>
