@@ -1,7 +1,7 @@
 #+title: ELOT template file
 #+subtitle: Blank file for writing an OWL ontology
 #+author: i-am-the-author
-#+date: WIP (version of 2024-03-20 19:03)
+#+date: WIP (version of 2024-03-20 19:29)
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 
 # Q2 2023: To export with abbreviated/more readable annotation
@@ -74,7 +74,10 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 | dcmitype: | http://purl.org/dc/dcmitype/                                                   |
 | prov:     | http://www.w3.org/ns/prov#                                                     |
 | iof-av:   | https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/ |
-
+*** source blocks for prefixes                                     :noexport:
+:PROPERTIES:
+:header-args:omn: :tangle no
+:END:
 #+name: sparql-prefixes
 #+begin_src emacs-lisp :var prefixes=prefix-table :exports none
   (mapconcat (lambda (row) (format "PREFIX %-5s <%s>" (car row) (cadr row)))
@@ -92,6 +95,20 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
   (mapconcat (lambda (row) (format "@prefix %-5s <%s> ." (car row) (cadr row)))
              prefixes "\n")
 #+end_src
+
+#+name: update-link-abbrev
+#+begin_src emacs-lisp :var prefixes=prefix-table[] :exports none
+  (setq org-link-abbrev-alist-local 
+    (mapcar (lambda (x) 
+              (cons (replace-regexp-in-string ":" "" (car x)) (cadr x)))
+            prefixes))
+#+end_src
+
+#+RESULTS: update-link-abbrev
+#+begin_SRC omn
+((ex . http://example.org/) (owl . http://www.w3.org/2002/07/owl#) (rdf . http://www.w3.org/1999/02/22-rdf-syntax-ns#) (xml . http://www.w3.org/XML/1998/namespace) (xsd . http://www.w3.org/2001/XMLSchema#) (rdfs . http://www.w3.org/2000/01/rdf-schema#) (skos . http://www.w3.org/2004/02/skos/core#) (pav . http://purl.org/pav/) (obo . http://purl.obolibrary.org/obo/) (dol . http://www.loa-cnr.it/ontologies/DOLCE-Lite.owl#) (ssn . http://www.w3.org/ns/ssn/) (time . http://www.w3.org/2006/time#) (om . http://www.ontology-of-units-of-measure.org/resource/om-2/) (foaf . http://xmlns.com/foaf/0.1/) (dc . http://purl.org/dc/elements/1.1/) (dcterms . http://purl.org/dc/terms/) (dcmitype . http://purl.org/dc/dcmitype/) (prov . http://www.w3.org/ns/prov#) (iof-av . https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/))
+#+end_SRC
+
 ** Declarations                                                    :noexport:
 :PROPERTIES:
 :custom_id: sec:declarations
@@ -595,31 +612,6 @@ Class: x:a
 	:PROPERTIES:
 	:VISIBILITY: folded
 	:END:
-** Prefixes
-For a resource definition with annotations, only description list
-items with "known" prefixes are tangled to the ontology. That is, for
-an annotation property /abc:myAnnotation/ the prefix /abc/ must be
-included in the following list.
-#+LINK: ex http://example.org/
-#+LINK: obo http://purl.obolibrary.org/obo/
-#+LINK: dol http://www.loa-cnr.it/ontologies/DOLCE-Lite.owl#
-#+LINK: ssn http://www.w3.org/ns/ssn/
-#+LINK: time http://www.w3.org/2006/time#
-#+LINK: om http://www.ontology-of-units-of-measure.org/resource/om-2/
-#+LINK: rdl http://example.org/rdl/
-#+LINK: skos http://www.w3.org/2004/02/skos/core#
-#+LINK: pav http://purl.org/pav/
-#+LINK: prov http://www.w3.org/ns/prov#
-#+LINK: foaf http://xmlns.com/foaf/0.1/
-#+LINK: dc http://purl.org/dc/elements/1.1/
-#+LINK: dcterms http://purl.org/dc/terms/
-#+LINK: dcmitype http://purl.org/dc/dcmitype/
-#+LINK: owl http://www.w3.org/2002/07/owl#
-#+LINK: rdf http://www.w3.org/1999/02/22-rdf-syntax-ns#
-#+LINK: xml http://www.w3.org/XML/1998/namespace
-#+LINK: xsd http://www.w3.org/2001/XMLSchema#
-#+LINK: rdfs http://www.w3.org/2000/01/rdf-schema#
-#+LINK: iof-av https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/
 ** Export
 #+LATEX_CLASS: book
 #+LATEX_CLASS_OPTIONS: [11pt,a4paper,appendixprefix,numbers=noenddot,twoside=false]
@@ -704,6 +696,7 @@ included in the following list.
 # (org-sbe defun-get-description-entry) ;helper functions
 # (org-sbe defun-ELOT-latex-derived-backend) ;helper functions
 # (defun ask-user-about-supersession-threat (fn) "nothing")  ; allow open omn file
+# (org-babel-ref-resolve "update-link-abbrev")
 # )
 # eval: (setq-local org-latex-image-default-scale .8)
 # eval: (setq-local org-babel-default-header-args:sparql 
@@ -718,6 +711,7 @@ included in the following list.
 # time-stamp-start: "(version of "
 # time-stamp-end: ")"
 # eval: (add-hook 'before-save-hook #'time-stamp)
+# eval: (add-hook 'before-save-hook (lambda () (org-babel-ref-resolve "update-link-abbrev")) nil t)
 # End:
 ** OTTR support -- may be added to ELOT later
 
