@@ -1,7 +1,7 @@
-* Helper functions for ELOT                                        :noexport:
+* Helper functions for ELOT
 ** elisp functions
 :PROPERTIES:
-:header-args: :tangle ./elot.el
+:header-args: :tangle ./elot.el :comments link
 :END:
 *** Header for the elisp file
 #+begin_src emacs-lisp
