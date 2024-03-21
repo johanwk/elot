@@ -1,7 +1,7 @@
 #+title: ELOT template file
 #+subtitle: Blank file for writing an OWL ontology
 #+author: i-am-the-author
-#+date: WIP (version of 2024-03-20 20:29)
+#+date: WIP (version of 2024-03-21 21:18)
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 
 # Q2 2023: To export with abbreviated/more readable annotation
@@ -35,47 +35,17 @@
 	:header-args: :padline yes
 	:END:
 <<ELOT-entities>>
-** Comment at top of file                                          :noexport:
+** Declarations                                                    :noexport:
+:PROPERTIES:
+:custom_id: sec:declarations
+:END:
+*** Comment at top of file                                         :noexport:
 #+begin_src omn
   ##
   ## This is an ELOT template ontology
   ## This document is in OWL 2 Manchester Syntax, see https://www.w3.org/TR/owl2-manchester-syntax/
   ##
 #+end_src
-** Prefixes
-<<sec:prefixes>>
-# For annotation property used in description lists to annotate
-# resources, the prefix has to be included in the following table.
-
-The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
-
-#+name: prefix-table
-#+caption: OWL ontology prefixes
-| prefix    | uri                                                                            |
-|-----------+--------------------------------------------------------------------------------|
-| ex:       | http://example.org/                                                            |
-| owl:      | http://www.w3.org/2002/07/owl#                                                 |
-| rdf:      | http://www.w3.org/1999/02/22-rdf-syntax-ns#                                    |
-| xml:      | http://www.w3.org/XML/1998/namespace                                           |
-| xsd:      | http://www.w3.org/2001/XMLSchema#                                              |
-| rdfs:     | http://www.w3.org/2000/01/rdf-schema#                                          |
-| skos:     | http://www.w3.org/2004/02/skos/core#                                           |
-| pav:      | http://purl.org/pav/                                                           |
-| obo:      | http://purl.obolibrary.org/obo/                                                |
-| dol:      | http://www.loa-cnr.it/ontologies/DOLCE-Lite.owl#                               |
-| ssn:      | http://www.w3.org/ns/ssn/                                                      |
-| time:     | http://www.w3.org/2006/time#                                                   |
-| om:       | http://www.ontology-of-units-of-measure.org/resource/om-2/                     |
-| foaf:     | http://xmlns.com/foaf/0.1/                                                     |
-| dc:       | http://purl.org/dc/elements/1.1/                                               |
-| dcterms:  | http://purl.org/dc/terms/                                                      |
-| dcmitype: | http://purl.org/dc/dcmitype/                                                   |
-| prov:     | http://www.w3.org/ns/prov#                                                     |
-| iof-av:   | https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/ |
-** Declarations                                                    :noexport:
-:PROPERTIES:
-:custom_id: sec:declarations
-:END:
 *** Prefix block
 #+begin_src omn
 <<omn-prefixes()>>
@@ -131,6 +101,36 @@ Datatype: xsd:boolean
   <<resource-taxonomy(hierarchy="ELOT-annotation-property-hierarchy", owl-type="AnnotationProperty", owl-relation="SubPropertyOf")>>
 
 #+END_SRC
+** Prefixes
+<<sec:prefixes>>
+# For annotation property used in description lists to annotate
+# resources, the prefix has to be included in the following table.
+
+The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
+
+#+name: prefix-table
+#+caption: OWL ontology prefixes
+| prefix    | uri                                                                            |
+|-----------+--------------------------------------------------------------------------------|
+| ex:       | http://example.org/                                                            |
+| owl:      | http://www.w3.org/2002/07/owl#                                                 |
+| rdf:      | http://www.w3.org/1999/02/22-rdf-syntax-ns#                                    |
+| xml:      | http://www.w3.org/XML/1998/namespace                                           |
+| xsd:      | http://www.w3.org/2001/XMLSchema#                                              |
+| rdfs:     | http://www.w3.org/2000/01/rdf-schema#                                          |
+| skos:     | http://www.w3.org/2004/02/skos/core#                                           |
+| pav:      | http://purl.org/pav/                                                           |
+| obo:      | http://purl.obolibrary.org/obo/                                                |
+| dol:      | http://www.loa-cnr.it/ontologies/DOLCE-Lite.owl#                               |
+| ssn:      | http://www.w3.org/ns/ssn/                                                      |
+| time:     | http://www.w3.org/2006/time#                                                   |
+| om:       | http://www.ontology-of-units-of-measure.org/resource/om-2/                     |
+| foaf:     | http://xmlns.com/foaf/0.1/                                                     |
+| dc:       | http://purl.org/dc/elements/1.1/                                               |
+| dcterms:  | http://purl.org/dc/terms/                                                      |
+| dcmitype: | http://purl.org/dc/dcmitype/                                                   |
+| prov:     | http://www.w3.org/ns/prov#                                                     |
+| iof-av:   | https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/ |
 ** Ontology
 	 :PROPERTIES:
 	 :ID:       ELOT-ontology-declaration
@@ -153,6 +153,9 @@ Datatype: xsd:boolean
  - dcterms:description :: The ELOT template ontology is a template
 # - # :: not issued yet dcterms:issued "2021-08-06"^^xsd:date
 
+#+begin_src omn
+DisjointClasses: ex:C3, ex:C4
+#+end_src
 #+latex: \clearpage\newpage
 ** Classes
 	 :PROPERTIES:
@@ -169,10 +172,6 @@ Datatype: xsd:boolean
    - rdfs:comment :: describe the restriction
  - SubClassOf :: ex:C3
  - SubClassOf :: ex:C4
-#  #+begin_src omn
-# Class: ex:C1
-#   SubClassOf: ex:r only ex:C2
-#  #+end_src
 *** ex:C2                                                    :oneof:disjoint:
  - rdfs:comment :: This class uses the org-mode properties "oneof" and
    "disjoint" to easily add disjointness axioms.
