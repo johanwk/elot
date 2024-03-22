@@ -6,11 +6,11 @@
 (package-initialize)
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
 
-(dolist (package '( ; none needed for minimal setup
-                   )
+(dolist (package '(htmlize
+                   ))
  (unless (package-installed-p package)
-   (package-install package))
-   (require package))
+   (package-install package)
+   (require package)))
 
 (require 'ob-lob) ; Library of Babel
 (require 'ox) ; export functions
