@@ -1,12 +1,27 @@
-;;; elot.el --- Helper functions for Emacs Literate Ontology Tool (ELOT)
+;;; elot.el --- Emacs Literate Ontology Tool (ELOT)   -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2024 Johan W. Klüwer
 
 ;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
 ;; URL: https://github.com/johanwk/elot
-;; Version: 0.0
-;; Package-Requires: ((emacs "29.2") ... and many more ...)
-;; Keywords: Org, ontology
+;; Version: 0.1-pre
+;; Package-Requires: ((emacs "29.2") ... and several more ...)
+;; Keywords: org, ontology
+
+;; This file is not part of GNU Emacs.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 
@@ -21,7 +36,7 @@
 
 ;;;; Usage
 
-;; ... create a new file, use Yankpad to insert a template ontology ...
+;; ... create a new file, use <template inserting function> to insert a template ontology ...
 
 ;; [[file:elot-lob.org::defun-desc-lists][defun-desc-lists]]
 (defun org-elt-exists (x elt)
@@ -34,7 +49,7 @@
   "for an item in an org-element map, return the paragraphs as one string"
   (replace-regexp-in-string "\\([^
 ]\\)\n[ \t]*" "\\1 "
- (s-trim (apply 'concat
+ (string-trim (apply 'concat
                 (org-element-map x '(paragraph plain-list)
                   (lambda (y) (substring-no-properties 
                                (org-element-interpret-data y)))
