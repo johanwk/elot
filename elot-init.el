@@ -3,10 +3,12 @@
 ;; init file for ELOT, to see what is required for making an ontology and document
 ;; borrowing from http://xahlee.info/emacs/emacs/emacs_sample_init.el
 
-(package-initialize)
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
+(package-initialize)
+(package-refresh-contents)
 
 (dolist (package '(htmlize
+		   omn-mode
                    ))
  (unless (package-installed-p package)
    (package-install package)
