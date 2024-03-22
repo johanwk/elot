@@ -32,7 +32,9 @@
 ;; Install the packages ... .  Then put this file in your `load-path', and put this in
 ;; your init file:
 
-;;   (require 'elot)
+(require 'ob-lob) ; Library of Babel
+(require 'ox) ; export functions
+(require 'ol) ; link functions
 
 ;;;; Usage
 
@@ -94,7 +96,7 @@
       (let (ret)
         (while (let ((heading (substring-no-properties (org-get-heading nil t)))
                      (descriptions (org-descriptions-in-section)))
-                 (unless (or (s-contains? "COMMENT" heading)
+                 (unless (or (string-match-p "COMMENT" heading)
                              (member "nodeclare" (org-get-tags (point) t)))
                    (setq ret
                          (cons
