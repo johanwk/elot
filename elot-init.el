@@ -32,9 +32,6 @@
 ;; need direct pointer to plantuml
 (setq org-plantuml-jar-path "/usr/share/plantuml/plantuml.jar")
 
-;; allow all evaluations of source blocks without confirmation
-(setq org-confirm-babel-evaluate nil)
-
 ;; allow BIND for attr_latex settings
 (setq org-export-allow-bind-keywords t)
 
