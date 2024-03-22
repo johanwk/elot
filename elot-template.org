@@ -1,7 +1,7 @@
 #+title: ELOT template file
 #+subtitle: Blank file for writing an OWL ontology
 #+author: i-am-the-author
-#+date: WIP (version of 2024-03-22 09:27)
+#+date: WIP (version of 2024-03-22 09:28)
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 
 # Q2 2023: To export with abbreviated/more readable annotation
@@ -335,12 +335,6 @@ DisjointClasses: ex:C3, ex:C4
 # (org-babel-ref-resolve "update-link-abbrev")
 # (setq-local org-latex-image-default-scale .8)
 # )
-# eval: (setq-local org-babel-default-header-args:sparql 
-# '((:results . "table replace")
-#   (:exports . "code")
-#   (:format . "text/tab-separated-values")
-#   (:noweb . "yes")
-#   (:url . "http://localhost:3030/NOTINUSE")))
 # time-stamp-line-limit: 1000
 # time-stamp-format: "%Y-%m-%d %H:%M"
 # time-stamp-active: t
