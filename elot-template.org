@@ -1,7 +1,7 @@
 #+title: ELOT template file
 #+subtitle: Blank file for writing an OWL ontology
 #+author: i-am-the-author
-#+date: WIP (version of 2024-03-22 09:24)
+#+date: WIP (version of 2024-03-22 09:27)
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 
 # Q2 2023: To export with abbreviated/more readable annotation
@@ -219,135 +219,6 @@ DisjointClasses: ex:C3, ex:C4
 *** dcterms:publisher
 *** dc:rights
 *** dcterms:description
-* Bibliography
-:PROPERTIES:
-:UNNUMBERED: t
-:END:
-
-#+latex: \bibliographystyle{plain}
-# to cite all entries
-#+latex: \nocite{*}
-#+latex: \bibliography{ELOT}
-
-* Sections for use during development                     :noexport:
-:PROPERTIES:
-:UNNUMBERED: t
-:END:
-** ELOT How-to                                                     :noexport:
-Write the content of the ontology into this org-mode file. Then, call
-M-x =org-babel-tangle= (C-c C-v t), to output the ontology file [[./ELOT.omn]].
-
- - Prefixes and ontology declaration go in [[Declarations]].
- - Outline headers in [[Classes]], [[Object properties]], [[Data properties]], and
-	 [[Annotation properties]] define resources.
-	 - Add =omn= source blocks anywhere in the outlines for various special
-		 constraints and annotations
-
-To create a PDF file, use the regular org-mode export facility, but
-for a better look: =(org-export-to-file 'ELOT-latex "ELOT.tex")=, see [[file:elot-lob.org::exporting-dlists][exporting-dlists]].
-
-** Overview of progress (using org-ql)
-*** Classes                                                        :noexport:
-#+name: ql-overview-class
-#+header: :exports results :eval no-export 
-#+begin_src emacs-lisp :colnames '(Class "nat lang" "example" "restriction" "source" "rdfs:comment" "rdfs:seeAlso")
-  (mapcar (lambda (x) (-replace nil "" x)) ;; avoid seeing "nil"
-    (org-ql-query
-      :select '(list (substring-no-properties (concat "[[*" (org-get-heading-nocookie t t) "][" (org-get-heading t t) "]]"))
-                     (rifle :regexps '("iof-av:naturalLanguageDefinition"))
-                     (rifle :regexps '("skos:example"))
-                     (src :lang "omn")
-                     (rifle :regexps '("lis:equivalent"))
-                     (rifle :regexps '("rdfs:comment"))
-                     (rifle :regexps '("rdfs:seeAlso"))
-                     )
-      :narrow t
-      :where '(and (heading-regexp "[_[:alnum:]]*:") (ancestors (property "ID" "ELOT-class-hierarchy"))))
-  )
-#+end_src
-
-#+ATTR_LATEX: :environment longtable :font \footnotesize :width \pagewidth
-#+RESULTS: ql-overview-class
-*** Object properties                                              :noexport:
-Note that for relations defined as inverses, we avoid duplication of
-annotations by annotating only one direction, and giving
-cross-references.
-
-TODO. Clean up, so either only "hasNnn" properties carry inverse
-axioms, or none. E.g. for "functionalPartOf".
-
-# The following helper function pushes all the inverses to the bottom of
-# the table, so it's easier to see the ones that need work.
-#+name: mysort
-#+begin_src emacs-lisp :var tbl="" cols="" sortcol="" :eval no-export :exports none
-  (cons cols
-      (cons 'hline
-            (--sort (string-lessp (nth sortcol it) (nth sortcol other))
-            tbl)))
-#+end_src
-
-#+name: ql-overview-op
-#+header: :exports results :eval no-export
-#+header: :post mysort(tbl=*this*, sortcol=7, cols='("Object Property" "nat lang" "example" "restriction" "source" "rdfs:comment" "rdfs:seeAlso" "inverse")) 
-#+begin_src emacs-lisp  
-  (mapcar (lambda (x) (-replace nil "" x)) ;; avoid seeing "nil"
-    (org-ql-query
-      :select '(list (substring-no-properties (concat "[[*" (org-get-heading-nocookie t t) "][" (org-get-heading t t) "]]"))
-                     (rifle :regexps '("iof-av:naturalLanguageDefinition"))
-                     (rifle :regexps '("skos:example"))
-                     (src :lang "omn")
-                     (rifle :regexps '("lis:equivalent"))
-                     (rifle :regexps '("rdfs:comment"))
-                     (rifle :regexps '("rdfs:seeAlso"))
-                     (rifle :regexps '("InverseOf:"))
-                     )
-      :narrow t
-      :where '(and (heading-regexp "[_[:alnum:]]*:") (ancestors (property "ID" "ELOT-object-property-hierarchy"))))
-  )
-#+end_src
-
-#+ATTR_LATEX: :environment longtable :font \footnotesize :width \pagewidth
-#+RESULTS: ql-overview-op
-*** Data properties                                                :noexport:
-#+name: ql-overview-dp
-#+header: :exports results :eval no-export
-#+begin_src emacs-lisp :colnames '("Data Property" "nat lang" "example" "restriction" "source" "rdfs:comment" "rdfs:seeAlso") 
-  (mapcar (lambda (x) (-replace nil "" x)) ;; avoid seeing "nil"
-    (org-ql-query
-      :select '(list (substring-no-properties (concat "[[*" (org-get-heading-nocookie t t) "][" (org-get-heading t t) "]]"))
-                     (rifle :regexps '("iof-av:naturalLanguageDefinition"))
-                     (rifle :regexps '("skos:example"))
-                     (src :lang "omn")
-                     (rifle :regexps '("lis:equivalent"))
-                     (rifle :regexps '("rdfs:comment"))
-                     (rifle :regexps '("rdfs:seeAlso"))
-                     )
-      :narrow t
-      :where '(and (heading-regexp "[_[:alnum:]]*:") (ancestors (property "ID" "ELOT-data-property-hierarchy"))))
-  )
-#+end_src
-
-#+ATTR_LATEX: :environment longtable :font \footnotesize :width \pagewidth
-#+RESULTS: ql-overview-dp
-*** Annotation properties                                          :noexport:
-#+name: ql-overview-ap
-#+header: :exports results :eval no-export
-#+begin_src emacs-lisp :colnames '("Annotation Property" "nat lang" "rdfs:comment" "rdfs:seeAlso" "rdfs:isDefinedBy") 
-  (mapcar (lambda (x) (-replace nil "" x)) ;; avoid seeing "nil" 
-    (org-ql-query
-      :select '(list (substring-no-properties (concat "[[*" (org-get-heading t t) "][" (org-get-heading t t) "]]"))
-                     (rifle :regexps '("iof-av:naturalLanguageDefinition"))
-                     (rifle :regexps '("rdfs:comment"))
-                     (rifle :regexps '("rdfs:seeAlso"))
-                     (rifle :regexps '("rdfs:isDefinedBy"))
-                     )
-      :narrow t
-      :where '(and (heading-regexp "[_[:alnum:]]*:") (ancestors (property "ID" "ELOT-annotation-property-hierarchy"))))
-  )
-#+end_src
-
-#+ATTR_LATEX: :environment longtable :font \footnotesize :width \pagewidth
-#+RESULTS: ql-overview-ap
 * Setup for org-mode																							 :noexport:
 	:PROPERTIES:
 	:VISIBILITY: folded
@@ -478,17 +349,3 @@ axioms, or none. E.g. for "functionalPartOf".
 # eval: (add-hook 'before-save-hook #'time-stamp)
 # eval: (add-hook 'before-save-hook (lambda () (org-babel-ref-resolve "update-link-abbrev")) nil t)
 # End:
-** OTTR support -- may be added to ELOT later
-
-The following may be added later to the =Local Variables:= block,
-to support emacs-ottr-toolkit for OTTR templates, good for creating
-individuals from tables.
-# stottr-dir: "./stottr"
-# bottr-dir: "./bottr"
-# docttr-dir: "./docttr"
-# data-dir: "./data"
-# eval: (org-babel-load-file (concat emacs-ottr-toolkit-root "ottr-extra.org"))
-# eval: (org-babel-lob-ingest (concat emacs-ottr-toolkit-root "ottr-lob.org"))
-# eval: (setq-local org-babel-default-header-args:stottr
-# '((:comments . "link")
-#   ))
