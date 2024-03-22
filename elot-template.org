@@ -1,7 +1,7 @@
 #+title: ELOT template file
 #+subtitle: Blank file for writing an OWL ontology
 #+author: i-am-the-author
-#+date: WIP (version of 2024-03-21 21:18)
+#+date: WIP (version of 2024-03-22 09:24)
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 
 # Q2 2023: To export with abbreviated/more readable annotation
@@ -268,62 +268,6 @@ for a better look: =(org-export-to-file 'ELOT-latex "ELOT.tex")=, see [[file:elo
 
 #+ATTR_LATEX: :environment longtable :font \footnotesize :width \pagewidth
 #+RESULTS: ql-overview-class
-| Class                                           | nat lang | example | restriction | source | rdfs:comment | rdfs:seeAlso |
-|-------------------------------------------------+----------+---------+-------------+--------+--------------+--------------|
-| [[*lis:Object][lis:Object [4/4]]]                                | t        | t       | t           |        | t            | t            |
-| [[*lis:FunctionalObject][lis:FunctionalObject [4/4]]]                      | t        | t       | t           |        | t            | t            |
-| [[*lis:System][lis:System [4/4]]]                                | t        | t       | t           |        | t            | t            |
-| [[*lis:PhysicalObject][lis:PhysicalObject [4/4]]]                        | t        | t       |             |        | t            | t            |
-| [[*lis:InanimatePhysicalObject][lis:InanimatePhysicalObject [4/4]]]               | t        | t       |             |        | t            | t            |
-| [[*lis:Stream][lis:Stream [4/4]]]                                | t        | t       |             |        | t            | t            |
-| [[*MateriallyClassifiedObject (lis:Compound)][MateriallyClassifiedObject (lis:Compound) [4/4]]] | t        | t       | t           |        | t            | t            |
-| [[*lis:Feature][lis:Feature [4/4]]]                               | t        | t       |             |        |              | t            |
-| [[*lis:Phase][lis:Phase [4/4]]]                                 | t        | t       | t           |        | t            | t            |
-| [[*lis:Organism][lis:Organism [4/4]]]                              | t        | t       |             |        |              | t            |
-| [[*lis:Person][lis:Person [4/4]]]                                | t        | t       |             |        |              | t            |
-| [[*lis:Artefact][lis:Artefact [4/4]]]                              | t        | t       | t           |        | t            | t            |
-| [[*COMMENT lis:PhysicalArtefact][COMMENT lis:PhysicalArtefact [4/4]]]              | t        | t       | t           |        | t            |              |
-| [[*COMMENT lis:SoftwareArtefact][COMMENT lis:SoftwareArtefact [4/4]]]              | t        | t       | t           |        |              | t            |
-| [[*lis:InformationObject][lis:InformationObject [4/4]]]                     | t        | t       |             |        | t            | t            |
-| [[*lis:QualityDatum][lis:QualityDatum [4/4]]]                          | t        | t       | t           |        | t            | t            |
-| [[*lis:ScalarQuantityDatum][lis:ScalarQuantityDatum [4/4]]]                   | t        | t       | t           |        | t            | t            |
-| [[*lis:UnitOfMeasure][lis:UnitOfMeasure [4/4]]]                         | t        | t       |             |        | t            | t            |
-| [[*lis:Scale][lis:Scale [4/4]]]                                 | t        | t       |             |        | t            | t            |
-| [[*lis:Organization][lis:Organization [4/4]]]                          | t        | t       |             |        |              | t            |
-| [[*lis:Location][lis:Location [4/4]]]                              | t        | t       | t           |        |              | t            |
-| [[*lis:Site][lis:Site [4/4]]]                                  | t        | t       |             |        | t            | t            |
-| [[*lis:SpatialLocation][lis:SpatialLocation [4/4]]]                       | t        | t       |             |        | t            | t            |
-| [[*lis:PointInSpace][lis:PointInSpace [4/4]]]                          | t        | t       |             |        |              |              |
-| [[*lis:LineInSpace][lis:LineInSpace [4/4]]]                           | t        | t       |             |        |              |              |
-| [[*lis:PlaneInSpace][lis:PlaneInSpace [4/4]]]                          | t        | t       |             |        |              |              |
-| [[*lis:VolumeInSpace][lis:VolumeInSpace [4/4]]]                         | t        | t       |             |        |              |              |
-| [[*lis:Dependent][lis:Dependent [4/4]]]                             | t        | t       | t           |        | t            | t            |
-| [[*lis:Potential][lis:Potential [4/4]]]                             | t        | t       |             |        | t            | t            |
-| [[*lis:Disposition][lis:Disposition [4/4]]]                           | t        | t       |             |        | t            | t            |
-| [[*lis:Capability][lis:Capability [4/4]]]                            | t        | t       |             |        | t            | t            |
-| [[*lis:Function][lis:Function [4/4]]]                              | t        | t       |             |        | t            | t            |
-| [[*lis:Role][lis:Role [4/4]]]                                  | t        | t       | t           |        | t            | t            |
-| [[*lis:Interest][lis:Interest [4/4]]]                              | t        | t       |             |        |              |              |
-| [[*lis:Quality][lis:Quality [4/4]]]                               | t        | t       |             |        | t            | t            |
-| [[*lis:PhysicalQuantity][lis:PhysicalQuantity [4/4]]]                      | t        | t       |             |        | t            | t            |
-| [[*lis:ShapeQuality][lis:ShapeQuality [4/4]]]                          | t        | t       |             |        |              |              |
-| [[*lis:MaterialCompositionQuality][lis:MaterialCompositionQuality [4/4]]]            | t        | t       |             |        |              |              |
-| [[*lis:PhaseQuality][lis:PhaseQuality [4/4]]]                          | t        | t       |             |        | t            |              |
-| [[*lis:Temporal][lis:Temporal [4/4]]]                              | t        | t       | t           |        | t            | t            |
-| [[*lis:Activity][lis:Activity [4/4]]]                              | t        | t       | t           |        | t            | t            |
-| [[*lis:ActivityProfile][lis:ActivityProfile [4/4]]]                       | t        | t       | t           |        | t            |              |
-| [[*lis:Event][lis:Event [4/4]]]                                 | t        | t       | t           |        | t            | t            |
-| [[*lis:SpatiotemporalRegion][lis:SpatiotemporalRegion [4/4]]]                  | t        | t       |             |        | t            | t            |
-| [[*lis:TemporalRegion][lis:TemporalRegion [4/4]]]                        | t        | t       |             |        | t            | t            |
-| [[*lis:InstantRegion][lis:InstantRegion [4/4]]]                         | t        | t       |             |        | t            | t            |
-| [[*lis:Instant][lis:Instant [4/4]]]                               | t        | t       |             |        | t            | t            |
-| [[*lis:IntervalRegion][lis:IntervalRegion [4/4]]]                        | t        | t       |             |        | t            | t            |
-| [[*lis:Interval][lis:Interval [4/4]]]                              | t        | t       |             |        | t            | t            |
-| [[*lis:Specified][lis:Specified [4/4]]]                             | t        | t       |             |        | t            | t            |
-| [[*COMMENT lis:SpecifiedObject][COMMENT lis:SpecifiedObject [6/6]]]               | t        | t       | t           |        |              | t            |
-| [[*lis:Actual][lis:Actual [4/4]]]                                | t        | t       |             |        |              |              |
-| [[*COMMENT lis:InstalledObject][COMMENT lis:InstalledObject [5/5]]]               | t        | t       | t           |        |              | t            |
-\newpage
 *** Object properties                                              :noexport:
 Note that for relations defined as inverses, we avoid duplication of
 annotations by annotating only one direction, and giving
@@ -364,108 +308,6 @@ axioms, or none. E.g. for "functionalPartOf".
 
 #+ATTR_LATEX: :environment longtable :font \footnotesize :width \pagewidth
 #+RESULTS: ql-overview-op
-| Object Property                             | nat lang | example | restriction | source | rdfs:comment | rdfs:seeAlso | inverse |
-|---------------------------------------------+----------+---------+-------------+--------+--------------+--------------+---------|
-| [[*lis:hasPart][lis:hasPart [5/5]]]                           | t        | t       |             |        | t            | t            |         |
-| [[*lis:hasArrangedPart][lis:hasArrangedPart [5/5]]]                   | t        | t       | t           |        | t            | t            |         |
-| [[*lis:hasFeature][lis:hasFeature [5/5]]]                        | t        | t       | t           |        | t            | t            |         |
-| [[*lis:hasAssembledPart][lis:hasAssembledPart [5/5]]]                  | t        | t       |             |        |              | t            |         |
-| [[*lis:hasFunctionalPart][lis:hasFunctionalPart [5/5]]]                 | t        | t       | t           |        |              | t            |         |
-| [[*lis:hasMaterialPart][lis:hasMaterialPart [5/5]]]                   | t        | t       | t           |        |              | t            |         |
-| [[*lis:hasTemporalPart][lis:hasTemporalPart [3/4]]]                   | t        | t       | t           |        |              | t            |         |
-| [[*lis:hasActivityPart][lis:hasActivityPart [4/4]]]                   | t        | t       | t           |        | t            | t            |         |
-| [[*lis:hasActivityBound][lis:hasActivityBound [4/4]]]                  | t        | t       | t           |        |              | t            |         |
-| [[*lis:hasBeginning][lis:hasBeginning [4/4]]]                      | t        | t       |             |        | t            | t            |         |
-| [[*lis:hasEnding][lis:hasEnding [5/5]]]                         | t        | t       |             |        | t            | t            |         |
-| [[*lis:hasActivityProfile][lis:hasActivityProfile [5/5]]]                | t        | t       | t           |        | t            | t            |         |
-| [[*lis:hasSubLocation][lis:hasSubLocation [4/4]]]                    | t        | t       | t           |        |              | t            |         |
-| [[*lis:hasContentPart][lis:hasContentPart [4/4]]]                    | t        | t       | t           |        | t            | t            |         |
-| [[*lis:datumUOM][lis:datumUOM [5/5]]]                          | t        | t       | t           |        | t            | t            |         |
-| [[*lis:hasQuality][lis:hasQuality [5/5]]]                        | t        | t       | t           |        | t            | t            |         |
-| [[*lis:hasPhysicalQuantity][lis:hasPhysicalQuantity [4/4]]]               | t        | t       | t           |        |              | t            |         |
-| [[*lis:hasParticipant][lis:hasParticipant [5/5]]]                    | t        | t       | t           |        | t            | t            |         |
-| [[*lis:hasActiveParticipant][lis:hasActiveParticipant [5/5]]]              | t        | t       |             |        |              | t            |         |
-| [[*lis:hasPassiveParticipant][lis:hasPassiveParticipant [5/5]]]             | t        | t       |             |        |              | t            |         |
-| [[*lis:creates][lis:creates [5/5]]]                           | t        | t       |             |        | t            | t            |         |
-| [[*lis:hasPrimaryParticipant][lis:hasPrimaryParticipant [5/5]]]             | t        | t       |             |        |              | t            |         |
-| [[*lis:hasPotential][lis:hasPotential [5/5]]]                      | t        | t       | t           |        | t            | t            |         |
-| [[*lis:hasDisposition][lis:hasDisposition [4/4]]]                    | t        | t       | t           |        | t            | t            |         |
-| [[*lis:hasCapability][lis:hasCapability [4/4]]]                     | t        | t       | t           |        | t            | t            |         |
-| [[*lis:hasFunction][lis:hasFunction [4/4]]]                       | t        | t       | t           |        | t            | t            |         |
-| [[*lis:hasRole][lis:hasRole [4/4]]]                           | t        | t       | t           |        | t            | t            |         |
-| [[*lis:hasInterest][lis:hasInterest [4/4]]]                       | t        | t       | t           |        | t            | t            |         |
-| [[*COMMENT lis:approves][COMMENT lis:approves [1/1]]]                  |          |         |             |        | t            | t            |         |
-| [[*lis:realizedIn][lis:realizedIn [5/5]]]                        | t        | t       | t           |        | t            | t            |         |
-| [[*lis:profileOfQuality][lis:profileOfQuality [4/4]]]                  | t        | t       | t           |        |              | t            |         |
-| [[*lis:connectedTo][lis:connectedTo [5/5]]]                       | t        | t       | t           |        | t            | t            |         |
-| [[*lis:directlyConnectedTo][lis:directlyConnectedTo [4/4]]]               | t        | t       | t           |        |              | t            |         |
-| [[*lis:locatedRelativeTo][lis:locatedRelativeTo [4/4]]]                 | t        | t       | t           |        | t            | t            |         |
-| [[*lis:contains][lis:contains [4/4]]]                          | t        | t       | t           |        | t            | t            |         |
-| [[*lis:residesIn][lis:residesIn [5/5]]]                         | t        | t       | t           |        |              | t            |         |
-| [[*lis:hasSpatialExtent][lis:hasSpatialExtent [4/4]]]                  | t        | t       | t           |        | t            | t            |         |
-| [[*lis:occursRelativeTo][lis:occursRelativeTo [5/5]]]                  | t        | t       | t           |        | t            | t            |         |
-| [[*lis:hasTemporalExtent][lis:hasTemporalExtent [5/5]]]                 | t        | t       | t           |        | t            | t            |         |
-| [[*lis:hasSpatiotemporalExtent][lis:hasSpatiotemporalExtent [5/5]]]           | t        | t       | t           |        | t            | t            |         |
-| [[*lis:before][lis:before [5/5]]]                            | t        | t       |             |        | t            | t            |         |
-| [[*COMMENT lis:causes][COMMENT lis:causes]]                          | t        | t       | t           |        | t            | t            |         |
-| [[*lis:siteOf][lis:siteOf [5/5]]]                            | t        | t       | t           |        | t            | t            |         |
-| [[*lis:isAbout][lis:isAbout [5/5]]]                           | t        | t       | t           |        | t            | t            |         |
-| [[*COMMENT lis:representedBy][COMMENT lis:representedBy [1/1]]]             |          |         | t           |        | t            | t            |         |
-| [[*lis:qualityQuantifiedAs][lis:qualityQuantifiedAs [4/4]]]               | t        | t       | t           |        | t            | t            |         |
-| [[*lis:hasQualityQuantifiedAs][lis:hasQualityQuantifiedAs [4/4]]]            | t        | t       | t           |        |              | t            |         |
-| [[*lis:hasParticipantQualityQuantifiedAs][lis:hasParticipantQualityQuantifiedAs [5/5]]] | t        | t       | t           |        |              | t            |         |
-| [[*lis:profileQuantityDatum][lis:profileQuantityDatum [4/4]]]              | t        | t       | t           |        | t            | t            |         |
-| [[*lis:concretizes][lis:concretizes [5/5]]]                       | t        | t       | t           |        | t            | t            |         |
-| [[*lis:implements][lis:implements [5/5]]]                        | t        | t       | t           |        |              | t            |         |
-| [[*lis:partOf][lis:partOf [3/3]]]                            |          |         | t           |        |              | t            | t       |
-| [[*lis:functionalPartOf][lis:functionalPartOf [3/3]]]                  |          |         | t           |        |              | t            | t       |
-| [[*lis:arrangedPartOf][lis:arrangedPartOf [3/3]]]                    |          |         | t           |        |              | t            | t       |
-| [[*lis:featureOf][lis:featureOf [3/3]]]                         |          |         | t           |        |              | t            | t       |
-| [[*lis:assembledPartOf][lis:assembledPartOf [3/3]]]                   |          |         | t           |        |              | t            | t       |
-| [[*lis:materialPartOf][lis:materialPartOf [3/3]]]                    |          |         | t           |        |              | t            | t       |
-| [[*lis:temporalPartOf][lis:temporalPartOf [3/3]]]                    |          |         | t           |        |              | t            | t       |
-| [[*lis:activityPartOf][lis:activityPartOf [3/3]]]                    |          |         | t           |        |              | t            | t       |
-| [[*lis:activityBoundOf][lis:activityBoundOf [3/3]]]                   |          |         | t           |        |              | t            | t       |
-| [[*lis:begins][lis:begins [3/3]]]                            |          |         | t           |        |              | t            | t       |
-| [[*lis:ends][lis:ends [3/3]]]                              |          |         | t           |        |              | t            | t       |
-| [[*lis:activityProfileOf][lis:activityProfileOf [3/3]]]                 |          |         | t           |        |              | t            | t       |
-| [[*lis:subLocationOf][lis:subLocationOf [3/3]]]                     |          |         | t           |        |              | t            | t       |
-| [[*lis:contentPartOf][lis:contentPartOf]]                           |          |         | t           |        |              | t            | t       |
-| [[*lis:uomOfDatum][lis:uomOfDatum [3/3]]]                        |          |         | t           |        | t            | t            | t       |
-| [[*lis:qualityOf][lis:qualityOf [3/3]]]                         |          |         | t           |        |              | t            | t       |
-| [[*lis:physicalQuantityOf][lis:physicalQuantityOf [3/3]]]                |          |         | t           |        |              | t            | t       |
-| [[*lis:participantIn][lis:participantIn [3/3]]]                     |          |         | t           |        |              | t            | t       |
-| [[*lis:activeParticipantIn][lis:activeParticipantIn [3/3]]]               |          |         | t           |        |              | t            | t       |
-| [[*lis:passiveParticipantIn][lis:passiveParticipantIn [3/3]]]              |          |         | t           |        |              | t            | t       |
-| [[*lis:createdBy][lis:createdBy [3/3]]]                         |          |         | t           |        |              | t            | t       |
-| [[*lis:primaryParticipantIn][lis:primaryParticipantIn [3/3]]]              |          |         | t           |        |              | t            | t       |
-| [[*lis:potentialOf][lis:potentialOf [3/3]]]                       |          |         | t           |        | t            | t            | t       |
-| [[*lis:dispositionOf][lis:dispositionOf [3/3]]]                     |          |         | t           |        |              | t            | t       |
-| [[*lis:capabilityOf][lis:capabilityOf [3/3]]]                      |          |         | t           |        |              | t            | t       |
-| [[*lis:functionOf][lis:functionOf [3/3]]]                        |          |         | t           |        |              | t            | t       |
-| [[*lis:roleOf][lis:roleOf [3/3]]]                            |          |         | t           |        | t            | t            | t       |
-| [[*lis:interestOf][lis:interestOf]]                              |          |         | t           |        |              | t            | t       |
-| [[*COMMENT lis:approvedBy][COMMENT lis:approvedBy [1/1]]]                |          |         | t           |        |              | t            | t       |
-| [[*lis:realizes][lis:realizes [3/3]]]                          |          |         | t           |        | t            | t            | t       |
-| [[*lis:qualityProfiledIn][lis:qualityProfiledIn [3/3]]]                 |          |         | t           |        |              | t            | t       |
-| [[*lis:containedBy][lis:containedBy [3/3]]]                       |          |         | t           |        |              | t            | t       |
-| [[*lis:hasResident][lis:hasResident [3/3]]]                       |          |         | t           |        |              | t            | t       |
-| [[*lis:spatialExtentOf][lis:spatialExtentOf [3/3]]]                   |          |         | t           |        |              | t            | t       |
-| [[*lis:temporalExtentOf][lis:temporalExtentOf [3/3]]]                  |          |         | t           |        |              | t            | t       |
-| [[*lis:spatiotemporalExtentOf][lis:spatiotemporalExtentOf [3/3]]]            |          |         | t           |        |              | t            | t       |
-| [[*lis:after][lis:after [3/3]]]                             |          |         | t           |        | t            | t            | t       |
-| [[*COMMENT lis:causedBy][COMMENT lis:causedBy [3/3]]]                  |          |         | t           |        | t            | t            | t       |
-| [[*lis:occursIn][lis:occursIn [3/3]]]                          |          |         | t           |        | t            | t            | t       |
-| [[*COMMENT lis:represents][COMMENT lis:represents [3/3]]]                |          |         | t           |        | t            | t            | t       |
-| [[*lis:quantifiesQuality][lis:quantifiesQuality [3/3]]]                 |          |         | t           |        |              | t            | t       |
-| [[*lis:quantifiesQualityOf][lis:quantifiesQualityOf [3/3]]]               |          |         | t           |        |              | t            | t       |
-| [[*lis:quantifiesQualityOfParticipantIn][lis:quantifiesQualityOfParticipantIn [3/3]]]  |          |         | t           |        |              | t            | t       |
-| [[*lis:quantityDatumOfProfile][lis:quantityDatumOfProfile [3/3]]]            |          |         | t           |        |              | t            | t       |
-| [[*lis:representedIn][lis:representedIn [3/3]]]                     |          |         | t           |        |              | t            | t       |
-| [[*lis:concretizedBy][lis:concretizedBy [3/3]]]                     |          |         | t           |        |              | t            | t       |
-| [[*lis:implementedBy][lis:implementedBy [3/3]]]                     |          |         | t           |        |              | t            | t       |
-
-\newpage
 *** Data properties                                                :noexport:
 #+name: ql-overview-dp
 #+header: :exports results :eval no-export
@@ -487,13 +329,6 @@ axioms, or none. E.g. for "functionalPartOf".
 
 #+ATTR_LATEX: :environment longtable :font \footnotesize :width \pagewidth
 #+RESULTS: ql-overview-dp
-| Data Property                  | nat lang | example | restriction | source | rdfs:comment | rdfs:seeAlso |
-|--------------------------------+----------+---------+-------------+--------+--------------+--------------|
-| [[*lis:datumValue][lis:datumValue [4/4]]]           | t        | t       | t           |        | t            | t            |
-| [[*lis:qualityQuantityValue][lis:qualityQuantityValue [3/3]]] | t        | t       | t           |        |              |              |
-| [[*lis:timestamp][lis:timestamp [0/0]]]            |          |         | t           |        | t            |              |
-| [[*lis:approvedOn][lis:approvedOn [1/1]]]           |          |         |             |        | t            |              |
-\newpage
 *** Annotation properties                                          :noexport:
 #+name: ql-overview-ap
 #+header: :exports results :eval no-export
@@ -513,58 +348,6 @@ axioms, or none. E.g. for "functionalPartOf".
 
 #+ATTR_LATEX: :environment longtable :font \footnotesize :width \pagewidth
 #+RESULTS: ql-overview-ap
-| Annotation Property                        | nat lang | rdfs:comment | rdfs:seeAlso | rdfs:isDefinedBy |
-|--------------------------------------------+----------+--------------+--------------+------------------|
-| [[*rdfs:comment][rdfs:comment]]                               |          | t            |              | t                |
-| [[*rdfs:label][rdfs:label]]                                 |          |              |              | t                |
-| [[*skos:prefLabel][skos:prefLabel]]                             |          | t            |              | t                |
-| [[*skos:altLabel][skos:altLabel]]                              |          | t            |              | t                |
-| [[*iof-av:synonym][iof-av:synonym]]                             |          |              |              | t                |
-| [[*see also (rdfs:seeAlso)][see also (rdfs:seeAlso)]]                    |          |              | t            | t                |
-| [[*rdfs:isDefinedBy][rdfs:isDefinedBy]]                           |          |              | t            | t                |
-| [[*lis:originatesFrom][lis:originatesFrom]]                         |          | t            |              |                  |
-| [[*lis:transformedFrom][lis:transformedFrom]]                        |          | t            |              |                  |
-| [[*lis:mergedFrom][lis:mergedFrom]]                             |          | t            |              |                  |
-| [[*lis:splitFrom][lis:splitFrom]]                              |          | t            |              |                  |
-| [[*lis:relatedEntity][lis:relatedEntity]]                          |          | t            |              |                  |
-| [[*lis:relatedEntityISO15926][lis:relatedEntityISO15926]]                  |          | t            |              |                  |
-| [[*lis:remodelsEntity][lis:remodelsEntity]]                         |          | t            |              |                  |
-| [[*lis:remodelsEntityISO15926][lis:remodelsEntityISO15926]]                 |          | t            |              |                  |
-| [[*lis:equivalentEntity][lis:equivalentEntity]]                       |          | t            |              |                  |
-| [[*lis:equivalentEntityISO15926][lis:equivalentEntityISO15926]]               |          | t            |              |                  |
-| [[*lis:deprecatedEntity][lis:deprecatedEntity]]                       |          | t            |              |                  |
-| [[*lis:deprecatedEntityISO15926][lis:deprecatedEntityISO15926]]               |          | t            |              |                  |
-| [[*iof-av:isPrimitive][iof-av:isPrimitive]]                         |          |              |              | t                |
-| [[*skos:note][skos:note]]                                  |          | t            |              | t                |
-| [[*skos:definition][skos:definition]]                            |          | t            |              | t                |
-| [[*iof-av:naturalLanguageDefinition][iof-av:naturalLanguageDefinition]]           | t        |              |              | t                |
-| [[*iof-av:firstOrderLogicDefinition][iof-av:firstOrderLogicDefinition]]           |          |              |              | t                |
-| [[*iof-av:semiFormalNaturalLanguageDefinition][iof-av:semiFormalNaturalLanguageDefinition]] |          |              |              | t                |
-| [[*skos:example][skos:example]]                               |          | t            |              | t                |
-| [[*iof-av:explanatoryNote][iof-av:explanatoryNote]]                     |          |              |              | t                |
-| [[*skos:scopeNote][skos:scopeNote]]                             |          |              |              | t                |
-| [[*iof-av:usageNote][iof-av:usageNote]]                           |          |              |              | t                |
-| [[*iof-av:primitiveRationale][iof-av:primitiveRationale]]                  |          |              |              | t                |
-| [[*iof-av:semiFormalNaturalLanguageAxiom][iof-av:semiFormalNaturalLanguageAxiom]]      |          |              |              | t                |
-| [[*pav:previousVersion][pav:previousVersion]]                        |          |              |              | t                |
-| [[*pav:derivedFrom][pav:derivedFrom]]                            |          |              |              | t                |
-| [[*pav:lastUpdateOn][pav:lastUpdateOn]]                           |          |              |              | t                |
-| [[*dcterms:source][dcterms:source]]                             |          |              |              | t                |
-| [[*iof-av:adaptedFrom][iof-av:adaptedFrom]]                         |          |              |              | t                |
-| [[*iof-av:directSource][iof-av:directSource]]                        |          |              |              | t                |
-| [[*dcterms:title][dcterms:title]]                              |          |              |              | t                |
-| [[*dcterms:license][dcterms:license]]                            |          |              |              | t                |
-| [[*dcterms:description][dcterms:description]]                        |          |              |              | t                |
-| [[*dcterms:issued][dcterms:issued]]                             |          |              |              | t                |
-| [[*dcterms:contributor][dcterms:contributor]]                        |          |              |              | t                |
-| [[*dcterms:creator][dcterms:creator]]                            |          |              |              | t                |
-| [[*pav:createdBy][pav:createdBy]]                              |          |              |              | t                |
-| [[*pav:contributedBy][pav:contributedBy]]                          |          |              |              | t                |
-| [[*dcterms:modified][dcterms:modified]]                           |          |              |              | t                |
-| [[*dcterms:publisher][dcterms:publisher]]                          |          |              |              | t                |
-| [[*dc:rights][dc:rights]]                                  |          |              |              | t                |
-| [[*foaf:isPrimaryTopicOf][foaf:isPrimaryTopicOf]]                      |          |              |              | t                |
-\newpage
 * Setup for org-mode																							 :noexport:
 	:PROPERTIES:
 	:VISIBILITY: folded
