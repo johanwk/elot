@@ -1,31 +1,8 @@
 #+title: ELOT template file
 #+subtitle: Blank file for writing an OWL ontology
 #+author: i-am-the-author
-#+date: WIP (version of 2024-03-22 09:28)
+#+date: WIP (version of 2024-03-22 17:29)
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
-
-# Q2 2023: To export with abbreviated/more readable annotation
-#   property names, use (org-export-to-file 'ELOT-latex "ELOT.tex").
-#   See section "Exporting with replacements of description list tags".
-#   To export to TeX: (org-export-to-file 'ELOT-latex "ELOT.tex")
-
-# Before tangling to ontology, remember
-# - org-babel-lob-ingest this file
-# - M-x normal-mode to read all local definitions
-
-# allow for export even when link targets are in a :noexport: section
-# #+OPTIONS: broken-links:mark
-#+OPTIONS: broken-links:t
-#+BIND: org-latex-default-figure-position "H"
-
-# hide TODO status in headings
-#+OPTIONS: todo:nil
-# hide completion "cookies" like "[4/4]"
-#+OPTIONS: stat:nil
-
-#+latex: \listoffigures
-#+latex: \listoftables
-# #+TOC: listings
 
 * Ontology Resources
 	:PROPERTIES:
@@ -172,12 +149,12 @@ DisjointClasses: ex:C3, ex:C4
    - rdfs:comment :: describe the restriction
  - SubClassOf :: ex:C3
  - SubClassOf :: ex:C4
-*** ex:C2                                                    :oneof:disjoint:
+*** I'm C2 (ex:C2)                                           :oneof:disjoint:
  - rdfs:comment :: This class uses the org-mode properties "oneof" and
    "disjoint" to easily add disjointness axioms.
 **** ex:C2a
-**** ex:C2b
-**** ex:C2c
+***** ex:C2b
+****** ex:C2c
 *** ex:C3
 *** ex:C4
 ** Object properties (individual-to-individual relations)
