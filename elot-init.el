@@ -14,10 +14,13 @@
 (package-initialize)
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
 
-(dolist (package '(org
-		   org-ql
-		   dash s f ht)
-	 )
+(dolist (package '(;; the standard works: org
+		               ;; make optional: org-ql
+		               ;; dash
+                   ;; replaced with string-trim: s
+                   ;; f ht)
+                   ob-lob
+	               )
  (unless (package-installed-p package)
    (package-install package))
    (require package))
@@ -34,12 +37,4 @@
 
 ;; allow BIND for attr_latex settings
 (setq org-export-allow-bind-keywords t)
-
-;; utility, get contents of named block
-;; (probably obsolete, replace with recent org function)
-(defun expand-named-babel-block (block)
-  (save-excursion
-    (org-babel-goto-named-src-block block)
-    (org-babel-expand-src-block))
-  )
 
