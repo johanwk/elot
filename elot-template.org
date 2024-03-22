@@ -1,7 +1,7 @@
 #+title: ELOT template file
 #+subtitle: Blank file for writing an OWL ontology
 #+author: i-am-the-author
-#+date: WIP (version of 2024-03-22 17:29)
+#+date: WIP (version of 2024-03-22 17:39)
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 
 * Ontology Resources
@@ -302,6 +302,7 @@ DisjointClasses: ex:C3, ex:C4
 # Local Variables:
 # mode: org
 # org-confirm-babel-evaluate: nil
+# org-export-allow-bind-keywords: t
 # org-babel-default-inline-header-args: ((:exports . "code"))
 # org-latex-src-block-backend: listings
 # org-latex-classes: (("book" "\\documentclass[11pt]{scrbook}" ontology-resource-section))
