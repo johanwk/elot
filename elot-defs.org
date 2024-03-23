@@ -1,7 +1,7 @@
 * Helper functions for ELOT
 ** elisp functions
 :PROPERTIES:
-:header-args: :tangle ./elot.el :comments link
+:header-args: :tangle ./elot-package/elot.el :comments link
 :END:
 *** Header for the elisp file
 #+begin_src emacs-lisp :comments nil
@@ -324,9 +324,9 @@ annotations in a future improved version, from sub-items.
 #+END_SRC
 *** Write typical class patterns
 *** Update link alist from table
-*** Default local variables
-#+begin_src emacs-lisp :tangle elot-defaults.el
-  ;; default settings, replaces Local Variables: block
+*** Default settings
+#+begin_src emacs-lisp :tangle ./elot-package/elot-defaults.el
+  ;; default settings, replaces Local Variables block
   (setq-local
    org-confirm-babel-evaluate nil
    org-export-allow-bind-keywords t
@@ -343,10 +343,10 @@ annotations in a future improved version, from sub-items.
    org-startup-folded 'show2levels
    )
   (progn
+    (require 'elot)
     (update-link-abbrev)
     (org-babel-lob-ingest "elot-lob.org")
-    (load (expand-file-name "./elot.el"))
-    (org-set-startup-visibility)
+    (org-cycle-set-startup-visibility)
     )
 #+end_src
 #+begin_src emacs-lisp
@@ -418,49 +418,6 @@ function =class-disjoint-from-header= is intended to be used in
       (let ((hierarchy-l (org-list-siblings)))
         (resource-taxonomy-from-l hierarchy-l owl-type owl-relation))))
 #+END_SRC
-*** Export SETUPFILE
-#+begin_src org :tangle elot-default-export.org
-# allow underscores in export
-#+OPTIONS: ^:{}
-# number really deep 
-#+OPTIONS: H:8 num:8
-#+OPTIONS: TOC: 3
-#+LATEX_CLASS: book
-#+LATEX_CLASS_OPTIONS: [11pt,numbers=noenddot,twoside=false]
-#+LaTeX_HEADER: \sloppy
-#+LATEX_HEADER_EXTRA: \usepackage{svg}
-#+LaTeX_HEADER: \hbadness=10000 % less warnings
-#+LaTeX_HEADER: \usepackage{newtxtext,newtxmath}
-#+LaTeX_HEADER: \usepackage{textcomp}
-#+LaTeX_HEADER: \usepackage{float}
-#+LaTeX_HEADER: \usepackage[a4paper,left=3cm,right=2cm,top=2.5cm,bottom=2.5cm]{geometry}
-#+LaTeX_HEADER: \usepackage{scrhack}
-#+LATEX_HEADER: \newenvironment{note}{\par\noindent\small\ignorespaces}{\par}
-#+LaTeX_HEADER: \setparsizes{0.0em}{6pt plus 0.1\baselineskip}{1.0em plus 1.0fil}
-#+LaTeX_HEADER: \usepackage{array}\newcolumntype{H}{@{}>{\lrbox0}l<{\endlrbox}}
-#+LaTeX_HEADER: \hypersetup{pdfborder=0 0 0}
-#+LaTeX_HEADER: \setcounter{tocdepth}{2}
-#+LaTeX_HEADER: \setcounter{secnumdepth}{5}
-#+LaTeX_HEADER: \frenchspacing
-#+LaTeX_HEADER: \usepackage{listings,xcolor}
-#+LaTeX_HEADER: \usepackage{rotating}
-#+LaTeX_HEADER: \lstdefinelanguage{omn}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
-#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
-#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
-#+LaTeX_HEADER: \lstdefinelanguage{ttl}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
-#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
-#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
-#+LaTeX_HEADER: \lstdefinelanguage{sparql}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
-#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
-#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
-#+LaTeX_HEADER: \lstdefinelanguage{stottr}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
-#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
-#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
-#+LaTeX_HEADER: \lstdefinelanguage{json}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
-#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
-#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
-#+LaTeX_HEADER: \usepackage{enumitem} \setlist[description]{font=\normalfont\itshape\space}
-#+end_src
 *** Headings in LaTeX export
 We format headings with indentation to match the subtype level in the
 ontology: for each level down we add a full stop and a space.
@@ -649,198 +606,50 @@ To get the ttl block to process correctly, for rdfpuml use.
   (defalias 'org-babel-execute:ttl 'org-babel-execute:passthrough))
 #+end_src
 
-** org source blocks
-*** Resource declarations (exctracted from outlines)
-#+name: resource-declarations
-#+BEGIN_SRC emacs-lisp :var hierarchy="ELOT-class-hierarchy" :var owl-type="Class" :wrap "SRC omn" 
-		(resource-declarations-from-header hierarchy owl-type)
-#+END_SRC
-*** Resource taxonomies (exctracted from outlines)
-#+name: resource-taxonomy
-#+BEGIN_SRC emacs-lisp :var hierarchy="ELOT-class-hierarchy" :var owl-type="Class" :var owl-relation="SubClassOf" :wrap "SRC omn" 
-(resource-taxonomy-from-header hierarchy owl-type owl-relation)
-#+END_SRC
-*** Dates for insertion into ontology on save
-#+name: current-date
-#+begin_src emacs-lisp :exports none
-(format-time-string "%Y-%m-%d")
-#+end_src
-
-#+name: current-datetime
-#+begin_src emacs-lisp :exports none
-  (format-time-string "%Y-%m-%dT%H:%M:%SZ" nil t)
-#+end_src
-*** Diagrams with rdfpuml
-**** Config for rdfpuml colours and directions
-#+name: rdfpuml-config
-#+begin_src ttl
-# customization
-@prefix puml: <http://plantuml.com/ontology#> .
-owl:Class      puml:stereotype "(C,Orange)".
-rdfs:subClassOf puml:arrow puml:up-tri .
-rdfs:subPropertyOf puml:arrow puml:up-tri .
-owl:Restriction      puml:stereotype "(C,Orange)".
-owl:ObjectProperty      puml:stereotype "(O,LightBlue)".
-owl:DatatypeProperty      puml:stereotype "(D,LightGreen)".
-owl:NamedIndividual      puml:stereotype "(i,White)".
-owl:Axiom      puml:stereotype "(X,LightYellow)".
-owl:annotatedSource puml:arrow puml:gray .
-owl:annotatedProperty puml:arrow puml:gray .
-owl:annotatedTarget puml:arrow puml:gray .
-rdf:in puml:arrow puml:up .
-rdfs:domain puml:arrow puml:left-gray .
-rdfs:range puml:arrow puml:right-gray .
-owl:onProperty puml:arrow puml:up .
-owl:someValuesFrom puml:arrow puml:right .
-owl:allValuesFrom puml:arrow puml:right .
-owl:equivalentClass puml:arrow puml:left-none .
-owl:equivalentProperty puml:arrow puml:left-none .
-#+end_src
-
-To make the =lis:hasPart= diagram more compact, make =rdfs:domain= and
-=rdfs:range= point downwards with this alternative configuration.
-#+name: rdfpuml-config-rangedomaindown
-#+begin_src ttl :noweb yes
-<<rdfpuml-config>>
-rdfs:domain puml:arrow puml:down .
-rdfs:range puml:arrow puml:down .
-#+end_src
-
-Another alternative, making range point down, but not domain.
-#+name: rdfpuml-config-rangedown
-#+begin_src ttl :noweb yes
-<<rdfpuml-config>>
-rdfs:range puml:arrow puml:down .
-#+end_src
-**** PDF or SVG images?
-When exporting to a PDF document, it's much easier to use PDF. Support
-for SVG in LaTeX is not great.
-
-On the other hand, inclusion in MS Word or export to HTML calls for
-SVGs. Conversion is described in 
-**** rdfpuml-block will read a ttl block and output a diagram
-Warnings. This script block is set up with /hardcoded paths/ to
- - call on Strawberry Perl (a perl implementation for Windows)
- - find rdfpuml (see https://github.com/VladimirAlexiev/rdf2rml)
-
-Also note *prefixes* go in file =prefixes.ttl= so rdfpuml finds them.
-#+name: rdfpuml-block
-#+header: :var ttlblock="example-ttl" :var config="" :var mydir=(concat (eval default-directory) "images/") :var format="svg" :var addtext="" :var addtextend="" :cache yes :eval never-export
-#+begin_src emacs-lisp :results file :dir ~ 
-  (let* ((puml-command 
-          (concat "LC_ALL=C /cygdrive/c/opt/strawberry/perl/bin/perl -C -S "
-                  (expand-file-name "~/bin/rdf2rml/bin/rdfpuml.pl")))
-         (ttl (concat
-               (eval `(org-sbe ,ttlblock))
-               (eval `(org-sbe ,config))))
-         (tmp-graphic-file (concat "tmp-rdfpuml." format))
-         (result-graphic-file (concat mydir ttlblock "." format))
-         )
-    (progn
-      (f-write-text ttl 'utf-8 "tmp-rdfpuml.ttl")
-      (message (concat "Wrote source block \"" ttlblock "\" to file:" (shell-command-to-string (concat "wc " "tmp-rdfpuml.ttl"))))
-      (shell-command-to-string 
-       (concat puml-command " tmp-rdfpuml.ttl"))
-      (message (concat "Executed rdfpuml on ttl to create plantuml file:" (shell-command-to-string (concat "wc " "tmp-rdfpuml.puml"))))
-      (message (concat puml-command " tmp-rdfpuml.ttl"))
-      (unless (string= addtext "") 
-        (shell-command-to-string (concat "sed -i '2i " addtext "' tmp-rdfpuml.puml")))
-      (unless (string= addtextend "") 
-        (shell-command-to-string (concat "sed -i '0,/@enduml/s/@enduml/" addtextend "\\n&/' tmp-rdfpuml.puml")))
-      (shell-command "sed -i 's/ : rdfs:\\(subClassOf\\|subPropertyOf\\)//g' tmp-rdfpuml.puml") ;; more compact diagram
-      (shell-command-to-string (concat "java -jar " org-plantuml-jar-path " -t" format " tmp-rdfpuml.puml"))
-      (message (concat "Executed plantuml to create " format " file:" (shell-command-to-string (concat "wc " tmp-graphic-file))))
-      (message (concat "java -jar " org-plantuml-jar-path " -t" format " tmp-rdfpuml.puml"))
-      (f-move tmp-graphic-file result-graphic-file)
-      ;(f-delete "tmp-rdfpuml.ttl")
-      ;(f-delete "tmp-rdfpuml.puml")
-      result-graphic-file
-      ))
-#+end_src
-
-#+RESULTS[fd2e7835ef9c2388a22067ffadf7e94d13a5052f]: rdfpuml-block
-[[file:images/example-ttl.svg]]
-
-**** Test ttl block
-#+name: example-ttl
-#+BEGIN_SRC ttl :exports none
-@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
-@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix ex:    <http://example.org/> .
-
-ex:House  a         ex:Classifier ;
-        rdfs:label  "House" .
-
-ex:ArchitecturalTerms
-        skos:member  ex:House .
-
-#+END_SRC
-To get the ttl block to process correctly: add this to startup.
+*** End with "provides"
 #+begin_src emacs-lisp
-(defun org-babel-execute:passthrough (body params) body)
-(unless (fboundp 'org-babel-execute:ttl)                
-  (defalias 'org-babel-execute:ttl 'org-babel-execute:passthrough))
+(provide 'elot)
 #+end_src
-**** Test run
-#+call: rdfpuml-block(ttlblock="example-ttl", config="rdfpuml-config", format="png") :dir ~ :cache yes
-
-#+RESULTS[5c2001466d943d4188759afde0d6f6e5a23fd62e]:
-[[file:example-ttl.png]]
-
-**** Use sparql as ttl source
-Querying a local Fuseki endpoint. Note that this isn't going to be
-useful if the Turtle data comes from template expansions.
-#+name: fuseki-for-rdfpuml-ttl
-#+begin_src sparql :url http://localhost:3030/ELOT/sparql :wrap "src ttl" :results output code :cache yes
-  PREFIX owl: <http://www.w3.org/2002/07/owl#>
-  PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-  construct { ?x rdfs:subClassOf ?z
-  }{
-    ?x a owl:Class ; rdfs:subClassOf ?z
-  } limit 2
+** Default export SETUPFILE for LaTeX
+#+begin_src org :tangle ./elot-package/elot-default-export.org
+# allow underscores in export
+#+OPTIONS: ^:{}
+# number really deep 
+#+OPTIONS: H:8 num:8
+#+OPTIONS: TOC: 3
+#+LATEX_CLASS: book
+#+LATEX_CLASS_OPTIONS: [11pt,numbers=noenddot,twoside=false]
+#+LaTeX_HEADER: \sloppy
+#+LATEX_HEADER_EXTRA: \usepackage{svg}
+#+LaTeX_HEADER: \hbadness=10000 % less warnings
+#+LaTeX_HEADER: \usepackage{newtxtext,newtxmath}
+#+LaTeX_HEADER: \usepackage{textcomp}
+#+LaTeX_HEADER: \usepackage{float}
+#+LaTeX_HEADER: \usepackage[a4paper,left=3cm,right=2cm,top=2.5cm,bottom=2.5cm]{geometry}
+#+LaTeX_HEADER: \usepackage{scrhack}
+#+LATEX_HEADER: \newenvironment{note}{\par\noindent\small\ignorespaces}{\par}
+#+LaTeX_HEADER: \setparsizes{0.0em}{6pt plus 0.1\baselineskip}{1.0em plus 1.0fil}
+#+LaTeX_HEADER: \usepackage{array}\newcolumntype{H}{@{}>{\lrbox0}l<{\endlrbox}}
+#+LaTeX_HEADER: \hypersetup{pdfborder=0 0 0}
+#+LaTeX_HEADER: \setcounter{tocdepth}{2}
+#+LaTeX_HEADER: \setcounter{secnumdepth}{5}
+#+LaTeX_HEADER: \frenchspacing
+#+LaTeX_HEADER: \usepackage{listings,xcolor}
+#+LaTeX_HEADER: \usepackage{rotating}
+#+LaTeX_HEADER: \lstdefinelanguage{omn}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
+#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
+#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
+#+LaTeX_HEADER: \lstdefinelanguage{ttl}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
+#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
+#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
+#+LaTeX_HEADER: \lstdefinelanguage{sparql}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
+#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
+#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
+#+LaTeX_HEADER: \lstdefinelanguage{stottr}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
+#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
+#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
+#+LaTeX_HEADER: \lstdefinelanguage{json}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
+#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
+#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
+#+LaTeX_HEADER: \usepackage{enumitem} \setlist[description]{font=\normalfont\itshape\space}
 #+end_src
-
-#+RESULTS:
-#+begin_src ttl
-@prefix :         <http://example.org/elot-template#> .
-@prefix dc:       <http://purl.org/dc/elements/1.1/> .
-@prefix dcmitype: <http://purl.org/dc/dcmitype/> .
-@prefix dcterms:  <http://purl.org/dc/terms/> .
-@prefix dol:      <http://www.loa-cnr.it/ontologies/DOLCE-Lite.owl#> .
-@prefix foaf:     <http://xmlns.com/foaf/0.1/> .
-@prefix iof-av:   <https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/> .
-@prefix lis:      <http://rds.posccaesar.org/ontology/lis14/rdl/> .
-@prefix obo:      <http://purl.obolibrary.org/obo/> .
-@prefix om:       <http://www.ontology-of-units-of-measure.org/resource/om-2/> .
-@prefix owl:      <http://www.w3.org/2002/07/owl#> .
-@prefix pav:      <http://purl.org/pav/> .
-@prefix prov:     <http://www.w3.org/ns/prov#> .
-@prefix rdf:      <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix skos:     <http://www.w3.org/2004/02/skos/core#> .
-@prefix ssn:      <http://www.w3.org/ns/ssn/> .
-@prefix time:     <http://www.w3.org/2006/time#> .
-@prefix xml:      <http://www.w3.org/XML/1998/namespace> .
-@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
-
-lis:MaterialCompositionQuality
-        rdfs:subClassOf  lis:Quality .
-
-lis:Organism  rdfs:subClassOf  lis:PhysicalObject .
-#+end_src
-
-The =ttlblock= argument can point to a named query.
-#+call: rdfpuml-block(ttlblock="fuseki-for-rdfpuml-ttl", config="rdfpuml-config", format="pdf") :dir ~ :cache yes
-
-#+ATTR_LATEX: :width 8cm
-#+RESULTS[fa175dd1ac5b97a422a799a4e749956f0e116096]:
-[[file:fuseki-for-rdfpuml-ttl.pdf]]
-
-*** Kill prefixes in Turtle output
-This is useful when there's too many prefix definitions
-#+name: kill-prefixes
-#+begin_src emacs-lisp :var data=""
-  (replace-regexp-in-string "^[[:blank:]]*[@]*prefix.*:.*\n" "" data)
-#+end_src
-
