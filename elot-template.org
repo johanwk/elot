@@ -1,20 +1,27 @@
+# -*- eval: (load-file "elot-defaults.el") -*-
 #+title: ELOT template file
 #+subtitle: Blank file for writing an OWL ontology
 #+author: i-am-the-author
-#+date: WIP (version of 2024-03-22 17:39)
-#+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
+#+date: WIP (version of 2024-03-23 01:18)
+# #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
+#+SETUPFILE: elot-default-export.org
 
-* Ontology Resources
-	:PROPERTIES:
-	 :ID:       ELOT-resource-hierarchy
-	:header-args:omn: :tangle ./ELOT.omn :noweb yes
-	:header-args:emacs-lisp: :tangle no :wrap "SRC omn" :exports results
-	:header-args: :padline yes
-	:END:
-<<ELOT-entities>>
+#
+# TEMPORARY: before exporting or tangling, open elot-lob.org and tangle
+#
+
+
+* ELOT template ontology Resources
+:PROPERTIES:
+ :ID:       ELOT-resource-hierarchy
+:header-args:omn: :tangle ./ELOT.omn :noweb yes
+:header-args:emacs-lisp: :tangle no :wrap "SRC omn" :exports results
+:header-args: :padline yes
+:END:
 ** Declarations                                                    :noexport:
 :PROPERTIES:
 :custom_id: sec:declarations
+:VISIBILITY: folded
 :END:
 *** Comment at top of file                                         :noexport:
 #+begin_src omn
@@ -27,6 +34,52 @@
 #+begin_src omn
 <<omn-prefixes()>>
 #+end_src
+*** Source blocks for prefixes                                     :noexport:
+:PROPERTIES:
+:header-args:omn: :tangle no
+:END:
+#+name: sparql-prefixes
+#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+  (mapconcat (lambda (row) (format "PREFIX %-5s <%s>" (car row) (cadr row)))
+             prefixes "\n")
+#+end_src
+
+#+name: omn-prefixes
+#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+  (mapconcat (lambda (row) (format "Prefix: %-5s <%s>" (car row) (cadr row)))
+             prefixes "\n")
+#+end_src
+
+#+name: ttl-prefixes
+#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+  (mapconcat (lambda (row) (format "@prefix %-5s <%s> ." (car row) (cadr row)))
+             prefixes "\n")
+#+end_src** Prefixes
+The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
+
+#+name: prefix-table
+#+caption: OWL ontology prefixes
+| prefix    | uri                                                                            |
+|-----------+--------------------------------------------------------------------------------|
+| ex:       | http://example.org/                                                            |
+| owl:      | http://www.w3.org/2002/07/owl#                                                 |
+| rdf:      | http://www.w3.org/1999/02/22-rdf-syntax-ns#                                    |
+| xml:      | http://www.w3.org/XML/1998/namespace                                           |
+| xsd:      | http://www.w3.org/2001/XMLSchema#                                              |
+| rdfs:     | http://www.w3.org/2000/01/rdf-schema#                                          |
+| skos:     | http://www.w3.org/2004/02/skos/core#                                           |
+| pav:      | http://purl.org/pav/                                                           |
+| obo:      | http://purl.obolibrary.org/obo/                                                |
+| dol:      | http://www.loa-cnr.it/ontologies/DOLCE-Lite.owl#                               |
+| ssn:      | http://www.w3.org/ns/ssn/                                                      |
+| time:     | http://www.w3.org/2006/time#                                                   |
+| om:       | http://www.ontology-of-units-of-measure.org/resource/om-2/                     |
+| foaf:     | http://xmlns.com/foaf/0.1/                                                     |
+| dc:       | http://purl.org/dc/elements/1.1/                                               |
+| dcterms:  | http://purl.org/dc/terms/                                                      |
+| dcmitype: | http://purl.org/dc/dcmitype/                                                   |
+| prov:     | http://www.w3.org/ns/prov#                                                     |
+| iof-av:   | https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/ |
 *** Ontology declaration                                           :noexport:
 #+begin_src omn
   <<resource-declarations(hierarchy="ELOT-ontology-declaration", owl-type="Ontology", owl-relation="")>>
@@ -41,7 +94,6 @@ Datatype: xsd:date
 Datatype: xsd:boolean
 #+END_SRC
 
-#+latex: \clearpage
 *** Class declarations																						 :noexport:
 #+BEGIN_SRC omn  
   ## Class declarations
@@ -78,42 +130,12 @@ Datatype: xsd:boolean
   <<resource-taxonomy(hierarchy="ELOT-annotation-property-hierarchy", owl-type="AnnotationProperty", owl-relation="SubPropertyOf")>>
 
 #+END_SRC
-** Prefixes
-<<sec:prefixes>>
-# For annotation property used in description lists to annotate
-# resources, the prefix has to be included in the following table.
-
-The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
-
-#+name: prefix-table
-#+caption: OWL ontology prefixes
-| prefix    | uri                                                                            |
-|-----------+--------------------------------------------------------------------------------|
-| ex:       | http://example.org/                                                            |
-| owl:      | http://www.w3.org/2002/07/owl#                                                 |
-| rdf:      | http://www.w3.org/1999/02/22-rdf-syntax-ns#                                    |
-| xml:      | http://www.w3.org/XML/1998/namespace                                           |
-| xsd:      | http://www.w3.org/2001/XMLSchema#                                              |
-| rdfs:     | http://www.w3.org/2000/01/rdf-schema#                                          |
-| skos:     | http://www.w3.org/2004/02/skos/core#                                           |
-| pav:      | http://purl.org/pav/                                                           |
-| obo:      | http://purl.obolibrary.org/obo/                                                |
-| dol:      | http://www.loa-cnr.it/ontologies/DOLCE-Lite.owl#                               |
-| ssn:      | http://www.w3.org/ns/ssn/                                                      |
-| time:     | http://www.w3.org/2006/time#                                                   |
-| om:       | http://www.ontology-of-units-of-measure.org/resource/om-2/                     |
-| foaf:     | http://xmlns.com/foaf/0.1/                                                     |
-| dc:       | http://purl.org/dc/elements/1.1/                                               |
-| dcterms:  | http://purl.org/dc/terms/                                                      |
-| dcmitype: | http://purl.org/dc/dcmitype/                                                   |
-| prov:     | http://www.w3.org/ns/prov#                                                     |
-| iof-av:   | https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/ |
 ** Ontology
-	 :PROPERTIES:
-	 :ID:       ELOT-ontology-declaration
-	 :custom_id:       ELOT-ontology-declaration
-	 :resourcedefs: yes
-	 :END:
+:PROPERTIES:
+:ID:       ELOT-ontology-declaration
+:custom_id:       ELOT-ontology-declaration
+:resourcedefs: yes
+:END:
 <<sec:ontology-declaration>>
 *** ELOT template ontology (ex:elot-template ex:elot-template/0.0)
 # - Import :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/
@@ -133,13 +155,13 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 #+begin_src omn
 DisjointClasses: ex:C3, ex:C4
 #+end_src
-#+latex: \clearpage\newpage
+
 ** Classes
-	 :PROPERTIES:
-	 :ID:       ELOT-class-hierarchy
-	 :custom_id:       ELOT-class-hierarchy
-	 :resourcedefs: yes
-	 :END:
+:PROPERTIES:
+:ID:       ELOT-class-hierarchy
+:custom_id:       ELOT-class-hierarchy
+:resourcedefs: yes
+:END:
 *** I'm C1 (ex:C1)
  - rdfs:comment :: The class label may be entered as a heading, with
    the URI in parentheses.
@@ -155,35 +177,35 @@ DisjointClasses: ex:C3, ex:C4
 **** ex:C2a
 ***** ex:C2b
 ****** ex:C2c
-*** ex:C3
-*** ex:C4
-** Object properties (individual-to-individual relations)
-	 :PROPERTIES:
-	 :ID:       ELOT-object-property-hierarchy
-	 :custom_id:       ELOT-object-property-hierarchy
-	 :resourcedefs: yes
-	 :END:
+**** ex:C3
+**** ex:C4
+** Object properties
+:PROPERTIES:
+:ID:       ELOT-object-property-hierarchy
+:custom_id:       ELOT-object-property-hierarchy
+:resourcedefs: yes
+:END:
 #+BEGIN_SRC omn :exports none
 ## Object property details
 #+END_SRC
 *** ex:r
 *** ex:s
-** Data properties (individual-to-value relations)
-	 :PROPERTIES:
-	 :ID:       ELOT-data-property-hierarchy
-	 :custom_id:       ELOT-data-property-hierarchy
-	 :resourcedefs: yes
-	 :END:
+** Data properties
+:PROPERTIES:
+:ID:       ELOT-data-property-hierarchy
+:custom_id:       ELOT-data-property-hierarchy
+:resourcedefs: yes
+:END:
 #+BEGIN_SRC omn :exports none
 ## Data property details
 #+END_SRC
 *** ex:v
-** Annotation properties (informative-only relations)
-	 :PROPERTIES:
-	 :ID:       ELOT-annotation-property-hierarchy
-	 :custom_id:       ELOT-annotation-property-hierarchy
-	 :resourcedefs: yes
-	 :END:
+** Annotation properties
+:PROPERTIES:
+:ID:       ELOT-annotation-property-hierarchy
+:custom_id:       ELOT-annotation-property-hierarchy
+:resourcedefs: yes
+:END:
 #+BEGIN_SRC omn :exports none
 ## Annotation property details
 #+END_SRC
@@ -196,128 +218,4 @@ DisjointClasses: ex:C3, ex:C4
 *** dcterms:publisher
 *** dc:rights
 *** dcterms:description
-* Setup for org-mode																							 :noexport:
-	:PROPERTIES:
-	:VISIBILITY: folded
-	:END:
-** Source blocks for prefixes                                      :noexport:
-:PROPERTIES:
-:header-args:omn: :tangle no
-:END:
-#+name: sparql-prefixes
-#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
-  (mapconcat (lambda (row) (format "PREFIX %-5s <%s>" (car row) (cadr row)))
-             prefixes "\n")
-#+end_src
 
-#+name: omn-prefixes
-#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
-  (mapconcat (lambda (row) (format "Prefix: %-5s <%s>" (car row) (cadr row)))
-             prefixes "\n")
-#+end_src
-
-#+name: ttl-prefixes
-#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
-  (mapconcat (lambda (row) (format "@prefix %-5s <%s> ." (car row) (cadr row)))
-             prefixes "\n")
-#+end_src
-
-#+name: update-link-abbrev
-#+begin_src emacs-lisp :var prefixes=prefix-table[] :exports none
-  (setq org-link-abbrev-alist-local 
-    (mapcar (lambda (x) 
-              (cons (replace-regexp-in-string ":" "" (car x)) (cadr x)))
-            prefixes))
-#+end_src
-
-#+RESULTS: update-link-abbrev
-#+begin_SRC omn
-((ex . http://example.org/) (owl . http://www.w3.org/2002/07/owl#) (rdf . http://www.w3.org/1999/02/22-rdf-syntax-ns#) (xml . http://www.w3.org/XML/1998/namespace) (xsd . http://www.w3.org/2001/XMLSchema#) (rdfs . http://www.w3.org/2000/01/rdf-schema#) (skos . http://www.w3.org/2004/02/skos/core#) (pav . http://purl.org/pav/) (obo . http://purl.obolibrary.org/obo/) (dol . http://www.loa-cnr.it/ontologies/DOLCE-Lite.owl#) (ssn . http://www.w3.org/ns/ssn/) (time . http://www.w3.org/2006/time#) (om . http://www.ontology-of-units-of-measure.org/resource/om-2/) (foaf . http://xmlns.com/foaf/0.1/) (dc . http://purl.org/dc/elements/1.1/) (dcterms . http://purl.org/dc/terms/) (dcmitype . http://purl.org/dc/dcmitype/) (prov . http://www.w3.org/ns/prov#) (iof-av . https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/))
-#+end_SRC
-
-** Export
-#+LATEX_CLASS: book
-#+LATEX_CLASS_OPTIONS: [11pt,a4paper,appendixprefix,numbers=noenddot,twoside=false]
-#+LaTeX_HEADER: \sloppy
-#+LaTeX_HEADER: \tolerance=1600
-#+LaTeX_HEADER: \hbadness=10000 % less warnings
-#+LATEX_HEADER: \usepackage[british]{babel}
-#+LaTeX_HEADER: \usepackage[toc,page]{appendix}
-#+LaTeX_HEADER: \usepackage{textcomp}
-#+LaTeX_HEADER: \usepackage{float}
-# #+LaTeX_HEADER: \renewcommand\appendixname{Annex}
-#+LaTeX_HEADER: \usepackage[a4paper,left=3cm,right=2cm,top=2.5cm,bottom=2.5cm]{geometry}
-#+LaTeX_HEADER: \usepackage{scrhack}
-#+LaTeX_HEADER: \usepackage{fontspec}\setmainfont[Ligatures={TeX,Common}]{Cambria}
-#+LaTeX_HEADER: \setmonofont{Courier New}
-#+LaTeX_HEADER: \addtokomafont{disposition}{\rmfamily} % headers in serif
-#+LATEX_HEADER: \newenvironment{note}{\par\noindent\small\ignorespaces}{\par}
-#+LaTeX_HEADER: \setparsizes{0.0em}{6pt plus 0.1\baselineskip}{1.0em plus 1.0fil}
-#+LaTeX_HEADER: \usepackage{array}\newcolumntype{H}{@{}>{\lrbox0}l<{\endlrbox}}
-#+LaTeX_HEADER: \hypersetup{pdfborder=0 0 0}
-#+LaTeX_HEADER: \setcounter{tocdepth}{1}
-#+LaTeX_HEADER: \setcounter{secnumdepth}{5}
-# setup for paragraphs
-#+LaTeX_HEADER: \RedeclareSectionCommand[runin=false,afterskip=0pt,afterindent=false]{paragraph}
-#+LaTeX_HEADER: \renewcommand\othersectionlevelsformat[3]{\makebox[0pt][r]{#3\autodot\enskip}}
-#+LaTeX_HEADER: \renewcommand\sectionformat{\makebox[0pt][r]{\thesection\autodot\enskip}}
-#+LaTeX_HEADER: \renewcommand\subsectionformat{\makebox[0pt][r]{\thesubsection\autodot\enskip}}
-#+LaTeX_HEADER: \renewcommand\subsubsectionformat{\makebox[0pt][r]{\thesubsubsection\autodot\enskip}}
-#+LaTeX_HEADER: \renewcommand\paragraphformat{\makebox[0pt][r]{\theparagraph\autodot\enskip}}
-#+LANGUAGE:  en
-#+LaTeX_HEADER: \frenchspacing
-#+EXPORT_EXCLUDE_TAGS: noexport
-#+OPTIONS: tags:nil
-# allow underscores in export, number really deep (increase "7" if
-# needed). Update for WD 2020-09-18 to number to 7 levels deep 
-#+OPTIONS: ^:{} H:8 num:8
-#+OPTIONS: TOC: 3
-#+LaTeX_HEADER: \usepackage{listings,xcolor}
-#+LaTeX_HEADER: \usepackage{rotating}
-#+LATEX_HEADER_EXTRA: \usepackage{svg}
-#+LaTeX_HEADER: \lstdefinelanguage{omn}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
-#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
-#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
-#+LaTeX_HEADER: \lstdefinelanguage{ttl}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
-#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
-#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
-#+LaTeX_HEADER: \lstdefinelanguage{ttlnocomment}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
-#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
-#+LaTeX_HEADER:   tabsize=2,columns=fullflexible,}  % this could be improved...
-#+LaTeX_HEADER: \lstdefinelanguage{sparql}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
-#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
-#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
-#+LaTeX_HEADER: \lstdefinelanguage{stottr}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
-#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
-#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
-#+LaTeX_HEADER: \lstdefinelanguage{json}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
-#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
-#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
-#+LaTeX_HEADER: \usepackage{enumitem} \setlist[description]{font=\normalfont\itshape\space}
-** Local variables for this org file
-# commenting out latex-filter-headline-dots
-# org-export-filter-headline-functions: (latex-filter-headline-dot)
-
-#+STARTUP: show2levels
-# Local Variables:
-# mode: org
-# org-confirm-babel-evaluate: nil
-# org-export-allow-bind-keywords: t
-# org-babel-default-inline-header-args: ((:exports . "code"))
-# org-latex-src-block-backend: listings
-# org-latex-classes: (("book" "\\documentclass[11pt]{scrbook}" ontology-resource-section))
-# org-latex-prefer-user-labels: t
-# eval: (progn
-# (org-babel-lob-ingest "elot-lob.org")
-# (load (expand-file-name "./elot.el"))
-# (org-babel-ref-resolve "update-link-abbrev")
-# (setq-local org-latex-image-default-scale .8)
-# )
-# time-stamp-line-limit: 1000
-# time-stamp-format: "%Y-%m-%d %H:%M"
-# time-stamp-active: t
-# time-stamp-start: "(version of "
-# time-stamp-end: ")"
-# eval: (add-hook 'before-save-hook #'time-stamp)
-# eval: (add-hook 'before-save-hook (lambda () (org-babel-ref-resolve "update-link-abbrev")) nil t)
-# End:
