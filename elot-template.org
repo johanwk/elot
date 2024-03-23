@@ -2,7 +2,7 @@
 #+title: ELOT template file
 #+subtitle: Blank file for writing an OWL ontology
 #+author: i-am-the-author
-#+date: WIP (version of 2024-03-23 01:18)
+#+date: WIP (version of 2024-03-23 01:31)
 # #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 #+SETUPFILE: elot-default-export.org
 
@@ -130,14 +130,12 @@ Datatype: xsd:boolean
   <<resource-taxonomy(hierarchy="ELOT-annotation-property-hierarchy", owl-type="AnnotationProperty", owl-relation="SubPropertyOf")>>
 
 #+END_SRC
-** Ontology
+** ELOT template ontology (ex:elot-template ex:elot-template/0.0)
 :PROPERTIES:
 :ID:       ELOT-ontology-declaration
 :custom_id:       ELOT-ontology-declaration
 :resourcedefs: yes
 :END:
-<<sec:ontology-declaration>>
-*** ELOT template ontology (ex:elot-template ex:elot-template/0.0)
 # - Import :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/
  - owl:versionInfo :: 0.0 start of ELOT
  - dcterms:title :: ELOT template ontology
