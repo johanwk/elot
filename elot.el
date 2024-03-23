@@ -35,6 +35,8 @@
 (require 'ob-lob) ; Library of Babel
 (require 'ox) ; export functions
 (require 'ol) ; link functions
+(require 'htmlize) ; fontify blocks
+(require 'omn-mode) ; OMN support
 
 ;;;; Usage
 
@@ -299,6 +301,15 @@ Maybe also with tags :hello: on the right. Return abc:MyClassName in both cases.
       (resource-declarations entity-l owl-type))))
 ;;(cdr (org-subsection-descriptions))))
 ;; defun-resource-declaration ends here
+
+;; [[file:elot-lob.org::*Default local variables][Default local variables:2]]
+(defun update-link-abbrev ()
+  (setq-local org-link-abbrev-alist-local 
+	      (mapcar (lambda (x) 
+			(cons (replace-regexp-in-string ":" "" (car x)) (cadr x)))
+		      (cl-remove 'hline (org-babel-ref-resolve "prefix-table")))
+	      ))
+;; Default local variables:2 ends here
 
 ;; [[file:elot-lob.org::defun-class-patterns][defun-class-patterns]]
 (defun class-oneof-from-header (l)
