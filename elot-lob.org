@@ -323,6 +323,40 @@ annotations in a future improved version, from sub-items.
   ;;(cdr (org-subsection-descriptions))))
 #+END_SRC
 *** Write typical class patterns
+*** Update link alist from table
+*** Default local variables
+#+begin_src emacs-lisp :tangle elot-defaults.el
+  ;; default settings, replaces Local Variables: block
+  (setq-local
+   org-confirm-babel-evaluate nil
+   org-export-allow-bind-keywords t
+   org-babel-default-inline-header-args '((:exports . "code"))
+   org-latex-src-block-backend 'listings
+   org-latex-classes '(("book" "\\documentclass[10pt]{scrbook}" ontology-resource-section))
+   org-latex-prefer-user-labels t
+   org-latex-image-default-scale .8
+   time-stamp-line-limit 100
+   time-stamp-format "%Y-%m-%d %H:%M"
+   time-stamp-active t
+   time-stamp-start "(version of "
+   time-stamp-end ")"
+   org-startup-folded 'show2levels
+   )
+  (progn
+    (update-link-abbrev)
+    (org-babel-lob-ingest "elot-lob.org")
+    (load (expand-file-name "./elot.el"))
+    (org-set-startup-visibility)
+    )
+#+end_src
+#+begin_src emacs-lisp
+(defun update-link-abbrev ()
+  (setq-local org-link-abbrev-alist-local 
+	      (mapcar (lambda (x) 
+			(cons (replace-regexp-in-string ":" "" (car x)) (cadr x)))
+		      (cl-remove 'hline (org-babel-ref-resolve "prefix-table")))
+	      ))
+#+end_src
 **** one-of
 It's common to say a class is a subclass of the union of immediate
 subclasses. The function =class-oneof-from-header= is intended to be
@@ -384,6 +418,49 @@ function =class-disjoint-from-header= is intended to be used in
       (let ((hierarchy-l (org-list-siblings)))
         (resource-taxonomy-from-l hierarchy-l owl-type owl-relation))))
 #+END_SRC
+*** Export SETUPFILE
+#+begin_src org :tangle elot-default-export.org
+# allow underscores in export
+#+OPTIONS: ^:{}
+# number really deep 
+#+OPTIONS: H:8 num:8
+#+OPTIONS: TOC: 3
+#+LATEX_CLASS: book
+#+LATEX_CLASS_OPTIONS: [11pt,numbers=noenddot,twoside=false]
+#+LaTeX_HEADER: \sloppy
+#+LATEX_HEADER_EXTRA: \usepackage{svg}
+#+LaTeX_HEADER: \hbadness=10000 % less warnings
+#+LaTeX_HEADER: \usepackage{newtxtext,newtxmath}
+#+LaTeX_HEADER: \usepackage{textcomp}
+#+LaTeX_HEADER: \usepackage{float}
+#+LaTeX_HEADER: \usepackage[a4paper,left=3cm,right=2cm,top=2.5cm,bottom=2.5cm]{geometry}
+#+LaTeX_HEADER: \usepackage{scrhack}
+#+LATEX_HEADER: \newenvironment{note}{\par\noindent\small\ignorespaces}{\par}
+#+LaTeX_HEADER: \setparsizes{0.0em}{6pt plus 0.1\baselineskip}{1.0em plus 1.0fil}
+#+LaTeX_HEADER: \usepackage{array}\newcolumntype{H}{@{}>{\lrbox0}l<{\endlrbox}}
+#+LaTeX_HEADER: \hypersetup{pdfborder=0 0 0}
+#+LaTeX_HEADER: \setcounter{tocdepth}{2}
+#+LaTeX_HEADER: \setcounter{secnumdepth}{5}
+#+LaTeX_HEADER: \frenchspacing
+#+LaTeX_HEADER: \usepackage{listings,xcolor}
+#+LaTeX_HEADER: \usepackage{rotating}
+#+LaTeX_HEADER: \lstdefinelanguage{omn}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
+#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
+#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
+#+LaTeX_HEADER: \lstdefinelanguage{ttl}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
+#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
+#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
+#+LaTeX_HEADER: \lstdefinelanguage{sparql}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
+#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
+#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
+#+LaTeX_HEADER: \lstdefinelanguage{stottr}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
+#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
+#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
+#+LaTeX_HEADER: \lstdefinelanguage{json}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
+#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
+#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
+#+LaTeX_HEADER: \usepackage{enumitem} \setlist[description]{font=\normalfont\itshape\space}
+#+end_src
 *** Headings in LaTeX export
 We format headings with indentation to match the subtype level in the
 ontology: for each level down we add a full stop and a space.
