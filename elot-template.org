@@ -2,7 +2,7 @@
 #+title: ELOT template file
 #+subtitle: Blank file for writing an OWL ontology
 #+author: i-am-the-author
-#+date: WIP (version of 2024-03-24 18:10)
+#+date: WIP (version of 2024-03-24 20:59)
 
 * ELOT template ontology Resources
 :PROPERTIES:
@@ -10,9 +10,7 @@
 :header-args:omn: :tangle ./ELOT.omn :noweb yes
 :header-args:emacs-lisp: :tangle no :wrap "SRC omn" :exports results
 :header-args: :padline yes
-:header-args+: :var ontid="ELOT"
 :END:
-#+OPTIONS: TOC: 0
 :OMN:
 #+begin_src omn :exports none
   ##
@@ -32,7 +30,7 @@
   Datatype: xsd:boolean
 
   ## Class declarations
-  <<resource-declarations(hierarchy="ELOT-class-hierarchy", owl-type="Class", owl-relation="SubClassOf")>>
+  <<resource-declarations(hierarchy="ELOT-class-hierarchy", owl-type="Class")>>
 
   ## Object property declarations
   <<resource-declarations(hierarchy="ELOT-object-property-hierarchy", owl-type="ObjectProperty")>>
@@ -48,7 +46,7 @@
   <<resource-taxonomy(hierarchy="ELOT-object-property-hierarchy", owl-type="ObjectProperty", owl-relation="SubPropertyOf")>>
   <<resource-taxonomy(hierarchy="ELOT-data-property-hierarchy", owl-type="DataProperty", owl-relation="SubPropertyOf")>>
   <<resource-taxonomy(hierarchy="ELOT-annotation-property-hierarchy", owl-type="AnnotationProperty", owl-relation="SubPropertyOf")>>
-#+END_SRC
+#+end_src
 :END:
 ** Prefixes
 The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
@@ -86,13 +84,11 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
   (mapconcat (lambda (row) (format "PREFIX %-5s <%s>" (car row) (cadr row)))
              prefixes "\n")
 #+end_src
-
 #+name: omn-prefixes
 #+begin_src emacs-lisp :var prefixes=prefix-table :exports none
   (mapconcat (lambda (row) (format "Prefix: %-5s <%s>" (car row) (cadr row)))
              prefixes "\n")
 #+end_src
-
 #+name: ttl-prefixes
 #+begin_src emacs-lisp :var prefixes=prefix-table :exports none
   (mapconcat (lambda (row) (format "@prefix %-5s <%s> ." (car row) (cadr row)))
@@ -178,8 +174,3 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 *** dcterms:publisher
 *** dc:rights
 *** dcterms:description
-
-# (defun my-latex-filter-omn-list (text backend info)
-#   "Format OMN content in description lists"
-#   (when (org-export-derived-backend-p backend 'latex)
-#     (replace-regexp-in-string "item.{\\(SubClassOf\\)}. \\(.*\\)" "item[\\\\ttfamily \\1] \\\\lstinline[language=omn]{\\2}" text)))

@@ -35,6 +35,7 @@
 (require 'ob-lob) ; Library of Babel
 (require 'ox) ; export functions
 (require 'ol) ; link functions
+(require 'org-tempo) ; link functions
 (require 'htmlize) ; fontify blocks
 (require 'omn-mode) ; OMN support
 
@@ -486,7 +487,3 @@ Maybe also with tags :hello: on the right. Return abc:MyClassName in both cases.
 (unless (fboundp 'org-babel-execute:ttl)                
   (defalias 'org-babel-execute:ttl 'org-babel-execute:passthrough))
 ;; Passthrough execute for ttl blocks:1 ends here
-
-;; [[file:../elot-defs.org::*End with "provides"][End with "provides":1]]
-(provide 'elot)
-;; End with "provides":1 ends here

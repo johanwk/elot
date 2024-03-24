@@ -42,6 +42,7 @@
   (require 'ob-lob) ; Library of Babel
   (require 'ox) ; export functions
   (require 'ol) ; link functions
+  (require 'org-tempo) ; link functions
   (require 'htmlize) ; fontify blocks
   (require 'omn-mode) ; OMN support
 
@@ -695,6 +696,183 @@ To get the ttl block to process correctly, for rdfpuml use.
 (unless (fboundp 'org-babel-execute:ttl)                
   (defalias 'org-babel-execute:ttl 'org-babel-execute:passthrough))
 #+end_src
+
+*** Tempo templates
+** ELOT document header
+Insert a document header with =<oh=.
+#+begin_src emacs-lisp :results none
+  (tempo-define-template "elot-doc-header"
+   '("# -*- eval: (load-library \"elot-defaults\") -*-" > n
+    "#+title: " (p "Document title: " doctitle) > n
+    "#+subtitle: An OWL ontology" > n
+    "#+author: " (p "Author name: " authname) > n
+    "#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
+    )
+   "<oh"
+   "ELOT document header"
+   'org-tempo-tags)
+#+end_src
+** ELOT ontology skeleton
+Insert a skeleton with =<os=.
+#+begin_src emacs-lisp :results none
+  (tempo-define-template
+   "elot-ont-skeleton"
+   '(n > "* " (p "Ontology identifier localname: " ontlocalname) > n
+       ":PROPERTIES:" > n
+       ":ID: " (s ontlocalname) > n
+       ":header-args:omn: :tangle ./" (s ontlocalname) ".omn :noweb yes" > n
+       ":header-args:emacs-lisp: :tangle no :wrap \"SRC omn\" :exports results" > n
+       ":header-args: :padline yes" > n
+       ":END:" > n
+       ":OMN:" > n
+       "#+begin_src omn :exports none" > n
+       "  ##" > n
+       "  ## This is the " (s ontlocalname) " ontology" > n
+       "  ## This document is in OWL 2 Manchester Syntax, see https://www.w3.org/TR/owl2-manchester-syntax/" > n
+       "  ##" > n n
+       "  ## Prefixes" > n
+       "  <<omn-prefixes()>>" > n  n
+       "  ## Ontology declaration" > n
+       "  <<resource-declarations(hierarchy=\"" (s ontlocalname) "-ontology-declaration\", owl-type=\"Ontology\", owl-relation=\"\")>>" > n 
+       "" > n
+       "  ## Data type declarations" > n
+       "  Datatype: xsd:dateTime" > n
+       "  Datatype: xsd:date" > n
+       "  Datatype: xsd:boolean" > n
+       "" > n
+       "  ## Class declarations" > n
+       "  <<resource-declarations(hierarchy=\"" (s ontlocalname) "-class-hierarchy\", owl-type=\"Class\")>>" > n
+       "" > n
+       "  ## Object property declarations" > n
+       "  <<resource-declarations(hierarchy=\"" (s ontlocalname) "-object-property-hierarchy\", owl-type=\"ObjectProperty\")>>" > n
+       "" > n
+       "  ## Data property declarations" > n
+       "  <<resource-declarations(hierarchy=\"" (s ontlocalname) "-data-property-hierarchy\", owl-type=\"DataProperty\")>>" > n
+       "" > n
+       "  ## Annotation property declarations" > n
+       "  <<resource-declarations(hierarchy=\"" (s ontlocalname) "-annotation-property-hierarchy\", owl-type=\"AnnotationProperty\")>>" > n
+       "" > n
+       "  ## Resource taxonomies" > n
+       "  <<resource-taxonomy(hierarchy=\"" (s ontlocalname) "-class-hierarchy\", owl-type=\"Class\", owl-relation=\"SubClassOf\")>>" > n
+       "  <<resource-taxonomy(hierarchy=\"" (s ontlocalname) "-object-property-hierarchy\", owl-type=\"ObjectProperty\", owl-relation=\"SubPropertyOf\")>>" > n
+       "  <<resource-taxonomy(hierarchy=\"" (s ontlocalname) "-data-property-hierarchy\", owl-type=\"DataProperty\", owl-relation=\"SubPropertyOf\")>>" > n
+       "  <<resource-taxonomy(hierarchy=\"" (s ontlocalname) "-annotation-property-hierarchy\", owl-type=\"AnnotationProperty\", owl-relation=\"SubPropertyOf\")>>" > n
+       "#+end_src" > n
+       ":END:" > n
+  "** Prefixes
+  The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
+
+  ,#+name: prefix-table
+  ,#+attr_latex: :align lp{.8\textwidth} :font \small
+  ,#+caption: OWL ontology prefixes
+  | prefix    | uri                                                                            |
+  |-----------+--------------------------------------------------------------------------------|
+  | owl:      | http://www.w3.org/2002/07/owl#                                                 |
+  | rdf:      | http://www.w3.org/1999/02/22-rdf-syntax-ns#                                    |
+  | xml:      | http://www.w3.org/XML/1998/namespace                                           |
+  | xsd:      | http://www.w3.org/2001/XMLSchema#                                              |
+  | rdfs:     | http://www.w3.org/2000/01/rdf-schema#                                          |
+  | skos:     | http://www.w3.org/2004/02/skos/core#                                           |
+  | pav:      | http://purl.org/pav/                                                           |
+  | foaf:     | http://xmlns.com/foaf/0.1/                                                     |
+  | dc:       | http://purl.org/dc/elements/1.1/                                               |
+  | dcterms:  | http://purl.org/dc/terms/                                                      |
+  | prov:     | http://www.w3.org/ns/prov#                                                     |
+  | iof-av:   | https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/ |
+  | " (p "Ontology namespace prefix (without the \":\") " ontprefix) 
+  ":       | " (p "Ontology namespace in full (\"http ...\") " ontns) "                                                            |" > n
+  "*** Source blocks for prefixes                                     :noexport:
+  :PROPERTIES:
+  :header-args:omn: :tangle no
+  :END:
+  ,#+name: sparql-prefixes
+  ,#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+    (mapconcat (lambda (row) (format \"PREFIX %-5s <%s>\" (car row) (cadr row)))
+               prefixes \"\n\")
+  ,#+end_src
+  ,#+name: omn-prefixes
+  ,#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+    (mapconcat (lambda (row) (format \"Prefix: %-5s <%s>\" (car row) (cadr row)))
+               prefixes \"\n\")
+  ,#+end_src
+  ,#+name: ttl-prefixes
+  ,#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+    (mapconcat (lambda (row) (format \"@prefix %-5s <%s> .\" (car row) (cadr row)))
+               prefixes \"\n\")
+  ,#+end_src
+  "
+  "
+  ,** " (s ontlocalname) " ontology (ex:" (s ontlocalname) " ex:" (s ontlocalname) "/0.0)
+  :PROPERTIES:
+  :ID:       " (s ontlocalname) "-ontology-declaration
+  :custom_id: " (s ontlocalname) "-ontology-declaration
+  :resourcedefs: yes
+  :END:
+   # - Import :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/
+  - owl:versionInfo :: 0.0 start of " (s ontlocalname) "
+  - dcterms:title :: \"" (s ontlocalname) " ontology\"@en
+  - owl:versionInfo :: 0.0 start of " (s ontlocalname) "
+  - pav:lastUpdateOn :: {{{modification-time(\"%Y-%m-%dT%H:%M:%SZ\",t)}}}^^xsd:dateTime
+  - dcterms:license :: [[https://creativecommons.org/licenses/by-sa/4.0/]]
+  - dcterms:creator :: {{{author}}}
+  - dcterms:modified ::  {{{modification-time(\"%Y-%m-%d\",t)}}}^^xsd:date
+  - dcterms:publisher :: https://example.org/thepublisher
+  - dc:rights :: Copyright info here
+  - rdfs:comment :: The " (s ontlocalname) " ontology is ...
+  - dcterms:description :: The " (s ontlocalname) " ontology is ...
+
+  ,** Classes
+  :PROPERTIES:
+  :ID:       " (s ontlocalname) "-class-hierarchy
+  :custom_id: " (s ontlocalname) "-class-hierarchy
+  :resourcedefs: yes
+  :END:
+  ,*** My class (ex:MyClass)
+  - rdfs:comment :: Leave a comment here
+  ,** Object properties
+  :PROPERTIES:
+  :ID:       " (s ontlocalname) "-object-property-hierarchy
+  :custom_id: " (s ontlocalname) "-object-property-hierarchy
+  :resourcedefs: yes
+  :END:
+  ,** Data properties
+  :PROPERTIES:
+  :ID:       " (s ontlocalname) "-data-property-hierarchy
+  :custom_id: " (s ontlocalname) "-data-property-hierarchy
+  :resourcedefs: yes
+  :END:
+  ,** Annotation properties
+  :PROPERTIES:
+  :ID:       " (s ontlocalname) "-annotation-property-hierarchy
+  :custom_id: " (s ontlocalname) "-annotation-property-hierarchy
+  :resourcedefs: yes
+  :END:
+  ,*** owl:versionInfo
+  ,*** dcterms:title
+   - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+  ,*** dcterms:license
+   - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+  ,*** dcterms:creator
+   - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+  ,*** dcterms:modified
+   - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+  ,*** dcterms:publisher
+   - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+  ,*** dcterms:description
+   - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+  ,*** dc:rights
+   - rdfs:isDefinedBy :: http://purl.org/dc/elements/1.1/
+  ,*** pav:lastUpdateOn
+   - rdfs:isDefinedBy :: [[http://purl.org/pav/]]
+  "
+       )
+   "<os"
+   "ELOT ontology sections skeleton"
+   'org-tempo-tags)
+
+#+end_src
+
+
 
 *** End with "provides"
 #+begin_src emacs-lisp
