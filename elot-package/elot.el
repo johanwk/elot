@@ -389,40 +389,22 @@ Maybe also with tags :hello: on the right. Return abc:MyClassName in both cases.
 ;; defun-resource-taxonomy ends here
 
 ;; [[file:../elot-defs.org::defun-latex-export][defun-latex-export]]
-;; (defun ontology-resource-section (level numbered-p)
-;;   (if numbered-p
-;;       (if (= 1 level) "\\section{%s}" 
-;;          (if (= 2 level) "\\subsection{%s}" "\\subsubsection{%s}"))
-;;    "\\subsubsection*{%s}"))
 (defun ontology-resource-section (level numbered-p)
   (if numbered-p
-      (if (= 1 level) "\\chapter{%s}" 
-        (if (= 2 level) "\\section{%s}"
-          (if (= 3 level) "\\subsection{%s}" 
-            "\\subsubsection{%s}")))
-          ;;     (if (= 5 level) "\\paragraph{%s}"
-          ;;          "\\subparagraph{%s}")))))
-    (if (= 1 level) "\\addchap{%s}"  ; Koma-script command, see https://tex.stackexchange.com/questions/193767/how-to-use-unnumbered-chapters-with-koma-script/193799#193799
-      (if (= 2 level) "\\addsec{%s}"
-        (if (= 3 level) "\\subsection*{%s}"
-           "\\subsubsection*{%s}")))
-        ;;     (if (= 5 level) "\\paragraph*{%s}"
-        ;;       "\\subparagraph{%s}")))))))
+    (cond 
+      ((= 1 level) "\\chapter{%s}")
+      ((= 2 level) "\\section{%s}")
+      ((= 3 level) "\\subsection{%s}")
+      ((= 4 level) "\\subsubsection{%s}")
+      ((= 5 level) "\\subsubsubsection{%s}")
+      ((= 6 level) "\\paragraph{%s}")
+      (t "\\subparagraph{%s}"))
+    (cond ;; Koma-script commands, see https://tex.stackexchange.com/questions/193767/how-to-use-unnumbered-chapters-with-koma-script/193799#193799
+     ((= 1 level) "\\addchap{%s}")
+     ((= 2 level) "\\addsec{%s}")
+     ((= 3 level) "\\subsection*{%s}")
+     (t "\\subsubsection*{%s}"))
     ))
-
-(defun latex-filter-headline-dots (text backend info)
-  "Ensure dots in headlines."
-  (when (org-export-derived-backend-p backend 'latex)
-    (let* ((prop-point (next-property-change 0 text))
-           (this-element (plist-get (text-properties-at prop-point text) :parent))
-           (this-element-level (org-element-property :level this-element))
-           (resourcedef-p (org-export-get-node-property :RESOURCEDEFS this-element t)))
-      (when (and resourcedef-p (> this-element-level 2))
-        (string-match "section\\(.?\\){" text)
-        (replace-match (concat "section\\1{\\\\itshape{}" 
-         (apply 'concat (make-list (- this-element-level 3) ".\\\\space{}")))
-                       nil nil text)
-        ))))
 ;; defun-latex-export ends here
 
 ;; [[file:../elot-defs.org::defun-get-heading-nocookie][defun-get-heading-nocookie]]
