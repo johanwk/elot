@@ -1,60 +1,56 @@
-# -*- eval: (load-file "elot-defaults.el") -*-
+# -*- eval: (load-library "elot-defaults") -*-
 #+title: ELOT template file
 #+subtitle: Blank file for writing an OWL ontology
 #+author: i-am-the-author
-#+date: WIP (version of 2024-03-23 01:31)
-# #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
-#+SETUPFILE: elot-default-export.org
-
-#
-# TEMPORARY: before exporting or tangling, open elot-lob.org and tangle
-#
-
+#+date: WIP (version of 2024-03-24 01:59)
 
 * ELOT template ontology Resources
 :PROPERTIES:
- :ID:       ELOT-resource-hierarchy
+:ID:       ELOT-resource-hierarchy
 :header-args:omn: :tangle ./ELOT.omn :noweb yes
 :header-args:emacs-lisp: :tangle no :wrap "SRC omn" :exports results
 :header-args: :padline yes
+:header-args+: :var ontid="ELOT"
 :END:
-** Declarations                                                    :noexport:
-:PROPERTIES:
-:custom_id: sec:declarations
-:VISIBILITY: folded
-:END:
-*** Comment at top of file                                         :noexport:
-#+begin_src omn
+#+OPTIONS: TOC: 0
+:OMN:
+#+begin_src omn :exports none
   ##
   ## This is an ELOT template ontology
   ## This document is in OWL 2 Manchester Syntax, see https://www.w3.org/TR/owl2-manchester-syntax/
   ##
-#+end_src
-*** Prefix block
-#+begin_src omn
-<<omn-prefixes()>>
-#+end_src
-*** Source blocks for prefixes                                     :noexport:
-:PROPERTIES:
-:header-args:omn: :tangle no
+
+  ## Prefixes
+  <<omn-prefixes()>>
+
+  ## Ontology declaration
+  <<resource-declarations(hierarchy="ELOT-ontology-declaration", owl-type="Ontology", owl-relation="")>>
+
+  ## Data type declarations
+  Datatype: xsd:dateTime
+  Datatype: xsd:date
+  Datatype: xsd:boolean
+
+  ## Class declarations
+  <<resource-declarations(hierarchy="ELOT-class-hierarchy", owl-type="Class", owl-relation="SubClassOf")>>
+
+  ## Object property declarations
+  <<resource-declarations(hierarchy="ELOT-object-property-hierarchy", owl-type="ObjectProperty")>>
+
+  ## Data property declarations
+  <<resource-declarations(hierarchy="ELOT-data-property-hierarchy", owl-type="DataProperty")>>
+
+  ## Annotation property declarations
+  <<resource-declarations(hierarchy="ELOT-annotation-property-hierarchy", owl-type="AnnotationProperty")>>
+
+  ## Resource taxonomies
+  <<resource-taxonomy(hierarchy="ELOT-class-hierarchy", owl-type="Class", owl-relation="SubClassOf")>>
+  <<resource-taxonomy(hierarchy="ELOT-object-property-hierarchy", owl-type="ObjectProperty", owl-relation="SubPropertyOf")>>
+  <<resource-taxonomy(hierarchy="ELOT-data-property-hierarchy", owl-type="DataProperty", owl-relation="SubPropertyOf")>>
+  <<resource-taxonomy(hierarchy="ELOT-annotation-property-hierarchy", owl-type="AnnotationProperty", owl-relation="SubPropertyOf")>>
+#+END_SRC
 :END:
-#+name: sparql-prefixes
-#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
-  (mapconcat (lambda (row) (format "PREFIX %-5s <%s>" (car row) (cadr row)))
-             prefixes "\n")
-#+end_src
-
-#+name: omn-prefixes
-#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
-  (mapconcat (lambda (row) (format "Prefix: %-5s <%s>" (car row) (cadr row)))
-             prefixes "\n")
-#+end_src
-
-#+name: ttl-prefixes
-#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
-  (mapconcat (lambda (row) (format "@prefix %-5s <%s> ." (car row) (cadr row)))
-             prefixes "\n")
-#+end_src** Prefixes
+** Prefixes
 The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
 
 #+name: prefix-table
@@ -80,56 +76,27 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 | dcmitype: | http://purl.org/dc/dcmitype/                                                   |
 | prov:     | http://www.w3.org/ns/prov#                                                     |
 | iof-av:   | https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/ |
-*** Ontology declaration                                           :noexport:
-#+begin_src omn
-  <<resource-declarations(hierarchy="ELOT-ontology-declaration", owl-type="Ontology", owl-relation="")>>
+*** Source blocks for prefixes                                     :noexport:
+:PROPERTIES:
+:header-args:omn: :tangle no
+:END:
+#+name: sparql-prefixes
+#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+  (mapconcat (lambda (row) (format "PREFIX %-5s <%s>" (car row) (cadr row)))
+             prefixes "\n")
 #+end_src
-*** Data type declarations                                         :noexport:
-#+BEGIN_SRC omn 
-## Data type declarations
-Datatype: xsd:dateTime
 
-Datatype: xsd:date
+#+name: omn-prefixes
+#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+  (mapconcat (lambda (row) (format "Prefix: %-5s <%s>" (car row) (cadr row)))
+             prefixes "\n")
+#+end_src
 
-Datatype: xsd:boolean
-#+END_SRC
-
-*** Class declarations																						 :noexport:
-#+BEGIN_SRC omn  
-  ## Class declarations
-
-  <<resource-declarations(hierarchy="ELOT-class-hierarchy", owl-type="Class", owl-relation="SubClassOf")>>
-#+END_SRC
-*** Object property declarations																	 :noexport:
-#+BEGIN_SRC omn 
-  ## Object property declarations
-
-  <<resource-declarations(hierarchy="ELOT-object-property-hierarchy", owl-type="ObjectProperty")>>
-#+END_SRC
-*** Data property declarations																		 :noexport:
-#+BEGIN_SRC omn 
-  ## Data property declarations
-
-  <<resource-declarations(hierarchy="ELOT-data-property-hierarchy", owl-type="DataProperty")>>
-#+END_SRC
-*** Annotation property declarations															 :noexport:
-#+BEGIN_SRC omn 
-  ## Annotation property declarations
-
-  <<resource-declarations(hierarchy="ELOT-annotation-property-hierarchy", owl-type="AnnotationProperty")>>
-#+END_SRC
-*** Ontology hierarchy																						 :noexport:
-#+BEGIN_SRC omn 
-  ## Resource taxonomies
-  <<resource-taxonomy(hierarchy="ELOT-class-hierarchy", owl-type="Class", owl-relation="SubClassOf")>>
-
-  <<resource-taxonomy(hierarchy="ELOT-object-property-hierarchy", owl-type="ObjectProperty", owl-relation="SubPropertyOf")>>
-
-  <<resource-taxonomy(hierarchy="ELOT-data-property-hierarchy", owl-type="DataProperty", owl-relation="SubPropertyOf")>>
-
-  <<resource-taxonomy(hierarchy="ELOT-annotation-property-hierarchy", owl-type="AnnotationProperty", owl-relation="SubPropertyOf")>>
-
-#+END_SRC
+#+name: ttl-prefixes
+#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+  (mapconcat (lambda (row) (format "@prefix %-5s <%s> ." (car row) (cadr row)))
+             prefixes "\n")
+#+end_src
 ** ELOT template ontology (ex:elot-template ex:elot-template/0.0)
 :PROPERTIES:
 :ID:       ELOT-ontology-declaration
@@ -142,9 +109,9 @@ Datatype: xsd:boolean
  - owl:versionInfo :: 0.0 start of ELOT
  - pav:lastUpdateOn :: {{{modification-time("%Y-%m-%dT%H:%M:%SZ",t)}}}^^xsd:dateTime
  - dcterms:license :: [[https://creativecommons.org/licenses/by-sa/4.0/]]
- - dcterms:creator :: https://orcid.org/0000-0002-7167-7321
+ - dcterms:creator :: {{{author}}}
  - dcterms:modified ::  {{{modification-time("%Y-%m-%d",t)}}}^^xsd:date
- - dcterms:publisher :: https://example.org
+ - dcterms:publisher :: https://example.org/thepublisher
  - dc:rights :: Copyright info here
  - rdfs:comment :: The ELOT template ontology is a template
  - dcterms:description :: The ELOT template ontology is a template
@@ -160,7 +127,7 @@ DisjointClasses: ex:C3, ex:C4
 :custom_id:       ELOT-class-hierarchy
 :resourcedefs: yes
 :END:
-*** I'm C1 (ex:C1)
+*** theclass C1 (ex:C1)
  - rdfs:comment :: The class label may be entered as a heading, with
    the URI in parentheses.
  - rdfs:seeAlso :: rdl:sdf
@@ -169,7 +136,7 @@ DisjointClasses: ex:C3, ex:C4
    - rdfs:comment :: describe the restriction
  - SubClassOf :: ex:C3
  - SubClassOf :: ex:C4
-*** I'm C2 (ex:C2)                                           :oneof:disjoint:
+*** theclass C2 (ex:C2)                                      :oneof:disjoint:
  - rdfs:comment :: This class uses the org-mode properties "oneof" and
    "disjoint" to easily add disjointness axioms.
 **** ex:C2a
@@ -183,9 +150,6 @@ DisjointClasses: ex:C3, ex:C4
 :custom_id:       ELOT-object-property-hierarchy
 :resourcedefs: yes
 :END:
-#+BEGIN_SRC omn :exports none
-## Object property details
-#+END_SRC
 *** ex:r
 *** ex:s
 ** Data properties
@@ -194,19 +158,13 @@ DisjointClasses: ex:C3, ex:C4
 :custom_id:       ELOT-data-property-hierarchy
 :resourcedefs: yes
 :END:
-#+BEGIN_SRC omn :exports none
-## Data property details
-#+END_SRC
-*** ex:v
+
 ** Annotation properties
 :PROPERTIES:
 :ID:       ELOT-annotation-property-hierarchy
 :custom_id:       ELOT-annotation-property-hierarchy
 :resourcedefs: yes
 :END:
-#+BEGIN_SRC omn :exports none
-## Annotation property details
-#+END_SRC
 *** dcterms:title
 *** owl:versionInfo
 *** pav:lastUpdateOn

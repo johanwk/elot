@@ -64,10 +64,10 @@
     (replace-regexp-in-string "\\([^
   ]\\)\n[ \t]*" "\\1 "
    (string-trim (apply 'concat
-                  (org-element-map x '(paragraph plain-list)
-                    (lambda (y) (substring-no-properties 
-                                 (org-element-interpret-data y)))
-                    nil nil 'plain-list)))))
+                       (org-element-map x '(paragraph plain-list)
+                         (lambda (y) (substring-no-properties 
+                                      (org-element-interpret-data y)))
+                         nil nil 'plain-list)))))
   (defun org-elt-item-str (x)
     (list (org-elt-item-tag-str x) (org-elt-item-pars-str x)))
   (defun org-descriptions-in-section-helper ()
@@ -104,20 +104,20 @@
       (save-excursion
         (unless (org-at-heading-p) (org-previous-visible-heading 1)) ; ensure we are at a heading
         (org-narrow-to-subtree)
-        (outline-next-heading)  ; don't include the section that has the target property id itself
-        (let (ret)
-          (while (let ((heading (substring-no-properties (org-get-heading nil t)))
-                       (descriptions (org-descriptions-in-section)))
-                   (unless (or (string-match-p "COMMENT" heading)
-                               (member "nodeclare" (org-get-tags (point) t)))
-                     (setq ret
-                           (cons
-                            (if descriptions
-                                (list heading descriptions)
-                              (list heading))
-                            ret)))
-                   (outline-next-heading)))
-          (nreverse ret)))))
+        (if (outline-next-heading)  ; don't include the section that has the target property id itself
+            (let (ret)
+              (while (let ((heading (substring-no-properties (org-get-heading nil t)))
+                           (descriptions (org-descriptions-in-section)))
+                       (unless (or (string-match-p "COMMENT" heading)
+                                   (member "nodeclare" (org-get-tags (point) t)))
+                         (setq ret
+                               (cons
+                                (if descriptions
+                                    (list heading descriptions)
+                                  (list heading))
+                                ret)))
+                       (outline-next-heading)))
+              (nreverse ret))))))
 #+END_SRC
 
 *** puri expansion
@@ -232,17 +232,17 @@ annotations in a future improved version, from sub-items.
 #+name: defun-resource-declaration
 #+BEGIN_SRC emacs-lisp :results silent
   (defun omn-declare (str owl-type)
-     "Given a string STR and an OWL type owl-type, write a Manchester Syntax entity declaration. Add rdfs:label annotation. If a parenthesis is given, use that as resource id."
-    ; check whether we have a label and a resource in parentheses
-     (let* ((suri (entity-from-header str))
-            ;; (prefix (if (string-match "\\(.*\\):\\(.*\\)" suri)
-            ;;             (match-string 1 suri) ""))
-            ;; (localname (if (string= prefix "") suri (match-string 2 suri)))
-            ;; (label (if (string-match "\\(.+\\) (.*)" str)
-            ;;            (match-string 1 str) localname))
-            )
-       (concat owl-type ": " suri)))
-       ;;               "\n    Annotations: rdfs:label \"" label "\"")))
+    "Given a string STR and an OWL type owl-type, write a Manchester Syntax entity declaration. Add rdfs:label annotation. If a parenthesis is given, use that as resource id."
+                                          ; check whether we have a label and a resource in parentheses
+    (let* ((suri (entity-from-header str))
+           ;; (prefix (if (string-match "\\(.*\\):\\(.*\\)" suri)
+           ;;             (match-string 1 suri) ""))
+           ;; (localname (if (string= prefix "") suri (match-string 2 suri)))
+           ;; (label (if (string-match "\\(.+\\) (.*)" str)
+           ;;            (match-string 1 str) localname))
+           )
+      (concat owl-type ": " suri)))
+  ;;               "\n    Annotations: rdfs:label \"" label "\"")))
 
   (defun annotation-entries (l &optional sep)
     "l is a list of puri--string pairs, each perhaps with a trailing list of similar, meta-annotation pairs. sep is 2 x indent blanks"
@@ -254,38 +254,38 @@ annotations in a future improved version, from sub-items.
           (l-uri-entries
            (cl-remove-if (lambda (x) (string-equal (car x)
                                                    (unprefix-uri (car x) org-link-abbrev-alist-local)))
-              l)))
-    (if (atom l) "\n"
-      (concat "\n" indent "Annotations: " 
-              (mapconcat (lambda (y)
-                           (concat
-                            (if (consp (caddr y)) ; we have meta-annotations
-                                (concat (annotation-entries (cddr y) 4) "\n " indent))
-                            (car y)
-                            (annotation-string-or-uri (cadr y))))
-                         l-uri-entries
-                         (concat ",\n " indent))))))
+                         l)))
+      (if (atom l) "\n"
+        (concat "\n" indent "Annotations: " 
+                (mapconcat (lambda (y)
+                             (concat
+                              (if (consp (caddr y)) ; we have meta-annotations
+                                  (concat (annotation-entries (cddr y) 4) "\n " indent))
+                              (car y)
+                              (annotation-string-or-uri (cadr y))))
+                           l-uri-entries
+                           (concat ",\n " indent))))))
 
   (defun restriction-entries (l)
     "l is a list of puri--string pairs, except we'll pick up Manchester Syntax vocabulary and use as such"
     (let ((indent (make-string 2 ?\ ))
           (l-omn-entries
            (cl-remove-if-not (lambda (x) (member (car x)
-                               '("Characteristics" "Domain" "Range" "SubClassOf" "SubPropertyOf" "EquivalentTo" "DisjointWith" "InverseOf" "SubPropertyChain" "Import")))
+                                                 '("Characteristics" "Domain" "Range" "SubClassOf" "SubPropertyOf" "EquivalentTo" "DisjointWith" "InverseOf" "SubPropertyChain" "Import")))
                              l)))
       (if (atom l) "\n"
         (concat "\n" indent
-              (mapconcat (lambda (y)
-                           (concat
-                            (car y) ": "
-                            (if (consp (caddr y)) ; we have meta-annotations
-                                (concat (annotation-entries (cddr y) 4) "\n " indent))
-                            (if (string-equal (car y) "Import") ; ontology import special case
-                                (annotation-string-or-uri (cadr y))
-                            (omn-restriction-string (cadr y)))
-                            ))
-                         l-omn-entries
-                         (concat "\n" indent))))))
+                (mapconcat (lambda (y)
+                             (concat
+                              (car y) ": "
+                              (if (consp (caddr y)) ; we have meta-annotations
+                                  (concat (annotation-entries (cddr y) 4) "\n " indent))
+                              (if (string-equal (car y) "Import") ; ontology import special case
+                                  (annotation-string-or-uri (cadr y))
+                                (omn-restriction-string (cadr y)))
+                              ))
+                           l-omn-entries
+                           (concat "\n" indent))))))
 
   (defun omn-annotate (l)
     (let* ((str (car l))
@@ -308,7 +308,7 @@ annotations in a future improved version, from sub-items.
      (lambda (x) 
        (concat
         (omn-declare (car x) owl-type)
-        ; if annotations, add to the annotation block that has been started with rdfs:label
+                                          ; if annotations, add to the annotation block that has been started with rdfs:label
         (omn-annotate x)
         (omn-restrict x)
         ))
@@ -319,7 +319,9 @@ annotations in a future improved version, from sub-items.
     (save-excursion
       (org-id-goto header-id)
       (let ((entity-l (org-subsection-descriptions)))
-        (resource-declarations entity-l owl-type))))
+        (if entity-l 
+            (resource-declarations entity-l owl-type)
+          "## (none)"))))
   ;;(cdr (org-subsection-descriptions))))
 #+END_SRC
 *** Write typical class patterns
@@ -341,6 +343,8 @@ annotations in a future improved version, from sub-items.
    time-stamp-start "(version of "
    time-stamp-end ")"
    org-startup-folded 'show2levels
+   org-export-with-sub-superscripts nil  ; preserve "_"
+   org-export-headline-levels 8  ; deep numbering
    )
   (progn
     (require 'elot)
@@ -414,9 +418,10 @@ function =class-disjoint-from-header= is intended to be used in
     "HEADER-ID is an org location id, OWL-TYPE is Class, etc., OWL-RELATION is SubClassOf, etc."
     (save-excursion
       (org-id-goto header-id)
-      (org-goto-first-child)
-      (let ((hierarchy-l (org-list-siblings)))
-        (resource-taxonomy-from-l hierarchy-l owl-type owl-relation))))
+      (if (org-goto-first-child)
+          (let ((hierarchy-l (org-list-siblings)))
+            (resource-taxonomy-from-l hierarchy-l owl-type owl-relation))
+        (concat "## no " owl-type "taxonomy"))))
 #+END_SRC
 *** Headings in LaTeX export
 We format headings with indentation to match the subtype level in the
@@ -609,47 +614,4 @@ To get the ttl block to process correctly, for rdfpuml use.
 *** End with "provides"
 #+begin_src emacs-lisp
 (provide 'elot)
-#+end_src
-** Default export SETUPFILE for LaTeX
-#+begin_src org :tangle ./elot-package/elot-default-export.org
-# allow underscores in export
-#+OPTIONS: ^:{}
-# number really deep 
-#+OPTIONS: H:8 num:8
-#+OPTIONS: TOC: 3
-#+LATEX_CLASS: book
-#+LATEX_CLASS_OPTIONS: [11pt,numbers=noenddot,twoside=false]
-#+LaTeX_HEADER: \sloppy
-#+LATEX_HEADER_EXTRA: \usepackage{svg}
-#+LaTeX_HEADER: \hbadness=10000 % less warnings
-#+LaTeX_HEADER: \usepackage{newtxtext,newtxmath}
-#+LaTeX_HEADER: \usepackage{textcomp}
-#+LaTeX_HEADER: \usepackage{float}
-#+LaTeX_HEADER: \usepackage[a4paper,left=3cm,right=2cm,top=2.5cm,bottom=2.5cm]{geometry}
-#+LaTeX_HEADER: \usepackage{scrhack}
-#+LATEX_HEADER: \newenvironment{note}{\par\noindent\small\ignorespaces}{\par}
-#+LaTeX_HEADER: \setparsizes{0.0em}{6pt plus 0.1\baselineskip}{1.0em plus 1.0fil}
-#+LaTeX_HEADER: \usepackage{array}\newcolumntype{H}{@{}>{\lrbox0}l<{\endlrbox}}
-#+LaTeX_HEADER: \hypersetup{pdfborder=0 0 0}
-#+LaTeX_HEADER: \setcounter{tocdepth}{2}
-#+LaTeX_HEADER: \setcounter{secnumdepth}{5}
-#+LaTeX_HEADER: \frenchspacing
-#+LaTeX_HEADER: \usepackage{listings,xcolor}
-#+LaTeX_HEADER: \usepackage{rotating}
-#+LaTeX_HEADER: \lstdefinelanguage{omn}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
-#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
-#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
-#+LaTeX_HEADER: \lstdefinelanguage{ttl}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
-#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
-#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
-#+LaTeX_HEADER: \lstdefinelanguage{sparql}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
-#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
-#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
-#+LaTeX_HEADER: \lstdefinelanguage{stottr}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
-#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
-#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
-#+LaTeX_HEADER: \lstdefinelanguage{json}{basicstyle=\footnotesize\ttfamily,commentstyle=\color{gray},frame=single,
-#+LaTeX_HEADER:   breaklines=true,breakatwhitespace=true,postbreak=\mbox{{\color{gray}\tiny$\rightarrow$}},
-#+LaTeX_HEADER:   tabsize=2,comment=[l]{\#},columns=fullflexible,}  % this could be improved...
-#+LaTeX_HEADER: \usepackage{enumitem} \setlist[description]{font=\normalfont\itshape\space}
 #+end_src
