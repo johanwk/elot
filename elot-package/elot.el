@@ -42,6 +42,33 @@
 
 ;; ... create a new file, use <template inserting function> to insert a template ontology ...
 
+;; [[file:../elot-defs.org::*OMN keywords][OMN keywords:1]]
+(defvar elot-omn-property-keywords
+'(
+    "EquivalentTo"
+    "SubClassOf"
+    "Characteristics"
+    "DisjointWith"
+    "Domain"
+    "Range"
+    "InverseOf"
+    "SubPropertyOf"
+    "SubPropertyChain"
+    "SameAs"
+    "DifferentFrom"
+    "Types"
+    "Facts"
+    "HasKey"
+    "Import"
+    ))
+;; OMN keywords:1 ends here
+
+;; [[file:../elot-defs.org::*Looking at][Looking at:1]]
+(defun at-ontology-heading ()
+  (let ((id (or (org-entry-get (point) "ID") "")))
+   (string-match "ontology-declaration" id)))
+;; Looking at:1 ends here
+
 ;; [[file:../elot-defs.org::defun-desc-lists][defun-desc-lists]]
 (defun org-elt-exists (x elt)
   (org-element-map x elt #'identity))
@@ -94,7 +121,9 @@
     (save-excursion
       (unless (org-at-heading-p) (org-previous-visible-heading 1)) ; ensure we are at a heading
       (org-narrow-to-subtree)
-      (if (outline-next-heading)  ; don't include the section that has the target property id itself
+      (if ;; don't include the section that has the target property id itself, except if ontology section
+          (or (outline-next-heading)
+            (at-ontology-heading))
           (let (ret)
             (while (let ((heading (substring-no-properties (org-get-heading nil t)))
                          (descriptions (org-descriptions-in-section)))
@@ -212,16 +241,9 @@ Maybe also with tags :hello: on the right. Return abc:MyClassName in both cases.
 ;; [[file:../elot-defs.org::defun-resource-declaration][defun-resource-declaration]]
 (defun omn-declare (str owl-type)
   "Given a string STR and an OWL type owl-type, write a Manchester Syntax entity declaration. Add rdfs:label annotation. If a parenthesis is given, use that as resource id."
-                                        ; check whether we have a label and a resource in parentheses
-  (let* ((suri (entity-from-header str))
-         ;; (prefix (if (string-match "\\(.*\\):\\(.*\\)" suri)
-         ;;             (match-string 1 suri) ""))
-         ;; (localname (if (string= prefix "") suri (match-string 2 suri)))
-         ;; (label (if (string-match "\\(.+\\) (.*)" str)
-         ;;            (match-string 1 str) localname))
-         )
+  ;; check whether we have a label and a resource in parentheses
+  (let* ((suri (entity-from-header str)))
     (concat owl-type ": " suri)))
-;;               "\n    Annotations: rdfs:label \"" label "\"")))
 
 (defun annotation-entries (l &optional sep)
   "l is a list of puri--string pairs, each perhaps with a trailing list of similar, meta-annotation pairs. sep is 2 x indent blanks"
@@ -250,7 +272,7 @@ Maybe also with tags :hello: on the right. Return abc:MyClassName in both cases.
   (let ((indent (make-string 2 ?\ ))
         (l-omn-entries
          (cl-remove-if-not (lambda (x) (member (car x)
-                                               '("Characteristics" "Domain" "Range" "SubClassOf" "SubPropertyOf" "EquivalentTo" "DisjointWith" "InverseOf" "SubPropertyChain" "Import")))
+                                               elot-omn-property-keywords))
                            l)))
     (if (atom l) "\n"
       (concat "\n" indent
@@ -287,7 +309,7 @@ Maybe also with tags :hello: on the right. Return abc:MyClassName in both cases.
    (lambda (x) 
      (concat
       (omn-declare (car x) owl-type)
-                                        ; if annotations, add to the annotation block that has been started with rdfs:label
+      ;; if annotations, add to the annotation block that has been started with rdfs:label
       (omn-annotate x)
       (omn-restrict x)
       ))
@@ -298,7 +320,7 @@ Maybe also with tags :hello: on the right. Return abc:MyClassName in both cases.
   (save-excursion
     (org-id-goto header-id)
     (let ((entity-l (org-subsection-descriptions)))
-      (if entity-l 
+      (if (or entity-l (string= owl-type "Ontology"))
           (resource-declarations entity-l owl-type)
         "## (none)"))))
 ;;(cdr (org-subsection-descriptions))))
