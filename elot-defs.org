@@ -698,7 +698,7 @@ To get the ttl block to process correctly, for rdfpuml use.
 #+end_src
 
 *** Tempo templates
-** ELOT document header
+**** ELOT document header
 Insert a document header with =<oh=.
 #+begin_src emacs-lisp :results none
   (tempo-define-template "elot-doc-header"
@@ -712,7 +712,7 @@ Insert a document header with =<oh=.
    "ELOT document header"
    'org-tempo-tags)
 #+end_src
-** ELOT ontology skeleton
+**** ELOT ontology skeleton
 Insert a skeleton with =<os=.
 #+begin_src emacs-lisp :results none
   (tempo-define-template
@@ -763,7 +763,7 @@ Insert a skeleton with =<os=.
   The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
 
   ,#+name: prefix-table
-  ,#+attr_latex: :align lp{.8\textwidth} :font \small
+  ,#+attr_latex: :align lp{.8\\textwidth} :font \small
   ,#+caption: OWL ontology prefixes
   | prefix    | uri                                                                            |
   |-----------+--------------------------------------------------------------------------------|
@@ -787,7 +787,7 @@ Insert a skeleton with =<os=.
   :END:
   ,#+name: sparql-prefixes
   ,#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
-    (mapconcat (lambda (row) (format \"PREFIX %-5s <%s>\" (car row) (cadr row)))
+    (mapconcat (lambda (row) (format \"PREFIX %-5s <%s>\" (car row) (cadr row)))t
                prefixes \"\n\")
   ,#+end_src
   ,#+name: omn-prefixes
