@@ -79,6 +79,18 @@ will change, so the appropriate keywords are included.
       "Import"
       ))
 #+end_src
+
+We add a filter to make OMN in description lists =\ttfamily=. See [[https://orgmode.org/manual/Advanced-Export-Configuration.html][manual]].
+#+begin_src emacs-lisp
+  (defun my-latex-filter-omn-list (text backend info)
+    "Format OMN content in description lists"
+    (when (org-export-derived-backend-p backend 'latex)
+      (when (seq-some (lambda (x) (string-match x text))
+             elot-omn-property-keywords)
+        (replace-regexp-in-string "\\\\item.{\\([a-zA-Z]+\\)}. \\(.*\\)" "\\\\item[\\\\normalfont\\\\ttfamily\\\\small \\1] \\\\lstinline[language=omn]{\\2}" text))))
+  (add-to-list 'org-export-filter-plain-text-functions
+             'my-latex-filter-omn-list)
+#+end_src
 *** Looking at
 Introduced because ontology-defining headings don't have
 subsections. Revisit to cover other kinds of headings, and probably a
@@ -208,8 +220,11 @@ better way to identify than matching with ID string.
             (concat "  " str))
           (; not a puri -- normal string, wrap in quotes
            (equal str (unprefix-uri str org-link-abbrev-alist-local))
-           ; escape all quotes with \", note this gives invalid results if some are already escaped
-           (concat "  \"" (replace-regexp-in-string "\"" "\\\\\"" str) "\""))
+           ;; if a language tag @en is present, return unchanged
+           (if (string-match "\".*\"@[a-z]+" str)
+               (concat " " str)
+             ;; escape all quotes with \", note this gives invalid results if some are already escaped
+             (concat "  \"" (replace-regexp-in-string "\"" "\\\\\"" str) "\"")))
           (; else, a puri -- wrap in angles
            t (concat "  " (unprefix-uri str org-link-abbrev-alist-local)))))
 
