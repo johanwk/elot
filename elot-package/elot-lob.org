@@ -1,6 +1,7 @@
 #+title: ELOT library of babel
+#+SETUPFILE: "elot-default-export.org"
 
-* org source blocks
+* export
 ** Resource declarations (exctracted from outlines)
 #+name: resource-declarations
 #+BEGIN_SRC emacs-lisp :var hierarchy="ELOT-class-hierarchy" :var owl-type="Class" :wrap "SRC omn" 
@@ -11,6 +12,8 @@
 #+BEGIN_SRC emacs-lisp :var hierarchy="ELOT-class-hierarchy" :var owl-type="Class" :var owl-relation="SubClassOf" :wrap "SRC omn" 
 (resource-taxonomy-from-header hierarchy owl-type owl-relation)
 #+END_SRC
+
+* in document
 ** Dates for insertion into ontology on save
 #+name: current-date
 #+begin_src emacs-lisp :exports none
@@ -21,6 +24,8 @@
 #+begin_src emacs-lisp :exports none
   (format-time-string "%Y-%m-%dT%H:%M:%SZ" nil t)
 #+end_src
+
+* sparql and rdfpuml
 ** Diagrams with rdfpuml
 *** Config for rdfpuml colours and directions
 #+name: rdfpuml-config
