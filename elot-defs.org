@@ -50,6 +50,44 @@
   ;; ... create a new file, use <template inserting function> to insert a template ontology ...
 
 #+end_src
+*** OMN keywords
+In omn-mode, there's variables for entity and property
+keywords. However, there the keyword "Import" is placed in the
+"entity" list, while we need this for ontology declaration in a
+"property" list. It also includes "DisjointUnion", which doesn't apply
+in ELOT, since not dependent on any particular resource.
+
+ELOT isn't set up (2024-03-24) for declaring individuals, but this
+will change, so the appropriate keywords are included.
+#+begin_src emacs-lisp
+  (defvar elot-omn-property-keywords
+  '(
+      "EquivalentTo"
+      "SubClassOf"
+      "Characteristics"
+      "DisjointWith"
+      "Domain"
+      "Range"
+      "InverseOf"
+      "SubPropertyOf"
+      "SubPropertyChain"
+      "SameAs"
+      "DifferentFrom"
+      "Types"
+      "Facts"
+      "HasKey"
+      "Import"
+      ))
+#+end_src
+*** Looking at
+Introduced because ontology-defining headings don't have
+subsections. Revisit to cover other kinds of headings, and probably a
+better way to identify than matching with ID string.
+#+begin_src emacs-lisp
+  (defun at-ontology-heading ()
+    (let ((id (or (org-entry-get (point) "ID") "")))
+     (string-match "ontology-declaration" id)))
+#+end_src
 *** Get description lists into lisp lists
 #+name: defun-desc-lists
 #+BEGIN_SRC emacs-lisp :results silent
@@ -104,7 +142,9 @@
       (save-excursion
         (unless (org-at-heading-p) (org-previous-visible-heading 1)) ; ensure we are at a heading
         (org-narrow-to-subtree)
-        (if (outline-next-heading)  ; don't include the section that has the target property id itself
+        (if ;; don't include the section that has the target property id itself, except if ontology section
+            (or (outline-next-heading)
+              (at-ontology-heading))
             (let (ret)
               (while (let ((heading (substring-no-properties (org-get-heading nil t)))
                            (descriptions (org-descriptions-in-section)))
@@ -233,16 +273,9 @@ annotations in a future improved version, from sub-items.
 #+BEGIN_SRC emacs-lisp :results silent
   (defun omn-declare (str owl-type)
     "Given a string STR and an OWL type owl-type, write a Manchester Syntax entity declaration. Add rdfs:label annotation. If a parenthesis is given, use that as resource id."
-                                          ; check whether we have a label and a resource in parentheses
-    (let* ((suri (entity-from-header str))
-           ;; (prefix (if (string-match "\\(.*\\):\\(.*\\)" suri)
-           ;;             (match-string 1 suri) ""))
-           ;; (localname (if (string= prefix "") suri (match-string 2 suri)))
-           ;; (label (if (string-match "\\(.+\\) (.*)" str)
-           ;;            (match-string 1 str) localname))
-           )
+    ;; check whether we have a label and a resource in parentheses
+    (let* ((suri (entity-from-header str)))
       (concat owl-type ": " suri)))
-  ;;               "\n    Annotations: rdfs:label \"" label "\"")))
 
   (defun annotation-entries (l &optional sep)
     "l is a list of puri--string pairs, each perhaps with a trailing list of similar, meta-annotation pairs. sep is 2 x indent blanks"
@@ -271,7 +304,7 @@ annotations in a future improved version, from sub-items.
     (let ((indent (make-string 2 ?\ ))
           (l-omn-entries
            (cl-remove-if-not (lambda (x) (member (car x)
-                                                 '("Characteristics" "Domain" "Range" "SubClassOf" "SubPropertyOf" "EquivalentTo" "DisjointWith" "InverseOf" "SubPropertyChain" "Import")))
+                                                 elot-omn-property-keywords))
                              l)))
       (if (atom l) "\n"
         (concat "\n" indent
@@ -308,7 +341,7 @@ annotations in a future improved version, from sub-items.
      (lambda (x) 
        (concat
         (omn-declare (car x) owl-type)
-                                          ; if annotations, add to the annotation block that has been started with rdfs:label
+        ;; if annotations, add to the annotation block that has been started with rdfs:label
         (omn-annotate x)
         (omn-restrict x)
         ))
@@ -319,12 +352,11 @@ annotations in a future improved version, from sub-items.
     (save-excursion
       (org-id-goto header-id)
       (let ((entity-l (org-subsection-descriptions)))
-        (if entity-l 
+        (if (or entity-l (string= owl-type "Ontology"))
             (resource-declarations entity-l owl-type)
           "## (none)"))))
   ;;(cdr (org-subsection-descriptions))))
 #+END_SRC
-*** Write typical class patterns
 *** Update link alist from table
 *** Default settings
 #+begin_src emacs-lisp :tangle ./elot-package/elot-defaults.el
@@ -371,6 +403,7 @@ annotations in a future improved version, from sub-items.
 		      (cl-remove 'hline (org-babel-ref-resolve "prefix-table")))
 	      ))
 #+end_src
+*** Write typical class patterns
 **** one-of
 It's common to say a class is a subclass of the union of immediate
 subclasses. The function =class-oneof-from-header= is intended to be
