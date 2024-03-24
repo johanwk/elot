@@ -63,6 +63,17 @@
     ))
 ;; OMN keywords:1 ends here
 
+;; [[file:../elot-defs.org::*OMN keywords][OMN keywords:2]]
+(defun elot-latex-filter-omn-list (text backend info)
+  "Format OMN content in description lists"
+  (when (org-export-derived-backend-p backend 'latex)
+    (when (seq-some (lambda (x) (string-match x text))
+           elot-omn-property-keywords)
+      (replace-regexp-in-string "\\\\item.{\\([a-zA-Z]+\\)}. \\(.*\\)" "\\\\item[\\\\normalfont\\\\ttfamily\\\\small \\1] \\\\lstinline[language=omn]{\\2}" text))))
+(add-to-list 'org-export-filter-plain-list-functions
+           'elot-latex-filter-omn-list)
+;; OMN keywords:2 ends here
+
 ;; [[file:../elot-defs.org::*Looking at][Looking at:1]]
 (defun at-ontology-heading ()
   (let ((id (or (org-entry-get (point) "ID") "")))
@@ -185,8 +196,11 @@
           (concat "  " str))
         (; not a puri -- normal string, wrap in quotes
          (equal str (unprefix-uri str org-link-abbrev-alist-local))
-         ; escape all quotes with \", note this gives invalid results if some are already escaped
-         (concat "  \"" (replace-regexp-in-string "\"" "\\\\\"" str) "\""))
+         ;; if a language tag @en is present, return unchanged
+         (if (string-match "\".*\"@[a-z]+" str)
+             (concat " " str)
+           ;; escape all quotes with \", note this gives invalid results if some are already escaped
+           (concat "  \"" (replace-regexp-in-string "\"" "\\\\\"" str) "\"")))
         (; else, a puri -- wrap in angles
          t (concat "  " (unprefix-uri str org-link-abbrev-alist-local)))))
 

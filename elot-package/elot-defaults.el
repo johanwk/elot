@@ -26,10 +26,8 @@
            "\\DeclareNewSectionCommand[style=section,counterwithin=subsubsection,afterskip=1.5ex plus .2ex,"
            "  beforeskip=3.25ex plus 1ex minus .2ex,afterindent=false,level=\\paragraphnumdepth,tocindent=10em,"
            "  tocnumwidth=5em]{subsubsubsection}"
-           "\\RedeclareSectionCommand[level=\\numexpr\\subsubsubsectionnumdepth+1\\relax,toclevel=\\numexpr\\subsubsubsectiontocdepth+1\\relax,"
-           "  ]{paragraph}"
-           "\\RedeclareSectionCommand[level=\\numexpr\\subsubsubsectionnumdepth+2\\relax,toclevel=\\numexpr\\subsubsubsectiontocdepth+2\\relax,"
-           "  ]{subparagraph}"
+           "\\RedeclareSectionCommand[level=\\numexpr\\subsubsubsectionnumdepth+1\\relax,toclevel=\\numexpr\\subsubsubsectiontocdepth+1\\relax,]{paragraph}"
+           "\\RedeclareSectionCommand[level=\\numexpr\\subsubsubsectionnumdepth+2\\relax,toclevel=\\numexpr\\subsubsubsectiontocdepth+2\\relax,]{subparagraph}"
            "\\RedeclareSectionCommand[counterwithin=subsubsubsection,tocnumwidth=6em]{paragraph}"
            "\\RedeclareSectionCommand[tocnumwidth=7em]{subparagraph}"
            ;; section numbers in margin

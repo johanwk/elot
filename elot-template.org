@@ -2,8 +2,8 @@
 #+title: ELOT template file
 #+subtitle: Blank file for writing an OWL ontology
 #+author: i-am-the-author
-#+date: WIP (version of 2024-03-24 15:48)
-#+OPTIONS: ^:{} H:8 num:8
+#+date: WIP (version of 2024-03-24 18:10)
+
 * ELOT template ontology Resources
 :PROPERTIES:
 :ID:       ELOT-resource-hierarchy
@@ -15,39 +15,39 @@
 #+OPTIONS: TOC: 0
 :OMN:
 #+begin_src omn :exports none
-          ##
-          ## This is an ELOT template ontology
-          ## This document is in OWL 2 Manchester Syntax, see https://www.w3.org/TR/owl2-manchester-syntax/
-          ##
+  ##
+  ## This is an ELOT template ontology
+  ## This document is in OWL 2 Manchester Syntax, see https://www.w3.org/TR/owl2-manchester-syntax/
+  ##
 
   ## Prefixes
   <<omn-prefixes()>>
 
-          ## Ontology declaration
-          <<resource-declarations(hierarchy="ELOT-ontology-declaration", owl-type="Ontology", owl-relation="")>>
+  ## Ontology declaration
+  <<resource-declarations(hierarchy="ELOT-ontology-declaration", owl-type="Ontology", owl-relation="")>>
 
   ## Data type declarations
   Datatype: xsd:dateTime
   Datatype: xsd:date
   Datatype: xsd:boolean
 
-          ## Class declarations
-          <<resource-declarations(hierarchy="ELOT-class-hierarchy", owl-type="Class", owl-relation="SubClassOf")>>
+  ## Class declarations
+  <<resource-declarations(hierarchy="ELOT-class-hierarchy", owl-type="Class", owl-relation="SubClassOf")>>
 
-          ## Object property declarations
-          <<resource-declarations(hierarchy="ELOT-object-property-hierarchy", owl-type="ObjectProperty")>>
+  ## Object property declarations
+  <<resource-declarations(hierarchy="ELOT-object-property-hierarchy", owl-type="ObjectProperty")>>
 
-          ## Data property declarations
-          <<resource-declarations(hierarchy="ELOT-data-property-hierarchy", owl-type="DataProperty")>>
+  ## Data property declarations
+  <<resource-declarations(hierarchy="ELOT-data-property-hierarchy", owl-type="DataProperty")>>
 
-          ## Annotation property declarations
-          <<resource-declarations(hierarchy="ELOT-annotation-property-hierarchy", owl-type="AnnotationProperty")>>
+  ## Annotation property declarations
+  <<resource-declarations(hierarchy="ELOT-annotation-property-hierarchy", owl-type="AnnotationProperty")>>
 
-          ## Resource taxonomies
-          <<resource-taxonomy(hierarchy="ELOT-class-hierarchy", owl-type="Class", owl-relation="SubClassOf")>>
-          <<resource-taxonomy(hierarchy="ELOT-object-property-hierarchy", owl-type="ObjectProperty", owl-relation="SubPropertyOf")>>
-          <<resource-taxonomy(hierarchy="ELOT-data-property-hierarchy", owl-type="DataProperty", owl-relation="SubPropertyOf")>>
-          <<resource-taxonomy(hierarchy="ELOT-annotation-property-hierarchy", owl-type="AnnotationProperty", owl-relation="SubPropertyOf")>>
+  ## Resource taxonomies
+  <<resource-taxonomy(hierarchy="ELOT-class-hierarchy", owl-type="Class", owl-relation="SubClassOf")>>
+  <<resource-taxonomy(hierarchy="ELOT-object-property-hierarchy", owl-type="ObjectProperty", owl-relation="SubPropertyOf")>>
+  <<resource-taxonomy(hierarchy="ELOT-data-property-hierarchy", owl-type="DataProperty", owl-relation="SubPropertyOf")>>
+  <<resource-taxonomy(hierarchy="ELOT-annotation-property-hierarchy", owl-type="AnnotationProperty", owl-relation="SubPropertyOf")>>
 #+END_SRC
 :END:
 ** Prefixes
@@ -106,7 +106,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 :END:
 # - Import :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/
 - owl:versionInfo :: 0.0 start of ELOT
-- dcterms:title :: "ELOT template ontologdsafy"@en
+- dcterms:title :: "ELOT template ontology"@en
 - owl:versionInfo :: 0.0 start of ELOT
 - pav:lastUpdateOn :: {{{modification-time("%Y-%m-%dT%H:%M:%SZ",t)}}}^^xsd:dateTime
 - dcterms:license :: [[https://creativecommons.org/licenses/by-sa/4.0/]]
@@ -132,10 +132,10 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 - rdfs:comment :: The class label may be entered as a heading, with
   the URI in parentheses.
 - rdfs:seeAlso :: rdl:sdf
-  - rdfs:comment :: lksjd
+  - rdfs:comment :: "lksjd"@no
 - SubClassOf :: ex:r only ex:C2
   - rdfs:comment :: describe the restriction
-- SubClassOf :: ex:C3
+- EquivalentTo :: ex:C3
 - SubClassOf :: ex:C4
 *** Food (ex:C2)                                             :oneof:disjoint:
 - rdfs:comment :: This class uses the org-mode properties "oneof" and
@@ -153,6 +153,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 :resourcedefs: yes
 :END:
 *** ex:r
+ - Range :: ex:C3
+ - Characteristics :: Functional
 *** ex:s
 ** Data properties
 :PROPERTIES:
