@@ -2,7 +2,7 @@
 #+title: The pizza ontology
 #+subtitle: An OWL ontology
 #+author: Alan Rector et al.
-#+date: WIP (version of 2024-03-25 20:32)
+#+date: WIP (version of 2024-03-25 20:35)
 #+options: num:8
 
 * The pizza ontology as an ELOT example
@@ -115,7 +115,7 @@ allow for the tangling to work.
 - dcterms:contributor :: "Matthew Horridge"
 - dcterms:contributor :: "Nick Drummond"
 - dcterms:contributor :: "Robert Stevens"
-- dcterms:license "Creative Commons Attribution 3.0 (CC BY 3.0)"
+- dcterms:license :: "Creative Commons Attribution 3.0 (CC BY 3.0)"
 - pav:lastUpdateOn :: {{{modification-time("%Y-%m-%dT%H:%M:%SZ",t)}}}^^xsd:dateTime
 - dcterms:creator :: johanw
 - dcterms:modified ::  {{{modification-time("%Y-%m-%d",t)}}}^^xsd:date
