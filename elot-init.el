@@ -8,7 +8,8 @@
 (package-refresh-contents)
 
 (dolist (package '(htmlize
-		   omn-mode
+		               omn-mode
+                   org-tempo
                    ))
  (unless (package-installed-p package)
    (package-install package)
