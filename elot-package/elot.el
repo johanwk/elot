@@ -607,9 +607,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 - dcterms:modified ::  {{{modification-time(\"%Y-%m-%d\",t)}}}^^xsd:date
 - dcterms:publisher :: https://example.org/thepublisher
 - dc:rights :: Copyright info here
-- rdfs:comment :: The " (s ontlocalname) " ontology is ...
 - dcterms:description :: The " (s ontlocalname) " ontology is ...
-
+- rdfs:comment :: The " (s ontlocalname) " ontology is ...
 ** Classes
 :PROPERTIES:
 :ID:       " (s ontlocalname) "-class-hierarchy
@@ -654,8 +653,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 *** pav:lastUpdateOn
  - rdfs:isDefinedBy :: [[http://purl.org/pav/]]
 "
-(progn (update-link-abbrev) "")
-     )
+(progn (update-link-abbrev) (org-cycle-set-startup-visibility) (goto-char (point-min))
+       (search-forward "dcterms:description :: ") (outline-show-entry) "")
+)
  "<os"
  "ELOT ontology sections skeleton"
  'org-tempo-tags)
