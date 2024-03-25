@@ -46,7 +46,7 @@
            ))
  )
 (progn
-  (require 'elot)
+  (load-library "elot")
   (update-link-abbrev)
   (org-babel-lob-ingest "elot-lob.org")
   (org-cycle-set-startup-visibility)

@@ -343,11 +343,13 @@ Maybe also with tags :hello: on the right. Return abc:MyClassName in both cases.
 
 ;; [[file:../elot-defs.org::*Default settings][Default settings:2]]
 (defun update-link-abbrev ()
-  (setq-local org-link-abbrev-alist-local 
-	      (mapcar (lambda (x) 
-			(cons (replace-regexp-in-string ":" "" (car x)) (cadr x)))
-		      (cl-remove 'hline (org-babel-ref-resolve "prefix-table")))
-	      ))
+  (if (save-excursion (goto-char (point-min))
+                      (re-search-forward "^#[+]name: prefix-table$" nil t))
+      (setq-local org-link-abbrev-alist-local
+                  (mapcar (lambda (x) 
+                            (cons (replace-regexp-in-string ":" "" (car x)) (cadr x)))
+          (cl-remove 'hline (org-babel-ref-resolve "prefix-table")))
+                  )))
 ;; Default settings:2 ends here
 
 ;; [[file:../elot-defs.org::defun-class-patterns][defun-class-patterns]]
@@ -589,7 +591,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 #+end_src
 "
 "
-** " (s ontlocalname) " ontology (ex:" (s ontlocalname) " ex:" (s ontlocalname) "/0.0)
+** " (s ontlocalname) " ontology (" (s ontprefix) ":" (s ontlocalname) " " (s ontprefix) ":" (s ontlocalname) "/0.0)
 :PROPERTIES:
 :ID:       " (s ontlocalname) "-ontology-declaration
 :custom_id: " (s ontlocalname) "-ontology-declaration
@@ -614,7 +616,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 :custom_id: " (s ontlocalname) "-class-hierarchy
 :resourcedefs: yes
 :END:
-*** My class (ex:MyClass)
+*** My class (" (s ontprefix) ":MyClass)
 - rdfs:comment :: Leave a comment here
 ** Object properties
 :PROPERTIES:
@@ -652,6 +654,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 *** pav:lastUpdateOn
  - rdfs:isDefinedBy :: [[http://purl.org/pav/]]
 "
+(progn (update-link-abbrev) "")
      )
  "<os"
  "ELOT ontology sections skeleton"

@@ -423,7 +423,7 @@ annotations in a future improved version, from sub-items.
              ))
    )
   (progn
-    (require 'elot)
+    (load-library "elot")
     (update-link-abbrev)
     (org-babel-lob-ingest "elot-lob.org")
     (org-cycle-set-startup-visibility)
@@ -438,12 +438,14 @@ annotations in a future improved version, from sub-items.
     )
 #+end_src
 #+begin_src emacs-lisp
-(defun update-link-abbrev ()
-  (setq-local org-link-abbrev-alist-local 
-	      (mapcar (lambda (x) 
-			(cons (replace-regexp-in-string ":" "" (car x)) (cadr x)))
-		      (cl-remove 'hline (org-babel-ref-resolve "prefix-table")))
-	      ))
+  (defun update-link-abbrev ()
+    (if (save-excursion (goto-char (point-min))
+                        (re-search-forward "^#[+]name: prefix-table$" nil t))
+        (setq-local org-link-abbrev-alist-local
+                    (mapcar (lambda (x) 
+                              (cons (replace-regexp-in-string ":" "" (car x)) (cadr x)))
+            (cl-remove 'hline (org-babel-ref-resolve "prefix-table")))
+                    )))
 #+end_src
 *** Write typical class patterns
 **** one-of
@@ -802,7 +804,7 @@ Insert a skeleton with =<os=.
   ,#+end_src
   "
   "
-  ,** " (s ontlocalname) " ontology (ex:" (s ontlocalname) " ex:" (s ontlocalname) "/0.0)
+  ,** " (s ontlocalname) " ontology (" (s ontprefix) ":" (s ontlocalname) " " (s ontprefix) ":" (s ontlocalname) "/0.0)
   :PROPERTIES:
   :ID:       " (s ontlocalname) "-ontology-declaration
   :custom_id: " (s ontlocalname) "-ontology-declaration
@@ -827,7 +829,7 @@ Insert a skeleton with =<os=.
   :custom_id: " (s ontlocalname) "-class-hierarchy
   :resourcedefs: yes
   :END:
-  ,*** My class (ex:MyClass)
+  ,*** My class (" (s ontprefix) ":MyClass)
   - rdfs:comment :: Leave a comment here
   ,** Object properties
   :PROPERTIES:
@@ -865,6 +867,7 @@ Insert a skeleton with =<os=.
   ,*** pav:lastUpdateOn
    - rdfs:isDefinedBy :: [[http://purl.org/pav/]]
   "
+  (progn (update-link-abbrev) "")
        )
    "<os"
    "ELOT ontology sections skeleton"
