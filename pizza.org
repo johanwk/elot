@@ -2,7 +2,7 @@
 #+title: The pizza ontology
 #+subtitle: An OWL ontology
 #+author: Alan Rector et al.
-#+date: WIP (version of 2024-03-25 20:28)
+#+date: WIP (version of 2024-03-25 20:32)
 #+options: num:8
 
 * The pizza ontology as an ELOT example
@@ -137,31 +137,31 @@ v1.4. Added Food class (used in domain/range of hasIngredient), Added several ha
 We add these in an OMN block.
 #+begin_src omn
 DisjointClasses: 
-    pizza:American,pizza:AmericanHot,pizza:Cajun,pizza:Capricciosa,pizza:Caprina,pizza:Fiorentina,pizza:FourSeasons,pizza:FruttiDiMare,pizza:Giardiniera,pizza:LaReine,pizza:Margherita,pizza:Mushroom,pizza:Napoletana,pizza:Parmense,pizza:PolloAdAstra,pizza:PrinceCarlo,pizza:QuattroFormaggi,pizza:Rosa,pizza:Siciliana,pizza:SloppyGiuseppe,pizza:Soho,pizza:UnclosedPizza,pizza:Veneziana
+    pizza:American, pizza:AmericanHot, pizza:Cajun, pizza:Capricciosa, pizza:Caprina, pizza:Fiorentina, pizza:FourSeasons, pizza:FruttiDiMare, pizza:Giardiniera, pizza:LaReine, pizza:Margherita, pizza:Mushroom, pizza:Napoletana, pizza:Parmense, pizza:PolloAdAstra, pizza:PrinceCarlo, pizza:QuattroFormaggi, pizza:Rosa, pizza:Siciliana, pizza:SloppyGiuseppe, pizza:Soho, pizza:UnclosedPizza, pizza:Veneziana
 
 DisjointClasses: 
-    pizza:AnchoviesTopping,pizza:MixedSeafoodTopping,pizza:PrawnsTopping
+    pizza:AnchoviesTopping, pizza:MixedSeafoodTopping, pizza:PrawnsTopping
 
 DisjointClasses: 
-    pizza:ArtichokeTopping,pizza:AsparagusTopping,pizza:CaperTopping,pizza:GarlicTopping,pizza:LeekTopping,pizza:MushroomTopping,pizza:OliveTopping,pizza:OnionTopping,pizza:PepperTopping,pizza:PetitPoisTopping,pizza:RocketTopping,pizza:SpinachTopping,pizza:TomatoTopping
+    pizza:ArtichokeTopping, pizza:AsparagusTopping, pizza:CaperTopping, pizza:GarlicTopping, pizza:LeekTopping, pizza:MushroomTopping, pizza:OliveTopping, pizza:OnionTopping, pizza:PepperTopping, pizza:PetitPoisTopping, pizza:RocketTopping, pizza:SpinachTopping, pizza:TomatoTopping
 
 DisjointClasses: 
-    pizza:CheeseTopping,pizza:FishTopping,pizza:FruitTopping,pizza:HerbSpiceTopping,pizza:MeatTopping,pizza:NutTopping,pizza:SauceTopping,pizza:VegetableTopping
+    pizza:CheeseTopping, pizza:FishTopping, pizza:FruitTopping, pizza:HerbSpiceTopping, pizza:MeatTopping, pizza:NutTopping, pizza:SauceTopping, pizza:VegetableTopping
 
 DisjointClasses: 
-    pizza:ChickenTopping,pizza:HamTopping,pizza:HotSpicedBeefTopping,pizza:PeperoniSausageTopping
+    pizza:ChickenTopping, pizza:HamTopping, pizza:HotSpicedBeefTopping, pizza:PeperoniSausageTopping
 
 DisjointClasses: 
-    pizza:FourCheesesTopping,pizza:GoatsCheeseTopping,pizza:GorgonzolaTopping,pizza:MozzarellaTopping,pizza:ParmesanTopping
+    pizza:FourCheesesTopping, pizza:GoatsCheeseTopping, pizza:GorgonzolaTopping, pizza:MozzarellaTopping, pizza:ParmesanTopping
 
 DisjointClasses: 
-    pizza:GreenPepperTopping,pizza:JalapenoPepperTopping,pizza:PeperonataTopping,pizza:SweetPepperTopping
+    pizza:GreenPepperTopping, pizza:JalapenoPepperTopping, pizza:PeperonataTopping, pizza:SweetPepperTopping
 
 DisjointClasses: 
-    pizza:Hot,pizza:Medium,pizza:Mild
+    pizza:Hot, pizza:Medium, pizza:Mild
 
 DisjointClasses: 
-    pizza:IceCream,pizza:Pizza,pizza:PizzaBase,pizza:PizzaTopping
+    pizza:IceCream, pizza:Pizza, pizza:PizzaBase, pizza:PizzaTopping
 #+end_src
 *** pizza:DomainConcept
  - rdfs:label :: "DomainThing"@en
