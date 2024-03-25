@@ -2,7 +2,7 @@
 #+title: The pizza ontology
 #+subtitle: An OWL ontology
 #+author: Alan Rector et al.
-#+date: WIP (version of 2024-03-25 19:58)
+#+date: WIP (version of 2024-03-25 20:03)
 
 
 * The pizza ontology as an ELOT example
@@ -110,12 +110,12 @@ allow for the tangling to work.
  # - Import :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/
 - owl:versionInfo :: 2.0.0. converted into org-mode for ELOT
 - dcterms:title :: "pizza"@en
-- dcterms:contributor :: "Alan Rector",
-- dcterms:contributor :: "Chris Wroe",
-- dcterms:contributor :: "Matthew Horridge",
-- dcterms:contributor :: "Nick Drummond",
-- dcterms:contributor :: "Robert Stevens",
-- dcterms:license "Creative Commons Attribution 3.0 (CC BY 3.0)",
+- dcterms:contributor :: "Alan Rector"
+- dcterms:contributor :: "Chris Wroe"
+- dcterms:contributor :: "Matthew Horridge"
+- dcterms:contributor :: "Nick Drummond"
+- dcterms:contributor :: "Robert Stevens"
+- dcterms:license "Creative Commons Attribution 3.0 (CC BY 3.0)"
 - pav:lastUpdateOn :: {{{modification-time("%Y-%m-%dT%H:%M:%SZ",t)}}}^^xsd:dateTime
 - dcterms:creator :: johanw
 - dcterms:modified ::  {{{modification-time("%Y-%m-%d",t)}}}^^xsd:date
@@ -650,7 +650,7 @@ v1.4. Added Food class (used in domain/range of hasIngredient), Added several ha
          and (pizza:hasBase only pizza:ThinAndCrispyBase)
 ****** pizza:UnclosedPizza
 
- - rdfs:comment :: "An unclosed Pizza cannot be inferred to be either a VegetarianPizza or a NonVegetarianPizza, because it might have other toppings.",
+ - rdfs:comment :: "An unclosed Pizza cannot be inferred to be either a VegetarianPizza or a NonVegetarianPizza, because it might have other toppings."
  - rdfs:label :: "PizzaAberta"@pt
  - rdfs:label :: "UnclosedPizza"@en
  - skos:prefLabel :: "Unclosed Pizza"@en
@@ -1193,7 +1193,7 @@ v1.4. Added Food class (used in domain/range of hasIngredient), Added several ha
          and (pizza:CheeseTopping or pizza:FruitTopping or pizza:HerbSpiceTopping or pizza:NutTopping or pizza:SauceTopping or pizza:VegetableTopping)
 *** pizza:ValuePartition
 
- - rdfs:comment :: "A ValuePartition is a pattern that describes a restricted set of classes from which a property can be associated. The parent class is used in restrictions, and the covering axiom means that only members of the subclasses may be used as values. The possible subclasses cannot be extended without updating the ValuePartition class.",
+ - rdfs:comment :: "A ValuePartition is a pattern that describes a restricted set of classes from which a property can be associated. The parent class is used in restrictions, and the covering axiom means that only members of the subclasses may be used as values. The possible subclasses cannot be extended without updating the ValuePartition class."
  - rdfs:label :: "ValorDaParticao"@pt
  - rdfs:label :: "ValuePartition"@en
  - skos:prefLabel :: "Value Partition"@en
