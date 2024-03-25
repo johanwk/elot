@@ -1,5 +1,4 @@
 #+title: ELOT library of babel
-#+SETUPFILE: "elot-default-export.org"
 
 * export
 ** Resource declarations (exctracted from outlines)
