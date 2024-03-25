@@ -6,7 +6,7 @@ org-mode documents, with supporting functions and scripts.
 
 Started 2024-03-03.
 
-* Quick start
+* Quick start (needs update!)
 
 For a minimal check that ontology can be exported and documents can be
 produced:
