@@ -2,7 +2,7 @@
 #+title: The pizza ontology
 #+subtitle: An OWL ontology
 #+author: Alan Rector et al.
-#+date: WIP (version of 2024-03-25 20:13)
+#+date: WIP (version of 2024-03-25 20:28)
 #+options: num:8
 
 * The pizza ontology as an ELOT example
@@ -73,7 +73,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 | prov:    | http://www.w3.org/ns/prov#                                                     |
 | iof-av:  | https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/ |
 | pizza:   | http://www.co-ode.org/ontologies/pizza/pizza.owl#                              |
-| coo:     | http://www.co-ode.org/ontologies/                                                                               |
+| coo:     | http://www.co-ode.org/ontologies/                                              |
 
 NOTE. As of 2024-03-25, ELOT doesn't support full URIs in the header
 for the ontology itself. Therefore, the prefix =coo= has been added, to
@@ -133,6 +133,36 @@ v1.4. Added Food class (used in domain/range of hasIngredient), Added several ha
 :custom_id: pizza-class-hierarchy
 :resourcedefs: yes
 :END:
+*** Disjointness clauses                                          :nodeclare:
+We add these in an OMN block.
+#+begin_src omn
+DisjointClasses: 
+    pizza:American,pizza:AmericanHot,pizza:Cajun,pizza:Capricciosa,pizza:Caprina,pizza:Fiorentina,pizza:FourSeasons,pizza:FruttiDiMare,pizza:Giardiniera,pizza:LaReine,pizza:Margherita,pizza:Mushroom,pizza:Napoletana,pizza:Parmense,pizza:PolloAdAstra,pizza:PrinceCarlo,pizza:QuattroFormaggi,pizza:Rosa,pizza:Siciliana,pizza:SloppyGiuseppe,pizza:Soho,pizza:UnclosedPizza,pizza:Veneziana
+
+DisjointClasses: 
+    pizza:AnchoviesTopping,pizza:MixedSeafoodTopping,pizza:PrawnsTopping
+
+DisjointClasses: 
+    pizza:ArtichokeTopping,pizza:AsparagusTopping,pizza:CaperTopping,pizza:GarlicTopping,pizza:LeekTopping,pizza:MushroomTopping,pizza:OliveTopping,pizza:OnionTopping,pizza:PepperTopping,pizza:PetitPoisTopping,pizza:RocketTopping,pizza:SpinachTopping,pizza:TomatoTopping
+
+DisjointClasses: 
+    pizza:CheeseTopping,pizza:FishTopping,pizza:FruitTopping,pizza:HerbSpiceTopping,pizza:MeatTopping,pizza:NutTopping,pizza:SauceTopping,pizza:VegetableTopping
+
+DisjointClasses: 
+    pizza:ChickenTopping,pizza:HamTopping,pizza:HotSpicedBeefTopping,pizza:PeperoniSausageTopping
+
+DisjointClasses: 
+    pizza:FourCheesesTopping,pizza:GoatsCheeseTopping,pizza:GorgonzolaTopping,pizza:MozzarellaTopping,pizza:ParmesanTopping
+
+DisjointClasses: 
+    pizza:GreenPepperTopping,pizza:JalapenoPepperTopping,pizza:PeperonataTopping,pizza:SweetPepperTopping
+
+DisjointClasses: 
+    pizza:Hot,pizza:Medium,pizza:Mild
+
+DisjointClasses: 
+    pizza:IceCream,pizza:Pizza,pizza:PizzaBase,pizza:PizzaTopping
+#+end_src
 *** pizza:DomainConcept
  - rdfs:label :: "DomainThing"@en
  - skos:prefLabel :: "Domain Thing"@en
@@ -1012,7 +1042,8 @@ v1.4. Added Food class (used in domain/range of hasIngredient), Added several ha
  - Types :: pizza:Country
 *** pizza:Italy
  - Types :: pizza:Country
-
+*** Difference clauses                                            :nodeclare:
+We add these in an OMN block.
 #+begin_src omn
 DifferentIndividuals: pizza:England, pizza:France, pizza:Germany, pizza:Italy
 #+end_src
