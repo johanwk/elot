@@ -541,6 +541,9 @@ Maybe also with tags :hello: on the right. Return abc:MyClassName in both cases.
      "  ## Annotation property declarations" > n
      "  <<resource-declarations(hierarchy=\"" (s ontlocalname) "-annotation-property-hierarchy\", owl-type=\"AnnotationProperty\")>>" > n
      "" > n
+     "  ## Individual declarations" > n
+     "  <<resource-declarations(hierarchy=\"" (s ontlocalname) "-individuals\", owl-type=\"Individual\")>>" > n
+     "" > n
      "  ## Resource taxonomies" > n
      "  <<resource-taxonomy(hierarchy=\"" (s ontlocalname) "-class-hierarchy\", owl-type=\"Class\", owl-relation=\"SubClassOf\")>>" > n
      "  <<resource-taxonomy(hierarchy=\"" (s ontlocalname) "-object-property-hierarchy\", owl-type=\"ObjectProperty\", owl-relation=\"SubPropertyOf\")>>" > n
@@ -652,6 +655,12 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - rdfs:isDefinedBy :: http://purl.org/dc/elements/1.1/
 *** pav:lastUpdateOn
  - rdfs:isDefinedBy :: [[http://purl.org/pav/]]
+** Individuals
+:PROPERTIES:
+:ID:       " (s ontlocalname) "-individuals
+:custom_id: " (s ontlocalname) "-individuals
+:resourcedefs: yes
+:END:
 "
 (progn (update-link-abbrev) (org-cycle-set-startup-visibility) (goto-char (point-min))
        (search-forward "dcterms:description :: ") (outline-show-entry) "")
