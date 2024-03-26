@@ -493,11 +493,12 @@ Maybe also with tags :hello: on the right. Return abc:MyClassName in both cases.
 ;; [[file:../elot-defs.org::*ELOT document header][ELOT document header:1]]
 (tempo-define-template "elot-doc-header"
  '("# -*- eval: (load-library \"elot-defaults\") -*-" > n
-  "#+title: " (p "Document title: " doctitle) > n
-  "#+subtitle: An OWL ontology" > n
-  "#+author: " (p "Author name: " authname) > n
-  "#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
-  )
+	"#+title: " (p "Document title: " doctitle) > n
+	"#+subtitle: An OWL ontology" > n
+	"#+author: " (p "Author name: " authname) > n
+	"#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
+	(progn (load-library "elot-defaults") "")
+	)
  "<oh"
  "ELOT document header"
  'org-tempo-tags)
@@ -570,9 +571,11 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 | dc:       | http://purl.org/dc/elements/1.1/                                               |
 | dcterms:  | http://purl.org/dc/terms/                                                      |
 | prov:     | http://www.w3.org/ns/prov#                                                     |
-| iof-av:   | https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/ |
-| " (p "Ontology namespace prefix (without the \":\") " ontprefix) 
-":       | " (p "Ontology namespace in full (\"http ...\") " ontns) "                                                            |" > n
+| iof-av:   | https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/ |" > n
+"| " (p "Namespace prefix for resources in this ontology (without the \":\") " resprefix) 
+":       | " (p "Resource namespace in full (\"http ...\") " resns) "                                                            |" > n
+"| " (p "Namespace prefix for the ontology itself (without the \":\") " ontprefix) 
+":       | " (p "Ontology namespace in full (\"http ...\") " ontns) "                                                            |" >  n
 "*** Source blocks for prefixes                                     :noexport:
 :PROPERTIES:
 :header-args:omn: :tangle no
@@ -601,25 +604,25 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 :resourcedefs: yes
 :END:
  # - Import :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/
-- owl:versionInfo :: 0.0 start of " (s ontlocalname) "
-- dcterms:title :: \"" (s ontlocalname) " ontology\"@en
-- owl:versionInfo :: 0.0 start of " (s ontlocalname) "
-- pav:lastUpdateOn :: {{{modification-time(\"%Y-%m-%dT%H:%M:%SZ\",t)}}}^^xsd:dateTime
-- dcterms:license :: [[https://creativecommons.org/licenses/by-sa/4.0/]]
-- dcterms:creator :: {{{author}}}
-- dcterms:modified ::  {{{modification-time(\"%Y-%m-%d\",t)}}}^^xsd:date
-- dcterms:publisher :: https://example.org/thepublisher
-- dc:rights :: Copyright info here
-- dcterms:description :: The " (s ontlocalname) " ontology is ...
-- rdfs:comment :: The " (s ontlocalname) " ontology is ...
+ - owl:versionInfo :: 0.0 start of " (s ontlocalname) "
+ - dcterms:title :: \"" (s ontlocalname) " ontology\"@en
+ - owl:versionInfo :: 0.0 start of " (s ontlocalname) "
+ - pav:lastUpdateOn :: {{{modification-time(\"%Y-%m-%dT%H:%M:%SZ\",t)}}}^^xsd:dateTime
+ - dcterms:license :: [[https://creativecommons.org/licenses/by-sa/4.0/]]
+ - dcterms:creator :: {{{author}}}
+ - dcterms:modified ::  {{{modification-time(\"%Y-%m-%d\",t)}}}^^xsd:date
+ - dcterms:publisher :: https://example.org/thepublisher
+ - dc:rights :: Copyright info here
+ - dcterms:description :: The " (s ontlocalname) " ontology is ...
+ - rdfs:comment :: The " (s ontlocalname) " ontology is ...
 ** Classes
 :PROPERTIES:
 :ID:       " (s ontlocalname) "-class-hierarchy
 :custom_id: " (s ontlocalname) "-class-hierarchy
 :resourcedefs: yes
 :END:
-*** My class (" (s ontprefix) ":MyClass)
-- rdfs:comment :: Leave a comment here
+*** My class (" (s resprefix) ":MyClass)
+ - rdfs:comment :: Leave a comment here
 ** Object properties
 :PROPERTIES:
 :ID:       " (s ontlocalname) "-object-property-hierarchy

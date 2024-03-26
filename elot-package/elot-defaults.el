@@ -48,7 +48,7 @@
 (progn
   (load-library "elot")
   (update-link-abbrev)
-  (org-babel-lob-ingest "elot-lob.org")
+  (org-babel-lob-ingest (replace-regexp-in-string "/[^/]+$" "/elot-lob.org" (locate-library "elot")))
   (org-cycle-set-startup-visibility)
   (add-to-list 'org-latex-classes
                '("elot-scrreprt"
