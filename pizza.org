@@ -110,23 +110,23 @@ allow for the tangling to work.
  # - Import :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/
 - owl:versionInfo :: 2.0.0. converted into org-mode for ELOT
 - dcterms:title :: "pizza"@en
-- dcterms:contributor :: "Alan Rector"
-- dcterms:contributor :: "Chris Wroe"
-- dcterms:contributor :: "Matthew Horridge"
-- dcterms:contributor :: "Nick Drummond"
-- dcterms:contributor :: "Robert Stevens"
-- dcterms:license :: "Creative Commons Attribution 3.0 (CC BY 3.0)"
+- dcterms:contributor :: Alan Rector
+- dcterms:contributor :: Chris Wroe
+- dcterms:contributor :: Matthew Horridge
+- dcterms:contributor :: Nick Drummond
+- dcterms:contributor :: Robert Stevens
+- dcterms:license :: Creative Commons Attribution 3.0 (CC BY 3.0)
 - pav:lastUpdateOn :: {{{modification-time("%Y-%m-%dT%H:%M:%SZ",t)}}}^^xsd:dateTime
 - dcterms:creator :: johanw
 - dcterms:modified ::  {{{modification-time("%Y-%m-%d",t)}}}^^xsd:date
-- dcterms:description :: "An ontology about pizzas and their toppings.
-  This is an example ontology that contains all constructs required for the various versions of the Pizza Tutorial run by Manchester University (see http://owl.cs.manchester.ac.uk/publications/talks-and-tutorials/protg-owl-tutorial)."@en
+- dcterms:description :: An ontology about pizzas and their toppings.
+  This is an example ontology that contains all constructs required for the various versions of the Pizza Tutorial run by Manchester University (see http://owl.cs.manchester.ac.uk/publications/talks-and-tutorials/protg-owl-tutorial).@en
 - dcterms:provenance :: v2.0 Added new annotations to the ontology using standard/well-know annotation properties
 
 v1.5. Removed protege.owl import and references. Made ontology URI date-independent
 
-v1.4. Added Food class (used in domain/range of hasIngredient), Added several hasCountryOfOrigin restrictions on pizzas, Made hasTopping invers functional"@en
-- rdfs:label :: "pizza"
+v1.4. Added Food class (used in domain/range of hasIngredient), Added several hasCountryOfOrigin restrictions on pizzas, Made hasTopping invers functional@en
+- rdfs:label :: pizza
 ** Classes
 :PROPERTIES:
 :ID:       pizza-class-hierarchy
