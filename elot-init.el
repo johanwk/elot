@@ -16,7 +16,7 @@
 
 (dolist (package '(htmlize
 		               omn-mode
-                   org-tempo
+                   ; apparently not needed org-tempo
                    ))
  (unless (package-installed-p package)
    (package-install package)
