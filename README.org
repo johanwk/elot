@@ -4,7 +4,12 @@
 This repository contains a template for writing OWL ontologies as
 org-mode documents, with supporting functions and scripts.
 
-Started 2024-03-03.
+Started 2024-03-03, this is work in progress and likely not to work in
+any predictable fashion -- yet!
+
+* Prerequisites
+You should install [[http://robot.obolibrary.org/][ROBOT]] to have Turtle output; [[https://plantuml.com/][PlantUML]] and [[https://github.com/VladimirAlexiev/rdf2rml][rdfpuml]]
+for diagrams.
 
 * Quick start (needs update!)
 
