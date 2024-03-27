@@ -15,8 +15,10 @@
 (package-refresh-contents)
 
 (dolist (package '(htmlize
-		               omn-mode
-                   ; apparently not needed org-tempo
+                   omn-mode
+                   ;; apparently not needed org-tempo
+                   modus-themes  ;; good looks
+                   orderless ;; easier to find commands
                    ))
  (unless (package-installed-p package)
    (package-install package)
@@ -27,6 +29,7 @@
 (require 'ol) ; link functions
 
 (setq tempo-interactive t)
+(load-theme 'modus-operandi-tritanopia t)
 
 ;; location of the elot package -- edit path to fit
 (push (expand-file-name "~/elisp/elot-package/") load-path)

@@ -51,6 +51,39 @@
   ;; ... create a new file, use <template inserting function> to insert a template ontology ...
 
 #+end_src
+*** Setting for post-processing with ROBOT, rdfpuml
+Se below under [[*Default settings][Default settings]] for a hook to convert to Turtle after
+tangling to OMN.
+#+begin_src emacs-lisp
+  (defgroup elot 
+    nil
+    "Customization group for ELOT")
+  (defcustom elot-robot-jar-path (expand-file-name "~/bin/robot.jar")
+    "Path to the robot.jar file."
+    :group 'elot
+    :version "29.2"
+    :type 'string)
+  (defvar elot-robot-command 
+    (concat "java -jar " elot-robot-jar-path))
+  (defun elot-robot-omn-to-ttl (omnfile)
+    "Call ROBOT to make a Turtle file from `omnfile'."
+    (cond
+     ((not (file-exists-p elot-robot-jar-path))
+      (message "ROBOT not found, not converting to Turtle"))
+     ((not (file-exists-p omnfile))
+      (message (concat omnfile " not found, nothing for ROBOT to convert")))
+     (t (shell-command
+         (concat elot-robot-command
+                  " convert --strict --verbose"
+                  " --input " omnfile
+                  " --output " (file-name-sans-extension omnfile) ".ttl")))))
+  (defun elot-tangled-omn-to-ttl ()
+    "After tangling to OMN, call ROBOT to convert to Turtle."
+    (let* ((omnfile (buffer-file-name))  ;; will run in the tangled buffer
+           (omn-p (string-match-p ".omn$" omnfile)))
+      (if omn-p
+          (elot-robot-omn-to-ttl omnfile))))
+#+end_src
 *** OMN keywords
 In omn-mode, there's variables for entity and property
 keywords. However, there the keyword "Import" is placed in the
@@ -424,10 +457,10 @@ annotations in a future improved version, from sub-items.
              ))
    )
   (progn
-    (load-library "elot")
-    (update-link-abbrev)
-    (org-babel-lob-ingest (replace-regexp-in-string "/[^/]+$" "/elot-lob.org" (locate-library "elot")))
     (org-cycle-set-startup-visibility)
+    (load-library "elot")
+    (org-babel-lob-ingest (concat (file-name-directory (locate-library "elot")) "elot-lob.org"))
+    (update-link-abbrev)
     (add-to-list 'org-latex-classes
                  '("elot-scrreprt"
                    "\\documentclass[11pt,a4paper,numbers=noenddot,twoside=false]{scrreprt}
@@ -436,8 +469,12 @@ annotations in a future improved version, from sub-items.
   [EXTRA]"
                    ontology-resource-section
                    ))
+    (add-hook 'org-babel-post-tangle-hook 
+              'elot-tangled-omn-to-ttl
+              'local) ;; make it a local hook only
     )
 #+end_src
+
 #+begin_src emacs-lisp
   (defun update-link-abbrev ()
     (if (save-excursion (goto-char (point-min))
@@ -583,6 +620,7 @@ completion in the text. So we get "lis:Dependent [4/4]" instead of just
 Execute export with "special formatting" with
 : (org-export-to-file 'ELOT-latex "ELOT.tex")
 
+NOTE. The following should be rewritten, using a filter like in =elot-latex-filter-omn-list=.
 #+name: defun-ELOT-latex-derived-backend
 #+begin_src emacs-lisp
     ;; see https://emacs.stackexchange.com/questions/55231/org-mode-export-html-add-name-attirbute-to-checkbox-input
@@ -710,7 +748,7 @@ Insert a document header with =<oh=.
 		"#+subtitle: An OWL ontology" > n
 		"#+author: " (p "Author name: " authname) > n
 		"#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
-		(progn (load-library "elot-defaults") "")
+		(progn (load-library "elot-defaults") (message "Loaded ELOT") "")
 		)
 	 "<oh"
 	 "ELOT document header"

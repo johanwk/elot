@@ -43,6 +43,37 @@
 
 ;; ... create a new file, use <template inserting function> to insert a template ontology ...
 
+;; [[file:../elot-defs.org::*Setting for post-processing with ROBOT, rdfpuml][Setting for post-processing with ROBOT, rdfpuml:1]]
+(defgroup elot 
+  nil
+  "Customization group for ELOT")
+(defcustom elot-robot-jar-path (expand-file-name "~/bin/robot.jar")
+  "Path to the robot.jar file."
+  :group 'elot
+  :version "29.2"
+  :type 'string)
+(defvar elot-robot-command 
+  (concat "java -jar " elot-robot-jar-path))
+(defun elot-robot-omn-to-ttl (omnfile)
+  "Call ROBOT to make a Turtle file from `omnfile'."
+  (cond
+   ((not (file-exists-p elot-robot-jar-path))
+    (message "ROBOT not found, not converting to Turtle"))
+   ((not (file-exists-p omnfile))
+    (message (concat omnfile " not found, nothing for ROBOT to convert")))
+   (t (shell-command
+       (concat elot-robot-command
+                " convert --strict --verbose"
+                " --input " omnfile
+                " --output " (file-name-sans-extension omnfile) ".ttl")))))
+(defun elot-tangled-omn-to-ttl ()
+  "After tangling to OMN, call ROBOT to convert to Turtle."
+  (let* ((omnfile (buffer-file-name))  ;; will run in the tangled buffer
+         (omn-p (string-match-p ".omn$" omnfile)))
+    (if omn-p
+        (elot-robot-omn-to-ttl omnfile))))
+;; Setting for post-processing with ROBOT, rdfpuml:1 ends here
+
 ;; [[file:../elot-defs.org::*OMN keywords][OMN keywords:1]]
 (defvar elot-omn-property-keywords
 '(
@@ -497,7 +528,7 @@ Maybe also with tags :hello: on the right. Return abc:MyClassName in both cases.
 	"#+subtitle: An OWL ontology" > n
 	"#+author: " (p "Author name: " authname) > n
 	"#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
-	(progn (load-library "elot-defaults") "")
+	(progn (load-library "elot-defaults") (message "Loaded ELOT") "")
 	)
  "<oh"
  "ELOT document header"

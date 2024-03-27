@@ -47,10 +47,10 @@
            ))
  )
 (progn
-  (load-library "elot")
-  (update-link-abbrev)
-  (org-babel-lob-ingest (replace-regexp-in-string "/[^/]+$" "/elot-lob.org" (locate-library "elot")))
   (org-cycle-set-startup-visibility)
+  (load-library "elot")
+  (org-babel-lob-ingest (concat (file-name-directory (locate-library "elot")) "elot-lob.org"))
+  (update-link-abbrev)
   (add-to-list 'org-latex-classes
                '("elot-scrreprt"
                  "\\documentclass[11pt,a4paper,numbers=noenddot,twoside=false]{scrreprt}
@@ -59,5 +59,8 @@
 [EXTRA]"
                  ontology-resource-section
                  ))
+  (add-hook 'org-babel-post-tangle-hook 
+            'elot-tangled-omn-to-ttl
+            'local) ;; make it a local hook only
   )
 ;; Default settings:1 ends here
