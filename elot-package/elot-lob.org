@@ -23,7 +23,25 @@
 #+begin_src emacs-lisp :exports none
   (format-time-string "%Y-%m-%dT%H:%M:%SZ" nil t)
 #+end_src
-
+** Metrics from ROBOT
+#+name: robot-metrics
+#+begin_src emacs-lisp :var omnfile="pizza.omn"
+  (let ((measure-file
+         (concat (org-babel-temp-directory)
+                 (file-name-sans-extension omnfile)
+                 ".measure")))
+  (elot-robot-command 
+   (concat "measure --input " omnfile
+           " --output " measure-file))
+  (let* ((lines (with-temp-buffer
+                 (insert-file-contents measure-file)
+                 (split-string (buffer-string) "\n")))
+         (header (split-string (car lines) "\t"))
+         (body (mapcar
+                (lambda (line) (split-string line "\t"))
+                (cdr lines))))
+    (cons header (cons 'hline body))))
+#+end_src
 * sparql and rdfpuml
 ** Diagrams with rdfpuml
 *** Config for rdfpuml colours and directions
