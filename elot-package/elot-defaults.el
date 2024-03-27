@@ -15,6 +15,7 @@
  org-startup-folded 'show2levels
  org-export-with-sub-superscripts nil  ; preserve "_"
  org-export-headline-levels 8  ; deep numbering
+ org-export-with-section-numbers 8  ; deep numbering
  org-latex-default-class "elot-scrreprt"
  org-latex-packages-alist
  (append org-latex-packages-alist 
