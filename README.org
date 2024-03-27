@@ -15,12 +15,11 @@ for diagrams.
 
 For a minimal check that ontology can be exported and documents can be
 produced:
- - Use a recent Emacs version (current latest version is 29.2.1)
- - Start Emacs with the init file [[elot-init.el]]. This minimal startup
-   file has no conveniences, it's intended only for testing.
-   - i.e., something like, =emacs -Q --load elot-init.el=
- - Open [[elot-template.org]]
- - Export to ontology [[ELOT.omn]] by M-x /org-babel-tangle/, keybinding
+ - Use a recent Emacs version (current latest version is 29.2)
+ - Look at the init file [[elot-init.el]] for settings
+ - Open a new org file, insert template =<oh= and press Tab for document
+   header, insert template =<os= and press Tab for ontology skeleton.
+ - Export to ontology by M-x /org-babel-tangle/, keybinding
    =C-c C-v t=. Open the ontology in Protégé to check it's OK.
  - Export to a document by M-x /org-export-dispatch/, keybinding =C-c
    C-e=. Choose your format from the menu.
