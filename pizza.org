@@ -2,8 +2,9 @@
 #+title: The pizza ontology
 #+subtitle: An OWL ontology
 #+author: Alan Rector et al.
-#+date: WIP (version of 2024-03-25 20:35)
+#+date: WIP (version of 2024-03-27 14:11)
 #+options: num:8
+#+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 
 * The pizza ontology as an ELOT example
 :PROPERTIES:
@@ -56,7 +57,7 @@ Datatype: xsd:boolean
 The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
 
 #+name: prefix-table
-#+attr_latex: :align lp{.8\textwidth} :font  mall
+#+attr_latex: :align lp{.8\textwidth} :font small
 #+caption: OWL ontology prefixes
 | prefix   | uri                                                                            |
 |----------+--------------------------------------------------------------------------------|
@@ -917,7 +918,7 @@ DisjointClasses:
  - rdfs:label :: "VegetarianTopping"@en
  - skos:prefLabel :: "Vegetarian Topping"@en
  - EquivalentTo :: pizza:PizzaTopping
-         and (pizza:CheeseTopping or pizza:FruitTopping or pizza:HerbSpiceTopping or pizza:NutTopping or pizza:SauceTopping or pizza:VegetableTopping)
+   and (pizza:CheeseTopping or pizza:FruitTopping or pizza:HerbSpiceTopping or pizza:NutTopping or pizza:SauceTopping or pizza:VegetableTopping)
 *** pizza:ValuePartition
  - rdfs:comment :: "A ValuePartition is a pattern that describes a restricted set of classes from which a property can be associated. The parent class is used in restrictions, and the covering axiom means that only members of the subclasses may be used as values. The possible subclasses cannot be extended without updating the ValuePartition class."
  - rdfs:label :: "ValorDaParticao"@pt
