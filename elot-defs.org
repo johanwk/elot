@@ -63,8 +63,10 @@ tangling to OMN.
     :group 'elot
     :version "29.2"
     :type 'string)
-  (defvar elot-robot-command 
+  (defvar elot-robot-command-str
     (concat "java -jar " elot-robot-jar-path))
+  (defun elot-robot-command (cmd)
+    (shell-command (concat elot-robot-command-str " " cmd)))
   (defun elot-robot-omn-to-ttl (omnfile)
     "Call ROBOT to make a Turtle file from `omnfile'."
     (cond
@@ -73,7 +75,7 @@ tangling to OMN.
      ((not (file-exists-p omnfile))
       (message (concat omnfile " not found, nothing for ROBOT to convert")))
      (t (shell-command
-         (concat elot-robot-command
+         (concat elot-robot-command-str
                   " convert --strict --verbose"
                   " --input " omnfile
                   " --output " (file-name-sans-extension omnfile) ".ttl")))))
@@ -925,9 +927,19 @@ Insert a skeleton with =<os=.
    'org-tempo-tags)
 
 #+end_src
-
-
-
+**** ROBOT metrics
+Insert a =call= to ROBOT for =measure=, returns a table of ontology
+metrics.
+#+begin_src emacs-lisp :results none
+  (tempo-define-template "robot-metrics"
+   '("#+call: robot-metrics(omnfile=\""
+     (p "Ontology filename to read for metrics: ") "\")"
+     (progn (org-ctrl-c-ctrl-c) "")
+     )
+     "<om"
+     "ROBOT metrics"
+     'org-tempo-tags)
+#+end_src
 *** End with "provides"
 #+begin_src emacs-lisp
 (provide 'elot)
