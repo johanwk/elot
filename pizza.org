@@ -2,7 +2,7 @@
 #+title: The pizza ontology
 #+subtitle: An OWL ontology
 #+author: Alan Rector et al.
-#+date: WIP (version of 2024-03-27 20:42)
+#+date: WIP (version of 2024-03-28 13:52)
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 
 * The pizza ontology as an ELOT example
@@ -52,6 +52,51 @@ Datatype: xsd:boolean
 <<resource-taxonomy(hierarchy="pizza-annotation-property-hierarchy", owl-type="AnnotationProperty", owl-relation="SubPropertyOf")>>
 #+end_src
 :END:
+** ROBOT metrics
+#+call: robot-metrics(omnfile="pizza.omn")
+
+#+RESULTS:
+#+begin_SRC omn
+| metric                         |                                 metric_value | metric_type  |
+|--------------------------------+----------------------------------------------+--------------|
+| abox_axiom_count               |                                            6 | single_value |
+| abox_axiom_count_incl          |                                            6 | single_value |
+| annotation_property_count      |                                           18 | single_value |
+| annotation_property_count_incl |                                           18 | single_value |
+| axiom_count                    |                                          953 | single_value |
+| axiom_count_incl               |                                          953 | single_value |
+| class_count                    |                                          100 | single_value |
+| class_count_incl               |                                          100 | single_value |
+| dataproperty_count             |                                            0 | single_value |
+| dataproperty_count_incl        |                                            0 | single_value |
+| datatypes_count                |                                            4 | single_value |
+| datatypes_count_incl           |                                            4 | single_value |
+| individual_count               |                                            5 | single_value |
+| individual_count_incl          |                                            5 | single_value |
+| logical_axiom_count            |                                          331 | single_value |
+| logical_axiom_count_incl       |                                          331 | single_value |
+| obj_property_count             |                                            8 | single_value |
+| obj_property_count_incl        |                                            8 | single_value |
+| ontology_anno_count            |                                           15 | single_value |
+| ontology_iri                   |       http://www.co-ode.org/ontologies/pizza | single_value |
+| ontology_version_iri           | http://www.co-ode.org/ontologies/pizza/2.0.0 | single_value |
+| owl2                           |                                         true | single_value |
+| owl2_dl                        |                                         true | single_value |
+| owl2_el                        |                                        false | single_value |
+| owl2_ql                        |                                        false | single_value |
+| owl2_rl                        |                                        false | single_value |
+| rbox_axiom_count               |                                            9 | single_value |
+| rbox_axiom_count_incl          |                                            9 | single_value |
+| rdfs                           |                                        false | single_value |
+| rule_count                     |                                            0 | single_value |
+| rule_count_incl                |                                            0 | single_value |
+| signature_entity_count         |                                          135 | single_value |
+| signature_entity_count_incl    |                                          135 | single_value |
+| tbox_axiom_count               |                                          316 | single_value |
+| tbox_axiom_count_incl          |                                          316 | single_value |
+| tboxrbox_axiom_count           |                                          325 | single_value |
+| tboxrbox_axiom_count_incl      |                                          325 | single_value |
+#+end_SRC
 ** Prefixes
 The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
 
