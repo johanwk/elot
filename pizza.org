@@ -2,14 +2,14 @@
 #+title: The pizza ontology
 #+subtitle: An OWL ontology
 #+author: Alan Rector et al.
-#+date: WIP (version of 2024-03-28 18:54)
+#+date: WIP (version of 2024-03-28 19:26)
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 
 * The pizza ontology as an ELOT example
 :PROPERTIES:
 :ID: pizza
 :header-args:omn: :tangle ./pizza.omn :noweb yes
-:header-args:emacs-lisp: :tangle no :wrap "SRC omn" :exports results
+:header-args:emacs-lisp: :tangle no :exports results
 :header-args: :padline yes
 :END:
 :OMN:
@@ -56,7 +56,6 @@ Datatype: xsd:boolean
 #+call: robot-metrics(omnfile="pizza.omn")
 
 #+RESULTS:
-#+begin_SRC omn
 | metric                         |                                 metric_value | metric_type  |
 |--------------------------------+----------------------------------------------+--------------|
 | abox_axiom_count               |                                            6 | single_value |
@@ -96,7 +95,7 @@ Datatype: xsd:boolean
 | tbox_axiom_count_incl          |                                          316 | single_value |
 | tboxrbox_axiom_count           |                                          325 | single_value |
 | tboxrbox_axiom_count_incl      |                                          325 | single_value |
-#+end_SRC
+
 ** ROBOT queries
 *** select query
 #+begin_src sparql :url "pizza.omn"
@@ -176,7 +175,7 @@ allow for the tangling to work.
 :END:
 #+name: sparql-prefixes
 #+begin_src emacs-lisp :var prefixes=prefix-table :exports none
-  (mapconcat (lambda (row) (format "PREFIX %-5s <%s>" (car row) (cadr row)))t
+  (mapconcat (lambda (row) (format "PREFIX %-5s <%s>" (car row) (cadr row)))
              prefixes "
 ")
 #+end_src
