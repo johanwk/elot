@@ -25,9 +25,9 @@
 #+end_src
 ** ROBOT metrics
 #+name: robot-metrics
-#+begin_src emacs-lisp :var omnfile="pizza.omn"
+#+begin_src emacs-lisp :var omnfile="pizza.omn" 
   (let ((measure-file
-         (concat (org-babel-temp-directory)
+         (concat (org-babel-temp-directory) "/"
                  (file-name-sans-extension omnfile)
                  ".measure")))
   (elot-robot-command 
@@ -124,18 +124,18 @@ overhaul is needed.
 
 Also note *prefixes* go in file =prefixes.ttl= so rdfpuml finds them.
 #+name: rdfpuml-block
-#+header: :var ttlblock="example-ttl" :var config="" :var mydir=(concat (eval default-directory) "images/") :var format="svg" :var addtext="" :var addtextend="" :cache yes :eval never-export
+#+header: :var ttlblock="example-ttl" :var config=rdfpuml-config[] :var imgdir=(expand-file-name "./images/") :var format="svg" :var addtext="" :var addtextend="" :cache yes :eval never-export
 #+begin_src emacs-lisp :results file :dir ~ 
-  (let* ((puml-command 
-          (concat "LC_ALL=C /cygdrive/c/opt/strawberry/perl/bin/perl -C -S "
-                  (expand-file-name "~/bin/rdf2rml/bin/rdfpuml.pl")))
-         (ttl (concat
+  (let* ((puml-command (concat elot-perl-command " " elot-rdfpuml-path))
+         (ttl (concat 
                (eval `(org-sbe ,ttlblock))
-               (eval `(org-sbe ,config))))
+               config))
+               ;;(eval `(org-sbe ,config))))
          (tmp-graphic-file (concat "tmp-rdfpuml." format))
-         (result-graphic-file (concat mydir ttlblock "." format))
+         (result-graphic-file (concat imgdir ttlblock "." format))
          )
-    (progn
+    (progn 
+      (make-directory imgdir :parents)
       (f-write-text ttl 'utf-8 "tmp-rdfpuml.ttl")
       (message (concat "Wrote source block \"" ttlblock "\" to file:" (shell-command-to-string (concat "wc " "tmp-rdfpuml.ttl"))))
       (shell-command-to-string 
