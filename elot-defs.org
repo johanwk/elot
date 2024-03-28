@@ -446,6 +446,10 @@ annotations in a future improved version, from sub-items.
                    "\n")))
 #+end_src
 *** Execute sparql using ROBOT
+The function =elot-robot-execute-query= takes a sparql query (with
+prefixes), a filename for the input ontology file, and a symbol ='ttl'=
+or ='csv= which should be chosen depending on whether the query is a
+=select= or a =construct=.
 #+begin_src emacs-lisp
 (defun elot-robot-execute-query (query inputfile format)
   "Execute sparql query `query' with ROBOT on ontology file
@@ -465,6 +469,37 @@ for RDF results in Turtle."
                " --query " query-file
                " " result-file))
       (insert-file-contents result-file)))
+#+end_src
+
+The function =org-babel-execute:sparql= is adopted from the definition
+in library =ob-sparql.el=. If the =:url= header argument doesn't start
+with string "=http=", we assume that the user wants to query a local
+file using ROBOT.
+#+begin_src emacs-lisp
+(defun org-babel-execute:sparql (body params)
+  "Execute a block containing a SPARQL query with org-babel.
+This function is called by `org-babel-execute-src-block'.
+The function has been patched for ELOT to allow query with ROBOT."
+  (message "Executing a SPARQL query block.")
+  (let* ((url (cdr (assoc :url params)))
+         (format (cdr (assoc :format params)))
+         (query (org-babel-expand-body:sparql body params))
+         (org-babel-sparql--current-curies (append org-link-abbrev-alist-local org-link-abbrev-alist))
+         (elot-prefixed-query
+          (concat (elot-prefix-block-from-alist org-link-abbrev-alist-local 'sparql)
+                  "\n" query))
+         (format-symbol
+          (if (string-match-p "\\(turtle\\|ttl\\)" format) 'ttl 'csv)))
+    (with-temp-buffer
+      (if (string-match-p "^http" url)  ;; querying an endpoint, or a file?
+          (sparql-execute-query query url format t)
+        (elot-robot-execute-query elot-prefixed-query url format-symbol))
+      (org-babel-result-cond
+          (cdr (assoc :result-params params))
+        (buffer-string)
+        (if (string-equal "text/csv" format)
+            (org-babel-sparql-convert-to-table)
+          (buffer-string))))))
 #+end_src
 *** Default settings
 #+begin_src emacs-lisp :tangle ./elot-package/elot-defaults.el

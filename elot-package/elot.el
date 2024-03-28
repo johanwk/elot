@@ -374,7 +374,7 @@ Maybe also with tags :hello: on the right. Return abc:MyClassName in both cases.
 ;;(cdr (org-subsection-descriptions))))
 ;; defun-resource-declaration ends here
 
-;; [[file:../elot-defs.org::*Default settings][Default settings:2]]
+;; [[file:../elot-defs.org::*Update link alist from prefix-table][Update link alist from prefix-table:1]]
 (defun update-link-abbrev ()
   (if (save-excursion (goto-char (point-min))
                       (re-search-forward "^#[+]name: prefix-table$" nil t))
@@ -383,7 +383,81 @@ Maybe also with tags :hello: on the right. Return abc:MyClassName in both cases.
                             (cons (replace-regexp-in-string ":" "" (car x)) (cadr x)))
           (cl-remove 'hline (org-babel-ref-resolve "prefix-table")))
                   )))
-;; Default settings:2 ends here
+;; Update link alist from prefix-table:1 ends here
+
+;; [[file:../elot-defs.org::*Make prefix blocks for omn, sparql, ttl][Make prefix blocks for omn, sparql, ttl:1]]
+(defun elot-prefix-block-from-alist (prefixes format)
+  "`prefixes' is an alist of prefixes, from an org-mode table or 
+the standard `org-link-abbrev-alist' or `org-link-abbrev-alist-local'. 
+`format' is a symbol, either `'omn', `'sparql', or `'ttl'.
+Return a string declaring prefixes."
+  (let ((format-str
+         (cond
+          ((eq format 'omn) "Prefix: %-5s <%s>")
+          ((eq format 'ttl) "@prefix %-5s <%s> .")
+          ((eq format 'sparql) "PREFIX %-5s <%s>"))))
+    (mapconcat (lambda (row) 
+                 (let ((prefix-str
+                        (if (string-match-p ":$" (car row))
+                            (car row) (concat (car row) ":")))
+                       (uri-str
+                        (if (listp (cdr row))
+                            (cadr row) ;; comes from org table
+                          (cdr row))))
+                       (format format-str prefix-str uri-str)))
+               (if (equal (car prefixes) '("prefix" . "uri"))
+                   (cdr prefixes)
+                 prefixes)
+                 "\n")))
+;; Make prefix blocks for omn, sparql, ttl:1 ends here
+
+;; [[file:../elot-defs.org::*Execute sparql using ROBOT][Execute sparql using ROBOT:1]]
+(defun elot-robot-execute-query (query inputfile format)
+  "Execute sparql query `query' with ROBOT on ontology file
+`inputfile'. `format' is `'csv' for tabular results, or `'ttl'
+for RDF results in Turtle."
+    (let* ((query-file
+            (concat (org-babel-temp-directory) "/"
+                    (file-name-sans-extension inputfile)
+                    ".sparql"))
+           (result-file
+            (concat (file-name-sans-extension inputfile) ".tsv"))
+           )
+      (with-temp-file query-file (insert query))
+      (elot-robot-command
+       (concat "query --input " inputfile
+               " --format " (symbol-name format)
+               " --query " query-file
+               " " result-file))
+      (insert-file-contents result-file)))
+;; Execute sparql using ROBOT:1 ends here
+
+;; [[file:../elot-defs.org::*Execute sparql using ROBOT][Execute sparql using ROBOT:2]]
+(defun org-babel-execute:sparql (body params)
+  "Execute a block containing a SPARQL query with org-babel.
+This function is called by `org-babel-execute-src-block'.
+The function has been patched for ELOT to allow query with ROBOT."
+  (message "Executing a SPARQL query block.")
+  (let* ((url (cdr (assoc :url params)))
+         (format (cdr (assoc :format params)))
+         (query (org-babel-expand-body:sparql body params))
+         (org-babel-sparql--current-curies (append org-link-abbrev-alist-local org-link-abbrev-alist))
+         (elot-prefixed-query
+          (concat (elot-prefix-block-from-alist org-link-abbrev-alist-local 'sparql)
+                  "\n" query))
+         (format-symbol
+          (if (string-match-p "\\(turtle\\|ttl\\)" format) 'ttl 'csv)))
+    (with-temp-buffer
+      (if (string-match-p "^http" url)  ;; querying an endpoint, or a file?
+          (sparql-execute-query query url format t)
+        (elot-robot-execute-query elot-prefixed-query url format-symbol))
+      (org-babel-result-cond
+          (cdr (assoc :result-params params))
+        (buffer-string)
+        (if (string-equal "text/csv" format)
+            (org-babel-sparql-convert-to-table)
+          (buffer-string))))))
+;; Execute sparql using ROBOT:2 ends here
 
 ;; [[file:../elot-defs.org::defun-class-patterns][defun-class-patterns]]
 (defun class-oneof-from-header (l)
@@ -706,7 +780,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  'org-tempo-tags)
 ;; ELOT ontology skeleton:1 ends here
 
-;; [[file:../elot-defs.org::*Read csv into org table][Read csv into org table:1]]
+;; [[file:../elot-defs.org::*Read tsv into org table][Read tsv into org table:1]]
 (defun elot-tsv-to-table (filename)
   (let* ((lines (with-temp-buffer
                  (insert-file-contents filename)
@@ -716,7 +790,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
                 (lambda (line) (split-string line "\t"))
                 (butlast (cdr lines)))))  ;; check this is ok
     (cons header (cons 'hline body))))
-;; Read csv into org table:1 ends here
+;; Read tsv into org table:1 ends here
 
 ;; [[file:../elot-defs.org::*ROBOT metrics][ROBOT metrics:1]]
 (tempo-define-template "robot-metrics"
