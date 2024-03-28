@@ -2,7 +2,7 @@
 #+title: The pizza ontology
 #+subtitle: An OWL ontology
 #+author: Alan Rector et al.
-#+date: WIP (version of 2024-03-28 19:26)
+#+date: WIP (version of 2024-03-28 19:30)
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 
 * The pizza ontology as an ELOT example
@@ -175,23 +175,18 @@ allow for the tangling to work.
 :END:
 #+name: sparql-prefixes
 #+begin_src emacs-lisp :var prefixes=prefix-table :exports none
-  (mapconcat (lambda (row) (format "PREFIX %-5s <%s>" (car row) (cadr row)))
-             prefixes "
-")
-#+end_src
-#+name: omn-prefixes
-#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
-  (mapconcat (lambda (row) (format "Prefix: %-5s <%s>" (car row) (cadr row)))
-             prefixes "
-")
-#+end_src
-#+name: ttl-prefixes
-#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
-  (mapconcat (lambda (row) (format "@prefix %-5s <%s> ." (car row) (cadr row)))
-             prefixes "
-")
+  (elot-prefix-block-from-alist prefixes 'sparql)
 #+end_src
 
+#+name: omn-prefixes
+#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+  (elot-prefix-block-from-alist prefixes 'omn)
+#+end_src
+
+#+name: ttl-prefixes
+#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+  (elot-prefix-block-from-alist prefixes 'ttl)
+#+end_src
 ** pizza ontology (coo:pizza coo:pizza/2.0.0)
 :PROPERTIES:
 :ID:       pizza-ontology-declaration
