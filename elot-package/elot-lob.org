@@ -115,9 +115,12 @@ for SVG in LaTeX is not great.
 On the other hand, inclusion in MS Word or export to HTML calls for
 SVGs. Conversion is described in 
 *** rdfpuml-block will read a ttl block and output a diagram
-Warnings. This script block is set up with /hardcoded paths/ to
+WARNINGS. This script block is set up with /hardcoded paths/ to
  - call on Strawberry Perl (a perl implementation for Windows)
  - find rdfpuml (see https://github.com/VladimirAlexiev/rdf2rml)
+
+This block also uses the =f= library, which is not really necessary. An
+overhaul is needed.
 
 Also note *prefixes* go in file =prefixes.ttl= so rdfpuml finds them.
 #+name: rdfpuml-block
