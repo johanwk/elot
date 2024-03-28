@@ -49,7 +49,7 @@
           (concat (org-babel-temp-directory) "/"
                   query
                   ".sparql"))
-         (result-file (concat (file-name-sans-extension omnfile) ".csv"))
+         (result-file (concat (file-name-sans-extension omnfile) ".tsv"))
          (qryblock (org-babel-lob--src-info query))
          (qrytext (cadr qryblock)))
     (setcar (nthcdr 1 qryblock)
