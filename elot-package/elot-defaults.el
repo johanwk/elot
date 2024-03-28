@@ -7,6 +7,7 @@
  org-latex-src-block-backend 'listings
  org-latex-prefer-user-labels t
  org-latex-image-default-scale .8
+ tempo-interactive t
  time-stamp-line-limit 100
  time-stamp-format "%Y-%m-%d %H:%M"
  time-stamp-active t

@@ -23,7 +23,7 @@
 #+begin_src emacs-lisp :exports none
   (format-time-string "%Y-%m-%dT%H:%M:%SZ" nil t)
 #+end_src
-** Metrics from ROBOT
+** ROBOT metrics
 #+name: robot-metrics
 #+begin_src emacs-lisp :var omnfile="pizza.omn"
   (let ((measure-file
@@ -39,9 +39,32 @@
          (header (split-string (car lines) "\t"))
          (body (mapcar
                 (lambda (line) (split-string line "\t"))
-                (cdr lines))))
+                (butlast (cdr lines)))))
     (cons header (cons 'hline body))))
 #+end_src
+** ROBOT sparql
+#+name: robot-sparql-select
+#+begin_src emacs-lisp :var omnfile="pizza.omn" query="myquery"
+  (let* ((query-file
+          (concat (org-babel-temp-directory) "/"
+                  query
+                  ".sparql"))
+         (result-file (concat (file-name-sans-extension omnfile) ".csv"))
+         (qryblock (org-babel-lob--src-info query))
+         (qrytext (cadr qryblock)))
+    (setcar (nthcdr 1 qryblock)
+            (concat "<<sparql-prefixes()>>\n" qrytext))
+    (let ((prefixedquery
+           (org-babel-expand-noweb-references qryblock)))
+      (with-temp-file query-file (insert prefixedquery)))
+    (elot-robot-command
+     (concat "query --input " omnfile
+             " --format TSV"
+             " --query " query-file
+             " " result-file))
+    (elot-csv-to-table result-file))
+#+end_src
+
 * sparql and rdfpuml
 ** Diagrams with rdfpuml
 *** Config for rdfpuml colours and directions

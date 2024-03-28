@@ -52,8 +52,10 @@
   :group 'elot
   :version "29.2"
   :type 'string)
-(defvar elot-robot-command 
+(defvar elot-robot-command-str
   (concat "java -jar " elot-robot-jar-path))
+(defun elot-robot-command (cmd)
+  (shell-command (concat elot-robot-command-str " " cmd)))
 (defun elot-robot-omn-to-ttl (omnfile)
   "Call ROBOT to make a Turtle file from `omnfile'."
   (cond
@@ -62,7 +64,7 @@
    ((not (file-exists-p omnfile))
     (message (concat omnfile " not found, nothing for ROBOT to convert")))
    (t (shell-command
-       (concat elot-robot-command
+       (concat elot-robot-command-str
                 " convert --strict --verbose"
                 " --input " omnfile
                 " --output " (file-name-sans-extension omnfile) ".ttl")))))
@@ -703,6 +705,29 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  "ELOT ontology sections skeleton"
  'org-tempo-tags)
 ;; ELOT ontology skeleton:1 ends here
+
+;; [[file:../elot-defs.org::*Read csv into org table][Read csv into org table:1]]
+(defun elot-tsv-to-table (filename)
+  (let* ((lines (with-temp-buffer
+                 (insert-file-contents filename)
+                 (split-string (buffer-string) "\n")))
+         (header (split-string (car lines) "\t"))
+         (body (mapcar
+                (lambda (line) (split-string line "\t"))
+                (butlast (cdr lines)))))  ;; check this is ok
+    (cons header (cons 'hline body))))
+;; Read csv into org table:1 ends here
+
+;; [[file:../elot-defs.org::*ROBOT metrics][ROBOT metrics:1]]
+(tempo-define-template "robot-metrics"
+ '("#+call: robot-metrics(omnfile=\""
+   (p "Ontology filename to read for metrics: ") "\")"
+   (progn (org-ctrl-c-ctrl-c) "")
+   )
+   "<om"
+   "ROBOT metrics"
+   'org-tempo-tags)
+;; ROBOT metrics:1 ends here
 
 ;; [[file:../elot-defs.org::*End with "provides"][End with "provides":1]]
 (provide 'elot)

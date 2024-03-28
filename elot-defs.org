@@ -419,6 +419,7 @@ annotations in a future improved version, from sub-items.
    org-latex-src-block-backend 'listings
    org-latex-prefer-user-labels t
    org-latex-image-default-scale .8
+   tempo-interactive t
    time-stamp-line-limit 100
    time-stamp-format "%Y-%m-%d %H:%M"
    time-stamp-active t
@@ -927,7 +928,20 @@ Insert a skeleton with =<os=.
    'org-tempo-tags)
 
 #+end_src
-**** ROBOT metrics
+**** ROBOT
+***** Read csv into org table
+#+begin_src emacs-lisp
+  (defun elot-tsv-to-table (filename)
+    (let* ((lines (with-temp-buffer
+                   (insert-file-contents filename)
+                   (split-string (buffer-string) "\n")))
+           (header (split-string (car lines) "\t"))
+           (body (mapcar
+                  (lambda (line) (split-string line "\t"))
+                  (butlast (cdr lines)))))  ;; check this is ok
+      (cons header (cons 'hline body))))
+#+end_src
+***** ROBOT metrics
 Insert a =call= to ROBOT for =measure=, returns a table of ontology
 metrics.
 #+begin_src emacs-lisp :results none
@@ -940,6 +954,8 @@ metrics.
      "ROBOT metrics"
      'org-tempo-tags)
 #+end_src
+***** ROBOT sparql
+Insert a sparql block, and a =call= to execute it on the current ontology.
 *** End with "provides"
 #+begin_src emacs-lisp
 (provide 'elot)
