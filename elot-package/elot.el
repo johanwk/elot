@@ -441,7 +441,8 @@ The function has been patched for ELOT to allow query with ROBOT."
   (let* ((url (cdr (assoc :url params)))
          (format (cdr (assoc :format params)))
          (query (org-babel-expand-body:sparql body params))
-         (org-babel-sparql--current-curies (append org-link-abbrev-alist-local org-link-abbrev-alist))
+         (org-babel-sparql--current-curies 
+          (append org-link-abbrev-alist-local org-link-abbrev-alist))
          (elot-prefixed-query
           (concat (elot-prefix-block-from-alist org-link-abbrev-alist-local 'sparql)
                   "\n" query))
@@ -618,7 +619,7 @@ The function has been patched for ELOT to allow query with ROBOT."
      ":PROPERTIES:" > n
      ":ID: " (s ontlocalname) > n
      ":header-args:omn: :tangle ./" (s ontlocalname) ".omn :noweb yes" > n
-     ":header-args:emacs-lisp: :tangle no :wrap \"SRC omn\" :exports results" > n
+     ":header-args:emacs-lisp: :tangle no :exports results" > n
      ":header-args: :padline yes" > n
      ":END:" > n
      ":OMN:" > n
