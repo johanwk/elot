@@ -445,6 +445,27 @@ annotations in a future improved version, from sub-items.
                    prefixes)
                    "\n")))
 #+end_src
+*** Execute sparql using ROBOT
+#+begin_src emacs-lisp
+(defun elot-robot-execute-query (query inputfile format)
+  "Execute sparql query `query' with ROBOT on ontology file
+`inputfile'. `format' is `'csv' for tabular results, or `'ttl'
+for RDF results in Turtle."
+    (let* ((query-file
+            (concat (org-babel-temp-directory) "/"
+                    (file-name-sans-extension inputfile)
+                    ".sparql"))
+           (result-file
+            (concat (file-name-sans-extension inputfile) ".tsv"))
+           )
+      (with-temp-file query-file (insert query))
+      (elot-robot-command
+       (concat "query --input " inputfile
+               " --format " (symbol-name format)
+               " --query " query-file
+               " " result-file))
+      (insert-file-contents result-file)))
+#+end_src
 *** Default settings
 #+begin_src emacs-lisp :tangle ./elot-package/elot-defaults.el
   ;; default settings, replaces Local Variables block
