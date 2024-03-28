@@ -38,6 +38,8 @@
 (require 'org-tempo) ; link functions
 (require 'htmlize) ; fontify blocks
 (require 'omn-mode) ; OMN support
+(require 'sparql-mode) ; OMN support
+(require 'f) ; files lib, used in rdfpuml-block only
 
 ;;;; Usage
 
