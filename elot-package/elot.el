@@ -74,6 +74,16 @@
          (omn-p (string-match-p ".omn$" omnfile)))
     (if omn-p
         (elot-robot-omn-to-ttl omnfile))))
+(defcustom elot-rdfpuml-path (expand-file-name "~/bin/rdf2rml/bin/rdfpuml.pl")
+  "Path to the rdfpuml Perl program."
+  :group 'elot
+  :version "29.2"
+  :type 'string)
+(defcustom elot-perl-command "perl"
+  "Perl command used for rdfpuml."
+  :group 'elot
+  :version "29.2"
+  :type 'string)
 ;; Setting for post-processing with ROBOT, rdfpuml:1 ends here
 
 ;; [[file:../elot-defs.org::*OMN keywords][OMN keywords:1]]
@@ -690,18 +700,15 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 :END:
 #+name: sparql-prefixes
 #+begin_src emacs-lisp :var prefixes=prefix-table :exports none
-  (mapconcat (lambda (row) (format \"PREFIX %-5s <%s>\" (car row) (cadr row)))t
-             prefixes \"\n\")
+  (elot-prefix-block-from-alist prefixes 'sparql)
 #+end_src
 #+name: omn-prefixes
 #+begin_src emacs-lisp :var prefixes=prefix-table :exports none
-  (mapconcat (lambda (row) (format \"Prefix: %-5s <%s>\" (car row) (cadr row)))
-             prefixes \"\n\")
+  (elot-prefix-block-from-alist prefixes 'omn)
 #+end_src
 #+name: ttl-prefixes
 #+begin_src emacs-lisp :var prefixes=prefix-table :exports none
-  (mapconcat (lambda (row) (format \"@prefix %-5s <%s> .\" (car row) (cadr row)))
-             prefixes \"\n\")
+  (elot-prefix-block-from-alist prefixes 'ttl)
 #+end_src
 "
 "
