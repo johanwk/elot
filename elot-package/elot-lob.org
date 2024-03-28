@@ -62,7 +62,7 @@
              " --format TSV"
              " --query " query-file
              " " result-file))
-    (elot-csv-to-table result-file))
+    (elot-tsv-to-table result-file))
 #+end_src
 
 * sparql and rdfpuml
