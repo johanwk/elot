@@ -28,4 +28,4 @@ It is necessary to make sure Protege 5.6 (not 5.5) is running.
 1. In this documentation directory there is a file ATT30846.emacs. Copy this file to C:\Users\myname\ and rename it .emacs
 2. Open the file and edit the line that says (push (expand-file-name "~/../elot-package/") load-path) so that it points to the location of your checked-out copy of ELOT in the subdir you have stored it (see above). Note that you need to point to elot/elot-package, the subdirectory inside the checked-out copy, not to elot itself.
 3. Start emacs by typing emacs into the Windows start bar. You should see a screen come up looking like the following.
-   ![elot start screen](/EmacsStartScreen.png)
+   ![elot start screen](EmacsStartScreen.png)
