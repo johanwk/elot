@@ -121,7 +121,7 @@ SVGs. Conversion is described in
 #+header: :var config=rdfpuml-config
 #+header: :var add-options="left to right direction"
 #+header: :var epilogue='()
-#+header: :var format="png"
+#+header: :var format="svg"
 #+begin_src emacs-lisp :results file
   (let ((ttl (org-babel-ref-resolve ttlblock)))
     (message (concat "Converting " ttlblock " to PlantUML ..."))
