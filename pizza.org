@@ -2,7 +2,7 @@
 #+title: The pizza ontology
 #+subtitle: An OWL ontology
 #+author: Alan Rector et al.
-#+date: WIP (version of 2024-04-02 02:45)
+#+date: WIP (version of 2024-04-02 09:34)
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 
 * The pizza ontology as an ELOT example
@@ -151,7 +151,7 @@ Note the use of quotes around the Turtle block name in =ttlblock=.
 #+call: rdfpuml-block(ttlblock="pizza-construct")
 
 #+RESULTS:
-[[file:./images/pizza-construct.png]]
+[[file:./images/pizza-construct.svg]]
 ** Prefixes
 The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
 
