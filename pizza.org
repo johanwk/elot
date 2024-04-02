@@ -2,7 +2,7 @@
 #+title: The pizza ontology
 #+subtitle: An OWL ontology
 #+author: Alan Rector et al.
-#+date: WIP (version of 2024-04-02 11:24)
+#+date: WIP (version of 2024-04-02 11:58)
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 
 * The pizza ontology as an ELOT example
@@ -115,30 +115,15 @@ Datatype: xsd:boolean
 | pizza:DomainConcept  | DomainConcept   |
 *** construct query
 #+name: pizza-construct
-#+begin_src sparql :url "pizza.omn" :format ttl :wrap "src ttl" :cache yes
+#+begin_src sparql :url "pizza.omn" :format ttl :wrap "src ttl" :cache yes :post kill-prefixes(data=*this*)
   construct { ?class a owl:Class ; rdfs:label ?label }
   { ?class a owl:Class ; rdfs:label ?label
     filter not exists { ?class rdfs:subClassOf ?x }
   }
 #+end_src
 
-#+RESULTS[671462d46a90b9d4528fc32060247ff49b70386d]: pizza-construct
+#+RESULTS[65e06529e9331244d0805f353bfa7b7897b3a74b]: pizza-construct
 #+begin_src ttl
-@prefix coo:   <http://www.co-ode.org/ontologies/> .
-@prefix pav:   <http://purl.org/pav/> .
-@prefix owl:   <http://www.w3.org/2002/07/owl#> .
-@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
-@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
-@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix pizza: <http://www.co-ode.org/ontologies/pizza/pizza.owl#> .
-@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix xml:   <http://www.w3.org/XML/1998/namespace> .
-@prefix dcterms: <http://purl.org/dc/terms/> .
-@prefix iof-av: <https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/> .
-@prefix prov:  <http://www.w3.org/ns/prov#> .
-@prefix foaf:  <http://xmlns.com/foaf/0.1/> .
-@prefix dc:    <http://purl.org/dc/elements/1.1/> .
-
 pizza:DomainConcept  a  owl:Class ;
         rdfs:label  "DomainConcept" , "DomainThing"@en .
 
