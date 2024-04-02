@@ -469,7 +469,7 @@ for RDF results in Turtle."
   "Execute a block containing a SPARQL query with org-babel.
 This function is called by `org-babel-execute-src-block'.
 The function has been patched for ELOT to allow query with ROBOT."
-  (message "Executing a SPARQL query block.")
+  (message "Executing a SPARQL query block with ELOT version of org-babel-execute:sparql.")
   (let* ((url (cdr (assoc :url params)))
          (format (cdr (assoc :format params)))
          (query (org-babel-expand-body:sparql body params))
