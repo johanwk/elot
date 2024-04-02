@@ -115,50 +115,24 @@ for SVG in LaTeX is not great.
 On the other hand, inclusion in MS Word or export to HTML calls for
 SVGs. Conversion is described in 
 *** rdfpuml-block will read a ttl block and output a diagram
-WARNINGS. This script block is set up with /hardcoded paths/ to
- - call on Strawberry Perl (a perl implementation for Windows)
- - find rdfpuml (see https://github.com/VladimirAlexiev/rdf2rml)
-
-This block also uses the =f= library, which is not really necessary. An
-overhaul is needed.
-
-Also note *prefixes* go in file =prefixes.ttl= so rdfpuml finds them.
 #+name: rdfpuml-block
-#+header: :var ttlblock="example-ttl" :var config=rdfpuml-config[] :var imgdir=(expand-file-name "./images/") :var format="svg" :var addtext="" :var addtextend="" :cache yes :eval never-export
-#+begin_src emacs-lisp :results file :dir ~ 
-  (let* ((puml-command (concat elot-perl-command " " elot-rdfpuml-path))
-         (ttl (concat 
-               (eval `(org-sbe ,ttlblock))
-               config))
-               ;;(eval `(org-sbe ,config))))
-         (tmp-graphic-file (concat "tmp-rdfpuml." format))
-         (result-graphic-file (concat imgdir ttlblock "." format))
-         )
-    (progn 
-      (make-directory imgdir :parents)
-      (f-write-text ttl 'utf-8 "tmp-rdfpuml.ttl")
-      (message (concat "Wrote source block \"" ttlblock "\" to file:" (shell-command-to-string (concat "wc " "tmp-rdfpuml.ttl"))))
-      (shell-command-to-string 
-       (concat puml-command " tmp-rdfpuml.ttl"))
-      (message (concat "Executed rdfpuml on ttl to create plantuml file:" (shell-command-to-string (concat "wc " "tmp-rdfpuml.puml"))))
-      (message (concat puml-command " tmp-rdfpuml.ttl"))
-      (unless (string= addtext "") 
-        (shell-command-to-string (concat "sed -i '2i " addtext "' tmp-rdfpuml.puml")))
-      (unless (string= addtextend "") 
-        (shell-command-to-string (concat "sed -i '0,/@enduml/s/@enduml/" addtextend "\\n&/' tmp-rdfpuml.puml")))
-      (shell-command "sed -i 's/ : rdfs:\\(subClassOf\\|subPropertyOf\\)//g' tmp-rdfpuml.puml") ;; more compact diagram
-      (shell-command-to-string (concat "java -jar " org-plantuml-jar-path " -t" format " tmp-rdfpuml.puml"))
-      (message (concat "Executed plantuml to create " format " file:" (shell-command-to-string (concat "wc " tmp-graphic-file))))
-      (message (concat "java -jar " org-plantuml-jar-path " -t" format " tmp-rdfpuml.puml"))
-      (f-move tmp-graphic-file result-graphic-file)
-      ;(f-delete "tmp-rdfpuml.ttl")
-      ;(f-delete "tmp-rdfpuml.puml")
-      result-graphic-file
-      ))
+#+header: :var ttlblock="example-ttl"
+#+header: :var prefixes='()
+#+header: :var config='()
+#+header: :var add-options="left to right direction"
+#+header: :var epilogue='()
+#+header: :var format="png"
+#+begin_src emacs-lisp :results file
+  (let ((ttl (org-babel-ref-resolve ttlblock)))
+    (message (concat "Converting " ttlblock " to PlantUML ..."))
+    (let ((puml-file 
+          (elot-rdfpuml-execute ttl prefixes config add-options epilogue)))
+      (elot-plantuml-execute puml-file ttlblock format)))
 #+end_src
 
+
 #+RESULTS[fd2e7835ef9c2388a22067ffadf7e94d13a5052f]: rdfpuml-block
-[[file:images/example-ttl.svg]]
+[[file:./images/example-ttl.png]]
 
 *** Test ttl block
 #+name: example-ttl

@@ -78,25 +78,44 @@ tangling to OMN.
       (message (concat omnfile " not found, nothing for ROBOT to convert")))
      (t (shell-command
          (concat elot-robot-command-str
-                  " convert --strict --verbose"
-                  " --input " omnfile
-                  " --output " (file-name-sans-extension omnfile) ".ttl")))))
+                 " convert --strict --verbose"
+                 " --input " omnfile
+                 " --output " (file-name-sans-extension omnfile) ".ttl")))))
   (defun elot-tangled-omn-to-ttl ()
     "After tangling to OMN, call ROBOT to convert to Turtle."
     (let* ((omnfile (buffer-file-name))  ;; will run in the tangled buffer
            (omn-p (string-match-p ".omn$" omnfile)))
       (if omn-p
           (elot-robot-omn-to-ttl omnfile))))
+  (defcustom elot-default-image-path "./images/"
+    "ELOT default output directory for generated images"
+    :group 'elot
+    :version "29.2"
+    :type 'string)
   (defcustom elot-rdfpuml-path (expand-file-name "~/bin/rdf2rml/bin/rdfpuml.pl")
     "Path to the rdfpuml Perl program."
     :group 'elot
     :version "29.2"
     :type 'string)
-  (defcustom elot-perl-command "perl"
-    "Perl command used for rdfpuml."
+  (defcustom elot-rdfpuml-options
+    "hide empty members
+  hide circle
+  skinparam classAttributeIconSize 0"
+    "Default options for rdfpuml"
     :group 'elot
     :version "29.2"
     :type 'string)
+  (defvar elot-rdfpuml-command-str 
+    (if (executable-find "rdfpuml") ;; rdfpuml.exe available
+        "rdfpuml"
+      (concat "perl -C -S " elot-rdfpuml-path)))
+  (defun elot-rdfpuml-command (ttl-file)
+    (let ((rdfpuml-command-str
+           (if (executable-find "rdfpuml") ;; rdfpuml.exe available
+               "LC_ALL=C rdfpuml"
+             (concat elot-perl-command " "
+                     elot-rdfpuml-path))))
+      (shell-command (concat rdfpuml-command-str " " ttl-file))))
 #+end_src
 *** OMN keywords
 In omn-mode, there's variables for entity and property
@@ -835,6 +854,54 @@ To get the ttl block to process correctly, for rdfpuml use.
   (defalias 'org-babel-execute:ttl 'org-babel-execute:passthrough))
 #+end_src
 
+*** Execute rdfpuml on Turtle content
+Function =elot-rdfpuml-execute= takes a Turtle /string/ plus options, runs
+rdfpuml, and returns the filename of the resulting PlantUML file.
+#+begin_src emacs-lisp
+(defun elot-rdfpuml-execute (ttl &optional prefixes config add-options epilogue)
+  "Run rdfpuml on Turtle RDF content and return PlantUML code. 
+`ttl' is a Turtle string, `prefixes' optional prefix block, 
+`config' optional Turtle for rdfpuml configuration, 
+`add-options' string of PlantUML options added to rdfpuml defaults,
+`epilogue' extra PlantUML clauses"
+  (let* ((options-str
+         (if add-options
+             (concat "[] puml:options \"\"\""
+                     elot-rdfpuml-options "\n"
+                     add-options
+                     "\n\"\"\".\n")))
+        (input-ttl-file (org-babel-temp-file "rdfpuml-" ".ttl"))
+        (output-puml-file (concat (file-name-sans-extension input-ttl-file) ".puml")))
+    (with-temp-file input-ttl-file
+      (insert (mapconcat 'identity
+                         (list prefixes ttl config options-str) "\n")))
+    ;; apparently prefixes.ttl is needed to reside in current dir, will overwrite
+    (if prefixes (with-temp-file "prefixes.ttl"
+                   (insert prefixes "\n")))
+    (elot-rdfpuml-command input-ttl-file)
+    (with-temp-file output-puml-file
+      (insert-file-contents output-puml-file)
+      (if epilogue (replace-string "@enduml"
+                                   (concat epilogue "\n" "@enduml"))))
+    output-puml-file))
+#+end_src
+
+Function =elot-plantuml-execute= takes a PlantUML filename, plus name
+and format suffix of the generated diagram. Resulting graphic file is
+placed in the default ELOT directory, and the filename returned.
+#+begin_src emacs-lisp
+(defun elot-plantuml-execute (puml-file output-name format)
+  "With PlantUML, read `puml-file' and output `output-name'.`format'
+to ELOT default image (sub)directory. Return output file name."
+  (let ((tmp-output-file (concat (file-name-sans-extension puml-file) "." format))
+        (output-file (concat elot-default-image-path ttlblock "." format)))
+    (message (concat puml-file " --> " output-file))
+    (make-directory elot-default-image-path :always)
+    (shell-command 
+     (concat "java -jar " org-plantuml-jar-path " -t" format " " puml-file))
+    (copy-file tmp-output-file output-file :allow-overwrite)
+    output-file))
+#+end_src
 *** Tempo templates
 **** ELOT document header
 Insert a document header with =<oh=.
@@ -1045,8 +1112,6 @@ metrics.
      "ROBOT metrics"
      'org-tempo-tags)
 #+end_src
-***** ROBOT sparql
-Insert a sparql block, and a =call= to execute it on the current ontology.
 *** End with "provides"
 #+begin_src emacs-lisp
 (provide 'elot)
