@@ -117,8 +117,8 @@ SVGs. Conversion is described in
 *** rdfpuml-block will read a ttl block and output a diagram
 #+name: rdfpuml-block
 #+header: :var ttlblock="example-ttl"
-#+header: :var prefixes='()
-#+header: :var config='()
+#+header: :var prefixes=ttl-prefixes
+#+header: :var config=rdfpuml-config
 #+header: :var add-options="left to right direction"
 #+header: :var epilogue='()
 #+header: :var format="png"
