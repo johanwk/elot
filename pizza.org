@@ -2,7 +2,7 @@
 #+title: The pizza ontology
 #+subtitle: An OWL ontology
 #+author: Alan Rector et al.
-#+date: WIP (version of 2024-03-28 19:30)
+#+date: WIP (version of 2024-04-02 02:30)
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 
 * The pizza ontology as an ELOT example
@@ -114,14 +114,15 @@ Datatype: xsd:boolean
 | http://www.co-ode.org/ontologies/pizza/pizza.owl#DomainConcept  | DomainThing     |
 | http://www.co-ode.org/ontologies/pizza/pizza.owl#DomainConcept  | DomainConcept   |
 *** construct query
-#+begin_src sparql :url "pizza.omn" :format ttl :wrap "src ttl"
+#+name: pizza-construct
+#+begin_src sparql :url "pizza.omn" :format ttl :wrap "src ttl" :cache yes
   construct { ?class rdfs:label ?label }
   { ?class a owl:Class ; rdfs:label ?label
     filter not exists { ?class rdfs:subClassOf ?x }
   }
 #+end_src
 
-#+RESULTS:
+#+RESULTS[47d2e64857e1188a22ed23df90f4dab0f1e525f5]: pizza-construct
 #+begin_src ttl
 @prefix coo:   <http://www.co-ode.org/ontologies/> .
 @prefix pav:   <http://purl.org/pav/> .
@@ -142,6 +143,12 @@ pizza:DomainConcept  rdfs:label  "DomainConcept" , "DomainThing"@en .
 
 pizza:ValuePartition  rdfs:label  "ValorDaParticao"@pt , "ValuePartition" , "ValuePartition"@en .
 #+end_src
+
+** rdfpuml diagram
+#+call: rdfpuml-block(ttlblock="pizza-construct", prefixes="ttl-prefixes")
+
+#+RESULTS:
+[[file:./images/pizza-construct.png]]
 
 ** Prefixes
 The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
