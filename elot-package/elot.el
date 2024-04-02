@@ -57,12 +57,14 @@
 (defvar elot-robot-command-str
   (concat "java -jar " elot-robot-jar-path))
 (defun elot-robot-command (cmd)
+  (if (or (string= elot-robot-jar-path "") (not (file-exists-p elot-robot-jar-path)))
+      (error "ROBOT not found. Set elot-robot-jar-path with M-x customize-variable."))
   (shell-command (concat elot-robot-command-str " " cmd)))
 (defun elot-robot-omn-to-ttl (omnfile)
   "Call ROBOT to make a Turtle file from `omnfile'."
   (cond
-   ((not (file-exists-p elot-robot-jar-path))
-    (message "ROBOT not found, not converting to Turtle"))
+   ((or (string= elot-robot-jar-path "") (not (file-exists-p elot-robot-jar-path)))
+    (message "ROBOT not found, not converting to Turtle. Set elot-robot-jar-path with M-x customize-variable."))
    ((not (file-exists-p omnfile))
     (message (concat omnfile " not found, nothing for ROBOT to convert")))
    (t (shell-command
@@ -96,7 +98,7 @@ skinparam classAttributeIconSize 0"
   :type 'string)
 (defcustom elot-rdfpuml-command-str
   (if (executable-find "rdfpuml") ;; rdfpuml.exe available
-      "LC_ALL=C rdfpuml"
+    "rdfpuml"  ;; LC_ALL=C should be added, but not available in Windows
     (concat "perl -C -S " elot-rdfpuml-path))
   "Command to execute `rdfpuml'."
   :group 'elot
@@ -661,8 +663,10 @@ The function has been patched for ELOT to allow query with ROBOT."
 (defun elot-plantuml-execute (puml-file output-name format)
   "With PlantUML, read `puml-file' and output `output-name'.`format'
 to ELOT default image (sub)directory. Return output file name."
+  (if (or (string= org-plantuml-jar-path "") (not (file-exists-p org-plantuml-jar-path)))
+    (error "PlantUML not found. Set org-plantuml-jar-path with M-x customize-variable."))
   (let ((tmp-output-file (concat (file-name-sans-extension puml-file) "." format))
-        (output-file (concat elot-default-image-path ttlblock "." format)))
+	(output-file (concat elot-default-image-path ttlblock "." format)))
     (message (concat puml-file " --> " output-file))
     (make-directory elot-default-image-path :always)
     (shell-command 
