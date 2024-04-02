@@ -39,7 +39,7 @@
 (require 'htmlize) ; fontify blocks
 (require 'omn-mode) ; OMN support
 (require 'sparql-mode) ; OMN support
-(require 'f) ; files lib, used in rdfpuml-block only
+(require 'ob-plantuml) ; PlantUML
 
 ;;;; Usage
 
@@ -94,17 +94,16 @@ skinparam classAttributeIconSize 0"
   :group 'elot
   :version "29.2"
   :type 'string)
-(defvar elot-rdfpuml-command-str 
+(defcustom elot-rdfpuml-command-str
   (if (executable-find "rdfpuml") ;; rdfpuml.exe available
-      "rdfpuml"
-    (concat "perl -C -S " elot-rdfpuml-path)))
+      "LC_ALL=C rdfpuml"
+    (concat "perl -C -S " elot-rdfpuml-path))
+  "Command to execute `rdfpuml'."
+  :group 'elot
+  :version "29.2"
+  :type 'string)
 (defun elot-rdfpuml-command (ttl-file)
-  (let ((rdfpuml-command-str
-         (if (executable-find "rdfpuml") ;; rdfpuml.exe available
-             "LC_ALL=C rdfpuml"
-           (concat elot-perl-command " "
-                   elot-rdfpuml-path))))
-    (shell-command (concat rdfpuml-command-str " " ttl-file))))
+  (shell-command (concat elot-rdfpuml-command-str " " ttl-file)))
 ;; Setting for post-processing with ROBOT, rdfpuml:1 ends here
 
 ;; [[file:../elot-defs.org::*OMN keywords][OMN keywords:1]]
