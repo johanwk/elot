@@ -2,7 +2,7 @@
 #+title: The pizza ontology
 #+subtitle: An OWL ontology
 #+author: Alan Rector et al.
-#+date: WIP (version of 2024-04-02 11:58)
+#+date: WIP (version of 2024-04-02 13:07)
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 
 * The pizza ontology as an ELOT example
@@ -102,17 +102,17 @@ Datatype: xsd:boolean
   select ?class ?label {
     ?class a owl:Class ; rdfs:label ?label
     filter not exists { ?class rdfs:subClassOf ?x }
-  }
+  } order by ?class
 #+end_src
 
 #+RESULTS:
 | class                | label           |
 |----------------------+-----------------|
-| pizza:ValuePartition | ValuePartition  |
-| pizza:ValuePartition | ValuePartition  |
-| pizza:ValuePartition | ValorDaParticao |
-| pizza:DomainConcept  | DomainThing     |
 | pizza:DomainConcept  | DomainConcept   |
+| pizza:DomainConcept  | DomainThing     |
+| pizza:ValuePartition | ValorDaParticao |
+| pizza:ValuePartition | ValuePartition  |
+| pizza:ValuePartition | ValuePartition  |
 *** construct query
 #+name: pizza-construct
 #+begin_src sparql :url "pizza.omn" :format ttl :wrap "src ttl" :cache yes :post kill-prefixes(data=*this*)
