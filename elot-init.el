@@ -28,7 +28,7 @@
 (dolist (package '(htmlize
                    omn-mode
                    sparql-mode
-                   ob-plantuml
+                   plantuml-mode
                    org-ql
                    ;; the following are completely optional
                    modus-themes
