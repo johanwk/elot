@@ -49,7 +49,7 @@
 (setq tempo-interactive t)
 
 ;; location of the elot package -- edit path to fit
-(push (expand-file-name "~/elisp/elot-package/") load-path)
+(push (expand-file-name "~/elisp/elot/elot-package/") load-path)
 (load-library "elot")
 
 (org-babel-do-load-languages
