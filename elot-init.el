@@ -74,6 +74,8 @@
 
 (load-theme 'modus-operandi-tritanopia t)
 
+(setq warning-minimum-level :error)
+
 (use-package general)  ; a dependency
 
 (use-package vertico
