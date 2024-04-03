@@ -1,7 +1,10 @@
 ; -*- coding: utf-8; lexical-binding: t; -*-
 
-;; init file for ELOT, to see what is required for making an ontology and document
-;; borrowing from http://xahlee.info/emacs/emacs/emacs_sample_init.el
+;; Initialization file for ELOT, loading what is required for making
+;; an ontology and document.
+;; 
+;; If you are new to Emacs, you can save this file as ".emacs" in your
+;; home directory, then restart Emacs.
 
 ;; convenience
 (setq inhibit-startup-message t)
