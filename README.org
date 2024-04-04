@@ -37,7 +37,7 @@ for Linux). It's recommended to
 For MacOS users: See the GNU Emacs page.
 ** Install ELOT in Emacs
 ELOT is in active development and will see frequent updates. For easy
-access to these updates, you should /clone/ of the ELOT repository using
+access to these updates, you should /clone/ the ELOT repository using
 Git. 
 
 The following steps will get you started editing OWL ontologies.
@@ -60,7 +60,7 @@ The following steps will get you started editing OWL ontologies.
 
 ** Install ELOT auxiliaries
 ELOT relies on external software programs to query your ontologies
-and producing diagrams. These need to be downloaded.
+and produce diagrams. These need to be downloaded.
 
 Preparatory steps, if needed:
  1. Create a directory named =bin= in your home folder: you will
@@ -97,10 +97,41 @@ To create a new ontology, do this in Emacs:
  - Insert the ELOT template for a document header: At the top of the
    document, type =<oh= and press the Tab key. Answer the prompts, and a
    header is produced, like the following.
+   #+begin_src org
+   # -*- eval: (load-library "elot-defaults") -*-
+    #+title: My new ontology
+    #+subtitle: An OWL ontology
+    #+author: John Doe
+    #+date: WIP (version of 2024-04-04 12:34)
+   #+end_src
  - Insert the ELOT template for an ontology skeleton: Below the
    header, type =<os= and press the Tab key. Answer the prompts -- be
    ready to provide namespaces/prefixes for your ontology and the
-   resources it will contain.
+   resources it will contain. 
+   #+begin_src org
+       ,* my-ont
+       ,** Prefixes
+       ,** my-ont ontology (exo:my-ont exo:my-ont/0.0)
+       :PROPERTIES:
+        # - Import :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/
+        - owl:versionInfo :: 0.0 start of my-ont
+        - dcterms:title :: "my-ont ontology"@en
+        - owl:versionInfo :: 0.0 start of my-ont
+        - pav:lastUpdateOn :: modification-time("%Y-%m-%dT%H:%M:%SZ",t)^^xsd:dateTime
+        - dcterms:license :: https://creativecommons.org/licenses/by-sa/4.0/
+        - dcterms:creator :: author
+        - dcterms:modified ::  modification-time("%Y-%m-%d",t)^^xsd:date
+        - dcterms:publisher :: https://example.org/thepublisher
+        - dc:rights :: Copyright info here
+        - dcterms:description :: The my-ont ontology is ...
+        - rdfs:comment :: The my-ont ontology is ...
+       ,** Classes
+       ,** Object properties
+       ,** Data properties
+       ,** Annotation properties
+       ,** Individuals
+   #+end_src
+
 
 Now create an OWL file from your new document.
  - Export to an ontology file with the Emacs command M-x
