@@ -2,12 +2,15 @@
 #+title: The pizza ontology
 #+subtitle: An OWL ontology
 #+author: Alan Rector et al.
-#+date: WIP (version of 2024-04-02 13:07)
+#+date: WIP (version of 2024-04-04 23:57)
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 
 * The pizza ontology as an ELOT example
 :PROPERTIES:
 :ID: pizza
+:ELOT-context-type: ontology
+:ELOT-context-localname: pizza
+:ELOT-default-prefix: pizza
 :header-args:omn: :tangle ./pizza.omn :noweb yes
 :header-args:emacs-lisp: :tangle no :exports results
 :header-args: :padline yes
