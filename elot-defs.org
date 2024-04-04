@@ -159,10 +159,37 @@ We add a filter to make OMN in description lists =\ttfamily=. See [[https://orgm
   (add-to-list 'org-export-filter-plain-list-functions
              'elot-latex-filter-omn-list)
 #+end_src
-*** Looking at
-Introduced because ontology-defining headings don't have
+*** Context identification
+In particular for tempo templates, it's useful to be able to retrieve
+information about the governing context of a position in the org-mode
+document. We introduce properties, to be added in the property drawer
+of a top-level heading for an ontology (later, for an OTTR library,
+etc.).
+ - property =ELOT-context-type= has value =ontology=
+ - property =ELOT-context-localname= has value =pizza= for the Pizza ontology
+ - property =ELOT-default-prefix= has value =pizza= for the Pizza ontology
+ #+begin_src emacs-lisp
+   (defun elot-context-type ()
+     "Retrieve value of property ELOT-context-type for a governing
+   heading. This will return \"ontology\" if point is under a
+   heading that declares an ontology."
+     (org-entry-get-with-inheritance "ELOT-context-type"))
+   (defun elot-context-localname ()
+     "Retrieve value of property ELOT-context-localname for a governing
+   heading. This will return the localname of the ontology if point
+   is under a heading that declares an ontology."
+     (org-entry-get-with-inheritance "ELOT-context-localname"))
+   (defun elot-default-prefix ()
+     "Retrieve value of property ELOT-default-prefix for a governing
+   heading. This will return the default prefix for ontology
+   resources if point is under a heading that declares an ontology."
+     (org-entry-get-with-inheritance "ELOT-default-prefix"))
+ #+end_src
+**** Looking at
+Introduced because ontology-declaring headings don't have
 subsections. Revisit to cover other kinds of headings, and probably a
-better way to identify than matching with ID string.
+better way to identify than matching with "ontology-declaration" in
+the ID string.
 #+begin_src emacs-lisp
   (defun at-ontology-heading ()
     (let ((id (or (org-entry-get (point) "ID") "")))
@@ -525,7 +552,7 @@ file using ROBOT.
             (if (string-match-p "\\(turtle\\|ttl\\)" format) 'ttl 'csv)))
       (with-temp-buffer
         (if (string-match-p "^http" url)  ;; querying an endpoint, or a file?
-            (sparql-execute-query query url format t)
+            (sparql-execute-query query url format t) ;; add test, does the file exist at all
           (elot-robot-execute-query elot-prefixed-query url format-symbol))
         (org-babel-result-cond
             (cdr (assoc :result-params params))
@@ -929,6 +956,9 @@ Insert a skeleton with =<os=.
    '(n > "* " (p "Ontology identifier localname: " ontlocalname) > n
        ":PROPERTIES:" > n
        ":ID: " (s ontlocalname) > n
+       ":ELOT-context-type: ontology" > n
+       ":ELOT-context-localname: " (s ontlocalname) > n
+       ":ELOT-default-prefix: " (p "Namespace prefix for resources in this ontology (without the \":\") " resprefix) > n
        ":header-args:omn: :tangle ./" (s ontlocalname) ".omn :noweb yes" > n
        ":header-args:emacs-lisp: :tangle no :exports results" > n
        ":header-args: :padline yes" > n
@@ -991,7 +1021,7 @@ Insert a skeleton with =<os=.
   | dcterms:  | http://purl.org/dc/terms/                                                      |
   | prov:     | http://www.w3.org/ns/prov#                                                     |
   | iof-av:   | https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/ |" > n
-  "| " (p "Namespace prefix for resources in this ontology (without the \":\") " resprefix) 
+  "| " (s resprefix)  
   ":       | " (p "Resource namespace in full (\"http ...\") " resns) "                                                            |" > n
   "| " (p "Namespace prefix for the ontology itself (without the \":\") " ontprefix) 
   ":       | " (p "Ontology namespace in full (\"http ...\") " ontns) "                                                            |" >  n
@@ -1115,6 +1145,8 @@ metrics.
      "ROBOT metrics"
      'org-tempo-tags)
 #+end_src
+**** OWL class templates
+***** OWL class
 *** End with "provides"
 #+begin_src emacs-lisp
 (provide 'elot)
