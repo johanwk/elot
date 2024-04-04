@@ -333,7 +333,8 @@ Maybe also with tags :hello: on the right. Return abc:MyClassName in both cases.
         (match-string 1 str)
       (if (string-match "(\\([-_[:alnum:]]*:[-_[:alnum:]]+ [-_[:alnum:]]*:[-_/.[:alnum:]]+\\))" str) ; two ids in parentheses, for ontology
           (match-string 1 str)
-        (concat "Malformed_" str)))))
+        (error (message "%s%s%s%s%s" "Fail! Heading \"" str "\" in " (org-entry-get-with-inheritance "ID") " is not well-formed") 
+               (concat "Malformed_" str))))))
 ;; defun-resource-headings ends here
 
 ;; [[file:../elot-defs.org::defun-resource-declaration][defun-resource-declaration]]

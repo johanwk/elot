@@ -376,7 +376,8 @@ annotations in a future improved version, from sub-items.
           (match-string 1 str)
         (if (string-match "(\\([-_[:alnum:]]*:[-_[:alnum:]]+ [-_[:alnum:]]*:[-_/.[:alnum:]]+\\))" str) ; two ids in parentheses, for ontology
             (match-string 1 str)
-          (concat "Malformed_" str)))))
+          (error (message "%s%s%s%s%s" "Fail! Heading \"" str "\" in " (org-entry-get-with-inheritance "ID") " is not well-formed") 
+                 (concat "Malformed_" str))))))
 #+END_SRC
 *** Write entity declarations
 #+name: defun-resource-declaration
@@ -1150,6 +1151,7 @@ metrics.
 #+end_src
 **** OWL class templates
 ***** OWL class
+
 *** End with "provides"
 #+begin_src emacs-lisp
 (provide 'elot)
