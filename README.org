@@ -81,7 +81,8 @@ Get the tools:
     ontologies.
     - On Windows, download [[https://github.com/VladimirAlexiev/rdf2rml/raw/master/bin/rdfpuml.exe][rdfpuml.exe]] to your =bin= folder.
     - On Linux or MacOS, clone the repository to your =bin= folder, then
-      add =~/bin/rdf2rml/bin/= to your PATH.
+      add =~/bin/rdf2rml/bin/= to your PATH. Install Perl modules as
+      listed in the [[https://github.com/VladimirAlexiev/rdf2rml?tab=readme-ov-file#installation][rdfpuml installation guide]].
        : cd ~/bin
        : git clone https://github.com/VladimirAlexiev/rdf2rml.git
 
