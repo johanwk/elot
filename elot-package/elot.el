@@ -868,8 +868,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 :resourcedefs: yes
 :END:
 "
-(progn (update-link-abbrev) (org-cycle-set-startup-visibility) 
-       (org-macro-initialize-templates)
+(progn (update-link-abbrev) 
+       (save-buffer) (org-macro-initialize-templates)
+       (org-cycle-set-startup-visibility)
        (goto-char (point-min))
        (search-forward "dcterms:description :: ") (outline-show-entry) "")
 )
