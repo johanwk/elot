@@ -140,6 +140,24 @@ skinparam classAttributeIconSize 0"
            'elot-latex-filter-omn-list)
 ;; OMN keywords:2 ends here
 
+;; [[file:../elot-defs.org::*Context identification][Context identification:1]]
+(defun elot-context-type ()
+  "Retrieve value of property ELOT-context-type for a governing
+heading. This will return \"ontology\" if point is under a
+heading that declares an ontology."
+  (org-entry-get-with-inheritance "ELOT-context-type"))
+(defun elot-context-localname ()
+  "Retrieve value of property ELOT-context-localname for a governing
+heading. This will return the localname of the ontology if point
+is under a heading that declares an ontology."
+  (org-entry-get-with-inheritance "ELOT-context-localname"))
+(defun elot-default-prefix ()
+  "Retrieve value of property ELOT-default-prefix for a governing
+heading. This will return the default prefix for ontology
+resources if point is under a heading that declares an ontology."
+  (org-entry-get-with-inheritance "ELOT-default-prefix"))
+;; Context identification:1 ends here
+
 ;; [[file:../elot-defs.org::*Looking at][Looking at:1]]
 (defun at-ontology-heading ()
   (let ((id (or (org-entry-get (point) "ID") "")))
@@ -482,7 +500,7 @@ The function has been patched for ELOT to allow query with ROBOT."
           (if (string-match-p "\\(turtle\\|ttl\\)" format) 'ttl 'csv)))
     (with-temp-buffer
       (if (string-match-p "^http" url)  ;; querying an endpoint, or a file?
-          (sparql-execute-query query url format t)
+          (sparql-execute-query query url format t) ;; add test, does the file exist at all
         (elot-robot-execute-query elot-prefixed-query url format-symbol))
       (org-babel-result-cond
           (cdr (assoc :result-params params))
@@ -695,6 +713,9 @@ to ELOT default image (sub)directory. Return output file name."
  '(n > "* " (p "Ontology identifier localname: " ontlocalname) > n
      ":PROPERTIES:" > n
      ":ID: " (s ontlocalname) > n
+     ":ELOT-context-type: ontology" > n
+     ":ELOT-context-localname: " (s ontlocalname) > n
+     ":ELOT-default-prefix: " (p "Namespace prefix for resources in this ontology (without the \":\") " resprefix) > n
      ":header-args:omn: :tangle ./" (s ontlocalname) ".omn :noweb yes" > n
      ":header-args:emacs-lisp: :tangle no :exports results" > n
      ":header-args: :padline yes" > n
@@ -757,7 +778,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 | dcterms:  | http://purl.org/dc/terms/                                                      |
 | prov:     | http://www.w3.org/ns/prov#                                                     |
 | iof-av:   | https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/ |" > n
-"| " (p "Namespace prefix for resources in this ontology (without the \":\") " resprefix) 
+"| " (s resprefix)  
 ":       | " (p "Resource namespace in full (\"http ...\") " resns) "                                                            |" > n
 "| " (p "Namespace prefix for the ontology itself (without the \":\") " ontprefix) 
 ":       | " (p "Ontology namespace in full (\"http ...\") " ontns) "                                                            |" >  n
@@ -847,7 +868,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 :resourcedefs: yes
 :END:
 "
-(progn (update-link-abbrev) (org-cycle-set-startup-visibility) (goto-char (point-min))
+(progn (update-link-abbrev) (org-cycle-set-startup-visibility) 
+       (org-macro-initialize-templates)
+       (goto-char (point-min))
        (search-forward "dcterms:description :: ") (outline-show-entry) "")
 )
  "<os"
