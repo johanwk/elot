@@ -861,7 +861,21 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 *** dc:rights
  - rdfs:isDefinedBy :: http://purl.org/dc/elements/1.1/
 *** pav:lastUpdateOn
- - rdfs:isDefinedBy :: [[http://purl.org/pav/]]
+ - rdfs:isDefinedBy :: http://purl.org/pav/
+*** skos:example
+ - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
+*** skos:prefLabel
+ - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
+*** skos:altLabel
+ - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
+*** iof-av:isPrimitive
+ - rdfs:isDefinedBy :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary
+*** skos:definition
+ - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
+**** iof-av:naturalLanguageDefinition
+ - rdfs:isDefinedBy :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary
+**** iof-av:primitiveRationale
+ - rdfs:isDefinedBy :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary
 ** Individuals
 :PROPERTIES:
 :ID:       " (s ontlocalname) "-individuals
@@ -902,6 +916,22 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
    "ROBOT metrics"
    'org-tempo-tags)
 ;; ROBOT metrics:1 ends here
+
+;; [[file:../elot-defs.org::*OWL primitive class with IOF defaults][OWL primitive class with IOF defaults:1]]
+(tempo-define-template "elot-class-iof-primitive"
+ '((make-string (car (org-heading-components)) ?*) " "
+   (p "Class label: ") " ("
+   (elot-default-prefix) ":" (p "localname: ") ") [1/4]" > n
+   " - [ ] iof-av:naturalLanguageDefinition :: " > n
+   " - [X] iof-av:isPrimitive :: true" > n
+   " - [ ] iof-av:primitiveRationale :: " > n
+   " - [ ] skos:example :: " > n
+   (progn (search-backward "Definition :: ") (end-of-line) (outline-show-entry) "")
+ )
+"<oci"
+"ELOT primitive class with IOF-AV annotations"
+'org-tempo-tags)
+;; OWL primitive class with IOF defaults:1 ends here
 
 ;; [[file:../elot-defs.org::*End with "provides"][End with "provides":1]]
 (provide 'elot)
