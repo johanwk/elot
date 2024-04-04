@@ -107,31 +107,10 @@ To create a new ontology, do this in Emacs:
  - Insert the ELOT template for an ontology skeleton: Below the
    header, type =<os= and press the Tab key. Answer the prompts -- be
    ready to provide namespaces/prefixes for your ontology and the
-   resources it will contain. 
-   #+begin_src org
-       ,* my-ont
-       ,** Prefixes
-       ,** my-ont ontology (exo:my-ont exo:my-ont/0.0)
-       :PROPERTIES:
-        # - Import :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/
-        - owl:versionInfo :: 0.0 start of my-ont
-        - dcterms:title :: "my-ont ontology"@en
-        - owl:versionInfo :: 0.0 start of my-ont
-        - pav:lastUpdateOn :: modification-time("%Y-%m-%dT%H:%M:%SZ",t)^^xsd:dateTime
-        - dcterms:license :: https://creativecommons.org/licenses/by-sa/4.0/
-        - dcterms:creator :: author
-        - dcterms:modified ::  modification-time("%Y-%m-%d",t)^^xsd:date
-        - dcterms:publisher :: https://example.org/thepublisher
-        - dc:rights :: Copyright info here
-        - dcterms:description :: The my-ont ontology is ...
-        - rdfs:comment :: The my-ont ontology is ...
-       ,** Classes
-       ,** Object properties
-       ,** Data properties
-       ,** Annotation properties
-       ,** Individuals
-   #+end_src
+   resources it will contain. You should see something like this
+   screenshot: 
 
+[[file:./documentation/images/elot-skeleton1.png]]
 
 Now create an OWL file from your new document.
  - Export to an ontology file with the Emacs command M-x
@@ -140,7 +119,12 @@ Now create an OWL file from your new document.
  - If you have installed ROBOT, a Turtle file named =myontology.ttl=
    will also be available.
  - Have Protégé ready, and open the ontology file there to inspect it.
+
+[[file:./documentation/images/protege-skeleton1.png]]
+
  - Export to an HTML document with the Emacs command M-x
    /org-export-dispatch/, keybinding =C-c C-e=. A menu will open; hit the
    key =h= to select HTML format, then =o= to automatically open in your
    web browser.
+
+[[file:./documentation/images/firefox-skeleton1.png]]
