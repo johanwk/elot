@@ -2,26 +2,114 @@
 
 * What
 This repository contains a template for writing OWL ontologies as
-org-mode documents, with supporting functions and scripts.
+[[https://orgmode.org/][Org Mode]] documents, with supporting functions and scripts.
 
-Started 2024-03-03, this is work in progress and likely not to work in
-any predictable fashion -- yet!
+Check out the file [[file:pizza.org]] for an example ELOT file.
 
-Check out the file `pizza.org` for an example ELOT file.
+ELOT works on Windows, MacOS, and Linux (tested in WSL).
 
-* Prerequisites
-You should install [[http://robot.obolibrary.org/][ROBOT]] to have Turtle output; [[https://plantuml.com/][PlantUML]] and [[https://github.com/VladimirAlexiev/rdf2rml][rdfpuml]]
-for diagrams.
+* Prerequisites in brief
+ - Download ELOT using [[https://github.com/git-guides/install-git][Git]] to easily obtain updates
+ - Use a recent version (29.x) of [[https://www.gnu.org/software/emacs/download.html][Emacs]] 
+ - For viewing your ontologies, install version 5.6 of [[https://protege.stanford.edu/][Protégé Desktop]]
+ - Install [[https://www.java.com/en/download/help/download_options.html][Java]] to enable advanced features
+   - Turtle output, ontology metrics, and more: install [[http://robot.obolibrary.org/][ROBOT]] 
+   - Ontology diagrams: install [[https://plantuml.com/][PlantUML]] and [[https://github.com/VladimirAlexiev/rdf2rml][rdfpuml]]
 
-* Quick start (needs update!)
+If you are new to Emacs, the book [[https://www.masteringemacs.org/][Mastering Emacs]] is highly
+recommended.
+* Installation
+** Get Emacs
+ELOT has only been tested on recent versions of Emacs. As of 2024-04,
+version 29.3 is the latest. See the [[https://www.gnu.org/software/emacs/download.html][GNU Emacs download page]].
 
-For a minimal check that ontology can be exported and documents can be
-produced:
- - Use a recent Emacs version (current latest version is 29.2)
- - Look at the init file [[elot-init.el]] for settings
- - Open a new org file, insert template =<oh= and press Tab for document
-   header, insert template =<os= and press Tab for ontology skeleton.
- - Export to ontology by M-x /org-babel-tangle/, keybinding
-   =C-c C-v t=. Open the ontology in Protégé to check it's OK.
- - Export to a document by M-x /org-export-dispatch/, keybinding =C-c
-   C-e=. Choose your format from the menu.
+For Windows users: download Emacs from the [[https://ftp.gnu.org/gnu/emacs/windows/emacs-29/][emacs-29 for Windows]]
+directory. The package named [[https://ftp.gnu.org/gnu/emacs/windows/emacs-29/emacs-29.3-installer.exe][emacs-29.3-installer.exe]] will work
+fine. It's preferable to install into a folder that doesn't contain
+spaces.
+
+For Linux users: ELOT has been tested on WSL 2 (Windows Subsystem
+for Linux). It's recommended to 
+ - upgrade to Ubuntu version 22; see the [[https://askubuntu.com/questions/1428423/upgrade-ubuntu-in-wsl2-from-20-04-to-22-04][guide at askubuntu.com]].
+ - compile Emacs to obtain the latest version: see the [[https://github.com/hubisan/emacs-wsl][guide at
+   hubisan/emacs-wsl]].
+
+For MacOS users: See the GNU Emacs page.
+** Install ELOT in Emacs
+ELOT is in active development and will see frequent updates. For easy
+access to these updates, you should /clone/ of the ELOT repository using
+Git. 
+
+The following steps will get you started editing OWL ontologies.
+ 1. Create a directory for local Emacs add-ons in your home folder,
+    named =elisp= (on Windows, that will likely mean
+    =c:\Users\myname\elisp\=).
+ 2. Clone ELOT into the =elisp= folder using your Git client.  If using
+    a terminal for Git, the following will do it.
+  : cd elisp
+  : git clone https://github.com/johanwk/elot.git
+    You should now have a subfolder of =elisp= called =elot=.
+ 3. Ensure ELOT is loaded when Emacs starts up.
+    - For new Emacs users: find the file =elot-init.el= inside the =elot=
+      folder, and copy it to a new file named =.emacs= /in your home
+      folder/, then restart Emacs. You should now be looking at a
+      basic, working Emacs configuration.
+    - Experienced Emacs users should open =elot-init.el= and look at the
+      list of packages that are required. Add
+      =~/elisp/elot/elot-package/= to your =load-path=.
+
+** Install ELOT auxiliaries
+ELOT relies on external software programs to query your ontologies
+and producing diagrams. These need to be downloaded.
+
+Preparatory steps, if needed:
+ 1. Create a directory named =bin= in your home folder: you will
+    download programs to this folder. On Windows, that will mean
+    =c:\Users\myname\bin\=.
+ 2. Ensure the =bin= folder is on your PATH, so the programs can be
+    found by ELOT. On Windows, use the Control Panel to edit Local
+    Environment Variables and add =c:\Users\myname\bin\= to the list.
+
+Get the tools:
+ 1. The [[http://robot.obolibrary.org/][ROBOT]] tool is highly recommended for ELOT. Download [[https://github.com/ontodev/robot/releases/download/v1.9.5/robot.jar][robot.jar]]
+    from the [[https://github.com/ontodev/robot/releases][ROBOT releases]] page to your =bin= folder.
+ 2. The [[https://plantuml.com/][PlantUML]] tool is needed for diagrams. Download
+    [[https://github.com/plantuml/plantuml/releases/download/v1.2024.3/plantuml-1.2024.3.jar][plantuml-1.2024.3.jar]] from the [[https://plantuml.com/download][PlantUML Downloads]] page to your =bin=
+    folder. For convenience, rename it as just =plantuml.jar= (on Linux,
+    make a symlink).
+ 3. The [[https://github.com/VladimirAlexiev/rdf2rml][rdfpuml]] tool will produce great-looking diagrams for
+    ontologies.
+    - On Windows, download [[https://github.com/VladimirAlexiev/rdf2rml/raw/master/bin/rdfpuml.exe][rdfpuml.exe]] to your =bin= folder.
+    - On Linux or MacOS, clone the repository to your =bin= folder, then
+      add =~/bin/rdf2rml/bin/= to your PATH.
+       : cd ~/bin
+       : git clone https://github.com/VladimirAlexiev/rdf2rml.git
+
+* Quick start using ELOT
+After the installation steps, it's wise to restart Emacs!
+
+Open the familiar Pizza ontology from =elisp/elot/pizza.org= for an
+example of what an ELOT file will look like.
+
+To create a new ontology, do this in Emacs:
+ - Select a directory that you want to work in. Open a new Org Mode
+   file, for instance =myontology.org=.
+ - Insert the ELOT template for a document header: At the top of the
+   document, type =<oh= and press the Tab key. Answer the prompts, and a
+   header is produced, like the following.
+ - Insert the ELOT template for an ontology skeleton: Below the
+   header, type =<os= and press the Tab key. Answer the prompts -- be
+   ready to provide namespaces/prefixes for your ontology and the
+   resources it will contain.
+
+Now create an OWL file from your new document.
+ - Export to an ontology file with the Emacs command M-x
+   /org-babel-tangle/, keybinding =C-c C-v t=. The ontology will be in OWL
+   Manchester Syntax, e.g., with filename =myontology.omn=.
+ - If you have installed ROBOT, a Turtle file named =myontology.ttl=
+   will also be available.
+ - Have Protégé ready, and open the ontology file there to inspect it.
+ - Export to an HTML document with the Emacs command M-x
+   /org-export-dispatch/, keybinding =C-c C-e=. A menu will open; hit the
+   key =h= to select HTML format, then =o= to automatically open in your
+   web browser.
