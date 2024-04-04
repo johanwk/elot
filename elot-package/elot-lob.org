@@ -214,6 +214,6 @@ The =ttlblock= argument can point to a named query.
 This is useful when there's too many prefix definitions
 #+name: kill-prefixes
 #+begin_src emacs-lisp :var data=""
-  (replace-regexp-in-string "^[[:blank:]]*[@]*prefix.*:.*\n" "" data)
+  (replace-regexp-in-string "^[[:blank:]]*[@]*prefix.*:.*\n\n*" "" data)
 #+end_src
 
