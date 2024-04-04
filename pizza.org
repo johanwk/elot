@@ -2,7 +2,7 @@
 #+title: The pizza ontology
 #+subtitle: An OWL ontology
 #+author: Alan Rector et al.
-#+date: WIP (version of 2024-04-04 23:57)
+#+date: WIP (version of 2024-04-05 01:02)
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 
 * The pizza ontology as an ELOT example
@@ -1106,9 +1106,20 @@ DisjointClasses:
  - rdfs:isDefinedBy :: http://purl.org/dc/elements/1.1/
 *** pav:lastUpdateOn
  - rdfs:isDefinedBy :: [[http://purl.org/pav/]]
+*** skos:example
+ - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
 *** skos:prefLabel
+*** iof-av:isPrimitive
+ - rdfs:isDefinedBy :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary
 *** skos:definition
 *** skos:altLabel
+*** skos:definition
+ - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
+**** iof-av:naturalLanguageDefinition
+ - rdfs:isDefinedBy :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/
+**** iof-av:primitiveRationale
+ - rdfs:isDefinedBy :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/
+
 ** Individuals
 :PROPERTIES:
 :ID:       pizza-individuals
