@@ -13,8 +13,8 @@
 (repeat-mode)
 
 ;; get packages
-(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
 (package-initialize)
+(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
 (package-refresh-contents)
 
 ;;; The following may be necessary for package installation in Windows
