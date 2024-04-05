@@ -95,8 +95,13 @@ example of what an ELOT file will look like.
 To create a new ontology, do this in Emacs:
  - Select a directory that you want to work in. Open a new Org Mode
    file, for instance =myontology.org=.
- - Insert the ELOT template for a document header: At the top of the
-   document, type =<oh= and press the Tab key. Answer the prompts, and a
+ - Insert the ELOT template for a document header: Press the =F4= key. A
+   menu is displayed at the bottom of the Emacs window. The letters in
+   blue represent /key sequences/ that will call up templates or execute
+   commands.
+
+[[file:./documentation/images/elot-helpdesk1.png]]
+ - Press keys =odh= to call up the document header template. Answer the prompts, and a
    header is produced, like the following.
    #+begin_src org
    # -*- eval: (load-library "elot-defaults") -*-
@@ -106,7 +111,7 @@ To create a new ontology, do this in Emacs:
     #+date: WIP (version of 2024-04-04 12:34)
    #+end_src
  - Insert the ELOT template for an ontology skeleton: Below the
-   header, type =<os= and press the Tab key. Answer the prompts -- be
+   header, press =F4= and then =ods=. Answer the prompts -- be
    ready to provide namespaces/prefixes for your ontology and the
    resources it will contain. You should see something like this
    screenshot: 
@@ -114,9 +119,9 @@ To create a new ontology, do this in Emacs:
 [[file:./documentation/images/elot-skeleton1.png]]
 
 Now create an OWL file from your new document.
- - Export to an ontology file with the Emacs command M-x
-   /org-babel-tangle/, keybinding =C-c C-v t=. The ontology will be in OWL
-   Manchester Syntax, e.g., with filename =myontology.omn=.
+ - Press =F4= and then =t=, to "tangle" the ontology to a file. The
+   ontology will be in OWL Manchester Syntax, e.g., with filename
+   =myontology.omn=.
  - If you have installed ROBOT, a Turtle file named =myontology.ttl=
    will also be available.
  - Have Protégé ready, and open the ontology file there to inspect it.
