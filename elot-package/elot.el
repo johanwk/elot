@@ -156,12 +156,25 @@ is under a heading that declares an ontology."
 heading. This will return the default prefix for ontology
 resources if point is under a heading that declares an ontology."
   (org-entry-get-with-inheritance "ELOT-default-prefix"))
+(defun elot-governing-hierarchy ()
+  "Retrieve the ID value of the governing hierarchy, or nil"
+  (let ((this-ID
+         (org-entry-get-with-inheritance "ID")))
+    (and (string-match-p "-hierarchy$" this-ID)
+         this-ID)))
 ;; Context identification:1 ends here
 
 ;; [[file:../elot-defs.org::*Looking at][Looking at:1]]
-(defun at-ontology-heading ()
+(defun elot-at-ontology-heading ()
+  "Return TRUE if point is in a heading that declares ontology"
   (let ((id (or (org-entry-get (point) "ID") "")))
    (string-match "ontology-declaration" id)))
+(defun elot-in-class-tree ()
+  "Return TRUE if point is a class hierarchy heading"
+  (string-match-p "class-hierarchy" (elot-governing-hierarchy)))
+(defun elot-in-property-tree ()
+  "Return TRUE if point is a property hierarchy heading"
+  (string-match-p "property-hierarchy" (elot-governing-hierarchy)))
 ;; Looking at:1 ends here
 
 ;; [[file:../elot-defs.org::defun-desc-lists][defun-desc-lists]]
@@ -218,7 +231,7 @@ resources if point is under a heading that declares an ontology."
       (org-narrow-to-subtree)
       (if ;; don't include the section that has the target property id itself, except if ontology section
           (or (outline-next-heading)
-            (at-ontology-heading))
+            (elot-at-ontology-heading))
           (let (ret)
             (while (let ((heading (substring-no-properties (org-get-heading nil t)))
                          (descriptions (org-descriptions-in-section)))
@@ -703,7 +716,7 @@ to ELOT default image (sub)directory. Return output file name."
 	"#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
 	(progn (load-library "elot-defaults") (message "Loaded ELOT") "")
 	)
- "<oh"
+ "<odh"
  "ELOT document header"
  'org-tempo-tags)
 ;; ELOT document header:1 ends here
@@ -889,10 +902,134 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
        (goto-char (point-min))
        (search-forward "dcterms:description :: ") (outline-show-entry) "")
 )
- "<os"
+ "<ods"
  "ELOT ontology sections skeleton"
  'org-tempo-tags)
 ;; ELOT ontology skeleton:1 ends here
+
+;; [[file:../elot-defs.org::*OWL primitive/non-primitive class, with IOF default annotations][OWL primitive/non-primitive class, with IOF default annotations:1]]
+(tempo-define-template "elot-class-iof-primitive"
+ '(
+   (org-toc-next) (org-open-line 1)
+   (make-string (org-current-level) ?*) " "
+   (p "Class label: ") " ("
+   (elot-default-prefix) ":" (p "localname: ") ") [1/4]" > n
+   " - [ ] iof-av:naturalLanguageDefinition :: " > n
+   " - [X] iof-av:isPrimitive :: true" > n
+   " - [ ] iof-av:primitiveRationale :: " > n
+   " - [ ] skos:example :: " > 
+ )
+ "<ocp"
+ "ELOT primitive class with IOF-AV annotations"
+ 'org-tempo-tags)
+
+(tempo-define-template "elot-class-iof-defined"
+ '((org-toc-next) (org-open-line 1)
+   (make-string (org-current-level) ?*) " "
+   (p "Class label: ") " ("
+   (elot-default-prefix) ":" (p "localname: ") ") [1/4]" > n
+   " - [ ] iof-av:semiFormalNaturalLanguageDefinition :: " > n
+   " - [X] iof-av:isPrimitive :: false" > n
+   " - [ ] skos:example :: " > 
+ )
+ "<ocd"
+ "ELOT primitive class with IOF-AV annotations"
+ 'org-tempo-tags)
+
+(tempo-define-template "elot-property-iof"
+ '((org-toc-next) (org-open-line 1)
+   (make-string (org-current-level) ?*) " "
+   (p "Property label: ") " ("
+   (elot-default-prefix) ":" (p "localname: ") ") [1/4]" > n
+   " - [ ] iof-av:naturalLanguageDefinition :: " > n
+   " - [ ] skos:example :: " > 
+ )
+ "<op"
+ "ELOT primitive class with IOF-AV annotations"
+ 'org-tempo-tags)
+;; OWL primitive/non-primitive class, with IOF default annotations:1 ends here
+
+;; [[file:../elot-defs.org::*Code blocks][Code blocks:1]]
+(tempo-define-template "elot-block-robot-metrics"
+ '(
+   (org-open-line 1) p
+   "#+call: robot-metrics(omnfile=\"" (elot-context-localname) ".omn\") :eval never-export" > 
+   (progn (message "Execute blocks with C-c C-c") "")
+ )
+ "<obm"
+ "ELOT ontology metrics from ROBOT"
+ 'org-tempo-tags)
+
+(tempo-define-template "elot-block-sparql-select"
+ '(
+   (org-open-line 1)
+"#+begin_src sparql :url \"" (elot-context-localname) ".omn\" :eval never-export
+  select
+  {
+
+  } 
+#+end_src" n
+   (progn (message "Execute blocks with C-c C-c") "")
+ )
+ "<obs"
+ "ELOT SPARQL SELECT from OMN "
+ 'org-tempo-tags)
+
+(tempo-define-template "elot-block-sparql-construct"
+ '(
+   (org-open-line 1)
+"#+begin_src sparql :url \"" (elot-context-localname) ".omn\" :eval never-export"
+":format ttl :wrap \"src ttl\" :cache yes :post kill-prefixes(data=*this*) :eval never-export
+  construct {
+
+  } {
+
+  } 
+#+end_src" n
+   (progn (message "Execute blocks with C-c C-c") "")
+ )
+ "<obc"
+ "ELOT SPARQL SELECT from OMN "
+ 'org-tempo-tags)
+
+(tempo-define-template "elot-block-rdfpuml-diagram"
+ '(
+   (org-open-line 1) p
+   "#+call: rdfpuml-block(omnfile=\"" (elot-context-localname) ".omn\") :eval never-export" > 
+   (progn (message "Execute blocks with C-c C-c") "")
+ )
+ "<obm"
+ "ELOT ontology metrics from ROBOT"
+ 'org-tempo-tags)
+;; Code blocks:1 ends here
+
+;; [[file:../elot-defs.org::*Hydra interface F4][Hydra interface F4:1]]
+(defhydra hydra-elot (:color blue :hint nil)
+  "
+ --- ELOT helpdesk ---
+
+ Insert definition         Code block             Document         ^^^^^^Output                  
+-----------------------------------------------------------------------------------------------
+<_ocp_ primitive class    <_obm_ metrics             <_odh_ header      [_t_] tangle ontology    
+<_ocd_ defined class      <_obs_ sparql select       <_ods_ ontology    [_h_] export HTML        
+ <_op_ property           <_obc_ sparql construct                                             
+                        ^^<_obd_ rdfpuml diagram                                              
+"
+  ("ocp" (tempo-template-elot-class-iof-primitive))
+  ("ocd" (tempo-template-elot-class-iof-defined))
+  ("op" (tempo-template-elot-property-iof))
+  ("t" (org-babel-tangle))
+  ("h" (browse-url-of-file (expand-file-name (org-html-export-to-html))))
+  ("obm" (tempo-template-elot-block-robot-metrics))
+  ("obs" (tempo-template-elot-block-sparql-select))
+  ("obc" (tempo-template-elot-block-sparql-construct))
+  ("obd" (tempo-template-elot-block-rdfpuml-diagram))
+  ("odh" (tempo-template-elot-doc-header))
+  ("ods" (tempo-template-elot-ont-skeleton))
+  )
+
+(define-key org-mode-map (kbd "<f4>") 'hydra-elot/body)
+;; Hydra interface F4:1 ends here
 
 ;; [[file:../elot-defs.org::*Read tsv into org table][Read tsv into org table:1]]
 (defun elot-tsv-to-table (filename)
@@ -916,22 +1053,6 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
    "ROBOT metrics"
    'org-tempo-tags)
 ;; ROBOT metrics:1 ends here
-
-;; [[file:../elot-defs.org::*OWL primitive class with IOF defaults][OWL primitive class with IOF defaults:1]]
-(tempo-define-template "elot-class-iof-primitive"
- '((make-string (car (org-heading-components)) ?*) " "
-   (p "Class label: ") " ("
-   (elot-default-prefix) ":" (p "localname: ") ") [1/4]" > n
-   " - [ ] iof-av:naturalLanguageDefinition :: " > n
-   " - [X] iof-av:isPrimitive :: true" > n
-   " - [ ] iof-av:primitiveRationale :: " > n
-   " - [ ] skos:example :: " > n
-   (progn (search-backward "Definition :: ") (end-of-line) (outline-show-entry) "")
- )
-"<oci"
-"ELOT primitive class with IOF-AV annotations"
-'org-tempo-tags)
-;; OWL primitive class with IOF defaults:1 ends here
 
 ;; [[file:../elot-defs.org::*End with "provides"][End with "provides":1]]
 (provide 'elot)
