@@ -32,7 +32,6 @@
                    omn-mode
                    sparql-mode
                    plantuml-mode
-                   org-toc
                    hydra
                    org-ql
                    ;; the following are completely optional
