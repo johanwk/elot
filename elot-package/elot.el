@@ -40,6 +40,8 @@
 (require 'omn-mode) ; OMN support
 (require 'sparql-mode) ; OMN support
 (require 'ob-plantuml) ; PlantUML
+(require 'hydra) ; hydra menu
+(require 'org-toc) ; navigate
 
 ;;;; Usage
 
