@@ -965,7 +965,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 (tempo-define-template "elot-block-sparql-select"
  '(
    (org-open-line 1)
-"#+begin_src sparql :url \"" (elot-context-localname) ".omn\" :eval never-export
+"#+name: " (p "Select query name: ") > n
+"#+begin_src sparql :url \"" (elot-context-localname) ".omn\" :eval never-export :exports results
   select
   {
 
@@ -980,7 +981,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 (tempo-define-template "elot-block-sparql-construct"
  '(
    (org-open-line 1)
-"#+begin_src sparql :url \"" (elot-context-localname) ".omn\" :eval never-export"
+"#+name: " (p "Construct query name: ") > n
+"#+begin_src sparql :url \"" (elot-context-localname) ".omn\" :eval never-export :exports results"
 " :format ttl :wrap \"src ttl\" :cache yes :post kill-prefixes(data=*this*) :eval never-export
   construct {
 
@@ -991,13 +993,16 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
    (progn (message "Execute blocks with C-c C-c") "")
  )
  "<obc"
- "ELOT SPARQL SELECT from OMN "
+ "ELOT SPARQL CONSTRUCT from OMN "
  'org-tempo-tags)
 
 (tempo-define-template "elot-block-rdfpuml-diagram"
  '(
-   (org-open-line 1) p
-   "#+call: rdfpuml-block(omnfile=\"" (elot-context-localname) ".omn\") :eval never-export" > 
+   (org-open-line 1)
+   "#+name: rdfpuml:" (p "Name of Turtle source block for diagram: " ttl-source) > n
+   "#+call: rdfpuml-block(ttlblock=\"" (s ttl-source) "\") :eval never-export" > n
+   "#+caption: " (p "Caption: ") > n
+   "#+results: rdfpuml:" (s ttl-source) > n
    (progn (message "Execute blocks with C-c C-c") "")
  )
  "<obm"
