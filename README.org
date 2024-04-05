@@ -170,3 +170,8 @@ Now create an OWL file from your new document.
    diagram is generated.
 
 [[file:documentation/images/elot-rdfpuml1.png]]
+
+ - Hit =F4=, then =h= to view the query results and diagram in your
+   browser.
+
+[[file:documentation/images/firefox-diagram1.png]]
