@@ -142,5 +142,23 @@ Now create an OWL file from your new document.
  - Navigate to the =Object properties= heading
  - =F4= followed by =op= will insert a relation (object, data, or
    annotation property).
+ - The screenshot shows how checkboxes are included for tracking
+   progress..
 
 [[file:documentation/images/elot-animal1.png]]
+
+* Querying the ontology
+  - Navigate to the =Prefixes= heading and insert a new heading named
+    "Queries".
+  - Hit =F4=, then =obs= to insert a SPARQL /select/ code block. Write a query over
+    the ontology.
+  - Hit =C-c C-c= to run the query.
+
+[[file:documentation/images/elot-query1.png]]
+
+* Making a diagram
+ - Hit =F4=, then =obc= to insert another query, this time SPARQL
+   /construct/.
+ - Write a query and hit =C-c C-c= to run it.
+
+[[file:documentation/images/elot-query2.png]]
