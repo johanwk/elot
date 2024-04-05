@@ -127,7 +127,8 @@ SVGs. Conversion is described in
     (message (concat "Converting " ttlblock " to PlantUML ..."))
     (let ((puml-file 
           (elot-rdfpuml-execute ttl prefixes config add-options epilogue)))
-      (elot-plantuml-execute puml-file ttlblock format)))
+      (elot-plantuml-execute puml-file ttlblock format)
+      (org-redisplay-inline-images)))
 #+end_src
 
 
