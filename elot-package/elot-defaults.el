@@ -60,8 +60,8 @@
 [EXTRA]"
                  ontology-resource-section
                  ))
-  (add-hook 'org-babel-post-tangle-hook 
-            'elot-tangled-omn-to-ttl
+  (add-hook 'org-babel-post-tangle-hook 'elot-tangled-omn-to-ttl
             'local) ;; make it a local hook only
+  (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images 'local)
   )
 ;; Default settings:1 ends here
