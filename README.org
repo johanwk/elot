@@ -127,7 +127,7 @@ Now create an OWL file from your new document.
    =myontology.omn=.
  - If you have installed ROBOT, a Turtle file named =myontology.ttl=
    will also be available.
- - Have Protégé ready, and open the ontology file there to inspect it.
+ - Have Protégé ready, and open the ontology file to inspect it.
 
 [[file:./documentation/images/protege-skeleton1.png]]
 
@@ -159,7 +159,7 @@ Now create an OWL file from your new document.
 
 [[file:documentation/images/elot-query1.png]]
 
-j*** Making a diagram
+*** Making a diagram
  - Hit =F4=, then =obc= to insert another query, this time SPARQL
    /construct/.
  - Write a query and hit =C-c C-c= to run it.

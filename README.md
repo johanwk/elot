@@ -9,18 +9,19 @@ Check out the file `pizza.org` for an example ELOT file.
 
 ELOT works on Windows, MacOS, and Linux (tested in WSL).
 
--   [Prerequisites in brief](#orgba8f136)
--   [Installation](#org9ca3549)
-    -   [Get Emacs](#org4417fd4)
-    -   [Install ELOT in Emacs](#org3768820)
-    -   [Install ELOT auxiliaries](#org95baea8)
--   [Quick start using ELOT](#orgda4d261)
-    -   [Add an ontology](#orgfe9c2af)
-    -   [Adding classes and relations](#org83dd802)
-    -   [Querying the ontology](#org29e6d37)
+-   [Prerequisites in brief](#orgaca9c63)
+-   [Installation](#org7b3c877)
+    -   [Get Emacs](#orgf9a018a)
+    -   [Install ELOT in Emacs](#orge7767b2)
+    -   [Install ELOT auxiliaries](#org43ed04b)
+-   [Quick start using ELOT](#org270cbc0)
+    -   [Add an ontology](#org203ed13)
+    -   [Adding classes and relations](#orge403677)
+    -   [Querying the ontology](#org30abfd6)
+    -   [Making a diagram](#orgf72e65f)
 
 
-<a id="orgba8f136"></a>
+<a id="orgaca9c63"></a>
 
 ## Prerequisites in brief
 
@@ -35,12 +36,12 @@ If you are new to Emacs, the book [Mastering Emacs](https://www.masteringemacs.o
 recommended.
 
 
-<a id="org9ca3549"></a>
+<a id="org7b3c877"></a>
 
 ## Installation
 
 
-<a id="org4417fd4"></a>
+<a id="orgf9a018a"></a>
 
 ### Get Emacs
 
@@ -62,7 +63,7 @@ for Linux). It&rsquo;s recommended to
 For MacOS users: See the GNU Emacs page.
 
 
-<a id="org3768820"></a>
+<a id="orge7767b2"></a>
 
 ### Install ELOT in Emacs
 
@@ -92,7 +93,7 @@ The following steps will get you started editing OWL ontologies.
         `~/elisp/elot/elot-package/` to your `load-path`.
 
 
-<a id="org95baea8"></a>
+<a id="org43ed04b"></a>
 
 ### Install ELOT auxiliaries
 
@@ -127,12 +128,12 @@ Get the tools:
             git clone https://github.com/VladimirAlexiev/rdf2rml.git
 
 
-<a id="orgda4d261"></a>
+<a id="org270cbc0"></a>
 
 ## Quick start using ELOT
 
 
-<a id="orgfe9c2af"></a>
+<a id="org203ed13"></a>
 
 ### Add an ontology
 
@@ -175,7 +176,7 @@ Now create an OWL file from your new document.
     `myontology.omn`.
 -   If you have installed ROBOT, a Turtle file named `myontology.ttl`
     will also be available.
--   Have Protégé ready, and open the ontology file there to inspect it.
+-   Have Protégé ready, and open the ontology file to inspect it.
 
 ![img](./documentation/images/protege-skeleton1.png)
 
@@ -185,7 +186,7 @@ Now create an OWL file from your new document.
 ![img](./documentation/images/firefox-skeleton1.png)
 
 
-<a id="org83dd802"></a>
+<a id="orge403677"></a>
 
 ### Adding classes and relations
 
@@ -203,7 +204,7 @@ Now create an OWL file from your new document.
 ![img](documentation/images/elot-animal1.png)
 
 
-<a id="org29e6d37"></a>
+<a id="org30abfd6"></a>
 
 ### Querying the ontology
 
@@ -215,7 +216,10 @@ Now create an OWL file from your new document.
 
 ![img](documentation/images/elot-query1.png)
 
-j\*\*\* Making a diagram
+
+<a id="orgf72e65f"></a>
+
+### Making a diagram
 
 -   Hit `F4`, then `obc` to insert another query, this time SPARQL
     *construct*.
