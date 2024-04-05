@@ -981,7 +981,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  '(
    (org-open-line 1)
 "#+begin_src sparql :url \"" (elot-context-localname) ".omn\" :eval never-export"
-":format ttl :wrap \"src ttl\" :cache yes :post kill-prefixes(data=*this*) :eval never-export
+" :format ttl :wrap \"src ttl\" :cache yes :post kill-prefixes(data=*this*) :eval never-export
   construct {
 
   } {
