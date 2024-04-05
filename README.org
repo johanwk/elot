@@ -5,7 +5,7 @@
 This repository contains a template for writing OWL ontologies as
 [[https://orgmode.org/][Org Mode]] documents, with supporting functions and scripts.
 
-Check out the file [[file:pizza.org]] for an example ELOT file.
+Check out the file =pizza.org= for an example ELOT file.
 
 ELOT works on Windows, MacOS, and Linux (tested in WSL).
 

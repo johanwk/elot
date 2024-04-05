@@ -5,22 +5,22 @@
 This repository contains a template for writing OWL ontologies as
 [Org Mode](https://orgmode.org/) documents, with supporting functions and scripts.
 
-Check out the file <pizza.md> for an example ELOT file.
+Check out the file `pizza.org` for an example ELOT file.
 
 ELOT works on Windows, MacOS, and Linux (tested in WSL).
 
--   [Prerequisites in brief](#org079808c)
--   [Installation](#org4e11fdc)
-    -   [Get Emacs](#orge6b70a8)
-    -   [Install ELOT in Emacs](#orged0f3ab)
-    -   [Install ELOT auxiliaries](#org33fc0d3)
--   [Quick start using ELOT](#orgec69f2c)
-    -   [Add an ontology](#orgee92649)
-    -   [Adding classes and relations](#org9b36ced)
-    -   [Querying the ontology](#org0ceaf14)
+-   [Prerequisites in brief](#org254cddb)
+-   [Installation](#org6210548)
+    -   [Get Emacs](#org17b009f)
+    -   [Install ELOT in Emacs](#org48fe907)
+    -   [Install ELOT auxiliaries](#org779ab7e)
+-   [Quick start using ELOT](#org33c090a)
+    -   [Add an ontology](#org895c89d)
+    -   [Adding classes and relations](#orgdc1b8a6)
+    -   [Querying the ontology](#orgfeb661e)
 
 
-<a id="org079808c"></a>
+<a id="org254cddb"></a>
 
 ## Prerequisites in brief
 
@@ -35,12 +35,12 @@ If you are new to Emacs, the book [Mastering Emacs](https://www.masteringemacs.o
 recommended.
 
 
-<a id="org4e11fdc"></a>
+<a id="org6210548"></a>
 
 ## Installation
 
 
-<a id="orge6b70a8"></a>
+<a id="org17b009f"></a>
 
 ### Get Emacs
 
@@ -62,7 +62,7 @@ for Linux). It&rsquo;s recommended to
 For MacOS users: See the GNU Emacs page.
 
 
-<a id="orged0f3ab"></a>
+<a id="org48fe907"></a>
 
 ### Install ELOT in Emacs
 
@@ -92,7 +92,7 @@ The following steps will get you started editing OWL ontologies.
         `~/elisp/elot/elot-package/` to your `load-path`.
 
 
-<a id="org33fc0d3"></a>
+<a id="org779ab7e"></a>
 
 ### Install ELOT auxiliaries
 
@@ -127,12 +127,12 @@ Get the tools:
             git clone https://github.com/VladimirAlexiev/rdf2rml.git
 
 
-<a id="orgec69f2c"></a>
+<a id="org33c090a"></a>
 
 ## Quick start using ELOT
 
 
-<a id="orgee92649"></a>
+<a id="org895c89d"></a>
 
 ### Add an ontology
 
@@ -185,7 +185,7 @@ Now create an OWL file from your new document.
 ![img](./documentation/images/firefox-skeleton1.png)
 
 
-<a id="org9b36ced"></a>
+<a id="orgdc1b8a6"></a>
 
 ### Adding classes and relations
 
@@ -203,7 +203,7 @@ Now create an OWL file from your new document.
 ![img](documentation/images/elot-animal1.png)
 
 
-<a id="org0ceaf14"></a>
+<a id="orgfeb661e"></a>
 
 ### Querying the ontology
 
