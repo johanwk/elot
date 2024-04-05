@@ -162,3 +162,11 @@ Now create an OWL file from your new document.
  - Write a query and hit =C-c C-c= to run it.
 
 [[file:documentation/images/elot-query2.png]]
+
+ - Hit =F4=, then =obd= to insert an /rdfpuml/ diagram block.
+ - When prompted, provide the name of the Turtle source (the name of
+   the construct query) and the figure caption.
+ - Place the cursor on the row of the  =#+call:= and hit =C-c C-c=. A
+   diagram is generated.
+
+[[file:documentation/images/elot-rdfpuml1.png]]
