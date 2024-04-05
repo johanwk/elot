@@ -128,9 +128,7 @@ Now create an OWL file from your new document.
 
 [[file:./documentation/images/protege-skeleton1.png]]
 
- - Export to an HTML document with the Emacs command M-x
-   /org-export-dispatch/, keybinding =C-c C-e=. A menu will open; hit the
-   key =h= to select HTML format, then =o= to automatically open in your
-   web browser.
+ - Export to an HTML document with =F4=, then the =h= key. The document
+   will open in your web browser.
 
 [[file:./documentation/images/firefox-skeleton1.png]]
