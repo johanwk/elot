@@ -1,4 +1,5 @@
 #+title: Emacs Literate Ontology Tool (ELOT)
+#+OPTIONS: toc:nil num:nil
 
 * What
 This repository contains a template for writing OWL ontologies as
@@ -8,7 +9,8 @@ Check out the file [[file:pizza.org]] for an example ELOT file.
 
 ELOT works on Windows, MacOS, and Linux (tested in WSL).
 
-* Prerequisites in brief
+#+TOC: headlines 2 local
+** Prerequisites in brief
  - Download ELOT using [[https://github.com/git-guides/install-git][Git]] to easily obtain updates
  - Use a recent version (29.x) of [[https://www.gnu.org/software/emacs/download.html][Emacs]] 
  - For viewing your ontologies, install version 5.6 of [[https://protege.stanford.edu/][Protégé Desktop]]
@@ -18,8 +20,8 @@ ELOT works on Windows, MacOS, and Linux (tested in WSL).
 
 If you are new to Emacs, the book [[https://www.masteringemacs.org/][Mastering Emacs]] is highly
 recommended.
-* Installation
-** Get Emacs
+** Installation
+*** Get Emacs
 ELOT has only been tested on recent versions of Emacs. As of 2024-04,
 version 29.3 is the latest. See the [[https://www.gnu.org/software/emacs/download.html][GNU Emacs download page]].
 
@@ -35,7 +37,7 @@ for Linux). It's recommended to
    hubisan/emacs-wsl]].
 
 For MacOS users: See the GNU Emacs page.
-** Install ELOT in Emacs
+*** Install ELOT in Emacs
 ELOT is in active development and will see frequent updates. For easy
 access to these updates, you should /clone/ the ELOT repository using
 Git. 
@@ -58,7 +60,7 @@ The following steps will get you started editing OWL ontologies.
       list of packages that are required. Add
       =~/elisp/elot/elot-package/= to your =load-path=.
 
-** Install ELOT auxiliaries
+*** Install ELOT auxiliaries
 ELOT relies on external software programs to query your ontologies
 and produce diagrams. These need to be downloaded.
 
@@ -86,7 +88,8 @@ Get the tools:
        : cd ~/bin
        : git clone https://github.com/VladimirAlexiev/rdf2rml.git
 
-* Quick start using ELOT
+** Quick start using ELOT
+*** Add an ontology
 After the installation steps, it's wise to restart Emacs!
 
 Open the familiar Pizza ontology from =elisp/elot/pizza.org= for an
@@ -133,7 +136,7 @@ Now create an OWL file from your new document.
 
 [[file:./documentation/images/firefox-skeleton1.png]]
 
-* Adding classes and relations
+*** Adding classes and relations
  - Navigate to the =Classes= heading
  - Press =F4= followed by =ocp= to insert headings for defining primitive
    classes, with some appropriate annotation properties added. Hit =ocd=
@@ -147,7 +150,7 @@ Now create an OWL file from your new document.
 
 [[file:documentation/images/elot-animal1.png]]
 
-* Querying the ontology
+*** Querying the ontology
   - Navigate to the =Prefixes= heading and insert a new heading named
     "Queries".
   - Hit =F4=, then =obs= to insert a SPARQL /select/ code block. Write a query over
@@ -156,7 +159,7 @@ Now create an OWL file from your new document.
 
 [[file:documentation/images/elot-query1.png]]
 
-* Making a diagram
+j*** Making a diagram
  - Hit =F4=, then =obc= to insert another query, this time SPARQL
    /construct/.
  - Write a query and hit =C-c C-c= to run it.
