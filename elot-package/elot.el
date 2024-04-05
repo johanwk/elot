@@ -912,7 +912,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ;; [[file:../elot-defs.org::*OWL primitive/non-primitive class, with IOF default annotations][OWL primitive/non-primitive class, with IOF default annotations:1]]
 (tempo-define-template "elot-class-iof-primitive"
  '(
-   (org-forward-element) (org-open-line 1)
+   (org-open-line 1)
    (make-string (org-current-level) ?*) " "
    (p "Class label: ") " ("
    (elot-default-prefix) ":" (p "localname: ") ") [1/4]" > n
@@ -926,7 +926,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  'org-tempo-tags)
 
 (tempo-define-template "elot-class-iof-defined"
- '((org-forward-element) (org-open-line 1)
+ '((org-open-line 1)
    (make-string (org-current-level) ?*) " "
    (p "Class label: ") " ("
    (elot-default-prefix) ":" (p "localname: ") ") [1/4]" > n
@@ -939,7 +939,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  'org-tempo-tags)
 
 (tempo-define-template "elot-property-iof"
- '((org-forward-element) (org-open-line 1)
+ '((org-open-line 1)
    (make-string (org-current-level) ?*) " "
    (p "Property label: ") " ("
    (elot-default-prefix) ":" (p "localname: ") ") [1/4]" > n

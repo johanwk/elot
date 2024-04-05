@@ -1159,7 +1159,7 @@ completion cookies.
 #+begin_src emacs-lisp :results none
   (tempo-define-template "elot-class-iof-primitive"
    '(
-     (org-forward-element) (org-open-line 1)
+     (org-open-line 1)
      (make-string (org-current-level) ?*) " "
      (p "Class label: ") " ("
      (elot-default-prefix) ":" (p "localname: ") ") [1/4]" > n
@@ -1173,7 +1173,7 @@ completion cookies.
    'org-tempo-tags)
 
   (tempo-define-template "elot-class-iof-defined"
-   '((org-forward-element) (org-open-line 1)
+   '((org-open-line 1)
      (make-string (org-current-level) ?*) " "
      (p "Class label: ") " ("
      (elot-default-prefix) ":" (p "localname: ") ") [1/4]" > n
@@ -1186,7 +1186,7 @@ completion cookies.
    'org-tempo-tags)
 
   (tempo-define-template "elot-property-iof"
-   '((org-forward-element) (org-open-line 1)
+   '((org-open-line 1)
      (make-string (org-current-level) ?*) " "
      (p "Property label: ") " ("
      (elot-default-prefix) ":" (p "localname: ") ") [1/4]" > n
