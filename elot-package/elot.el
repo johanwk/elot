@@ -913,7 +913,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 (tempo-define-template "elot-class-iof-primitive"
  '(
    (org-open-line 1)
-   (make-string (org-current-level) ?*) " "
+   (make-string (max 3 (org-current-level)) ?*) " "
    (p "Class label: ") " ("
    (elot-default-prefix) ":" (p "localname: ") ") [1/4]" > n
    " - [ ] iof-av:naturalLanguageDefinition :: " > n
@@ -927,7 +927,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 (tempo-define-template "elot-class-iof-defined"
  '((org-open-line 1)
-   (make-string (org-current-level) ?*) " "
+   (make-string (max 3 (org-current-level)) ?*) " "
    (p "Class label: ") " ("
    (elot-default-prefix) ":" (p "localname: ") ") [1/4]" > n
    " - [ ] iof-av:semiFormalNaturalLanguageDefinition :: " > n
@@ -940,7 +940,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 (tempo-define-template "elot-property-iof"
  '((org-open-line 1)
-   (make-string (org-current-level) ?*) " "
+   (make-string (max 3 (org-current-level)) ?*) " "
    (p "Property label: ") " ("
    (elot-default-prefix) ":" (p "localname: ") ") [1/4]" > n
    " - [ ] iof-av:naturalLanguageDefinition :: " > n
@@ -1017,9 +1017,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  <_op_ property           <_obc_ sparql construct                                             
                         ^^<_obd_ rdfpuml diagram                                              
 "
-  ("ocp" (tempo-template-elot-class-iof-primitive))
-  ("ocd" (tempo-template-elot-class-iof-defined))
-  ("op" (tempo-template-elot-property-iof))
+  ("ocp" (progn (outline-next-heading) (tempo-template-elot-class-iof-primitive)))
+  ("ocd" (progn (outline-next-heading) (tempo-template-elot-class-iof-defined)))
+  ("op" (progn (outline-next-heading) (tempo-template-elot-property-iof)))
   ("t" (org-babel-tangle))
   ("h" (browse-url-of-file (expand-file-name (org-html-export-to-html))))
   ("obm" (tempo-template-elot-block-robot-metrics))
