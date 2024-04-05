@@ -184,16 +184,30 @@ etc.).
    heading. This will return the default prefix for ontology
    resources if point is under a heading that declares an ontology."
      (org-entry-get-with-inheritance "ELOT-default-prefix"))
+   (defun elot-governing-hierarchy ()
+     "Retrieve the ID value of the governing hierarchy, or nil"
+     (let ((this-ID
+            (org-entry-get-with-inheritance "ID")))
+       (and (string-match-p "-hierarchy$" this-ID)
+            this-ID)))
  #+end_src
 **** Looking at
+Functions to know where we are in an ELOT tree.
 Introduced because ontology-declaring headings don't have
 subsections. Revisit to cover other kinds of headings, and probably a
 better way to identify than matching with "ontology-declaration" in
 the ID string.
 #+begin_src emacs-lisp
-  (defun at-ontology-heading ()
+  (defun elot-at-ontology-heading ()
+    "Return TRUE if point is in a heading that declares ontology"
     (let ((id (or (org-entry-get (point) "ID") "")))
      (string-match "ontology-declaration" id)))
+  (defun elot-in-class-tree ()
+    "Return TRUE if point is a class hierarchy heading"
+    (string-match-p "class-hierarchy" (elot-governing-hierarchy)))
+  (defun elot-in-property-tree ()
+    "Return TRUE if point is a property hierarchy heading"
+    (string-match-p "property-hierarchy" (elot-governing-hierarchy)))
 #+end_src
 *** Get description lists into lisp lists
 #+name: defun-desc-lists
@@ -251,7 +265,7 @@ the ID string.
         (org-narrow-to-subtree)
         (if ;; don't include the section that has the target property id itself, except if ontology section
             (or (outline-next-heading)
-              (at-ontology-heading))
+              (elot-at-ontology-heading))
             (let (ret)
               (while (let ((heading (substring-no-properties (org-get-heading nil t)))
                            (descriptions (org-descriptions-in-section)))
@@ -945,12 +959,12 @@ Insert a document header with =<oh=.
 		"#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
 		(progn (load-library "elot-defaults") (message "Loaded ELOT") "")
 		)
-	 "<oh"
+	 "<odh"
 	 "ELOT document header"
 	 'org-tempo-tags)
 #+end_src
 **** ELOT ontology skeleton
-Insert a skeleton with =<os=.
+Insert a skeleton with =<ods=.
 #+begin_src emacs-lisp :results none
   (tempo-define-template
    "elot-ont-skeleton"
@@ -1132,12 +1146,139 @@ Insert a skeleton with =<os=.
          (goto-char (point-min))
          (search-forward "dcterms:description :: ") (outline-show-entry) "")
   )
-   "<os"
+   "<ods"
    "ELOT ontology sections skeleton"
    'org-tempo-tags)
 #+end_src
-**** ROBOT
-***** Read tsv into org table
+**** OWL templates
+***** OWL primitive/non-primitive class, with IOF default annotations
+Insert a class heading with IOF-AV required annotation properties and
+completion cookies.
+#+begin_src emacs-lisp :results none
+  (tempo-define-template "elot-class-iof-primitive"
+   '(
+     (org-toc-next) (org-open-line 1)
+     (make-string (org-current-level) ?*) " "
+     (p "Class label: ") " ("
+     (elot-default-prefix) ":" (p "localname: ") ") [1/4]" > n
+     " - [ ] iof-av:naturalLanguageDefinition :: " > n
+     " - [X] iof-av:isPrimitive :: true" > n
+     " - [ ] iof-av:primitiveRationale :: " > n
+     " - [ ] skos:example :: " > 
+   )
+   "<ocp"
+   "ELOT primitive class with IOF-AV annotations"
+   'org-tempo-tags)
+
+  (tempo-define-template "elot-class-iof-defined"
+   '((org-toc-next) (org-open-line 1)
+     (make-string (org-current-level) ?*) " "
+     (p "Class label: ") " ("
+     (elot-default-prefix) ":" (p "localname: ") ") [1/4]" > n
+     " - [ ] iof-av:semiFormalNaturalLanguageDefinition :: " > n
+     " - [X] iof-av:isPrimitive :: false" > n
+     " - [ ] skos:example :: " > 
+   )
+   "<ocd"
+   "ELOT primitive class with IOF-AV annotations"
+   'org-tempo-tags)
+
+  (tempo-define-template "elot-property-iof"
+   '((org-toc-next) (org-open-line 1)
+     (make-string (org-current-level) ?*) " "
+     (p "Property label: ") " ("
+     (elot-default-prefix) ":" (p "localname: ") ") [1/4]" > n
+     " - [ ] iof-av:naturalLanguageDefinition :: " > n
+     " - [ ] skos:example :: " > 
+   )
+   "<op"
+   "ELOT primitive class with IOF-AV annotations"
+   'org-tempo-tags)
+#+end_src
+**** Code blocks
+#+begin_src emacs-lisp
+  (tempo-define-template "elot-block-robot-metrics"
+   '(
+     (org-open-line 1) p
+     "#+call: robot-metrics(omnfile=\"" (elot-context-localname) ".omn\") :eval never-export" > 
+     (progn (message "Execute blocks with C-c C-c") "")
+   )
+   "<obm"
+   "ELOT ontology metrics from ROBOT"
+   'org-tempo-tags)
+
+  (tempo-define-template "elot-block-sparql-select"
+   '(
+     (org-open-line 1)
+  "#+begin_src sparql :url \"" (elot-context-localname) ".omn\" :eval never-export
+    select
+    {
+
+    } 
+  ,#+end_src" n
+     (progn (message "Execute blocks with C-c C-c") "")
+   )
+   "<obs"
+   "ELOT SPARQL SELECT from OMN "
+   'org-tempo-tags)
+
+  (tempo-define-template "elot-block-sparql-construct"
+   '(
+     (org-open-line 1)
+  "#+begin_src sparql :url \"" (elot-context-localname) ".omn\" :eval never-export"
+  ":format ttl :wrap \"src ttl\" :cache yes :post kill-prefixes(data=*this*) :eval never-export
+    construct {
+
+    } {
+
+    } 
+  ,#+end_src" n
+     (progn (message "Execute blocks with C-c C-c") "")
+   )
+   "<obc"
+   "ELOT SPARQL SELECT from OMN "
+   'org-tempo-tags)
+
+  (tempo-define-template "elot-block-rdfpuml-diagram"
+   '(
+     (org-open-line 1) p
+     "#+call: rdfpuml-block(omnfile=\"" (elot-context-localname) ".omn\") :eval never-export" > 
+     (progn (message "Execute blocks with C-c C-c") "")
+   )
+   "<obm"
+   "ELOT ontology metrics from ROBOT"
+   'org-tempo-tags)
+#+end_src
+**** Hydra interface F4
+#+begin_src emacs-lisp
+  (defhydra hydra-elot (:color blue :hint nil)
+    "
+   --- ELOT helpdesk ---
+
+   Insert definition         Code block             Document         ^^^^^^Output                  
+  -----------------------------------------------------------------------------------------------
+  <_ocp_ primitive class    <_obm_ metrics             <_odh_ header      [_t_] tangle ontology    
+  <_ocd_ defined class      <_obs_ sparql select       <_ods_ ontology    [_h_] export HTML        
+   <_op_ property           <_obc_ sparql construct                                             
+                          ^^<_obd_ rdfpuml diagram                                              
+  "
+    ("ocp" (tempo-template-elot-class-iof-primitive))
+    ("ocd" (tempo-template-elot-class-iof-defined))
+    ("op" (tempo-template-elot-property-iof))
+    ("t" (org-babel-tangle))
+    ("h" (browse-url-of-file (expand-file-name (org-html-export-to-html))))
+    ("obm" (tempo-template-elot-block-robot-metrics))
+    ("obs" (tempo-template-elot-block-sparql-select))
+    ("obc" (tempo-template-elot-block-sparql-construct))
+    ("obd" (tempo-template-elot-block-rdfpuml-diagram))
+    ("odh" (tempo-template-elot-doc-header))
+    ("ods" (tempo-template-elot-ont-skeleton))
+    )
+
+  (define-key org-mode-map (kbd "<f4>") 'hydra-elot/body)
+#+end_src
+*** ROBOT
+**** Read tsv into org table
 #+begin_src emacs-lisp
   (defun elot-tsv-to-table (filename)
     (let* ((lines (with-temp-buffer
@@ -1149,7 +1290,7 @@ Insert a skeleton with =<os=.
                   (butlast (cdr lines)))))  ;; check this is ok
       (cons header (cons 'hline body))))
 #+end_src
-***** ROBOT metrics
+**** ROBOT metrics
 Insert a =call= to ROBOT for =measure=, returns a table of ontology
 metrics.
 #+begin_src emacs-lisp :results none
@@ -1162,26 +1303,6 @@ metrics.
      "ROBOT metrics"
      'org-tempo-tags)
 #+end_src
-**** OWL class templates
-***** OWL primitive class with IOF defaults
-Insert a class heading with IOF-AV required annotation properties and
-completion cookies.
-#+begin_src emacs-lisp :results none
-  (tempo-define-template "elot-class-iof-primitive"
-   '((make-string (car (org-heading-components)) ?*) " "
-     (p "Class label: ") " ("
-     (elot-default-prefix) ":" (p "localname: ") ") [1/4]" > n
-     " - [ ] iof-av:naturalLanguageDefinition :: " > n
-     " - [X] iof-av:isPrimitive :: true" > n
-     " - [ ] iof-av:primitiveRationale :: " > n
-     " - [ ] skos:example :: " > n
-     (progn (search-backward "Definition :: ") (end-of-line) (outline-show-entry) "")
-   )
-  "<oci"
-  "ELOT primitive class with IOF-AV annotations"
-  'org-tempo-tags)
-#+end_src
-
 *** End with "provides"
 #+begin_src emacs-lisp
 (provide 'elot)
