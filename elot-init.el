@@ -32,7 +32,8 @@
                    omn-mode
                    sparql-mode
                    plantuml-mode
-		   hydra
+                   org-toc
+                   hydra
                    org-ql
                    ;; the following are completely optional
                    modus-themes
