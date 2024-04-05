@@ -132,3 +132,15 @@ Now create an OWL file from your new document.
    will open in your web browser.
 
 [[file:./documentation/images/firefox-skeleton1.png]]
+
+* Adding classes and relations
+ - Navigate to the =Classes= heading
+ - Press =F4= followed by =ocp= to insert headings for defining primitive
+   classes, with some appropriate annotation properties added. Hit =ocd=
+   for non-primitive classes. The templates reveal the ELOT authors'
+   preference for the [[https://spec.industrialontologies.org/iof/ontology/core/meta/AnnotationVocabulary/][Industrial Ontology Foundry Annotation Vocabulary (IOF-AV)]].
+ - Navigate to the =Object properties= heading
+ - =F4= followed by =op= will insert a relation (object, data, or
+   annotation property).
+
+[[file:documentation/images/elot-animal1.png]]
