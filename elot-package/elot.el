@@ -714,6 +714,7 @@ to ELOT default image (sub)directory. Return output file name."
 	"#+subtitle: An OWL ontology" > n
 	"#+author: " (p "Author name: " authname) > n
 	"#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
+  "#+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup"
 	(progn (load-library "elot-defaults") (message "Loaded ELOT") "")
 	)
  "<odh"
