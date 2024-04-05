@@ -9,18 +9,18 @@ Check out the file `pizza.org` for an example ELOT file.
 
 ELOT works on Windows, MacOS, and Linux (tested in WSL).
 
--   [Prerequisites in brief](#org254cddb)
--   [Installation](#org6210548)
-    -   [Get Emacs](#org17b009f)
-    -   [Install ELOT in Emacs](#org48fe907)
-    -   [Install ELOT auxiliaries](#org779ab7e)
--   [Quick start using ELOT](#org33c090a)
-    -   [Add an ontology](#org895c89d)
-    -   [Adding classes and relations](#orgdc1b8a6)
-    -   [Querying the ontology](#orgfeb661e)
+-   [Prerequisites in brief](#orgba8f136)
+-   [Installation](#org9ca3549)
+    -   [Get Emacs](#org4417fd4)
+    -   [Install ELOT in Emacs](#org3768820)
+    -   [Install ELOT auxiliaries](#org95baea8)
+-   [Quick start using ELOT](#orgda4d261)
+    -   [Add an ontology](#orgfe9c2af)
+    -   [Adding classes and relations](#org83dd802)
+    -   [Querying the ontology](#org29e6d37)
 
 
-<a id="org254cddb"></a>
+<a id="orgba8f136"></a>
 
 ## Prerequisites in brief
 
@@ -35,12 +35,12 @@ If you are new to Emacs, the book [Mastering Emacs](https://www.masteringemacs.o
 recommended.
 
 
-<a id="org6210548"></a>
+<a id="org9ca3549"></a>
 
 ## Installation
 
 
-<a id="org17b009f"></a>
+<a id="org4417fd4"></a>
 
 ### Get Emacs
 
@@ -62,7 +62,7 @@ for Linux). It&rsquo;s recommended to
 For MacOS users: See the GNU Emacs page.
 
 
-<a id="org48fe907"></a>
+<a id="org3768820"></a>
 
 ### Install ELOT in Emacs
 
@@ -92,7 +92,7 @@ The following steps will get you started editing OWL ontologies.
         `~/elisp/elot/elot-package/` to your `load-path`.
 
 
-<a id="org779ab7e"></a>
+<a id="org95baea8"></a>
 
 ### Install ELOT auxiliaries
 
@@ -127,12 +127,12 @@ Get the tools:
             git clone https://github.com/VladimirAlexiev/rdf2rml.git
 
 
-<a id="org33c090a"></a>
+<a id="orgda4d261"></a>
 
 ## Quick start using ELOT
 
 
-<a id="org895c89d"></a>
+<a id="orgfe9c2af"></a>
 
 ### Add an ontology
 
@@ -156,10 +156,10 @@ To create a new ontology, do this in Emacs:
     header is produced, like the following.
     
         # -*- eval: (load-library "elot-defaults") -*-
-         #+title: My new ontology
-         #+subtitle: An OWL ontology
-         #+author: John Doe
-         #+date: WIP (version of 2024-04-04 12:34)
+        #+title: My new ontology
+        #+subtitle: An OWL ontology
+        #+author: John Doe
+        #+date: WIP (version of 2024-04-04 12:34)
 -   Insert the ELOT template for an ontology skeleton: Below the
     header, press `F4` and then `ods`. Answer the prompts &#x2013; be
     ready to provide namespaces/prefixes for your ontology and the
@@ -185,7 +185,7 @@ Now create an OWL file from your new document.
 ![img](./documentation/images/firefox-skeleton1.png)
 
 
-<a id="orgdc1b8a6"></a>
+<a id="org83dd802"></a>
 
 ### Adding classes and relations
 
@@ -203,7 +203,7 @@ Now create an OWL file from your new document.
 ![img](documentation/images/elot-animal1.png)
 
 
-<a id="orgfeb661e"></a>
+<a id="org29e6d37"></a>
 
 ### Querying the ontology
 

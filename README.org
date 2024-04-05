@@ -108,10 +108,10 @@ To create a new ontology, do this in Emacs:
    header is produced, like the following.
    #+begin_src org
    # -*- eval: (load-library "elot-defaults") -*-
-    #+title: My new ontology
-    #+subtitle: An OWL ontology
-    #+author: John Doe
-    #+date: WIP (version of 2024-04-04 12:34)
+   #+title: My new ontology
+   #+subtitle: An OWL ontology
+   #+author: John Doe
+   #+date: WIP (version of 2024-04-04 12:34)
    #+end_src
  - Insert the ELOT template for an ontology skeleton: Below the
    header, press =F4= and then =ods=. Answer the prompts -- be
