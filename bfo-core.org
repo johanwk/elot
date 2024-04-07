@@ -2,7 +2,7 @@
 #+title: bfo-core (BFO-2020) in ELOT
 #+subtitle: An OWL ontology
 #+author: The BFO team
-#+date: WIP (version of 2024-04-07 23:38)
+#+date: WIP (version of 2024-04-07 23:42)
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 
 * COMMENT Issues after conversion
@@ -10,6 +10,7 @@
    - delete "," at end of line
  - prefix =dc11= not defined, add it
  - bare URIs in angled brackets =<...>= in annotations give trouble?
+ - quotes around entries without language tag
  - manually add disjointness clauses
 
 * bfo-core
@@ -149,12 +150,12 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 :resourcedefs: yes
 :END:
 *** entity (obo:BFO_0000001)
- - dc11:identifier :: "001-BFO"
+ - dc11:identifier :: 001-BFO
  - rdfs:label :: "entity"@en
  - skos:definition :: "(Elucidation) An entity is anything that exists or has existed or will exist"@en
  - skos:example :: "Julius Caesar; the Second World War; your body mass index; Verdi's Requiem"@en
 **** continuant (obo:BFO_0000002)
- - dc11:identifier :: "008-BFO"
+ - dc11:identifier :: 008-BFO
  - rdfs:label :: "continuant"@en
  - skos:definition :: "(Elucidation) A continuant is an entity that persists, endures, or continues to exist through
    time while maintaining its identity"@en
@@ -163,7 +164,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: obo:BFO_0000176 only obo:BFO_0000002
  - DisjointWith :: obo:BFO_0000003
 ***** generically dependent continuant (obo:BFO_0000031)
- - dc11:identifier :: "074-BFO"
+ - dc11:identifier :: 074-BFO
  - rdfs:label :: "generically dependent continuant"@en
  - skos:altLabel :: "g-dependent continuant"@en
  - skos:definition :: "(Elucidation) A generically dependent continuant is an entity that exists in virtue of the fact
@@ -175,7 +176,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
    engineering blueprint"@en
  - SubClassOf :: obo:BFO_0000002
 ***** independent continuant (obo:BFO_0000004)
- - dc11:identifier :: "017-BFO"
+ - dc11:identifier :: 017-BFO
  - rdfs:label :: "independent continuant"@en
  - skos:definition :: "b is an independent continuant =Def b is a continuant & there is no c such that b specifically
    depends on c or b generically depends on c"@en
@@ -184,7 +185,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: obo:BFO_0000002
  - SubClassOf :: obo:BFO_0000176 only obo:BFO_0000004
 ****** immaterial entity (obo:BFO_0000141)
- - dc11:identifier :: "028-BFO"
+ - dc11:identifier :: 028-BFO
  - rdfs:label :: "immaterial entity"@en
  - skos:definition :: "b is an immaterial entity =Def b is an independent continuant which is such that there is no time
    t when it has a material entity as continuant part"@en
@@ -192,7 +193,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: obo:BFO_0000004
  - DisjointWith :: obo:BFO_0000040
 ******* continuant fiat boundary (obo:BFO_0000140)
- - dc11:identifier :: "029-BFO"
+ - dc11:identifier :: 029-BFO
  - rdfs:label :: "continuant fiat boundary"@en
  - skos:definition :: "(Elucidation) A continuant fiat boundary b is an immaterial entity that is of zero, one or two
    dimensions & such that there is no time t when b has a spatial region as continuant part & whose location is
@@ -202,7 +203,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: obo:BFO_0000124 only obo:BFO_0000140
  - SubClassOf :: obo:BFO_0000178 only obo:BFO_0000140
 ******** fiat line (obo:BFO_0000142)
- - dc11:identifier :: "032-BFO"
+ - dc11:identifier :: 032-BFO
  - rdfs:label :: "fiat line"@en
  - skos:definition :: "(Elucidation) A fiat line is a one-dimensional continuant fiat boundary that is continuous"@en
  - skos:example :: "The Equator; all geopolitical boundaries; all lines of latitude and longitude; the median sulcus of
@@ -211,7 +212,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: obo:BFO_0000140
  - SubClassOf :: obo:BFO_0000178 only (obo:BFO_0000142 or obo:BFO_0000147)
 ******** fiat point (obo:BFO_0000147)
- - dc11:identifier :: "031-BFO"
+ - dc11:identifier :: 031-BFO
  - rdfs:label :: "fiat point"@en
  - skos:definition :: "(Elucidation) A fiat point is a zero-dimensional continuant fiat boundary that consists of a
    single point"@en
@@ -220,7 +221,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: obo:BFO_0000140
  - SubClassOf :: obo:BFO_0000178 only obo:BFO_0000147
 ******** fiat surface (obo:BFO_0000146)
- - dc11:identifier :: "033-BFO"
+ - dc11:identifier :: 033-BFO
  - rdfs:label :: "fiat surface"@en
  - skos:definition :: "(Elucidation) A fiat surface is a two-dimensional continuant fiat boundary that is
    self-connected"@en
@@ -229,7 +230,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: obo:BFO_0000140
  - SubClassOf :: obo:BFO_0000178 only obo:BFO_0000140
 ******* site (obo:BFO_0000029)
- - dc11:identifier :: "034-BFO"
+ - dc11:identifier :: 034-BFO
  - rdfs:label :: "site"@en
  - skos:definition :: "(Elucidation) A site is a three-dimensional immaterial entity whose boundaries either (partially
    or wholly) coincide with the boundaries of one or more material entities or have locations determined in relation to
@@ -243,7 +244,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: obo:BFO_0000178 only (obo:BFO_0000029 or obo:BFO_0000140)
  - SubClassOf :: obo:BFO_0000210 only obo:BFO_0000028
 ******* spatial region (obo:BFO_0000006)
- - dc11:identifier :: "035-BFO"
+ - dc11:identifier :: 035-BFO
  - rdfs:label :: "spatial region"@en
  - skos:definition :: "(Elucidation) A spatial region is a continuant entity that is a continuant part of the spatial
    projection of a portion of spacetime at a given time"@en
@@ -252,7 +253,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: obo:BFO_0000141
  - SubClassOf :: obo:BFO_0000176 only obo:BFO_0000006
 ******** one-dimensional spatial region (obo:BFO_0000026)
- - dc11:identifier :: "038-BFO"
+ - dc11:identifier :: 038-BFO
  - rdfs:label :: "one-dimensional spatial region"@en
  - skos:definition :: "(Elucidation) A one-dimensional spatial region is a whole consisting of a line together with zero
    or more lines which may have points as parts"@en
@@ -261,7 +262,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: obo:BFO_0000006
  - SubClassOf :: obo:BFO_0000178 only (obo:BFO_0000018 or obo:BFO_0000026)
 ******** three-dimensional spatial region (obo:BFO_0000028)
- - dc11:identifier :: "040-BFO"
+ - dc11:identifier :: 040-BFO
  - rdfs:label :: "three-dimensional spatial region"@en
  - skos:definition :: "(Elucidation) A three-dimensional spatial region is a whole consisting of a spatial volume
    together with zero or more spatial volumes which may have spatial regions of lower dimension as parts"@en
@@ -270,7 +271,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: obo:BFO_0000006
  - SubClassOf :: obo:BFO_0000178 only obo:BFO_0000006
 ******** two-dimensional spatial region (obo:BFO_0000009)
- - dc11:identifier :: "039-BFO"
+ - dc11:identifier :: 039-BFO
  - rdfs:label :: "two-dimensional spatial region"@en
  - skos:definition :: "(Elucidation) A two-dimensional spatial region is a spatial region that is a whole consisting of
    a surface together with zero or more surfaces which may have spatial regions of lower dimension as parts"@en
@@ -278,7 +279,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: obo:BFO_0000006
  - SubClassOf :: obo:BFO_0000178 only (obo:BFO_0000009 or obo:BFO_0000018 or obo:BFO_0000026)
 ******** zero-dimensional spatial region (obo:BFO_0000018)
- - dc11:identifier :: "037-BFO"
+ - dc11:identifier :: 037-BFO
  - rdfs:label :: "zero-dimensional spatial region"@en
  - skos:definition :: "(Elucidation) A zero-dimensional spatial region is one or a collection of more than one spatially
    disjoint points in space"@en
@@ -286,7 +287,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: obo:BFO_0000006
  - SubClassOf :: obo:BFO_0000178 only obo:BFO_0000018
 ****** material entity (obo:BFO_0000040)
- - dc11:identifier :: "019-BFO"
+ - dc11:identifier :: 019-BFO
  - rdfs:label :: "material entity"@en
  - skos:definition :: "(Elucidation) A material entity is an independent continuant has some portion of matter as
    continuant part"@en
@@ -296,7 +297,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: obo:BFO_0000178 only (obo:BFO_0000029 or obo:BFO_0000040 or obo:BFO_0000140)
  - DisjointWith :: obo:BFO_0000141
 ******* fiat object part (obo:BFO_0000024)
- - dc11:identifier :: "027-BFO"
+ - dc11:identifier :: 027-BFO
  - rdfs:label :: "fiat object part"@en
  - skos:definition :: "(Elucidation) A fiat object part b is a material entity & such that if b exists then it is
    continuant part of some object c & demarcated from the remainder of c by one or more fiat surfaces"@en
@@ -304,7 +305,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
    hemisphere of the Earth; the FMA:regional parts of an intact human body"@en
  - SubClassOf :: obo:BFO_0000040
 ******* object (obo:BFO_0000030)
- - dc11:identifier :: "024-BFO"
+ - dc11:identifier :: 024-BFO
  - rdfs:label :: "object"@en
  - skos:definition :: "(Elucidation) An object is a material entity which manifests causal unity & is of a type
    instances of which are maximal relative to the sort of causal unity manifested"@en
@@ -313,7 +314,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
    2.0. Specification and User Guide"@en
  - SubClassOf :: obo:BFO_0000040
 ******* object aggregate (obo:BFO_0000027)
- - dc11:identifier :: "025-BFO"
+ - dc11:identifier :: 025-BFO
  - rdfs:label :: "object aggregate"@en
  - skos:definition :: "(Elucidation) An object aggregate is a material entity consisting exactly of a plurality (≥1) of
    objects as member parts which together form a unit"@en
@@ -325,7 +326,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
    loses all but one of its pups, but it must at some time have a plurality of member parts."
  - SubClassOf :: obo:BFO_0000040
 ***** specifically dependent continuant (obo:BFO_0000020)
- - dc11:identifier :: "050-BFO"
+ - dc11:identifier :: 050-BFO
  - rdfs:label :: "specifically dependent continuant"@en
  - skos:definition :: "b is a specifically dependent continuant =Def b is a continuant & there is some independent
    continuant c which is not a spatial region & which is such that b specifically depends on c"@en
@@ -336,7 +337,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
    being a doctor; the function of this heart to pump blood; the shape of this hole"@en
  - SubClassOf :: obo:BFO_0000002
 ****** quality (obo:BFO_0000019)
- - dc11:identifier :: "055-BFO"
+ - dc11:identifier :: 055-BFO
  - rdfs:label :: "quality"@en
  - skos:definition :: "(Elucidation) A quality is a specifically dependent continuant that, in contrast to roles and
    dispositions, does not require any further process in order to be realized"@en
@@ -345,14 +346,14 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: obo:BFO_0000020
  - DisjointWith :: obo:BFO_0000017
 ******* relational quality (obo:BFO_0000145)
- - dc11:identifier :: "057-BFO"
+ - dc11:identifier :: 057-BFO
  - rdfs:label :: "relational quality"@en
  - skos:definition :: "b is a relational quality =Def b is a quality & there exists c and d such that c and d are not
    identical & b specifically depends on c & b specifically depends on d"@en
  - skos:example :: "A marriage bond; an instance of love; an obligation between one person and another"@en
  - SubClassOf :: obo:BFO_0000019
 ****** realizable entity (obo:BFO_0000017)
- - dc11:identifier :: "058-BFO"
+ - dc11:identifier :: 058-BFO
  - rdfs:label :: "realizable entity"@en
  - skos:definition :: "(Elucidation) A realizable entity is a specifically dependent continuant that inheres in some
    independent continuant which is not a spatial region & which is of a type some instances of which are realized in
@@ -363,7 +364,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: obo:BFO_0000020
  - DisjointWith :: obo:BFO_0000019
 ******* disposition (obo:BFO_0000016)
- - dc11:identifier :: "062-BFO"
+ - dc11:identifier :: 062-BFO
  - rdfs:label :: "disposition"@en
  - skos:altLabel :: "internally-grounded realizable entity"@en
  - skos:definition :: "(Elucidation) A disposition b is a realizable entity such that if b ceases to exist then its
@@ -375,7 +376,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: obo:BFO_0000017
  - DisjointWith :: obo:BFO_0000023
 ******** function (obo:BFO_0000034)
- - dc11:identifier :: "064-BFO"
+ - dc11:identifier :: 064-BFO
  - rdfs:label :: "function"@en
  - skos:definition :: "(Elucidation) A function is a disposition that exists in virtue of its bearer's physical make-up
    & this physical make-up is something the bearer possesses because it came into being either through evolution (in the
@@ -385,7 +386,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
    beating of a heart through electricity"@en
  - SubClassOf :: obo:BFO_0000016
 ******* role (obo:BFO_0000023)
- - dc11:identifier :: "061-BFO"
+ - dc11:identifier :: 061-BFO
  - rdfs:label :: "role"@en
  - skos:altLabel :: "externally-grounded realizable entity"@en
  - skos:definition :: "(Elucidation) A role b is a realizable entity such that b exists because there is some single
@@ -398,7 +399,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: obo:BFO_0000017
  - DisjointWith :: obo:BFO_0000016
 **** occurrent (obo:BFO_0000003)
- - dc11:identifier :: "077-BFO"
+ - dc11:identifier :: 077-BFO
  - rdfs:label :: "occurrent"@en
  - skos:definition :: "(Elucidation) An occurrent is an entity that unfolds itself in time or it is the start or end of
    such an entity or it is a temporal or spatiotemporal region"@en
@@ -407,7 +408,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: obo:BFO_0000001
  - DisjointWith :: obo:BFO_0000002
 ***** process (obo:BFO_0000015)
- - dc11:identifier :: "083-BFO"
+ - dc11:identifier :: 083-BFO
  - rdfs:label :: "process"@en
  - skos:altLabel :: "event"@en
  - skos:definition :: "(Elucidation) p is a process means p is an occurrent that has some temporal proper part and for
@@ -419,7 +420,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: obo:BFO_0000132 only obo:BFO_0000015
  - SubClassOf :: obo:BFO_0000139 only obo:BFO_0000015
 ***** process boundary (obo:BFO_0000035)
- - dc11:identifier :: "084-BFO"
+ - dc11:identifier :: 084-BFO
  - rdfs:label :: "process boundary"@en
  - skos:definition :: "p is a process boundary =Def p is a temporal part of a process & p has no proper temporal
    parts"@en
@@ -430,14 +431,14 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: obo:BFO_0000132 only (obo:BFO_0000015 or obo:BFO_0000035)
  - SubClassOf :: obo:BFO_0000139 only (obo:BFO_0000015 or obo:BFO_0000035)
 ****** history (obo:BFO_0000182)
- - dc11:identifier :: "138-BFO"
+ - dc11:identifier :: 138-BFO
  - rdfs:label :: "history"@en
  - skos:definition :: "(Elucidation) A history is a process that is the sum of the totality of processes taking place in
    the spatiotemporal region occupied by the material part of a material entity"@en
  - skos:example :: "The life of an organism from the beginning to the end of its existence"@en
  - SubClassOf :: obo:BFO_0000015
 ***** spatiotemporal region (obo:BFO_0000011)
- - dc11:identifier :: "095-BFO"
+ - dc11:identifier :: 095-BFO
  - rdfs:label :: "spatiotemporal region"@en
  - skos:definition :: "(Elucidation) A spatiotemporal region is an occurrent that is an occurrent part of spacetime"@en
  - skos:example :: "The spatiotemporal region occupied by the development of a cancer tumour; the spatiotemporal region
@@ -447,7 +448,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: obo:BFO_0000132 only obo:BFO_0000011
  - SubClassOf :: obo:BFO_0000139 only obo:BFO_0000011
 ***** temporal region (obo:BFO_0000008)
- - dc11:identifier :: "100-BFO"
+ - dc11:identifier :: 100-BFO
  - rdfs:label :: "temporal region"@en
  - skos:definition :: "(Elucidation) A temporal region is an occurrent over which processes can unfold"@en
  - skos:example :: "As for zero-dimensional temporal region and one-dimensional temporal region"@en
@@ -455,7 +456,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: obo:BFO_0000132 only obo:BFO_0000008
  - SubClassOf :: obo:BFO_0000139 only obo:BFO_0000008
 ****** one-dimensional temporal region (obo:BFO_0000038)
- - dc11:identifier :: "103-BFO"
+ - dc11:identifier :: 103-BFO
  - rdfs:label :: "one-dimensional temporal region"@en
  - skos:definition :: "(Elucidation) A one-dimensional temporal region is a temporal region that is a whole that has a
    temporal interval and zero or more temporal intervals and temporal instants as parts"@en
@@ -465,7 +466,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: obo:BFO_0000139 only obo:BFO_0000038
  - DisjointWith :: obo:BFO_0000148
 ******* temporal interval (obo:BFO_0000202)
- - dc11:identifier :: "155-BFO"
+ - dc11:identifier :: 155-BFO
  - rdfs:label :: "temporal interval"@en
  - skos:definition :: "(Elucidation) A temporal interval is a one-dimensional temporal region that is continuous, thus
    without gaps or breaks"@en
@@ -474,7 +475,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
    temporal instants separated from other parts by gaps."@en
  - SubClassOf :: obo:BFO_0000038
 ****** zero-dimensional temporal region (obo:BFO_0000148)
- - dc11:identifier :: "102-BFO"
+ - dc11:identifier :: 102-BFO
  - rdfs:label :: "zero-dimensional temporal region"@en
  - skos:definition :: "(Elucidation) A zero-dimensional temporal region is a temporal region that is a whole consisting
    of one or more separated temporal instants as parts"@en
@@ -484,7 +485,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: obo:BFO_0000121 only obo:BFO_0000148
  - DisjointWith :: obo:BFO_0000038
 ******* temporal instant (obo:BFO_0000203)
- - dc11:identifier :: "209-BFO"
+ - dc11:identifier :: 209-BFO
  - rdfs:label :: "temporal instant"@en
  - skos:definition :: "(Elucidation) A temporal instant is a zero-dimensional temporal region that has no proper
    temporal part"@en
@@ -510,7 +511,7 @@ DisjointClasses:
 :resourcedefs: yes
 :END:
 *** concretizes (obo:BFO_0000059)
- - dc11:identifier :: "256-BFO"
+ - dc11:identifier :: 256-BFO
  - rdfs:label :: "concretizes"@en
  - skos:definition :: "b concretizes c =Def b is a process or a specifically dependent continuant & c is a generically
    dependent continuant & there is some time t such that c is the pattern or content which b shares at t with actual or
@@ -522,7 +523,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000031
  - InverseOf :: obo:BFO_0000058
 *** continuant part of (obo:BFO_0000176)
- - dc11:identifier :: "221-BFO"
+ - dc11:identifier :: 221-BFO
  - rdfs:label :: "continuant part of"@en
  - skos:definition :: "b continuant part of c =Def b and c are continuants & there is some time t such that b and c
    exist at t & b continuant part of c at t"@en
@@ -534,7 +535,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000002
  - InverseOf :: obo:BFO_0000178
 **** member part of (obo:BFO_0000129)
- - dc11:identifier :: "228-BFO"
+ - dc11:identifier :: 228-BFO
  - rdfs:label :: "member part of"@en
  - skos:definition :: "b member part of c =Def b is an object & c is a material entity & there is some time t such that b
    continuant part of c at t & there is a mutually exhaustive and pairwise disjoint partition of c into objects x1, ...,
@@ -547,7 +548,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000040
  - InverseOf :: obo:BFO_0000115
 *** environs (obo:BFO_0000183)
- - dc11:identifier :: "267-BFO"
+ - dc11:identifier :: 267-BFO
  - rdfs:label :: "environs"@en
  - skos:altLabel :: "contains process"@en
  - skos:definition :: "b environs c =Def c occurs in b"@en
@@ -556,7 +557,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000015 or obo:BFO_0000035
  - InverseOf :: obo:BFO_0000066
 *** exists at (obo:BFO_0000108)
- - dc11:identifier :: "118-BFO"
+ - dc11:identifier :: 118-BFO
  - rdfs:label :: "exists at"@en
  - skos:definition :: "(Elucidation) exists at is a relation between a particular and some temporal region at which the
    particular exists"@en
@@ -564,7 +565,7 @@ DisjointClasses:
  - Domain :: obo:BFO_0000001
  - Range :: obo:BFO_0000008
 *** first instant of (obo:BFO_0000221)
- - dc11:identifier :: "268-BFO"
+ - dc11:identifier :: 268-BFO
  - rdfs:label :: "first instant of"@en
  - skos:definition :: "t first instant of t' =Def t is a temporal instant & t' is a temporal region t' & t precedes all
    temporal parts of t' other than t"@en
@@ -573,7 +574,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000008
  - InverseOf :: obo:BFO_0000222
 *** generically depends on (obo:BFO_0000084)
- - dc11:identifier :: "252-BFO"
+ - dc11:identifier :: 252-BFO
  - rdfs:label :: "generically depends on"@en
  - skos:altLabel :: "g-depends on"@en
  - skos:definition :: "b generically depends on c =Def b is a generically dependent continuant & c is an independent
@@ -586,7 +587,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000004 and (not (obo:BFO_0000006))
  - InverseOf :: obo:BFO_0000101
 *** has continuant part (obo:BFO_0000178)
- - dc11:identifier :: "271-BFO"
+ - dc11:identifier :: 271-BFO
  - rdfs:label :: "has continuant part"@en
  - skos:definition :: "b has continuant part c =Def c continuant part of b"@en
  - skos:scopeNote :: "Users that require more sophisticated representations of time are encouraged to import a temporal
@@ -596,7 +597,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000002
  - InverseOf :: obo:BFO_0000176
 **** has member part (obo:BFO_0000115)
- - dc11:identifier :: "230-BFO"
+ - dc11:identifier :: 230-BFO
  - rdfs:label :: "has member part"@en
  - skos:definition :: "b has member part c =Def c member part of b"@en
  - skos:scopeNote :: "Users that require more sophisticated representations of time are encouraged to import a temporal
@@ -607,7 +608,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000040
  - InverseOf :: obo:BFO_0000129
 *** has first instant (obo:BFO_0000222)
- - dc11:identifier :: "261-BFO"
+ - dc11:identifier :: 261-BFO
  - rdfs:label :: "has first instant"@en
  - skos:definition :: "t has first instant t' =Def t' first instant of t"@en
  - skos:example :: "The first hour of a year has first instant midnight on December 31"@en
@@ -616,7 +617,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000203
  - InverseOf :: obo:BFO_0000221
 *** has history (obo:BFO_0000185)
- - dc11:identifier :: "145-BFO"
+ - dc11:identifier :: 145-BFO
  - rdfs:label :: "has history"@en
  - skos:definition :: "b has history c =Def c history of b"@en
  - skos:example :: "This organism has history this life"@en
@@ -624,7 +625,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000182
  - InverseOf :: obo:BFO_0000184
 *** has last instant (obo:BFO_0000224)
- - dc11:identifier :: "215-BFO"
+ - dc11:identifier :: 215-BFO
  - rdfs:label :: "has last instant"@en
  - skos:definition :: "t has last instant t' =Def t' last instant of t"@en
  - skos:example :: "The last hour of a year has last instant midnight December 31"@en
@@ -633,7 +634,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000203
  - InverseOf :: obo:BFO_0000223
 *** has material basis (obo:BFO_0000218)
- - dc11:identifier :: "242-BFO"
+ - dc11:identifier :: 242-BFO
  - rdfs:label :: "has material basis"@en
  - skos:definition :: "b has material basis c =Def b is a disposition & c is a material entity & there is some d bearer
    of b & there is some time t such that c is a continuant part of d at t & d has disposition b because c is a
@@ -645,7 +646,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000040
  - InverseOf :: obo:BFO_0000127
 *** has occurrent part (obo:BFO_0000117)
- - dc11:identifier :: "202-BFO"
+ - dc11:identifier :: 202-BFO
  - rdfs:label :: "has occurrent part"@en
  - skos:definition :: "b has occurrent part c =Def c occurrent part of b"@en
  - skos:example :: "Mary's life has occurrent part Mary's 5th birthday"@en
@@ -654,7 +655,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000003
  - InverseOf :: obo:BFO_0000132
 **** has temporal part (obo:BFO_0000121)
- - dc11:identifier :: "211-BFO"
+ - dc11:identifier :: 211-BFO
  - rdfs:label :: "has temporal part"@en
  - skos:definition :: "b has temporal part c =Def c temporal part of b"@en
  - skos:example :: "Your life has temporal part the first year of your life"@en
@@ -664,7 +665,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000003
  - InverseOf :: obo:BFO_0000139
 *** has participant (obo:BFO_0000057)
- - dc11:identifier :: "248-BFO"
+ - dc11:identifier :: 248-BFO
  - rdfs:label :: "has participant"@en
  - skos:definition :: "p has participant c =Def c participates in p"@en
  - skos:scopeNote :: "Users that require more sophisticated representations of time are encouraged to import a temporal
@@ -674,7 +675,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000020 or obo:BFO_0000031 or (obo:BFO_0000004 and (not (obo:BFO_0000006)))
  - InverseOf :: obo:BFO_0000056
 *** has realization (obo:BFO_0000054)
- - dc11:identifier :: "206-BFO"
+ - dc11:identifier :: 206-BFO
  - rdfs:label :: "has realization"@en
  - skos:altLabel :: "realized in"@en
  - skos:definition :: "b has realization c =Def c realizes b"@en
@@ -683,7 +684,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000015
  - InverseOf :: obo:BFO_0000055
 *** history of (obo:BFO_0000184)
- - dc11:identifier :: "144-BFO"
+ - dc11:identifier :: 144-BFO
  - rdfs:label :: "history of"@en
  - skos:definition :: "(Elucidation) history of is a relation between history b and material entity c such that b is the
    unique history of c"@en
@@ -694,7 +695,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000040
  - InverseOf :: obo:BFO_0000185
 *** is carrier of (obo:BFO_0000101)
- - dc11:identifier :: "254-BFO"
+ - dc11:identifier :: 254-BFO
  - rdfs:label :: "is carrier of"@en
  - skos:definition :: "b is carrier of c =Def there is some time t such that c generically depends on b at t"@en
  - skos:scopeNote :: "Users that require more sophisticated representations of time are encouraged to import a temporal
@@ -704,7 +705,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000031
  - InverseOf :: obo:BFO_0000084
 *** is concretized by (obo:BFO_0000058)
- - dc11:identifier :: "258-BFO"
+ - dc11:identifier :: 258-BFO
  - rdfs:label :: "is concretized by"@en
  - skos:definition :: "c is concretized by b =Def b concretizes c"@en
  - skos:scopeNote :: "Users that require more sophisticated representations of time are encouraged to import a temporal
@@ -714,7 +715,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000015 or obo:BFO_0000020
  - InverseOf :: obo:BFO_0000059
 *** last instant of (obo:BFO_0000223)
- - dc11:identifier :: "269-BFO"
+ - dc11:identifier :: 269-BFO
  - rdfs:label :: "last instant of"@en
  - skos:definition :: "t last instant of t' =Def t is a temporal instant & t' is a temporal region & all temporal parts
    of t' other than t precede t"@en
@@ -723,7 +724,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000008
  - InverseOf :: obo:BFO_0000224
 *** located in (obo:BFO_0000171)
- - dc11:identifier :: "234-BFO"
+ - dc11:identifier :: 234-BFO
  - rdfs:label :: "located in"@en
  - skos:definition :: "b located in c =Def b is an independent continuant & c is an independent & neither is a spatial
    region & there is some time t such that the spatial region which b occupies at t is continuant part of the spatial
@@ -735,7 +736,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000004 and (not (obo:BFO_0000006))
  - InverseOf :: obo:BFO_0000124
 *** location of (obo:BFO_0000124)
- - dc11:identifier :: "236-BFO"
+ - dc11:identifier :: 236-BFO
  - rdfs:label :: "location of"@en
  - skos:definition :: "b location of c =Def c located in b"@en
  - skos:scopeNote :: "Users that require more sophisticated representations of time are encouraged to import a temporal
@@ -745,7 +746,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000004 and (not (obo:BFO_0000006))
  - InverseOf :: obo:BFO_0000171
 *** material basis of (obo:BFO_0000127)
- - dc11:identifier :: "244-BFO"
+ - dc11:identifier :: 244-BFO
  - rdfs:label :: "material basis of"@en
  - skos:definition :: "b material basis of c =Def c has material basis b"@en
  - skos:scopeNote :: "Users that require more sophisticated representations of time are encouraged to import a temporal
@@ -755,7 +756,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000016
  - InverseOf :: obo:BFO_0000218
 *** occupies spatial region (obo:BFO_0000210)
- - dc11:identifier :: "232-BFO"
+ - dc11:identifier :: 232-BFO
  - rdfs:label :: "occupies spatial region"@en
  - skos:definition :: "b occupies spatial region r =Def b is an independent continuant that is not a spatial region & r
    is a spatial region & there is some time t such that every continuant part of b occupies some continuant part of r at
@@ -766,7 +767,7 @@ DisjointClasses:
  - Domain :: obo:BFO_0000004 and (not (obo:BFO_0000006))
  - Range :: obo:BFO_0000006
 *** occupies spatiotemporal region (obo:BFO_0000200)
- - dc11:identifier :: "082-BFO"
+ - dc11:identifier :: 082-BFO
  - rdfs:label :: "occupies spatiotemporal region"@en
  - skos:definition :: "(Elucidation) occupies spatiotemporal region is a relation between a process or process boundary
    p and the spatiotemporal region s which is its spatiotemporal extent"@en
@@ -776,7 +777,7 @@ DisjointClasses:
  - Domain :: obo:BFO_0000015 or obo:BFO_0000035
  - Range :: obo:BFO_0000011
 *** occupies temporal region (obo:BFO_0000199)
- - dc11:identifier :: "132-BFO"
+ - dc11:identifier :: 132-BFO
  - rdfs:label :: "occupies temporal region"@en
  - skos:definition :: "p occupies temporal region t =Def p is a process or process boundary & the spatiotemporal region
    occupied by p temporally projects onto t"@en
@@ -785,7 +786,7 @@ DisjointClasses:
  - Domain :: obo:BFO_0000015 or obo:BFO_0000035
  - Range :: obo:BFO_0000008
 *** occurrent part of (obo:BFO_0000132)
- - dc11:identifier :: "003-BFO"
+ - dc11:identifier :: 003-BFO
  - rdfs:label :: "occurrent part of"@en
  - skos:definition :: "(Elucidation) occurrent part of is a relation between occurrents b and c when b is part of c"@en
  - skos:example :: "Mary's 5th birthday is an occurrent part of Mary's life; the first set of the tennis match is an
@@ -795,7 +796,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000003
  - InverseOf :: obo:BFO_0000117
 **** temporal part of (obo:BFO_0000139)
- - dc11:identifier :: "078-BFO"
+ - dc11:identifier :: 078-BFO
  - rdfs:label :: "temporal part of"@en
  - skos:definition :: "b temporal part of c =Def b occurrent part of c & (b and c are temporal regions) or (b and c are
    spatiotemporal regions & b temporally projects onto an occurrent part of the temporal region that c temporally
@@ -810,7 +811,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000003
  - InverseOf :: obo:BFO_0000121
 *** occurs in (obo:BFO_0000066)
- - dc11:identifier :: "143-BFO"
+ - dc11:identifier :: 143-BFO
  - rdfs:label :: "occurs in"@en
  - skos:definition :: "b occurs in c =Def b is a process or a process boundary & c is a material entity or site & there
    exists a spatiotemporal region r & b occupies spatiotemporal region r & for all time t, if b exists at t then c
@@ -822,7 +823,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000029 or obo:BFO_0000040
  - InverseOf :: obo:BFO_0000183
 *** participates in (obo:BFO_0000056)
- - dc11:identifier :: "250-BFO"
+ - dc11:identifier :: 250-BFO
  - rdfs:label :: "participates in"@en
  - skos:definition :: "(Elucidation) participates in holds between some b that is either a specifically dependent
    continuant or generically dependent continuant or independent continuant that is not a spatial region & some process
@@ -834,7 +835,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000015
  - InverseOf :: obo:BFO_0000057
 *** preceded by (obo:BFO_0000062)
- - dc11:identifier :: "213-BFO"
+ - dc11:identifier :: 213-BFO
  - rdfs:label :: "preceded by"@en
  - skos:definition :: "b preceded by c =Def b precedes c"@en
  - skos:example :: "The temporal region occupied by the second half of the match is preceded by the temporal region
@@ -844,7 +845,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000003
  - InverseOf :: obo:BFO_0000063
 *** precedes (obo:BFO_0000063)
- - dc11:identifier :: "270-BFO"
+ - dc11:identifier :: 270-BFO
  - rdfs:label :: "precedes"@en
  - skos:definition :: "(Elucidation) precedes is a relation between occurrents o, o' such that if t is the temporal
    extent of o & t' is the temporal extent of o' then either the last instant of o is before the first instant of o' or
@@ -860,7 +861,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000003
  - InverseOf :: obo:BFO_0000062
 *** realizes (obo:BFO_0000055)
- - dc11:identifier :: "059-BFO"
+ - dc11:identifier :: 059-BFO
  - rdfs:label :: "realizes"@en
  - skos:definition :: "(Elucidation) realizes is a relation between a process b and realizable entity c such that c
    inheres in some d & for all t, if b has participant d then c exists & the type instantiated by b is correlated with
@@ -871,7 +872,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000017
  - InverseOf :: obo:BFO_0000054
 *** spatially projects onto (obo:BFO_0000216)
- - dc11:identifier :: "246-BFO"
+ - dc11:identifier :: 246-BFO
  - rdfs:label :: "spatially projects onto"@en
  - skos:definition :: "(Elucidation) spatially projects onto is a relation between some spatiotemporal region b and
    spatial region c such that at some time t, c is the spatial extent of b at t"@en
@@ -881,7 +882,7 @@ DisjointClasses:
  - Domain :: obo:BFO_0000011
  - Range :: obo:BFO_0000006
 *** specifically depended on by (obo:BFO_0000194)
- - dc11:identifier :: "260-BFO"
+ - dc11:identifier :: 260-BFO
  - rdfs:label :: "specifically depended on by"@en
  - skos:altLabel :: "s-depended on by"@en
  - skos:definition :: "b specifically depended on by c =Def c specifically depends on b"@en
@@ -890,7 +891,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000020
  - InverseOf :: obo:BFO_0000195
 **** bearer of (obo:BFO_0000196)
- - dc11:identifier :: "053-BFO"
+ - dc11:identifier :: 053-BFO
  - rdfs:label :: "bearer of"@en
  - skos:definition :: "b bearer of c =Def c inheres in b"@en
  - skos:example :: "A patch of ink is the bearer of a colour quality; an organism is the bearer of a temperature quality"@en
@@ -899,7 +900,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000020
  - InverseOf :: obo:BFO_0000197
 *** specifically depends on (obo:BFO_0000195)
- - dc11:identifier :: "012-BFO"
+ - dc11:identifier :: 012-BFO
  - rdfs:label :: "specifically depends on"@en
  - skos:altLabel :: "s-depends on"@en
  - skos:definition :: "(Elucidation) specifically depends on is a relation between a specifically dependent continuant b
@@ -913,7 +914,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000020 or (obo:BFO_0000004 and (not (obo:BFO_0000006)))
  - InverseOf :: obo:BFO_0000194
 **** inheres in (obo:BFO_0000197)
- - dc11:identifier :: "051-BFO"
+ - dc11:identifier :: 051-BFO
  - rdfs:label :: "inheres in"@en
  - skos:definition :: "b inheres in c =Def b is a specifically dependent continuant & c is an independent continuant
    that is not a spatial region & b specifically depends on c"@en
@@ -923,7 +924,7 @@ DisjointClasses:
  - Range :: obo:BFO_0000004 and (not (obo:BFO_0000006))
  - InverseOf :: obo:BFO_0000196
 *** temporally projects onto (obo:BFO_0000153)
- - dc11:identifier :: "080-BFO"
+ - dc11:identifier :: 080-BFO
  - rdfs:label :: "temporally projects onto"@en
  - skos:definition :: "(Elucidation) temporally projects onto is a relation between a spatiotemporal region s and some
    temporal region which is the temporal extent of s"@en
