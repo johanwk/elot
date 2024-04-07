@@ -2,7 +2,7 @@
 #+title: bfo-core (BFO-2020) in ELOT
 #+subtitle: An OWL ontology
 #+author: The BFO team
-#+date: WIP (version of 2024-04-07 23:10)
+#+date: WIP (version of 2024-04-07 23:15)
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 
 * COMMENT Issues after conversion
@@ -78,7 +78,6 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 | skos:    | http://www.w3.org/2004/02/skos/core#                                           |
 | pav:     | http://purl.org/pav/                                                           |
 | foaf:    | http://xmlns.com/foaf/0.1/                                                     |
-| dc:      | http://purl.org/dc/elements/1.1/                                               |
 | dc11:    | http://purl.org/dc/elements/1.1/                                               |
 | dc:      | http://purl.org/dc/terms/                                                      |
 | prov:    | http://www.w3.org/ns/prov#                                                     |
