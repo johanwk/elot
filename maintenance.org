@@ -2,7 +2,7 @@
 #+title: The Maintenance Reference Ontology as ELOT example
 #+subtitle: An OWL ontology
 #+author: IOF Maintenance Working Group
-#+date: WIP (version of 2024-04-08 13:42)
+#+date: WIP (version of 2024-04-08 13:58)
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 
 * COMMENT Notes
@@ -182,14 +182,19 @@ DisjointClasses:
 **** undesireable disposition (iof-maint:UndesireableDisposition)
  - rdfs:label :: "undesireable disposition"@en-us
  - skos:example :: disposition to leak, disposition to overheat, disposition to vibrate
- - iof-av:explanatoryNote :: "There are two subclasses, disposition to fail and disposition to exhibit undesirable behavior. We need to distinguish between the disposition to leak which is realised in a leaking process (regarded as a failure) and the disposition to overheat realised in a heating process (which, in this example) is not a failure process).
-We asset that disposition to exhibit undesirable behavior is the disposition of an item that would not be expected under normal operating conditions but may occur such as vibration or overheating."
-        iof-av:firstOrderLogicDefinition "UndesirableDisposition(x) ↔ DispositionToFail(x) ∨ DispositionToExhibitUndesirableBehavior(x)"
-        iof-av:isPrimitive false
-        iof-av:maturity https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/Provisional
-        iof-av:naturalLanguageDefinition "disposition of an item to undergo a process that leads to undesirable outcomes"@en-us
-        iof-av:semiFormalNaturalLanguageDefinition "every instance of 'undesirable disposition' is defined as exactly an instance of 'disposition to fail' or exactly an instance of 'disposition to exhibit undesirable behavior'"
-        iof-av:synonym "failure mode"
+ - iof-av:explanatoryNote :: There are two subclasses, disposition to fail and disposition to exhibit undesirable
+   behavior. We need to distinguish between the disposition to leak which is realised in a leaking process (regarded as
+   a failure) and the disposition to overheat realised in a heating process (which, in this example) is not a failure
+   process).
+
+   We asset that disposition to exhibit undesirable behavior is the disposition of an item that would not be expected
+   under normal operating conditions but may occur such as vibration or overheating.
+ - iof-av:firstOrderLogicDefinition :: UndesirableDisposition(x) ↔ DispositionToFail(x) ∨ DispositionToExhibitUndesirableBehavior(x)
+ - iof-av:isPrimitive :: false
+ - iof-av:maturity :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/Provisional
+ - iof-av:naturalLanguageDefinition :: "disposition of an item to undergo a process that leads to undesirable outcomes"@en-us
+ - iof-av:semiFormalNaturalLanguageDefinition :: every instance of 'undesirable disposition' is defined as exactly an instance of 'disposition to fail' or exactly an instance of 'disposition to exhibit undesirable behavior'
+ - iof-av:synonym :: failure mode
  - EquivalentTo :: iof-maint:DispositionToExhibitUndesirableBehavior or iof-maint:DispositionToFail
  - SubClassOf :: obo:BFO_0000016
 ***** disposition to exhibit undesirable behavior (iof-maint:DispositionToExhibitUndesirableBehavior)
@@ -249,7 +254,7 @@ We asset that disposition to exhibit undesirable behavior is the disposition of 
 **** failure mode code (iof-maint:FailureModeCode)
  - rdfs:label :: "failure mode code"@en-us
  - rdfs:seeAlso :: ISO14224 for example list of failure modes
- - skos:example \"high output\", \"leaking\", \"vibrating\"
+ - skos:example :: "high output", "leaking", "vibrating"
  - iof-av:adaptedFrom :: The natural language definition is adapted from EN:13306
  - iof-av:firstOrderLogicAxiom :: FailureModeCode(x) → InformationContentEntity(x) ∧ ∃y(UndesirableDisposition(y) ∧ describes(x,y))
  - iof-av:isPrimitive :: true
@@ -302,7 +307,7 @@ We asset that disposition to exhibit undesirable behavior is the disposition of 
  - iof-av:isPrimitive :: false
  - iof-av:maturity :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/Provisional
  - iof-av:naturalLanguageDefinition :: "state of an item being unable to perform a required function due to a failure event"@en-us
- - iof-av:semiFormalNaturalLanguageDefinition \"failed state': every instance of 'failed state' is defined as exactly an instance of 'maintenance state' o1 that 'has participant at all times' some 'maintainable material item' i and that is 'initiated by' some 'failure event' and is 'preceded by' some ('degraded state' or 'operating state') o2 that 'has participant at all times' i and there is no ('degraded state' or 'operating state' ) o3 such that o3 'has participant at all times' i and o2 'precedes' o3 and o3 'precedes' o1\"
+ - iof-av:semiFormalNaturalLanguageDefinition :: 'failed state': every instance of 'failed state' is defined as exactly an instance of 'maintenance state' o1 that 'has participant at all times' some 'maintainable material item' i and that is 'initiated by' some 'failure event' and is 'preceded by' some ('degraded state' or 'operating state') o2 that 'has participant at all times' i and there is no ('degraded state' or 'operating state' ) o3 such that o3 'has participant at all times' i and o2 'precedes' o3 and o3 'precedes' o1
  - SubClassOf :: iof-maint:MaintenanceState
  - SubClassOf :: obo:BFO_0000062 some (iof-maint:DegradedState or iof-maint:OperatingState)
  - SubClassOf :: obo:BFO_0000167 some iof-core:MaintainableMaterialItem, inverse (iof-maint:initiates) some iof-maint:FailureEvent
