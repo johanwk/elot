@@ -5,7 +5,9 @@
 This repository contains a template for writing OWL ontologies as
 [Org Mode](https://orgmode.org/) documents, with supporting functions and scripts.
 
-Check out the file `pizza.org` for an example ELOT file.
+Check out `pizza.org`, `bfo-core.org`, `maintenance.org` for example ELOT files.
+
+The Emacs package is in subdirectory `elot-package`. Not yet ready for release, but we are working on it!
 
 ELOT works on Windows, MacOS, and Linux (tested in WSL).
 
