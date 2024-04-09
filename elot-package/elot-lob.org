@@ -65,6 +65,21 @@
     (elot-tsv-to-table result-file))
 #+end_src
 
+** Class hierarchy as SPARQL construct
+#+name: ttl-Class-hierarchy
+#+header: :var top="owl:Thing" :noweb yes :format ttl
+#+begin_src sparql :url "pizza.omn" :wrap "src ttl" :cache yes :eval never-export
+  construct {
+    ?c a owl:Class .
+    ?subC a owl:Class .
+    ?subC rdfs:subClassOf ?c .
+  }{
+    values ?cTop { $top }
+    ?c a owl:Class ;
+      rdfs:subClassOf* ?cTop .
+    optional { ?subC rdfs:subClassOf ?c }
+  }
+#+end_src
 * sparql and rdfpuml
 ** Diagrams with rdfpuml
 *** Config for rdfpuml colours and directions
