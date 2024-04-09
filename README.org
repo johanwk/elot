@@ -98,14 +98,15 @@ example of what an ELOT file will look like.
 To create a new ontology, do this in Emacs:
  - Select a directory that you want to work in. Open a new Org Mode
    file, for instance =myontology.org=.
- - Insert the ELOT template for a document header: Press the =F4= key. A
-   menu is displayed at the bottom of the Emacs window. The letters in
-   blue represent /key sequences/ that will call up templates or execute
-   commands.
+ - Insert the ELOT template for a document header.
+   You can do this in two ways:
+   - Press the =F4= key. A menu is displayed at the bottom of the Emacs window.
+     The letters in blue represent /key sequences/ that will call up templates or execute commands.
+   - Type the same sequence (including =<=) at the beginning of a line and press =TAB=.
 
 [[file:./documentation/images/elot-helpdesk1.png]]
- - Press keys =odh= to call up the document header template. Answer the prompts, and a
-   header is produced, like the following.
+ - Use =odh= ("ontology document header") to call up the document header template.
+   Answer the prompts, and a header is produced, like the following.
    #+begin_src org
    # -*- eval: (load-library "elot-defaults") -*-
    #+title: My new ontology
