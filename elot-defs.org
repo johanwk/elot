@@ -933,14 +933,14 @@ rdfpuml, and returns the filename of the resulting PlantUML file.
 Function =elot-plantuml-execute= takes a PlantUML filename, plus name
 and format suffix of the generated diagram. Resulting graphic file is
 placed in the default ELOT directory, and the filename returned.
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :results silent
   (defun elot-plantuml-execute (puml-file output-name format)
     "With PlantUML, read `puml-file' and output `output-name'.`format'
   to ELOT default image (sub)directory. Return output file name."
     (if (or (string= org-plantuml-jar-path "") (not (file-exists-p org-plantuml-jar-path)))
       (error "PlantUML not found. Set org-plantuml-jar-path with M-x customize-variable."))
     (let ((tmp-output-file (concat (file-name-sans-extension puml-file) "." format))
-	  (output-file (concat elot-default-image-path ttlblock "." format)))
+    (output-file (concat elot-default-image-path output-name "." format)))
       (message (concat puml-file " --> " output-file))
       (make-directory elot-default-image-path :always)
       (shell-command 
