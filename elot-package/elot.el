@@ -699,7 +699,7 @@ to ELOT default image (sub)directory. Return output file name."
   (if (or (string= org-plantuml-jar-path "") (not (file-exists-p org-plantuml-jar-path)))
     (error "PlantUML not found. Set org-plantuml-jar-path with M-x customize-variable."))
   (let ((tmp-output-file (concat (file-name-sans-extension puml-file) "." format))
-	(output-file (concat elot-default-image-path ttlblock "." format)))
+  (output-file (concat elot-default-image-path output-name "." format)))
     (message (concat puml-file " --> " output-file))
     (make-directory elot-default-image-path :always)
     (shell-command 
