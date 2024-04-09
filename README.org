@@ -75,10 +75,10 @@ Preparatory steps, if needed:
 Get the tools:
  1. The [[http://robot.obolibrary.org/][ROBOT]] tool is highly recommended for ELOT. Download [[https://github.com/ontodev/robot/releases/download/v1.9.5/robot.jar][robot.jar]]
     from the [[https://github.com/ontodev/robot/releases][ROBOT releases]] page to your =bin= folder.
- 2. The [[https://plantuml.com/][PlantUML]] tool is needed for diagrams. Download
-    [[https://github.com/plantuml/plantuml/releases/download/v1.2024.3/plantuml-1.2024.3.jar][plantuml-1.2024.3.jar]] from the [[https://plantuml.com/download][PlantUML Downloads]] page to your =bin=
-    folder. For convenience, rename it as just =plantuml.jar= (on Linux,
-    make a symlink).
+ 2. The [[https://plantuml.com/][PlantUML]] tool is needed for diagrams.
+    Download the latest version from [[https://plantuml.com/download][PlantUML Downloads]] (tested with [[https://github.com/plantuml/plantuml/releases/download/v1.2024.3/plantuml-1.2024.3.jar][plantuml-1.2024.3.jar]])
+    to your =bin= folder.
+    For convenience, rename it as just =plantuml.jar= (on Linux, make a symlink).
  3. The [[https://github.com/VladimirAlexiev/rdf2rml][rdfpuml]] tool will produce great-looking diagrams for
     ontologies.
     - On Windows, download [[https://github.com/VladimirAlexiev/rdf2rml/raw/master/bin/rdfpuml.exe][rdfpuml.exe]] to your =bin= folder.
@@ -98,14 +98,15 @@ example of what an ELOT file will look like.
 To create a new ontology, do this in Emacs:
  - Select a directory that you want to work in. Open a new Org Mode
    file, for instance =myontology.org=.
- - Insert the ELOT template for a document header: Press the =F4= key. A
-   menu is displayed at the bottom of the Emacs window. The letters in
-   blue represent /key sequences/ that will call up templates or execute
-   commands.
+ - Insert the ELOT template for a document header.
+   You can do this in two ways:
+   - Press the =F4= key. A menu is displayed at the bottom of the Emacs window.
+     The letters in blue represent /key sequences/ that will call up templates or execute commands.
+   - Type the same sequence (including =<=) at the beginning of a line and press =TAB=.
 
 [[file:./documentation/images/elot-helpdesk1.png]]
- - Press keys =odh= to call up the document header template. Answer the prompts, and a
-   header is produced, like the following.
+ - Use =odh= ("ontology document header") to call up the document header template.
+   Answer the prompts, and a header is produced, like the following.
    #+begin_src org
    # -*- eval: (load-library "elot-defaults") -*-
    #+title: My new ontology
