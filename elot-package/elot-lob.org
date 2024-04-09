@@ -11,7 +11,11 @@
 #+BEGIN_SRC emacs-lisp :var hierarchy="ELOT-class-hierarchy" :var owl-type="Class" :var owl-relation="SubClassOf" :wrap "SRC omn" 
 (resource-taxonomy-from-header hierarchy owl-type owl-relation)
 #+END_SRC
-
+** readtheorg HTML setup file
+#+name: theme-readtheorg
+#+begin_src emacs-lisp :results drawer
+(concat "#+SETUPFILE: " (file-name-directory (locate-library "elot")) "theme-readtheorg.setup")
+#+end_src
 * in document
 ** Dates for insertion into ontology on save
 #+name: current-date
