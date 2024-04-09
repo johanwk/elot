@@ -2,8 +2,8 @@
 #+title: The Maintenance Reference Ontology as ELOT example
 #+subtitle: An OWL ontology
 #+author: IOF Maintenance Working Group
-#+date: WIP (version of 2024-04-09 17:31)
-#+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
+#+date: WIP (version of 2024-04-09 18:14)
+#+call: theme-readtheorg()
 
 # hide TODO status in headings
 #+OPTIONS: todo:nil
