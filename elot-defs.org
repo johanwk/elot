@@ -285,7 +285,7 @@ the ID string.
 *** puri expansion
 #+name: defun-puri
 #+BEGIN_SRC emacs-lisp :results silent
-  (defconst puri-re "^\\([-a-z_A-Z0-9]*\\):\\([a-z_A-Z0-9-.]+\\)$")
+  (defconst puri-re "^\\([-a-z_A-Z0-9]*\\):\\([a-z_A-Z0-9-.]*\\)$")
 
   (defun unprefix-uri (puri abbrev-alist)
    "Replace prefix in puri with full form from abbrev-alist, if there's a match."
@@ -385,11 +385,11 @@ annotations in a future improved version, from sub-items.
    - my class name (abc:MyClassName)
 
   Maybe also with tags :hello: on the right. Return abc:MyClassName in both cases."
-    (if (string-match "(\\([-_[:alnum:]]*:[-_[:alnum:]]+\\))" str) ; the resource id is in parentheses
+    (if (string-match "(\\([-_[:alnum:]]*:[-_[:alnum:]]*\\))" str) ; the resource id is in parentheses
         (match-string 1 str)
-      (if (string-match "^\\([-_[:alnum:]]*:[-_[:alnum:]]+\\)" str) ; return string up to whitespace
+      (if (string-match "^\\([-_[:alnum:]]*:[-_[:alnum:]]*\\)" str) ; return string up to whitespace
           (match-string 1 str)
-        (if (string-match "(\\([-_[:alnum:]]*:[-_[:alnum:]]+ [-_[:alnum:]]*:[-_/.[:alnum:]]+\\))" str) ; two ids in parentheses, for ontology
+        (if (string-match "(\\([-_[:alnum:]]*:[-_[:alnum:]]* [-_[:alnum:]]*:[-_/.[:alnum:]]*\\))" str) ; two ids in parentheses, for ontology
             (match-string 1 str)
           (error (message "%s%s%s%s%s" "Fail! Heading \"" str "\" in " (org-entry-get-with-inheritance "ID") " is not well-formed") 
                  (concat "Malformed_" str))))))
