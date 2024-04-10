@@ -2,7 +2,7 @@
 #+title: The Maintenance Reference Ontology as ELOT example
 #+subtitle: An OWL ontology
 #+author: IOF Maintenance Working Group
-#+date: WIP (version of 2024-04-09 18:14)
+#+date: WIP (version of 2024-04-10 09:39)
 #+call: theme-readtheorg()
 
 # hide TODO status in headings
@@ -118,13 +118,13 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
   (elot-prefix-block-from-alist prefixes 'ttl)
 #+end_src
 
-** Maintenance ontology (iof-maint:Maintenance)
+** Maintenance ontology (iof-maint: iof-ont:202401/maintenance/Maintenance/)
 :PROPERTIES:
 :ID:       Maintenance-ontology-declaration
 :custom_id: Maintenance-ontology-declaration
 :resourcedefs: yes
 :END:
-  - Import ::  https://spec.industrialontologies.org/ontology/core/Core/
+  - Import ::  iof-core:
  - pav:lastUpdateOn :: {{{modification-time("%Y-%m-%dT%H:%M:%SZ",t)}}}^^xsd:dateTime
  - dcterms:modified ::  {{{modification-time("%Y-%m-%d",t)}}}^^xsd:date
  - dcterms:abstract :: The purpose of this IOF Maintenance Reference ontology is to support semantic interoperatibility
@@ -139,7 +139,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - dcterms:creator :: "IOF Maintenance Working Group"@en
  - dcterms:license :: http://opensource.org/licenses/MIT
  - dcterms:publisher :: "Industrial Ontology Foundry"@en
- - dcterms:references :: http://purl.org/dc/terms/
+ - dcterms:references :: dcterms:
  - dcterms:references :: http://www.w3.org/2004/02/skos/core#
  - dcterms:title :: Industrial Ontology Foundry (IOF) Maintenance Reference Ontology
  - iof-av:maturity :: iof-av:Provisional
@@ -524,21 +524,21 @@ We add a diagram. TODO: allow for the ttl to be implicit, so only one call is ne
 :END:
 *** owl:versionInfo
 *** dcterms:title
- - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+ - rdfs:isDefinedBy :: dcterms:
 *** dcterms:license
- - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+ - rdfs:isDefinedBy :: dcterms:
 *** dcterms:creator
- - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+ - rdfs:isDefinedBy :: dcterms:
 *** dcterms:modified
- - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+ - rdfs:isDefinedBy :: dcterms:
 *** dcterms:publisher
- - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+ - rdfs:isDefinedBy :: dcterms:
 *** dcterms:description
- - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+ - rdfs:isDefinedBy :: dcterms:
 *** dc:rights
- - rdfs:isDefinedBy :: http://purl.org/dc/elements/1.1/
+ - rdfs:isDefinedBy :: dc:
 *** pav:lastUpdateOn
- - rdfs:isDefinedBy :: http://purl.org/pav/
+ - rdfs:isDefinedBy :: pav:
 *** skos:example
  - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
 *** skos:prefLabel
@@ -546,13 +546,13 @@ We add a diagram. TODO: allow for the ttl to be implicit, so only one call is ne
 *** skos:altLabel
  - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
 *** iof-av:isPrimitive
- - rdfs:isDefinedBy :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary
+ - rdfs:isDefinedBy :: iof-av:
 *** skos:definition
  - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
 **** iof-av:naturalLanguageDefinition
- - rdfs:isDefinedBy :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary
+ - rdfs:isDefinedBy :: iof-av:
 **** iof-av:primitiveRationale
- - rdfs:isDefinedBy :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary
+ - rdfs:isDefinedBy :: iof-av:
 *** abstract (dcterms:abstract)
 *** acronym (iof-av:acronym)
 *** adaptedFrom (iof-av:adaptedFrom)
