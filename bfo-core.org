@@ -2,8 +2,8 @@
 #+title: bfo-core (BFO-2020) in ELOT
 #+subtitle: An OWL ontology
 #+author: The BFO team
-#+date: WIP (version of 2024-04-09 17:34)
-#+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
+#+date: WIP (version of 2024-04-10 12:37)
+#+call: theme-readtheorg()
 
 * COMMENT Issues after conversion
  - a comma at the end of lines create trouble
