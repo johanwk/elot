@@ -249,7 +249,7 @@ resources if point is under a heading that declares an ontology."
 ;; defun-desc-lists ends here
 
 ;; [[file:../elot-defs.org::defun-puri][defun-puri]]
-(defconst puri-re "^\\([-a-z_A-Z0-9]*\\):\\([a-z_A-Z0-9-.]+\\)$")
+(defconst puri-re "^\\([-a-z_A-Z0-9]*\\):\\([a-z_A-Z0-9-.]*\\)$")
 
 (defun unprefix-uri (puri abbrev-alist)
  "Replace prefix in puri with full form from abbrev-alist, if there's a match."
@@ -341,11 +341,11 @@ The headers can be of two kinds. With prefix 'abc',
  - my class name (abc:MyClassName)
 
 Maybe also with tags :hello: on the right. Return abc:MyClassName in both cases."
-  (if (string-match "(\\([-_[:alnum:]]*:[-_[:alnum:]]+\\))" str) ; the resource id is in parentheses
+  (if (string-match "(\\([-_[:alnum:]]*:[-_[:alnum:]]*\\))" str) ; the resource id is in parentheses
       (match-string 1 str)
-    (if (string-match "^\\([-_[:alnum:]]*:[-_[:alnum:]]+\\)" str) ; return string up to whitespace
+    (if (string-match "^\\([-_[:alnum:]]*:[-_[:alnum:]]*\\)" str) ; return string up to whitespace
         (match-string 1 str)
-      (if (string-match "(\\([-_[:alnum:]]*:[-_[:alnum:]]+ [-_[:alnum:]]*:[-_/.[:alnum:]]+\\))" str) ; two ids in parentheses, for ontology
+      (if (string-match "(\\([-_[:alnum:]]*:[-_[:alnum:]]* [-_[:alnum:]]*:[-_/.[:alnum:]]*\\))" str) ; two ids in parentheses, for ontology
           (match-string 1 str)
         (error (message "%s%s%s%s%s" "Fail! Heading \"" str "\" in " (org-entry-get-with-inheritance "ID") " is not well-formed") 
                (concat "Malformed_" str))))))
@@ -715,7 +715,7 @@ to ELOT default image (sub)directory. Return output file name."
 	"#+subtitle: An OWL ontology" > n
 	"#+author: " (p "Author name: " authname) > n
 	"#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
-  "#+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup" n n
+  "#+call: theme-readtheorg()" n n
 	(progn (load-library "elot-defaults") (message "Loaded ELOT") "")
 	)
  "<odh"
