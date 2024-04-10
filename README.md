@@ -30,7 +30,7 @@ ELOT works on Windows, MacOS, and Linux (tested in WSL).
 -   Download ELOT using [Git](https://github.com/git-guides/install-git) to easily obtain updates
 -   Use a recent version (29.x) of [Emacs](https://www.gnu.org/software/emacs/download.html)
 -   For viewing your ontologies, install version 5.6 of [Protégé Desktop](https://protege.stanford.edu/)
--   Install [Java](https://www.java.com/en/download/help/download_options.html) to enable advanced features
+-   Install [Java](https://www.java.com/en/download/help/download_options.html) to enable advanced features. NOTE, install the latest Java version, not version 8!
     -   Turtle output, ontology metrics, and more: install [ROBOT](http://robot.obolibrary.org/)
     -   Ontology diagrams: install [PlantUML](https://plantuml.com/) and [rdfpuml](https://github.com/VladimirAlexiev/rdf2rml)
 
