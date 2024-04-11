@@ -60,6 +60,8 @@
 [EXTRA]"
                  ontology-resource-section
                  ))
+(modify-syntax-entry ?\: "w")
+(modify-syntax-entry ?\_ "w")
   (add-hook 'org-babel-post-tangle-hook 'elot-tangled-omn-to-ttl
             'local) ;; make it a local hook only
   (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images 'local)
