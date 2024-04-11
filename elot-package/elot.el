@@ -825,7 +825,6 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  # - Import :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/
  - owl:versionInfo :: 0.0 start of " (s ontlocalname) "
  - dcterms:title :: \"" (s ontlocalname) " ontology\"@en
- - owl:versionInfo :: 0.0 start of " (s ontlocalname) "
  - pav:lastUpdateOn :: {{{modification-time(\"%Y-%m-%dT%H:%M:%SZ\",t)}}}^^xsd:dateTime
  - dcterms:license :: [[https://creativecommons.org/licenses/by-sa/4.0/]]
  - dcterms:creator :: {{{author}}}
