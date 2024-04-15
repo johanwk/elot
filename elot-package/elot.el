@@ -131,14 +131,29 @@ skinparam classAttributeIconSize 0"
 ;; OMN keywords:1 ends here
 
 ;; [[file:../elot-defs.org::*OMN keywords][OMN keywords:2]]
-(defun elot-latex-filter-omn-list (text backend info)
+(defun elot-latex-filter-omn-item (text backend info)
   "Format OMN content in description lists"
   (when (org-export-derived-backend-p backend 'latex)
-    (when (seq-some (lambda (x) (string-match x text))
+    (when (seq-some
+           (lambda (x)
+             (string-match (concat "^\\\\item\\[{" x "}\\]") text))
            elot-omn-property-keywords)
-      (replace-regexp-in-string "\\\\item.{\\([a-zA-Z]+\\)}. \\(.*\\)" "\\\\item[\\\\normalfont\\\\ttfamily\\\\small \\1] \\\\lstinline[language=omn]{\\2}" text))))
-(add-to-list 'org-export-filter-plain-list-functions
-           'elot-latex-filter-omn-list)
+        ;; make the description term texttt
+        (setq text (replace-regexp-in-string
+                    "\\\\item\\[{\\([a-zA-Z]+\\)}\\]"
+                    "\\\\item[\\\\normalfont\\\\ttfamily\\\\small \\1]"
+                    text))
+        ;; make the list entry content omn inline code unless it's a url
+        (if (not (string-match "\\url{.*}$" text))
+            (replace-regexp-in-string
+             "^\\(.*\\] \\)\\(.*\\)"
+             "\\1\\\\lstinline[language=omn]{\\2}"
+             text)
+          text))))
+
+
+(add-to-list 'org-export-filter-item-functions
+           'elot-latex-filter-omn-item)
 ;; OMN keywords:2 ends here
 
 ;; [[file:../elot-defs.org::*Context identification][Context identification:1]]
