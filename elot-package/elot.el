@@ -131,14 +131,29 @@ skinparam classAttributeIconSize 0"
 ;; OMN keywords:1 ends here
 
 ;; [[file:../elot-defs.org::*OMN keywords][OMN keywords:2]]
-(defun elot-latex-filter-omn-list (text backend info)
+(defun elot-latex-filter-omn-item (text backend info)
   "Format OMN content in description lists"
   (when (org-export-derived-backend-p backend 'latex)
-    (when (seq-some (lambda (x) (string-match x text))
+    (when (seq-some
+           (lambda (x)
+             (string-match (concat "^\\\\item\\[{" x "}\\]") text))
            elot-omn-property-keywords)
-      (replace-regexp-in-string "\\\\item.{\\([a-zA-Z]+\\)}. \\(.*\\)" "\\\\item[\\\\normalfont\\\\ttfamily\\\\small \\1] \\\\lstinline[language=omn]{\\2}" text))))
-(add-to-list 'org-export-filter-plain-list-functions
-           'elot-latex-filter-omn-list)
+        ;; make the description term texttt
+        (setq text (replace-regexp-in-string
+                    "\\\\item\\[{\\([a-zA-Z]+\\)}\\]"
+                    "\\\\item[\\\\normalfont\\\\ttfamily\\\\small \\1]"
+                    text))
+        ;; make the list entry content omn inline code unless it's a url
+        (if (not (string-match "\\url{.*}$" text))
+            (replace-regexp-in-string
+             "^\\(.*\\] \\)\\(.*\\)"
+             "\\1\\\\lstinline[language=omn]{\\2}"
+             text)
+          text))))
+
+
+(add-to-list 'org-export-filter-item-functions
+           'elot-latex-filter-omn-item)
 ;; OMN keywords:2 ends here
 
 ;; [[file:../elot-defs.org::*Context identification][Context identification:1]]
@@ -249,7 +264,7 @@ resources if point is under a heading that declares an ontology."
 ;; defun-desc-lists ends here
 
 ;; [[file:../elot-defs.org::defun-puri][defun-puri]]
-(defconst puri-re "^\\([-a-z_A-Z0-9]*\\):\\([a-z_A-Z0-9-.]+\\)$")
+(defconst puri-re "^\\([-a-z_A-Z0-9]*\\):\\([a-z_A-Z0-9-.]*\\)$")
 
 (defun unprefix-uri (puri abbrev-alist)
  "Replace prefix in puri with full form from abbrev-alist, if there's a match."
@@ -341,11 +356,11 @@ The headers can be of two kinds. With prefix 'abc',
  - my class name (abc:MyClassName)
 
 Maybe also with tags :hello: on the right. Return abc:MyClassName in both cases."
-  (if (string-match "(\\([-_[:alnum:]]*:[-_[:alnum:]]+\\))" str) ; the resource id is in parentheses
+  (if (string-match "(\\([-_[:alnum:]]*:[-_[:alnum:]]*\\))" str) ; the resource id is in parentheses
       (match-string 1 str)
-    (if (string-match "^\\([-_[:alnum:]]*:[-_[:alnum:]]+\\)" str) ; return string up to whitespace
+    (if (string-match "^\\([-_[:alnum:]]*:[-_[:alnum:]]*\\)" str) ; return string up to whitespace
         (match-string 1 str)
-      (if (string-match "(\\([-_[:alnum:]]*:[-_[:alnum:]]+ [-_[:alnum:]]*:[-_/.[:alnum:]]+\\))" str) ; two ids in parentheses, for ontology
+      (if (string-match "(\\([-_[:alnum:]]*:[-_[:alnum:]]* [-_[:alnum:]]*:[-_/.[:alnum:]]*\\))" str) ; two ids in parentheses, for ontology
           (match-string 1 str)
         (error (message "%s%s%s%s%s" "Fail! Heading \"" str "\" in " (org-entry-get-with-inheritance "ID") " is not well-formed") 
                (concat "Malformed_" str))))))
@@ -699,7 +714,7 @@ to ELOT default image (sub)directory. Return output file name."
   (if (or (string= org-plantuml-jar-path "") (not (file-exists-p org-plantuml-jar-path)))
     (error "PlantUML not found. Set org-plantuml-jar-path with M-x customize-variable."))
   (let ((tmp-output-file (concat (file-name-sans-extension puml-file) "." format))
-	(output-file (concat elot-default-image-path ttlblock "." format)))
+  (output-file (concat elot-default-image-path output-name "." format)))
     (message (concat puml-file " --> " output-file))
     (make-directory elot-default-image-path :always)
     (shell-command 
@@ -715,7 +730,7 @@ to ELOT default image (sub)directory. Return output file name."
 	"#+subtitle: An OWL ontology" > n
 	"#+author: " (p "Author name: " authname) > n
 	"#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
-  "#+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup" n n
+  "#+call: theme-readtheorg()" n n
 	(progn (load-library "elot-defaults") (message "Loaded ELOT") "")
 	)
  "<odh"
@@ -825,7 +840,6 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  # - Import :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/
  - owl:versionInfo :: 0.0 start of " (s ontlocalname) "
  - dcterms:title :: \"" (s ontlocalname) " ontology\"@en
- - owl:versionInfo :: 0.0 start of " (s ontlocalname) "
  - pav:lastUpdateOn :: {{{modification-time(\"%Y-%m-%dT%H:%M:%SZ\",t)}}}^^xsd:dateTime
  - dcterms:license :: [[https://creativecommons.org/licenses/by-sa/4.0/]]
  - dcterms:creator :: {{{author}}}

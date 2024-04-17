@@ -2,8 +2,8 @@
 #+title: bfo-core (BFO-2020) in ELOT
 #+subtitle: An OWL ontology
 #+author: The BFO team
-#+date: WIP (version of 2024-04-08 00:03)
-#+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
+#+date: WIP (version of 2024-04-10 12:37)
+#+call: theme-readtheorg()
 
 * COMMENT Issues after conversion
  - a comma at the end of lines create trouble
@@ -12,6 +12,7 @@
  - bare URIs in angled brackets =<...>= in annotations give trouble?
  - quotes around entries without language tag
  - manually add disjointness clauses
+ - language tags for rdfs:label in headings is not supported (yet)
 
 * bfo-core
 :PROPERTIES:
@@ -69,21 +70,21 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 #+name: prefix-table
 #+attr_latex: :align lp{.8\textwidth} :font  mall
 #+caption: OWL ontology prefixes
-| prefix   | uri                                                                            |
-|----------+--------------------------------------------------------------------------------|
-| owl:     | http://www.w3.org/2002/07/owl#                                                 |
-| rdf:     | http://www.w3.org/1999/02/22-rdf-syntax-ns#                                    |
-| xml:     | http://www.w3.org/XML/1998/namespace                                           |
-| xsd:     | http://www.w3.org/2001/XMLSchema#                                              |
-| rdfs:    | http://www.w3.org/2000/01/rdf-schema#                                          |
-| skos:    | http://www.w3.org/2004/02/skos/core#                                           |
-| pav:     | http://purl.org/pav/                                                           |
-| foaf:    | http://xmlns.com/foaf/0.1/                                                     |
-| dc11:    | http://purl.org/dc/elements/1.1/                                               |
-| dc:      | http://purl.org/dc/terms/                                                      |
-| prov:    | http://www.w3.org/ns/prov#                                                     |
-| iof-av:  | https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/ |
-| obo:     | http://purl.obolibrary.org/obo/                                                |
+| prefix  | uri                                                                            |
+|---------+--------------------------------------------------------------------------------|
+| owl:    | http://www.w3.org/2002/07/owl#                                                 |
+| rdf:    | http://www.w3.org/1999/02/22-rdf-syntax-ns#                                    |
+| xml:    | http://www.w3.org/XML/1998/namespace                                           |
+| xsd:    | http://www.w3.org/2001/XMLSchema#                                              |
+| rdfs:   | http://www.w3.org/2000/01/rdf-schema#                                          |
+| skos:   | http://www.w3.org/2004/02/skos/core#                                           |
+| pav:    | http://purl.org/pav/                                                           |
+| foaf:   | http://xmlns.com/foaf/0.1/                                                     |
+| dc11:   | http://purl.org/dc/elements/1.1/                                               |
+| dc:     | http://purl.org/dc/terms/                                                      |
+| prov:   | http://www.w3.org/ns/prov#                                                     |
+| iof-av: | https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/ |
+| obo:    | http://purl.obolibrary.org/obo/                                                |
 *** Source blocks for prefixes                                     :noexport:
 :PROPERTIES:
 :header-args:omn: :tangle no

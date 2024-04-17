@@ -11,7 +11,11 @@
 #+BEGIN_SRC emacs-lisp :var hierarchy="ELOT-class-hierarchy" :var owl-type="Class" :var owl-relation="SubClassOf" :wrap "SRC omn" 
 (resource-taxonomy-from-header hierarchy owl-type owl-relation)
 #+END_SRC
-
+** readtheorg HTML setup file
+#+name: theme-readtheorg
+#+begin_src emacs-lisp :results drawer
+(concat "#+SETUPFILE: " (file-name-directory (locate-library "elot")) "theme-readtheorg.setup")
+#+end_src
 * in document
 ** Dates for insertion into ontology on save
 #+name: current-date
@@ -65,6 +69,21 @@
     (elot-tsv-to-table result-file))
 #+end_src
 
+** Class hierarchy as SPARQL construct
+#+name: ttl-Class-hierarchy
+#+header: :var top="owl:Thing" :noweb yes :format ttl
+#+begin_src sparql :url "pizza.omn" :wrap "src ttl" :cache yes :eval never-export
+  construct {
+    ?c a owl:Class .
+    ?subC a owl:Class .
+    ?subC rdfs:subClassOf ?c .
+  }{
+    values ?cTop { $top }
+    ?c a owl:Class ;
+      rdfs:subClassOf* ?cTop .
+    optional { ?subC rdfs:subClassOf ?c }
+  }
+#+end_src
 * sparql and rdfpuml
 ** Diagrams with rdfpuml
 *** Config for rdfpuml colours and directions
