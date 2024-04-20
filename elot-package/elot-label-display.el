@@ -166,6 +166,9 @@ to the font-lock list of keywords, then fontify."
          (append completion-extra-properties 
                  '(:annotation-function elot-label-lookup-annotations)))
         (tmp-elot-slurp elot-slurp))
-    (completing-read 
-     "Label: "
-     (mapcar (lambda (resource) (nth 1 resource)) elot-slurp))))
+    (let ((selected-label
+           (completing-read 
+            "Label: "
+            (mapcar (lambda (resource) (nth 1 resource)) elot-slurp))))
+      (if selected-label
+          (insert (caar (seq-filter (lambda (r) (equal (nth 1 r) selected-label)) elot-slurp)))))))
