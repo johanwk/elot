@@ -89,7 +89,7 @@ Get the tools:
        : git clone https://github.com/VladimirAlexiev/rdf2rml.git
 
 ** Quick start using ELOT
-*** Add an ontology
+*** Adding an ontology
 After the installation steps, it's wise to restart Emacs!
 
 Open the familiar Pizza ontology from =elisp/elot/pizza.org= for an
@@ -186,3 +186,10 @@ In this screenshot, two annotations are added to the "transitive" characteristic
    browser.
 
 [[file:documentation/images/firefox-diagram1.png]]
+*** Display labels instead of identifiers
+ELOT can display readable labels instead of prefixed identifiers
+(which are unreadable if the identifiers are not informative), 
+and
+offers quick search across the ontology resources.
+
+[[file:documentation/images/elot-label-display1.png]]

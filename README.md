@@ -9,20 +9,21 @@ Check out the file `pizza.org` for an example ELOT file.
 
 ELOT works on Windows, MacOS, and Linux (tested in WSL).
 
--   [Prerequisites in brief](#orgd1465bd)
--   [Installation](#org4cbe097)
-    -   [Get Emacs](#org7fd3ccc)
-    -   [Install ELOT in Emacs](#org7620947)
-    -   [Install ELOT auxiliaries](#orga302cfa)
--   [Quick start using ELOT](#org317e051)
-    -   [Add an ontology](#org10ec10e)
-    -   [Adding classes and relations](#org92a3ae2)
-    -   [Adding annotations](#orgf156c78)
-    -   [Querying the ontology](#org850b96f)
-    -   [Making a diagram](#orgc691d52)
+-   [Prerequisites in brief](#orgff8cd37)
+-   [Installation](#org1f82bf0)
+    -   [Get Emacs](#org0bebeac)
+    -   [Install ELOT in Emacs](#org09b031b)
+    -   [Install ELOT auxiliaries](#org03b84e8)
+-   [Quick start using ELOT](#org97b0a59)
+    -   [Adding an ontology](#org06d1f6c)
+    -   [Adding classes and relations](#orgdbbba17)
+    -   [Adding annotations](#org8014b06)
+    -   [Querying the ontology](#org730c207)
+    -   [Making a diagram](#org57dad6d)
+    -   [Display labels instead of identifiers](#orge44a26e)
 
 
-<a id="orgd1465bd"></a>
+<a id="orgff8cd37"></a>
 
 ## Prerequisites in brief
 
@@ -37,12 +38,12 @@ If you are new to Emacs, the book [Mastering Emacs](https://www.masteringemacs.o
 recommended.
 
 
-<a id="org4cbe097"></a>
+<a id="org1f82bf0"></a>
 
 ## Installation
 
 
-<a id="org7fd3ccc"></a>
+<a id="org0bebeac"></a>
 
 ### Get Emacs
 
@@ -64,7 +65,7 @@ for Linux). It&rsquo;s recommended to
 For MacOS users: See the GNU Emacs page.
 
 
-<a id="org7620947"></a>
+<a id="org09b031b"></a>
 
 ### Install ELOT in Emacs
 
@@ -94,7 +95,7 @@ The following steps will get you started editing OWL ontologies.
         `~/elisp/elot/elot-package/` to your `load-path`.
 
 
-<a id="orga302cfa"></a>
+<a id="org03b84e8"></a>
 
 ### Install ELOT auxiliaries
 
@@ -129,14 +130,14 @@ Get the tools:
             git clone https://github.com/VladimirAlexiev/rdf2rml.git
 
 
-<a id="org317e051"></a>
+<a id="org97b0a59"></a>
 
 ## Quick start using ELOT
 
 
-<a id="org10ec10e"></a>
+<a id="org06d1f6c"></a>
 
-### Add an ontology
+### Adding an ontology
 
 After the installation steps, it&rsquo;s wise to restart Emacs!
 
@@ -188,7 +189,7 @@ Now create an OWL file from your new document.
 ![img](./documentation/images/firefox-skeleton1.png)
 
 
-<a id="org92a3ae2"></a>
+<a id="orgdbbba17"></a>
 
 ### Adding classes and relations
 
@@ -206,7 +207,7 @@ Now create an OWL file from your new document.
 ![img](documentation/images/elot-animal1.png)
 
 
-<a id="orgf156c78"></a>
+<a id="org8014b06"></a>
 
 ### Adding annotations
 
@@ -217,7 +218,7 @@ In this screenshot, two annotations are added to the &ldquo;transitive&rdquo; ch
 ![img](documentation/images/elot-annotate-axiom1.png)
 
 
-<a id="org850b96f"></a>
+<a id="org730c207"></a>
 
 ### Querying the ontology
 
@@ -230,7 +231,7 @@ In this screenshot, two annotations are added to the &ldquo;transitive&rdquo; ch
 ![img](documentation/images/elot-query1.png)
 
 
-<a id="orgc691d52"></a>
+<a id="org57dad6d"></a>
 
 ### Making a diagram
 
@@ -252,4 +253,16 @@ In this screenshot, two annotations are added to the &ldquo;transitive&rdquo; ch
     browser.
 
 ![img](documentation/images/firefox-diagram1.png)
+
+
+<a id="orge44a26e"></a>
+
+### Display labels instead of identifiers
+
+ELOT can display readable labels instead of prefixed identifiers
+(which are unreadable if the identifiers are not informative), 
+and
+offers quick search across the ontology resources.
+
+![img](documentation/images/elot-label-display1.png)
 
