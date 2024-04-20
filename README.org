@@ -151,6 +151,13 @@ Now create an OWL file from your new document.
 
 [[file:documentation/images/elot-animal1.png]]
 
+*** Adding annotations
+ELOT makes it easy to add annotations to both annotations and axioms: 
+just put them in a sublist. 
+In this screenshot, two annotations are added to the "transitive" characteristic axiom:
+
+[[file:documentation/images/elot-annotate-axiom1.png]]
+
 *** Querying the ontology
   - Navigate to the =Prefixes= heading and insert a new heading named
     "Queries".
