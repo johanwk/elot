@@ -5,32 +5,31 @@
 This repository contains a template for writing OWL ontologies as
 [Org Mode](https://orgmode.org/) documents, with supporting functions and scripts.
 
-Check out `pizza.org`, `bfo-core.org`, `maintenance.org` for example ELOT files.
-
-The Emacs package is in subdirectory `elot-package`. Not yet ready for release, but we are working on it!
+Check out the file `pizza.org` for an example ELOT file.
 
 ELOT works on Windows, MacOS, and Linux (tested in WSL).
 
--   [Prerequisites in brief](#orgaca9c63)
--   [Installation](#org7b3c877)
-    -   [Get Emacs](#orgf9a018a)
-    -   [Install ELOT in Emacs](#orge7767b2)
-    -   [Install ELOT auxiliaries](#org43ed04b)
--   [Quick start using ELOT](#org270cbc0)
-    -   [Add an ontology](#org203ed13)
-    -   [Adding classes and relations](#orge403677)
-    -   [Querying the ontology](#org30abfd6)
-    -   [Making a diagram](#orgf72e65f)
+-   [Prerequisites in brief](#orgd1465bd)
+-   [Installation](#org4cbe097)
+    -   [Get Emacs](#org7fd3ccc)
+    -   [Install ELOT in Emacs](#org7620947)
+    -   [Install ELOT auxiliaries](#orga302cfa)
+-   [Quick start using ELOT](#org317e051)
+    -   [Add an ontology](#org10ec10e)
+    -   [Adding classes and relations](#org92a3ae2)
+    -   [Adding annotations](#orgf156c78)
+    -   [Querying the ontology](#org850b96f)
+    -   [Making a diagram](#orgc691d52)
 
 
-<a id="orgaca9c63"></a>
+<a id="orgd1465bd"></a>
 
 ## Prerequisites in brief
 
 -   Download ELOT using [Git](https://github.com/git-guides/install-git) to easily obtain updates
 -   Use a recent version (29.x) of [Emacs](https://www.gnu.org/software/emacs/download.html)
 -   For viewing your ontologies, install version 5.6 of [Protégé Desktop](https://protege.stanford.edu/)
--   Install [Java](https://www.java.com/en/download/help/download_options.html) to enable advanced features. NOTE, install the latest Java version, not version 8!
+-   Install [Java](https://www.java.com/en/download/help/download_options.html) to enable advanced features
     -   Turtle output, ontology metrics, and more: install [ROBOT](http://robot.obolibrary.org/)
     -   Ontology diagrams: install [PlantUML](https://plantuml.com/) and [rdfpuml](https://github.com/VladimirAlexiev/rdf2rml)
 
@@ -38,12 +37,12 @@ If you are new to Emacs, the book [Mastering Emacs](https://www.masteringemacs.o
 recommended.
 
 
-<a id="org7b3c877"></a>
+<a id="org4cbe097"></a>
 
 ## Installation
 
 
-<a id="orgf9a018a"></a>
+<a id="org7fd3ccc"></a>
 
 ### Get Emacs
 
@@ -65,7 +64,7 @@ for Linux). It&rsquo;s recommended to
 For MacOS users: See the GNU Emacs page.
 
 
-<a id="orge7767b2"></a>
+<a id="org7620947"></a>
 
 ### Install ELOT in Emacs
 
@@ -95,7 +94,7 @@ The following steps will get you started editing OWL ontologies.
         `~/elisp/elot/elot-package/` to your `load-path`.
 
 
-<a id="org43ed04b"></a>
+<a id="orga302cfa"></a>
 
 ### Install ELOT auxiliaries
 
@@ -115,10 +114,10 @@ Get the tools:
 
 1.  The [ROBOT](http://robot.obolibrary.org/) tool is highly recommended for ELOT. Download [robot.jar](https://github.com/ontodev/robot/releases/download/v1.9.5/robot.jar)
     from the [ROBOT releases](https://github.com/ontodev/robot/releases) page to your `bin` folder.
-2.  The [PlantUML](https://plantuml.com/) tool is needed for diagrams. Download
-    [plantuml-1.2024.3.jar](https://github.com/plantuml/plantuml/releases/download/v1.2024.3/plantuml-1.2024.3.jar) from the [PlantUML Downloads](https://plantuml.com/download) page to your `bin`
-    folder. For convenience, rename it as just `plantuml.jar` (on Linux,
-    make a symlink).
+2.  The [PlantUML](https://plantuml.com/) tool is needed for diagrams.
+    Download the latest version from [PlantUML Downloads](https://plantuml.com/download) (tested with [plantuml-1.2024.3.jar](https://github.com/plantuml/plantuml/releases/download/v1.2024.3/plantuml-1.2024.3.jar))
+    to your `bin` folder.
+    For convenience, rename it as just `plantuml.jar` (on Linux, make a symlink).
 3.  The [rdfpuml](https://github.com/VladimirAlexiev/rdf2rml) tool will produce great-looking diagrams for
     ontologies.
     -   On Windows, download [rdfpuml.exe](https://github.com/VladimirAlexiev/rdf2rml/raw/master/bin/rdfpuml.exe) to your `bin` folder.
@@ -130,12 +129,12 @@ Get the tools:
             git clone https://github.com/VladimirAlexiev/rdf2rml.git
 
 
-<a id="org270cbc0"></a>
+<a id="org317e051"></a>
 
 ## Quick start using ELOT
 
 
-<a id="org203ed13"></a>
+<a id="org10ec10e"></a>
 
 ### Add an ontology
 
@@ -148,15 +147,16 @@ To create a new ontology, do this in Emacs:
 
 -   Select a directory that you want to work in. Open a new Org Mode
     file, for instance `myontology.org`.
--   Insert the ELOT template for a document header: Press the `F4` key. A
-    menu is displayed at the bottom of the Emacs window. The letters in
-    blue represent *key sequences* that will call up templates or execute
-    commands.
+-   Insert the ELOT template for a document header.
+    You can do this in two ways:
+    -   Press the `F4` key. A menu is displayed at the bottom of the Emacs window.
+        The letters in blue represent *key sequences* that will call up templates or execute commands.
+    -   Type the same sequence (including `<`) at the beginning of a line and press `TAB`.
 
 ![img](./documentation/images/elot-helpdesk1.png)
 
--   Press keys `odh` to call up the document header template. Answer the prompts, and a
-    header is produced, like the following.
+-   Use `odh` (&ldquo;ontology document header&rdquo;) to call up the document header template.
+    Answer the prompts, and a header is produced, like the following.
     
         # -*- eval: (load-library "elot-defaults") -*-
         #+title: My new ontology
@@ -188,7 +188,7 @@ Now create an OWL file from your new document.
 ![img](./documentation/images/firefox-skeleton1.png)
 
 
-<a id="orge403677"></a>
+<a id="org92a3ae2"></a>
 
 ### Adding classes and relations
 
@@ -206,7 +206,18 @@ Now create an OWL file from your new document.
 ![img](documentation/images/elot-animal1.png)
 
 
-<a id="org30abfd6"></a>
+<a id="orgf156c78"></a>
+
+### Adding annotations
+
+ELOT makes it easy to add annotations to both annotations and axioms: 
+just put them in a sublist. 
+In this screenshot, two annotations are added to the &ldquo;transitive&rdquo; characteristic axiom:
+
+![img](documentation/images/elot-annotate-axiom1.png)
+
+
+<a id="org850b96f"></a>
 
 ### Querying the ontology
 
@@ -219,7 +230,7 @@ Now create an OWL file from your new document.
 ![img](documentation/images/elot-query1.png)
 
 
-<a id="orgf72e65f"></a>
+<a id="orgc691d52"></a>
 
 ### Making a diagram
 
