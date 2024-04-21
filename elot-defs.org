@@ -48,6 +48,7 @@
   (require 'sparql-mode) ; OMN support
   (require 'ob-plantuml) ; PlantUML
   (require 'hydra) ; hydra menu
+  (require 'ht) ; hashtable, for label display
 
   ;;;; Usage
 
@@ -636,7 +637,8 @@ file using ROBOT.
              "\\renewcommand\\subsubsubsectionformat{\\makebox[0pt][r]{\\thesubsubsubsection\\autodot\\enskip}}"
              "\\renewcommand\\paragraphformat{\\makebox[0pt][r]{\\theparagraph\\autodot\\enskip}}"
              "\\renewcommand\\subparagraphformat{\\makebox[0pt][r]{\\thesubparagraph\\autodot\\enskip}}"
-             "\\hypersetup{pdfborder=0 0 0}"
+             "\\PassOptionsToPackage{hyphens}{url}"
+             "\\hypersetup{pdfborder=0 0 0,colorlinks=true}"
              "\\lstdefinelanguage{omn}{basicstyle=\\small\\ttfamily,commentstyle=\\color{gray},frame=single,breaklines=true,breakatwhitespace=true,postbreak=\\mbox{{\\color{gray}\\tiny$\\rightarrow$}},tabsize=2,comment=[l]{\\#},columns=fullflexible,}"
              "\\lstdefinelanguage{ttl}{basicstyle=\\footnotesize\\ttfamily,commentstyle=\\color{gray},frame=single,breaklines=true,breakatwhitespace=true,postbreak=\\mbox{{\\color{gray}\\tiny$\\rightarrow$}},tabsize=2,comment=[l]{\\#},columns=fullflexible,}"
              "\\lstdefinelanguage{sparql}{basicstyle=\\footnotesize\\ttfamily,commentstyle=\\color{gray},frame=single,breaklines=true,breakatwhitespace=true,postbreak=\\mbox{{\\color{gray}\\tiny$\\rightarrow$}},tabsize=2,comment=[l]{\\#},columns=fullflexible,}"
@@ -657,11 +659,14 @@ file using ROBOT.
                    ))
   (modify-syntax-entry ?\: "w")
   (modify-syntax-entry ?\_ "w")
-    (add-hook 'org-babel-post-tangle-hook 'elot-tangled-omn-to-ttl
-              'local) ;; make it a local hook only
-    (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images 'local)
-    (add-hook 'after-save-hook 'update-link-abbrev)
-    )
+  (add-hook 'org-babel-post-tangle-hook 'elot-tangled-omn-to-ttl
+            'local) ;; make it a local hook only
+  (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images 'local)
+  (add-hook 'after-save-hook 'update-link-abbrev)
+  ;; the label display functions are in a separate file
+  (load-library "elot-label-display.el")
+  (elot-label-display-setup)
+  )
 #+end_src
 *** Write typical class patterns
 **** one-of
@@ -1277,15 +1282,16 @@ completion cookies.
 #+begin_src emacs-lisp
   (defhydra hydra-elot (:color blue :hint nil)
     "
-   --- ELOT helpdesk ---
+   --- ELOT helpdesk --- press F5 to toggle labels ---
 
-   Insert definition         Code block             Document         ^^^^^^Output                  
+   Insert                    Code block             Document         ^^^^^^Output                  
   -----------------------------------------------------------------------------------------------
-  <_ocp_ primitive class    <_obm_ metrics             <_odh_ header      [_t_] tangle ontology    
-  <_ocd_ defined class      <_obs_ sparql select       <_ods_ ontology    [_h_] export HTML        
-   <_op_ property           <_obc_ sparql construct                                             
-                          ^^<_obd_ rdfpuml diagram                                              
+   [_r_] resource id        <_obm_ metrics             <_odh_ header      [_t_] tangle ontology    
+  <_ocp_ primitive class    <_obs_ sparql select       <_ods_ ontology    [_h_] export HTML        
+  <_ocd_ defined class      <_obc_ sparql construct                                             
+   <_op_ property         ^^<_obd_ rdfpuml diagram                                              
   "
+    ("r" (elot-label-lookup))
     ("ocp" (progn (outline-next-heading) (tempo-template-elot-class-iof-primitive)))
     ("ocd" (progn (outline-next-heading) (tempo-template-elot-class-iof-defined)))
     ("op" (progn (outline-next-heading) (tempo-template-elot-property-iof)))
@@ -1301,6 +1307,10 @@ completion cookies.
 
   (define-key org-mode-map (kbd "<f4>") 'hydra-elot/body)
 #+end_src
+
+#+RESULTS:
+: hydra-elot/body
+
 *** ROBOT
 **** Read tsv into org table
 #+begin_src emacs-lisp
