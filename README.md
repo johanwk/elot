@@ -5,25 +5,32 @@
 This repository contains a template for writing OWL ontologies as
 [Org Mode](https://orgmode.org/) documents, with supporting functions and scripts.
 
-Check out the file `pizza.org` for an example ELOT file.
+Check out the files `pizza.org`, `bfo-core.org`, `maintenance.org` for example ELOT files.
 
 ELOT works on Windows, MacOS, and Linux (tested in WSL).
 
--   [Prerequisites in brief](#orgff8cd37)
--   [Installation](#org1f82bf0)
-    -   [Get Emacs](#org0bebeac)
-    -   [Install ELOT in Emacs](#org09b031b)
-    -   [Install ELOT auxiliaries](#org03b84e8)
--   [Quick start using ELOT](#org97b0a59)
-    -   [Adding an ontology](#org06d1f6c)
-    -   [Adding classes and relations](#orgdbbba17)
-    -   [Adding annotations](#org8014b06)
-    -   [Querying the ontology](#org730c207)
-    -   [Making a diagram](#org57dad6d)
-    -   [Display labels instead of identifiers](#orge44a26e)
+[Literate programming](https://en.wikipedia.org/wiki/Literate_programming) is a paradigm where the creator of some technical artefact focuses on the explanation and readability of each technical construct, rather than its formal machine-readable definition.
+The machine-readable artefacts are then extracted through a process called &ldquo;tangling&rdquo;.
+
+ELOT takes inspiration from this paradigm and uses the excellent Emacs Orgmode plain-text format to create an author- and reader-friendly ontology authoring environment.
+Ontological constructs are generated from narrative sections and Manchester Notation (OMN) fragments. Diagrams are generated from Turtle examples or SPARQL queries by using the rdfpuml tool.
+The tool then extracts ontological definitions (OMN or Turtle) and documentation (HTML or PDF).
+
+-   [Prerequisites in brief](#orgdc63e54)
+-   [Installation](#org0783d3c)
+    -   [Get Emacs](#org96e2956)
+    -   [Install ELOT in Emacs](#org46be23f)
+    -   [Install ELOT auxiliaries](#orgef569b1)
+-   [Quick start using ELOT](#org6438d73)
+    -   [Adding an ontology](#org57c84a9)
+    -   [Adding classes and relations](#org46fd886)
+    -   [Adding annotations](#org15b475e)
+    -   [Querying the ontology](#org42d384c)
+    -   [Making a diagram](#org1a05e36)
+    -   [Display labels instead of identifiers](#org5fd6ef7)
 
 
-<a id="orgff8cd37"></a>
+<a id="orgdc63e54"></a>
 
 ## Prerequisites in brief
 
@@ -38,12 +45,12 @@ If you are new to Emacs, the book [Mastering Emacs](https://www.masteringemacs.o
 recommended.
 
 
-<a id="org1f82bf0"></a>
+<a id="org0783d3c"></a>
 
 ## Installation
 
 
-<a id="org0bebeac"></a>
+<a id="org96e2956"></a>
 
 ### Get Emacs
 
@@ -65,7 +72,7 @@ for Linux). It&rsquo;s recommended to
 For MacOS users: See the GNU Emacs page.
 
 
-<a id="org09b031b"></a>
+<a id="org46be23f"></a>
 
 ### Install ELOT in Emacs
 
@@ -95,7 +102,7 @@ The following steps will get you started editing OWL ontologies.
         `~/elisp/elot/elot-package/` to your `load-path`.
 
 
-<a id="org03b84e8"></a>
+<a id="orgef569b1"></a>
 
 ### Install ELOT auxiliaries
 
@@ -130,12 +137,12 @@ Get the tools:
             git clone https://github.com/VladimirAlexiev/rdf2rml.git
 
 
-<a id="org97b0a59"></a>
+<a id="org6438d73"></a>
 
 ## Quick start using ELOT
 
 
-<a id="org06d1f6c"></a>
+<a id="org57c84a9"></a>
 
 ### Adding an ontology
 
@@ -189,7 +196,7 @@ Now create an OWL file from your new document.
 ![img](./documentation/images/firefox-skeleton1.png)
 
 
-<a id="orgdbbba17"></a>
+<a id="org46fd886"></a>
 
 ### Adding classes and relations
 
@@ -207,7 +214,7 @@ Now create an OWL file from your new document.
 ![img](documentation/images/elot-animal1.png)
 
 
-<a id="org8014b06"></a>
+<a id="org15b475e"></a>
 
 ### Adding annotations
 
@@ -218,7 +225,7 @@ In this screenshot, two annotations are added to the &ldquo;transitive&rdquo; ch
 ![img](documentation/images/elot-annotate-axiom1.png)
 
 
-<a id="org730c207"></a>
+<a id="org42d384c"></a>
 
 ### Querying the ontology
 
@@ -231,7 +238,7 @@ In this screenshot, two annotations are added to the &ldquo;transitive&rdquo; ch
 ![img](documentation/images/elot-query1.png)
 
 
-<a id="org57dad6d"></a>
+<a id="org1a05e36"></a>
 
 ### Making a diagram
 
@@ -255,7 +262,7 @@ In this screenshot, two annotations are added to the &ldquo;transitive&rdquo; ch
 ![img](documentation/images/firefox-diagram1.png)
 
 
-<a id="orge44a26e"></a>
+<a id="org5fd6ef7"></a>
 
 ### Display labels instead of identifiers
 

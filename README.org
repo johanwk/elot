@@ -5,9 +5,17 @@
 This repository contains a template for writing OWL ontologies as
 [[https://orgmode.org/][Org Mode]] documents, with supporting functions and scripts.
 
-Check out the file =pizza.org= for an example ELOT file.
+Check out the files =pizza.org=, =bfo-core.org=, =maintenance.org= for example ELOT files.
 
 ELOT works on Windows, MacOS, and Linux (tested in WSL).
+
+
+[[https://en.wikipedia.org/wiki/Literate_programming][Literate programming]] is a paradigm where the creator of some technical artefact focuses on the explanation and readability of each technical construct, rather than its formal machine-readable definition.
+The machine-readable artefacts are then extracted through a process called "tangling".
+
+ELOT takes inspiration from this paradigm and uses the excellent Emacs Orgmode plain-text format to create an author- and reader-friendly ontology authoring environment.
+Ontological constructs are generated from narrative sections and Manchester Notation (OMN) fragments. Diagrams are generated from Turtle examples or SPARQL queries by using the rdfpuml tool.
+The tool then extracts ontological definitions (OMN or Turtle) and documentation (HTML or PDF).
 
 #+TOC: headlines 2 local
 ** Prerequisites in brief
