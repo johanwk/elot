@@ -41,6 +41,7 @@
                    vertico
                    marginalia
                    consult
+                   ht
                    ))
  (unless (package-installed-p package)
    (package-install package)
