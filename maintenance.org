@@ -2,18 +2,11 @@
 #+title: The Maintenance Reference Ontology as ELOT example
 #+subtitle: An OWL ontology
 #+author: IOF Maintenance Working Group
-#+date: WIP (version of 2024-04-09 14:44)
+#+date: WIP (version of 2024-04-23 13:13)
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 
 
 * COMMENT Notes
-There is a problem in that the identifier for the Maintenance ontology
-itself is the same as the prefix. This has been changed here, so that
-the id for the ontology is simply
-: iof-maint:Maintenance
-
-The ontology version IRI also needs to be looked at.
-
 When iof-core is imported, ROBOT produces a rather long list of
 warnings.
 * Maintenance
@@ -178,8 +171,8 @@ We add a diagram. TODO: allow for the ttl to be implicit, so only one call is ne
 #+results: rdfpuml:Event
 [[file:./images/ttl-Event.svg]]
 
-*** BFO_0000003 (obo:BFO_0000003)
-*** BFO_0000015 (obo:BFO_0000015)
+*** occurrent  (obo:BFO_0000003)
+*** process  (obo:BFO_0000015)
 **** failure effect (iof-maint:FailureEffect)
  - skos:example :: leaking pipe, erratic operation, equipment does not run
  - iof-av:firstOrderLogicAxiom :: FailureEffect(x) → Process(x) ∧ ∃f((FailureEvent(f) ∨ FailureProcess(f)) ∧
@@ -218,7 +211,7 @@ We add a diagram. TODO: allow for the ttl to be implicit, so only one call is ne
  - iof-av:semiFormalNaturalLanguageDefinition :: every instance of 'functioning process' is defined as exactly an
    instance of 'process' that 'realizes' some 'function'
  - EquivalentTo :: obo:BFO_0000015 and (obo:BFO_0000055 some obo:BFO_0000034)
-*** BFO_0000016 (obo:BFO_0000016)
+*** disposition  (obo:BFO_0000016)
 **** undesireable disposition (iof-maint:UndesireableDisposition)
  - skos:example :: disposition to leak, disposition to overheat, disposition to vibrate
  - iof-av:explanatoryNote :: There are two subclasses, disposition to fail and disposition to exhibit undesirable
@@ -266,7 +259,7 @@ We add a diagram. TODO: allow for the ttl to be implicit, so only one call is ne
  - iof-av:semiFormalNaturalLanguageAxiom :: if x is a 'disposition to fail' then x is a 'undesireable disposition' that
    'has realization' some 'failure process'
  - SubClassOf :: obo:BFO_0000054 some iof-maint:FailureProcess
-*** BFO_0000034 (obo:BFO_0000034)
+*** function  (obo:BFO_0000034)
 **** required function (iof-maint:RequiredFunction)
  - rdfs:seeAlso :: ISO81346 for examples of functions
  - skos:example :: to sense, to store, to process information, to control
@@ -377,7 +370,7 @@ We add a diagram. TODO: allow for the ttl to be implicit, so only one call is ne
    'has participant at all times' i and there is no ('degraded state' or 'operating state' ) o3 such that o3 'has
    participant at all times' i and o2 'precedes' o3 and o3 'precedes' o1
  - SubClassOf :: obo:BFO_0000062 some (iof-maint:DegradedState or iof-maint:OperatingState)
- - SubClassOf :: obo:BFO_0000167 some iof-core:MaintainableMaterialItem, inverse (iof-maint:initiates) some
+ - SubClassOf :: obo:BFO_0000057 some iof-core:MaintainableMaterialItem, inverse (iof-maint:initiates) some
    iof-maint:FailureEvent
  - DisjointWith :: iof-maint:OperatingState
 ***** operating state (iof-maint:OperatingState)
@@ -449,7 +442,7 @@ We add a diagram. TODO: allow for the ttl to be implicit, so only one call is ne
    that 'prescribes' p
  - iof-av:semiFormalNaturalLanguageAxiom :: LA3: if p is 'maintenance process' then there is some 'maintainable material
    item' x such that p 'has input' x and p 'has participant at all times' x
- - SubClassOf :: obo:BFO_0000167 some iof-core:MaintainableMaterialItem
+ - SubClassOf :: obo:BFO_0000057 some iof-core:MaintainableMaterialItem
  - SubClassOf :: iof-core:hasInput some iof-core:MaintainableMaterialItem
  - SubClassOf :: iof-core:prescribedBy some iof-maint:MaintenanceStrategy
 ***** maintenance activity (iof-maint:MaintenanceActivity)
@@ -489,9 +482,9 @@ We add a diagram. TODO: allow for the ttl to be implicit, so only one call is ne
 :custom_id: Maintenance-object-property-hierarchy
 :resourcedefs: yes
 :END:
-*** BFO_0000054 (obo:BFO_0000054)
-*** BFO_0000055 (obo:BFO_0000055)
-*** BFO_0000056 (obo:BFO_0000056)
+*** has realization  (obo:BFO_0000054)
+*** realizes  (obo:BFO_0000055)
+*** participates in  (obo:BFO_0000056)
 **** has maintenance state (iof-maint:hasMaintenanceState)
  - skos:example :: has partial function or loss of function
  - iof-av:maturity :: iof-av:Provisional
@@ -499,8 +492,8 @@ We add a diagram. TODO: allow for the ttl to be implicit, so only one call is ne
  - Domain :: iof-core:MaintainableMaterialItem
  - Range :: iof-maint:MaintenanceState
  - InverseOf :: iof-maint:maintenanceStateOf
-*** BFO_0000062 (obo:BFO_0000062)
-*** BFO_0000063 (obo:BFO_0000063)
+*** preceded by  (obo:BFO_0000062)
+*** precedes  (obo:BFO_0000063)
 **** initiates (iof-maint:initiates)
  - skos:example :: starts, begins, commences
  - iof-av:maturity :: iof-av:Provisional
@@ -508,7 +501,7 @@ We add a diagram. TODO: allow for the ttl to be implicit, so only one call is ne
    the event or process"@en-us
  - Domain :: obo:BFO_0000003
  - Range :: obo:BFO_0000015 or iof-core:Event
-*** BFO_0000167 (obo:BFO_0000167)
+*** has participant (obo:BFO_0000057)
 **** maintenance state of (iof-maint:maintenanceStateOf)
  - skos:example :: the physical or software asset
  - iof-av:maturity :: iof-av:Provisional
