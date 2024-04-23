@@ -22,10 +22,10 @@ Prefix: iof-maint: <https://spec.industrialontologies.org/ontology/maintenance/M
 Prefix: iof-ont: <https://spec.industrialontologies.org/ontology/>
 
 ## Ontology declaration
-Ontology: iof-maint:Maintenance
+Ontology: iof-maint: iof-ont:202401/maintenance/Maintenance/
       Annotations: rdfs:label  "Maintenance ontology",
-       pav:lastUpdateOn  "2024-04-08T15:12:30Z"^^xsd:dateTime,
-       dcterms:modified  "2024-04-08"^^xsd:date,
+       pav:lastUpdateOn  "2024-04-17T18:48:27Z"^^xsd:dateTime,
+       dcterms:modified  "2024-04-17"^^xsd:date,
        dcterms:abstract  "The purpose of this IOF Maintenance Reference ontology is to support semantic interoperatibility through the use modular ontologies in the maintenance domain. This Ontology contains terms and concepts identified as common in a number of application ontologies for maintenance management, maintenance procedures, asset failure and failure modes and effects analysis. The ontology is aligned with the IOF Core Ontology which is aligned with Basic Formal Ontology and importas terms for other domain independent ontologies.",
        dcterms:contributor "Caitlin Woods, University of Western Australia"@en,
        dcterms:contributor "Markus Stumptner, University of South Australia"@en,
@@ -49,10 +49,10 @@ Datatype: xsd:anyURI
 
 ## Class declarations
 Class: obo:BFO_0000003
-      Annotations: rdfs:label  "BFO_0000003"
+      Annotations: rdfs:label  "occurrent "
 
 Class: obo:BFO_0000015
-      Annotations: rdfs:label  "BFO_0000015"
+      Annotations: rdfs:label  "process "
 
 Class: iof-maint:FailureEffect
       Annotations: rdfs:label  "failure effect",
@@ -87,7 +87,7 @@ Class: iof-maint:FunctioningProcess
        iof-av:semiFormalNaturalLanguageDefinition  "every instance of 'functioning process' is defined as exactly an instance of 'process' that 'realizes' some 'function'"
   EquivalentTo: obo:BFO_0000015 and (obo:BFO_0000055 some obo:BFO_0000034)
 Class: obo:BFO_0000016
-      Annotations: rdfs:label  "BFO_0000016"
+      Annotations: rdfs:label  "disposition "
 
 Class: iof-maint:UndesireableDisposition
       Annotations: rdfs:label  "undesireable disposition",
@@ -121,10 +121,10 @@ Class: iof-maint:DispositionToFail
        iof-av:maturity  <https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/Released>,
        iof-av:naturalLanguageDefinition "disposition of an item to undergo a failure process"@en-us,
        iof-av:primitiveRationale  "As a disposition will come into its existance prior to its realization in a failure process necessary and sufficient conditions can not be created at this point due to a lack of patterns to express process types regardless of the time of their existence",
-       iof-av:semiFormalNaturalLanguageAxiom  "if x is a 'disposition to fail' then x  is a 'undesireable disposition' that 'has realization' some 'failure process'"
+       iof-av:semiFormalNaturalLanguageAxiom  "if x is a 'disposition to fail' then x is a 'undesireable disposition' that 'has realization' some 'failure process'"
   SubClassOf: obo:BFO_0000054 some iof-maint:FailureProcess
 Class: obo:BFO_0000034
-      Annotations: rdfs:label  "BFO_0000034"
+      Annotations: rdfs:label  "function "
 
 Class: iof-maint:RequiredFunction
       Annotations: rdfs:label  "required function",
@@ -216,7 +216,7 @@ Class: iof-maint:FailedState
        iof-av:naturalLanguageDefinition "state of an item being unable to perform a required function due to a failure event"@en-us,
        iof-av:semiFormalNaturalLanguageDefinition  "'failed state': every instance of 'failed state' is defined as exactly an instance of 'maintenance state' o1 that 'has participant at all times' some 'maintainable material item' i and that is 'initiated by' some 'failure event' and is 'preceded by' some ('degraded state' or 'operating state') o2 that 'has participant at all times' i and there is no ('degraded state' or 'operating state' ) o3 such that o3 'has participant at all times' i and o2 'precedes' o3 and o3 'precedes' o1"
   SubClassOf: obo:BFO_0000062 some (iof-maint:DegradedState or iof-maint:OperatingState)
-  SubClassOf: obo:BFO_0000167 some iof-core:MaintainableMaterialItem, inverse (iof-maint:initiates) some iof-maint:FailureEvent
+  SubClassOf: obo:BFO_0000057 some iof-core:MaintainableMaterialItem, inverse (iof-maint:initiates) some iof-maint:FailureEvent
   DisjointWith: iof-maint:OperatingState
 Class: iof-maint:OperatingState
       Annotations: rdfs:label  "operating state",
@@ -273,7 +273,7 @@ Class: iof-maint:MaintenanceProcess
        iof-av:semiFormalNaturalLanguageAxiom  "LA1: if p is 'planned process' that is prescribed by some 'maintenance strategy' then x is a 'maintenance process'",
        iof-av:semiFormalNaturalLanguageAxiom  "LA2: if p is 'maintenance process' then there is some 'maintenance strategy' that 'prescribes' p",
        iof-av:semiFormalNaturalLanguageAxiom  "LA3: if p is 'maintenance process' then there is some 'maintainable material item' x such that p 'has input' x and p 'has participant at all times' x"
-  SubClassOf: obo:BFO_0000167 some iof-core:MaintainableMaterialItem
+  SubClassOf: obo:BFO_0000057 some iof-core:MaintainableMaterialItem
   SubClassOf: iof-core:hasInput some iof-core:MaintainableMaterialItem
   SubClassOf: iof-core:prescribedBy some iof-maint:MaintenanceStrategy
 Class: iof-maint:MaintenanceActivity
@@ -311,13 +311,13 @@ Class: iof-maint:QualificationSpecification
 
 ## Object property declarations
 ObjectProperty: obo:BFO_0000054
-      Annotations: rdfs:label  "BFO_0000054"
+      Annotations: rdfs:label  "has realization "
 
 ObjectProperty: obo:BFO_0000055
-      Annotations: rdfs:label  "BFO_0000055"
+      Annotations: rdfs:label  "realizes "
 
 ObjectProperty: obo:BFO_0000056
-      Annotations: rdfs:label  "BFO_0000056"
+      Annotations: rdfs:label  "participates in "
 
 ObjectProperty: iof-maint:hasMaintenanceState
       Annotations: rdfs:label  "has maintenance state",
@@ -328,10 +328,10 @@ ObjectProperty: iof-maint:hasMaintenanceState
   Range: iof-maint:MaintenanceState
   InverseOf: iof-maint:maintenanceStateOf
 ObjectProperty: obo:BFO_0000062
-      Annotations: rdfs:label  "BFO_0000062"
+      Annotations: rdfs:label  "preceded by "
 
 ObjectProperty: obo:BFO_0000063
-      Annotations: rdfs:label  "BFO_0000063"
+      Annotations: rdfs:label  "precedes "
 
 ObjectProperty: iof-maint:initiates
       Annotations: rdfs:label  "initiates",
@@ -340,8 +340,8 @@ ObjectProperty: iof-maint:initiates
        iof-av:naturalLanguageDefinition "comes before an event or process in time and results in beginning or creation of the event or process"@en-us
   Domain: obo:BFO_0000003
   Range: obo:BFO_0000015 or iof-core:Event
-ObjectProperty: obo:BFO_0000167
-      Annotations: rdfs:label  "BFO_0000167"
+ObjectProperty: obo:BFO_0000057
+      Annotations: rdfs:label  "has participant"
 
 ObjectProperty: iof-maint:maintenanceStateOf
       Annotations: rdfs:label  "maintenance state of",
@@ -426,7 +426,7 @@ AnnotationProperty: skos:altLabel
   
 AnnotationProperty: iof-av:isPrimitive
       Annotations: rdfs:label  "isPrimitive",
-       rdfs:isDefinedBy  <https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary>
+       rdfs:isDefinedBy  <https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/>
   
 AnnotationProperty: skos:definition
       Annotations: rdfs:label  "definition",
@@ -434,11 +434,11 @@ AnnotationProperty: skos:definition
   
 AnnotationProperty: iof-av:naturalLanguageDefinition
       Annotations: rdfs:label  "naturalLanguageDefinition",
-       rdfs:isDefinedBy  <https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary>
+       rdfs:isDefinedBy  <https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/>
   
 AnnotationProperty: iof-av:primitiveRationale
       Annotations: rdfs:label  "primitiveRationale",
-       rdfs:isDefinedBy  <https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary>
+       rdfs:isDefinedBy  <https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/>
   
 AnnotationProperty: dcterms:abstract
       Annotations: rdfs:label  "abstract"
@@ -534,7 +534,7 @@ ObjectProperty: iof-maint:hasMaintenanceState
 ObjectProperty: iof-maint:initiates
     SubPropertyOf: obo:BFO_0000063
 ObjectProperty: iof-maint:maintenanceStateOf
-    SubPropertyOf: obo:BFO_0000167
+    SubPropertyOf: obo:BFO_0000057
 ## no DataPropertytaxonomy
 
 AnnotationProperty: iof-av:naturalLanguageDefinition
