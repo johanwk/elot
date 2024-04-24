@@ -3,7 +3,8 @@
 #+subtitle: An OWL ontology
 #+author: IOF Maintenance Working Group
 #+date: WIP (version of 2024-04-23 13:13)
-#+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
+#+call: theme-readtheorg()
+
 
 
 * COMMENT Notes
