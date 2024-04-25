@@ -1035,7 +1035,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  [_r_] resource id        <_obm_ metrics             <_odh_ header      [_t_] tangle ontology    
 <_ocp_ primitive class    <_obs_ sparql select       <_ods_ ontology    [_h_] export HTML        
 <_ocd_ defined class      <_obc_ sparql construct                                             
- <_op_ property         ^^<_obd_ rdfpuml diagram                                              
+ <_op_ property           <_obd_ rdfpuml diagram                                              
 "
   ("r" (elot-label-lookup))
   ("ocp" (progn (outline-next-heading) (tempo-template-elot-class-iof-primitive)))
