@@ -19,16 +19,18 @@ return a list of uri, label, and plist of attributes."
 
 (defun elot-slurp-entities ()
   "Read the class, property, and individual sections with `org-subsection-descriptions`
-and return a list of (uri, label, plist of attributes)"
+and return a list of (uri, label, plist of attributes). Unless not in an ELOT buffer,
+then use `elot-slurp-global'"
   (save-excursion
     (beginning-of-buffer)
-    (search-forward ":ELOT-context-type: ontology")
-    (let ((context (elot-context-localname)))
-      (append
-       (org-id-goto (concat context "-class-hierarchy")) (elot-entities-with-plist (org-subsection-descriptions) "owl:Class")
-       (org-id-goto (concat context "-object-property-hierarchy")) (elot-entities-with-plist (org-subsection-descriptions) "owl:ObjectProperty")
-       (org-id-goto (concat context "-annotation-property-hierarchy")) (elot-entities-with-plist (org-subsection-descriptions) "owl:AnnotationProperty")
-       (org-id-goto (concat context "-individuals")) (elot-entities-with-plist (org-subsection-descriptions) "owl:NamedIndividual")))))
+    (if (search-forward ":ELOT-context-type: ontology" nil :noerror)
+        (let ((context (elot-context-localname)))
+          (append
+           (org-id-goto (concat context "-class-hierarchy")) (elot-entities-with-plist (org-subsection-descriptions) "owl:Class")
+           (org-id-goto (concat context "-object-property-hierarchy")) (elot-entities-with-plist (org-subsection-descriptions) "owl:ObjectProperty")
+           (org-id-goto (concat context "-annotation-property-hierarchy")) (elot-entities-with-plist (org-subsection-descriptions) "owl:AnnotationProperty")
+           (org-id-goto (concat context "-individuals")) (elot-entities-with-plist (org-subsection-descriptions) "owl:NamedIndividual")))
+      '())))
 
 (defun elot-codelist-from-slurp (slurp)
   "`slurp' is a list of lists made with `elot-slurp-entities'.
@@ -50,6 +52,8 @@ of the resource is added to the plist with key `\"puri\"'."
 (defvar-local elot-slurp nil
   "List of resources declared in an ELOT buffer. 
 Each member is a list of curie, label, and plist of attributes.")
+(defvar elot-slurp-global nil
+  "List of resources retrieved from SPARQL endpoints.")
 (defvar-local elot-codelist-ht nil
   "Hashtable holding pairs of curie and label for ELOT label-display.")
 (defvar-local elot-attriblist-ht nil
@@ -59,12 +63,18 @@ Each member is a list of curie, label, and plist of attributes.")
 
 (defun elot-slurp-to-vars ()
   "Read resources declared in ELOT buffer into local variables
-`elot-slurp' (plist) and `elot-codelist-ht', `elot-attriblist-ht' (hashtable)"
-  (setq elot-slurp (elot-slurp-entities))
-  (setq elot-codelist-ht
-        (ht<-plist (elot-codelist-from-slurp elot-slurp)))
-  (setq elot-attriblist-ht
-        (ht<-alist (elot-attriblist-from-slurp elot-slurp))))
+`elot-slurp' (plist) and `elot-codelist-ht', `elot-attriblist-ht' (hashtable).
+If not in an ELOT buffer, use `elot-slurp-global'"
+  (let ((slurp (elot-slurp-entities)))
+    (setq elot-slurp (or slurp elot-slurp-global))
+    (setq elot-codelist-ht
+          (ht<-plist (elot-codelist-from-slurp
+                      ;; only fontify what's locally declared
+                      elot-slurp)))
+    (setq elot-attriblist-ht
+          (ht<-alist (elot-attriblist-from-slurp
+                      ;; lookup includes the global list
+                      (append slurp elot-slurp-global))))))
 
 (defun elot-codelist-id-label (idstring)
   "Given curie `idstring`, return label if found"
@@ -123,6 +133,103 @@ to the font-lock list of keywords, then fontify."
 (defun elot-remove-prop-display () 
   (remove-text-properties (point-min) (point-max) '(elot-label-display nil)))
 
+(defun elot-label-attribs-query (&optional filter limit)
+  "SPARQL query to retrieve (id, label, list of relationships)
+for all resources. Optional `filter' is merged into the query."
+  (concat
+   (elot-prefix-block-from-alist org-link-abbrev-alist-local 'sparql)
+   "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> 
+PREFIX owl:  <http://www.w3.org/2002/07/owl#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX iof-av: <https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/>
+select distinct ?id ?label ?plist
+{ ?id rdfs:label ?label 
+  filter(lang(?label) = \"\" || lang(?label) = \"en\")    # language should be a user option
+  { select ?id 
+    (concat( group_concat(distinct concat(str(?p), \";;\", str(?o)); separator=\";;\") ) as ?plist) 
+    where { ?id rdfs:label ?label .
+            optional { 
+              values ?p { rdf:type rdfs:label 
+                          iof-av:naturalLanguageDefinition dcterms:description skos:definition rdfs:comment }
+              ?id ?p ?o .
+              filter(!(isBlank(?o))) }
+            FILTER isIRI(?id)
+            "
+   (if filter (concat filter "\n"))
+   " } group by ?id ?label }
+}"
+  (if limit (concat "\nlimit " 
+                    (if (stringp limit) limit (number-to-string limit) )))))
+
+(defun elot-retrieve-prefixes (url)
+  "Given a SPARQL endpoint url or ontology filename, return the prefixes 
+used as a list of (uri, prefix) pairs"
+  (let ((empty-construct-qry "construct where {?x ?y ?z} limit 0")
+        (format ""))
+    (with-temp-buffer
+      ;; reusing from ELOT customized org-babel-execute:sparql
+      (if (string-match-p "^http" url)  ;; querying an endpoint, or a file?
+          (sparql-execute-query empty-construct-qry url format t)
+        (elot-robot-execute-query empty-construct-qry url 'ttl))
+      (mapcar 
+       (lambda (x)
+         (string-match "^\\([^ ]*:\\).*<\\([^>]+\\)>" x)
+         (cons (match-string 2 x) (match-string 1 x)))
+           (cl-remove ""
+                  (split-string
+                      (buffer-string)
+                      "@prefix +")
+                  :test #'equal)))))
+
+(defun elot-replace-strings (str pairs)
+  "`pairs' is a list of pairs of strings to replace in string `str'."
+  (seq-reduce
+   (lambda (s pair)
+     (string-replace (car pair) (cdr pair) s))
+   pairs
+   str))
+
+(defun elot-retrieve-labels-plist (url out-file &optional filter limit)
+  "Query `url' with SPARQL for labels and attributes, output to 
+`out-file' as an elisp list"
+  (let ((labels-qry (elot-label-attribs-query filter limit))
+        (format "application/sparql-results+json"))
+    (with-temp-buffer
+      ;; reusing from ELOT customized org-babel-execute:sparql
+      (if (string-match-p "^http" url)  ;; querying an endpoint, or a file?
+          (sparql-execute-query labels-qry url format t)
+        (error "ROBOT ontology-file query not implemented yet for elot labels query"))
+        ;; (elot-robot-execute-query labels-qry url 'json)) ; can't output json format
+      (let* ((prefixes (elot-retrieve-prefixes url))
+             (data-puri (elot-replace-strings (buffer-string) prefixes))
+             (bindings (cdr (cadadr (json-read-from-string data-puri)))))
+        (with-temp-file (expand-file-name out-file)
+          (insert (pp-to-string
+           (mapcar (lambda (x) 
+            (list 
+             (alist-get 'value (alist-get 'id x))
+             (alist-get 'value (alist-get 'label x))
+             (string-split 
+              (alist-get 'value (alist-get 'plist x))
+              ";;" t)))
+          bindings))))))))
+
+;;(elot-retrieve-labels-plist "http://localhost:3030/bfo-core/query" "~/tmp/bfotest.el")
+;;(elot-retrieve-labels-plist "https://www.qudt.org/fuseki/qudt/sparql" "~/tmp/qudttest.el")
+
+(defun elot-read-slurp-global (&rest file-l)
+  "`file-l' is a list of files holding elisp lists for label-display"
+  (let ((out))
+    (cl-loop for l in file-l do
+             (setq out 
+              (append out
+               (with-temp-buffer
+                 (insert-file-contents (expand-file-name l))
+                 (read (buffer-string))))))
+    (setq elot-slurp-global out)))
+
 (defun elot-label-display-setup ()
   (interactive)
   (progn
@@ -163,11 +270,13 @@ to the font-lock list of keywords, then fontify."
     (let* ((attrib-plist (ht-get tmp-elot-attriblist-ht label))
            (rdf-type (plist-get attrib-plist "rdf:type" 'string=))
            (prefix (car (split-string (plist-get attrib-plist "puri" 'string=) ":")))
-           (definition (string-limit
+           (definition (string-replace "\n" " " (string-limit
                         (or (plist-get attrib-plist "iof-av:naturalLanguageDefinition" 'string=)
                             (plist-get attrib-plist "skos:definition" 'string=)
-                            (plist-get attrib-plist "rdfs:comment" 'string=))
-                        120))
+                            (plist-get attrib-plist "dcterms:description" 'string=)
+                            (plist-get attrib-plist "rdfs:comment" 'string=)
+                            "")
+                        120)))
            )
       (concat 
        ;; pad annotations to col 35
