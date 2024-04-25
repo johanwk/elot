@@ -541,17 +541,19 @@ The function =elot-robot-execute-query= takes a sparql query (with
 prefixes), a filename for the input ontology file, and a symbol ='ttl'=
 or ='csv= which should be chosen depending on whether the query is a
 =select= or a =construct=.
-#+begin_src emacs-lisp
-(defun elot-robot-execute-query (query inputfile format)
-  "Execute sparql query `query' with ROBOT on ontology file
-`inputfile'. `format' is `'csv' for tabular results, or `'ttl'
-for RDF results in Turtle."
+
+Need to investigate how to query files for JSON /select/ results.
+#+begin_src emacs-lisp :results none
+  (defun elot-robot-execute-query (query inputfile format)
+    "Execute sparql query `query' with ROBOT on ontology file
+  `inputfile'. `format' is `'csv' for tabular results, or `'ttl'
+  for RDF results in Turtle."
     (let* ((query-file
             (concat (org-babel-temp-directory) "/"
-                    (file-name-sans-extension inputfile)
+                    (file-name-base inputfile)
                     ".sparql"))
            (result-file
-            (concat (file-name-sans-extension inputfile) ".tsv"))
+            (concat (file-name-sans-extension inputfile) (symbol-name format)))
            )
       (with-temp-file query-file (insert query))
       (elot-robot-command
