@@ -28,6 +28,7 @@ then use `elot-slurp-global'"
           (append
            (org-id-goto (concat context "-class-hierarchy")) (elot-entities-with-plist (org-subsection-descriptions) "owl:Class")
            (org-id-goto (concat context "-object-property-hierarchy")) (elot-entities-with-plist (org-subsection-descriptions) "owl:ObjectProperty")
+           (org-id-goto (concat context "-data-property-hierarchy")) (elot-entities-with-plist (org-subsection-descriptions) "owl:DatatypeProperty")
            (org-id-goto (concat context "-annotation-property-hierarchy")) (elot-entities-with-plist (org-subsection-descriptions) "owl:AnnotationProperty")
            (org-id-goto (concat context "-individuals")) (elot-entities-with-plist (org-subsection-descriptions) "owl:NamedIndividual")))
       '())))
