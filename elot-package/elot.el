@@ -71,7 +71,7 @@
     (message (concat omnfile " not found, nothing for ROBOT to convert")))
    (t (shell-command
        (concat elot-robot-command-str
-               " convert --strict --verbose"
+               " convert --verbose"
                " --input " omnfile
                " --output " (file-name-sans-extension omnfile) ".ttl")))))
 (defun elot-tangled-omn-to-ttl ()
@@ -497,20 +497,20 @@ Return a string declaring prefixes."
   "Execute sparql query `query' with ROBOT on ontology file
 `inputfile'. `format' is `'csv' for tabular results, or `'ttl'
 for RDF results in Turtle."
-    (let* ((query-file
-            (concat (org-babel-temp-directory) "/"
-                    (file-name-sans-extension inputfile)
-                    ".sparql"))
-           (result-file
-            (concat (file-name-sans-extension inputfile) ".tsv"))
-           )
-      (with-temp-file query-file (insert query))
-      (elot-robot-command
-       (concat "query --input " inputfile
-               " --format " (symbol-name format)
-               " --query " query-file
-               " " result-file))
-      (insert-file-contents result-file)))
+  (let* ((query-file
+          (concat (org-babel-temp-directory) "/"
+                  (file-name-base inputfile)
+                  ".sparql"))
+         (result-file
+          (concat (file-name-sans-extension inputfile) (symbol-name format)))
+         )
+    (with-temp-file query-file (insert query))
+    (elot-robot-command
+     (concat "query --input " inputfile
+             " --format " (symbol-name format)
+             " --query " query-file
+             " " result-file))
+    (insert-file-contents result-file)))
 ;; Execute sparql using ROBOT:1 ends here
 
 ;; [[file:../elot-defs.org::*Execute sparql using ROBOT][Execute sparql using ROBOT:2]]

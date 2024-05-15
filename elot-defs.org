@@ -82,7 +82,7 @@ tangling to OMN.
       (message (concat omnfile " not found, nothing for ROBOT to convert")))
      (t (shell-command
          (concat elot-robot-command-str
-                 " convert --strict --verbose"
+                 " convert --verbose"
                  " --input " omnfile
                  " --output " (file-name-sans-extension omnfile) ".ttl")))))
   (defun elot-tangled-omn-to-ttl ()
