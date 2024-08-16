@@ -347,7 +347,7 @@ the ID string.
           (; not a puri -- normal string, wrap in quotes
            (equal str (unprefix-uri str org-link-abbrev-alist-local))
            ;; if a language tag @en is present, return unchanged
-           (if (string-match "\".*\"@[a-z]+" str)
+           (if (string-match "\"\\(.*\n\\)*.*\"@[a-z]+" str)
                (concat " " str)
              ;; escape all quotes with \", note this gives invalid results if some are already escaped
              (concat "  \"" (replace-regexp-in-string "\"" "\\\\\"" str) "\"")))
