@@ -2,7 +2,7 @@
 #+title: The pizza ontology
 #+subtitle: An OWL ontology
 #+author: Alan Rector et al.
-#+date: WIP (version of 2024-04-10 12:37)
+#+date: WIP (version of 2024-08-16 14:06)
 #+call: theme-readtheorg()
 
 * The pizza ontology as an ELOT example
@@ -202,13 +202,13 @@ allow for the tangling to work.
 - pav:lastUpdateOn :: {{{modification-time("%Y-%m-%dT%H:%M:%SZ",t)}}}^^xsd:dateTime
 - dcterms:creator :: johanw
 - dcterms:modified ::  {{{modification-time("%Y-%m-%d",t)}}}^^xsd:date
-- dcterms:description :: An ontology about pizzas and their toppings.
-  This is an example ontology that contains all constructs required for the various versions of the Pizza Tutorial run by Manchester University (see http://owl.cs.manchester.ac.uk/publications/talks-and-tutorials/protg-owl-tutorial).@en
-- dcterms:provenance :: v2.0 Added new annotations to the ontology using standard/well-know annotation properties
+- dcterms:description :: "An ontology about pizzas and their toppings.
+  This is an example ontology that contains all constructs required for the various versions of the Pizza Tutorial run by Manchester University (see http://owl.cs.manchester.ac.uk/publications/talks-and-tutorials/protg-owl-tutorial)."@en
+- dcterms:provenance :: "v2.0 Added new annotations to the ontology using standard/well-know annotation properties
 
-v1.5. Removed protege.owl import and references. Made ontology URI date-independent
+  v1.5. Removed protege.owl import and references. Made ontology URI date-independent
 
-v1.4. Added Food class (used in domain/range of hasIngredient), Added several hasCountryOfOrigin restrictions on pizzas, Made hasTopping invers functional@en
+  v1.4. Added Food class (used in domain/range of hasIngredient), Added several hasCountryOfOrigin restrictions on pizzas, Made hasTopping invers functional"@en
 - rdfs:label :: pizza
 ** Classes
 :PROPERTIES:
