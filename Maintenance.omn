@@ -24,7 +24,7 @@ Prefix: iof-ont: <https://spec.industrialontologies.org/ontology/>
 ## Ontology declaration
 Ontology: iof-maint: iof-ont:202401/maintenance/Maintenance/
       Annotations: rdfs:label  "Maintenance ontology",
-       pav:lastUpdateOn  "2024-08-16T10:28:05Z"^^xsd:dateTime,
+       pav:lastUpdateOn  "2024-08-16T10:38:32Z"^^xsd:dateTime,
        dcterms:modified  "2024-08-16"^^xsd:date,
        dcterms:abstract  "The purpose of this IOF Maintenance Reference ontology is to support semantic interoperatibility through the use modular ontologies in the maintenance domain. This Ontology contains terms and concepts identified as common in a number of application ontologies for maintenance management, maintenance procedures, asset failure and failure modes and effects analysis. The ontology is aligned with the IOF Core Ontology which is aligned with Basic Formal Ontology and importas terms for other domain independent ontologies.",
        dcterms:contributor "Caitlin Woods, University of Western Australia"@en,
@@ -49,10 +49,10 @@ Datatype: xsd:anyURI
 
 ## Class declarations
 Class: obo:BFO_0000003
-      Annotations: rdfs:label  "occurrent "
+      Annotations: rdfs:label  "occurrent"
 
 Class: obo:BFO_0000015
-      Annotations: rdfs:label  "process "
+      Annotations: rdfs:label  "process"
 
 Class: iof-maint:FailureEffect
       Annotations: rdfs:label  "failure effect",
@@ -87,7 +87,7 @@ Class: iof-maint:FunctioningProcess
        iof-av:semiFormalNaturalLanguageDefinition  "every instance of 'functioning process' is defined as exactly an instance of 'process' that 'realizes' some 'function'"
   EquivalentTo: obo:BFO_0000015 and (obo:BFO_0000055 some obo:BFO_0000034)
 Class: obo:BFO_0000016
-      Annotations: rdfs:label  "disposition "
+      Annotations: rdfs:label  "disposition"
 
 Class: iof-maint:UndesireableDisposition
       Annotations: rdfs:label  "undesireable disposition",
@@ -124,7 +124,7 @@ Class: iof-maint:DispositionToFail
        iof-av:semiFormalNaturalLanguageAxiom  "if x is a 'disposition to fail' then x is a 'undesireable disposition' that 'has realization' some 'failure process'"
   SubClassOf: obo:BFO_0000054 some iof-maint:FailureProcess
 Class: obo:BFO_0000034
-      Annotations: rdfs:label  "function "
+      Annotations: rdfs:label  "function"
 
 Class: iof-maint:RequiredFunction
       Annotations: rdfs:label  "required function",
@@ -311,10 +311,10 @@ Class: iof-maint:QualificationSpecification
 
 ## Object property declarations
 ObjectProperty: obo:BFO_0000054
-      Annotations: rdfs:label  "has realization "
+      Annotations: rdfs:label  "has realization"
 
 ObjectProperty: obo:BFO_0000055
-      Annotations: rdfs:label  "realizes "
+      Annotations: rdfs:label  "realizes"
 
 ObjectProperty: obo:BFO_0000056
       Annotations: rdfs:label  "participates in"
@@ -328,10 +328,10 @@ ObjectProperty: iof-maint:hasMaintenanceState
   Range: iof-maint:MaintenanceState
   InverseOf: iof-maint:maintenanceStateOf
 ObjectProperty: obo:BFO_0000062
-      Annotations: rdfs:label  "preceded by "
+      Annotations: rdfs:label  "preceded by"
 
 ObjectProperty: obo:BFO_0000063
-      Annotations: rdfs:label  "precedes "
+      Annotations: rdfs:label  "precedes"
 
 ObjectProperty: iof-maint:initiates
       Annotations: rdfs:label  "initiates",
