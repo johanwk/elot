@@ -2,7 +2,7 @@
 #+title: The Maintenance Reference Ontology as ELOT example
 #+subtitle: An OWL ontology
 #+author: IOF Maintenance Working Group
-#+date: WIP (version of 2024-04-23 13:13)
+#+date: WIP (version of 2024-08-16 10:27)
 #+call: theme-readtheorg()
 
 
@@ -485,7 +485,7 @@ We add a diagram. TODO: allow for the ttl to be implicit, so only one call is ne
 :END:
 *** has realization  (obo:BFO_0000054)
 *** realizes  (obo:BFO_0000055)
-*** participates in  (obo:BFO_0000056)
+*** participates in (obo:BFO_0000056)
 **** has maintenance state (iof-maint:hasMaintenanceState)
  - skos:example :: has partial function or loss of function
  - iof-av:maturity :: iof-av:Provisional
