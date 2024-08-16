@@ -5,7 +5,7 @@
 ;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
 ;; URL: https://github.com/johanwk/elot
 ;; Version: 0.1-pre
-;; Package-Requires: ((emacs "29.2") ... and several more ...)
+;; Package-Requires: ((emacs "29.2"))
 ;; Keywords: org, ontology
 
 ;; This file is not part of GNU Emacs.
