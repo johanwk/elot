@@ -24,8 +24,8 @@ Prefix: iof-ont: <https://spec.industrialontologies.org/ontology/>
 ## Ontology declaration
 Ontology: iof-maint: iof-ont:202401/maintenance/Maintenance/
       Annotations: rdfs:label  "Maintenance ontology",
-       pav:lastUpdateOn  "2024-04-17T18:48:27Z"^^xsd:dateTime,
-       dcterms:modified  "2024-04-17"^^xsd:date,
+       pav:lastUpdateOn  "2024-08-16T10:28:05Z"^^xsd:dateTime,
+       dcterms:modified  "2024-08-16"^^xsd:date,
        dcterms:abstract  "The purpose of this IOF Maintenance Reference ontology is to support semantic interoperatibility through the use modular ontologies in the maintenance domain. This Ontology contains terms and concepts identified as common in a number of application ontologies for maintenance management, maintenance procedures, asset failure and failure modes and effects analysis. The ontology is aligned with the IOF Core Ontology which is aligned with Basic Formal Ontology and importas terms for other domain independent ontologies.",
        dcterms:contributor "Caitlin Woods, University of Western Australia"@en,
        dcterms:contributor "Markus Stumptner, University of South Australia"@en,
@@ -317,7 +317,7 @@ ObjectProperty: obo:BFO_0000055
       Annotations: rdfs:label  "realizes "
 
 ObjectProperty: obo:BFO_0000056
-      Annotations: rdfs:label  "participates in "
+      Annotations: rdfs:label  "participates in"
 
 ObjectProperty: iof-maint:hasMaintenanceState
       Annotations: rdfs:label  "has maintenance state",
