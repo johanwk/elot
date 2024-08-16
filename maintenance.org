@@ -2,7 +2,7 @@
 #+title: The Maintenance Reference Ontology as ELOT example
 #+subtitle: An OWL ontology
 #+author: IOF Maintenance Working Group
-#+date: WIP (version of 2024-08-16 10:27)
+#+date: WIP (version of 2024-08-16 10:38)
 #+call: theme-readtheorg()
 
 
@@ -172,8 +172,8 @@ We add a diagram. TODO: allow for the ttl to be implicit, so only one call is ne
 #+results: rdfpuml:Event
 [[file:./images/ttl-Event.svg]]
 
-*** occurrent  (obo:BFO_0000003)
-*** process  (obo:BFO_0000015)
+*** occurrent (obo:BFO_0000003)
+*** process (obo:BFO_0000015)
 **** failure effect (iof-maint:FailureEffect)
  - skos:example :: leaking pipe, erratic operation, equipment does not run
  - iof-av:firstOrderLogicAxiom :: FailureEffect(x) → Process(x) ∧ ∃f((FailureEvent(f) ∨ FailureProcess(f)) ∧
@@ -212,7 +212,7 @@ We add a diagram. TODO: allow for the ttl to be implicit, so only one call is ne
  - iof-av:semiFormalNaturalLanguageDefinition :: every instance of 'functioning process' is defined as exactly an
    instance of 'process' that 'realizes' some 'function'
  - EquivalentTo :: obo:BFO_0000015 and (obo:BFO_0000055 some obo:BFO_0000034)
-*** disposition  (obo:BFO_0000016)
+*** disposition (obo:BFO_0000016)
 **** undesireable disposition (iof-maint:UndesireableDisposition)
  - skos:example :: disposition to leak, disposition to overheat, disposition to vibrate
  - iof-av:explanatoryNote :: There are two subclasses, disposition to fail and disposition to exhibit undesirable
@@ -260,7 +260,7 @@ We add a diagram. TODO: allow for the ttl to be implicit, so only one call is ne
  - iof-av:semiFormalNaturalLanguageAxiom :: if x is a 'disposition to fail' then x is a 'undesireable disposition' that
    'has realization' some 'failure process'
  - SubClassOf :: obo:BFO_0000054 some iof-maint:FailureProcess
-*** function  (obo:BFO_0000034)
+*** function (obo:BFO_0000034)
 **** required function (iof-maint:RequiredFunction)
  - rdfs:seeAlso :: ISO81346 for examples of functions
  - skos:example :: to sense, to store, to process information, to control
@@ -483,8 +483,8 @@ We add a diagram. TODO: allow for the ttl to be implicit, so only one call is ne
 :custom_id: Maintenance-object-property-hierarchy
 :resourcedefs: yes
 :END:
-*** has realization  (obo:BFO_0000054)
-*** realizes  (obo:BFO_0000055)
+*** has realization (obo:BFO_0000054)
+*** realizes (obo:BFO_0000055)
 *** participates in (obo:BFO_0000056)
 **** has maintenance state (iof-maint:hasMaintenanceState)
  - skos:example :: has partial function or loss of function
@@ -493,8 +493,8 @@ We add a diagram. TODO: allow for the ttl to be implicit, so only one call is ne
  - Domain :: iof-core:MaintainableMaterialItem
  - Range :: iof-maint:MaintenanceState
  - InverseOf :: iof-maint:maintenanceStateOf
-*** preceded by  (obo:BFO_0000062)
-*** precedes  (obo:BFO_0000063)
+*** preceded by (obo:BFO_0000062)
+*** precedes (obo:BFO_0000063)
 **** initiates (iof-maint:initiates)
  - skos:example :: starts, begins, commences
  - iof-av:maturity :: iof-av:Provisional
