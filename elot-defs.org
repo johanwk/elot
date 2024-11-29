@@ -322,7 +322,7 @@ the ID string.
     ;; maybe there's macros in the string, expand them
     (if (string-match "{{{.+}}}" str)
       (let ((omt org-macro-templates))
-        (with-temp-buffer 
+        (with-temp-buffer (org-mode)
           (insert str) (org-macro-replace-all omt) 
           (setq str (buffer-string)))))
      (cond (; a number -- return the string
