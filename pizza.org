@@ -2,7 +2,7 @@
 #+title: The pizza ontology
 #+subtitle: An OWL ontology
 #+author: Alan Rector et al.
-#+date: WIP (version of 2024-08-16 14:06)
+#+date: WIP (version of 2024-11-29 17:05)
 #+call: theme-readtheorg()
 
 * The pizza ontology as an ELOT example
@@ -119,19 +119,29 @@ Datatype: xsd:boolean
 *** construct query
 #+name: pizza-construct
 #+begin_src sparql :url "pizza.omn" :format ttl :wrap "src ttl" :cache yes :post kill-prefixes(data=*this*)
-  construct { ?class a owl:Class ; rdfs:label ?label }
+  construct { ?class a owl:Class ; rdfs:label ?label ; rdfs:subClassOf ?superclass }
   { ?class a owl:Class ; rdfs:label ?label
-    filter not exists { ?class rdfs:subClassOf ?x }
+    filter not exists { ?class rdfs:subClassOf/rdfs:subClassOf ?x }
+    optional { ?class rdfs:subClassOf ?superclass }
   }
 #+end_src
 
-#+RESULTS[65e06529e9331244d0805f353bfa7b7897b3a74b]: pizza-construct
+#+RESULTS[a7867b92913974ab2bf4bde77ec56a919b764bb6]: pizza-construct
 #+begin_src ttl
-pizza:DomainConcept  a  owl:Class ;
-        rdfs:label  "DomainConcept" , "DomainThing"@en .
+pizza:Country  a    owl:Class ;
+        rdfs:label  "Country" , "Country"@en , "Pais"@pt .
 
 pizza:ValuePartition  a  owl:Class ;
         rdfs:label  "ValorDaParticao"@pt , "ValuePartition" , "ValuePartition"@en .
+
+pizza:Spiciness  a  owl:Class ;
+        rdfs:label  "Spiciness" , "Spiciness"@en , "Tempero"@pt .
+
+pizza:DomainConcept  a  owl:Class ;
+        rdfs:label  "DomainConcept" , "DomainThing"@en .
+
+pizza:Food  a       owl:Class ;
+        rdfs:label  "Food" , "Food"@en .
 #+end_src
 
 ** rdfpuml diagram
