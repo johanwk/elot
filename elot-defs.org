@@ -4,8 +4,12 @@
 :header-args: :tangle ./elot-package/elot.el :comments link
 :END:
 *** Header for the elisp file
+Block native compilation with ~no-native-compile: t;~. This (apparently)
+allows for local variables to be accessed -- relevant for
+~org-link-abbrev-alist-local~, which is needed for abbreviation of URIs
+in SPARQL select results.
 #+begin_src emacs-lisp :comments nil
-  ;;; elot.el --- Emacs Literate Ontology Tool (ELOT)   -*- lexical-binding: t; -*-
+  ;;; elot.el --- Emacs Literate Ontology Tool (ELOT)   -*- lexical-binding: t; no-native-compile: t; -*-
 
   ;; Copyright (C) 2024 Johan W. Klüwer
 
