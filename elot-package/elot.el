@@ -1,4 +1,4 @@
-;;; elot.el --- Emacs Literate Ontology Tool (ELOT)   -*- lexical-binding: t; -*-
+;;; elot.el --- Emacs Literate Ontology Tool (ELOT)   -*- lexical-binding: t; no-native-compile: t; -*-
 
 ;; Copyright (C) 2024 Johan W. Klüwer
 
@@ -286,7 +286,7 @@ resources if point is under a heading that declares an ontology."
   ;; maybe there's macros in the string, expand them
   (if (string-match "{{{.+}}}" str)
     (let ((omt org-macro-templates))
-      (with-temp-buffer 
+      (with-temp-buffer (org-mode)
         (insert str) (org-macro-replace-all omt) 
         (setq str (buffer-string)))))
    (cond (; a number -- return the string
@@ -311,7 +311,7 @@ resources if point is under a heading that declares an ontology."
         (; not a puri -- normal string, wrap in quotes
          (equal str (unprefix-uri str org-link-abbrev-alist-local))
          ;; if a language tag @en is present, return unchanged
-         (if (string-match "\".*\"@[a-z]+" str)
+         (if (string-match "\"\\(.*\n\\)*.*\"@[a-z]+" str)
              (concat " " str)
            ;; escape all quotes with \", note this gives invalid results if some are already escaped
            (concat "  \"" (replace-regexp-in-string "\"" "\\\\\"" str) "\"")))
@@ -726,17 +726,17 @@ to ELOT default image (sub)directory. Return output file name."
 
 ;; [[file:../elot-defs.org::*ELOT document header][ELOT document header:1]]
 (tempo-define-template "elot-doc-header"
- '("# -*- eval: (load-library \"elot-defaults\") -*-" > n
-	"#+title: " (p "Document title: " doctitle) > n
-	"#+subtitle: An OWL ontology" > n
-	"#+author: " (p "Author name: " authname) > n
-	"#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
-  "#+call: theme-readtheorg()" n n
-	(progn (load-library "elot-defaults") (message "Loaded ELOT") "")
-	)
- "<odh"
- "ELOT document header"
- 'org-tempo-tags)
+     '("# -*- eval: (load-library \"elot-defaults\") -*-" > n
+    	"#+title: " (p "Document title: " doctitle) > n
+    	"#+subtitle: An OWL ontology" > n
+    	"#+author: " (p "Author name: " authname) > n
+    	"#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
+"#+call: theme-readtheorg()" n n
+    	(progn (load-library "elot-defaults") (message "Loaded ELOT") "")
+    	)
+     "<odh"
+     "ELOT document header"
+     'org-tempo-tags)
 ;; ELOT document header:1 ends here
 
 ;; [[file:../elot-defs.org::*ELOT ontology skeleton][ELOT ontology skeleton:1]]
