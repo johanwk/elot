@@ -299,7 +299,7 @@ resources if point is under a heading that declares an ontology."
           (string-match "^\\(https?[^ ]*\\)$" str)
           (concat "  <" (match-string 1 str) ">"))
          (; a bare URI, in angles
-          (string-match "^<\\(https?[^ ]*\\)>$" str)
+          (string-match "^\\(<https?[^ ]*>\\)$" str)
           (concat "  " (match-string 1 str)))
         (; true -- make it an explicit boolean
           (string-match "true" str) " \"true\"^^xsd:boolean")
