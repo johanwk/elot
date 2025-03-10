@@ -305,63 +305,63 @@ the ID string.
 *** puri expansion
 #+name: defun-puri
 #+BEGIN_SRC emacs-lisp :results silent
-  (defconst puri-re "^\\([-a-z_A-Z0-9]*\\):\\([a-z_A-Z0-9-.]*\\)$")
+	(defconst puri-re "^\\([-a-z_A-Z0-9]*\\):\\([a-z_A-Z0-9-.]*\\)$")
 
-  (defun unprefix-uri (puri abbrev-alist)
-   "Replace prefix in puri with full form from abbrev-alist, if there's a match."
-   (if (eq abbrev-alist nil) puri
-     (if (string-match puri-re puri)
-         (let* ((this-prefix (match-string-no-properties 1 puri))
-                (this-localname (match-string-no-properties 2 puri))
-                (this-ns (cdr (assoc this-prefix abbrev-alist))))
-           (if this-ns
-               (concat "<" this-ns this-localname ">")
-             puri))
-       puri)))
+	(defun unprefix-uri (puri abbrev-alist)
+	 "Replace prefix in puri with full form from abbrev-alist, if there's a match."
+	 (if (eq abbrev-alist nil) puri
+		 (if (string-match puri-re puri)
+				 (let* ((this-prefix (match-string-no-properties 1 puri))
+								(this-localname (match-string-no-properties 2 puri))
+								(this-ns (cdr (assoc this-prefix abbrev-alist))))
+					 (if this-ns
+							 (concat "<" this-ns this-localname ">")
+						 puri))
+			 puri)))
 
-  (defun annotation-string-or-uri (str)
-    "str is wanted as an annotation value in Manchester Syntax. Expand uri, or return number, or wrap in quotes."
-    ; maybe this entry contains string representation of meta-annotations, remove them
-    (setq str (replace-regexp-in-string " - [^ ]+ ::.*$" "" str))
-    ;; maybe there's macros in the string, expand them
-    (if (string-match "{{{.+}}}" str)
-      (let ((omt org-macro-templates))
-        (with-temp-buffer (org-mode)
-          (insert str) (org-macro-replace-all omt) 
-          (setq str (buffer-string)))))
-     (cond (; a number -- return the string
-            (string-match "^[[:digit:]]+[.]?[[:digit:]]*$" str)
-            (concat "  " str))
-           (; a bare URI, which org-mode wraps in double brackets -- wrap in angles
-            (string-match "^[[][[]\\(https?[^ ]*\\)[]][]]$" str)
-            (concat "  <" (match-string 1 str) ">"))
-           (; a bare URI, but no double brackets -- wrap in angles
-            (string-match "^\\(https?[^ ]*\\)$" str)
-            (concat "  <" (match-string 1 str) ">"))
-           (; a bare URI, in angles
-            (string-match "^\\(<https?[^ ]*>\\)$" str)
-            (concat "  " (match-string 1 str)))
-          (; true -- make it an explicit boolean
-            (string-match "true" str) " \"true\"^^xsd:boolean")
-          (; false -- make it an explicit boolean
-            (string-match "false" str) " \"false\"^^xsd:boolean")
-          (; string with datatype -- return unchanged
-            (string-match "^\".*\"^^[-_[:alnum:]]*:[-_[:alnum:]]+$" str)
-            (concat "  " str))
-          (; not a puri -- normal string, wrap in quotes
-           (equal str (unprefix-uri str org-link-abbrev-alist-local))
-           ;; if a language tag @en is present, return unchanged
-           (if (string-match "\"\\(.*\n\\)*.*\"@[a-z]+" str)
-               (concat " " str)
-             ;; escape all quotes with \", note this gives invalid results if some are already escaped
-             (concat "  \"" (replace-regexp-in-string "\"" "\\\\\"" str) "\"")))
-          (; else, a puri -- wrap in angles
-           t (concat "  " (unprefix-uri str org-link-abbrev-alist-local))))
+	(defun annotation-string-or-uri (str)
+		"str is wanted as an annotation value in Manchester Syntax. Expand uri, or return number, or wrap in quotes."
+		; maybe this entry contains string representation of meta-annotations, remove them
+		(setq str (replace-regexp-in-string " - [^ ]+ ::.*$" "" str))
+		;; maybe there's macros in the string, expand them
+		(if (string-match "{{{.+}}}" str)
+			(let ((omt org-macro-templates))
+				(with-temp-buffer (org-mode)
+					(insert str) (org-macro-replace-all omt) 
+					(setq str (buffer-string)))))
+		 (cond (; a number -- return the string
+						(string-match "^[[:digit:]]+[.]?[[:digit:]]*$" str)
+						(concat "  " str))
+					 (; a bare URI, which org-mode wraps in double brackets -- wrap in angles
+						(string-match "^[[][[]\\(https?[^ ]*\\)[]][]]$" str)
+						(concat "  <" (match-string 1 str) ">"))
+					 (; a bare URI, but no double brackets -- wrap in angles
+						(string-match "^\\(https?[^ ]*\\)$" str)
+						(concat "  <" (match-string 1 str) ">"))
+					 (; a bare URI, in angles
+						(string-match "^\\(<https?[^ ]*>\\)$" str)
+						(concat "  " (match-string 1 str)))
+					(; true -- make it an explicit boolean
+						(string-match "true" str) " \"true\"^^xsd:boolean")
+					(; false -- make it an explicit boolean
+						(string-match "false" str) " \"false\"^^xsd:boolean")
+					(; string with datatype -- return unchanged
+						(string-match "^\".*\"^^[-_[:alnum:]]*:[-_[:alnum:]]+$" str)
+						(concat "  " str))
+					(; not a puri -- normal string, wrap in quotes
+					 (equal str (unprefix-uri str org-link-abbrev-alist-local))
+					 ;; if a language tag @en is present, return unchanged
+					 (if (string-match "\"\\(.*\n\\)*.*\"@[a-z]+" str)
+							 (concat " " str)
+						 ;; escape all quotes with \", note this gives invalid results if some are already escaped
+						 (concat "  \"" (replace-regexp-in-string "\"" "\\\\\"" str) "\"")))
+					(; else, a puri -- wrap in angles
+					 t (concat "  " (unprefix-uri str org-link-abbrev-alist-local)))))
 
-  (defun omn-restriction-string (str)
-    "str is wanted as OMN value. Strip any meta-annotations. Otherwise return unchanged."
-    (setq str (replace-regexp-in-string " - [^ ]+ ::.*$" "" str))
-    str)
+	(defun omn-restriction-string (str)
+		"str is wanted as OMN value. Strip any meta-annotations. Otherwise return unchanged."
+		(setq str (replace-regexp-in-string " - [^ ]+ ::.*$" "" str))
+		str)
 #+END_SRC
 *** Use section headings as ontology resources
 =org-list-siblings= returns a tree of headline strings that matches the
