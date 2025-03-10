@@ -316,7 +316,7 @@ resources if point is under a heading that declares an ontology."
            ;; escape all quotes with \", note this gives invalid results if some are already escaped
            (concat "  \"" (replace-regexp-in-string "\"" "\\\\\"" str) "\"")))
         (; else, a puri -- wrap in angles
-         t (concat "  " (unprefix-uri str org-link-abbrev-alist-local)))))
+         t (concat "  " (unprefix-uri str org-link-abbrev-alist-local))))
 
 (defun omn-restriction-string (str)
   "str is wanted as OMN value. Strip any meta-annotations. Otherwise return unchanged."
@@ -326,45 +326,61 @@ resources if point is under a heading that declares an ontology."
 
 ;; [[file:../elot-defs.org::defun-resource-headings][defun-resource-headings]]
 ; http://stackoverflow.com/questions/17179911/emacs-org-mode-tree-to-list
-(defun org-list-siblings ()
-  "List siblings in current buffer starting at point.
-  Note, you can always (goto-char (point-min)) to collect all siblings."
-  (interactive)
-  (let (ret)
-    (unless (org-at-heading-p) 
-      (org-forward-heading-same-level nil t))
-    (while (progn
-             (unless (looking-at "[*]* *COMMENT")
-               (setq ret
-                     (if (member "nodeclare" (org-get-tags (point) t)) ; tagged to be skipped, proceed down
-                         (cons (save-excursion
-                                         (when (org-goto-first-child)
-                                           (org-list-siblings))) ret)
-                       (cons (append (list
-                                        ; the nil t arguments for tags yes, todos no, todos no, priorities no
-                                        (substring-no-properties (org-get-heading nil t t t)))
-                                       (save-excursion
-                                         (when (org-goto-first-child)
-                                           (org-list-siblings))))
-                               ret))))
-             (org-goto-sibling)))
-    (nreverse ret)))
+  (defun org-list-siblings ()
+    "List siblings in current buffer starting at point.
+    Note, you can always (goto-char (point-min)) to collect all siblings."
+    (interactive)
+    (let (ret)
+      (unless (org-at-heading-p) 
+        (org-forward-heading-same-level nil t))
+      (while (progn
+               (unless (looking-at "[*]* *COMMENT")
+                 (setq ret
+                       (if (member "nodeclare" (org-get-tags (point) t)) ; tagged to be skipped, proceed down
+                           (cons (save-excursion
+                                           (when (org-goto-first-child)
+                                             (org-list-siblings))) ret)
+                         (cons (append (list
+                                          ; the nil t arguments for tags yes, todos no, todos no, priorities no
+                                          (substring-no-properties (org-get-heading nil t t t)))
+                                         (save-excursion
+                                           (when (org-goto-first-child)
+                                             (org-list-siblings))))
+                                 ret))))
+               (org-goto-sibling)))
+      (nreverse ret)))
 
-(defun entity-from-header (str)
+  (defun entity-from-header (str)
   "Get an entity from a header string.
-The headers can be of two kinds. With prefix 'abc',
- - abc:MyClassName
- - my class name (abc:MyClassName)
-
-Maybe also with tags :hello: on the right. Return abc:MyClassName in both cases."
-  (if (string-match "(\\([-_[:alnum:]]*:[-_[:alnum:]]*\\))" str) ; the resource id is in parentheses
-      (match-string 1 str)
-    (if (string-match "^\\([-_[:alnum:]]*:[-_[:alnum:]]*\\)" str) ; return string up to whitespace
-        (match-string 1 str)
-      (if (string-match "(\\([-_[:alnum:]]*:[-_[:alnum:]]* [-_[:alnum:]]*:[-_/.[:alnum:]]*\\))" str) ; two ids in parentheses, for ontology
-          (match-string 1 str)
-        (error (message "%s%s%s%s%s" "Fail! Heading \"" str "\" in " (org-entry-get-with-inheritance "ID") " is not well-formed") 
-               (concat "Malformed_" str))))))
+Return either a CURIE
+or a full-form URI in angle brackets)."
+  (let* ((curie-regex "[-_[:alnum:]]*:[-_[:alnum:]]*")
+         (full-uri-regex "http[s]?://[-A-Za-z0-9._~:/?#\\@!$&'()*+,;=%]*"))
+    (cond
+     ;; CURIE, beginning of line
+     ((string-match (format "^\\(%s\\)" curie-regex) str)
+      (match-string 1 str))
+     ;; CURIE in parentheses
+     ((string-match (format "(\\(%s\\))" curie-regex) str)
+      (match-string 1 str))
+     ;; single URI, beginning of line
+     ((string-match (format "^<?\\(%s\\)>?" full-uri-regex) str)
+      (format "<%s>" (match-string 1 str)))
+     ;; single URI in parentheses
+     ((string-match (format "(<?\\(%s\\)>?)" full-uri-regex) str)
+      (format "<%s>" (match-string 1 str)))
+     ;; two CURIEs in parentheses (ontology and ontology version)
+     ((string-match (format "(\\(%s\\) \\(%s\\))" curie-regex curie-regex) str)
+      (format "%s %s" (match-string 1 str) (match-string 2 str)))
+     ;; two URIs in parentheses (ontology and ontology version)
+     ((string-match (format "(<?\\(%s\\)>? <?\\(%s\\)>?)" full-uri-regex full-uri-regex) str)
+      (let ((uri1 (match-string 1 str))
+            (uri2 (match-string 2 str)))
+        (format "<%s> <%s>" uri1 uri2)))
+     (t
+      (error "Fail! Heading \"%s\" in %s is not well-formed"
+             str
+             (org-entry-get-with-inheritance "ID"))))))
 ;; defun-resource-headings ends here
 
 ;; [[file:../elot-defs.org::defun-resource-declaration][defun-resource-declaration]]
