@@ -5,6 +5,8 @@
 This repository contains a template for writing OWL ontologies as
 [[https://orgmode.org/][Org Mode]] documents, with supporting functions and scripts.
 
+*NEW* March 2025: Convert OWL files to ELOT's org-mode format, see [[https://github.com/johanwk/elot/releases][releases]]
+
 Check out the files =pizza.org=, =bfo-core.org=, =maintenance.org= for example ELOT files.
 
 ELOT works on Windows, MacOS, and Linux (tested in WSL).
@@ -30,21 +32,18 @@ If you are new to Emacs, the book [[https://www.masteringemacs.org/][Mastering E
 recommended.
 ** Installation
 *** Get Emacs
-ELOT has only been tested on recent versions of Emacs. As of 2024-04,
-version 29.3 is the latest. See the [[https://www.gnu.org/software/emacs/download.html][GNU Emacs download page]].
+ELOT has only been tested on recent versions of Emacs. See the [[https://www.gnu.org/software/emacs/download.html][GNU
+Emacs download page]].
 
-For Windows users: download Emacs from the [[https://ftp.gnu.org/gnu/emacs/windows/emacs-29/][emacs-29 for Windows]]
-directory. The package named [[https://ftp.gnu.org/gnu/emacs/windows/emacs-29/emacs-29.3-installer.exe][emacs-29.3-installer.exe]] will work
-fine. It's preferable to install into a folder that doesn't contain
-spaces.
+For new Windows users: download Emacs from a [[http://ftpmirror.gnu.org/emacs/windows][GNU mirror]]; the latest
+version is in the ~emacs-30~ directory. The package named
+[[http://ftp.gnu.org/gnu/emacs/windows/emacs-30/emacs-30.1-installer.exe][emacs-30.1-installer.exe]] will work fine (as of 2025-03-11). It's
+preferable to install into a folder that doesn't contain spaces.
 
 For Linux users: ELOT has been tested on WSL 2 (Windows Subsystem
-for Linux). It's recommended to 
- - upgrade to Ubuntu version 22; see the [[https://askubuntu.com/questions/1428423/upgrade-ubuntu-in-wsl2-from-20-04-to-22-04][guide at askubuntu.com]].
- - compile Emacs to obtain the latest version: see the [[https://github.com/hubisan/emacs-wsl][guide at
-   hubisan/emacs-wsl]].
+for Linux). 
 
-For MacOS users: See the GNU Emacs page.
+For MacOS users: See the [[https://www.gnu.org/software/emacs/download.html][GNU Emacs downloads]] page under "macOS".
 *** Install ELOT in Emacs
 ELOT is in active development and will see frequent updates. For easy
 access to these updates, you should /clone/ the ELOT repository using
@@ -95,7 +94,12 @@ Get the tools:
       listed in the [[https://github.com/VladimirAlexiev/rdf2rml?tab=readme-ov-file#installation][rdfpuml installation guide]].
        : cd ~/bin
        : git clone https://github.com/VladimirAlexiev/rdf2rml.git
+*** NEW: Convert existing OWL files to ELOT format
+A Java binary will read an OWL file, in Turtle, RDF/XML or other
+formats, and output an org-mode file in ELOT format. This makes it
+easy to work on existing ontologies in your favourite editor. 
 
+The ~jar~ file can be downloaded from [[https://github.com/johanwk/elot/releases][ELOT releases]].
 ** Quick start using ELOT
 *** Adding an ontology
 After the installation steps, it's wise to restart Emacs!
