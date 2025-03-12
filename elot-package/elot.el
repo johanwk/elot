@@ -369,6 +369,8 @@ or a full-form URI in angle brackets)."
    ;; single URI in parentheses
    ((string-match (format "(<?\\(%s\\)>?)" full-uri-regex) str)
     (format "<%s>" (match-string 1 str)))
+   ;; URN identifier: return as-is if the string is a URN, e.g. <urn:isbn:0943396611>
+   ((string-match "^<urn:[^>]+>$" str) str)
    ;; two CURIEs in parentheses (ontology and ontology version)
    ((string-match (format "(\\(%s\\) \\(%s\\))" curie-regex curie-regex) str)
     (format "%s %s" (match-string 1 str) (match-string 2 str)))
