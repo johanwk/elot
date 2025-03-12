@@ -302,9 +302,9 @@ resources if point is under a heading that declares an ontology."
          (string-match "^\\(<https?[^ ]*>\\)$" str)
          (concat "  " (match-string 1 str)))
         (; true -- make it an explicit boolean
-         (string-match "true" str) " \"true\"^^xsd:boolean")
+         (string-match "^true$" str) " \"true\"^^xsd:boolean")
         (; false -- make it an explicit boolean
-         (string-match "false" str) " \"false\"^^xsd:boolean")
+         (string-match "^false$" str) " \"false\"^^xsd:boolean")
         (; string with datatype -- return unchanged
          (string-match "^\".*\"^^[-_[:alnum:]]*:[-_[:alnum:]]+$" str)
          (concat "  " str))
