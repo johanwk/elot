@@ -268,119 +268,122 @@ resources if point is under a heading that declares an ontology."
 (defconst puri-re "^\\([-a-z_A-Z0-9]*\\):\\([a-z_A-Z0-9-.]*\\)$")
 
 (defun unprefix-uri (puri abbrev-alist)
- "Replace prefix in puri with full form from abbrev-alist, if there's a match."
- (if (eq abbrev-alist nil) puri
-	 (if (string-match puri-re puri)
-			 (let* ((this-prefix (match-string-no-properties 1 puri))
-							(this-localname (match-string-no-properties 2 puri))
-							(this-ns (cdr (assoc this-prefix abbrev-alist))))
-				 (if this-ns
-						 (concat "<" this-ns this-localname ">")
-					 puri))
-		 puri)))
+  "Replace prefix in puri with full form from abbrev-alist, if there's a match."
+  (if (eq abbrev-alist nil) puri
+    (if (string-match puri-re puri)
+        (let* ((this-prefix (match-string-no-properties 1 puri))
+               (this-localname (match-string-no-properties 2 puri))
+               (this-ns (cdr (assoc this-prefix abbrev-alist))))
+          (if this-ns
+              (concat "<" this-ns this-localname ">")
+            puri))
+      puri)))
 
 (defun annotation-string-or-uri (str)
-	"str is wanted as an annotation value in Manchester Syntax. Expand uri, or return number, or wrap in quotes."
-	; maybe this entry contains string representation of meta-annotations, remove them
-	(setq str (replace-regexp-in-string " - [^ ]+ ::.*$" "" str))
-	;; maybe there's macros in the string, expand them
-	(if (string-match "{{{.+}}}" str)
-		(let ((omt org-macro-templates))
-			(with-temp-buffer (org-mode)
-				(insert str) (org-macro-replace-all omt) 
-				(setq str (buffer-string)))))
-	 (cond (; a number -- return the string
-					(string-match "^[[:digit:]]+[.]?[[:digit:]]*$" str)
-					(concat "  " str))
-				 (; a bare URI, which org-mode wraps in double brackets -- wrap in angles
-					(string-match "^[[][[]\\(https?[^ ]*\\)[]][]]$" str)
-					(concat "  <" (match-string 1 str) ">"))
-				 (; a bare URI, but no double brackets -- wrap in angles
-					(string-match "^\\(https?[^ ]*\\)$" str)
-					(concat "  <" (match-string 1 str) ">"))
-				 (; a bare URI, in angles
-					(string-match "^\\(<https?[^ ]*>\\)$" str)
-					(concat "  " (match-string 1 str)))
-				(; true -- make it an explicit boolean
-					(string-match "true" str) " \"true\"^^xsd:boolean")
-				(; false -- make it an explicit boolean
-					(string-match "false" str) " \"false\"^^xsd:boolean")
-				(; string with datatype -- return unchanged
-					(string-match "^\".*\"^^[-_[:alnum:]]*:[-_[:alnum:]]+$" str)
-					(concat "  " str))
-				(; not a puri -- normal string, wrap in quotes
-				 (equal str (unprefix-uri str org-link-abbrev-alist-local))
-				 ;; if a language tag @en is present, return unchanged
-				 (if (string-match "\"\\(.*\n\\)*.*\"@[a-z]+" str)
-						 (concat " " str)
-					 ;; escape all quotes with \", note this gives invalid results if some are already escaped
-					 (concat "  \"" (replace-regexp-in-string "\"" "\\\\\"" str) "\"")))
-				(; else, a puri -- wrap in angles
-				 t (concat "  " (unprefix-uri str org-link-abbrev-alist-local)))))
+  "str is wanted as an annotation value in Manchester Syntax. Expand uri, or return number, or wrap in quotes."
+                                        ; maybe this entry contains string representation of meta-annotations, remove them
+  (setq str (replace-regexp-in-string " - [^ ]+ ::.*$" "" str))
+  ;; maybe there's macros in the string, expand them
+  (if (string-match "{{{.+}}}" str)
+      (let ((omt org-macro-templates))
+        (with-temp-buffer (org-mode)
+                          (insert str) (org-macro-replace-all omt) 
+                          (setq str (buffer-string)))))
+  (cond (; a number -- return the string
+         (string-match "^[[:digit:]]+[.]?[[:digit:]]*$" str)
+         (concat "  " str))
+        (; a bare URI, which org-mode wraps in double brackets -- wrap in angles
+         (string-match "^[[][[]\\(https?[^ ]*\\)[]][]]$" str)
+         (concat "  <" (match-string 1 str) ">"))
+        (; a bare URI, but no double brackets -- wrap in angles
+         (string-match "^\\(https?[^ ]*\\)$" str)
+         (concat "  <" (match-string 1 str) ">"))
+        (; a bare URI, in angles
+         (string-match "^\\(<https?[^ ]*>\\)$" str)
+         (concat "  " (match-string 1 str)))
+        (; true -- make it an explicit boolean
+         (string-match "true" str) " \"true\"^^xsd:boolean")
+        (; false -- make it an explicit boolean
+         (string-match "false" str) " \"false\"^^xsd:boolean")
+        (; string with datatype -- return unchanged
+         (string-match "^\".*\"^^[-_[:alnum:]]*:[-_[:alnum:]]+$" str)
+         (concat "  " str))
+        (; not a puri -- normal string, wrap in quotes
+         (equal str (unprefix-uri str org-link-abbrev-alist-local))
+         ;; if a language tag @en is present, return unchanged
+         (if (string-match "\"\\(.*\n\\)*.*\"@[a-z]+" str)
+             (concat " " str)
+           ;; escape all quotes with \", note this gives invalid results if some are already escaped
+           (concat "  \"" (replace-regexp-in-string "\"" "\\\\\"" str) "\"")))
+        (; else, a puri -- wrap in angles
+         t (concat "  " (unprefix-uri str org-link-abbrev-alist-local)))))
 
 (defun omn-restriction-string (str)
-	"str is wanted as OMN value. Strip any meta-annotations. Otherwise return unchanged."
-	(setq str (replace-regexp-in-string " - [^ ]+ ::.*$" "" str))
-	str)
+  "str is wanted as OMN value. Strip any meta-annotations. Otherwise return unchanged."
+  (setq str (replace-regexp-in-string " - [^ ]+ ::.*$" "" str))
+  str)
 ;; defun-puri ends here
 
 ;; [[file:../elot-defs.org::defun-resource-headings][defun-resource-headings]]
 ; http://stackoverflow.com/questions/17179911/emacs-org-mode-tree-to-list
-  (defun org-list-siblings ()
-    "List siblings in current buffer starting at point.
-    Note, you can always (goto-char (point-min)) to collect all siblings."
-    (interactive)
-    (let (ret)
-      (unless (org-at-heading-p) 
-        (org-forward-heading-same-level nil t))
-      (while (progn
-               (unless (looking-at "[*]* *COMMENT")
-                 (setq ret
-                       (if (member "nodeclare" (org-get-tags (point) t)) ; tagged to be skipped, proceed down
-                           (cons (save-excursion
-                                           (when (org-goto-first-child)
-                                             (org-list-siblings))) ret)
-                         (cons (append (list
-                                          ; the nil t arguments for tags yes, todos no, todos no, priorities no
-                                          (substring-no-properties (org-get-heading nil t t t)))
-                                         (save-excursion
-                                           (when (org-goto-first-child)
-                                             (org-list-siblings))))
-                                 ret))))
-               (org-goto-sibling)))
-      (nreverse ret)))
+(defun org-list-siblings ()
+  "List siblings in current buffer starting at point.
+  Note, you can always (goto-char (point-min)) to collect all siblings."
+  (interactive)
+  (let (ret)
+    (unless (org-at-heading-p) 
+      (org-forward-heading-same-level nil t))
+    (while (progn
+             (unless (looking-at "[*]* *COMMENT")
+               (setq ret
+                     (if (member "nodeclare" (org-get-tags (point) t)) ; tagged to be skipped, proceed down
+                         (cons (save-excursion
+                                         (when (org-goto-first-child)
+                                           (org-list-siblings))) ret)
+                       (cons (append (list
+                                        ; the nil t arguments for tags yes, todos no, todos no, priorities no
+                                        (substring-no-properties (org-get-heading nil t t t)))
+                                       (save-excursion
+                                         (when (org-goto-first-child)
+                                           (org-list-siblings))))
+                               ret))))
+             (org-goto-sibling)))
+    (nreverse ret)))
 
-  (defun entity-from-header (str)
-  "Get an entity from a header string.
+(defun entity-from-header (str)
+"Get an entity from a header string.
 Return either a CURIE
 or a full-form URI in angle brackets)."
-  (let* ((curie-regex "[-_[:alnum:]]*:[-_[:alnum:]]*")
-         (full-uri-regex "http[s]?://[-A-Za-z0-9._~:/?#\\@!$&'()*+,;=%]*"))
-    (cond
-     ;; CURIE, beginning of line
-     ((string-match (format "^\\(%s\\)" curie-regex) str)
-      (match-string 1 str))
-     ;; CURIE in parentheses
-     ((string-match (format "(\\(%s\\))" curie-regex) str)
-      (match-string 1 str))
-     ;; single URI, beginning of line
-     ((string-match (format "^<?\\(%s\\)>?" full-uri-regex) str)
-      (format "<%s>" (match-string 1 str)))
-     ;; single URI in parentheses
-     ((string-match (format "(<?\\(%s\\)>?)" full-uri-regex) str)
-      (format "<%s>" (match-string 1 str)))
-     ;; two CURIEs in parentheses (ontology and ontology version)
-     ((string-match (format "(\\(%s\\) \\(%s\\))" curie-regex curie-regex) str)
-      (format "%s %s" (match-string 1 str) (match-string 2 str)))
-     ;; two URIs in parentheses (ontology and ontology version)
-     ((string-match (format "(<?\\(%s\\)>? <?\\(%s\\)>?)" full-uri-regex full-uri-regex) str)
-      (let ((uri1 (match-string 1 str))
-            (uri2 (match-string 2 str)))
-        (format "<%s> <%s>" uri1 uri2)))
-     (t
-      (error "Fail! Heading \"%s\" in %s is not well-formed"
-             str
-             (org-entry-get-with-inheritance "ID"))))))
+(let* ((curie-regex "[-_./[:alnum:]]*:[-_/.[:alnum:]]*")
+       (full-uri-regex "http[s]?://[-A-Za-z0-9._~:/?#\\@!$&'()*+,;=%]*"))
+  (cond
+   ;; CURIE, beginning of line
+   ((string-match (format "^\\(%s\\)" curie-regex) str)
+    (match-string 1 str))
+   ;; CURIE in parentheses
+   ((string-match (format "(\\(%s\\))" curie-regex) str)
+    (match-string 1 str))
+   ;; single URI, beginning of line
+   ((string-match (format "^<?\\(%s\\)>?" full-uri-regex) str)
+    (format "<%s>" (match-string 1 str)))
+   ;; single URI in parentheses
+   ((string-match (format "(<?\\(%s\\)>?)" full-uri-regex) str)
+    (format "<%s>" (match-string 1 str)))
+   ;; two CURIEs in parentheses (ontology and ontology version)
+   ((string-match (format "(\\(%s\\) \\(%s\\))" curie-regex curie-regex) str)
+    (format "%s %s" (match-string 1 str) (match-string 2 str)))
+   ;; CURIE, then URI in parentheses (ontology and ontology version)
+   ((string-match (format "(\\(%s\\) \\(%s\\))" curie-regex full-uri-regex) str)
+    (format "%s <%s>" (match-string 1 str) (match-string 2 str)))
+   ;; two URIs in parentheses (ontology and ontology version)
+   ((string-match (format "(<?\\(%s\\)>? <?\\(%s\\)>?)" full-uri-regex full-uri-regex) str)
+    (let ((uri1 (match-string 1 str))
+          (uri2 (match-string 2 str)))
+      (format "<%s> <%s>" uri1 uri2)))
+   (t
+    (error "Fail! Heading \"%s\" in %s is not well-formed"
+           str
+           (org-entry-get-with-inheritance "ID"))))))
 ;; defun-resource-headings ends here
 
 ;; [[file:../elot-defs.org::defun-resource-declaration][defun-resource-declaration]]
@@ -742,17 +745,17 @@ to ELOT default image (sub)directory. Return output file name."
 
 ;; [[file:../elot-defs.org::*ELOT document header][ELOT document header:1]]
 (tempo-define-template "elot-doc-header"
- '("# -*- eval: (load-library \"elot-defaults\") -*-" > n
-	"#+title: " (p "Document title: " doctitle) > n
-	"#+subtitle: An OWL ontology" > n
-	"#+author: " (p "Author name: " authname) > n
-	"#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
-  "#+call: theme-readtheorg()" n n
-	(progn (load-library "elot-defaults") (message "Loaded ELOT") "")
-	)
- "<odh"
- "ELOT document header"
- 'org-tempo-tags)
+     '("# -*- eval: (load-library \"elot-defaults\") -*-" > n
+    	"#+title: " (p "Document title: " doctitle) > n
+    	"#+subtitle: An OWL ontology" > n
+    	"#+author: " (p "Author name: " authname) > n
+    	"#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
+"#+call: theme-readtheorg()" n n
+    	(progn (load-library "elot-defaults") (message "Loaded ELOT") "")
+    	)
+     "<odh"
+     "ELOT document header"
+     'org-tempo-tags)
 ;; ELOT document header:1 ends here
 
 ;; [[file:../elot-defs.org::*ELOT ontology skeleton][ELOT ontology skeleton:1]]
