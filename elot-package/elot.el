@@ -252,7 +252,7 @@ resources if point is under a heading that declares an ontology."
           (let (ret)
             (while (let ((heading (substring-no-properties (org-get-heading nil t)))
                          (descriptions (org-descriptions-in-section)))
-                     (unless (or (string-match-p "COMMENT" heading)
+                     (unless (or (string-match-p "^COMMENT" heading)
                                  (member "nodeclare" (org-get-tags (point) t)))
                        (setq ret
                              (cons
