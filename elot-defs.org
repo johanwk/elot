@@ -933,7 +933,7 @@ replacements. /But/, this isn't usable, because the tangled ontology
 content influences position numbers /at export/.
 #+begin_src emacs-lisp :tangle no
   (save-excursion
-    (beginning-of-buffer)
+    (goto-char (point-min))
     (search-forward-regexp "* IDO Entities")
     (let* ((entry (org-element-at-point))
            (start (org-element-property :begin entry))
@@ -1370,5 +1370,7 @@ metrics.
 #+end_src
 *** End with "provides"
 #+begin_src emacs-lisp
-(provide 'elot)
+	(provide 'elot)
+
+	;;; elot.el ends here
 #+end_src
