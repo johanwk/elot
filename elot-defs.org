@@ -1373,5 +1373,5 @@ metrics.
 #+begin_src emacs-lisp :comments none
 (provide 'elot)
 ;;; elot.el ends here
-
+#+end_src
 
