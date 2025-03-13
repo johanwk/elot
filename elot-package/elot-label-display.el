@@ -301,3 +301,5 @@ used as a list of (uri, prefix) pairs"
             "Label: " elot-attriblist-ht)))
       (if selected-label
           (insert (elot-attriblist-label-value selected-label "puri"))))))
+
+(provide 'elot-label-display)
