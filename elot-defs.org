@@ -16,7 +16,7 @@ in SPARQL select results.
   ;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
   ;; URL: https://github.com/johanwk/elot
   ;; Version: 0.1-pre
-  ;; Package-Requires: ((emacs "29.2"))
+  ;; Package-Requires: ((emacs "29.2") (htmlize) (ht))
   ;; Keywords: org, ontology
 
   ;; This file is not part of GNU Emacs.
@@ -627,6 +627,7 @@ file using ROBOT.
 *** Default settings
 #+begin_src emacs-lisp :tangle ./elot-package/elot-defaults.el
   ;; default settings, replaces Local Variables block
+  (require 'ox-latex)
   (setq-local
    org-confirm-babel-evaluate nil
    org-export-allow-bind-keywords t
@@ -1369,8 +1370,8 @@ metrics.
      'org-tempo-tags)
 #+end_src
 *** End with "provides"
-#+begin_src emacs-lisp
-	(provide 'elot)
+#+begin_src emacs-lisp :comments none
+(provide 'elot)
+;;; elot.el ends here
 
-	;;; elot.el ends here
-#+end_src
+
