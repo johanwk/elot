@@ -4,12 +4,12 @@
 ** Resource declarations (exctracted from outlines)
 #+name: resource-declarations
 #+BEGIN_SRC emacs-lisp :var hierarchy="ELOT-class-hierarchy" :var owl-type="Class" :wrap "SRC omn" 
-		(resource-declarations-from-header hierarchy owl-type)
+(elot-resource-declarations-from-header hierarchy owl-type)
 #+END_SRC
 ** Resource taxonomies (exctracted from outlines)
-#+name: resource-taxonomy
+#+name: elot-resource-taxonomy
 #+BEGIN_SRC emacs-lisp :var hierarchy="ELOT-class-hierarchy" :var owl-type="Class" :var owl-relation="SubClassOf" :wrap "SRC omn" 
-(resource-taxonomy-from-header hierarchy owl-type owl-relation)
+(elot-resource-taxonomy-from-header hierarchy owl-type owl-relation)
 #+END_SRC
 ** readtheorg HTML setup file
 #+name: theme-readtheorg
@@ -170,9 +170,9 @@ ex:ArchitecturalTerms
 #+END_SRC
 To get the ttl block to process correctly: add this to startup.
 #+begin_src emacs-lisp
-(defun org-babel-execute:passthrough (body params) body)
+(defun elot-org-babel-execute:passthrough (body params) body)
 (unless (fboundp 'org-babel-execute:ttl)                
-  (defalias 'org-babel-execute:ttl 'org-babel-execute:passthrough))
+  (defalias 'org-babel-execute:ttl 'elot-org-babel-execute:passthrough))
 #+end_src
 *** Test run
 #+call: rdfpuml-block(ttlblock="example-ttl", config="rdfpuml-config", format="png") :dir ~ :cache yes

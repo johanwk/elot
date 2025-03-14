@@ -53,21 +53,21 @@
   (org-cycle-set-startup-visibility)
   (load-library "elot")
   (org-babel-lob-ingest (concat (file-name-directory (locate-library "elot")) "elot-lob.org"))
-  (update-link-abbrev)
+  (elot-update-link-abbrev)
   (add-to-list 'org-latex-classes
                '("elot-scrreprt"
                  "\\documentclass[11pt,a4paper,numbers=noenddot,twoside=false]{scrreprt}
 [DEFAULT-PACKAGES]
 [PACKAGES]
 [EXTRA]"
-                 ontology-resource-section
+                 elot-ontology-resource-section
                  ))
 (modify-syntax-entry ?\: "w")
 (modify-syntax-entry ?\_ "w")
 (add-hook 'org-babel-post-tangle-hook 'elot-tangled-omn-to-ttl
           'local) ;; make it a local hook only
 (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images 'local)
-(add-hook 'after-save-hook 'update-link-abbrev)
+(add-hook 'after-save-hook 'elot-update-link-abbrev)
 ;; the label display functions are in a separate file
 (load-library "elot-label-display.el")
 (elot-label-display-setup)
