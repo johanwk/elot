@@ -162,8 +162,7 @@ will change, so the appropriate keywords are included.
       "Types"
       "Facts"
       "HasKey"
-      "Import"
-      ))
+      "Import"))
 #+end_src
 
 We add a filter to make OMN in description lists =\ttfamily=. See the Org [[https://orgmode.org/manual/Advanced-Export-Configuration.html][manual]].
@@ -275,8 +274,8 @@ the ID string.
                               (if (elot-org-elt-exists (cdr y) 'item)
                                   (org-element-map (cdr y) 'item
                                     (lambda (z) (if (org-element-property :tag z)
-                                                    (elot-org-elt-item-str z))) nil nil 'item))
-                              ))) nil nil 'item))
+                                                    (elot-org-elt-item-str z))) nil nil 'item))))) 
+      nil nil 'item))
 
   (defun elot-org-descriptions-in-section ()
     "Return any description list items in current section as a list of strings."
@@ -324,7 +323,7 @@ the ID string.
 *** puri expansion
 #+name: src-puri-expand
 #+BEGIN_SRC emacs-lisp :results silent
-  (defconst elot-puri-re "^\\([-a-z_A-Z0-9]*\\):\\([a-z_A-Z0-9-.]*\\)$")
+  (defconst elot-puri-re "^\\([-a-z_A-Z0-9]*\\):\\([a-z_A-Z0-9.-]*\\)$")
 
   (defun elot-unprefix-uri (puri abbrev-alist)
     "Replace prefix in PURI with full form from ABBREV-ALIST, if there's a match."
@@ -353,13 +352,13 @@ the ID string.
            (string-match "^[[:digit:]]+[.]?[[:digit:]]*$" str)
            (concat "  " str))
           (; a bare URI, which org-mode wraps in double brackets -- wrap in angles
-           (string-match "^[[][[]\\(https?[^ ]*\\)[]][]]$" str)
+           (string-match "^[[][[]\\(http[^ ]*\\)[]][]]$" str)
            (concat "  <" (match-string 1 str) ">"))
           (; a bare URI, but no double brackets -- wrap in angles
-           (string-match "^\\(https?[^ ]*\\)$" str)
+           (string-match "^\\(http[^ ]*\\)$" str)
            (concat "  <" (match-string 1 str) ">"))
           (; a bare URI, in angles
-           (string-match "^\\(<https?[^ ]*>\\)$" str)
+           (string-match "^\\(<http[^ ]*>\\)$" str)
            (concat "  " (match-string 1 str)))
           (; true -- make it an explicit boolean
            (string-match "^true$" str) " \"true\"^^xsd:boolean")
@@ -508,8 +507,7 @@ annotations in a future improved version, from sub-items.
                                   (concat (elot-annotation-entries (cddr y) 4) "\n " indent))
                               (if (string-equal (car y) "Import") ; ontology import special case
                                   (elot-annotation-string-or-uri (cadr y))
-                                (elot-omn-restriction-string (cadr y)))
-                              ))
+                                (elot-omn-restriction-string (cadr y)))))
                            l-omn-entries
                            (concat "\n" indent))))))
 
@@ -536,8 +534,7 @@ annotations in a future improved version, from sub-items.
         (elot-omn-declare (car x) owl-type)
         ;; if annotations, add to the annotation block that has been started with rdfs:label
         (elot-omn-annotate x)
-        (elot-omn-restrict x)
-        ))
+        (elot-omn-restrict x)))
      l "\n"))
 
   (defun elot-resource-declarations-from-header (header-id owl-type)
@@ -559,8 +556,7 @@ annotations in a future improved version, from sub-items.
         (setq-local org-link-abbrev-alist-local
                     (mapcar (lambda (x) 
                               (cons (replace-regexp-in-string ":" "" (car x)) (cadr x)))
-            (cl-remove 'hline (org-babel-ref-resolve "prefix-table")))
-                    )))
+            (cl-remove 'hline (org-babel-ref-resolve "prefix-table"))))))
 #+end_src
 *** Make prefix blocks for omn, sparql, ttl
 #+name: src-prefix-blocks
@@ -606,8 +602,7 @@ Need to investigate how to query files for JSON /select/ results.
                     (file-name-base inputfile)
                     ".sparql"))
            (result-file
-            (concat (file-name-sans-extension inputfile) (symbol-name format)))
-           )
+            (concat (file-name-sans-extension inputfile) (symbol-name format))))
       (with-temp-file query-file (insert query))
       (elot-robot-command
        (concat "query --input " inputfile
@@ -699,9 +694,7 @@ file using ROBOT.
              "\\hypersetup{pdfborder=0 0 0,colorlinks=true}"
              "\\lstdefinelanguage{omn}{basicstyle=\\small\\ttfamily,commentstyle=\\color{gray},frame=single,breaklines=true,breakatwhitespace=true,postbreak=\\mbox{{\\color{gray}\\tiny$\\rightarrow$}},tabsize=2,comment=[l]{\\#},columns=fullflexible,}"
              "\\lstdefinelanguage{ttl}{basicstyle=\\footnotesize\\ttfamily,commentstyle=\\color{gray},frame=single,breaklines=true,breakatwhitespace=true,postbreak=\\mbox{{\\color{gray}\\tiny$\\rightarrow$}},tabsize=2,comment=[l]{\\#},columns=fullflexible,}"
-             "\\lstdefinelanguage{sparql}{basicstyle=\\footnotesize\\ttfamily,commentstyle=\\color{gray},frame=single,breaklines=true,breakatwhitespace=true,postbreak=\\mbox{{\\color{gray}\\tiny$\\rightarrow$}},tabsize=2,comment=[l]{\\#},columns=fullflexible,}"
-             ))
-   )
+             "\\lstdefinelanguage{sparql}{basicstyle=\\footnotesize\\ttfamily,commentstyle=\\color{gray},frame=single,breaklines=true,breakatwhitespace=true,postbreak=\\mbox{{\\color{gray}\\tiny$\\rightarrow$}},tabsize=2,comment=[l]{\\#},columns=fullflexible,}")))
   (progn
     (org-cycle-set-startup-visibility)
     (load-library "elot")
@@ -713,18 +706,17 @@ file using ROBOT.
   [DEFAULT-PACKAGES]
   [PACKAGES]
   [EXTRA]"
-                   elot-ontology-resource-section
-                   ))
-  (modify-syntax-entry ?\: "w")
-  (modify-syntax-entry ?\_ "w")
-  (add-hook 'org-babel-post-tangle-hook 'elot-tangled-omn-to-ttl
-            'local) ;; make it a local hook only
-  (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images 'local)
-  (add-hook 'after-save-hook 'elot-update-link-abbrev)
-  ;; the label display functions are in a separate file
-  (load-library "elot-label-display.el")
-  (elot-label-display-setup)
-  )
+                   elot-ontology-resource-section))
+    ;;
+    (modify-syntax-entry ?\: "w")
+    (modify-syntax-entry ?\_ "w")
+    (add-hook 'org-babel-post-tangle-hook 'elot-tangled-omn-to-ttl
+              'local) ;; make it a local hook only
+    (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images 'local)
+    (add-hook 'after-save-hook 'elot-update-link-abbrev)
+    ;; the label display functions are in a separate file
+    (load-library "elot-label-display.el")
+    (elot-label-display-setup))
 #+end_src
 *** Write typical class patterns
 **** one-of
@@ -811,8 +803,7 @@ ontology: for each level down we add a full stop and a space.
        ((= 1 level) "\\addchap{%s}")
        ((= 2 level) "\\addsec{%s}")
        ((= 3 level) "\\subsection*{%s}")
-       (t "\\subsubsection*{%s}"))
-      ))
+       (t "\\subsubsection*{%s}"))))
 #+end_src
 
 The function =elot-latex-filter-headline-dots= is not in use. It's for adding
@@ -831,8 +822,7 @@ useful sometime.
           (string-match "section\\(.?\\){" text)
           (replace-match (concat "section\\1{\\\\itshape{}" 
            (apply 'concat (make-list (- this-element-level 3) ".\\\\space{}")))
-                         nil nil text)
-          ))))
+                         nil nil text)))))
 #+end_src
 *** For use in org-ql
 **** Get headings without cookies
@@ -899,11 +889,9 @@ See https://emacs.stackexchange.com/questions/55231/org-mode-export-html-add-nam
                      ("iof‑av:semiFormalNaturalLanguageDefinition" . "semi-formal definition")
                      ("iof-av:semiFormalNaturalLanguageAxiom" . "semi-formal axiom")
                      ("iof-av:adaptedFrom" . "adapted from")
-                     ("iof-av:synonym" . "synonym"))
-                    ))))
+                     ("iof-av:synonym" . "synonym"))))))
             (if tag-mapped
-                (setf (plist-get (cadr item) :tag) (cdr tag-mapped)))
-            )))
+                (setf (plist-get (cadr item) :tag) (cdr tag-mapped))))))
       (unless (and item-tag-stringp
                    (or (string= item-tag "item-translate-start") (string= item-tag "item-translate-stop")))
         (org-latex-item item c info))))
@@ -1233,8 +1221,7 @@ Insert a skeleton with =<ods=.
          (save-buffer) (org-macro-initialize-templates)
          (org-cycle-set-startup-visibility)
          (goto-char (point-min))
-         (search-forward "dcterms:description :: ") (outline-show-entry) "")
-  )
+         (search-forward "dcterms:description :: ") (outline-show-entry) ""))
    "<ods"
    "ELOT ontology sections skeleton"
    'org-tempo-tags)
@@ -1257,8 +1244,7 @@ completion cookies.
      " - [ ] iof-av:naturalLanguageDefinition :: " > n
      " - [X] iof-av:isPrimitive :: true" > n
      " - [ ] iof-av:primitiveRationale :: " > n
-     " - [ ] skos:example :: " > 
-   )
+     " - [ ] skos:example :: " > )
    "<ocp"
    "ELOT primitive class with IOF-AV annotations"
    'org-tempo-tags)
@@ -1270,8 +1256,7 @@ completion cookies.
      (elot-default-prefix) ":" (p "localname: ") ") [1/4]" > n
      " - [ ] iof-av:semiFormalNaturalLanguageDefinition :: " > n
      " - [X] iof-av:isPrimitive :: false" > n
-     " - [ ] skos:example :: " > 
-   )
+     " - [ ] skos:example :: " > )
    "<ocd"
    "ELOT primitive class with IOF-AV annotations"
    'org-tempo-tags)
@@ -1282,8 +1267,7 @@ completion cookies.
      (p "Property label: ") " ("
      (elot-default-prefix) ":" (p "localname: ") ") [1/4]" > n
      " - [ ] iof-av:naturalLanguageDefinition :: " > n
-     " - [ ] skos:example :: " > 
-   )
+     " - [ ] skos:example :: " > )
    "<op"
    "ELOT primitive class with IOF-AV annotations"
    'org-tempo-tags)
@@ -1295,8 +1279,7 @@ completion cookies.
    '(
      (org-open-line 1) p
      "#+call: robot-metrics(omnfile=\"" (elot-context-localname) ".omn\") :eval never-export" > 
-     (progn (message "Execute blocks with C-c C-c") "")
-   )
+     (progn (message "Execute blocks with C-c C-c") ""))
    "<obm"
    "ELOT ontology metrics from ROBOT"
    'org-tempo-tags)
@@ -1311,8 +1294,7 @@ completion cookies.
 
     } 
   ,#+end_src" n
-     (progn (message "Execute blocks with C-c C-c") "")
-   )
+     (progn (message "Execute blocks with C-c C-c") ""))
    "<obs"
    "ELOT SPARQL SELECT from OMN "
    'org-tempo-tags)
@@ -1329,8 +1311,7 @@ completion cookies.
 
     } 
   ,#+end_src" n
-     (progn (message "Execute blocks with C-c C-c") "")
-   )
+     (progn (message "Execute blocks with C-c C-c") ""))
    "<obc"
    "ELOT SPARQL CONSTRUCT from OMN "
    'org-tempo-tags)
@@ -1342,8 +1323,7 @@ completion cookies.
      "#+call: rdfpuml-block(ttlblock=\"" (s ttl-source) "\") :eval never-export" > n
      "#+caption: " (p "Caption: ") > n
      "#+results: rdfpuml:" (s ttl-source) > n
-     (progn (message "Execute blocks with C-c C-c") "")
-   )
+     (progn (message "Execute blocks with C-c C-c") ""))
    "<obm"
    "ELOT ontology metrics from ROBOT"
    'org-tempo-tags)
@@ -1373,8 +1353,7 @@ completion cookies.
     ("obc" (tempo-template-elot-block-sparql-construct))
     ("obd" (tempo-template-elot-block-rdfpuml-diagram))
     ("odh" (tempo-template-elot-doc-header))
-    ("ods" (tempo-template-elot-ont-skeleton))
-    )
+    ("ods" (tempo-template-elot-ont-skeleton)))
 
   (define-key org-mode-map (kbd "<f4>") 'elot-hydra/body)
 #+end_src
@@ -1404,8 +1383,7 @@ metrics.
   (tempo-define-template "robot-metrics"
    '("#+call: robot-metrics(omnfile=\""
      (p "Ontology filename to read for metrics: ") "\")"
-     (progn (org-ctrl-c-ctrl-c) "")
-     )
+     (progn (org-ctrl-c-ctrl-c) ""))
      "<om"
      "ROBOT metrics"
      'org-tempo-tags)

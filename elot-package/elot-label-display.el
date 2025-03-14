@@ -1,14 +1,14 @@
 (require 'ht)
 
 (defun elot-entities-with-plist (subsection-descriptions &optional owl-type)
-  "With a list `subsection-descriptions` produced by
-`org-subsection-descriptions` and a string for `owl-type`,
-return a list of uri, label, and plist of attributes."
+  "With a list SUBSECTION-DESCRIPTIONS produced by
+`elot-org-subsection-descriptions' and a string for OWL-TYPE,
+return a list of URI, label, and plist of attributes."
   (mapcar (lambda (x)
             (let* ((owl-type (or owl-type "rdfs:Resource"))
                    (header (car x))
                    (annotations-plist (flatten-tree (cdr x)))
-                   (puri (entity-from-header header))
+                   (puri (elot-entity-from-header header))
                    (label 
                     (if (string-match "\\(.+\\) (.*)" header)
                         (match-string 1 header) puri)))
@@ -18,30 +18,30 @@ return a list of uri, label, and plist of attributes."
           subsection-descriptions))
 
 (defun elot-slurp-entities ()
-  "Read the class, property, and individual sections with `org-subsection-descriptions`
-and return a list of (uri, label, plist of attributes). Unless not in an ELOT buffer,
-then use `elot-slurp-global'"
+  "Read the class, property, and individual sections with `elot-org-subsection-descriptions'
+and return a list of (URI, label, plist of attributes). Unless not in an ELOT buffer,
+if so use `elot-slurp-global'"
   (save-excursion
     (beginning-of-buffer)
     (if (search-forward ":ELOT-context-type: ontology" nil :noerror)
         (let ((context (elot-context-localname)))
           (append
-           (org-id-goto (concat context "-class-hierarchy")) (elot-entities-with-plist (org-subsection-descriptions) "owl:Class")
-           (org-id-goto (concat context "-object-property-hierarchy")) (elot-entities-with-plist (org-subsection-descriptions) "owl:ObjectProperty")
-           (org-id-goto (concat context "-data-property-hierarchy")) (elot-entities-with-plist (org-subsection-descriptions) "owl:DatatypeProperty")
-           (org-id-goto (concat context "-annotation-property-hierarchy")) (elot-entities-with-plist (org-subsection-descriptions) "owl:AnnotationProperty")
-           (org-id-goto (concat context "-individuals")) (elot-entities-with-plist (org-subsection-descriptions) "owl:NamedIndividual")))
+           (org-id-goto (concat context "-class-hierarchy")) (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:Class")
+           (org-id-goto (concat context "-object-property-hierarchy")) (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:ObjectProperty")
+           (org-id-goto (concat context "-data-property-hierarchy")) (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:DatatypeProperty")
+           (org-id-goto (concat context "-annotation-property-hierarchy")) (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:AnnotationProperty")
+           (org-id-goto (concat context "-individuals")) (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:NamedIndividual")))
       '())))
 
 (defun elot-codelist-from-slurp (slurp)
-  "`slurp' is a list of lists made with `elot-slurp-entities'.
+  "SLURP is a list of lists made with `elot-slurp-entities'.
 Return a plist of the first two entries of each member, i.e.,
 pairs of identifiers and labels to display."
   (flatten-tree 
    (mapcar (lambda (row) (take 2 row)) slurp)))
 
 (defun elot-attriblist-from-slurp (slurp)
-  "`slurp' is a list of lists made with `elot-slurp-entities'.
+  "SLURP is a list of lists made with `elot-slurp-entities'.
 Return a plist of the second and third entries of each member:
 pairs of labels and plists of predicate--value pairs. The puri
 of the resource is added to the plist with key `\"puri\"'."
@@ -85,7 +85,7 @@ If not in an ELOT buffer, use `elot-slurp-global'"
   (plist-get (ht-get elot-attriblist-ht idstring) prop 'equal))
 
 (defvar elot-codelist-fontify-regexp
-  "\\<\\([-a-z_A-Z0-9]*\\):\\([a-z_A-Z0-9-.]*\\)\\>"
+  "\\<\\([-a-z_A-Z0-9]*\\):\\([a-z_A-Z0-9.-]*\\)\\>"
   "A regular expression used to match identifiers, for use with label-display.")
 
 (defun elot-update-codelist-fontify-regexp ()
@@ -136,7 +136,7 @@ to the font-lock list of keywords, then fontify."
 
 (defun elot-label-attribs-query (&optional filter limit)
   "SPARQL query to retrieve (id, label, list of relationships)
-for all resources. Optional `filter' is merged into the query."
+for all resources. Optional FILTER and LIMIT is merged into the query."
   (concat
    (elot-prefix-block-from-alist org-link-abbrev-alist-local 'sparql)
    "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -165,8 +165,8 @@ select distinct ?id ?label ?plist
                     (if (stringp limit) limit (number-to-string limit) )))))
 
 (defun elot-retrieve-prefixes (url)
-  "Given a SPARQL endpoint url or ontology filename, return the prefixes 
-used as a list of (uri, prefix) pairs"
+  "URI is a SPARQL endpoint URL or ontology filename.  Return the prefixes 
+in the query result as a list of (uri, prefix) pairs."
   (let ((empty-construct-qry "construct where {?x ?y ?z} limit 0")
         (format ""))
     (with-temp-buffer
@@ -185,7 +185,7 @@ used as a list of (uri, prefix) pairs"
                   :test #'equal)))))
 
 (defun elot-replace-strings (str pairs)
-  "`pairs' is a list of pairs of strings to replace in string `str'."
+  "PAIRS is a list of pairs of strings to replace in string STR."
   (seq-reduce
    (lambda (s pair)
      (string-replace (car pair) (cdr pair) s))
@@ -193,8 +193,8 @@ used as a list of (uri, prefix) pairs"
    str))
 
 (defun elot-retrieve-labels-plist (url out-file &optional filter limit)
-  "Query `url' with SPARQL for labels and attributes, output to 
-`out-file' as an elisp list"
+  "Query URL with SPARQL for labels and attributes, optionally with FILTER and LIMIT. 
+Output to OUT-FILE as an elisp list."
   (let ((labels-qry (elot-label-attribs-query filter limit))
         (format "application/sparql-results+json"))
     (with-temp-buffer
@@ -221,7 +221,7 @@ used as a list of (uri, prefix) pairs"
 ;;(elot-retrieve-labels-plist "https://www.qudt.org/fuseki/qudt/sparql" "~/tmp/qudttest.el")
 
 (defun elot-read-slurp-global (&rest file-l)
-  "`file-l' is a list of files holding elisp lists for label-display"
+  "FILE-L is a list of files holding elisp lists for label-display."
   (let ((out))
     (cl-loop for l in file-l do
              (setq out 
@@ -250,8 +250,7 @@ used as a list of (uri, prefix) pairs"
     (help-at-pt-set-timer)))
 
 (defun elot-toggle-label-display ()
-  "Toggle between showing curie or `rdfs:label`, using
-`elot-label-display`"
+  "Toggle between showing curie or rdfs:label, using `elot-label-display'."
   (interactive)
   (with-silent-modifications
     (if (local-variable-p 'elot-label-display)
@@ -277,8 +276,7 @@ used as a list of (uri, prefix) pairs"
                             (plist-get attrib-plist "dcterms:description" 'string=)
                             (plist-get attrib-plist "rdfs:comment" 'string=)
                             "")
-                        120)))
-           )
+                        120))))
       (concat 
        ;; pad annotations to col 35
        (make-string (max (- 35 (length label)) 0) 32)

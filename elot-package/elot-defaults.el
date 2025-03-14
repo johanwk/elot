@@ -46,9 +46,7 @@
            "\\hypersetup{pdfborder=0 0 0,colorlinks=true}"
            "\\lstdefinelanguage{omn}{basicstyle=\\small\\ttfamily,commentstyle=\\color{gray},frame=single,breaklines=true,breakatwhitespace=true,postbreak=\\mbox{{\\color{gray}\\tiny$\\rightarrow$}},tabsize=2,comment=[l]{\\#},columns=fullflexible,}"
            "\\lstdefinelanguage{ttl}{basicstyle=\\footnotesize\\ttfamily,commentstyle=\\color{gray},frame=single,breaklines=true,breakatwhitespace=true,postbreak=\\mbox{{\\color{gray}\\tiny$\\rightarrow$}},tabsize=2,comment=[l]{\\#},columns=fullflexible,}"
-           "\\lstdefinelanguage{sparql}{basicstyle=\\footnotesize\\ttfamily,commentstyle=\\color{gray},frame=single,breaklines=true,breakatwhitespace=true,postbreak=\\mbox{{\\color{gray}\\tiny$\\rightarrow$}},tabsize=2,comment=[l]{\\#},columns=fullflexible,}"
-           ))
- )
+           "\\lstdefinelanguage{sparql}{basicstyle=\\footnotesize\\ttfamily,commentstyle=\\color{gray},frame=single,breaklines=true,breakatwhitespace=true,postbreak=\\mbox{{\\color{gray}\\tiny$\\rightarrow$}},tabsize=2,comment=[l]{\\#},columns=fullflexible,}")))
 (progn
   (org-cycle-set-startup-visibility)
   (load-library "elot")
@@ -60,16 +58,15 @@
 [DEFAULT-PACKAGES]
 [PACKAGES]
 [EXTRA]"
-                 elot-ontology-resource-section
-                 ))
-(modify-syntax-entry ?\: "w")
-(modify-syntax-entry ?\_ "w")
-(add-hook 'org-babel-post-tangle-hook 'elot-tangled-omn-to-ttl
-          'local) ;; make it a local hook only
-(add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images 'local)
-(add-hook 'after-save-hook 'elot-update-link-abbrev)
-;; the label display functions are in a separate file
-(load-library "elot-label-display.el")
-(elot-label-display-setup)
-)
+                 elot-ontology-resource-section))
+  ;;
+  (modify-syntax-entry ?\: "w")
+  (modify-syntax-entry ?\_ "w")
+  (add-hook 'org-babel-post-tangle-hook 'elot-tangled-omn-to-ttl
+            'local) ;; make it a local hook only
+  (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images 'local)
+  (add-hook 'after-save-hook 'elot-update-link-abbrev)
+  ;; the label display functions are in a separate file
+  (load-library "elot-label-display.el")
+  (elot-label-display-setup))
 ;; src-defaults ends here
