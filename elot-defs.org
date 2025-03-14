@@ -373,30 +373,30 @@ lists. We use nested lists in order to allow for annotation of
 annotations in a future improved version, from sub-items.
 #+name: defun-resource-headings
 #+BEGIN_SRC emacs-lisp :results silent
-  ; http://stackoverflow.com/questions/17179911/emacs-org-mode-tree-to-list
-  (defun org-list-siblings ()
-    "List siblings in current buffer starting at point.
-    Note, you can always (goto-char (point-min)) to collect all siblings."
-    (interactive)
-    (let (ret)
-      (unless (org-at-heading-p) 
-        (org-forward-heading-same-level nil t))
-      (while (progn
-               (unless (looking-at "[*]* *COMMENT")
-                 (setq ret
-                       (if (member "nodeclare" (org-get-tags (point) t)) ; tagged to be skipped, proceed down
-                           (cons (save-excursion
-                                           (when (org-goto-first-child)
-                                             (org-list-siblings))) ret)
-                         (cons (append (list
-                                          ; the nil t arguments for tags yes, todos no, todos no, priorities no
-                                          (substring-no-properties (org-get-heading nil t t t)))
-                                         (save-excursion
-                                           (when (org-goto-first-child)
-                                             (org-list-siblings))))
-                                 ret))))
-               (org-goto-sibling)))
-      (nreverse ret)))
+; http://stackoverflow.com/questions/17179911/emacs-org-mode-tree-to-list
+(defun org-list-siblings ()
+  "List siblings in current buffer starting at point.
+  Note, you can always (goto-char (point-min)) to collect all siblings."
+  (interactive)
+  (let (ret)
+    (unless (org-at-heading-p) 
+      (org-forward-heading-same-level nil t))
+    (while (progn
+             (unless (looking-at "[*]* *COMMENT")
+               (setq ret
+                     (if (member "nodeclare" (org-get-tags (point) t)) ; tagged to be skipped, proceed down
+                         (cons (save-excursion
+                                         (when (org-goto-first-child)
+                                           (org-list-siblings))) ret)
+                       (cons (append (list
+                                        ; the nil t arguments for tags yes, todos no, todos no, priorities no
+                                        (substring-no-properties (org-get-heading nil t t t)))
+                                       (save-excursion
+                                         (when (org-goto-first-child)
+                                           (org-list-siblings))))
+                               ret))))
+             (org-goto-sibling)))
+    (nreverse ret)))
 
 (defun entity-from-header (str)
 "Get an entity from a header string.
