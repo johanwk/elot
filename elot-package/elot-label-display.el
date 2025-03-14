@@ -1,9 +1,51 @@
-(require 'ht)
+;;; elot-label-display.el --- Emacs Literate Ontology Tool (ELOT): Label display   -*- lexical-binding: t; no-native-compile: t; -*-
+
+;; Copyright (C) 2024, 2025 Johan W. Klüwer
+
+;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
+;; URL: https://github.com/johanwk/elot
+;; Version: 0.1-pre
+;; Package-Requires: ((emacs "29.2") (elot))
+;; Keywords: tools convenience
+
+;; This file is not part of GNU Emacs.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; Collect pairs of resource identifiers and readable labels.
+;; Allow for switching between displaying identifiers and labels.
+
+;;;; Usage
+
+;; ... switch with elot-toggle-label-display ... 
+;; ... look up identifiers with elot-label-lookup ...
+
+;; The latest version is available at:
+;;
+;;        <https://github.com/johanwk/elot>
+;;
+
+;;; Code:
+
+(require 'elot)
 
 (defun elot-entities-with-plist (subsection-descriptions &optional owl-type)
-  "With a list SUBSECTION-DESCRIPTIONS produced by
-`elot-org-subsection-descriptions' and a string for OWL-TYPE,
-return a list of URI, label, and plist of attributes."
+  "Return a list of URI, label, and plist of attributes for a resource.
+Arguments are a list SUBSECTION-DESCRIPTIONS produced by
+`elot-org-subsection-descriptions' and a string for OWL-TYPE."
   (mapcar (lambda (x)
             (let* ((owl-type (or owl-type "rdfs:Resource"))
                    (header (car x))
@@ -18,9 +60,10 @@ return a list of URI, label, and plist of attributes."
           subsection-descriptions))
 
 (defun elot-slurp-entities ()
-  "Read the class, property, and individual sections with `elot-org-subsection-descriptions'
-and return a list of (URI, label, plist of attributes). Unless not in an ELOT buffer,
-if so use `elot-slurp-global'"
+  "Return a list of lists (URI, label, plist of attributes).
+Uses `elot-org-subsection-descriptions' to read class, property, and 
+individual sections from an ELOT buffer.  If not in an ELOT buffer,
+read using `elot-slurp-global'"
   (save-excursion
     (beginning-of-buffer)
     (if (search-forward ":ELOT-context-type: ontology" nil :noerror)
@@ -34,17 +77,17 @@ if so use `elot-slurp-global'"
       '())))
 
 (defun elot-codelist-from-slurp (slurp)
-  "SLURP is a list of lists made with `elot-slurp-entities'.
-Return a plist of the first two entries of each member, i.e.,
-pairs of identifiers and labels to display."
+  "Return a plist of the first two entries of each member of SLURP.
+SLURP is a list of lists made with `elot-slurp-entities'.
+The result is a plist of pairs of identifiers and labels to display."
   (flatten-tree 
    (mapcar (lambda (row) (take 2 row)) slurp)))
 
 (defun elot-attriblist-from-slurp (slurp)
-  "SLURP is a list of lists made with `elot-slurp-entities'.
-Return a plist of the second and third entries of each member:
-pairs of labels and plists of predicate--value pairs. The puri
-of the resource is added to the plist with key `\"puri\"'."
+  "Return a plist of the second and third entries of each member of SLURP.
+SLURP is a list of lists made with `elot-slurp-entities'.  The result is
+a plist of pairs of labels and plists of predicate--value pairs. The
+identifier puri of the resource is added to the plist with key `\"puri\"'."
    (mapcar (lambda (row) (cons (cadr row) 
                                (append `("puri" ,(car row))
                                        (caddr row)))) 
@@ -63,9 +106,9 @@ Each member is a list of curie, label, and plist of attributes.")
   "Value says `no' or `yes' to showing labels for RDF resources")
 
 (defun elot-slurp-to-vars ()
-  "Read resources declared in ELOT buffer into local variables
-`elot-slurp' (plist) and `elot-codelist-ht', `elot-attriblist-ht' (hashtable).
-If not in an ELOT buffer, use `elot-slurp-global'"
+  "Read resources declared in ELOT buffer into local variables.
+The variables are ELOT-SLURP (plist) and ELOT-CODELIST-HT, 
+ELOT-ATTRIBLIST-HT (hashtable).  Outside ELOT buffers, use ELOT-SLURP-GLOBAL."
   (let ((slurp (elot-slurp-entities)))
     (setq elot-slurp (or slurp elot-slurp-global))
     (setq elot-codelist-ht
@@ -78,10 +121,10 @@ If not in an ELOT buffer, use `elot-slurp-global'"
                       (append slurp elot-slurp-global))))))
 
 (defun elot-codelist-id-label (idstring)
-  "Given curie `idstring`, return label if found"
+  "Given curie IDSTRING, return label if found."
   (ht-get elot-codelist-ht idstring))
 (defun elot-attriblist-label-value (idstring prop)
-  "Given `label' and `prop', return puri if found"
+  "Given label IDSTRING and PROP, return puri if found."
   (plist-get (ht-get elot-attriblist-ht idstring) prop 'equal))
 
 (defvar elot-codelist-fontify-regexp
@@ -94,7 +137,7 @@ If not in an ELOT buffer, use `elot-slurp-global'"
             (regexp-opt
              (flatten-tree 
               (mapcar (lambda (row) (car row)) elot-slurp))))
-    (error "List of resources `elot-slurp` is missing, can't make regexp")))
+    (error "List of resources `elot-slurp' is missing, can't make regexp")))
 
 (defvar elot-fontify-keyword nil
   "Variable holding font-lock pattern.")
@@ -122,8 +165,8 @@ If not in an ELOT buffer, use `elot-slurp-global'"
                                        'face 'italic)))))))))
 
 (defun elot-add-label-fontification ()
- "Add label fontification (as given in elot-fontify-keyword) 
-to the font-lock list of keywords, then fontify."
+ "Add label fontification to the font-lock list of keywords, then fontify.
+The list of keywords is in `elot-fontify-keyword'."
  (progn
    (with-silent-modifications ;; don't mark as edited
      (font-lock-add-keywords 
@@ -132,11 +175,12 @@ to the font-lock list of keywords, then fontify."
    (font-lock-fontify-buffer)))
 
 (defun elot-remove-prop-display () 
+  "Remove fontification added by `elot-label-display'."
   (remove-text-properties (point-min) (point-max) '(elot-label-display nil)))
 
 (defun elot-label-attribs-query (&optional filter limit)
-  "SPARQL query to retrieve (id, label, list of relationships)
-for all resources. Optional FILTER and LIMIT is merged into the query."
+  "SPARQL query to retrieve (id, label, list of relationships).
+Query resources, optionally with FILTER and LIMIT merged into the query."
   (concat
    (elot-prefix-block-from-alist org-link-abbrev-alist-local 'sparql)
    "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -164,16 +208,17 @@ select distinct ?id ?label ?plist
   (if limit (concat "\nlimit " 
                     (if (stringp limit) limit (number-to-string limit) )))))
 
-(defun elot-retrieve-prefixes (url)
-  "URI is a SPARQL endpoint URL or ontology filename.  Return the prefixes 
-in the query result as a list of (uri, prefix) pairs."
+(defun elot-retrieve-prefixes (uri)
+  "Query with SPARQL and return the prefixes.
+Prefixes in the query result are returned as a list of (uri, prefix) pairs.
+URI is a SPARQL endpoint URL or ontology filename."
   (let ((empty-construct-qry "construct where {?x ?y ?z} limit 0")
         (format ""))
     (with-temp-buffer
       ;; reusing from ELOT customized org-babel-execute:sparql
-      (if (string-match-p "^http" url)  ;; querying an endpoint, or a file?
-          (sparql-execute-query empty-construct-qry url format t)
-        (elot-robot-execute-query empty-construct-qry url 'ttl))
+      (if (string-match-p "^http" uri)  ;; querying an endpoint, or a file?
+          (sparql-execute-query empty-construct-qry uri format t)
+        (elot-robot-execute-query empty-construct-qry uri 'ttl))
       (mapcar 
        (lambda (x)
          (string-match "^\\([^ ]*:\\).*<\\([^>]+\\)>" x)
@@ -232,6 +277,7 @@ Output to OUT-FILE as an elisp list."
     (setq elot-slurp-global out)))
 
 (defun elot-label-display-setup ()
+  "Read identifier-label pairs and initialise label-display."
   (interactive)
   (progn
     (elot-slurp-to-vars)
@@ -250,7 +296,7 @@ Output to OUT-FILE as an elisp list."
     (help-at-pt-set-timer)))
 
 (defun elot-toggle-label-display ()
-  "Toggle between showing curie or rdfs:label, using `elot-label-display'."
+  "Toggle between showing identifier or rdfs:label, using `elot-label-display'."
   (interactive)
   (with-silent-modifications
     (if (local-variable-p 'elot-label-display)
@@ -267,25 +313,26 @@ Output to OUT-FILE as an elisp list."
 (add-hook 'after-save-hook #'elot-slurp-to-vars nil :local)
 
 (defun elot-label-lookup-annotations (label)
-    (let* ((attrib-plist (ht-get tmp-elot-attriblist-ht label))
-           (rdf-type (plist-get attrib-plist "rdf:type" 'string=))
-           (prefix (car (split-string (plist-get attrib-plist "puri" 'string=) ":")))
-           (definition (string-replace "\n" " " (string-limit
-                        (or (plist-get attrib-plist "iof-av:naturalLanguageDefinition" 'string=)
-                            (plist-get attrib-plist "skos:definition" 'string=)
-                            (plist-get attrib-plist "dcterms:description" 'string=)
-                            (plist-get attrib-plist "rdfs:comment" 'string=)
-                            "")
-                        120))))
-      (concat 
-       ;; pad annotations to col 35
-       (make-string (max (- 35 (length label)) 0) 32)
-       "  " 
-       prefix
-       (make-string (max (- 10 (length prefix)) 0) 32)
-       rdf-type
-       (make-string (max (- 24 (length rdf-type)) 0) 32)
-       definition)))
+  (let* ((attrib-plist (ht-get tmp-elot-attriblist-ht label))
+         (rdf-type (plist-get attrib-plist "rdf:type" 'string=))
+         (prefix (car (split-string (plist-get attrib-plist "puri" 'string=) ":")))
+         (definition (string-replace "\n" " " (string-limit
+                                               (or (plist-get attrib-plist "iof-av:naturalLanguageDefinition" 'string=)
+                                                   (plist-get attrib-plist "skos:definition" 'string=)
+                                                   (plist-get attrib-plist "dcterms:description" 'string=)
+                                                   (plist-get attrib-plist "rdfs:comment" 'string=)
+                                                   "")
+                                               120)))
+         )
+    (concat 
+     ;; pad annotations to col 35
+     (make-string (max (- 35 (length label)) 0) 32)
+     "  " 
+     prefix
+     (make-string (max (- 10 (length prefix)) 0) 32)
+     rdf-type
+     (make-string (max (- 24 (length rdf-type)) 0) 32)
+     definition)))
 
 (defun elot-label-lookup ()
   (interactive)
@@ -299,3 +346,6 @@ Output to OUT-FILE as an elisp list."
             "Label: " elot-attriblist-ht)))
       (if selected-label
           (insert (elot-attriblist-label-value selected-label "puri"))))))
+
+(provide 'elot-label-display)
+;;; elot-label-display.el ends here
