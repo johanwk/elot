@@ -1,5 +1,6 @@
-;; [[file:../elot-defs.org::*Default settings][Default settings:1]]
+;; [[file:../elot-defs.org::src-defaults][src-defaults]]
 ;; default settings, replaces Local Variables block
+(require 'ox-latex)
 (setq-local
  org-confirm-babel-evaluate nil
  org-export-allow-bind-keywords t
@@ -71,4 +72,4 @@
 (load-library "elot-label-display.el")
 (elot-label-display-setup)
 )
-;; Default settings:1 ends here
+;; src-defaults ends here

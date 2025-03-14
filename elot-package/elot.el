@@ -1,11 +1,11 @@
 ;;; elot.el --- Emacs Literate Ontology Tool (ELOT)   -*- lexical-binding: t; no-native-compile: t; -*-
 
-;; Copyright (C) 2024 Johan W. Klüwer
+;; Copyright (C) 2024, 2025 Johan W. Klüwer
 
 ;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
 ;; URL: https://github.com/johanwk/elot
 ;; Version: 0.1-pre
-;; Package-Requires: ((emacs "29.2"))
+;; Package-Requires: ((emacs "29.2") (htmlize) (ht))
 ;; Keywords: org, ontology
 
 ;; This file is not part of GNU Emacs.
@@ -47,7 +47,7 @@
 
 ;; ... create a new file, use <template inserting function> to insert a template ontology ...
 
-;; [[file:../elot-defs.org::*Setting for post-processing with ROBOT, rdfpuml][Setting for post-processing with ROBOT, rdfpuml:1]]
+;; [[file:../elot-defs.org::src-settings-externals][src-settings-externals]]
 (defgroup elot 
   nil
   "Customization group for ELOT")
@@ -108,9 +108,9 @@ skinparam classAttributeIconSize 0"
   :type 'string)
 (defun elot-rdfpuml-command (ttl-file)
   (shell-command (concat elot-rdfpuml-command-str " " ttl-file)))
-;; Setting for post-processing with ROBOT, rdfpuml:1 ends here
+;; src-settings-externals ends here
 
-;; [[file:../elot-defs.org::*OMN keywords][OMN keywords:1]]
+;; [[file:../elot-defs.org::src-omn-keywords][src-omn-keywords]]
 (defvar elot-omn-property-keywords
 '(
     "EquivalentTo"
@@ -129,9 +129,9 @@ skinparam classAttributeIconSize 0"
     "HasKey"
     "Import"
     ))
-;; OMN keywords:1 ends here
+;; src-omn-keywords ends here
 
-;; [[file:../elot-defs.org::*OMN keywords][OMN keywords:2]]
+;; [[file:../elot-defs.org::src-omn-latex-tt][src-omn-latex-tt]]
 (defun elot-latex-filter-omn-item (text backend info)
   "Format OMN content in description lists"
   (when (org-export-derived-backend-p backend 'latex)
@@ -155,9 +155,9 @@ skinparam classAttributeIconSize 0"
 
 (add-to-list 'org-export-filter-item-functions
            'elot-latex-filter-omn-item)
-;; OMN keywords:2 ends here
+;; src-omn-latex-tt ends here
 
-;; [[file:../elot-defs.org::*Context identification][Context identification:1]]
+;; [[file:../elot-defs.org::src-context-info][src-context-info]]
 (defun elot-context-type ()
   "Retrieve value of property ELOT-context-type for a governing
 heading. This will return \"ontology\" if point is under a
@@ -179,9 +179,9 @@ resources if point is under a heading that declares an ontology."
          (org-entry-get-with-inheritance "ID")))
     (and (string-match-p "-hierarchy$" this-ID)
          this-ID)))
-;; Context identification:1 ends here
+;; src-context-info ends here
 
-;; [[file:../elot-defs.org::*Looking at][Looking at:1]]
+;; [[file:../elot-defs.org::src-looking-at][src-looking-at]]
 (defun elot-at-ontology-heading ()
   "Return TRUE if point is in a heading that declares ontology"
   (let ((id (or (org-entry-get (point) "ID") "")))
@@ -192,9 +192,9 @@ resources if point is under a heading that declares an ontology."
 (defun elot-in-property-tree ()
   "Return TRUE if point is a property hierarchy heading"
   (string-match-p "property-hierarchy" (elot-governing-hierarchy)))
-;; Looking at:1 ends here
+;; src-looking-at ends here
 
-;; [[file:../elot-defs.org::defun-desc-lists][defun-desc-lists]]
+;; [[file:../elot-defs.org::src-desc-lists][src-desc-lists]]
 (defun org-elt-exists (x elt)
   (org-element-map x elt #'identity))
 (defun org-elt-item-tag-str (x)
@@ -262,9 +262,9 @@ resources if point is under a heading that declares an ontology."
                               ret)))
                      (outline-next-heading)))
             (nreverse ret))))))
-;; defun-desc-lists ends here
+;; src-desc-lists ends here
 
-;; [[file:../elot-defs.org::defun-puri][defun-puri]]
+;; [[file:../elot-defs.org::src-puri-expand][src-puri-expand]]
 (defconst puri-re "^\\([-a-z_A-Z0-9]*\\):\\([a-z_A-Z0-9-.]*\\)$")
 
 (defun unprefix-uri (puri abbrev-alist)
@@ -322,9 +322,9 @@ resources if point is under a heading that declares an ontology."
   "str is wanted as OMN value. Strip any meta-annotations. Otherwise return unchanged."
   (setq str (replace-regexp-in-string " - [^ ]+ ::.*$" "" str))
   str)
-;; defun-puri ends here
+;; src-puri-expand ends here
 
-;; [[file:../elot-defs.org::defun-resource-headings][defun-resource-headings]]
+;; [[file:../elot-defs.org::src-heading-to-list][src-heading-to-list]]
 ; http://stackoverflow.com/questions/17179911/emacs-org-mode-tree-to-list
 (defun org-list-siblings ()
   "List siblings in current buffer starting at point.
@@ -386,9 +386,9 @@ or a full-form URI in angle brackets)."
     (error "Fail! Heading \"%s\" in %s is not well-formed"
            str
            (org-entry-get-with-inheritance "ID"))))))
-;; defun-resource-headings ends here
+;; src-heading-to-list ends here
 
-;; [[file:../elot-defs.org::defun-resource-declaration][defun-resource-declaration]]
+;; [[file:../elot-defs.org::src-resource-declare][src-resource-declare]]
 (defun omn-declare (str owl-type)
   "Given a string STR and an OWL type owl-type, write a Manchester Syntax entity declaration. Add rdfs:label annotation. If a parenthesis is given, use that as resource id."
   ;; check whether we have a label and a resource in parentheses
@@ -474,9 +474,9 @@ or a full-form URI in angle brackets)."
           (resource-declarations entity-l owl-type)
         "## (none)"))))
 ;;(cdr (org-subsection-descriptions))))
-;; defun-resource-declaration ends here
+;; src-resource-declare ends here
 
-;; [[file:../elot-defs.org::*Update link alist from prefix-table][Update link alist from prefix-table:1]]
+;; [[file:../elot-defs.org::src-prefix-links][src-prefix-links]]
 (defun update-link-abbrev ()
   (if (save-excursion (goto-char (point-min))
                       (re-search-forward "^#[+]name: prefix-table$" nil t))
@@ -485,9 +485,9 @@ or a full-form URI in angle brackets)."
                             (cons (replace-regexp-in-string ":" "" (car x)) (cadr x)))
           (cl-remove 'hline (org-babel-ref-resolve "prefix-table")))
                   )))
-;; Update link alist from prefix-table:1 ends here
+;; src-prefix-links ends here
 
-;; [[file:../elot-defs.org::*Make prefix blocks for omn, sparql, ttl][Make prefix blocks for omn, sparql, ttl:1]]
+;; [[file:../elot-defs.org::src-prefix-blocks][src-prefix-blocks]]
 (defun elot-prefix-block-from-alist (prefixes format)
   "`prefixes' is an alist of prefixes, from an org-mode table or 
 the standard `org-link-abbrev-alist' or `org-link-abbrev-alist-local'. 
@@ -511,9 +511,9 @@ Return a string declaring prefixes."
                    (cdr prefixes)
                  prefixes)
                  "\n")))
-;; Make prefix blocks for omn, sparql, ttl:1 ends here
+;; src-prefix-blocks ends here
 
-;; [[file:../elot-defs.org::*Execute sparql using ROBOT][Execute sparql using ROBOT:1]]
+;; [[file:../elot-defs.org::src-robot-query][src-robot-query]]
 (defun elot-robot-execute-query (query inputfile format)
   "Execute sparql query `query' with ROBOT on ontology file
 `inputfile'. `format' is `'csv' for tabular results, or `'ttl'
@@ -532,9 +532,9 @@ for RDF results in Turtle."
              " --query " query-file
              " " result-file))
     (insert-file-contents result-file)))
-;; Execute sparql using ROBOT:1 ends here
+;; src-robot-query ends here
 
-;; [[file:../elot-defs.org::*Execute sparql using ROBOT][Execute sparql using ROBOT:2]]
+;; [[file:../elot-defs.org::src-sparql-exec-patch][src-sparql-exec-patch]]
 (defun org-babel-execute:sparql (body params)
   "Execute a block containing a SPARQL query with org-babel.
 This function is called by `org-babel-execute-src-block'.
@@ -560,9 +560,9 @@ The function has been patched for ELOT to allow query with ROBOT."
         (if (string-equal "text/csv" format)
             (org-babel-sparql-convert-to-table)
           (buffer-string))))))
-;; Execute sparql using ROBOT:2 ends here
+;; src-sparql-exec-patch ends here
 
-;; [[file:../elot-defs.org::defun-class-patterns][defun-class-patterns]]
+;; [[file:../elot-defs.org::src-write-class][src-write-class]]
 (defun class-oneof-from-header (l)
   "L a list of class resources like ((super (((sub) (sub) ... (sub)))))."
   (let ((owl-type "Class") (owl-subclause "SubClassOf"))
@@ -579,9 +579,9 @@ The function has been patched for ELOT to allow query with ROBOT."
             (mapconcat (lambda (x)
                          (entity-from-header (car x)))
                        (cdr l) ", ")))
-;; defun-class-patterns ends here
+;; src-write-class ends here
 
-;; [[file:../elot-defs.org::defun-resource-taxonomy][defun-resource-taxonomy]]
+;; [[file:../elot-defs.org::src-write-taxonomy][src-write-taxonomy]]
 (defun org-tags-in-string (str)
   "Return list of any tags in org-mode :asdf:lksjdf: from STR"
   (if (string-match ".*\\W+:\\(.*\\):" str)
@@ -613,9 +613,9 @@ The function has been patched for ELOT to allow query with ROBOT."
         (let ((hierarchy-l (org-list-siblings)))
           (resource-taxonomy-from-l hierarchy-l owl-type owl-relation))
       (concat "## no " owl-type "taxonomy"))))
-;; defun-resource-taxonomy ends here
+;; src-write-taxonomy ends here
 
-;; [[file:../elot-defs.org::defun-latex-export][defun-latex-export]]
+;; [[file:../elot-defs.org::src-latex-section-export][src-latex-section-export]]
 (defun ontology-resource-section (level numbered-p)
   (if numbered-p
     (cond 
@@ -632,15 +632,15 @@ The function has been patched for ELOT to allow query with ROBOT."
      ((= 3 level) "\\subsection*{%s}")
      (t "\\subsubsection*{%s}"))
     ))
-;; defun-latex-export ends here
+;; src-latex-section-export ends here
 
-;; [[file:../elot-defs.org::defun-get-heading-nocookie][defun-get-heading-nocookie]]
+;; [[file:../elot-defs.org::src-get-heading-nocookie][src-get-heading-nocookie]]
 (defun org-get-heading-nocookie (&optional no-tags no-todo no-priority no-comment)
   (replace-regexp-in-string " \\[[[:digit:]/%]+\\]$" ""
                             (org-get-heading no-tags no-todo no-priority no-comment)))
-;; defun-get-heading-nocookie ends here
+;; src-get-heading-nocookie ends here
 
-;; [[file:../elot-defs.org::defun-get-description-entry][defun-get-description-entry]]
+;; [[file:../elot-defs.org::src-get-description-entry][src-get-description-entry]]
 (defun org-get-description-entry (tag)
   (save-excursion
     (if (search-forward-regexp tag nil t)
@@ -649,11 +649,10 @@ The function has been patched for ELOT to allow query with ROBOT."
                (end (org-element-property :contents-end element))
                (entry-text (buffer-substring-no-properties beg end)))
            (replace-regexp-in-string "\n\s*" " " entry-text)))))
-;; defun-get-description-entry ends here
+;; src-get-description-entry ends here
 
-;; [[file:../elot-defs.org::defun-ELOT-latex-derived-backend][defun-ELOT-latex-derived-backend]]
-;; see https://emacs.stackexchange.com/questions/55231/org-mode-export-html-add-name-attirbute-to-checkbox-input
-  (org-export-define-derived-backend 'ELOT-latex 'latex
+;; [[file:../elot-defs.org::src-latex-export-replacenames][src-latex-export-replacenames]]
+(org-export-define-derived-backend 'ELOT-latex 'latex
     :translate-alist '((item . my-item-translator)))
   (defvar item-process nil)
 
@@ -692,15 +691,15 @@ The function has been patched for ELOT to allow query with ROBOT."
     (unless (and item-tag-stringp
                  (or (string= item-tag "item-translate-start") (string= item-tag "item-translate-stop")))
       (org-latex-item item c info))))
-;; defun-ELOT-latex-derived-backend ends here
+;; src-latex-export-replacenames ends here
 
-;; [[file:../elot-defs.org::*Passthrough execute for ttl blocks][Passthrough execute for ttl blocks:1]]
+;; [[file:../elot-defs.org::src-babel-passthrough][src-babel-passthrough]]
 (defun org-babel-execute:passthrough (body params) body)
 (unless (fboundp 'org-babel-execute:ttl)                
   (defalias 'org-babel-execute:ttl 'org-babel-execute:passthrough))
-;; Passthrough execute for ttl blocks:1 ends here
+;; src-babel-passthrough ends here
 
-;; [[file:../elot-defs.org::*Execute rdfpuml on Turtle content][Execute rdfpuml on Turtle content:1]]
+;; [[file:../elot-defs.org::src-rdfpuml-execute][src-rdfpuml-execute]]
 (defun elot-rdfpuml-execute (ttl &optional prefixes config add-options epilogue)
   "Run rdfpuml on Turtle RDF content and return PlantUML code. 
 `ttl' is a Turtle string, `prefixes' optional prefix block, 
@@ -727,9 +726,9 @@ The function has been patched for ELOT to allow query with ROBOT."
       (if epilogue (replace-string "@enduml"
                                    (concat epilogue "\n" "@enduml"))))
     output-puml-file))
-;; Execute rdfpuml on Turtle content:1 ends here
+;; src-rdfpuml-execute ends here
 
-;; [[file:../elot-defs.org::*Execute rdfpuml on Turtle content][Execute rdfpuml on Turtle content:2]]
+;; [[file:../elot-defs.org::src-plantuml-execute][src-plantuml-execute]]
 (defun elot-plantuml-execute (puml-file output-name format)
   "With PlantUML, read `puml-file' and output `output-name'.`format'
 to ELOT default image (sub)directory. Return output file name."
@@ -743,9 +742,9 @@ to ELOT default image (sub)directory. Return output file name."
      (concat "java -jar " org-plantuml-jar-path " -t" format " " puml-file))
     (copy-file tmp-output-file output-file :allow-overwrite)
     output-file))
-;; Execute rdfpuml on Turtle content:2 ends here
+;; src-plantuml-execute ends here
 
-;; [[file:../elot-defs.org::*ELOT document header][ELOT document header:1]]
+;; [[file:../elot-defs.org::src-tempo-docheader][src-tempo-docheader]]
 (tempo-define-template "elot-doc-header"
      '("# -*- eval: (load-library \"elot-defaults\") -*-" > n
     	"#+title: " (p "Document title: " doctitle) > n
@@ -758,9 +757,9 @@ to ELOT default image (sub)directory. Return output file name."
      "<odh"
      "ELOT document header"
      'org-tempo-tags)
-;; ELOT document header:1 ends here
+;; src-tempo-docheader ends here
 
-;; [[file:../elot-defs.org::*ELOT ontology skeleton][ELOT ontology skeleton:1]]
+;; [[file:../elot-defs.org::src-tempo-ontology][src-tempo-ontology]]
 (tempo-define-template
  "elot-ont-skeleton"
  '(n > "* " (p "Ontology identifier localname: " ontlocalname) > n
@@ -943,9 +942,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  "<ods"
  "ELOT ontology sections skeleton"
  'org-tempo-tags)
-;; ELOT ontology skeleton:1 ends here
+;; src-tempo-ontology ends here
 
-;; [[file:../elot-defs.org::*OWL primitive/non-primitive class, with IOF default annotations][OWL primitive/non-primitive class, with IOF default annotations:1]]
+;; [[file:../elot-defs.org::src-tempo-resource][src-tempo-resource]]
 (tempo-define-template "elot-class-iof-primitive"
  '(
    (org-open-line 1)
@@ -985,9 +984,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  "<op"
  "ELOT primitive class with IOF-AV annotations"
  'org-tempo-tags)
-;; OWL primitive/non-primitive class, with IOF default annotations:1 ends here
+;; src-tempo-resource ends here
 
-;; [[file:../elot-defs.org::*Code blocks][Code blocks:1]]
+;; [[file:../elot-defs.org::src-tempo-codeblock][src-tempo-codeblock]]
 (tempo-define-template "elot-block-robot-metrics"
  '(
    (org-open-line 1) p
@@ -1044,9 +1043,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  "<obm"
  "ELOT ontology metrics from ROBOT"
  'org-tempo-tags)
-;; Code blocks:1 ends here
+;; src-tempo-codeblock ends here
 
-;; [[file:../elot-defs.org::*Hydra interface F4][Hydra interface F4:1]]
+;; [[file:../elot-defs.org::src-hydra-menu][src-hydra-menu]]
 (defhydra hydra-elot (:color blue :hint nil)
   "
  --- ELOT helpdesk --- press F5 to toggle labels ---
@@ -1073,9 +1072,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
   )
 
 (define-key org-mode-map (kbd "<f4>") 'hydra-elot/body)
-;; Hydra interface F4:1 ends here
+;; src-hydra-menu ends here
 
-;; [[file:../elot-defs.org::*Read tsv into org table][Read tsv into org table:1]]
+;; [[file:../elot-defs.org::src-tsv-table][src-tsv-table]]
 (defun elot-tsv-to-table (filename)
   (let* ((lines (with-temp-buffer
                  (insert-file-contents filename)
@@ -1085,9 +1084,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
                 (lambda (line) (split-string line "\t"))
                 (butlast (cdr lines)))))  ;; check this is ok
     (cons header (cons 'hline body))))
-;; Read tsv into org table:1 ends here
+;; src-tsv-table ends here
 
-;; [[file:../elot-defs.org::*ROBOT metrics][ROBOT metrics:1]]
+;; [[file:../elot-defs.org::src-robot-metrics][src-robot-metrics]]
 (tempo-define-template "robot-metrics"
  '("#+call: robot-metrics(omnfile=\""
    (p "Ontology filename to read for metrics: ") "\")"
@@ -1096,8 +1095,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
    "<om"
    "ROBOT metrics"
    'org-tempo-tags)
-;; ROBOT metrics:1 ends here
+;; src-robot-metrics ends here
 
-;; [[file:../elot-defs.org::*End with "provides"][End with "provides":1]]
 (provide 'elot)
-;; End with "provides":1 ends here
+;;; elot.el ends here

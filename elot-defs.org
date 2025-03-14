@@ -8,6 +8,7 @@ Block native compilation with ~no-native-compile: t;~. This (apparently)
 allows for local variables to be accessed -- relevant for
 ~org-link-abbrev-alist-local~, which is needed for abbreviation of URIs
 in SPARQL select results.
+#+name: src-package-header
 #+begin_src emacs-lisp :comments nil
   ;;; elot.el --- Emacs Literate Ontology Tool (ELOT)   -*- lexical-binding: t; no-native-compile: t; -*-
 
