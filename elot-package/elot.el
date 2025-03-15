@@ -155,7 +155,7 @@ Target output type BACKEND in context INFO."
                     "\\\\item[\\\\normalfont\\\\ttfamily\\\\small \\1]"
                     text))
         ;; make the list entry content omn inline code unless it's a url
-        (if (not (string-match "\\url{.*}$" text))
+        (if (not (string-match "\\\\url{.*}$" text))
             (replace-regexp-in-string
              "^\\(.*\\] \\)\\(.*\\)"
              "\\1\\\\lstinline[language=omn]{\\2}"
@@ -170,7 +170,7 @@ Target output type BACKEND in context INFO."
 ;; [[file:../elot-defs.org::src-context-info][src-context-info]]
 (defun elot-context-type ()
   "Retrieve value of property ELOT-context-type for a governing heading.
-This will return \"ontology\" if point is under a heading that 
+This will return \"ontology\" if point is under a heading that
 declares an ontology."
   (org-entry-get-with-inheritance "ELOT-context-type"))
 (defun elot-context-localname ()
@@ -221,8 +221,7 @@ if point is under a heading that declares an ontology."
                                     (org-element-interpret-data y)))
                        nil nil 'plain-list)))))
 (defun elot-org-elt-item-str (x)
-  "For an item X in an org-element-map, the tag and the paragraph content
-as a pair of strings."
+  "For X in an org-element-map, return pair of strings (tag, paragraph content)."
   (list (elot-org-elt-item-tag-str x) (elot-org-elt-item-pars-str x)))
 (defun elot-org-descriptions-in-section-helper ()
   (org-element-map (org-element-parse-buffer) 'item
@@ -293,8 +292,8 @@ of description-list items and values."
       puri)))
 
 (defun elot-annotation-string-or-uri (str)
-  "STR is wanted as an annotation value in Manchester Syntax.  Expand uri,
-or return number, or wrap in quotes."
+  "Expand STR to be used as an annotation value in Manchester Syntax.
+Expand uri, or return number, or wrap in quotes."
   ;; maybe this entry contains string representation of meta-annotations, remove them
   (setq str (replace-regexp-in-string " - [^ ]+ ::.*$" "" str))
   ;; maybe there's macros in the string, expand them
@@ -402,9 +401,9 @@ Note, you can always (goto-char (point-min)) to collect all siblings."
 
 ;; [[file:../elot-defs.org::src-resource-declare][src-resource-declare]]
 (defun elot-omn-declare (str owl-type)
-  "Given a string STR and an OWL type OWL-TYPE, write a Manchester Syntax
-entity declaration.  Add rdfs:label annotation.  If a parenthesis is
-given, use that as resource id."
+  "Declare entity from header content STR as an OWL-TYPE, in Manchester Syntax.
+Add rdfs:label annotation. If the identifier is inside parentheses, use
+that as resource id."
   ;; check whether we have a label and a resource in parentheses
   (let* ((suri (elot-entity-from-header str)))
     (concat owl-type ": " suri)))
@@ -502,10 +501,10 @@ Syntax vocabulary and use as such."
 
 ;; [[file:../elot-defs.org::src-prefix-blocks][src-prefix-blocks]]
 (defun elot-prefix-block-from-alist (prefixes format)
-  "`prefixes' is an alist of prefixes, from an org-mode table or 
-the standard `org-link-abbrev-alist' or `org-link-abbrev-alist-local'. 
-`format' is a symbol, either `'omn', `'sparql', or `'ttl'.
-Return a string declaring prefixes."
+  "Return a prefix block from PREFIXES for use with filetype FORMAT.
+PREFIXES is an alist of prefixes, from an Org table or 
+the standard ORG-LINK-ABBREV-ALIST or ORG-LINK-ABBREV-ALIST-LOCAL. 
+FORMAT is a symbol, either `omn', `sparql', or `ttl'."
   (let ((format-str
          (cond
           ((eq format 'omn) "Prefix: %-5s <%s>")
@@ -594,7 +593,7 @@ The function has been patched for ELOT to allow query with ROBOT."
 
 ;; [[file:../elot-defs.org::src-write-taxonomy][src-write-taxonomy]]
 (defun elot-org-tags-in-string (str)
-  "Return list of any tags in org-mode :asdf:lksjdf: from STR"
+  "Return list of any tags from Org heading contents STR."
   (if (string-match ".*\\W+:\\(.*\\):" str)
       (split-string (match-string 1 str) ":")))
 
@@ -703,9 +702,22 @@ The function has been patched for ELOT to allow query with ROBOT."
 ;; src-latex-export-replacenames ends here
 
 ;; [[file:../elot-defs.org::src-babel-passthrough][src-babel-passthrough]]
-(defun elot-org-babel-execute:passthrough (body params) body)
-(unless (fboundp 'org-babel-execute:ttl)                
-  (defalias 'org-babel-execute:ttl 'elot-org-babel-execute:passthrough))
+(defun elot-org-babel-execute-passthrough (body params) 
+  "Return BODY unchanged when executing an Org Babel block.
+
+This function is used to define a passthrough execution behavior 
+for Org Babel blocks with the language `ttl'. It ensures that 
+the contents of a `#+begin_src ttl' block are returned as-is, 
+without any processing or transformation.
+
+This is useful for passing Turtle (TTL) content to other source 
+blocks without modification.
+
+PARAMS is ignored."
+  body)
+
+(unless (fboundp 'org-babel-execute:ttl)
+  (defalias 'org-babel-execute:ttl 'elot-org-babel-execute-passthrough))
 ;; src-babel-passthrough ends here
 
 ;; [[file:../elot-defs.org::src-rdfpuml-execute][src-rdfpuml-execute]]
@@ -739,8 +751,8 @@ EPILOGUE extra PlantUML clauses."
 
 ;; [[file:../elot-defs.org::src-plantuml-execute][src-plantuml-execute]]
 (defun elot-plantuml-execute (puml-file output-name format)
-  "With PlantUML, read PUML-FILE and write file OUTPUT-NAME.FORMAT
-to ELOT default image (sub)directory.  Return output file name."
+  "With PlantUML, read PUML-FILE and write image file to OUTPUT-NAME.FORMAT.
+The file is stored in the ELOT default image directory.  Return output file name."
   (if (or (string= org-plantuml-jar-path "") (not (file-exists-p org-plantuml-jar-path)))
     (error "PlantUML not found.  Set org-plantuml-jar-path with M-x customize-variable"))
   (let ((tmp-output-file (concat (file-name-sans-extension puml-file) "." format))
@@ -1073,7 +1085,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
   ("odh" (tempo-template-elot-doc-header))
   ("ods" (tempo-template-elot-ont-skeleton)))
 
-(define-key org-mode-map (kbd "<f4>") 'elot-hydra/body)
+;; The key <f4> is assigned to elot-hydra in elot-defaults.el
 ;; src-hydra-menu ends here
 
 ;; [[file:../elot-defs.org::src-tsv-table][src-tsv-table]]

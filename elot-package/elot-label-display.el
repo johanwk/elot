@@ -288,7 +288,6 @@ Output to OUT-FILE as an elisp list."
     (elot-add-label-fontification)
     (make-local-variable 'elot-label-display)
     (setq elot-label-display 'on)
-    (local-set-key (kbd "<f5>") #'elot-toggle-label-display)
     ;; use minibuffer to display info about identifier at point.
     ;; set, then activate.
     (setq help-at-pt-display-when-idle t)

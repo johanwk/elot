@@ -102,7 +102,9 @@
   (add-hook 'after-save-hook 'elot-update-link-abbrev)
   ;; the label display functions are in a separate file
   (load-library "elot-label-display")
-  (elot-label-display-setup))
+  (elot-label-display-setup)
+  (local-set-key (kbd "<f4>") #'elot-hydra/body)
+  (local-set-key (kbd "<f5>") #'elot-toggle-label-display))
 ;; src-settings-defaults ends here
 
 (provide 'elot-defaults)

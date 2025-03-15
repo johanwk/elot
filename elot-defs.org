@@ -206,7 +206,7 @@ etc.).
 #+begin_src emacs-lisp
   (defun elot-context-type ()
     "Retrieve value of property ELOT-context-type for a governing heading.
-  This will return \"ontology\" if point is under a heading that 
+  This will return \"ontology\" if point is under a heading that
   declares an ontology."
     (org-entry-get-with-inheritance "ELOT-context-type"))
   (defun elot-context-localname ()
@@ -264,8 +264,7 @@ the ID string.
                                       (org-element-interpret-data y)))
                          nil nil 'plain-list)))))
   (defun elot-org-elt-item-str (x)
-    "For an item X in an org-element-map, the tag and the paragraph content
-  as a pair of strings."
+    "For X in an org-element-map, return pair of strings (tag, paragraph content)."
     (list (elot-org-elt-item-tag-str x) (elot-org-elt-item-pars-str x)))
   (defun elot-org-descriptions-in-section-helper ()
     (org-element-map (org-element-parse-buffer) 'item
@@ -338,8 +337,8 @@ the ID string.
         puri)))
 
   (defun elot-annotation-string-or-uri (str)
-    "STR is wanted as an annotation value in Manchester Syntax.  Expand uri,
-  or return number, or wrap in quotes."
+    "Expand STR to be used as an annotation value in Manchester Syntax.
+  Expand uri, or return number, or wrap in quotes."
     ;; maybe this entry contains string representation of meta-annotations, remove them
     (setq str (replace-regexp-in-string " - [^ ]+ ::.*$" "" str))
     ;; maybe there's macros in the string, expand them
@@ -460,9 +459,9 @@ annotations in a future improved version, from sub-items.
 #+name: src-resource-declare
 #+BEGIN_SRC emacs-lisp :results silent
   (defun elot-omn-declare (str owl-type)
-    "Given a string STR and an OWL type OWL-TYPE, write a Manchester Syntax
-  entity declaration.  Add rdfs:label annotation.  If a parenthesis is
-  given, use that as resource id."
+    "Declare entity from header content STR as an OWL-TYPE, in Manchester Syntax.
+  Add rdfs:label annotation. If the identifier is inside parentheses, use
+  that as resource id."
     ;; check whether we have a label and a resource in parentheses
     (let* ((suri (elot-entity-from-header str)))
       (concat owl-type ": " suri)))
@@ -562,10 +561,10 @@ annotations in a future improved version, from sub-items.
 #+name: src-prefix-blocks
 #+begin_src emacs-lisp
   (defun elot-prefix-block-from-alist (prefixes format)
-    "`prefixes' is an alist of prefixes, from an org-mode table or 
-  the standard `org-link-abbrev-alist' or `org-link-abbrev-alist-local'. 
-  `format' is a symbol, either `'omn', `'sparql', or `'ttl'.
-  Return a string declaring prefixes."
+    "Return a prefix block from PREFIXES for use with filetype FORMAT.
+  PREFIXES is an alist of prefixes, from an Org table or 
+  the standard ORG-LINK-ABBREV-ALIST or ORG-LINK-ABBREV-ALIST-LOCAL. 
+  FORMAT is a symbol, either `omn', `sparql', or `ttl'."
     (let ((format-str
            (cond
             ((eq format 'omn) "Prefix: %-5s <%s>")
@@ -676,7 +675,7 @@ function =elot-class-disjoint-from-header= is intended to be used in
 #+name: src-write-taxonomy
 #+BEGIN_SRC emacs-lisp :results silent
   (defun elot-org-tags-in-string (str)
-    "Return list of any tags in org-mode :asdf:lksjdf: from STR"
+    "Return list of any tags from Org heading contents STR."
     (if (string-match ".*\\W+:\\(.*\\):" str)
         (split-string (match-string 1 str) ":")))
 
@@ -892,9 +891,22 @@ content influences position numbers /at export/.
 To get the ttl block to process correctly, for rdfpuml use.
 #+name: src-babel-passthrough
 #+begin_src emacs-lisp
-(defun elot-org-babel-execute:passthrough (body params) body)
-(unless (fboundp 'org-babel-execute:ttl)                
-  (defalias 'org-babel-execute:ttl 'elot-org-babel-execute:passthrough))
+  (defun elot-org-babel-execute-passthrough (body params)
+    "Return BODY unchanged when executing an Org Babel block.
+
+  This function is used to define a passthrough execution behavior
+  for Org Babel blocks with the language `ttl'. It ensures that
+  the contents of a `#+begin_src ttl' block are returned as-is,
+  without any processing or transformation.
+
+  This is useful for passing Turtle (TTL) content to other source
+  blocks without modification.
+
+  PARAMS is ignored."
+    body)
+
+  (unless (fboundp 'org-babel-execute:ttl)
+    (defalias 'org-babel-execute:ttl 'elot-org-babel-execute-passthrough))
 #+end_src
 
 *** Execute rdfpuml on Turtle content
@@ -936,8 +948,8 @@ placed in the default ELOT directory, and the filename returned.
 #+name: src-plantuml-execute
 #+begin_src emacs-lisp :results silent
   (defun elot-plantuml-execute (puml-file output-name format)
-    "With PlantUML, read PUML-FILE and write file OUTPUT-NAME.FORMAT
-  to ELOT default image (sub)directory.  Return output file name."
+    "With PlantUML, read PUML-FILE and write image file to OUTPUT-NAME.FORMAT.
+  The file is stored in the ELOT default image directory.  Return output file name."
     (if (or (string= org-plantuml-jar-path "") (not (file-exists-p org-plantuml-jar-path)))
       (error "PlantUML not found.  Set org-plantuml-jar-path with M-x customize-variable"))
     (let ((tmp-output-file (concat (file-name-sans-extension puml-file) "." format))
@@ -1281,7 +1293,7 @@ completion cookies.
     ("odh" (tempo-template-elot-doc-header))
     ("ods" (tempo-template-elot-ont-skeleton)))
 
-  (define-key org-mode-map (kbd "<f4>") 'elot-hydra/body)
+  ;; The key <f4> is assigned to elot-hydra in elot-defaults.el
 #+end_src
 
 #+RESULTS:
@@ -1435,7 +1447,9 @@ metrics.
     (add-hook 'after-save-hook 'elot-update-link-abbrev)
     ;; the label display functions are in a separate file
     (load-library "elot-label-display")
-    (elot-label-display-setup))
+    (elot-label-display-setup)
+    (local-set-key (kbd "<f4>") #'elot-hydra/body)
+    (local-set-key (kbd "<f5>") #'elot-toggle-label-display))
 #+end_src
 *** End with "provides"
 #+name: src-provide-library
