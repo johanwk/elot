@@ -5,8 +5,8 @@
 ;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
 ;; URL: https://github.com/johanwk/elot
 ;; Version: 0.1-pre
-;; Package-Requires: ((emacs "29.2") (htmlize) (ht))
-;; Keywords: org, ontology, languages, outlines, tools
+;; Package-Requires: ((emacs "29.1") (htmlize) (ht))
+;; Keywords: languages outlines tools org ontology
 
 ;; This file is not part of GNU Emacs.
 
