@@ -182,7 +182,7 @@ We add a filter to make OMN in description lists =\ttfamily=. See the Org [[http
                       "\\\\item[\\\\normalfont\\\\ttfamily\\\\small \\1]"
                       text))
           ;; make the list entry content omn inline code unless it's a url
-          (if (not (string-match "\\url{.*}$" text))
+          (if (not (string-match "\\\\url{.*}$" text))
               (replace-regexp-in-string
                "^\\(.*\\] \\)\\(.*\\)"
                "\\1\\\\lstinline[language=omn]{\\2}"
