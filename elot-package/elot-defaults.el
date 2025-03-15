@@ -4,9 +4,6 @@
 
 ;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
 ;; URL: https://github.com/johanwk/elot
-;; Version: 0.1-pre
-;; Package-Requires: ((emacs "29.1"))
-;; Keywords: languages outlines tools org ontology
 
 ;; This file is not part of GNU Emacs.
 
@@ -28,7 +25,7 @@
 ;; Default startup settings for ELOT.
 ;;
 ;; This file is intended to be loaded when an ELOT org-mode file is
-;; opened. To achieve this, add the following text to the first line
+;; opened.  To achieve this, add the following text to the first line
 ;; of the ELOT file:
 ;;
 ;;   # -*- eval: (load-library "elot-defaults") -*-
@@ -57,7 +54,7 @@
  org-export-with-section-numbers 8  ; deep numbering
  org-latex-default-class "elot-scrreprt"
  org-latex-packages-alist
- (append org-latex-packages-alist 
+ (append org-latex-packages-alist
          '(("" "svg" t)
            ("" "enumitem" t)
            "\\setlist[description]{font=\\normalfont\\itshape\\space}"

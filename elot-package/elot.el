@@ -55,7 +55,7 @@
 ;;; Code:
 
 ;; [[file:../elot-defs.org::src-settings-externals][src-settings-externals]]
-(defgroup elot 
+(defgroup elot
   nil
   "Customization group for Emacs Literate Ontology Tool (ELOT)."
   :prefix "elot-"
@@ -69,7 +69,7 @@
   (concat "java -jar " elot-robot-jar-path))
 (defun elot-robot-command (cmd)
   (if (or (string= elot-robot-jar-path "") (not (file-exists-p elot-robot-jar-path)))
-      (error "ROBOT not found.  Set elot-robot-jar-path with M-x customize-variable."))
+      (error "ROBOT not found.  Set elot-robot-jar-path with M-x customize-variable"))
   (shell-command (concat elot-robot-command-str " " cmd)))
 (defun elot-robot-omn-to-ttl (omnfile)
   "Call ROBOT to make a Turtle file from OMNFILE."

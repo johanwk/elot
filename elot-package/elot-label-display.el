@@ -4,9 +4,6 @@
 
 ;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
 ;; URL: https://github.com/johanwk/elot
-;; Version: 0.1-pre
-;; Package-Requires: ((emacs "29.1"))
-;; Keywords: tools convenience
 
 ;; This file is not part of GNU Emacs.
 
@@ -30,7 +27,7 @@
 
 ;;;; Usage
 
-;; ... switch with elot-toggle-label-display ... 
+;; ... switch with elot-toggle-label-display ...
 ;; ... look up identifiers with elot-label-lookup ...
 
 ;; The latest version is available at:
@@ -318,7 +315,7 @@ Output to OUT-FILE as an elisp list."
   "Temporary storage for attribute list during label lookup.")
 
 (defun elot-label-lookup-annotations (label)
-  "Helper function for `elot-label-lookup' provides preview string for LABEL"
+  "Helper function for `elot-label-lookup' provides preview string for LABEL."
   (let* ((attrib-plist (ht-get elot-label-lookup-tmp-attriblist-ht label))
          (rdf-type (plist-get attrib-plist "rdf:type" 'string=))
          (prefix (car (split-string (plist-get attrib-plist "puri" 'string=) ":")))
@@ -340,7 +337,7 @@ Output to OUT-FILE as an elisp list."
      definition)))
 
 (defun elot-label-lookup ()
-  "Interactive lookup of resource identifier, with completion"
+  "Interactive lookup of resource identifier, with completion."
   (interactive)
   (let ((completion-extra-properties 
          (append completion-extra-properties 
