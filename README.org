@@ -5,7 +5,9 @@
 This repository contains a template for writing OWL ontologies as
 [[https://orgmode.org/][Org Mode]] documents, with supporting functions and scripts.
 
-*NEW* March 2025: Convert OWL files to ELOT's org-mode format, see [[https://github.com/johanwk/elot/releases][releases]]
+*NEW* March 2025: Convert OWL files to ELOT's org-mode format. Download
+the ~jar~ binary from [[https://github.com/johanwk/elot/releases][releases]], store as ~elot-exporter.jar~ in your ~bin/~
+and open existing OWL files with function ~elot-open-owl~.
 
 Check out the files =pizza.org=, =bfo-core.org=, =maintenance.org= for example ELOT files.
 
