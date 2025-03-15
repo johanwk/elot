@@ -729,7 +729,7 @@ Used in `elot-my-item-translator'.")
 
 (defun elot-my-item-translator (item c info)
   "Translator for LaTeX export, replace RDF identifiers with simpler labels.
-This makes for more readable output in description lists. A list serves
+This makes for more readable output in description lists.  A list serves
 to map selected annotation properties to shorter labels.  For example,
 `iof-av:explanatoryNote' will be replaced by `explanatory note'.
 
@@ -783,7 +783,7 @@ conducted."
   "Return BODY unchanged when executing an Org Babel block.
 
 This function is used to define a passthrough execution behavior
-for Org Babel blocks with the language `ttl'. It ensures that
+for Org Babel blocks with the language `ttl'.  It ensures that
 the contents of a `#+begin_src ttl' block are returned as-is,
 without any processing or transformation.
 
