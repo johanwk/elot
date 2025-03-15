@@ -1000,32 +1000,35 @@ Function =elot-rdfpuml-execute= takes a Turtle /string/ plus options, runs
 rdfpuml, and returns the filename of the resulting PlantUML file.
 #+name: src-rdfpuml-execute
 #+begin_src emacs-lisp
-(defun elot-rdfpuml-execute (ttl &optional prefixes config add-options epilogue)
-  "Run rdfpuml on Turtle RDF content and return PlantUML code.
-TTL is a Turtle string, PREFIXES optional prefix block,
-CONFIG optional Turtle for rdfpuml configuration,
-ADD-OPTIONS a string of PlantUML options added to rdfpuml defaults,
-EPILOGUE extra PlantUML clauses."
-  (let* ((options-str
-         (if add-options
-             (concat "[] puml:options \"\"\""
-                     elot-rdfpuml-options "\n"
-                     add-options
-                     "\n\"\"\".\n")))
-        (input-ttl-file (org-babel-temp-file "rdfpuml-" ".ttl"))
-        (output-puml-file (concat (file-name-sans-extension input-ttl-file) ".puml")))
-    (with-temp-file input-ttl-file
-      (insert (mapconcat 'identity
-                         (list prefixes ttl config options-str) "\n")))
-    ;; apparently prefixes.ttl is needed to reside in current dir, will overwrite
-    (if prefixes (with-temp-file "prefixes.ttl"
-                   (insert prefixes "\n")))
-    (elot-rdfpuml-command input-ttl-file)
-    (with-temp-file output-puml-file
-      (insert-file-contents output-puml-file)
-      (if epilogue (replace-string "@enduml"
-                                   (concat epilogue "\n" "@enduml"))))
-    output-puml-file))
+  (defun elot-rdfpuml-execute (ttl &optional prefixes config add-options epilogue)
+    "Run rdfpuml on Turtle RDF content and return PlantUML code.
+  TTL is a Turtle string, PREFIXES optional prefix block,
+  CONFIG optional Turtle for rdfpuml configuration,
+  ADD-OPTIONS a string of PlantUML options added to rdfpuml defaults,
+  EPILOGUE extra PlantUML clauses."
+    (let* ((options-str
+           (if add-options
+               (concat "[] puml:options \"\"\""
+                       elot-rdfpuml-options "\n"
+                       add-options
+                       "\n\"\"\".\n")))
+          (input-ttl-file (org-babel-temp-file "rdfpuml-" ".ttl"))
+          (output-puml-file (concat (file-name-sans-extension input-ttl-file) ".puml")))
+      (with-temp-file input-ttl-file
+        (insert (mapconcat 'identity
+                           (list prefixes ttl config options-str) "\n")))
+      ;; apparently prefixes.ttl is needed to reside in current dir, will overwrite
+      (if prefixes (with-temp-file "prefixes.ttl"
+                     (insert prefixes "\n")))
+      (elot-rdfpuml-command input-ttl-file)
+      (with-temp-file output-puml-file
+        (insert-file-contents output-puml-file)
+        (when epilogue
+          (save-excursion
+            (goto-char (point-min))
+            (while (search-forward "@enduml" nil t)
+              (replace-match (concat epilogue "\n@enduml") t t)))))
+      output-puml-file))
 #+end_src
 
 Function =elot-plantuml-execute= takes a PlantUML filename, plus name

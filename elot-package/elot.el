@@ -829,8 +829,11 @@ EPILOGUE extra PlantUML clauses."
     (elot-rdfpuml-command input-ttl-file)
     (with-temp-file output-puml-file
       (insert-file-contents output-puml-file)
-      (if epilogue (replace-string "@enduml"
-                                   (concat epilogue "\n" "@enduml"))))
+      (when epilogue
+        (save-excursion
+          (goto-char (point-min))
+          (while (search-forward "@enduml" nil t)
+            (replace-match (concat epilogue "\n@enduml") t t)))))
     output-puml-file))
 ;; src-rdfpuml-execute ends here
 
