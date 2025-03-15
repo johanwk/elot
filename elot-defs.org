@@ -84,8 +84,9 @@ tangling to OMN.
   (defvar elot-robot-command-str
     (concat "java -jar " elot-robot-jar-path))
   (defun elot-robot-command (cmd)
-    "Check whether `elot-robot-jar-path` is set and points to an existing file.
-  Returns non-nil if the path is valid, otherwise nil."
+    "Execute ROBOT command CMD using `shell-command'.
+  Check whether `elot-robot-jar-path` is set and points to an existing file.
+  It not set, return an error."
     (if (or (string= elot-robot-jar-path "") (not (file-exists-p elot-robot-jar-path)))
         (error "ROBOT not found.  Set elot-robot-jar-path with M-x customize-variable"))
     (shell-command (concat elot-robot-command-str " " cmd)))
@@ -272,6 +273,9 @@ the ID string.
     "For X in an org-element-map, return pair of strings (tag, paragraph content)."
     (list (elot-org-elt-item-tag-str x) (elot-org-elt-item-pars-str x)))
   (defun elot-org-descriptions-in-section-helper ()
+    "Return all description list items as pairs in a list.
+  This function is called from `elot-org-descriptions-in-section' after
+  narrowing to a description list under a heading."
     (org-element-map (org-element-parse-buffer) 'item
       (lambda (y) (if (org-element-property :tag y)
                       (append (elot-org-elt-item-str y)
@@ -478,8 +482,8 @@ annotations in a future improved version, from sub-items.
   (defun elot-annotation-entries (l &optional sep)
     "Return a list of puri--string pairs, with optional meta-annotations.
   L is a list of puri--string pairs, each perhaps with a trailing list of
-  similar, meta-annotation pairs. SEP is a number used to build a string
-  of spaces for line indentation. Ensures consistent spacing in formatted
+  similar, meta-annotation pairs.  SEP is a number used to build a string
+  of spaces for line indentation.  Ensures consistent spacing in formatted
   output."
     (let ((indent (make-string (if sep (* 2 sep) 6) ?\ ))
           ;; l-uri-entries is the description list after purging any
@@ -502,7 +506,7 @@ annotations in a future improved version, from sub-items.
                            (concat ",\n " indent))))))
 
   (defun elot-restriction-entries (l)
-    "Write Manchester Syntax restrictions. L is a list of puri--string pairs.
+    "Write Manchester Syntax restrictions.  L is a list of puri--string pairs.
   Add annotations on the restriction axioms if present.
   Special treatment for `Import' on an ontology resource."
     (let ((indent (make-string 2 ?\ ))
@@ -713,9 +717,11 @@ function =elot-class-disjoint-from-header= is intended to be used in
 
   (defun elot-resource-taxonomy-from-l (l owl-type owl-subclause)
     "Helper function for `elot-resource-taxonomy-from-header'.
-  Recursively go through the list, outputting subtype axioms.
-  Process any `oneof' and `disjont' Org tags on each header, calling 
-  `elot-class-oneof-from-header' or elot-class-disjoint-from-header'."
+  Recursively go through the list L, outputting subtype axioms for OWL
+  entity type OWL-TYPE and subrelation OWL-SUBCLAUSE.
+
+  Process any `oneof' and `disjont' Org tags on each header, calling
+  `elot-class-oneof-from-header' or `elot-class-disjoint-from-header'."
     (if (listp (car l))
         (mapconcat (lambda (x) (elot-resource-taxonomy-from-l x owl-type owl-subclause)) l "")
       (if (and (stringp (car l)) (stringp (caadr l)))
@@ -739,7 +745,7 @@ function =elot-class-disjoint-from-header= is intended to be used in
   `elot-lob.org' named `resource-taxonomy'.
 
   HEADER-ID is an org location id, OWL-TYPE is `Class', `ObjectProperty',
-  `DataProperty', `AnnotationProperty', or `Individual'. OWL-RELATION is
+  `DataProperty', `AnnotationProperty', or `Individual'.  OWL-RELATION is
   `SubClassOf' or `SubPropertyOf'.
 
   The org location id, embedded in the `PROPERTIES' drawer for each OWL
@@ -846,13 +852,17 @@ See https://emacs.stackexchange.com/questions/55231/org-mode-export-html-add-nam
   (defun elot-my-item-translator (item c info)
     "Translator for LaTeX export, replace RDF identifiers with simpler labels.
   This makes for more readable output in description lists. A list serves
-  to map selected annotation properties to shorter labels. For example, 
+  to map selected annotation properties to shorter labels.  For example,
   `iof-av:explanatoryNote' will be replaced by `explanatory note'.
+
+  ITEM is an entry in a description list.  C is the contents of the item.
+  INFO is a plist holding contextual information.  See the documentation
+  for `org-latex-item'.
 
   Translation is turned on when the magic value `item-translate-start' is
   found in a description list, and off when `item-translate-stop' is found.
 
-  This function is a workaround. It relies on magic strings because
+  This function is a workaround.  It relies on magic strings because
   positions in the buffer are unpredictable while the export is being
   conducted."
     (let* ((item-tag-maybe (car (org-element-property :tag item)))
