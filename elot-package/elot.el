@@ -68,6 +68,8 @@
 (defvar elot-robot-command-str
   (concat "java -jar " elot-robot-jar-path))
 (defun elot-robot-command (cmd)
+  "Check whether `elot-robot-jar-path` is set and points to an existing file.
+Returns non-nil if the path is valid, otherwise nil."
   (if (or (string= elot-robot-jar-path "") (not (file-exists-p elot-robot-jar-path)))
       (error "ROBOT not found.  Set elot-robot-jar-path with M-x customize-variable"))
   (shell-command (concat elot-robot-command-str " " cmd)))
@@ -206,78 +208,81 @@ if point is under a heading that declares an ontology."
 
 ;; [[file:../elot-defs.org::src-desc-lists][src-desc-lists]]
 (defun elot-org-elt-exists (x elt)
-    (org-element-map x elt #'identity))
-  (defun elot-org-elt-item-tag-str (x)
-    "For an item X in an org-element-map, return the item tag."
-    (if (org-element-property :tag x)
-        (substring-no-properties (org-element-interpret-data (org-element-property :tag x)))))
-  (defun elot-org-elt-item-pars-str (x)
-    "For an item X in an org-element-map, return the paragraphs as one string."
-    (replace-regexp-in-string "\\([^
-  ]\\)\n[ \t]*" "\\1 "
-   (string-trim (apply 'concat
-                       (org-element-map x '(paragraph plain-list)
-                         (lambda (y) (substring-no-properties
-                                      (org-element-interpret-data y)))
-                         nil nil 'plain-list)))))
-  (defun elot-org-elt-item-str (x)
-    "For X in an org-element-map, return pair of strings (tag, paragraph content)."
-    (list (elot-org-elt-item-tag-str x) (elot-org-elt-item-pars-str x)))
-  (defun elot-org-descriptions-in-section-helper ()
-    (org-element-map (org-element-parse-buffer) 'item
-      (lambda (y) (if (org-element-property :tag y)
-                      (append (elot-org-elt-item-str y)
-                              (if (elot-org-elt-exists (cdr y) 'item)
-                                  (org-element-map (cdr y) 'item
-                                    (lambda (z) (if (org-element-property :tag z)
-                                                    (elot-org-elt-item-str z))) nil nil 'item)))))
-      nil nil 'item))
+  "Return a list of elements of type ELT extracted from X.
+Uses `org-element-map` to collect matching elements.
+The function is used to check whether the list contains ELT."
+  (org-element-map x elt #'identity))
+(defun elot-org-elt-item-tag-str (x)
+  "For an item X in an org-element-map, return the item tag."
+  (if (org-element-property :tag x)
+      (substring-no-properties (org-element-interpret-data (org-element-property :tag x)))))
+(defun elot-org-elt-item-pars-str (x)
+  "For an item X in an org-element-map, return the paragraphs as one string."
+  (replace-regexp-in-string "\\([^
+]\\)\n[ \t]*" "\\1 "
+ (string-trim (apply 'concat
+                     (org-element-map x '(paragraph plain-list)
+                       (lambda (y) (substring-no-properties
+                                    (org-element-interpret-data y)))
+                       nil nil 'plain-list)))))
+(defun elot-org-elt-item-str (x)
+  "For X in an org-element-map, return pair of strings (tag, paragraph content)."
+  (list (elot-org-elt-item-tag-str x) (elot-org-elt-item-pars-str x)))
+(defun elot-org-descriptions-in-section-helper ()
+  (org-element-map (org-element-parse-buffer) 'item
+    (lambda (y) (if (org-element-property :tag y)
+                    (append (elot-org-elt-item-str y)
+                            (if (elot-org-elt-exists (cdr y) 'item)
+                                (org-element-map (cdr y) 'item
+                                  (lambda (z) (if (org-element-property :tag z)
+                                                  (elot-org-elt-item-str z))) nil nil 'item)))))
+    nil nil 'item))
 
-  (defun elot-org-descriptions-in-section ()
-    "Return any description list items in current section as a list of strings."
-    (interactive)
-    ;; narrow our area of interest to the current section, before any subsection
-    (let ((section-begin) (section-end))
-      (save-restriction
-        (save-excursion
-          (unless (org-at-heading-p) (org-previous-visible-heading 1))
-          (setq section-begin (org-element-property :contents-begin (org-element-at-point)))
-          (outline-next-heading)
-          (setq section-end (point))
-          (if (or (null section-begin) (<= section-end section-begin))
-              nil ; maybe this outline section is empty
-            (progn
-              (narrow-to-region section-begin section-end)
-              ;; return all paragraphs--description items as pairs in a list
-              (elot-org-descriptions-in-section-helper)))))))
+(defun elot-org-descriptions-in-section ()
+  "Return any description list items in current section as a list of strings."
+  (interactive)
+  ;; narrow our area of interest to the current section, before any subsection
+  (let ((section-begin) (section-end))
+    (save-restriction
+      (save-excursion
+        (unless (org-at-heading-p) (org-previous-visible-heading 1))
+        (setq section-begin (org-element-property :contents-begin (org-element-at-point)))
+        (outline-next-heading)
+        (setq section-end (point))
+        (if (or (null section-begin) (<= section-end section-begin))
+            nil ; maybe this outline section is empty
+          (progn
+            (narrow-to-region section-begin section-end)
+            ;; return all paragraphs--description items as pairs in a list
+            (elot-org-descriptions-in-section-helper)))))))
 
-  (defun elot-org-subsection-descriptions ()
-    "Return a plist mapping subsection headlines to description lists.
+(defun elot-org-subsection-descriptions ()
+  "Return a plist mapping subsection headlines to description lists.
 This function collects headlines in the current subtree and associates
 each with a plist of description-list items and values.  Sections with
 the tag `nodeclare' or with headings starting with `COMMENT' are excluded.
 The function does not include the section that has the target property ID,
 unless it is an ontology section."
-    (save-restriction
-      (save-excursion
-        (unless (org-at-heading-p) (org-previous-visible-heading 1)) ; ensure we are at a heading
-        (org-narrow-to-subtree)
-        (if ;; don't include the section that has the target property id itself, except if ontology section
-            (or (outline-next-heading)
-              (elot-at-ontology-heading))
-            (let (ret)
-              (while (let ((heading (substring-no-properties (org-get-heading nil t)))
-                           (descriptions (elot-org-descriptions-in-section)))
-                       (unless (or (string-match-p "^COMMENT" heading)
-                                   (member "nodeclare" (org-get-tags (point) t)))
-                         (setq ret
-                               (cons
-                                (if descriptions
-                                    (list heading descriptions)
-                                  (list heading))
-                                ret)))
-                       (outline-next-heading)))
-              (nreverse ret))))))
+  (save-restriction
+    (save-excursion
+      (unless (org-at-heading-p) (org-previous-visible-heading 1)) ; ensure we are at a heading
+      (org-narrow-to-subtree)
+      (if ;; don't include the section that has the target property id itself, except if ontology section
+          (or (outline-next-heading)
+            (elot-at-ontology-heading))
+          (let (ret)
+            (while (let ((heading (substring-no-properties (org-get-heading nil t)))
+                         (descriptions (elot-org-descriptions-in-section)))
+                     (unless (or (string-match-p "^COMMENT" heading)
+                                 (member "nodeclare" (org-get-tags (point) t)))
+                       (setq ret
+                             (cons
+                              (if descriptions
+                                  (list heading descriptions)
+                                (list heading))
+                              ret)))
+                     (outline-next-heading)))
+            (nreverse ret))))))
 ;; src-desc-lists ends here
 
 ;; [[file:../elot-defs.org::src-puri-expand][src-puri-expand]]
@@ -413,8 +418,11 @@ that as resource id."
     (concat owl-type ": " suri)))
 
 (defun elot-annotation-entries (l &optional sep)
-  "L is a list of puri--string pairs, each perhaps with a trailing list of
-similar, meta-annotation pairs. SEP is 2 x indent blanks"
+  "Return a list of puri--string pairs, with optional meta-annotations.
+L is a list of puri--string pairs, each perhaps with a trailing list of
+similar, meta-annotation pairs. SEP is a number used to build a string
+of spaces for line indentation. Ensures consistent spacing in formatted
+output."
   (let ((indent (make-string (if sep (* 2 sep) 6) ?\ ))
         ;; l-uri-entries is the description list after purging any
         ;; items that have a prefix that isn't included as a LINK
@@ -436,8 +444,9 @@ similar, meta-annotation pairs. SEP is 2 x indent blanks"
                          (concat ",\n " indent))))))
 
 (defun elot-restriction-entries (l)
-  "L is a list of puri--string pairs, except we'll pick up Manchester
-Syntax vocabulary and use as such."
+  "Write Manchester Syntax restrictions. L is a list of puri--string pairs.
+Add annotations on the restriction axioms if present.
+Special treatment for `Import' on an ontology resource."
   (let ((indent (make-string 2 ?\ ))
         (l-omn-entries
          (cl-remove-if-not (lambda (x) (member (car x)
@@ -457,6 +466,8 @@ Syntax vocabulary and use as such."
                          (concat "\n" indent))))))
 
 (defun elot-omn-annotate (l)
+  "Add annotations to the first element of L, which is an org heading string.
+This is a helper function for `elot-resource-declarations'."
   (let* ((str (car l))
          (suri (elot-entity-from-header str))
          (prefix (if (string-match "\\(.*\\):\\(.*\\)" suri)
@@ -469,6 +480,8 @@ Syntax vocabulary and use as such."
     (elot-annotation-entries resource-annotations)))
 
 (defun elot-omn-restrict (l)
+  "Retrieve restriction axioms from the second element of L.
+This is a helper function for `elot-resource-declarations'."
   (elot-restriction-entries (cadr l)))
 
 (defun elot-resource-declarations (l owl-type)
@@ -483,18 +496,31 @@ Syntax vocabulary and use as such."
    l "\n"))
 
 (defun elot-resource-declarations-from-header (header-id owl-type)
-  "HEADER-ID is an org location id, OWL-TYPE is Class, etc."
+  "Output OMN declarations for Class, Property, or Individual Org trees.
+This function is called from the `org-babel' block in file
+`elot-lob.org' named `resource-declarations'.
+
+This function does not output subclass or subproperty axioms, as these
+are handled by function `elot-resource-taxonomy-from-header'.
+
+HEADER-ID is an org location id, OWL-TYPE is `Class', `ObjectProperty',
+`DataProperty', `AnnotationProperty', or `Individual'.
+
+The org location id, embedded in the `PROPERTIES' drawer for each OWL
+resource type, is `<ontology>-class-hierarchy' for the Class outline,
+and accordingly for `object-property', `data-property', and
+`annotation-property'; for individuals, `<ontology>-individuals'."
   (save-excursion
     (org-id-goto header-id)
     (let ((entity-l (elot-org-subsection-descriptions)))
       (if (or entity-l (string= owl-type "Ontology"))
           (elot-resource-declarations entity-l owl-type)
         "## (none)"))))
-;;(cdr (elot-org-subsection-descriptions))))
 ;; src-resource-declare ends here
 
 ;; [[file:../elot-defs.org::src-prefix-links][src-prefix-links]]
 (defun elot-update-link-abbrev ()
+  "Refresh `org-link-abbrev-alist-local' from current buffer prefixes table."
   (if (save-excursion (goto-char (point-min))
                       (re-search-forward "^#[+]name: prefix-table$" nil t))
       (setq-local org-link-abbrev-alist-local
@@ -578,7 +604,8 @@ The function has been patched for ELOT to allow query with ROBOT."
 
 ;; [[file:../elot-defs.org::src-write-class][src-write-class]]
 (defun elot-class-oneof-from-header (l)
-  "L a list of class resources like ((super (((sub) (sub) ... (sub)))))."
+  "L a list of class resources like ((super (((sub) (sub) ... (sub))))).
+This is a helper function for `elot-resource-taxonomy-from-l'."
   (let ((owl-type "Class") (owl-subclause "SubClassOf"))
     (concat "\n" owl-type ": " (elot-entity-from-header (car l))
             "\n    " owl-subclause ": "
@@ -587,7 +614,8 @@ The function has been patched for ELOT to allow query with ROBOT."
                        (cdr l) " or "))))
 
 (defun elot-class-disjoint-from-header (l)
-  "L a list of class resources like ((super (((sub) (sub) ... (sub)))))."
+  "L a list of class resources like ((super (((sub) (sub) ... (sub))))).
+This is a helper function for `elot-resource-taxonomy-from-l'."
     (concat "\nDisjointClasses: "
             "\n    "
             (mapconcat (lambda (x)
@@ -602,6 +630,10 @@ The function has been patched for ELOT to allow query with ROBOT."
       (split-string (match-string 1 str) ":")))
 
 (defun elot-resource-taxonomy-from-l (l owl-type owl-subclause)
+  "Helper function for `elot-resource-taxonomy-from-header'.
+Recursively go through the list, outputting subtype axioms.
+Process any `oneof' and `disjont' Org tags on each header, calling 
+`elot-class-oneof-from-header' or elot-class-disjoint-from-header'."
   (if (listp (car l))
       (mapconcat (lambda (x) (elot-resource-taxonomy-from-l x owl-type owl-subclause)) l "")
     (if (and (stringp (car l)) (stringp (caadr l)))
@@ -620,7 +652,18 @@ The function has been patched for ELOT to allow query with ROBOT."
           (elot-resource-taxonomy-from-l (cdr l) owl-type owl-subclause)))))
 
 (defun elot-resource-taxonomy-from-header (header-id owl-type owl-relation)
-  "HEADER-ID is an org location id, OWL-TYPE is Class, etc., OWL-RELATION is SubClassOf, etc."
+  "Output OMN subtype axioms for Class or Property Org trees.
+This function is called from the `org-babel' block in file
+`elot-lob.org' named `resource-taxonomy'.
+
+HEADER-ID is an org location id, OWL-TYPE is `Class', `ObjectProperty',
+`DataProperty', `AnnotationProperty', or `Individual'. OWL-RELATION is
+`SubClassOf' or `SubPropertyOf'.
+
+The org location id, embedded in the `PROPERTIES' drawer for each OWL
+resource type, is `<ontology>-class-hierarchy' for the Class outline,
+and accordingly for `object-property', `data-property', and
+`annotation-property'."
   (save-excursion
     (org-id-goto header-id)
     (if (org-goto-first-child)
@@ -631,6 +674,8 @@ The function has been patched for ELOT to allow query with ROBOT."
 
 ;; [[file:../elot-defs.org::src-latex-section-export][src-latex-section-export]]
 (defun elot-ontology-resource-section (level numbered-p)
+  "Return LaTeX environment by subsection depth LEVEL.
+If NUMBERED-P is `true', create a numbered section."
   (if numbered-p
     (cond
       ((= 1 level) "\\chapter{%s}")
@@ -649,12 +694,17 @@ The function has been patched for ELOT to allow query with ROBOT."
 
 ;; [[file:../elot-defs.org::src-get-heading-nocookie][src-get-heading-nocookie]]
 (defun elot-org-get-heading-nocookie (&optional no-tags no-todo no-priority no-comment)
+  "Call `org-get-heading' but strip out any task progress cookie, like `[3/4]'.
+If provided, optional arguments NO-TAGS, NO-TODO, NO-PRIORITY, and NO-COMMENT
+are passed on to `org-get-heading'."
   (replace-regexp-in-string " \\[[[:digit:]/%]+\\]$" ""
                             (org-get-heading no-tags no-todo no-priority no-comment)))
 ;; src-get-heading-nocookie ends here
 
-;; [[file:../elot-defs.org::src-get-description-entry][src-get-description-entry]]
+;; [[file:../elot-defs.org::src-get-description-entry :tangle no][src-get-description-entry :tangle no]]
 (defun elot-org-get-description-entry (tag)
+  "Search forward for TAG and return text of Org element found, no decorations.
+Newlines are replaced by spaces in the result."
   (save-excursion
     (if (search-forward-regexp tag nil t)
         (let* ((element (org-element-at-point))
@@ -662,14 +712,27 @@ The function has been patched for ELOT to allow query with ROBOT."
                (end (org-element-property :contents-end element))
                (entry-text (buffer-substring-no-properties beg end)))
            (replace-regexp-in-string "\n\s*" " " entry-text)))))
-;; src-get-description-entry ends here
+;; src-get-description-entry :tangle no ends here
 
 ;; [[file:../elot-defs.org::src-latex-export-replacenames][src-latex-export-replacenames]]
 (org-export-define-derived-backend 'ELOT-latex 'latex
   :translate-alist '((item . elot-my-item-translator)))
-(defvar elot-item-process nil)
+(defvar elot-item-process nil
+  "Toggle during LaTeX export, to turn replacement of list items on or off.
+Used in `elot-my-item-translator'.")
 
 (defun elot-my-item-translator (item c info)
+  "Translator for LaTeX export, replace RDF identifiers with simpler labels.
+This makes for more readable output in description lists. A list serves
+to map selected annotation properties to shorter labels. For example, 
+`iof-av:explanatoryNote' will be replaced by `explanatory note'.
+
+Translation is turned on when the magic value `item-translate-start' is
+found in a description list, and off when `item-translate-stop' is found.
+
+This function is a workaround. It relies on magic strings because
+positions in the buffer are unpredictable while the export is being
+conducted."
   (let* ((item-tag-maybe (car (org-element-property :tag item)))
          (item-tag-stringp (stringp item-tag-maybe))
          (item-tag (if item-tag-stringp (substring-no-properties item-tag-maybe) item-tag-maybe)))
@@ -1093,6 +1156,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 ;; [[file:../elot-defs.org::src-tsv-table][src-tsv-table]]
 (defun elot-tsv-to-table (filename)
+  "Read tab separated values file FILENAME and insert an Org table at point."
   (let* ((lines (with-temp-buffer
                  (insert-file-contents filename)
                  (split-string (buffer-string) "\n")))
