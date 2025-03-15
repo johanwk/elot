@@ -601,6 +601,7 @@ This function is called by `org-babel-execute-src-block'."
          (format-symbol
           (if (string-match-p "\\(turtle\\|ttl\\)" format) 'ttl 'csv)))
     (with-temp-buffer
+      (always org-babel-sparql--current-curies) ;; avoid warning, it is actually used
       (if (string-match-p "^http" url)  ;; querying an endpoint, or a file?
           (sparql-execute-query query url format t) ;; add test, does the file exist at all
         (elot-robot-execute-query elot-prefixed-query url format-symbol))
@@ -1153,12 +1154,12 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
   "
  --- ELOT helpdesk --- press F5 to toggle labels ---
 
- Insert                    Code block             Document         ^^^^^^Output                  
------------------------------------------------------------------------------------------------
- [_r_] resource id        <_obm_ metrics             <_odh_ header      [_t_] tangle ontology    
-<_ocp_ primitive class    <_obs_ sparql select       <_ods_ ontology    [_h_] export HTML        
-<_ocd_ defined class      <_obc_ sparql construct                                             
- <_op_ property           <_obd_ rdfpuml diagram                                              
+ Insert                    Code block             Document         ^^^^^Output       
+------------------------------------------------------------------------------
+ [_r_] resource id        <_obm_ metrics             <_odh_ header     [_t_] ontology
+<_ocp_ primitive class    <_obs_ sparql select       <_ods_ ontology   [_h_] HTML    
+<_ocd_ defined class      <_obc_ sparql construct                                    
+ <_op_ property           <_obd_ rdfpuml diagram                                     
 "
   ("r" (elot-label-lookup))
   ("ocp" (progn (outline-next-heading) (tempo-template-elot-class-iof-primitive)))
