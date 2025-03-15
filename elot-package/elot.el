@@ -174,13 +174,13 @@ This will return \"ontology\" if point is under a heading that
 declares an ontology."
   (org-entry-get-with-inheritance "ELOT-context-type"))
 (defun elot-context-localname ()
-  "Retrieve value of property ELOT-context-localname for a governing heading. 
-This will return the localname of the ontology 
+  "Retrieve value of property ELOT-context-localname for a governing heading.
+This will return the localname of the ontology
 if point is under a heading that declares an ontology."
   (org-entry-get-with-inheritance "ELOT-context-localname"))
 (defun elot-default-prefix ()
-  "Retrieve value of property ELOT-default-prefix for a governing heading. 
-This will return the default prefix for ontology resources 
+  "Retrieve value of property ELOT-default-prefix for a governing heading.
+This will return the default prefix for ontology resources
 if point is under a heading that declares an ontology."
   (org-entry-get-with-inheritance "ELOT-default-prefix"))
 (defun elot-governing-hierarchy ()
@@ -206,74 +206,78 @@ if point is under a heading that declares an ontology."
 
 ;; [[file:../elot-defs.org::src-desc-lists][src-desc-lists]]
 (defun elot-org-elt-exists (x elt)
-  (org-element-map x elt #'identity))
-(defun elot-org-elt-item-tag-str (x)
-  "For an item X in an org-element-map, return the item tag."
-  (if (org-element-property :tag x)
-      (substring-no-properties (org-element-interpret-data (org-element-property :tag x)))))
-(defun elot-org-elt-item-pars-str (x)
-  "For an item X in an org-element-map, return the paragraphs as one string."
-  (replace-regexp-in-string "\\([^
-]\\)\n[ \t]*" "\\1 "
- (string-trim (apply 'concat
-                     (org-element-map x '(paragraph plain-list)
-                       (lambda (y) (substring-no-properties 
-                                    (org-element-interpret-data y)))
-                       nil nil 'plain-list)))))
-(defun elot-org-elt-item-str (x)
-  "For X in an org-element-map, return pair of strings (tag, paragraph content)."
-  (list (elot-org-elt-item-tag-str x) (elot-org-elt-item-pars-str x)))
-(defun elot-org-descriptions-in-section-helper ()
-  (org-element-map (org-element-parse-buffer) 'item
-    (lambda (y) (if (org-element-property :tag y)
-                    (append (elot-org-elt-item-str y)
-                            (if (elot-org-elt-exists (cdr y) 'item)
-                                (org-element-map (cdr y) 'item
-                                  (lambda (z) (if (org-element-property :tag z)
-                                                  (elot-org-elt-item-str z))) nil nil 'item))))) 
-    nil nil 'item))
+    (org-element-map x elt #'identity))
+  (defun elot-org-elt-item-tag-str (x)
+    "For an item X in an org-element-map, return the item tag."
+    (if (org-element-property :tag x)
+        (substring-no-properties (org-element-interpret-data (org-element-property :tag x)))))
+  (defun elot-org-elt-item-pars-str (x)
+    "For an item X in an org-element-map, return the paragraphs as one string."
+    (replace-regexp-in-string "\\([^
+  ]\\)\n[ \t]*" "\\1 "
+   (string-trim (apply 'concat
+                       (org-element-map x '(paragraph plain-list)
+                         (lambda (y) (substring-no-properties
+                                      (org-element-interpret-data y)))
+                         nil nil 'plain-list)))))
+  (defun elot-org-elt-item-str (x)
+    "For X in an org-element-map, return pair of strings (tag, paragraph content)."
+    (list (elot-org-elt-item-tag-str x) (elot-org-elt-item-pars-str x)))
+  (defun elot-org-descriptions-in-section-helper ()
+    (org-element-map (org-element-parse-buffer) 'item
+      (lambda (y) (if (org-element-property :tag y)
+                      (append (elot-org-elt-item-str y)
+                              (if (elot-org-elt-exists (cdr y) 'item)
+                                  (org-element-map (cdr y) 'item
+                                    (lambda (z) (if (org-element-property :tag z)
+                                                    (elot-org-elt-item-str z))) nil nil 'item)))))
+      nil nil 'item))
 
-(defun elot-org-descriptions-in-section ()
-  "Return any description list items in current section as a list of strings."
-  (interactive)
-  ;; narrow our area of interest to the current section, before any subsection
-  (let ((section-begin) (section-end))
-    (save-restriction 
+  (defun elot-org-descriptions-in-section ()
+    "Return any description list items in current section as a list of strings."
+    (interactive)
+    ;; narrow our area of interest to the current section, before any subsection
+    (let ((section-begin) (section-end))
+      (save-restriction
+        (save-excursion
+          (unless (org-at-heading-p) (org-previous-visible-heading 1))
+          (setq section-begin (org-element-property :contents-begin (org-element-at-point)))
+          (outline-next-heading)
+          (setq section-end (point))
+          (if (or (null section-begin) (<= section-end section-begin))
+              nil ; maybe this outline section is empty
+            (progn
+              (narrow-to-region section-begin section-end)
+              ;; return all paragraphs--description items as pairs in a list
+              (elot-org-descriptions-in-section-helper)))))))
+
+  (defun elot-org-subsection-descriptions ()
+    "Return a plist mapping subsection headlines to description lists.
+This function collects headlines in the current subtree and associates
+each with a plist of description-list items and values.  Sections with
+the tag `nodeclare' or with headings starting with `COMMENT' are excluded.
+The function does not include the section that has the target property ID,
+unless it is an ontology section."
+    (save-restriction
       (save-excursion
-        (unless (org-at-heading-p) (org-previous-visible-heading 1))
-        (setq section-begin (org-element-property :contents-begin (org-element-at-point)))
-        (outline-next-heading)
-        (setq section-end (point))
-        (if (or (null section-begin) (<= section-end section-begin))
-            nil ; maybe this outline section is empty
-          (progn
-            (narrow-to-region section-begin section-end)
-            ;; return all paragraphs--description items as pairs in a list
-            (elot-org-descriptions-in-section-helper)))))))
-
-(defun elot-org-subsection-descriptions ()
-  "Return a plist for the outline at point, of headlines paired with plists
-of description-list items and values."
-  (save-restriction
-    (save-excursion
-      (unless (org-at-heading-p) (org-previous-visible-heading 1)) ; ensure we are at a heading
-      (org-narrow-to-subtree)
-      (if ;; don't include the section that has the target property id itself, except if ontology section
-          (or (outline-next-heading)
-            (elot-at-ontology-heading))
-          (let (ret)
-            (while (let ((heading (substring-no-properties (org-get-heading nil t)))
-                         (descriptions (elot-org-descriptions-in-section)))
-                     (unless (or (string-match-p "^COMMENT" heading)
-                                 (member "nodeclare" (org-get-tags (point) t)))
-                       (setq ret
-                             (cons
-                              (if descriptions
-                                  (list heading descriptions)
-                                (list heading))
-                              ret)))
-                     (outline-next-heading)))
-            (nreverse ret))))))
+        (unless (org-at-heading-p) (org-previous-visible-heading 1)) ; ensure we are at a heading
+        (org-narrow-to-subtree)
+        (if ;; don't include the section that has the target property id itself, except if ontology section
+            (or (outline-next-heading)
+              (elot-at-ontology-heading))
+            (let (ret)
+              (while (let ((heading (substring-no-properties (org-get-heading nil t)))
+                           (descriptions (elot-org-descriptions-in-section)))
+                       (unless (or (string-match-p "^COMMENT" heading)
+                                   (member "nodeclare" (org-get-tags (point) t)))
+                         (setq ret
+                               (cons
+                                (if descriptions
+                                    (list heading descriptions)
+                                  (list heading))
+                                ret)))
+                       (outline-next-heading)))
+              (nreverse ret))))))
 ;; src-desc-lists ends here
 
 ;; [[file:../elot-defs.org::src-puri-expand][src-puri-expand]]
@@ -300,7 +304,7 @@ Expand uri, or return number, or wrap in quotes."
   (if (string-match "{{{.+}}}" str)
       (let ((omt org-macro-templates))
         (with-temp-buffer (org-mode)
-                          (insert str) (org-macro-replace-all omt) 
+                          (insert str) (org-macro-replace-all omt)
                           (setq str (buffer-string)))))
   (cond (; a number -- return the string
          (string-match "^[[:digit:]]+[.]?[[:digit:]]*$" str)
@@ -344,7 +348,7 @@ Expand uri, or return number, or wrap in quotes."
 Note, you can always (goto-char (point-min)) to collect all siblings."
   (interactive)
   (let (ret)
-    (unless (org-at-heading-p) 
+    (unless (org-at-heading-p)
       (org-forward-heading-same-level nil t))
     (while (progn
              (unless (looking-at "[*]* *COMMENT")
@@ -402,7 +406,7 @@ Note, you can always (goto-char (point-min)) to collect all siblings."
 ;; [[file:../elot-defs.org::src-resource-declare][src-resource-declare]]
 (defun elot-omn-declare (str owl-type)
   "Declare entity from header content STR as an OWL-TYPE, in Manchester Syntax.
-Add rdfs:label annotation. If the identifier is inside parentheses, use
+Add rdfs:label annotation.  If the identifier is inside parentheses, use
 that as resource id."
   ;; check whether we have a label and a resource in parentheses
   (let* ((suri (elot-entity-from-header str)))
@@ -421,7 +425,7 @@ similar, meta-annotation pairs. SEP is 2 x indent blanks"
                                                  (elot-unprefix-uri (car x) org-link-abbrev-alist-local)))
                        l)))
     (if (atom l) "\n"
-      (concat "\n" indent "Annotations: " 
+      (concat "\n" indent "Annotations: "
               (mapconcat (lambda (y)
                            (concat
                             (if (consp (caddr y)) ; we have meta-annotations
@@ -470,7 +474,7 @@ Syntax vocabulary and use as such."
 (defun elot-resource-declarations (l owl-type)
   "Take a possibly list L of identifiers with annotations, declare to be of OWL-TYPE."
   (mapconcat
-   (lambda (x) 
+   (lambda (x)
      (concat
       (elot-omn-declare (car x) owl-type)
       ;; if annotations, add to the annotation block that has been started with rdfs:label
@@ -494,7 +498,7 @@ Syntax vocabulary and use as such."
   (if (save-excursion (goto-char (point-min))
                       (re-search-forward "^#[+]name: prefix-table$" nil t))
       (setq-local org-link-abbrev-alist-local
-                  (mapcar (lambda (x) 
+                  (mapcar (lambda (x)
                             (cons (replace-regexp-in-string ":" "" (car x)) (cadr x)))
           (cl-remove 'hline (org-babel-ref-resolve "prefix-table"))))))
 ;; src-prefix-links ends here
@@ -502,15 +506,15 @@ Syntax vocabulary and use as such."
 ;; [[file:../elot-defs.org::src-prefix-blocks][src-prefix-blocks]]
 (defun elot-prefix-block-from-alist (prefixes format)
   "Return a prefix block from PREFIXES for use with filetype FORMAT.
-PREFIXES is an alist of prefixes, from an Org table or 
-the standard ORG-LINK-ABBREV-ALIST or ORG-LINK-ABBREV-ALIST-LOCAL. 
+PREFIXES is an alist of prefixes, from an Org table or
+the standard ORG-LINK-ABBREV-ALIST or ORG-LINK-ABBREV-ALIST-LOCAL.
 FORMAT is a symbol, either `omn', `sparql', or `ttl'."
   (let ((format-str
          (cond
           ((eq format 'omn) "Prefix: %-5s <%s>")
           ((eq format 'ttl) "@prefix %-5s <%s> .")
           ((eq format 'sparql) "PREFIX %-5s <%s>"))))
-    (mapconcat (lambda (row) 
+    (mapconcat (lambda (row)
                  (let ((prefix-str
                         (if (string-match-p ":$" (car row))
                             (car row) (concat (car row) ":")))
@@ -553,7 +557,7 @@ The function has been patched for ELOT to allow query with ROBOT."
   (let* ((url (cdr (assoc :url params)))
          (format (cdr (assoc :format params)))
          (query (org-babel-expand-body:sparql body params))
-         (org-babel-sparql--current-curies 
+         (org-babel-sparql--current-curies
           (append org-link-abbrev-alist-local org-link-abbrev-alist))
          (elot-prefixed-query
           (concat (elot-prefix-block-from-alist org-link-abbrev-alist-local 'sparql)
@@ -601,7 +605,7 @@ The function has been patched for ELOT to allow query with ROBOT."
   (if (listp (car l))
       (mapconcat (lambda (x) (elot-resource-taxonomy-from-l x owl-type owl-subclause)) l "")
     (if (and (stringp (car l)) (stringp (caadr l)))
-        (concat 
+        (concat
           ;simple subclass clauses
           (mapconcat (lambda (x)
                       (concat "\n" owl-type ": "
@@ -628,7 +632,7 @@ The function has been patched for ELOT to allow query with ROBOT."
 ;; [[file:../elot-defs.org::src-latex-section-export][src-latex-section-export]]
 (defun elot-ontology-resource-section (level numbered-p)
   (if numbered-p
-    (cond 
+    (cond
       ((= 1 level) "\\chapter{%s}")
       ((= 2 level) "\\section{%s}")
       ((= 3 level) "\\subsection{%s}")
@@ -702,15 +706,15 @@ The function has been patched for ELOT to allow query with ROBOT."
 ;; src-latex-export-replacenames ends here
 
 ;; [[file:../elot-defs.org::src-babel-passthrough][src-babel-passthrough]]
-(defun elot-org-babel-execute-passthrough (body params) 
+(defun elot-org-babel-execute-passthrough (body params)
   "Return BODY unchanged when executing an Org Babel block.
 
-This function is used to define a passthrough execution behavior 
-for Org Babel blocks with the language `ttl'. It ensures that 
-the contents of a `#+begin_src ttl' block are returned as-is, 
+This function is used to define a passthrough execution behavior
+for Org Babel blocks with the language `ttl'. It ensures that
+the contents of a `#+begin_src ttl' block are returned as-is,
 without any processing or transformation.
 
-This is useful for passing Turtle (TTL) content to other source 
+This is useful for passing Turtle (TTL) content to other source
 blocks without modification.
 
 PARAMS is ignored."
@@ -722,9 +726,9 @@ PARAMS is ignored."
 
 ;; [[file:../elot-defs.org::src-rdfpuml-execute][src-rdfpuml-execute]]
 (defun elot-rdfpuml-execute (ttl &optional prefixes config add-options epilogue)
-  "Run rdfpuml on Turtle RDF content and return PlantUML code. 
-TTL is a Turtle string, PREFIXES optional prefix block, 
-CONFIG optional Turtle for rdfpuml configuration, 
+  "Run rdfpuml on Turtle RDF content and return PlantUML code.
+TTL is a Turtle string, PREFIXES optional prefix block,
+CONFIG optional Turtle for rdfpuml configuration,
 ADD-OPTIONS a string of PlantUML options added to rdfpuml defaults,
 EPILOGUE extra PlantUML clauses."
   (let* ((options-str
@@ -759,7 +763,7 @@ The file is stored in the ELOT default image directory.  Return output file name
   (output-file (concat elot-default-image-path output-name "." format)))
     (message (concat puml-file " --> " output-file))
     (make-directory elot-default-image-path :always)
-    (shell-command 
+    (shell-command
      (concat "java -jar " org-plantuml-jar-path " -t" format " " puml-file))
     (copy-file tmp-output-file output-file :allow-overwrite)
     output-file))
@@ -773,8 +777,7 @@ The file is stored in the ELOT default image directory.  Return output file name
     	"#+author: " (p "Author name: " authname) > n
     	"#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
 "#+call: theme-readtheorg()" n n
-    	(progn (load-library "elot-defaults") (message "Loaded ELOT") "")
-    	)
+    	(progn (load-library "elot-defaults") (message "Loaded ELOT") ""))
      "<odh"
      "ELOT document header"
      'org-tempo-tags)
@@ -801,7 +804,7 @@ The file is stored in the ELOT default image directory.  Return output file name
      "  ## Prefixes" > n
      "  <<omn-prefixes()>>" > n  n
      "  ## Ontology declaration" > n
-     "  <<elot-resource-declarations(hierarchy=\"" (s ontlocalname) "-ontology-declaration\", owl-type=\"Ontology\", owl-relation=\"\")>>" > n 
+     "  <<elot-resource-declarations(hierarchy=\"" (s ontlocalname) "-ontology-declaration\", owl-type=\"Ontology\", owl-relation=\"\")>>" > n
      "" > n
      "  ## Data type declarations" > n
      "  Datatype: xsd:dateTime" > n
@@ -850,9 +853,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 | dcterms:  | http://purl.org/dc/terms/                                                      |
 | prov:     | http://www.w3.org/ns/prov#                                                     |
 | iof-av:   | https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/ |" > n
-"| " (s resprefix)  
+"| " (s resprefix)
 ":       | " (p "Resource namespace in full (\"http ...\") " resns) "                                                            |" > n
-"| " (p "Namespace prefix for the ontology itself (without the \":\") " ontprefix) 
+"| " (p "Namespace prefix for the ontology itself (without the \":\") " ontprefix)
 ":       | " (p "Ontology namespace in full (\"http ...\") " ontns) "                                                            |" >  n
 "*** Source blocks for prefixes                                     :noexport:
 :PROPERTIES:
@@ -953,7 +956,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 :resourcedefs: yes
 :END:
 "
-(progn (elot-update-link-abbrev) 
+(progn (elot-update-link-abbrev)
        (save-buffer) (org-macro-initialize-templates)
        (org-cycle-set-startup-visibility)
        (goto-char (point-min))
@@ -1009,7 +1012,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 (tempo-define-template "elot-block-robot-metrics"
  '(
    (org-open-line 1) p
-   "#+call: robot-metrics(omnfile=\"" (elot-context-localname) ".omn\") :eval never-export" > 
+   "#+call: robot-metrics(omnfile=\"" (elot-context-localname) ".omn\") :eval never-export" >
    (progn (message "Execute blocks with C-c C-c") ""))
  "<obm"
  "ELOT ontology metrics from ROBOT"
@@ -1023,7 +1026,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
   select
   {
 
-  } 
+  }
 #+end_src" n
    (progn (message "Execute blocks with C-c C-c") ""))
  "<obs"
@@ -1040,7 +1043,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
   } {
 
-  } 
+  }
 #+end_src" n
    (progn (message "Execute blocks with C-c C-c") ""))
  "<obc"
