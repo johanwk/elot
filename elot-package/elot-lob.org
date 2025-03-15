@@ -7,7 +7,7 @@
 (elot-resource-declarations-from-header hierarchy owl-type)
 #+END_SRC
 ** Resource taxonomies (exctracted from outlines)
-#+name: elot-resource-taxonomy
+#+name: resource-taxonomy
 #+BEGIN_SRC emacs-lisp :var hierarchy="ELOT-class-hierarchy" :var owl-type="Class" :var owl-relation="SubClassOf" :wrap "SRC omn" 
 (elot-resource-taxonomy-from-header hierarchy owl-type owl-relation)
 #+END_SRC
