@@ -43,6 +43,8 @@
 (require 'ob-plantuml) ; PlantUML in org-babel
 (require 'hydra) ; hydra menu
 (require 'ht) ; hashtable, for label display
+(require 'url) ; for opening online ontologies
+(require 'url-http) ; for opening online ontologies
 
 ;;;; Usage
 
@@ -68,6 +70,13 @@
   :type 'string)
 (defvar elot-robot-command-str
   (concat "java -jar " elot-robot-jar-path))
+(defcustom elot-exporter-jar-path (expand-file-name "~/bin/elot-exporter.jar")
+  "Path to the elot-exporter.jar file."
+  :group 'elot
+  :version "29.2"
+  :type 'string)
+(defvar elot-exporter-command-str
+  (concat "java -jar " elot-exporter-jar-path))
 (defun elot-robot-command (cmd)
   "Execute ROBOT command CMD using `shell-command'.
 Check whether `elot-robot-jar-path` is set and points to an existing file.
@@ -123,6 +132,40 @@ skinparam classAttributeIconSize 0"
   "Command to execute rdfpuml to generate diagram from TTL-FILE."
   (shell-command (concat elot-rdfpuml-command-str " " ttl-file)))
 ;; src-settings-externals ends here
+
+;; [[file:../elot-defs.org::*Open existing OWL files or online ontologies][Open existing OWL files or online ontologies:1]]
+(defun elot-open-owl (owl-source)
+  "Open an OWL ontology from OWL-SOURCE by converting with `elot-exporter'.
+OWL-SOURCE can be a local file or a URL. If a URL is provided, the function requests
+the ontology using content negotiation, preferring Turtle, RDF/XML, N3, JSON-LD, OWL
+Functional Syntax, or Manchester Syntax. The output is captured into a buffer named
+after the converted file, with `.org' as the extension."
+  (interactive "sEnter OWL file path or URL: ")
+  (let* ((is-url (string-match-p "\\`https?://" owl-source))
+         (local-file (if is-url
+                         (let ((temp-file (make-temp-file "elot-ontology-" nil ".owl")))
+                           (elot-download-ontology owl-source temp-file)
+                           temp-file)
+                       owl-source))
+         (output-buffer-name (concat (file-name-sans-extension (file-name-nondirectory local-file)) ".org"))
+         (output-buffer (get-buffer-create output-buffer-name))
+         (command (concat elot-exporter-command-str " " (shell-quote-argument local-file))))
+    (with-current-buffer output-buffer
+      (erase-buffer)
+      (shell-command command output-buffer)
+      (org-mode))
+    (pop-to-buffer output-buffer)
+    (when is-url
+      (delete-file local-file))))  ;; Clean up temp file after conversion
+
+(defun elot-download-ontology (url dest-file)
+  "Download an ontology from URL with content negotiation and save it to DEST-FILE.
+Requests the ontology in the best available format: Turtle, RDF/XML, N3, JSON-LD, 
+OWL Functional Syntax, or Manchester Syntax."
+  (let ((url-request-extra-headers
+         '(("Accept" . "text/turtle, application/rdf+xml, text/n3, application/ld+json, text/owl-functional, text/owl-manchester; q=0.9"))))
+    (url-copy-file url dest-file t)))
+;; Open existing OWL files or online ontologies:1 ends here
 
 ;; [[file:../elot-defs.org::src-omn-keywords][src-omn-keywords]]
 (defvar elot-omn-property-keywords
