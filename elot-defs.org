@@ -594,7 +594,6 @@ annotations in a future improved version, from sub-items.
                     (mapcar (lambda (x)
                               (cons (replace-regexp-in-string ":" "" (car x)) (cadr x)))
             (cl-remove 'hline (org-babel-ref-resolve "prefix-table"))))))
-  (declare-function elot-update-link-abbrev)
 #+end_src
 *** Make prefix blocks for omn, sparql, ttl
 #+name: src-prefix-blocks

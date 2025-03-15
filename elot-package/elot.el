@@ -535,7 +535,6 @@ and accordingly for `object-property', `data-property', and
                   (mapcar (lambda (x)
                             (cons (replace-regexp-in-string ":" "" (car x)) (cadr x)))
           (cl-remove 'hline (org-babel-ref-resolve "prefix-table"))))))
-(declare-function elot-update-link-abbrev)
 ;; src-prefix-links ends here
 
 ;; [[file:../elot-defs.org::src-prefix-blocks][src-prefix-blocks]]
