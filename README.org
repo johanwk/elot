@@ -98,6 +98,12 @@ Get the tools:
       listed in the [[https://github.com/VladimirAlexiev/rdf2rml?tab=readme-ov-file#installation][rdfpuml installation guide]].
        : cd ~/bin
        : git clone https://github.com/VladimirAlexiev/rdf2rml.git
+ 4. The ~elot-exporter~ tool converts existing OWL ontologies to ELOT's
+    org-mode format. Once downloaded, you can open an OWL ontology
+    from a local file, or from a URL, with ~M-x elot-open-owl~.
+    - download the Java JAR from [[https://github.com/johanwk/elot/releases][releases]] and save it as
+      ~elot-exporter.jar~ in your ~bin~ folder.
+
 *** NEW: Convert existing OWL files to ELOT format
 A Java binary will read an OWL file, in Turtle, RDF/XML or other
 formats, and output an org-mode file in ELOT format. This makes it
