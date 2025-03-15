@@ -101,7 +101,7 @@
   (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images 'local)
   (add-hook 'after-save-hook 'elot-update-link-abbrev)
   ;; the label display functions are in a separate file
-  (require 'elot-label-display)
+  (load-library "elot-label-display")
   (elot-label-display-setup)
   (local-set-key (kbd "<f4>") #'elot-hydra/body)
   (local-set-key (kbd "<f5>") #'elot-toggle-label-display))

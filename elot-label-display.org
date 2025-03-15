@@ -232,7 +232,7 @@ identifiers using ~regexp-opt~.
        (font-lock-add-keywords
         nil  ; current buffer
         elot-fontify-keyword 'append))
-     (font-lock-fontify-buffer)))
+     (font-lock-flush)))
 #+end_src
 ** Remove fontification
 #+name: src-fontify-remove
@@ -419,7 +419,7 @@ and more.
               (progn (elot-remove-prop-display)
                      (setq elot-label-display 'off)
                      (message "ELOT label-display turned off"))
-            (progn (font-lock-fontify-buffer)
+            (progn (font-lock-flush)
                    (setq elot-label-display 'on)
                    (message "ELOT label-display turned on")))
         ;; not active yet, add fontification

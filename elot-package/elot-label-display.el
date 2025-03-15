@@ -62,7 +62,7 @@ Uses `elot-org-subsection-descriptions' to read class, property, and
 individual sections from an ELOT buffer.  If not in an ELOT buffer,
 read using `elot-slurp-global'"
   (save-excursion
-    (beginning-of-buffer)
+    (goto-char (point-min))
     (if (search-forward ":ELOT-context-type: ontology" nil :noerror)
         (let ((context (elot-context-localname)))
           (append
@@ -171,7 +171,7 @@ The list of keywords is in `elot-fontify-keyword'."
      (font-lock-add-keywords
       nil  ; current buffer
       elot-fontify-keyword 'append))
-   (font-lock-fontify-buffer)))
+   (font-lock-flush)))
 
 (defun elot-remove-prop-display ()
   "Remove fontification added by `elot-label-display'."
@@ -302,7 +302,7 @@ Output to OUT-FILE as an elisp list."
             (progn (elot-remove-prop-display)
                    (setq elot-label-display 'off)
                    (message "ELOT label-display turned off"))
-          (progn (font-lock-fontify-buffer)
+          (progn (font-lock-flush)
                  (setq elot-label-display 'on)
                  (message "ELOT label-display turned on")))
       ;; not active yet, add fontification

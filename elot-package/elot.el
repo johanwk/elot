@@ -35,11 +35,12 @@
 (require 'ob-lob) ; Library of Babel
 (require 'ox) ; export functions
 (require 'ol) ; link functions
-(require 'org-tempo) ; link functions
+(require 'org-tempo) ; document templates
 (require 'htmlize) ; fontify blocks
-(require 'omn-mode) ; OMN support
-(require 'sparql-mode) ; OMN support
-(require 'ob-plantuml) ; PlantUML
+(require 'omn-mode) ; OWL Manchester Syntax (OMN) support
+(require 'sparql-mode) ; SPARQL
+(require 'ob-sparql) ; SPARQL in org-babel
+(require 'ob-plantuml) ; PlantUML in org-babel
 (require 'hydra) ; hydra menu
 (require 'ht) ; hashtable, for label display
 
@@ -146,12 +147,15 @@ skinparam classAttributeIconSize 0"
 ;; [[file:../elot-defs.org::src-omn-latex-tt][src-omn-latex-tt]]
 (defun elot-latex-filter-omn-item (text backend info)
   "Format OWL Manchester Syntax content TEXT in description lists.
-Target output type BACKEND in context INFO."
-  (when (org-export-derived-backend-p backend 'latex)
-    (when (seq-some
-           (lambda (x)
-             (string-match (concat "^\\\\item\\[{" x "}\\]") text))
-           elot-omn-property-keywords)
+Target output type BACKEND
+The context INFO is ignored."
+  (progn
+    (always info) ;; ignore this argument
+    (when (org-export-derived-backend-p backend 'latex)
+      (when (seq-some
+             (lambda (x)
+               (string-match (concat "^\\\\item\\[{" x "}\\]") text))
+             elot-omn-property-keywords)
         ;; make the description term texttt
         (setq text (replace-regexp-in-string
                     "\\\\item\\[{\\([a-zA-Z]+\\)}\\]"
@@ -163,11 +167,11 @@ Target output type BACKEND in context INFO."
              "^\\(.*\\] \\)\\(.*\\)"
              "\\1\\\\lstinline[language=omn]{\\2}"
              text)
-          text))))
+          text)))))
 
 
 (add-to-list 'org-export-filter-item-functions
-           'elot-latex-filter-omn-item)
+             'elot-latex-filter-omn-item)
 ;; src-omn-latex-tt ends here
 
 ;; [[file:../elot-defs.org::src-context-info][src-context-info]]
@@ -489,7 +493,7 @@ This is a helper function for `elot-resource-declarations'."
   (elot-restriction-entries (cadr l)))
 
 (defun elot-resource-declarations (l owl-type)
-  "Take a possibly list L of identifiers with annotations, declare to be of OWL-TYPE."
+  "For list L of identifiers with annotations, declare to be of OWL-TYPE."
   (mapconcat
    (lambda (x)
      (concat
@@ -581,8 +585,10 @@ Result FORMAT is tabular `csv', or Turtle RDF `ttl'."
 ;; [[file:../elot-defs.org::src-sparql-exec-patch][src-sparql-exec-patch]]
 (defun org-babel-execute:sparql (body params)
   "Execute a SPARQL query block BODY with parameters PARAMS with org-babel.
-This function is called by `org-babel-execute-src-block'.
-The function has been patched for ELOT to allow query with ROBOT."
+
+This is a modification of `org-babel-execute:sparql' from `ob-sparql'.
+The function has been patched for ELOT to allow query with ROBOT.
+This function is called by `org-babel-execute-src-block'."
   (message "Executing a SPARQL query block with ELOT version of org-babel-execute:sparql.")
   (let* ((url (cdr (assoc :url params)))
          (format (cdr (assoc :format params)))
@@ -791,7 +797,9 @@ This is useful for passing Turtle (TTL) content to other source
 blocks without modification.
 
 PARAMS is ignored."
-  body)
+  (progn
+    (always params)  ;; ignore argument
+    body))
 
 (unless (fboundp 'org-babel-execute:ttl)
   (defalias 'org-babel-execute:ttl 'elot-org-babel-execute-passthrough))
@@ -829,7 +837,8 @@ EPILOGUE extra PlantUML clauses."
 ;; [[file:../elot-defs.org::src-plantuml-execute][src-plantuml-execute]]
 (defun elot-plantuml-execute (puml-file output-name format)
   "With PlantUML, read PUML-FILE and write image file to OUTPUT-NAME.FORMAT.
-The file is stored in the ELOT default image directory.  Return output file name."
+The file is stored in the ELOT default image directory.
+Return output file name."
   (if (or (string= org-plantuml-jar-path "") (not (file-exists-p org-plantuml-jar-path)))
     (error "PlantUML not found.  Set org-plantuml-jar-path with M-x customize-variable"))
   (let ((tmp-output-file (concat (file-name-sans-extension puml-file) "." format))
