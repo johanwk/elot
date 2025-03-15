@@ -1,13 +1,4 @@
-#+title: New version of label-display
-
-* What
-start from scratch to build a new label-display that will initially
-read from the org-mode file rather than get the list of labels to display
-from a sparql query.
-
-Write the code in elisp blocks in this file.
-
-See many notes in denote file [[denote:20240410T210435][Notes improving label-display.el]].
+#+title: label-display for ELOT
 
 * Code
 :PROPERTIES:
