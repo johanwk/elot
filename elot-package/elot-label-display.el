@@ -5,7 +5,7 @@
 ;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
 ;; URL: https://github.com/johanwk/elot
 ;; Version: 0.1-pre
-;; Package-Requires: ((emacs "29.2") (elot))
+;; Package-Requires: ((emacs "29.1"))
 ;; Keywords: tools convenience
 
 ;; This file is not part of GNU Emacs.
@@ -86,8 +86,8 @@ The result is a plist of pairs of identifiers and labels to display."
 (defun elot-attriblist-from-slurp (slurp)
   "Return a plist of the second and third entries of each member of SLURP.
 SLURP is a list of lists made with `elot-slurp-entities'.  The result is
-a plist of pairs of labels and plists of predicate--value pairs. The
-identifier puri of the resource is added to the plist with key `\"puri\"'."
+a plist of pairs of labels and plists of predicate--value pairs.
+The identifier puri of the resource is added to the plist with key `\"puri\"'."
    (mapcar (lambda (row) (cons (cadr row) 
                                (append `("puri" ,(car row))
                                        (caddr row)))) 
@@ -103,7 +103,7 @@ Each member is a list of curie, label, and plist of attributes.")
 (defvar-local elot-attriblist-ht nil
   "Hashtable holding pairs of curie and attribute plist for ELOT label-display.")
 (defvar-local elot-label-display 'no
-  "Value says `no' or `yes' to showing labels for RDF resources")
+  "Value says `no' or `yes' to showing labels for RDF resources.")
 
 (defun elot-slurp-to-vars ()
   "Read resources declared in ELOT buffer into local variables.
@@ -132,6 +132,7 @@ ELOT-ATTRIBLIST-HT (hashtable).  Outside ELOT buffers, use ELOT-SLURP-GLOBAL."
   "A regular expression used to match identifiers, for use with label-display.")
 
 (defun elot-update-codelist-fontify-regexp ()
+  "Update `elot-codelist-fontify-regexp' from identifiers using `regexp-opt'."
   (if (listp elot-slurp)
       (setq elot-codelist-fontify-regexp
             (regexp-opt
@@ -143,6 +144,7 @@ ELOT-ATTRIBLIST-HT (hashtable).  Outside ELOT buffers, use ELOT-SLURP-GLOBAL."
   "Variable holding font-lock pattern.")
 
 (defun elot-update-fontify-keyword ()
+  "Update `elot-fontify-keyword' from collected identifier-label pairs."
   (setq elot-fontify-keyword
         `((,elot-codelist-fontify-regexp
            (0 ;; all of the match
@@ -238,7 +240,7 @@ URI is a SPARQL endpoint URL or ontology filename."
    str))
 
 (defun elot-retrieve-labels-plist (url out-file &optional filter limit)
-  "Query URL with SPARQL for labels and attributes, optionally with FILTER and LIMIT. 
+  "Query URL with SPARQL for labels and attributes, optionally FILTER and LIMIT. 
 Output to OUT-FILE as an elisp list."
   (let ((labels-qry (elot-label-attribs-query filter limit))
         (format "application/sparql-results+json"))
@@ -312,18 +314,21 @@ Output to OUT-FILE as an elisp list."
 
 (add-hook 'after-save-hook #'elot-slurp-to-vars nil :local)
 
+(defvar elot-label-lookup-tmp-attriblist-ht nil
+  "Temporary storage for attribute list during label lookup.")
+
 (defun elot-label-lookup-annotations (label)
-  (let* ((attrib-plist (ht-get tmp-elot-attriblist-ht label))
+  "Helper function for `elot-label-lookup' provides preview string for LABEL"
+  (let* ((attrib-plist (ht-get elot-label-lookup-tmp-attriblist-ht label))
          (rdf-type (plist-get attrib-plist "rdf:type" 'string=))
          (prefix (car (split-string (plist-get attrib-plist "puri" 'string=) ":")))
          (definition (string-replace "\n" " " (string-limit
-                                               (or (plist-get attrib-plist "iof-av:naturalLanguageDefinition" 'string=)
-                                                   (plist-get attrib-plist "skos:definition" 'string=)
-                                                   (plist-get attrib-plist "dcterms:description" 'string=)
-                                                   (plist-get attrib-plist "rdfs:comment" 'string=)
-                                                   "")
-                                               120)))
-         )
+                      (or (plist-get attrib-plist "iof-av:naturalLanguageDefinition" 'string=)
+                          (plist-get attrib-plist "skos:definition" 'string=)
+                          (plist-get attrib-plist "dcterms:description" 'string=)
+                          (plist-get attrib-plist "rdfs:comment" 'string=)
+                          "")
+                      120))))
     (concat 
      ;; pad annotations to col 35
      (make-string (max (- 35 (length label)) 0) 32)
@@ -335,12 +340,13 @@ Output to OUT-FILE as an elisp list."
      definition)))
 
 (defun elot-label-lookup ()
+  "Interactive lookup of resource identifier, with completion"
   (interactive)
   (let ((completion-extra-properties 
          (append completion-extra-properties 
-                 '(:annotation-function elot-label-lookup-annotations)))
-        ;; make a tmp copy since elot-attriblist-ht is a local variable
-        (tmp-elot-attriblist-ht elot-attriblist-ht))
+                 '(:annotation-function elot-label-lookup-annotations))))
+    ;; Store the attriblist globally so annotation function can access it
+    (setq elot-label-lookup-tmp-attriblist-ht elot-attriblist-ht)
     (let ((selected-label
            (completing-read 
             "Label: " elot-attriblist-ht)))
