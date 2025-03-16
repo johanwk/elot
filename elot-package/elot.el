@@ -27,11 +27,22 @@
 
 ;; This package is for authoring OWL ontologies using org-mode.
 
-;;;; Installation
+;; To start an ontology from scratch using ELOT, open an Org file and
+;; use predefined "tempo" templates.
 
-;; Install the packages ... .  Then put this file in your `load-path', and put this in
-;; your init file:
+;;  - insert `<odh' and hit <Tab> to add a header for the document
+;;  - insert `<ods' and hit <Tab> to insert headers for the ontology,
+;;    classes, properties, and individuals.
 
+;; The F4 key will open a "hydra" menu with more templates and functions
+;; for exporting to an ontology file or HTML. 
+
+;; Please consult the package Github site for more information:
+;;        <https://github.com/johanwk/elot>
+
+;;; Code:
+
+;; [[file:../elot-defs.org::src-require][src-require]]
 (require 'ob-lob) ; Library of Babel
 (require 'ox) ; export functions
 (require 'ol) ; link functions
@@ -45,17 +56,7 @@
 (require 'ht) ; hashtable, for label display
 (require 'url) ; for opening online ontologies
 (require 'url-http) ; for opening online ontologies
-
-;;;; Usage
-
-;; ... create a new file, use <template inserting function> to insert a template ontology ...
-
-;; The latest version is available at:
-;;
-;;        <https://github.com/johanwk/elot>
-;;
-
-;;; Code:
+;; src-require ends here
 
 ;; [[file:../elot-defs.org::src-settings-externals][src-settings-externals]]
 (defgroup elot

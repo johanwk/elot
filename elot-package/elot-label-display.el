@@ -22,18 +22,14 @@
 
 ;;; Commentary:
 
-;; Collect pairs of resource identifiers and readable labels.
-;; Allow for switching between displaying identifiers and labels.
+;; This file allows for displaying rdfs:label strings instead of
+;; resource identifiers while editing an ontology with ELOT.
 
-;;;; Usage
+;; By default for ELOT, switching between display of identifiers and
+;; labels is assigned to the F5 key.
 
-;; ... switch with elot-toggle-label-display ...
-;; ... look up identifiers with elot-label-lookup ...
-
-;; The latest version is available at:
-;;
-;;        <https://github.com/johanwk/elot>
-;;
+;; By default, labels are updated when your file is saved to disk. You
+;; can also update labels with M-x `elot-label-display-setup'.
 
 ;;; Code:
 

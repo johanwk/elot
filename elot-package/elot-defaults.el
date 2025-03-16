@@ -26,7 +26,7 @@
 ;;
 ;; This file is intended to be loaded when an ELOT org-mode file is
 ;; opened.  To achieve this, add the following text to the first line
-;; of the ELOT file:
+;; of your file:
 ;;
 ;;   # -*- eval: (load-library "elot-defaults") -*-
 
