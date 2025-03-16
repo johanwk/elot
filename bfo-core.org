@@ -17,13 +17,20 @@ identifiers (for instance, from
 ~<http://purl.obolibrary.org/obo/BFO_0000030>~ for the class 'object' to
 just ~:BFO_0000030~).
 
+By default, ELOT will use the /localname/ of an ontology to determine
+the filename of an output ontology file. Because the localname of
+BFO-2020 is ~bfo.owl~, this will produce ~bfo.owl.omn~ (Manchester Syntax)
+and ~bfo.owl.ttl~ (Turtle), which is not intuitive! Therefore, in the
+~:PROPERTIES:~ org-mode "drawer" below, below the top headline,
+the ~:tangle~ target was changed to ~bfo-core.omn~.
+
 * bfo.owl
 :PROPERTIES:
 :ID:       bfo.owl
 :ELOT-context-type: ontology
 :ELOT-context-localname: bfo.owl
 :ELOT-default-prefix: bfo.owl
-:header-args:omn: :tangle ./bfo.owl.omn :noweb yes
+:header-args:omn: :tangle ./bfo-core.omn :noweb yes
 :header-args:emacs-lisp: :tangle no :exports results
 :header-args: :padline yes
 :END:
