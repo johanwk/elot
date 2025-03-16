@@ -536,6 +536,7 @@ DisjointClasses:
  - Range :: :BFO_0000040
  - InverseOf :: :BFO_0000185
  - Characteristics :: Functional
+ - Characteristics :: InverseFunctional
 *** "is carrier of"@en (:BFO_0000101)
  - dc11:identifier :: 254-BFO
  - skos:definition :: "b is carrier of c =Def there is some time t such that c generically depends on b at t"@en
