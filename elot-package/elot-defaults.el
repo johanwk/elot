@@ -98,11 +98,11 @@
   ;;
   (modify-syntax-entry ?\: "w")
   (modify-syntax-entry ?\_ "w")
-  (add-hook 'org-babel-post-tangle-hook 'elot-tangled-omn-to-ttl
+  (add-hook 'org-babel-post-tangle-hook #'elot-tangled-omn-to-ttl
             'local) ;; make it a local hook only
-  (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images 'local)
+  (add-hook 'org-babel-after-execute-hook #'org-redisplay-inline-images 'local)
   (declare-function elot-update-link-abbrev "elot.el")
-  (add-hook 'after-save-hook 'elot-update-link-abbrev)
+  (add-hook 'after-save-hook #'elot-update-link-abbrev)
   ;; the label display functions are in a separate file
   (require 'elot-label-display)
   (declare-function elot-label-display-setup "elot-label-display.el")

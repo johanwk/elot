@@ -161,9 +161,9 @@ file, with `.org' as the extension."
       (delete-file local-file))))  ;; Clean up temp file after conversion
 
 (defun elot-download-ontology (url dest-file)
-  "Download an ontology from URL with content negotiation and save it to DEST-FILE.
-Requests the ontology in the best available format: Turtle, RDF/XML, N3, JSON-LD,
-OWL Functional Syntax, or Manchester Syntax."
+  "Download an ontology from URL with content negotiation, save it to DEST-FILE.
+Requests the ontology in the best available format: Turtle, RDF/XML, N3,
+JSON-LD, OWL Functional Syntax, or Manchester Syntax."
   (let ((url-request-extra-headers
          '(("Accept" . "text/turtle, application/rdf+xml, text/n3, application/ld+json, text/owl-functional, text/owl-manchester; q=0.9"))))
     (url-copy-file url dest-file t)))
@@ -263,20 +263,20 @@ Uses `org-element-map` to collect matching elements.
 The function is used to check whether the list contains ELT."
   (org-element-map x elt #'identity))
 (defun elot-org-elt-item-tag-str (x)
-  "For an item X in an org-element-map, return the item tag."
+  "For an item X in an `org-element-map', return the item tag."
   (if (org-element-property :tag x)
       (substring-no-properties (org-element-interpret-data (org-element-property :tag x)))))
 (defun elot-org-elt-item-pars-str (x)
-  "For an item X in an org-element-map, return the paragraphs as one string."
+  "For an item X in an `org-element-map', return the paragraphs as one string."
   (replace-regexp-in-string "\\([^
 ]\\)\n[ \t]*" "\\1 "
- (string-trim (apply 'concat
+ (string-trim (apply #'concat
                      (org-element-map x '(paragraph plain-list)
                        (lambda (y) (substring-no-properties
                                     (org-element-interpret-data y)))
                        nil nil 'plain-list)))))
 (defun elot-org-elt-item-str (x)
-  "For X in an org-element-map, return pair of strings (tag, paragraph content)."
+  "For X in an `org-element-map', return pair of strings (tag, paragraph content)."
   (list (elot-org-elt-item-tag-str x) (elot-org-elt-item-pars-str x)))
 (defun elot-org-descriptions-in-section-helper ()
   "Return all description list items as pairs in a list.
@@ -856,8 +856,8 @@ PARAMS is ignored."
     (always params)  ;; ignore argument
     body))
 
-(unless (fboundp 'org-babel-execute:ttl)
-  (defalias 'org-babel-execute:ttl 'elot-org-babel-execute-passthrough))
+(unless (fboundp #'org-babel-execute:ttl)
+  (defalias #'org-babel-execute:ttl #'elot-org-babel-execute-passthrough))
 ;; src-babel-passthrough ends here
 
 ;; [[file:../elot-defs.org::src-rdfpuml-execute][src-rdfpuml-execute]]
@@ -876,7 +876,7 @@ EPILOGUE extra PlantUML clauses."
         (input-ttl-file (org-babel-temp-file "rdfpuml-" ".ttl"))
         (output-puml-file (concat (file-name-sans-extension input-ttl-file) ".puml")))
     (with-temp-file input-ttl-file
-      (insert (mapconcat 'identity
+      (insert (mapconcat #'identity
                          (list prefixes ttl config options-str) "\n")))
     ;; apparently prefixes.ttl is needed to reside in current dir, will overwrite
     (if prefixes (with-temp-file "prefixes.ttl"
@@ -911,16 +911,16 @@ Return output file name."
 
 ;; [[file:../elot-defs.org::src-tempo-docheader][src-tempo-docheader]]
 (tempo-define-template "elot-doc-header"
-     '("# -*- eval: (load-library \"elot-defaults\") -*-" > n
-    	"#+title: " (p "Document title: " doctitle) > n
-    	"#+subtitle: An OWL ontology" > n
-    	"#+author: " (p "Author name: " authname) > n
-    	"#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
-"#+call: theme-readtheorg()" n n
-    	(progn (load-library "elot-defaults") (message "Loaded ELOT") ""))
-     "<odh"
-     "ELOT document header"
-     'org-tempo-tags)
+                       '("# -*- eval: (load-library \"elot-defaults\") -*-" > n
+    	                 "#+title: " (p "Document title: " doctitle) > n
+    	                 "#+subtitle: An OWL ontology" > n
+    	                 "#+author: " (p "Author name: " authname) > n
+    	                 "#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
+                         "#+call: theme-readtheorg()" n n
+    	                 (progn (load-library "elot-defaults") (message "Loaded ELOT") ""))
+                       "<odh"
+                       "ELOT document header"
+                       'org-tempo-tags)
 ;; src-tempo-docheader ends here
 
 ;; [[file:../elot-defs.org::src-tempo-ontology][src-tempo-ontology]]
