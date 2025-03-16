@@ -11,25 +11,29 @@ This ELOT example was created by from the BFO-2020 ontology release of
 https://github.com/BFO-ontology/BFO-2020/releases/tag/release-2024-01-29.
 The file was opened with the ELOT function ~elot-open-owl~.
 
-One change was made to the source file: before converting to an
+One change was made to the source file before converting to an
 org-mode document: The empty prefix ~:~ was applied to shorten
 identifiers (for instance, from
 ~<http://purl.obolibrary.org/obo/BFO_0000030>~ for the class 'object' to
 just ~:BFO_0000030~).
 
-By default, ELOT will use the /localname/ of an ontology to determine
-the filename of an output ontology file. Because the localname of
-BFO-2020 is ~bfo.owl~, this will produce ~bfo.owl.omn~ (Manchester Syntax)
-and ~bfo.owl.ttl~ (Turtle), which is not intuitive! Therefore, in the
-~:PROPERTIES:~ org-mode "drawer" below, below the top headline,
-the ~:tangle~ target was changed to ~bfo-core.omn~.
+In the ~:PROPERTIES:~ org-mode "drawer" below, below the top headline,
+some important changes have been made after conversion.
+ - the ~:tangle~ target was changed to ~bfo-core.omn~. By default, ELOT
+   will use the /localname/ of an ontology to determine the filename of
+   an output ontology file. Because the localname of BFO-2020 is
+   ~bfo.owl~, this will produce ~bfo.owl.omn~ (Manchester Syntax) and
+   ~bfo.owl.ttl~ (Turtle), which is not intuitive!
+ - The ~:ELOT-default-prefix:~ has been made blank, since this ontology
+   uses a blank prefix (the colon ~:~). This is important for using the
+   "F4" menu shorthand for inserting classes and properties.
 
 * bfo.owl
 :PROPERTIES:
 :ID:       bfo.owl
 :ELOT-context-type: ontology
 :ELOT-context-localname: bfo.owl
-:ELOT-default-prefix: bfo.owl
+:ELOT-default-prefix: 
 :header-args:omn: :tangle ./bfo-core.omn :noweb yes
 :header-args:emacs-lisp: :tangle no :exports results
 :header-args: :padline yes
