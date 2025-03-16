@@ -35,7 +35,7 @@
 ;;    classes, properties, and individuals.
 
 ;; The F4 key will open a "hydra" menu with more templates and functions
-;; for exporting to an ontology file or HTML. 
+;; for exporting to an ontology file or HTML.
 
 ;; Please consult the package Github site for more information:
 ;;        <https://github.com/johanwk/elot>
@@ -137,10 +137,11 @@ skinparam classAttributeIconSize 0"
 ;; [[file:../elot-defs.org::*Open existing OWL files or online ontologies][Open existing OWL files or online ontologies:1]]
 (defun elot-open-owl (owl-source)
   "Open an OWL ontology from OWL-SOURCE by converting with `elot-exporter'.
-OWL-SOURCE can be a local file or a URL. If a URL is provided, the function requests
-the ontology using content negotiation, preferring Turtle, RDF/XML, N3, JSON-LD, OWL
-Functional Syntax, or Manchester Syntax. The output is captured into a buffer named
-after the converted file, with `.org' as the extension."
+OWL-SOURCE can be a local file or a URL.  If a URL is provided, the
+function requests the ontology using content negotiation, preferring
+Turtle, RDF/XML, N3, JSON-LD, OWL Functional Syntax, or Manchester
+Syntax.  The output is captured into a buffer named after the converted
+file, with `.org' as the extension."
   (interactive "sEnter OWL file path or URL: ")
   (let* ((is-url (string-match-p "\\`https?://" owl-source))
          (local-file (if is-url
@@ -632,7 +633,11 @@ Result FORMAT is tabular `csv', or Turtle RDF `ttl'."
   (bound-and-true-p elot-buffer-p))
 
 (defun elot--custom-org-babel-execute-sparql (orig-fun &rest args)
-  "ELOT-specific SPARQL execution with support for ROBOT."
+  "ELOT-specific SPARQL execution with support for ROBOT.
+This function is used to provide `advice' around
+`org-babel-execute:sparql'.  ORIG-FUN and ARGS serve to invoke the
+unchanged function, defined in `ob-sparql.el', when not called from an
+ELOT buffer."
   (if (elot--is-elot-buffer)
       (progn
         (message "Executing a SPARQL query block with ELOT version of org-babel-execute:sparql.")
