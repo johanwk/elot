@@ -162,7 +162,7 @@ file, with `.org' as the extension."
 
 (defun elot-download-ontology (url dest-file)
   "Download an ontology from URL with content negotiation and save it to DEST-FILE.
-Requests the ontology in the best available format: Turtle, RDF/XML, N3, JSON-LD, 
+Requests the ontology in the best available format: Turtle, RDF/XML, N3, JSON-LD,
 OWL Functional Syntax, or Manchester Syntax."
   (let ((url-request-extra-headers
          '(("Accept" . "text/turtle, application/rdf+xml, text/n3, application/ld+json, text/owl-functional, text/owl-manchester; q=0.9"))))

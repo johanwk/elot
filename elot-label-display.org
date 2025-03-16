@@ -42,8 +42,8 @@ in SPARQL select results.
   ;; By default for ELOT, switching between display of identifiers and
   ;; labels is assigned to the F5 key.
 
-  ;; By default, labels are updated when your file is saved to disk. You
-  ;; can also update labels with M-x `elot-label-display-setup'.
+  ;; By default, labels are updated when your file is saved to disk.
+  ;; You can also update labels with M-x `elot-label-display-setup'.
 
   ;;; Code:
 #+end_src
