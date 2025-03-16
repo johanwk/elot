@@ -627,34 +627,39 @@ Result FORMAT is tabular `csv', or Turtle RDF `ttl'."
 ;; src-robot-query ends here
 
 ;; [[file:../elot-defs.org::src-sparql-exec-patch][src-sparql-exec-patch]]
-(defun org-babel-execute:sparql (body params)
-  "Execute a SPARQL query block BODY with parameters PARAMS with org-babel.
+(defun elot--is-elot-buffer ()
+  "Check if the current buffer is an ELOT buffer."
+  (bound-and-true-p elot-buffer-p))
 
-This is a modification of `org-babel-execute:sparql' from `ob-sparql'.
-The function has been patched for ELOT to allow query with ROBOT.
-This function is called by `org-babel-execute-src-block'."
-  (message "Executing a SPARQL query block with ELOT version of org-babel-execute:sparql.")
-  (let* ((url (cdr (assoc :url params)))
-         (format (cdr (assoc :format params)))
-         (query (org-babel-expand-body:sparql body params))
-         (org-babel-sparql--current-curies
-          (append org-link-abbrev-alist-local org-link-abbrev-alist))
-         (elot-prefixed-query
-          (concat (elot-prefix-block-from-alist org-link-abbrev-alist-local 'sparql)
-                  "\n" query))
-         (format-symbol
-          (if (string-match-p "\\(turtle\\|ttl\\)" format) 'ttl 'csv)))
-    (with-temp-buffer
-      (always org-babel-sparql--current-curies) ;; avoid warning, it is actually used
-      (if (string-match-p "^http" url)  ;; querying an endpoint, or a file?
-          (sparql-execute-query query url format t) ;; add test, does the file exist at all
-        (elot-robot-execute-query elot-prefixed-query url format-symbol))
-      (org-babel-result-cond
-          (cdr (assoc :result-params params))
-        (buffer-string)
-        (if (string-equal "text/csv" format)
-            (org-babel-sparql-convert-to-table)
-          (buffer-string))))))
+(defun elot--custom-org-babel-execute-sparql (orig-fun &rest args)
+  "ELOT-specific SPARQL execution with support for ROBOT."
+  (if (elot--is-elot-buffer)
+      (progn
+        (message "Executing a SPARQL query block with ELOT version of org-babel-execute:sparql.")
+        (let* ((body (nth 0 args))
+               (params (nth 1 args))
+               (url (cdr (assoc :url params)))
+               (format (cdr (assoc :format params)))
+               (query (org-babel-expand-body:sparql body params))
+               (org-babel-sparql--current-curies
+                (append org-link-abbrev-alist-local org-link-abbrev-alist))
+               (elot-prefixed-query
+                (concat (elot-prefix-block-from-alist org-link-abbrev-alist-local 'sparql) "\n" query))
+               (format-symbol (if (string-match-p "\\(turtle\\|ttl\\)" format) 'ttl 'csv)))
+          (with-temp-buffer
+            (if (string-match-p "^http" url)
+                (sparql-execute-query query url format t) ;; Query an endpoint
+              (elot-robot-execute-query elot-prefixed-query url format-symbol)) ;; Query local file
+            (org-babel-result-cond
+                (cdr (assoc :result-params params))
+              (buffer-string)
+              (if (string-equal "text/csv" format)
+                  (org-babel-sparql-convert-to-table)
+                (buffer-string))))))
+    ;; Default behavior for non-ELOT buffers
+    (apply orig-fun args)))
+
+(advice-add 'org-babel-execute:sparql :around #'elot--custom-org-babel-execute-sparql)
 ;; src-sparql-exec-patch ends here
 
 ;; [[file:../elot-defs.org::src-write-class][src-write-class]]

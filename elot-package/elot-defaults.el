@@ -84,6 +84,8 @@
 (progn
   (org-cycle-set-startup-visibility)
   (load-library "elot")
+  (defvar-local elot-buffer-p t
+    "Indicates that this buffer is an ELOT buffer.")
   (org-babel-lob-ingest (concat (file-name-directory (locate-library "elot")) "elot-lob.org"))
   (elot-update-link-abbrev)
   (add-to-list 'org-latex-classes
