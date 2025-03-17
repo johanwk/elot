@@ -1,5 +1,5 @@
 * Helper functions for ELOT
-** elisp functions
+** elisp functions -- tangling to ~elot-package/elot.el~
 :PROPERTIES:
 :header-args: :tangle ./elot-package/elot.el :comments link
 :END:
@@ -8,64 +8,81 @@ Block native compilation with ~no-native-compile: t;~. This (apparently)
 allows for local variables to be accessed -- relevant for
 ~org-link-abbrev-alist-local~, which is needed for abbreviation of URIs
 in SPARQL select results.
+#+name: src-package-header
 #+begin_src emacs-lisp :comments nil
-  ;;; elot.el --- Emacs Literate Ontology Tool (ELOT)   -*- lexical-binding: t; no-native-compile: t; -*-
+   ;;; elot.el --- Emacs Literate Ontology Tool (ELOT)   -*- lexical-binding: t; no-native-compile: t; -*-
 
-  ;; Copyright (C) 2024 Johan W. Klüwer
+   ;; Copyright (C) 2024, 2025 Johan W. Klüwer
 
-  ;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
-  ;; URL: https://github.com/johanwk/elot
-  ;; Version: 0.1-pre
-  ;; Package-Requires: ((emacs "29.2") (htmlize) (ht))
-  ;; Keywords: org, ontology
+   ;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
+   ;; URL: https://github.com/johanwk/elot
+   ;; Version: 1.0.0
+   ;; Package-Requires: ((emacs "29.1") (htmlize "1.58") (ht "2.3") (omn-mode "1.3") (hydra "0.15.0") (sparql-mode "4.0.2"))
+   ;; Keywords: languages outlines tools org ontology
 
-  ;; This file is not part of GNU Emacs.
+   ;; This file is not part of GNU Emacs.
 
-  ;; This program is free software; you can redistribute it and/or modify
-  ;; it under the terms of the GNU General Public License as published by
-  ;; the Free Software Foundation, either version 3 of the License, or
-  ;; (at your option) any later version.
+   ;; This program is free software; you can redistribute it and/or modify
+   ;; it under the terms of the GNU General Public License as published by
+   ;; the Free Software Foundation, either version 3 of the License, or
+   ;; (at your option) any later version.
 
-  ;; This program is distributed in the hope that it will be useful,
-  ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-  ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  ;; GNU General Public License for more details.
+   ;; This program is distributed in the hope that it will be useful,
+   ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+   ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   ;; GNU General Public License for more details.
 
-  ;; You should have received a copy of the GNU General Public License
-  ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   ;; You should have received a copy of the GNU General Public License
+   ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-  ;;; Commentary:
+   ;;; Commentary:
 
-  ;; This package is for authoring OWL ontologies using org-mode.
+   ;; This package is for authoring OWL ontologies using org-mode.
 
-  ;;;; Installation
+   ;; To start an ontology from scratch using ELOT, open an Org file and
+   ;; use predefined "tempo" templates.
 
-  ;; Install the packages ... .  Then put this file in your `load-path', and put this in
-  ;; your init file:
+   ;;  - insert `<odh' and hit <Tab> to add a header for the document
+   ;;  - insert `<ods' and hit <Tab> to insert headers for the ontology,
+   ;;    classes, properties, and individuals.
 
+   ;; The F4 key will open a "hydra" menu with more templates and functions
+   ;; for exporting to an ontology file or HTML.
+
+   ;; Please consult the package Github site for more information:
+   ;;        <https://github.com/johanwk/elot>
+   
+   ;;; Code:
+#+end_src
+
+
+*** Require packages
+#+name: src-require
+#+begin_src emacs-lisp
   (require 'ob-lob) ; Library of Babel
   (require 'ox) ; export functions
   (require 'ol) ; link functions
-  (require 'org-tempo) ; link functions
+  (require 'org-tempo) ; document templates
   (require 'htmlize) ; fontify blocks
-  (require 'omn-mode) ; OMN support
-  (require 'sparql-mode) ; OMN support
-  (require 'ob-plantuml) ; PlantUML
+  (require 'omn-mode) ; OWL Manchester Syntax (OMN) support
+  (require 'sparql-mode) ; SPARQL
+  (require 'ob-sparql) ; SPARQL in org-babel
+  (require 'ob-plantuml) ; PlantUML in org-babel
   (require 'hydra) ; hydra menu
   (require 'ht) ; hashtable, for label display
-
-  ;;;; Usage
-
-  ;; ... create a new file, use <template inserting function> to insert a template ontology ...
-
+  (require 'url) ; for opening online ontologies
+  (require 'url-http) ; for opening online ontologies
 #+end_src
-*** Setting for post-processing with ROBOT, rdfpuml
+*** Setting for post-processing with ROBOT, rdfpuml; import OWL with elot-exporter
 Se below under [[*Default settings][Default settings]] for a hook to convert to Turtle after
 tangling to OMN.
+#+name: src-settings-externals
 #+begin_src emacs-lisp
-  (defgroup elot 
+  (defgroup elot
     nil
-    "Customization group for ELOT")
+    "Customization group for Emacs Literate Ontology Tool (ELOT)."
+    :prefix "elot-"
+    :group 'elot)
   (defcustom elot-robot-jar-path (expand-file-name "~/bin/robot.jar")
     "Path to the robot.jar file."
     :group 'elot
@@ -73,15 +90,25 @@ tangling to OMN.
     :type 'string)
   (defvar elot-robot-command-str
     (concat "java -jar " elot-robot-jar-path))
+  (defcustom elot-exporter-jar-path (expand-file-name "~/bin/elot-exporter.jar")
+    "Path to the elot-exporter.jar file."
+    :group 'elot
+    :version "29.2"
+    :type 'string)
+  (defvar elot-exporter-command-str
+    (concat "java -jar " elot-exporter-jar-path))
   (defun elot-robot-command (cmd)
+    "Execute ROBOT command CMD using `shell-command'.
+  Check whether `elot-robot-jar-path` is set and points to an existing file.
+  It not set, return an error."
     (if (or (string= elot-robot-jar-path "") (not (file-exists-p elot-robot-jar-path)))
-        (error "ROBOT not found. Set elot-robot-jar-path with M-x customize-variable."))
+        (error "ROBOT not found.  Set elot-robot-jar-path with M-x customize-variable"))
     (shell-command (concat elot-robot-command-str " " cmd)))
   (defun elot-robot-omn-to-ttl (omnfile)
-    "Call ROBOT to make a Turtle file from `omnfile'."
+    "Call ROBOT to make a Turtle file from OMNFILE."
     (cond
      ((or (string= elot-robot-jar-path "") (not (file-exists-p elot-robot-jar-path)))
-      (message "ROBOT not found, not converting to Turtle. Set elot-robot-jar-path with M-x customize-variable."))
+      (message "ROBOT not found, not converting to Turtle.  Set elot-robot-jar-path with M-x customize-variable."))
      ((not (file-exists-p omnfile))
       (message (concat omnfile " not found, nothing for ROBOT to convert")))
      (t (shell-command
@@ -96,7 +123,7 @@ tangling to OMN.
       (if omn-p
           (elot-robot-omn-to-ttl omnfile))))
   (defcustom elot-default-image-path "./images/"
-    "ELOT default output directory for generated images"
+    "ELOT default output directory for generated images."
     :group 'elot
     :version "29.2"
     :type 'string)
@@ -109,7 +136,7 @@ tangling to OMN.
     "hide empty members
   hide circle
   skinparam classAttributeIconSize 0"
-    "Default options for rdfpuml"
+    "Default options for rdfpuml."
     :group 'elot
     :version "29.2"
     :type 'string)
@@ -122,7 +149,43 @@ tangling to OMN.
     :version "29.2"
     :type 'string)
   (defun elot-rdfpuml-command (ttl-file)
+    "Command to execute rdfpuml to generate diagram from TTL-FILE."
     (shell-command (concat elot-rdfpuml-command-str " " ttl-file)))
+#+end_src
+*** Open existing OWL files or online ontologies
+#+begin_src emacs-lisp
+  (defun elot-open-owl (owl-source)
+    "Open an OWL ontology from OWL-SOURCE by converting with `elot-exporter'.
+  OWL-SOURCE can be a local file or a URL.  If a URL is provided, the
+  function requests the ontology using content negotiation, preferring
+  Turtle, RDF/XML, N3, JSON-LD, OWL Functional Syntax, or Manchester
+  Syntax.  The output is captured into a buffer named after the converted
+  file, with `.org' as the extension."
+    (interactive "sEnter OWL file path or URL: ")
+    (let* ((is-url (string-match-p "\\`https?://" owl-source))
+           (local-file (if is-url
+                           (let ((temp-file (make-temp-file "elot-ontology-" nil ".owl")))
+                             (elot-download-ontology owl-source temp-file)
+                             temp-file)
+                         owl-source))
+           (output-buffer-name (concat (file-name-sans-extension (file-name-nondirectory local-file)) ".org"))
+           (output-buffer (get-buffer-create output-buffer-name))
+           (command (concat elot-exporter-command-str " " (shell-quote-argument local-file))))
+      (with-current-buffer output-buffer
+        (erase-buffer)
+        (shell-command command output-buffer)
+        (org-mode))
+      (pop-to-buffer output-buffer)
+      (when is-url
+        (delete-file local-file))))  ;; Clean up temp file after conversion
+
+  (defun elot-download-ontology (url dest-file)
+    "Download an ontology from URL with content negotiation, save it to DEST-FILE.
+  Requests the ontology in the best available format: Turtle, RDF/XML, N3,
+  JSON-LD, OWL Functional Syntax, or Manchester Syntax."
+    (let ((url-request-extra-headers
+           '(("Accept" . "text/turtle, application/rdf+xml, text/n3, application/ld+json, text/owl-functional, text/owl-manchester; q=0.9"))))
+      (url-copy-file url dest-file t)))
 #+end_src
 *** OMN keywords
 In omn-mode, there's variables for entity and property
@@ -133,6 +196,7 @@ in ELOT, since not dependent on any particular resource.
 
 ELOT isn't set up (2024-03-24) for declaring individuals, but this
 will change, so the appropriate keywords are included.
+#+name: src-omn-keywords
 #+begin_src emacs-lisp
   (defvar elot-omn-property-keywords
   '(
@@ -150,35 +214,39 @@ will change, so the appropriate keywords are included.
       "Types"
       "Facts"
       "HasKey"
-      "Import"
-      ))
+      "Import"))
 #+end_src
 
 We add a filter to make OMN in description lists =\ttfamily=. See the Org [[https://orgmode.org/manual/Advanced-Export-Configuration.html][manual]].
+#+name: src-omn-latex-tt
 #+begin_src emacs-lisp
   (defun elot-latex-filter-omn-item (text backend info)
-    "Format OMN content in description lists"
-    (when (org-export-derived-backend-p backend 'latex)
-      (when (seq-some
-             (lambda (x)
-               (string-match (concat "^\\\\item\\[{" x "}\\]") text))
-             elot-omn-property-keywords)
+    "Format OWL Manchester Syntax content TEXT in description lists.
+  Target output type BACKEND
+  The context INFO is ignored."
+    (progn
+      (always info) ;; ignore this argument
+      (when (org-export-derived-backend-p backend 'latex)
+        (when (seq-some
+               (lambda (x)
+                 (string-match (concat "^\\\\item\\[{" x "}\\]") text))
+               elot-omn-property-keywords)
           ;; make the description term texttt
           (setq text (replace-regexp-in-string
                       "\\\\item\\[{\\([a-zA-Z]+\\)}\\]"
                       "\\\\item[\\\\normalfont\\\\ttfamily\\\\small \\1]"
                       text))
           ;; make the list entry content omn inline code unless it's a url
-          (if (not (string-match "\\url{.*}$" text))
+          (if (not (string-match "\\\\url{.*}$" text))
               (replace-regexp-in-string
                "^\\(.*\\] \\)\\(.*\\)"
                "\\1\\\\lstinline[language=omn]{\\2}"
                text)
-            text))))
+            text)))))
 
 
   (add-to-list 'org-export-filter-item-functions
-             'elot-latex-filter-omn-item)
+               'elot-latex-filter-omn-item)
 #+end_src
 *** Context identification
 In particular for tempo templates, it's useful to be able to retrieve
@@ -189,83 +257,92 @@ etc.).
  - property =ELOT-context-type= has value =ontology=
  - property =ELOT-context-localname= has value =pizza= for the Pizza ontology
  - property =ELOT-default-prefix= has value =pizza= for the Pizza ontology
- #+begin_src emacs-lisp
-   (defun elot-context-type ()
-     "Retrieve value of property ELOT-context-type for a governing
-   heading. This will return \"ontology\" if point is under a
-   heading that declares an ontology."
-     (org-entry-get-with-inheritance "ELOT-context-type"))
-   (defun elot-context-localname ()
-     "Retrieve value of property ELOT-context-localname for a governing
-   heading. This will return the localname of the ontology if point
-   is under a heading that declares an ontology."
-     (org-entry-get-with-inheritance "ELOT-context-localname"))
-   (defun elot-default-prefix ()
-     "Retrieve value of property ELOT-default-prefix for a governing
-   heading. This will return the default prefix for ontology
-   resources if point is under a heading that declares an ontology."
-     (org-entry-get-with-inheritance "ELOT-default-prefix"))
-   (defun elot-governing-hierarchy ()
-     "Retrieve the ID value of the governing hierarchy, or nil"
-     (let ((this-ID
-            (org-entry-get-with-inheritance "ID")))
-       (and (string-match-p "-hierarchy$" this-ID)
-            this-ID)))
- #+end_src
+#+name: src-context-info
+#+begin_src emacs-lisp
+  (defun elot-context-type ()
+    "Retrieve value of property ELOT-context-type for a governing heading.
+  This will return \"ontology\" if point is under a heading that
+  declares an ontology."
+    (org-entry-get-with-inheritance "ELOT-context-type"))
+  (defun elot-context-localname ()
+    "Retrieve value of property ELOT-context-localname for a governing heading.
+  This will return the localname of the ontology
+  if point is under a heading that declares an ontology."
+    (org-entry-get-with-inheritance "ELOT-context-localname"))
+  (defun elot-default-prefix ()
+    "Retrieve value of property ELOT-default-prefix for a governing heading.
+  This will return the default prefix for ontology resources
+  if point is under a heading that declares an ontology."
+    (org-entry-get-with-inheritance "ELOT-default-prefix"))
+  (defun elot-governing-hierarchy ()
+    "Retrieve the ID value of the governing hierarchy, or nil."
+    (let ((this-ID
+           (org-entry-get-with-inheritance "ID")))
+      (and (string-match-p "-hierarchy$" this-ID)
+           this-ID)))
+#+end_src
 **** Looking at
 Functions to know where we are in an ELOT tree.
 Introduced because ontology-declaring headings don't have
 subsections. Revisit to cover other kinds of headings, and probably a
 better way to identify than matching with "ontology-declaration" in
 the ID string.
+#+name: src-looking-at
 #+begin_src emacs-lisp
   (defun elot-at-ontology-heading ()
-    "Return TRUE if point is in a heading that declares ontology"
+    "Return TRUE if point is in a heading that declares ontology."
     (let ((id (or (org-entry-get (point) "ID") "")))
      (string-match "ontology-declaration" id)))
   (defun elot-in-class-tree ()
-    "Return TRUE if point is a class hierarchy heading"
+    "Return TRUE if point is a class hierarchy heading."
     (string-match-p "class-hierarchy" (elot-governing-hierarchy)))
   (defun elot-in-property-tree ()
-    "Return TRUE if point is a property hierarchy heading"
+    "Return TRUE if point is a property hierarchy heading."
     (string-match-p "property-hierarchy" (elot-governing-hierarchy)))
 #+end_src
 *** Get description lists into lisp lists
-#+name: defun-desc-lists
+#+name: src-desc-lists
 #+BEGIN_SRC emacs-lisp :results silent
-  (defun org-elt-exists (x elt)
+  (defun elot-org-elt-exists (x elt)
+    "Return a list of elements of type ELT extracted from X.
+  Uses `org-element-map` to collect matching elements.
+  The function is used to check whether the list contains ELT."
     (org-element-map x elt #'identity))
-  (defun org-elt-item-tag-str (x)
-    "for an item in an org-element-map, return the item tag"
+  (defun elot-org-elt-item-tag-str (x)
+    "For an item X in an `org-element-map', return the item tag."
     (if (org-element-property :tag x)
         (substring-no-properties (org-element-interpret-data (org-element-property :tag x)))))
-  (defun org-elt-item-pars-str (x)
-    "for an item in an org-element map, return the paragraphs as one string"
+  (defun elot-org-elt-item-pars-str (x)
+    "For an item X in an `org-element-map', return the paragraphs as one string."
     (replace-regexp-in-string "\\([^
   ]\\)\n[ \t]*" "\\1 "
-   (string-trim (apply 'concat
+   (string-trim (apply #'concat
                        (org-element-map x '(paragraph plain-list)
-                         (lambda (y) (substring-no-properties 
+                         (lambda (y) (substring-no-properties
                                       (org-element-interpret-data y)))
                          nil nil 'plain-list)))))
-  (defun org-elt-item-str (x)
-    (list (org-elt-item-tag-str x) (org-elt-item-pars-str x)))
-  (defun org-descriptions-in-section-helper ()
+  (defun elot-org-elt-item-str (x)
+    "For X in an `org-element-map', return pair of strings (tag, paragraph content)."
+    (list (elot-org-elt-item-tag-str x) (elot-org-elt-item-pars-str x)))
+  (defun elot-org-descriptions-in-section-helper ()
+    "Return all description list items as pairs in a list.
+  This function is called from `elot-org-descriptions-in-section' after
+  narrowing to a description list under a heading."
     (org-element-map (org-element-parse-buffer) 'item
       (lambda (y) (if (org-element-property :tag y)
-                      (append (org-elt-item-str y)
-                              (if (org-elt-exists (cdr y) 'item)
+                      (append (elot-org-elt-item-str y)
+                              (if (elot-org-elt-exists (cdr y) 'item)
                                   (org-element-map (cdr y) 'item
                                     (lambda (z) (if (org-element-property :tag z)
-                                                    (org-elt-item-str z))) nil nil 'item))
-                              ))) nil nil 'item))
+                                                    (elot-org-elt-item-str z))) nil nil 'item)))))
+      nil nil 'item))
 
-  (defun org-descriptions-in-section ()
-    "return any description list items in current section as a list of strings"
+  (defun elot-org-descriptions-in-section ()
+    "Return any description list items in current section as a list of strings."
     (interactive)
-                                          ; narrow our area of interest to the current section, before any subsection
+    ;; narrow our area of interest to the current section, before any subsection
     (let ((section-begin) (section-end))
-      (save-restriction 
+      (save-restriction
         (save-excursion
           (unless (org-at-heading-p) (org-previous-visible-heading 1))
           (setq section-begin (org-element-property :contents-begin (org-element-at-point)))
@@ -275,11 +352,16 @@ the ID string.
               nil ; maybe this outline section is empty
             (progn
               (narrow-to-region section-begin section-end)
-                                          ; return all paragraphs--description items as pairs in a list
-              (org-descriptions-in-section-helper)))))))
+              ;; return all paragraphs--description items as pairs in a list
+              (elot-org-descriptions-in-section-helper)))))))
 
-  (defun org-subsection-descriptions ()
-    "return a plist for the outline at point, of headlines paired with plists of description-list items and values."
+  (defun elot-org-subsection-descriptions ()
+    "Return a plist mapping subsection headlines to description lists.
+  This function collects headlines in the current subtree and associates
+  each with a plist of description-list items and values.  Sections with
+  the tag `nodeclare' or with headings starting with `COMMENT' are excluded.
+  The function does not include the section that has the target property ID,
+  unless it is an ontology section."
     (save-restriction
       (save-excursion
         (unless (org-at-heading-p) (org-previous-visible-heading 1)) ; ensure we are at a heading
@@ -289,7 +371,7 @@ the ID string.
               (elot-at-ontology-heading))
             (let (ret)
               (while (let ((heading (substring-no-properties (org-get-heading nil t)))
-                           (descriptions (org-descriptions-in-section)))
+                           (descriptions (elot-org-descriptions-in-section)))
                        (unless (or (string-match-p "^COMMENT" heading)
                                    (member "nodeclare" (org-get-tags (point) t)))
                          (setq ret
@@ -303,14 +385,14 @@ the ID string.
 #+END_SRC
 
 *** puri expansion
-#+name: defun-puri
+#+name: src-puri-expand
 #+BEGIN_SRC emacs-lisp :results silent
-  (defconst puri-re "^\\([-a-z_A-Z0-9]*\\):\\([a-z_A-Z0-9-.]*\\)$")
+  (defconst elot-puri-re "^\\([-a-z_A-Z0-9]*\\):\\([a-z_A-Z0-9.-]*\\)$")
 
-  (defun unprefix-uri (puri abbrev-alist)
-    "Replace prefix in puri with full form from abbrev-alist, if there's a match."
+  (defun elot-unprefix-uri (puri abbrev-alist)
+    "Replace prefix in PURI with full form from ABBREV-ALIST, if there's a match."
     (if (eq abbrev-alist nil) puri
-      (if (string-match puri-re puri)
+      (if (string-match elot-puri-re puri)
           (let* ((this-prefix (match-string-no-properties 1 puri))
                  (this-localname (match-string-no-properties 2 puri))
                  (this-ns (cdr (assoc this-prefix abbrev-alist))))
@@ -319,27 +401,28 @@ the ID string.
               puri))
         puri)))
 
-  (defun annotation-string-or-uri (str)
-    "str is wanted as an annotation value in Manchester Syntax. Expand uri, or return number, or wrap in quotes."
-                                          ; maybe this entry contains string representation of meta-annotations, remove them
+  (defun elot-annotation-string-or-uri (str)
+    "Expand STR to be used as an annotation value in Manchester Syntax.
+  Expand uri, or return number, or wrap in quotes."
+    ;; maybe this entry contains string representation of meta-annotations, remove them
     (setq str (replace-regexp-in-string " - [^ ]+ ::.*$" "" str))
     ;; maybe there's macros in the string, expand them
     (if (string-match "{{{.+}}}" str)
         (let ((omt org-macro-templates))
           (with-temp-buffer (org-mode)
-                            (insert str) (org-macro-replace-all omt) 
+                            (insert str) (org-macro-replace-all omt)
                             (setq str (buffer-string)))))
     (cond (; a number -- return the string
            (string-match "^[[:digit:]]+[.]?[[:digit:]]*$" str)
            (concat "  " str))
           (; a bare URI, which org-mode wraps in double brackets -- wrap in angles
-           (string-match "^[[][[]\\(https?[^ ]*\\)[]][]]$" str)
+           (string-match "^[[][[]\\(http[^ ]*\\)[]][]]$" str)
            (concat "  <" (match-string 1 str) ">"))
           (; a bare URI, but no double brackets -- wrap in angles
-           (string-match "^\\(https?[^ ]*\\)$" str)
+           (string-match "^\\(http[^ ]*\\)$" str)
            (concat "  <" (match-string 1 str) ">"))
           (; a bare URI, in angles
-           (string-match "^\\(<https?[^ ]*>\\)$" str)
+           (string-match "^\\(<http[^ ]*>\\)$" str)
            (concat "  " (match-string 1 str)))
           (; true -- make it an explicit boolean
            (string-match "^true$" str) " \"true\"^^xsd:boolean")
@@ -349,107 +432,111 @@ the ID string.
            (string-match "^\".*\"^^[-_[:alnum:]]*:[-_[:alnum:]]+$" str)
            (concat "  " str))
           (; not a puri -- normal string, wrap in quotes
-           (equal str (unprefix-uri str org-link-abbrev-alist-local))
+           (equal str (elot-unprefix-uri str org-link-abbrev-alist-local))
            ;; if a language tag @en is present, return unchanged
            (if (string-match "\"\\(.*\n\\)*.*\"@[a-z]+" str)
                (concat " " str)
              ;; escape all quotes with \", note this gives invalid results if some are already escaped
              (concat "  \"" (replace-regexp-in-string "\"" "\\\\\"" str) "\"")))
           (; else, a puri -- wrap in angles
-           t (concat "  " (unprefix-uri str org-link-abbrev-alist-local)))))
+           t (concat "  " (elot-unprefix-uri str org-link-abbrev-alist-local)))))
 
-  (defun omn-restriction-string (str)
-    "str is wanted as OMN value. Strip any meta-annotations. Otherwise return unchanged."
+  (defun elot-omn-restriction-string (str)
+    "STR is wanted as an OMN value.  Strip any meta-annotations, or return unchanged."
     (setq str (replace-regexp-in-string " - [^ ]+ ::.*$" "" str))
     str)
 #+END_SRC
 *** Use section headings as ontology resources
-=org-list-siblings= returns a tree of headline strings that matches the
-outline at point. 
+=elot-org-list-siblings= returns a tree of headline strings that matches the
+outline at point.
 
-=org-subsection-descriptions= returns a list for the outline at point,
+=elot-org-subsection-descriptions= returns a list for the outline at point,
 of headlines paired with lists of item-value pairs from description
 lists. We use nested lists in order to allow for annotation of
 annotations in a future improved version, from sub-items.
-#+name: defun-resource-headings
+#+name: src-heading-to-list
 #+BEGIN_SRC emacs-lisp :results silent
-; http://stackoverflow.com/questions/17179911/emacs-org-mode-tree-to-list
-(defun org-list-siblings ()
-  "List siblings in current buffer starting at point.
+  ; http://stackoverflow.com/questions/17179911/emacs-org-mode-tree-to-list
+  (defun elot-org-list-siblings ()
+    "List siblings in current buffer starting at point.
   Note, you can always (goto-char (point-min)) to collect all siblings."
-  (interactive)
-  (let (ret)
-    (unless (org-at-heading-p) 
-      (org-forward-heading-same-level nil t))
-    (while (progn
-             (unless (looking-at "[*]* *COMMENT")
-               (setq ret
-                     (if (member "nodeclare" (org-get-tags (point) t)) ; tagged to be skipped, proceed down
-                         (cons (save-excursion
-                                         (when (org-goto-first-child)
-                                           (org-list-siblings))) ret)
-                       (cons (append (list
-                                        ; the nil t arguments for tags yes, todos no, todos no, priorities no
-                                        (substring-no-properties (org-get-heading nil t t t)))
-                                       (save-excursion
-                                         (when (org-goto-first-child)
-                                           (org-list-siblings))))
-                               ret))))
-             (org-goto-sibling)))
-    (nreverse ret)))
+    (interactive)
+    (let (ret)
+      (unless (org-at-heading-p)
+        (org-forward-heading-same-level nil t))
+      (while (progn
+               (unless (looking-at "[*]* *COMMENT")
+                 (setq ret
+                       (if (member "nodeclare" (org-get-tags (point) t)) ; tagged to be skipped, proceed down
+                           (cons (save-excursion
+                                           (when (org-goto-first-child)
+                                             (elot-org-list-siblings))) ret)
+                         (cons (append (list
+                                          ; the nil t arguments for tags yes, todos no, todos no, priorities no
+                                          (substring-no-properties (org-get-heading nil t t t)))
+                                         (save-excursion
+                                           (when (org-goto-first-child)
+                                             (elot-org-list-siblings))))
+                                 ret))))
+               (org-goto-sibling)))
+      (nreverse ret)))
 
-(defun entity-from-header (str)
-"Get an entity from a header string.
-Return either a CURIE
-or a full-form URI in angle brackets)."
-(let* ((curie-regex "[-_./[:alnum:]]*:[-_/.[:alnum:]]*")
-       (full-uri-regex "http[s]?://[-A-Za-z0-9._~:/?#\\@!$&'()*+,;=%]*"))
-  (cond
-   ;; single URI, beginning of line
-   ((string-match (format "^<?\\(%s\\)>?" full-uri-regex) str)
-    (format "<%s>" (match-string 1 str)))
-   ;; single URI in parentheses
-   ((string-match (format "(<?\\(%s\\)>?)" full-uri-regex) str)
-    (format "<%s>" (match-string 1 str)))
-   ;; CURIE, then URI in parentheses (ontology and ontology version)
-   ((string-match (format "(\\(%s\\) <?\\(%s\\)>?)" curie-regex full-uri-regex) str)
-    (format "%s <%s>" (match-string 1 str) (match-string 2 str)))
-   ;; two URIs in parentheses (ontology and ontology version)
-   ((string-match (format "(<?\\(%s\\)>? <?\\(%s\\)>?)" full-uri-regex full-uri-regex) str)
-    (let ((uri1 (match-string 1 str))
-          (uri2 (match-string 2 str)))
-      (format "<%s> <%s>" uri1 uri2)))
-   ;; CURIE, beginning of line
-   ((string-match (format "^\\(%s\\)" curie-regex) str)
-    (match-string 1 str))
-   ;; CURIE in parentheses
-   ((string-match (format "(\\(%s\\))" curie-regex) str)
-    (match-string 1 str))
-   ;; URN identifier: return as-is if the string is a URN, e.g. <urn:isbn:0943396611>
-   ((string-match "^<urn:[^>]+>$" str) str)
-   ;; two CURIEs in parentheses (ontology and ontology version)
-   ((string-match (format "(\\(%s\\) \\(%s\\))" curie-regex curie-regex) str)
-    (format "%s %s" (match-string 1 str) (match-string 2 str)))
-   (t
-    (error "Fail! Heading \"%s\" in %s is not well-formed"
-           str
-           (org-entry-get-with-inheritance "ID"))))))
+  (defun elot-entity-from-header (str)
+    "From header string STR return a CURIE or a full-form URI in angle brackets."
+    (let* ((curie-regex "[-_./[:alnum:]]*:[-_/.[:alnum:]]*")
+           (full-uri-regex "http[s]?://[-A-Za-z0-9._~:/?#\\@!$&'()*+,;=%]*"))
+      (cond
+       ;; single URI, beginning of line
+       ((string-match (format "^<?\\(%s\\)>?" full-uri-regex) str)
+        (format "<%s>" (match-string 1 str)))
+       ;; single URI in parentheses
+       ((string-match (format "(<?\\(%s\\)>?)" full-uri-regex) str)
+        (format "<%s>" (match-string 1 str)))
+       ;; CURIE, then URI in parentheses (ontology and ontology version)
+       ((string-match (format "(\\(%s\\) <?\\(%s\\)>?)" curie-regex full-uri-regex) str)
+        (format "%s <%s>" (match-string 1 str) (match-string 2 str)))
+       ;; two URIs in parentheses (ontology and ontology version)
+       ((string-match (format "(<?\\(%s\\)>? <?\\(%s\\)>?)" full-uri-regex full-uri-regex) str)
+        (let ((uri1 (match-string 1 str))
+              (uri2 (match-string 2 str)))
+          (format "<%s> <%s>" uri1 uri2)))
+       ;; CURIE, beginning of line
+       ((string-match (format "^\\(%s\\)" curie-regex) str)
+        (match-string 1 str))
+       ;; CURIE in parentheses
+       ((string-match (format "(\\(%s\\))" curie-regex) str)
+        (match-string 1 str))
+       ;; URN identifier: return as-is if the string is a URN, e.g. <urn:isbn:0943396611>
+       ((string-match "^<urn:[^>]+>$" str) str)
+       ;; two CURIEs in parentheses (ontology and ontology version)
+       ((string-match (format "(\\(%s\\) \\(%s\\))" curie-regex curie-regex) str)
+        (format "%s %s" (match-string 1 str) (match-string 2 str)))
+       (t
+        (error "Fail! Heading \"%s\" in %s is not well-formed"
+               str
+               (org-entry-get-with-inheritance "ID"))))))
 #+end_src
 
 *** Notes:
 - *Error Handling:* The error messages are more User-friendly now; it directly mentions the malformed heading.
-- *Clarity:* The use of =cond= instead of nested =if= improves readability.#+END_SRC
+- *Clarity:* The use of =cond= instead of nested =if= improves readability.
 *** Write entity declarations
-#+name: defun-resource-declaration
+#+name: src-resource-declare
 #+BEGIN_SRC emacs-lisp :results silent
-  (defun omn-declare (str owl-type)
-    "Given a string STR and an OWL type owl-type, write a Manchester Syntax entity declaration. Add rdfs:label annotation. If a parenthesis is given, use that as resource id."
+  (defun elot-omn-declare (str owl-type)
+    "Declare entity from header content STR as an OWL-TYPE, in Manchester Syntax.
+  Add rdfs:label annotation.  If the identifier is inside parentheses, use
+  that as resource id."
     ;; check whether we have a label and a resource in parentheses
-    (let* ((suri (entity-from-header str)))
+    (let* ((suri (elot-entity-from-header str)))
       (concat owl-type ": " suri)))
 
-  (defun annotation-entries (l &optional sep)
-    "l is a list of puri--string pairs, each perhaps with a trailing list of similar, meta-annotation pairs. sep is 2 x indent blanks"
+  (defun elot-annotation-entries (l &optional sep)
+    "Return a list of puri--string pairs, with optional meta-annotations.
+  L is a list of puri--string pairs, each perhaps with a trailing list of
+  similar, meta-annotation pairs.  SEP is a number used to build a string
+  of spaces for line indentation.  Ensures consistent spacing in formatted
+  output."
     (let ((indent (make-string (if sep (* 2 sep) 6) ?\ ))
           ;; l-uri-entries is the description list after purging any
           ;; items that have a prefix that isn't included as a LINK
@@ -457,21 +544,23 @@ or a full-form URI in angle brackets)."
           ;; that expanded URIs in brackets <...> are let through.
           (l-uri-entries
            (cl-remove-if (lambda (x) (string-equal (car x)
-                                                   (unprefix-uri (car x) org-link-abbrev-alist-local)))
+                                                   (elot-unprefix-uri (car x) org-link-abbrev-alist-local)))
                          l)))
       (if (atom l) "\n"
-        (concat "\n" indent "Annotations: " 
+        (concat "\n" indent "Annotations: "
                 (mapconcat (lambda (y)
                              (concat
                               (if (consp (caddr y)) ; we have meta-annotations
-                                  (concat (annotation-entries (cddr y) 4) "\n " indent))
+                                  (concat (elot-annotation-entries (cddr y) 4) "\n " indent))
                               (car y)
-                              (annotation-string-or-uri (cadr y))))
+                              (elot-annotation-string-or-uri (cadr y))))
                            l-uri-entries
                            (concat ",\n " indent))))))
 
-  (defun restriction-entries (l)
-    "l is a list of puri--string pairs, except we'll pick up Manchester Syntax vocabulary and use as such"
+  (defun elot-restriction-entries (l)
+    "Write Manchester Syntax restrictions.  L is a list of puri--string pairs.
+  Add annotations on the restriction axioms if present.
+  Special treatment for `Import' on an ontology resource."
     (let ((indent (make-string 2 ?\ ))
           (l-omn-entries
            (cl-remove-if-not (lambda (x) (member (car x)
@@ -483,17 +572,18 @@ or a full-form URI in angle brackets)."
                              (concat
                               (car y) ": "
                               (if (consp (caddr y)) ; we have meta-annotations
-                                  (concat (annotation-entries (cddr y) 4) "\n " indent))
+                                  (concat (elot-annotation-entries (cddr y) 4) "\n " indent))
                               (if (string-equal (car y) "Import") ; ontology import special case
-                                  (annotation-string-or-uri (cadr y))
-                                (omn-restriction-string (cadr y)))
-                              ))
+                                  (elot-annotation-string-or-uri (cadr y))
+                                (elot-omn-restriction-string (cadr y)))))
                            l-omn-entries
                            (concat "\n" indent))))))
 
-  (defun omn-annotate (l)
+  (defun elot-omn-annotate (l)
+    "Add annotations to the first element of L, which is an org heading string.
+  This is a helper function for `elot-resource-declarations'."
     (let* ((str (car l))
-           (suri (entity-from-header str))
+           (suri (elot-entity-from-header str))
            (prefix (if (string-match "\\(.*\\):\\(.*\\)" suri)
                        (match-string 1 suri) ""))
            (localname (if (string= prefix "") suri (match-string 2 suri)))
@@ -501,57 +591,72 @@ or a full-form URI in angle brackets)."
                       (match-string 1 str) localname))
            (resource-annotations
             (cons (list "rdfs:label" label) (cadr l))))
-      (annotation-entries resource-annotations)))
+      (elot-annotation-entries resource-annotations)))
 
-  (defun omn-restrict (l)
-    (restriction-entries (cadr l)))
+  (defun elot-omn-restrict (l)
+    "Retrieve restriction axioms from the second element of L.
+  This is a helper function for `elot-resource-declarations'."
+    (elot-restriction-entries (cadr l)))
 
-  (defun resource-declarations (l owl-type)
-    "Take a possibly list of identifiers with annotations, declare to be of owl-type."
+  (defun elot-resource-declarations (l owl-type)
+    "For list L of identifiers with annotations, declare to be of OWL-TYPE."
     (mapconcat
-     (lambda (x) 
+     (lambda (x)
        (concat
-        (omn-declare (car x) owl-type)
+        (elot-omn-declare (car x) owl-type)
         ;; if annotations, add to the annotation block that has been started with rdfs:label
-        (omn-annotate x)
-        (omn-restrict x)
-        ))
+        (elot-omn-annotate x)
+        (elot-omn-restrict x)))
      l "\n"))
 
-  (defun resource-declarations-from-header (header-id owl-type)
-    "HEADER-ID is an org location id, OWL-TYPE is Class, etc."
+  (defun elot-resource-declarations-from-header (header-id owl-type)
+    "Output OMN declarations for Class, Property, or Individual Org trees.
+  This function is called from the `org-babel' block in file
+  `elot-lob.org' named `resource-declarations'.
+
+  This function does not output subclass or subproperty axioms, as these
+  are handled by function `elot-resource-taxonomy-from-header'.
+
+  HEADER-ID is an org location id, OWL-TYPE is `Class', `ObjectProperty',
+  `DataProperty', `AnnotationProperty', or `Individual'.
+
+  The org location id, embedded in the `PROPERTIES' drawer for each OWL
+  resource type, is `<ontology>-class-hierarchy' for the Class outline,
+  and accordingly for `object-property', `data-property', and
+  `annotation-property'; for individuals, `<ontology>-individuals'."
     (save-excursion
       (org-id-goto header-id)
-      (let ((entity-l (org-subsection-descriptions)))
+      (let ((entity-l (elot-org-subsection-descriptions)))
         (if (or entity-l (string= owl-type "Ontology"))
-            (resource-declarations entity-l owl-type)
+            (elot-resource-declarations entity-l owl-type)
           "## (none)"))))
-  ;;(cdr (org-subsection-descriptions))))
 #+END_SRC
 *** Update link alist from prefix-table
+#+name: src-prefix-links
 #+begin_src emacs-lisp
-  (defun update-link-abbrev ()
+  (defun elot-update-link-abbrev ()
+    "Refresh `org-link-abbrev-alist-local' from current buffer prefixes table."
     (if (save-excursion (goto-char (point-min))
                         (re-search-forward "^#[+]name: prefix-table$" nil t))
         (setq-local org-link-abbrev-alist-local
-                    (mapcar (lambda (x) 
+                    (mapcar (lambda (x)
                               (cons (replace-regexp-in-string ":" "" (car x)) (cadr x)))
-            (cl-remove 'hline (org-babel-ref-resolve "prefix-table")))
-                    )))
+            (cl-remove 'hline (org-babel-ref-resolve "prefix-table"))))))
 #+end_src
 *** Make prefix blocks for omn, sparql, ttl
+#+name: src-prefix-blocks
 #+begin_src emacs-lisp
   (defun elot-prefix-block-from-alist (prefixes format)
-    "`prefixes' is an alist of prefixes, from an org-mode table or 
-  the standard `org-link-abbrev-alist' or `org-link-abbrev-alist-local'. 
-  `format' is a symbol, either `'omn', `'sparql', or `'ttl'.
-  Return a string declaring prefixes."
+    "Return a prefix block from PREFIXES for use with filetype FORMAT.
+  PREFIXES is an alist of prefixes, from an Org table or
+  the standard ORG-LINK-ABBREV-ALIST or ORG-LINK-ABBREV-ALIST-LOCAL.
+  FORMAT is a symbol, either `omn', `sparql', or `ttl'."
     (let ((format-str
            (cond
             ((eq format 'omn) "Prefix: %-5s <%s>")
             ((eq format 'ttl) "@prefix %-5s <%s> .")
             ((eq format 'sparql) "PREFIX %-5s <%s>"))))
-      (mapconcat (lambda (row) 
+      (mapconcat (lambda (row)
                    (let ((prefix-str
                           (if (string-match-p ":$" (car row))
                               (car row) (concat (car row) ":")))
@@ -572,18 +677,17 @@ or ='csv= which should be chosen depending on whether the query is a
 =select= or a =construct=.
 
 Need to investigate how to query files for JSON /select/ results.
+#+name: src-robot-query
 #+begin_src emacs-lisp :results none
   (defun elot-robot-execute-query (query inputfile format)
-    "Execute sparql query `query' with ROBOT on ontology file
-  `inputfile'. `format' is `'csv' for tabular results, or `'ttl'
-  for RDF results in Turtle."
+    "Execute SPARQL query QUERY with ROBOT on ontology file INPUTFILE.
+  Result FORMAT is tabular `csv', or Turtle RDF `ttl'."
     (let* ((query-file
             (concat (org-babel-temp-directory) "/"
                     (file-name-base inputfile)
                     ".sparql"))
            (result-file
-            (concat (file-name-sans-extension inputfile) (symbol-name format)))
-           )
+            (concat (file-name-sans-extension inputfile) (symbol-name format))))
       (with-temp-file query-file (insert query))
       (elot-robot-command
        (concat "query --input " inputfile
@@ -593,187 +697,149 @@ Need to investigate how to query files for JSON /select/ results.
       (insert-file-contents result-file)))
 #+end_src
 
-The function =org-babel-execute:sparql= is adopted from the definition
-in library =ob-sparql.el=. If the =:url= header argument doesn't start
-with string "=http=", we assume that the user wants to query a local
-file using ROBOT.
+Elisp /advice/ around =org-babel-execute:sparql= enables sparql queries,
+using ROBOT, on the Manchester Syntax files produced by ELOT. If the
+=:url= header argument doesn't start with string "=http=", we assume that
+the user wants to query a local file.
+
+To remove the advice:
+: (advice-remove 'sparql-mode-run-query #'elot--custom-sparql-run-query)
+#+name: src-sparql-exec-patch
 #+begin_src emacs-lisp
-  (defun org-babel-execute:sparql (body params)
-    "Execute a block containing a SPARQL query with org-babel.
-  This function is called by `org-babel-execute-src-block'.
-  The function has been patched for ELOT to allow query with ROBOT."
-    (message "Executing a SPARQL query block with ELOT version of org-babel-execute:sparql.")
-    (let* ((url (cdr (assoc :url params)))
-           (format (cdr (assoc :format params)))
-           (query (org-babel-expand-body:sparql body params))
-           (org-babel-sparql--current-curies 
-            (append org-link-abbrev-alist-local org-link-abbrev-alist))
-           (elot-prefixed-query
-            (concat (elot-prefix-block-from-alist org-link-abbrev-alist-local 'sparql)
-                    "\n" query))
-           (format-symbol
-            (if (string-match-p "\\(turtle\\|ttl\\)" format) 'ttl 'csv)))
-      (with-temp-buffer
-        (if (string-match-p "^http" url)  ;; querying an endpoint, or a file?
-            (sparql-execute-query query url format t) ;; add test, does the file exist at all
-          (elot-robot-execute-query elot-prefixed-query url format-symbol))
-        (org-babel-result-cond
-            (cdr (assoc :result-params params))
-          (buffer-string)
-          (if (string-equal "text/csv" format)
-              (org-babel-sparql-convert-to-table)
-            (buffer-string))))))
+  (defun elot--is-elot-buffer ()
+    "Check if the current buffer is an ELOT buffer."
+    (bound-and-true-p elot-buffer-p))
+
+  (defun elot--custom-org-babel-execute-sparql (orig-fun &rest args)
+    "ELOT-specific SPARQL execution with support for ROBOT.
+  This function is used to provide `advice' around
+  `org-babel-execute:sparql'.  ORIG-FUN and ARGS serve to invoke the
+  unchanged function, defined in `ob-sparql.el', when not called from an
+  ELOT buffer."
+    (if (elot--is-elot-buffer)
+        (progn
+          (message "Executing a SPARQL query block with ELOT version of org-babel-execute:sparql.")
+          (let* ((body (nth 0 args))
+                 (params (nth 1 args))
+                 (url (cdr (assoc :url params)))
+                 (format (cdr (assoc :format params)))
+                 (query (org-babel-expand-body:sparql body params))
+                 (org-babel-sparql--current-curies
+                  (append org-link-abbrev-alist-local org-link-abbrev-alist))
+                 (elot-prefixed-query
+                  (concat (elot-prefix-block-from-alist org-link-abbrev-alist-local 'sparql) "\n" query))
+                 (format-symbol (if (string-match-p "\\(turtle\\|ttl\\)" format) 'ttl 'csv)))
+            (with-temp-buffer
+              (if (string-match-p "^http" url)
+                  (sparql-execute-query query url format t) ;; Query an endpoint
+                (elot-robot-execute-query elot-prefixed-query url format-symbol)) ;; Query local file
+              (org-babel-result-cond
+                  (cdr (assoc :result-params params))
+                (buffer-string)
+                (if (string-equal "text/csv" format)
+                    (org-babel-sparql-convert-to-table)
+                  (buffer-string))))))
+      ;; Default behavior for non-ELOT buffers
+      (apply orig-fun args)))
+
+  (advice-add 'org-babel-execute:sparql :around #'elot--custom-org-babel-execute-sparql)
 #+end_src
-*** Default settings
-#+begin_src emacs-lisp :tangle ./elot-package/elot-defaults.el
-  ;; default settings, replaces Local Variables block
-  (require 'ox-latex)
-  (setq-local
-   org-confirm-babel-evaluate nil
-   org-export-allow-bind-keywords t
-   org-babel-default-inline-header-args '((:exports . "code"))
-   org-latex-src-block-backend 'listings
-   org-latex-prefer-user-labels t
-   org-latex-image-default-scale .8
-   tempo-interactive t
-   time-stamp-line-limit 100
-   time-stamp-format "%Y-%m-%d %H:%M"
-   time-stamp-active t
-   time-stamp-start "(version of "
-   time-stamp-end ")"
-   org-startup-folded 'show2levels
-   org-export-with-sub-superscripts nil  ; preserve "_"
-   org-export-headline-levels 8  ; deep numbering
-   org-export-with-section-numbers 8  ; deep numbering
-   org-latex-default-class "elot-scrreprt"
-   org-latex-packages-alist
-   (append org-latex-packages-alist 
-           '(("" "svg" t)
-             ("" "enumitem" t)
-             "\\setlist[description]{font=\\normalfont\\itshape\\space}"
-             "\\sloppy"
-             ;; subsubsubsection, see https://tex.stackexchange.com/questions/356567/subsubsubsection-for-scrbook
-             "\\DeclareNewSectionCommand[style=section,counterwithin=subsubsection,afterskip=1.5ex plus .2ex,"
-             "  beforeskip=3.25ex plus 1ex minus .2ex,afterindent=false,level=\\paragraphnumdepth,tocindent=10em,"
-             "  tocnumwidth=5em]{subsubsubsection}"
-             "\\RedeclareSectionCommand[level=\\numexpr\\subsubsubsectionnumdepth+1\\relax,toclevel=\\numexpr\\subsubsubsectiontocdepth+1\\relax,]{paragraph}"
-             "\\RedeclareSectionCommand[level=\\numexpr\\subsubsubsectionnumdepth+2\\relax,toclevel=\\numexpr\\subsubsubsectiontocdepth+2\\relax,]{subparagraph}"
-             "\\RedeclareSectionCommand[counterwithin=subsubsubsection,tocnumwidth=6em]{paragraph}"
-             "\\RedeclareSectionCommand[tocnumwidth=7em]{subparagraph}"
-             ;; section numbers in margin
-             "\\RedeclareSectionCommands[runin=false,afterskip=1.5ex plus .2ex,afterindent=false,indent=0pt]{paragraph,subparagraph}"
-             "\\renewcommand\\othersectionlevelsformat[3]{\\makebox[0pt][r]{#3\\autodot\\enskip}}"
-             "\\renewcommand\\sectionformat{\\makebox[0pt][r]{\\thesection\\autodot\\enskip}}"
-             "\\renewcommand\\subsectionformat{\\makebox[0pt][r]{\\thesubsection\\autodot\\enskip}}"
-             "\\renewcommand\\subsubsectionformat{\\makebox[0pt][r]{\\thesubsubsection\\autodot\\enskip}}"
-             "\\renewcommand\\subsubsubsectionformat{\\makebox[0pt][r]{\\thesubsubsubsection\\autodot\\enskip}}"
-             "\\renewcommand\\paragraphformat{\\makebox[0pt][r]{\\theparagraph\\autodot\\enskip}}"
-             "\\renewcommand\\subparagraphformat{\\makebox[0pt][r]{\\thesubparagraph\\autodot\\enskip}}"
-             "\\PassOptionsToPackage{hyphens}{url}"
-             "\\hypersetup{pdfborder=0 0 0,colorlinks=true}"
-             "\\lstdefinelanguage{omn}{basicstyle=\\small\\ttfamily,commentstyle=\\color{gray},frame=single,breaklines=true,breakatwhitespace=true,postbreak=\\mbox{{\\color{gray}\\tiny$\\rightarrow$}},tabsize=2,comment=[l]{\\#},columns=fullflexible,}"
-             "\\lstdefinelanguage{ttl}{basicstyle=\\footnotesize\\ttfamily,commentstyle=\\color{gray},frame=single,breaklines=true,breakatwhitespace=true,postbreak=\\mbox{{\\color{gray}\\tiny$\\rightarrow$}},tabsize=2,comment=[l]{\\#},columns=fullflexible,}"
-             "\\lstdefinelanguage{sparql}{basicstyle=\\footnotesize\\ttfamily,commentstyle=\\color{gray},frame=single,breaklines=true,breakatwhitespace=true,postbreak=\\mbox{{\\color{gray}\\tiny$\\rightarrow$}},tabsize=2,comment=[l]{\\#},columns=fullflexible,}"
-             ))
-   )
-  (progn
-    (org-cycle-set-startup-visibility)
-    (load-library "elot")
-    (org-babel-lob-ingest (concat (file-name-directory (locate-library "elot")) "elot-lob.org"))
-    (update-link-abbrev)
-    (add-to-list 'org-latex-classes
-                 '("elot-scrreprt"
-                   "\\documentclass[11pt,a4paper,numbers=noenddot,twoside=false]{scrreprt}
-  [DEFAULT-PACKAGES]
-  [PACKAGES]
-  [EXTRA]"
-                   ontology-resource-section
-                   ))
-  (modify-syntax-entry ?\: "w")
-  (modify-syntax-entry ?\_ "w")
-  (add-hook 'org-babel-post-tangle-hook 'elot-tangled-omn-to-ttl
-            'local) ;; make it a local hook only
-  (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images 'local)
-  (add-hook 'after-save-hook 'update-link-abbrev)
-  ;; the label display functions are in a separate file
-  (load-library "elot-label-display.el")
-  (elot-label-display-setup)
-  )
-#+end_src
+
 *** Write typical class patterns
 **** one-of
 It's common to say a class is a subclass of the union of immediate
-subclasses. The function =class-oneof-from-header= is intended to be
-used in =resource-taxonomy-from-l=. 
+subclasses. The function =elot-class-oneof-from-header= is intended to be
+used in =elot-resource-taxonomy-from-l=.
 
-It's common to say a set of immediate subclasses are disjoint. The
-function =class-disjoint-from-header= is intended to be used in
-=resource-taxonomy-from-l=.
-#+name: defun-class-patterns
+And, it's common to say a set of immediate subclasses are disjoint. The
+function =elot-class-disjoint-from-header= is intended to be used in
+=elot-resource-taxonomy-from-l=.
+#+name: src-write-class
 #+BEGIN_SRC emacs-lisp
-  (defun class-oneof-from-header (l)
-    "L a list of class resources like ((super (((sub) (sub) ... (sub)))))."
+  (defun elot-class-oneof-from-header (l)
+    "L a list of class resources like ((super (((sub) (sub) ... (sub))))).
+  This is a helper function for `elot-resource-taxonomy-from-l'."
     (let ((owl-type "Class") (owl-subclause "SubClassOf"))
-      (concat "\n" owl-type ": " (entity-from-header (car l))
+      (concat "\n" owl-type ": " (elot-entity-from-header (car l))
               "\n    " owl-subclause ": "
               (mapconcat (lambda (x)
-                           (entity-from-header (car x)))
+                           (elot-entity-from-header (car x)))
                          (cdr l) " or "))))
 
-  (defun class-disjoint-from-header (l)
-    "L a list of class resources like ((super (((sub) (sub) ... (sub)))))."
+  (defun elot-class-disjoint-from-header (l)
+    "L a list of class resources like ((super (((sub) (sub) ... (sub))))).
+  This is a helper function for `elot-resource-taxonomy-from-l'."
       (concat "\nDisjointClasses: "
               "\n    "
               (mapconcat (lambda (x)
-                           (entity-from-header (car x)))
+                           (elot-entity-from-header (car x)))
                          (cdr l) ", ")))
 #+END_SRC
 *** Write entity taxonomy
-#+name: defun-resource-taxonomy
+#+name: src-write-taxonomy
 #+BEGIN_SRC emacs-lisp :results silent
-  (defun org-tags-in-string (str)
-    "Return list of any tags in org-mode :asdf:lksjdf: from STR"
+  (defun elot-org-tags-in-string (str)
+    "Return list of any tags from Org heading contents STR."
     (if (string-match ".*\\W+:\\(.*\\):" str)
         (split-string (match-string 1 str) ":")))
 
-  (defun resource-taxonomy-from-l (l owl-type owl-subclause)
+  (defun elot-resource-taxonomy-from-l (l owl-type owl-subclause)
+    "Helper function for `elot-resource-taxonomy-from-header'.
+  Recursively go through the list L, outputting subtype axioms for OWL
+  entity type OWL-TYPE and subrelation OWL-SUBCLAUSE.
+
+  Process any `oneof' and `disjont' Org tags on each header, calling
+  `elot-class-oneof-from-header' or `elot-class-disjoint-from-header'."
     (if (listp (car l))
-        (mapconcat (lambda (x) (resource-taxonomy-from-l x owl-type owl-subclause)) l "")
+        (mapconcat (lambda (x) (elot-resource-taxonomy-from-l x owl-type owl-subclause)) l "")
       (if (and (stringp (car l)) (stringp (caadr l)))
-          (concat 
+          (concat
             ;simple subclass clauses
             (mapconcat (lambda (x)
                         (concat "\n" owl-type ": "
-                                (entity-from-header (car x))
+                                (elot-entity-from-header (car x))
                                 "\n    " owl-subclause ": "
-                                (entity-from-header (car l))))
+                                (elot-entity-from-header (car l))))
                       (cdr l) "")
             ;one-of pattern
-            (if (member "oneof" (org-tags-in-string (car l))) (class-oneof-from-header l))
+            (if (member "oneof" (elot-org-tags-in-string (car l))) (elot-class-oneof-from-header l))
             ;disjoint pattern
-            (if (member "disjoint" (org-tags-in-string (car l))) (class-disjoint-from-header l))
-            (resource-taxonomy-from-l (cdr l) owl-type owl-subclause)))))
+            (if (member "disjoint" (elot-org-tags-in-string (car l))) (elot-class-disjoint-from-header l))
+            (elot-resource-taxonomy-from-l (cdr l) owl-type owl-subclause)))))
 
-  (defun resource-taxonomy-from-header (header-id owl-type owl-relation)
-    "HEADER-ID is an org location id, OWL-TYPE is Class, etc., OWL-RELATION is SubClassOf, etc."
+  (defun elot-resource-taxonomy-from-header (header-id owl-type owl-relation)
+    "Output OMN subtype axioms for Class or Property Org trees.
+  This function is called from the `org-babel' block in file
+  `elot-lob.org' named `resource-taxonomy'.
+
+  HEADER-ID is an org location id, OWL-TYPE is `Class', `ObjectProperty',
+  `DataProperty', `AnnotationProperty', or `Individual'.  OWL-RELATION is
+  `SubClassOf' or `SubPropertyOf'.
+
+  The org location id, embedded in the `PROPERTIES' drawer for each OWL
+  resource type, is `<ontology>-class-hierarchy' for the Class outline,
+  and accordingly for `object-property', `data-property', and
+  `annotation-property'."
     (save-excursion
       (org-id-goto header-id)
       (if (org-goto-first-child)
-          (let ((hierarchy-l (org-list-siblings)))
-            (resource-taxonomy-from-l hierarchy-l owl-type owl-relation))
+          (let ((hierarchy-l (elot-org-list-siblings)))
+            (elot-resource-taxonomy-from-l hierarchy-l owl-type owl-relation))
         (concat "## no " owl-type "taxonomy"))))
 #+END_SRC
 *** Headings in LaTeX export
 We format headings with indentation to match the subtype level in the
 ontology: for each level down we add a full stop and a space.
 
-# Consider using a different symbol, for instance the unicode ↳, in latex-filter-headline-dots
+# Consider using a different symbol, for instance the unicode ↳, in elot-latex-filter-headline-dots
 
-#+name: defun-latex-export
+#+name: src-latex-section-export
 #+begin_src emacs-lisp
-  (defun ontology-resource-section (level numbered-p)
+  (defun elot-ontology-resource-section (level numbered-p)
+    "Return LaTeX environment by subsection depth LEVEL.
+  If NUMBERED-P is `true', create a numbered section."
     (if numbered-p
-      (cond 
+      (cond
         ((= 1 level) "\\chapter{%s}")
         ((= 2 level) "\\section{%s}")
         ((= 3 level) "\\subsection{%s}")
@@ -785,15 +851,15 @@ ontology: for each level down we add a full stop and a space.
        ((= 1 level) "\\addchap{%s}")
        ((= 2 level) "\\addsec{%s}")
        ((= 3 level) "\\subsection*{%s}")
-       (t "\\subsubsection*{%s}"))
-      ))
+       (t "\\subsubsection*{%s}"))))
 #+end_src
 
-The function =latex-filter-headline-dots= is not in use. It's for adding
+The function =elot-latex-filter-headline-dots= is not in use. It's for adding
 indentation to sub-sections instead of deep numbering. This may become
 useful sometime.
+#+name: src-latex-heading-filter
 #+begin_src emacs-lisp :tangle no
-  (defun latex-filter-headline-dots (text backend info)
+  (defun elot-latex-filter-headline-dots (text backend info)
     "Ensure dots in headlines."
     (when (org-export-derived-backend-p backend 'latex)
       (let* ((prop-point (next-property-change 0 text))
@@ -802,33 +868,38 @@ useful sometime.
              (resourcedef-p (org-export-get-node-property :RESOURCEDEFS this-element t)))
         (when (and resourcedef-p (> this-element-level 2))
           (string-match "section\\(.?\\){" text)
-          (replace-match (concat "section\\1{\\\\itshape{}" 
+          (replace-match (concat "section\\1{\\\\itshape{}"
            (apply 'concat (make-list (- this-element-level 3) ".\\\\space{}")))
-                         nil nil text)
-          ))))
+                         nil nil text)))))
 #+end_src
 *** For use in org-ql
 **** Get headings without cookies
 The function =org-get-heading= will include "cookies" that track task
 completion in the text. So we get "lis:Dependent [4/4]" instead of just
 "lis:Dependent". The following strips off the cookie.
-#+name: defun-get-heading-nocookie
+#+name: src-get-heading-nocookie
 #+begin_src emacs-lisp
-  (defun org-get-heading-nocookie (&optional no-tags no-todo no-priority no-comment)
+  (defun elot-org-get-heading-nocookie (&optional no-tags no-todo no-priority no-comment)
+    "Call `org-get-heading' but strip out any task progress cookie, like `[3/4]'.
+  If provided, optional arguments NO-TAGS, NO-TODO, NO-PRIORITY, and NO-COMMENT
+  are passed on to `org-get-heading'."
     (replace-regexp-in-string " \\[[[:digit:]/%]+\\]$" ""
                               (org-get-heading no-tags no-todo no-priority no-comment)))
 #+end_src
 **** Get text of description list entry
-#+name:defun-get-description-entry
+This function is not in use.
+#+name:src-get-description-entry :tangle no
 #+begin_src emacs-lisp
-(defun org-get-description-entry (tag)
-  (save-excursion
-    (if (search-forward-regexp tag nil t)
-        (let* ((element (org-element-at-point))
-               (beg (org-element-property :contents-begin element))
-               (end (org-element-property :contents-end element))
-               (entry-text (buffer-substring-no-properties beg end)))
-           (replace-regexp-in-string "\n\s*" " " entry-text)))))
+  (defun elot-org-get-description-entry (tag)
+    "Search forward for TAG and return text of Org element found, no decorations.
+  Newlines are replaced by spaces in the result."
+    (save-excursion
+      (if (search-forward-regexp tag nil t)
+          (let* ((element (org-element-at-point))
+                 (beg (org-element-property :contents-begin element))
+                 (end (org-element-property :contents-end element))
+                 (entry-text (buffer-substring-no-properties beg end)))
+             (replace-regexp-in-string "\n\s*" " " entry-text)))))
 #+end_src
 *** Exporting with replacements of description list tags
 <<exporting-dlists>>
@@ -836,52 +907,69 @@ Execute export with "special formatting" with
 : (org-export-to-file 'ELOT-latex "ELOT.tex")
 
 NOTE. The following should be rewritten, using a filter like in =elot-latex-filter-omn-list=.
-#+name: defun-ELOT-latex-derived-backend
-#+begin_src emacs-lisp
-    ;; see https://emacs.stackexchange.com/questions/55231/org-mode-export-html-add-name-attirbute-to-checkbox-input
-    (org-export-define-derived-backend 'ELOT-latex 'latex
-      :translate-alist '((item . my-item-translator)))
-    (defvar item-process nil)
 
-    (defun my-item-translator (item c info)
-      (let* ((item-tag-maybe (car (org-element-property :tag item)))
-             (item-tag-stringp (stringp item-tag-maybe))
-             (item-tag (if item-tag-stringp (substring-no-properties item-tag-maybe) item-tag-maybe)))
-        (if (and item-tag-stringp (string= item-tag "item-translate-start")) (setq item-process t))
-        (if (and item-tag-stringp (string= item-tag "item-translate-stop")) (setq item-process nil))
-      (when (and item-process item-tag-stringp)
+See https://emacs.stackexchange.com/questions/55231/org-mode-export-html-add-name-attirbute-to-checkbox-input.
+#+name: src-latex-export-replacenames
+#+begin_src emacs-lisp
+  (org-export-define-derived-backend 'ELOT-latex 'latex
+    :translate-alist '((item . elot-my-item-translator)))
+  (defvar elot-item-process nil
+    "Toggle during LaTeX export, to turn replacement of list items on or off.
+  Used in `elot-my-item-translator'.")
+
+  (defun elot-my-item-translator (item c info)
+    "Translator for LaTeX export, replace RDF identifiers with simpler labels.
+  This makes for more readable output in description lists.  A list serves
+  to map selected annotation properties to shorter labels.  For example,
+  `iof-av:explanatoryNote' will be replaced by `explanatory note'.
+
+  ITEM is an entry in a description list.  C is the contents of the item.
+  INFO is a plist holding contextual information.  See the documentation
+  for `org-latex-item'.
+
+  Translation is turned on when the magic value `item-translate-start' is
+  found in a description list, and off when `item-translate-stop' is found.
+
+  This function is a workaround.  It relies on magic strings because
+  positions in the buffer are unpredictable while the export is being
+  conducted."
+    (let* ((item-tag-maybe (car (org-element-property :tag item)))
+           (item-tag-stringp (stringp item-tag-maybe))
+           (item-tag (if item-tag-stringp (substring-no-properties item-tag-maybe) item-tag-maybe)))
+      (if (and item-tag-stringp (string= item-tag "item-translate-start")) (setq elot-item-process t))
+      (if (and item-tag-stringp (string= item-tag "item-translate-stop")) (setq elot-item-process nil))
+      (when (and elot-item-process item-tag-stringp)
         (progn
-          ;(message (substring-no-properties item-tag))
+                                          ;(message (substring-no-properties item-tag))
           (setf (plist-get (cadr item) :checkbox) nil)  ; set checkbox here
-          (let ((tag-mapped (assoc item-tag (quote
-  (("iof-av:isPrimitive" . "primitive?")
-   ("iof-av:naturalLanguageDefinition" . "definition")
-   ("iof-av:primitiveRationale" . "why primitive")
-   ("iof-av:usageNote" . "usage note")
-   ("owl:deprecated" . "deprecated?")
-   ("rdfs:seeAlso" . "see also")
-   ("skos:example" . "example")
-   ("skos:scopeNote" . "scope note")
-   ("skos:altLabel" . "alternative label")
-   ("iof-av:explanatoryNote" . "explanatory note")
-   ("rdfs:comment" . "comment")
-   ("rdfs:isDefinedBy" . "defined by")
-   ("iof-av:firstOrderLogicDefinition" . "first-order logic definition")
-   ("iof‑av:semiFormalNaturalLanguageDefinition" . "semi-formal definition")
-   ("iof-av:semiFormalNaturalLanguageAxiom" . "semi-formal axiom")
-   ("iof-av:adaptedFrom" . "adapted from")
-   ("iof-av:synonym" . "synonym"))
-                                           ))))
-              (if tag-mapped
-                  (setf (plist-get (cadr item) :tag) (cdr tag-mapped)))
-              )))
+          (let ((tag-mapped (assoc item-tag
+                   (quote
+                    (("iof-av:isPrimitive" . "primitive?")
+                     ("iof-av:naturalLanguageDefinition" . "definition")
+                     ("iof-av:primitiveRationale" . "why primitive")
+                     ("iof-av:usageNote" . "usage note")
+                     ("owl:deprecated" . "deprecated?")
+                     ("rdfs:seeAlso" . "see also")
+                     ("skos:example" . "example")
+                     ("skos:scopeNote" . "scope note")
+                     ("skos:altLabel" . "alternative label")
+                     ("iof-av:explanatoryNote" . "explanatory note")
+                     ("rdfs:comment" . "comment")
+                     ("rdfs:isDefinedBy" . "defined by")
+                     ("iof-av:firstOrderLogicDefinition" . "first-order logic definition")
+                     ("iof‑av:semiFormalNaturalLanguageDefinition" . "semi-formal definition")
+                     ("iof-av:semiFormalNaturalLanguageAxiom" . "semi-formal axiom")
+                     ("iof-av:adaptedFrom" . "adapted from")
+                     ("iof-av:synonym" . "synonym"))))))
+            (if tag-mapped
+                (setf (plist-get (cadr item) :tag) (cdr tag-mapped))))))
       (unless (and item-tag-stringp
                    (or (string= item-tag "item-translate-start") (string= item-tag "item-translate-stop")))
         (org-latex-item item c info))))
 #+end_src
 
 #+RESULTS: defun-ELOT-latex-derived-backend
-: my-item-translator
+: elot-my-item-translator
 
 #+name: item-tag-name-map
 | annotation property                        | entry text                   |
@@ -947,58 +1035,80 @@ content influences position numbers /at export/.
 
 *** Passthrough execute for ttl blocks
 To get the ttl block to process correctly, for rdfpuml use.
+#+name: src-babel-passthrough
 #+begin_src emacs-lisp
-(defun org-babel-execute:passthrough (body params) body)
-(unless (fboundp 'org-babel-execute:ttl)                
-  (defalias 'org-babel-execute:ttl 'org-babel-execute:passthrough))
+  (defun elot-org-babel-execute-passthrough (body params)
+    "Return BODY unchanged when executing an Org Babel block.
+
+  This function is used to define a passthrough execution behavior
+  for Org Babel blocks with the language `ttl'.  It ensures that
+  the contents of a `#+begin_src ttl' block are returned as-is,
+  without any processing or transformation.
+
+  This is useful for passing Turtle (TTL) content to other source
+  blocks without modification.
+
+  PARAMS is ignored."
+    (progn
+      (always params)  ;; ignore argument
+      body))
+
+  (unless (fboundp #'org-babel-execute:ttl)
+    (defalias #'org-babel-execute:ttl #'elot-org-babel-execute-passthrough))
 #+end_src
 
 *** Execute rdfpuml on Turtle content
 Function =elot-rdfpuml-execute= takes a Turtle /string/ plus options, runs
 rdfpuml, and returns the filename of the resulting PlantUML file.
+#+name: src-rdfpuml-execute
 #+begin_src emacs-lisp
-(defun elot-rdfpuml-execute (ttl &optional prefixes config add-options epilogue)
-  "Run rdfpuml on Turtle RDF content and return PlantUML code. 
-`ttl' is a Turtle string, `prefixes' optional prefix block, 
-`config' optional Turtle for rdfpuml configuration, 
-`add-options' string of PlantUML options added to rdfpuml defaults,
-`epilogue' extra PlantUML clauses"
-  (let* ((options-str
-         (if add-options
-             (concat "[] puml:options \"\"\""
-                     elot-rdfpuml-options "\n"
-                     add-options
-                     "\n\"\"\".\n")))
-        (input-ttl-file (org-babel-temp-file "rdfpuml-" ".ttl"))
-        (output-puml-file (concat (file-name-sans-extension input-ttl-file) ".puml")))
-    (with-temp-file input-ttl-file
-      (insert (mapconcat 'identity
-                         (list prefixes ttl config options-str) "\n")))
-    ;; apparently prefixes.ttl is needed to reside in current dir, will overwrite
-    (if prefixes (with-temp-file "prefixes.ttl"
-                   (insert prefixes "\n")))
-    (elot-rdfpuml-command input-ttl-file)
-    (with-temp-file output-puml-file
-      (insert-file-contents output-puml-file)
-      (if epilogue (replace-string "@enduml"
-                                   (concat epilogue "\n" "@enduml"))))
-    output-puml-file))
+  (defun elot-rdfpuml-execute (ttl &optional prefixes config add-options epilogue)
+    "Run rdfpuml on Turtle RDF content and return PlantUML code.
+  TTL is a Turtle string, PREFIXES optional prefix block,
+  CONFIG optional Turtle for rdfpuml configuration,
+  ADD-OPTIONS a string of PlantUML options added to rdfpuml defaults,
+  EPILOGUE extra PlantUML clauses."
+    (let* ((options-str
+           (if add-options
+               (concat "[] puml:options \"\"\""
+                       elot-rdfpuml-options "\n"
+                       add-options
+                       "\n\"\"\".\n")))
+          (input-ttl-file (org-babel-temp-file "rdfpuml-" ".ttl"))
+          (output-puml-file (concat (file-name-sans-extension input-ttl-file) ".puml")))
+      (with-temp-file input-ttl-file
+        (insert (mapconcat #'identity
+                           (list prefixes ttl config options-str) "\n")))
+      ;; apparently prefixes.ttl is needed to reside in current dir, will overwrite
+      (if prefixes (with-temp-file "prefixes.ttl"
+                     (insert prefixes "\n")))
+      (elot-rdfpuml-command input-ttl-file)
+      (with-temp-file output-puml-file
+        (insert-file-contents output-puml-file)
+        (when epilogue
+          (save-excursion
+            (goto-char (point-min))
+            (while (search-forward "@enduml" nil t)
+              (replace-match (concat epilogue "\n@enduml") t t)))))
+      output-puml-file))
 #+end_src
 
 Function =elot-plantuml-execute= takes a PlantUML filename, plus name
 and format suffix of the generated diagram. Resulting graphic file is
 placed in the default ELOT directory, and the filename returned.
+#+name: src-plantuml-execute
 #+begin_src emacs-lisp :results silent
   (defun elot-plantuml-execute (puml-file output-name format)
-    "With PlantUML, read `puml-file' and output `output-name'.`format'
-  to ELOT default image (sub)directory. Return output file name."
+    "With PlantUML, read PUML-FILE and write image file to OUTPUT-NAME.FORMAT.
+  The file is stored in the ELOT default image directory.
+  Return output file name."
     (if (or (string= org-plantuml-jar-path "") (not (file-exists-p org-plantuml-jar-path)))
-      (error "PlantUML not found. Set org-plantuml-jar-path with M-x customize-variable."))
+      (error "PlantUML not found.  Set org-plantuml-jar-path with M-x customize-variable"))
     (let ((tmp-output-file (concat (file-name-sans-extension puml-file) "." format))
     (output-file (concat elot-default-image-path output-name "." format)))
       (message (concat puml-file " --> " output-file))
       (make-directory elot-default-image-path :always)
-      (shell-command 
+      (shell-command
        (concat "java -jar " org-plantuml-jar-path " -t" format " " puml-file))
       (copy-file tmp-output-file output-file :allow-overwrite)
       output-file))
@@ -1006,25 +1116,25 @@ placed in the default ELOT directory, and the filename returned.
 *** Tempo templates
 **** ELOT document header
 Insert a document header with =<oh=.
+#+name: src-tempo-docheader
 #+begin_src emacs-lisp :results none
-	(tempo-define-template "elot-doc-header"
-	 '("# -*- eval: (load-library \"elot-defaults\") -*-" > n
-		"#+title: " (p "Document title: " doctitle) > n
-		"#+subtitle: An OWL ontology" > n
-		"#+author: " (p "Author name: " authname) > n
-		"#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
-    "#+call: theme-readtheorg()" n n
-		(progn (load-library "elot-defaults") (message "Loaded ELOT") "")
-		)
-	 "<odh"
-	 "ELOT document header"
-	 'org-tempo-tags)
+  (tempo-define-template "elot-doc-header"
+                         '("# -*- eval: (load-library \"elot-defaults\") -*-" > n
+      	                 "#+title: " (p "Document title: " doctitle) > n
+      	                 "#+subtitle: An OWL ontology" > n
+      	                 "#+author: " (p "Author name: " authname) > n
+      	                 "#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
+                           "#+call: theme-readtheorg()" n n
+      	                 (progn (load-library "elot-defaults") (message "Loaded ELOT") ""))
+                         "<odh"
+                         "ELOT document header"
+                         'org-tempo-tags)
 #+end_src
 **** ELOT ontology skeleton
 Insert a skeleton with =<ods=.
+#+name: src-tempo-ontology
 #+begin_src emacs-lisp :results none
-  (tempo-define-template
-   "elot-ont-skeleton"
+  (tempo-define-template "elot-ont-skeleton"
    '(n > "* " (p "Ontology identifier localname: " ontlocalname) > n
        ":PROPERTIES:" > n
        ":ID: " (s ontlocalname) > n
@@ -1044,7 +1154,7 @@ Insert a skeleton with =<ods=.
        "  ## Prefixes" > n
        "  <<omn-prefixes()>>" > n  n
        "  ## Ontology declaration" > n
-       "  <<resource-declarations(hierarchy=\"" (s ontlocalname) "-ontology-declaration\", owl-type=\"Ontology\", owl-relation=\"\")>>" > n 
+       "  <<elot-resource-declarations(hierarchy=\"" (s ontlocalname) "-ontology-declaration\", owl-type=\"Ontology\", owl-relation=\"\")>>" > n
        "" > n
        "  ## Data type declarations" > n
        "  Datatype: xsd:dateTime" > n
@@ -1052,25 +1162,25 @@ Insert a skeleton with =<ods=.
        "  Datatype: xsd:boolean" > n
        "" > n
        "  ## Class declarations" > n
-       "  <<resource-declarations(hierarchy=\"" (s ontlocalname) "-class-hierarchy\", owl-type=\"Class\")>>" > n
+       "  <<elot-resource-declarations(hierarchy=\"" (s ontlocalname) "-class-hierarchy\", owl-type=\"Class\")>>" > n
        "" > n
        "  ## Object property declarations" > n
-       "  <<resource-declarations(hierarchy=\"" (s ontlocalname) "-object-property-hierarchy\", owl-type=\"ObjectProperty\")>>" > n
+       "  <<elot-resource-declarations(hierarchy=\"" (s ontlocalname) "-object-property-hierarchy\", owl-type=\"ObjectProperty\")>>" > n
        "" > n
        "  ## Data property declarations" > n
-       "  <<resource-declarations(hierarchy=\"" (s ontlocalname) "-data-property-hierarchy\", owl-type=\"DataProperty\")>>" > n
+       "  <<elot-resource-declarations(hierarchy=\"" (s ontlocalname) "-data-property-hierarchy\", owl-type=\"DataProperty\")>>" > n
        "" > n
        "  ## Annotation property declarations" > n
-       "  <<resource-declarations(hierarchy=\"" (s ontlocalname) "-annotation-property-hierarchy\", owl-type=\"AnnotationProperty\")>>" > n
+       "  <<elot-resource-declarations(hierarchy=\"" (s ontlocalname) "-annotation-property-hierarchy\", owl-type=\"AnnotationProperty\")>>" > n
        "" > n
        "  ## Individual declarations" > n
-       "  <<resource-declarations(hierarchy=\"" (s ontlocalname) "-individuals\", owl-type=\"Individual\")>>" > n
+       "  <<elot-resource-declarations(hierarchy=\"" (s ontlocalname) "-individuals\", owl-type=\"Individual\")>>" > n
        "" > n
        "  ## Resource taxonomies" > n
-       "  <<resource-taxonomy(hierarchy=\"" (s ontlocalname) "-class-hierarchy\", owl-type=\"Class\", owl-relation=\"SubClassOf\")>>" > n
-       "  <<resource-taxonomy(hierarchy=\"" (s ontlocalname) "-object-property-hierarchy\", owl-type=\"ObjectProperty\", owl-relation=\"SubPropertyOf\")>>" > n
-       "  <<resource-taxonomy(hierarchy=\"" (s ontlocalname) "-data-property-hierarchy\", owl-type=\"DataProperty\", owl-relation=\"SubPropertyOf\")>>" > n
-       "  <<resource-taxonomy(hierarchy=\"" (s ontlocalname) "-annotation-property-hierarchy\", owl-type=\"AnnotationProperty\", owl-relation=\"SubPropertyOf\")>>" > n
+       "  <<elot-resource-taxonomy(hierarchy=\"" (s ontlocalname) "-class-hierarchy\", owl-type=\"Class\", owl-relation=\"SubClassOf\")>>" > n
+       "  <<elot-resource-taxonomy(hierarchy=\"" (s ontlocalname) "-object-property-hierarchy\", owl-type=\"ObjectProperty\", owl-relation=\"SubPropertyOf\")>>" > n
+       "  <<elot-resource-taxonomy(hierarchy=\"" (s ontlocalname) "-data-property-hierarchy\", owl-type=\"DataProperty\", owl-relation=\"SubPropertyOf\")>>" > n
+       "  <<elot-resource-taxonomy(hierarchy=\"" (s ontlocalname) "-annotation-property-hierarchy\", owl-type=\"AnnotationProperty\", owl-relation=\"SubPropertyOf\")>>" > n
        "#+end_src" > n
        ":END:" > n
   "** Prefixes
@@ -1093,9 +1203,9 @@ Insert a skeleton with =<ods=.
   | dcterms:  | http://purl.org/dc/terms/                                                      |
   | prov:     | http://www.w3.org/ns/prov#                                                     |
   | iof-av:   | https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/ |" > n
-  "| " (s resprefix)  
+  "| " (s resprefix)
   ":       | " (p "Resource namespace in full (\"http ...\") " resns) "                                                            |" > n
-  "| " (p "Namespace prefix for the ontology itself (without the \":\") " ontprefix) 
+  "| " (p "Namespace prefix for the ontology itself (without the \":\") " ontprefix)
   ":       | " (p "Ontology namespace in full (\"http ...\") " ontns) "                                                            |" >  n
   "*** Source blocks for prefixes                                     :noexport:
   :PROPERTIES:
@@ -1196,20 +1306,23 @@ Insert a skeleton with =<ods=.
   :resourcedefs: yes
   :END:
   "
-  (progn (update-link-abbrev) 
+  (progn (elot-update-link-abbrev)
          (save-buffer) (org-macro-initialize-templates)
          (org-cycle-set-startup-visibility)
          (goto-char (point-min))
-         (search-forward "dcterms:description :: ") (outline-show-entry) "")
-  )
+         (search-forward "dcterms:description :: ") (outline-show-entry) ""))
    "<ods"
    "ELOT ontology sections skeleton"
    'org-tempo-tags)
+  ;;
+  ;; end of template 'elot-ont-skeleton'
+  ;;
 #+end_src
 **** OWL templates
 ***** OWL primitive/non-primitive class, with IOF default annotations
 Insert a class heading with IOF-AV required annotation properties and
 completion cookies.
+#+name: src-tempo-resource
 #+begin_src emacs-lisp :results none
   (tempo-define-template "elot-class-iof-primitive"
    '(
@@ -1220,8 +1333,7 @@ completion cookies.
      " - [ ] iof-av:naturalLanguageDefinition :: " > n
      " - [X] iof-av:isPrimitive :: true" > n
      " - [ ] iof-av:primitiveRationale :: " > n
-     " - [ ] skos:example :: " > 
-   )
+     " - [ ] skos:example :: " > )
    "<ocp"
    "ELOT primitive class with IOF-AV annotations"
    'org-tempo-tags)
@@ -1233,8 +1345,7 @@ completion cookies.
      (elot-default-prefix) ":" (p "localname: ") ") [1/4]" > n
      " - [ ] iof-av:semiFormalNaturalLanguageDefinition :: " > n
      " - [X] iof-av:isPrimitive :: false" > n
-     " - [ ] skos:example :: " > 
-   )
+     " - [ ] skos:example :: " > )
    "<ocd"
    "ELOT primitive class with IOF-AV annotations"
    'org-tempo-tags)
@@ -1245,20 +1356,19 @@ completion cookies.
      (p "Property label: ") " ("
      (elot-default-prefix) ":" (p "localname: ") ") [1/4]" > n
      " - [ ] iof-av:naturalLanguageDefinition :: " > n
-     " - [ ] skos:example :: " > 
-   )
+     " - [ ] skos:example :: " > )
    "<op"
    "ELOT primitive class with IOF-AV annotations"
    'org-tempo-tags)
 #+end_src
 **** Code blocks
+#+name: src-tempo-codeblock
 #+begin_src emacs-lisp
   (tempo-define-template "elot-block-robot-metrics"
    '(
      (org-open-line 1) p
-     "#+call: robot-metrics(omnfile=\"" (elot-context-localname) ".omn\") :eval never-export" > 
-     (progn (message "Execute blocks with C-c C-c") "")
-   )
+     "#+call: robot-metrics(omnfile=\"" (elot-context-localname) ".omn\") :eval never-export" >
+     (progn (message "Execute blocks with C-c C-c") ""))
    "<obm"
    "ELOT ontology metrics from ROBOT"
    'org-tempo-tags)
@@ -1271,10 +1381,9 @@ completion cookies.
     select
     {
 
-    } 
+    }
   ,#+end_src" n
-     (progn (message "Execute blocks with C-c C-c") "")
-   )
+     (progn (message "Execute blocks with C-c C-c") ""))
    "<obs"
    "ELOT SPARQL SELECT from OMN "
    'org-tempo-tags)
@@ -1289,10 +1398,9 @@ completion cookies.
 
     } {
 
-    } 
+    }
   ,#+end_src" n
-     (progn (message "Execute blocks with C-c C-c") "")
-   )
+     (progn (message "Execute blocks with C-c C-c") ""))
    "<obc"
    "ELOT SPARQL CONSTRUCT from OMN "
    'org-tempo-tags)
@@ -1304,24 +1412,24 @@ completion cookies.
      "#+call: rdfpuml-block(ttlblock=\"" (s ttl-source) "\") :eval never-export" > n
      "#+caption: " (p "Caption: ") > n
      "#+results: rdfpuml:" (s ttl-source) > n
-     (progn (message "Execute blocks with C-c C-c") "")
-   )
+     (progn (message "Execute blocks with C-c C-c") ""))
    "<obm"
    "ELOT ontology metrics from ROBOT"
    'org-tempo-tags)
 #+end_src
 **** Hydra interface F4
+#+name: src-hydra-menu
 #+begin_src emacs-lisp
-  (defhydra hydra-elot (:color blue :hint nil)
+  (defhydra elot-hydra (:color blue :hint nil)
     "
    --- ELOT helpdesk --- press F5 to toggle labels ---
 
-   Insert                    Code block             Document         ^^^^^^Output                  
-  -----------------------------------------------------------------------------------------------
-   [_r_] resource id        <_obm_ metrics             <_odh_ header      [_t_] tangle ontology    
-  <_ocp_ primitive class    <_obs_ sparql select       <_ods_ ontology    [_h_] export HTML        
-  <_ocd_ defined class      <_obc_ sparql construct                                             
-   <_op_ property           <_obd_ rdfpuml diagram                                              
+   Insert                    Code block             Document         ^^^^^Output       
+  ------------------------------------------------------------------------------
+   [_r_] resource id        <_obm_ metrics             <_odh_ header     [_t_] ontology
+  <_ocp_ primitive class    <_obs_ sparql select       <_ods_ ontology   [_h_] HTML    
+  <_ocd_ defined class      <_obc_ sparql construct                                    
+   <_op_ property           <_obd_ rdfpuml diagram                                     
   "
     ("r" (elot-label-lookup))
     ("ocp" (progn (outline-next-heading) (tempo-template-elot-class-iof-primitive)))
@@ -1334,19 +1442,21 @@ completion cookies.
     ("obc" (tempo-template-elot-block-sparql-construct))
     ("obd" (tempo-template-elot-block-rdfpuml-diagram))
     ("odh" (tempo-template-elot-doc-header))
-    ("ods" (tempo-template-elot-ont-skeleton))
-    )
+    ("ods" (tempo-template-elot-ont-skeleton)))
 
-  (define-key org-mode-map (kbd "<f4>") 'hydra-elot/body)
+  ;; The key <f4> is assigned to elot-hydra in elot-defaults.el
 #+end_src
 
 #+RESULTS:
-: hydra-elot/body
+: elot-hydra/body
 
 *** ROBOT
 **** Read tsv into org table
+This function is currently not in use.
+#+name: src-tsv-table
 #+begin_src emacs-lisp
   (defun elot-tsv-to-table (filename)
+    "Read tab separated values file FILENAME and insert an Org table at point."
     (let* ((lines (with-temp-buffer
                    (insert-file-contents filename)
                    (split-string (buffer-string) "\n")))
@@ -1359,19 +1469,150 @@ completion cookies.
 **** ROBOT metrics
 Insert a =call= to ROBOT for =measure=, returns a table of ontology
 metrics.
+#+name: src-robot-metrics
 #+begin_src emacs-lisp :results none
   (tempo-define-template "robot-metrics"
    '("#+call: robot-metrics(omnfile=\""
      (p "Ontology filename to read for metrics: ") "\")"
-     (progn (org-ctrl-c-ctrl-c) "")
-     )
+     (progn (org-ctrl-c-ctrl-c) ""))
      "<om"
      "ROBOT metrics"
      'org-tempo-tags)
 #+end_src
 *** End with "provides"
+#+name: src-provide-library
 #+begin_src emacs-lisp :comments none
 (provide 'elot)
 ;;; elot.el ends here
 #+end_src
 
+** Default settings -- tangling to ~elot-package/elot-defaults.el~
+:PROPERTIES:
+:header-args: :tangle ./elot-package/elot-defaults.el :comments link
+:END:
+*** Package header
+#+name: src-package-header-defaults
+#+begin_src emacs-lisp :comments nil
+  ;;; elot-defaults.el --- Emacs Literate Ontology Tool (ELOT): Default settings   -*- lexical-binding: t; no-native-compile: t; -*-
+
+  ;; Copyright (C) 2024, 2025 Johan W. Klüwer
+
+  ;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
+  ;; URL: https://github.com/johanwk/elot
+
+  ;; This file is not part of GNU Emacs.
+
+  ;; This program is free software; you can redistribute it and/or modify
+  ;; it under the terms of the GNU General Public License as published by
+  ;; the Free Software Foundation, either version 3 of the License, or
+  ;; (at your option) any later version.
+
+  ;; This program is distributed in the hope that it will be useful,
+  ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ;; GNU General Public License for more details.
+
+  ;; You should have received a copy of the GNU General Public License
+  ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+  ;;; Commentary:
+
+  ;; Default startup settings for ELOT.
+  ;;
+  ;; This file is intended to be loaded when an ELOT org-mode file is
+  ;; opened.  To achieve this, add the following text to the first line
+  ;; of your file:
+  ;;
+  ;;   # -*- eval: (load-library "elot-defaults") -*-
+
+  ;;; Code:
+#+end_src
+
+*** The settings
+#+name: src-settings-defaults
+#+begin_src emacs-lisp
+  ;; default settings, replaces Local Variables block
+  (require 'ox-latex)
+  (setq-local
+   org-confirm-babel-evaluate nil
+   org-export-allow-bind-keywords t
+   org-babel-default-inline-header-args '((:exports . "code"))
+   org-latex-src-block-backend 'listings
+   org-latex-prefer-user-labels t
+   org-latex-image-default-scale .8
+   tempo-interactive t
+   time-stamp-line-limit 100
+   time-stamp-format "%Y-%m-%d %H:%M"
+   time-stamp-active t
+   time-stamp-start "(version of "
+   time-stamp-end ")"
+   org-startup-folded 'show2levels
+   org-export-with-sub-superscripts nil  ; preserve "_"
+   org-export-headline-levels 8  ; deep numbering
+   org-export-with-section-numbers 8  ; deep numbering
+   org-latex-default-class "elot-scrreprt"
+   org-latex-packages-alist
+   (append org-latex-packages-alist
+           '(("" "svg" t)
+             ("" "enumitem" t)
+             "\\setlist[description]{font=\\normalfont\\itshape\\space}"
+             "\\sloppy"
+             ;; subsubsubsection, see https://tex.stackexchange.com/questions/356567/subsubsubsection-for-scrbook
+             "\\DeclareNewSectionCommand[style=section,counterwithin=subsubsection,afterskip=1.5ex plus .2ex,"
+             "  beforeskip=3.25ex plus 1ex minus .2ex,afterindent=false,level=\\paragraphnumdepth,tocindent=10em,"
+             "  tocnumwidth=5em]{subsubsubsection}"
+             "\\RedeclareSectionCommand[level=\\numexpr\\subsubsubsectionnumdepth+1\\relax,toclevel=\\numexpr\\subsubsubsectiontocdepth+1\\relax,]{paragraph}"
+             "\\RedeclareSectionCommand[level=\\numexpr\\subsubsubsectionnumdepth+2\\relax,toclevel=\\numexpr\\subsubsubsectiontocdepth+2\\relax,]{subparagraph}"
+             "\\RedeclareSectionCommand[counterwithin=subsubsubsection,tocnumwidth=6em]{paragraph}"
+             "\\RedeclareSectionCommand[tocnumwidth=7em]{subparagraph}"
+             ;; section numbers in margin
+             "\\RedeclareSectionCommands[runin=false,afterskip=1.5ex plus .2ex,afterindent=false,indent=0pt]{paragraph,subparagraph}"
+             "\\renewcommand\\othersectionlevelsformat[3]{\\makebox[0pt][r]{#3\\autodot\\enskip}}"
+             "\\renewcommand\\sectionformat{\\makebox[0pt][r]{\\thesection\\autodot\\enskip}}"
+             "\\renewcommand\\subsectionformat{\\makebox[0pt][r]{\\thesubsection\\autodot\\enskip}}"
+             "\\renewcommand\\subsubsectionformat{\\makebox[0pt][r]{\\thesubsubsection\\autodot\\enskip}}"
+             "\\renewcommand\\subsubsubsectionformat{\\makebox[0pt][r]{\\thesubsubsubsection\\autodot\\enskip}}"
+             "\\renewcommand\\paragraphformat{\\makebox[0pt][r]{\\theparagraph\\autodot\\enskip}}"
+             "\\renewcommand\\subparagraphformat{\\makebox[0pt][r]{\\thesubparagraph\\autodot\\enskip}}"
+             "\\PassOptionsToPackage{hyphens}{url}"
+             "\\hypersetup{pdfborder=0 0 0,colorlinks=true}"
+             "\\lstdefinelanguage{omn}{basicstyle=\\small\\ttfamily,commentstyle=\\color{gray},frame=single,breaklines=true,breakatwhitespace=true,postbreak=\\mbox{{\\color{gray}\\tiny$\\rightarrow$}},tabsize=2,comment=[l]{\\#},columns=fullflexible,}"
+             "\\lstdefinelanguage{ttl}{basicstyle=\\footnotesize\\ttfamily,commentstyle=\\color{gray},frame=single,breaklines=true,breakatwhitespace=true,postbreak=\\mbox{{\\color{gray}\\tiny$\\rightarrow$}},tabsize=2,comment=[l]{\\#},columns=fullflexible,}"
+             "\\lstdefinelanguage{sparql}{basicstyle=\\footnotesize\\ttfamily,commentstyle=\\color{gray},frame=single,breaklines=true,breakatwhitespace=true,postbreak=\\mbox{{\\color{gray}\\tiny$\\rightarrow$}},tabsize=2,comment=[l]{\\#},columns=fullflexible,}")))
+  (progn
+    (org-cycle-set-startup-visibility)
+    (load-library "elot")
+    (defvar-local elot-buffer-p t
+      "Indicates that this buffer is an ELOT buffer.")
+    (org-babel-lob-ingest (concat (file-name-directory (locate-library "elot")) "elot-lob.org"))
+    (elot-update-link-abbrev)
+    (add-to-list 'org-latex-classes
+                 '("elot-scrreprt"
+                   "\\documentclass[11pt,a4paper,numbers=noenddot,twoside=false]{scrreprt}
+  [DEFAULT-PACKAGES]
+  [PACKAGES]
+  [EXTRA]"
+                   elot-ontology-resource-section))
+    ;;
+    (modify-syntax-entry ?\: "w")
+    (modify-syntax-entry ?\_ "w")
+    (add-hook 'org-babel-post-tangle-hook #'elot-tangled-omn-to-ttl
+              'local) ;; make it a local hook only
+    (add-hook 'org-babel-after-execute-hook #'org-redisplay-inline-images 'local)
+    (declare-function elot-update-link-abbrev "elot.el")
+    (add-hook 'after-save-hook #'elot-update-link-abbrev)
+    ;; the label display functions are in a separate file
+    (require 'elot-label-display)
+    (declare-function elot-label-display-setup "elot-label-display.el")
+    (elot-label-display-setup)
+    (declare-function elot-hydra/body "elot.el")
+    (local-set-key (kbd "<f4>") #'elot-hydra/body)
+    (declare-function elot-toggle-label-display "elot-label-display.el")
+    (local-set-key (kbd "<f5>") #'elot-toggle-label-display))
+#+end_src
+*** End with "provides"
+#+name: src-provide-library
+#+begin_src emacs-lisp :comments none
+(provide 'elot-defaults)
+;;; elot-defaults.el ends here
+#+end_src

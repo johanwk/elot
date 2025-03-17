@@ -5,9 +5,12 @@
 This repository contains a template for writing OWL ontologies as
 [[https://orgmode.org/][Org Mode]] documents, with supporting functions and scripts.
 
-*NEW* March 2025: Convert OWL files to ELOT's org-mode format, see [[https://github.com/johanwk/elot/releases][releases]]
+*NEW* March 2025: Convert OWL files to ELOT's org-mode format. Download
+the ~jar~ binary from [[https://github.com/johanwk/elot/releases][releases]], store as ~elot-exporter.jar~ in your ~bin/~
+and open existing OWL files with function ~elot-open-owl~.
 
-Check out the files =pizza.org=, =bfo-core.org=, =maintenance.org= for example ELOT files.
+Check out the files =pizza.org=, =bfo-core.org=, =maintenance.org= for
+example ELOT files with queries and diagrams, or check out the files in [[https://github.com/johanwk/elot/tree/main/examples][examples]].
 
 ELOT works on Windows, MacOS, and Linux (tested in WSL).
 
@@ -27,6 +30,7 @@ The tool then extracts ontological definitions (OMN or Turtle) and documentation
  - Install [[https://www.java.com/en/download/help/download_options.html][Java]] to enable advanced features
    - Turtle output, ontology metrics, and more: install [[http://robot.obolibrary.org/][ROBOT]] 
    - Ontology diagrams: install [[https://plantuml.com/][PlantUML]] and [[https://github.com/VladimirAlexiev/rdf2rml][rdfpuml]]
+   - Open OWL files: Download ~elot-exporter~ from [[https://github.com/johanwk/elot/releases][releases]]
 
 If you are new to Emacs, the book [[https://www.masteringemacs.org/][Mastering Emacs]] is highly
 recommended.
@@ -94,6 +98,12 @@ Get the tools:
       listed in the [[https://github.com/VladimirAlexiev/rdf2rml?tab=readme-ov-file#installation][rdfpuml installation guide]].
        : cd ~/bin
        : git clone https://github.com/VladimirAlexiev/rdf2rml.git
+ 4. The ~elot-exporter~ tool converts existing OWL ontologies to ELOT's
+    org-mode format. Once downloaded, you can open an OWL ontology
+    from a local file, or from a URL, with ~M-x elot-open-owl~.
+    - download the Java JAR from [[https://github.com/johanwk/elot/releases][releases]] and save it as
+      ~elot-exporter.jar~ in your ~bin~ folder.
+
 *** NEW: Convert existing OWL files to ELOT format
 A Java binary will read an OWL file, in Turtle, RDF/XML or other
 formats, and output an org-mode file in ELOT format. This makes it

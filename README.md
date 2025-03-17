@@ -5,9 +5,12 @@
 This repository contains a template for writing OWL ontologies as
 [Org Mode](https://orgmode.org/) documents, with supporting functions and scripts.
 
-**NEW** March 2025: Convert OWL files to ELOT&rsquo;s org-mode format, see [releases](https://github.com/johanwk/elot/releases)
+**NEW** March 2025: Convert OWL files to ELOT&rsquo;s org-mode format. Download
+the `jar` binary from [releases](https://github.com/johanwk/elot/releases), store as `elot-exporter.jar` in your `bin/`
+and open existing OWL files with function `elot-open-owl`.
 
-Check out the files `pizza.org`, `bfo-core.org`, `maintenance.org` for example ELOT files.
+Check out the files `pizza.org`, `bfo-core.org`, `maintenance.org` for
+example ELOT files with queries and diagrams, or check out the files in [examples](https://github.com/johanwk/elot/tree/main/examples).
 
 ELOT works on Windows, MacOS, and Linux (tested in WSL).
 
@@ -18,22 +21,22 @@ ELOT takes inspiration from this paradigm and uses the excellent Emacs Orgmode p
 Ontological constructs are generated from narrative sections and Manchester Notation (OMN) fragments. Diagrams are generated from Turtle examples or SPARQL queries by using the rdfpuml tool.
 The tool then extracts ontological definitions (OMN or Turtle) and documentation (HTML or PDF).
 
--   [Prerequisites in brief](#orga786df8)
--   [Installation](#org4e3f0cf)
-    -   [Get Emacs](#org6382bcf)
-    -   [Install ELOT in Emacs](#org178f0d3)
-    -   [Install ELOT auxiliaries](#orgc3cca89)
-    -   [NEW: Convert existing OWL files to ELOT format](#org8e5507b)
--   [Quick start using ELOT](#org4debbb5)
-    -   [Adding an ontology](#org0864f17)
-    -   [Adding classes and relations](#orge61f7ae)
-    -   [Adding annotations](#org0538717)
-    -   [Querying the ontology](#org505479d)
-    -   [Making a diagram](#org7dca572)
-    -   [Display labels instead of identifiers](#org11a9d5b)
+-   [Prerequisites in brief](#org1e02f68)
+-   [Installation](#org0f85e39)
+    -   [Get Emacs](#org0587a82)
+    -   [Install ELOT in Emacs](#orgc87927e)
+    -   [Install ELOT auxiliaries](#orgf4e0cfd)
+    -   [NEW: Convert existing OWL files to ELOT format](#org8213d0a)
+-   [Quick start using ELOT](#orgcf01a83)
+    -   [Adding an ontology](#orgb1214f9)
+    -   [Adding classes and relations](#org9c2b7e0)
+    -   [Adding annotations](#org266aa15)
+    -   [Querying the ontology](#orge58816b)
+    -   [Making a diagram](#org26529e8)
+    -   [Display labels instead of identifiers](#orgf82a586)
 
 
-<a id="orga786df8"></a>
+<a id="org1e02f68"></a>
 
 ## Prerequisites in brief
 
@@ -43,17 +46,18 @@ The tool then extracts ontological definitions (OMN or Turtle) and documentation
 -   Install [Java](https://www.java.com/en/download/help/download_options.html) to enable advanced features
     -   Turtle output, ontology metrics, and more: install [ROBOT](http://robot.obolibrary.org/)
     -   Ontology diagrams: install [PlantUML](https://plantuml.com/) and [rdfpuml](https://github.com/VladimirAlexiev/rdf2rml)
+    -   Open OWL files: Download `elot-exporter` from [releases](https://github.com/johanwk/elot/releases)
 
 If you are new to Emacs, the book [Mastering Emacs](https://www.masteringemacs.org/) is highly
 recommended.
 
 
-<a id="org4e3f0cf"></a>
+<a id="org0f85e39"></a>
 
 ## Installation
 
 
-<a id="org6382bcf"></a>
+<a id="org0587a82"></a>
 
 ### Get Emacs
 
@@ -71,7 +75,7 @@ for Linux).
 For MacOS users: See the [GNU Emacs downloads](https://www.gnu.org/software/emacs/download.html) page under &ldquo;macOS&rdquo;.
 
 
-<a id="org178f0d3"></a>
+<a id="orgc87927e"></a>
 
 ### Install ELOT in Emacs
 
@@ -101,7 +105,7 @@ The following steps will get you started editing OWL ontologies.
         `~/elisp/elot/elot-package/` to your `load-path`.
 
 
-<a id="orgc3cca89"></a>
+<a id="orgf4e0cfd"></a>
 
 ### Install ELOT auxiliaries
 
@@ -134,9 +138,14 @@ Get the tools:
         
             cd ~/bin
             git clone https://github.com/VladimirAlexiev/rdf2rml.git
+4.  The `elot-exporter` tool converts existing OWL ontologies to ELOT&rsquo;s
+    org-mode format. Once downloaded, you can open an OWL ontology
+    from a local file, or from a URL, with `M-x elot-open-owl`.
+    -   download the Java JAR from [releases](https://github.com/johanwk/elot/releases) and save it as
+        `elot-exporter.jar` in your `bin` folder.
 
 
-<a id="org8e5507b"></a>
+<a id="org8213d0a"></a>
 
 ### NEW: Convert existing OWL files to ELOT format
 
@@ -147,12 +156,12 @@ easy to work on existing ontologies in your favourite editor.
 The `jar` file can be downloaded from [ELOT releases](https://github.com/johanwk/elot/releases).
 
 
-<a id="org4debbb5"></a>
+<a id="orgcf01a83"></a>
 
 ## Quick start using ELOT
 
 
-<a id="org0864f17"></a>
+<a id="orgb1214f9"></a>
 
 ### Adding an ontology
 
@@ -206,7 +215,7 @@ Now create an OWL file from your new document.
 ![img](./documentation/images/firefox-skeleton1.png)
 
 
-<a id="orge61f7ae"></a>
+<a id="org9c2b7e0"></a>
 
 ### Adding classes and relations
 
@@ -224,7 +233,7 @@ Now create an OWL file from your new document.
 ![img](documentation/images/elot-animal1.png)
 
 
-<a id="org0538717"></a>
+<a id="org266aa15"></a>
 
 ### Adding annotations
 
@@ -235,7 +244,7 @@ In this screenshot, two annotations are added to the &ldquo;transitive&rdquo; ch
 ![img](documentation/images/elot-annotate-axiom1.png)
 
 
-<a id="org505479d"></a>
+<a id="orge58816b"></a>
 
 ### Querying the ontology
 
@@ -248,7 +257,7 @@ In this screenshot, two annotations are added to the &ldquo;transitive&rdquo; ch
 ![img](documentation/images/elot-query1.png)
 
 
-<a id="org7dca572"></a>
+<a id="org26529e8"></a>
 
 ### Making a diagram
 
@@ -272,7 +281,7 @@ In this screenshot, two annotations are added to the &ldquo;transitive&rdquo; ch
 ![img](documentation/images/firefox-diagram1.png)
 
 
-<a id="org11a9d5b"></a>
+<a id="orgf82a586"></a>
 
 ### Display labels instead of identifiers
 

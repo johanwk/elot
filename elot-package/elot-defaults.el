@@ -1,5 +1,40 @@
-;; [[file:../elot-defs.org::*Default settings][Default settings:1]]
+;;; elot-defaults.el --- Emacs Literate Ontology Tool (ELOT): Default settings   -*- lexical-binding: t; no-native-compile: t; -*-
+
+;; Copyright (C) 2024, 2025 Johan W. Klüwer
+
+;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
+;; URL: https://github.com/johanwk/elot
+
+;; This file is not part of GNU Emacs.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; Default startup settings for ELOT.
+;;
+;; This file is intended to be loaded when an ELOT org-mode file is
+;; opened.  To achieve this, add the following text to the first line
+;; of your file:
+;;
+;;   # -*- eval: (load-library "elot-defaults") -*-
+
+;;; Code:
+
+;; [[file:../elot-defs.org::src-settings-defaults][src-settings-defaults]]
 ;; default settings, replaces Local Variables block
+(require 'ox-latex)
 (setq-local
  org-confirm-babel-evaluate nil
  org-export-allow-bind-keywords t
@@ -19,7 +54,7 @@
  org-export-with-section-numbers 8  ; deep numbering
  org-latex-default-class "elot-scrreprt"
  org-latex-packages-alist
- (append org-latex-packages-alist 
+ (append org-latex-packages-alist
          '(("" "svg" t)
            ("" "enumitem" t)
            "\\setlist[description]{font=\\normalfont\\itshape\\space}"
@@ -45,30 +80,38 @@
            "\\hypersetup{pdfborder=0 0 0,colorlinks=true}"
            "\\lstdefinelanguage{omn}{basicstyle=\\small\\ttfamily,commentstyle=\\color{gray},frame=single,breaklines=true,breakatwhitespace=true,postbreak=\\mbox{{\\color{gray}\\tiny$\\rightarrow$}},tabsize=2,comment=[l]{\\#},columns=fullflexible,}"
            "\\lstdefinelanguage{ttl}{basicstyle=\\footnotesize\\ttfamily,commentstyle=\\color{gray},frame=single,breaklines=true,breakatwhitespace=true,postbreak=\\mbox{{\\color{gray}\\tiny$\\rightarrow$}},tabsize=2,comment=[l]{\\#},columns=fullflexible,}"
-           "\\lstdefinelanguage{sparql}{basicstyle=\\footnotesize\\ttfamily,commentstyle=\\color{gray},frame=single,breaklines=true,breakatwhitespace=true,postbreak=\\mbox{{\\color{gray}\\tiny$\\rightarrow$}},tabsize=2,comment=[l]{\\#},columns=fullflexible,}"
-           ))
- )
+           "\\lstdefinelanguage{sparql}{basicstyle=\\footnotesize\\ttfamily,commentstyle=\\color{gray},frame=single,breaklines=true,breakatwhitespace=true,postbreak=\\mbox{{\\color{gray}\\tiny$\\rightarrow$}},tabsize=2,comment=[l]{\\#},columns=fullflexible,}")))
 (progn
   (org-cycle-set-startup-visibility)
   (load-library "elot")
+  (defvar-local elot-buffer-p t
+    "Indicates that this buffer is an ELOT buffer.")
   (org-babel-lob-ingest (concat (file-name-directory (locate-library "elot")) "elot-lob.org"))
-  (update-link-abbrev)
+  (elot-update-link-abbrev)
   (add-to-list 'org-latex-classes
                '("elot-scrreprt"
                  "\\documentclass[11pt,a4paper,numbers=noenddot,twoside=false]{scrreprt}
 [DEFAULT-PACKAGES]
 [PACKAGES]
 [EXTRA]"
-                 ontology-resource-section
-                 ))
-(modify-syntax-entry ?\: "w")
-(modify-syntax-entry ?\_ "w")
-(add-hook 'org-babel-post-tangle-hook 'elot-tangled-omn-to-ttl
-          'local) ;; make it a local hook only
-(add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images 'local)
-(add-hook 'after-save-hook 'update-link-abbrev)
-;; the label display functions are in a separate file
-(load-library "elot-label-display.el")
-(elot-label-display-setup)
-)
-;; Default settings:1 ends here
+                 elot-ontology-resource-section))
+  ;;
+  (modify-syntax-entry ?\: "w")
+  (modify-syntax-entry ?\_ "w")
+  (add-hook 'org-babel-post-tangle-hook #'elot-tangled-omn-to-ttl
+            'local) ;; make it a local hook only
+  (add-hook 'org-babel-after-execute-hook #'org-redisplay-inline-images 'local)
+  (declare-function elot-update-link-abbrev "elot.el")
+  (add-hook 'after-save-hook #'elot-update-link-abbrev)
+  ;; the label display functions are in a separate file
+  (require 'elot-label-display)
+  (declare-function elot-label-display-setup "elot-label-display.el")
+  (elot-label-display-setup)
+  (declare-function elot-hydra/body "elot.el")
+  (local-set-key (kbd "<f4>") #'elot-hydra/body)
+  (declare-function elot-toggle-label-display "elot-label-display.el")
+  (local-set-key (kbd "<f5>") #'elot-toggle-label-display))
+;; src-settings-defaults ends here
+
+(provide 'elot-defaults)
+;;; elot-defaults.el ends here
