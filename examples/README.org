@@ -1,0 +1,34 @@
+#+title: ELOT Examples
+#+startup: nonum
+
+* Intro
+These examples are generated with the ~elot-exporter~ (see https://github.com/johanwk/elot/releases), eg:
+#+begin_src 
+java -jar elot-exporter-0.3-SNAPSHOT.jar ontology.ttl > ontology.org
+#+end_src
+
+* Cell Ontology
+[[./cl-basic.org][cl-basic.org]]: 2.2Mb
+
+CL-basic from http://purl.obolibrary.org/obo/cl/cl-basic.owl.
+This is part of the Cell Ontology, see https://www.ebi.ac.uk/ols4/ontologies/cl and http://purl.obolibrary.org/obo/cl.owl.
+
+* Units of Measure
+[[./om-2.org][om-2.org]]: 840kB
+
+Ontology of Units of Measure from http://www.ontology-of-units-of-measure.org/page/om-2
+
+* UBERON
+[[./uberon.org][uberon.org]]: 29Mb
+
+Uberon Multi-species Anatomy Ontology from https://obophenotype.github.io/uberon/ and http://purl.obolibrary.org/obo/uberon.owl.
+
+Warning: 
+- The file is very large. ~elot~ startup code has been removed from that file to speed up loading.
+- But still, Emacs may hang for a very long time before responding (eg 10 minutes). So it's perhaps better to use ~find-file-literally~ to avoid that.
+
+
+* CIM Equipment
+[[61970-600-2_Equipment-AP-Voc-RDFS2020_v3-0-0.org][61970-600-2_Equipment-AP-Voc-RDFS2020_v3-0-0.org]]: 305kB
+
+Electrical CIM: equipment ontology from [[https://github.com/Sveino/Inst4CIM-KG/blob/develop/rdfs-improved/CGMES/ttl/61970-600-2_Equipment-AP-Voc-RDFS2020_v3-0-0.ttl][61970-600-2_Equipment-AP-Voc-RDFS2020_v3-0-0.ttl]]
