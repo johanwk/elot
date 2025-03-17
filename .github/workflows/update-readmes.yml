@@ -1,0 +1,49 @@
+name: Auto-Update README.md from README.org
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # Allows manual triggering
+
+jobs:
+  update-readmes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Emacs
+        run: sudo apt-get install -y emacs
+
+      - name: Convert README.org to README.md using Emacs
+        run: |
+          find . -name "README.org" | while read orgfile; do
+            mdfile="${orgfile%.org}.md"
+
+            # Backup old README.md if it exists
+            if [ -f "$mdfile" ]; then
+              cp "$mdfile" "$mdfile.old"
+            fi
+
+            # Generate the new README.md
+            emacs --batch "$orgfile" --eval "(progn (require 'ox-md) (org-md-export-to-markdown))"
+
+            # Only stage if README.md has changed
+            if [ -f "$mdfile.old" ] && diff -q "$mdfile.old" "$mdfile" > /dev/null; then
+              echo "No changes in $mdfile"
+              rm "$mdfile.old"
+            else
+              echo "Updating $mdfile"
+              git add "$mdfile"
+              rm -f "$mdfile.old"
+            fi
+          done
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+
+          # Commit only if there are staged changes
+          git diff --cached --quiet || (git commit -m "Auto-update README.md from README.org" && git push)
