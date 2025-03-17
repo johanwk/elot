@@ -21,10 +21,11 @@ jobs:
           find . -name "README.org" | while read orgfile; do
             mdfile="${orgfile%.org}.md"
 
+            # Prepend required Org options before conversion
+            echo -e "#+OPTIONS: broken-links:mark ^:nil\n$(cat "$orgfile")" > "$orgfile.tmp" && mv "$orgfile.tmp" "$orgfile"
+
             # Backup old README.md if it exists
-            if [ -f "$mdfile" ]; then
-              cp "$mdfile" "$mdfile.old"
-            fi
+            [ -f "$mdfile" ] && cp "$mdfile" "$mdfile.old"
 
             # Generate the new README.md
             emacs --batch "$orgfile" --eval "(progn (require 'ox-md) (org-md-export-to-markdown))"
