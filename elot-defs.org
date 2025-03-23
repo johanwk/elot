@@ -424,6 +424,9 @@ the ID string.
           (; a bare URI, in angles
            (string-match "^\\(<http[^ ]*>\\)$" str)
            (concat "  " (match-string 1 str)))
+          (; a bare URN, in angles
+           (string-match "^\\(<urn:[^ ]*>\\)$" str)
+           (concat "  " (match-string 1 str)))
           (; true -- make it an explicit boolean
            (string-match "^true$" str) " \"true\"^^xsd:boolean")
           (; false -- make it an explicit boolean
