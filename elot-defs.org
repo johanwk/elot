@@ -314,7 +314,7 @@ the ID string.
         (substring-no-properties (org-element-interpret-data (org-element-property :tag x)))))
   (defun elot-org-elt-item-pars-str (x)
     "For an item X in an `org-element-map', return the paragraphs as one string."
-    (replace-regexp-in-string "\\([^
+    (replace-regexp-in-string " *\\([^
   ]\\)\n[ \t]*" "\\1:newline:"
    (string-trim (apply #'concat
                        (org-element-map x '(paragraph plain-list)
