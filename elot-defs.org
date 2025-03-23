@@ -448,7 +448,7 @@ the ID string.
 	(defun elot-omn-restriction-string (str)
 		"STR is wanted as an OMN value.  Strip any meta-annotations, or return unchanged."
 		(setq str (replace-regexp-in-string " - [^ ]+ ::.*$" "" str))
-		str)
+		(replace-regexp-in-string ":newline:" "\n" str))
 #+END_SRC
 *** Use section headings as ontology resources
 =elot-org-list-siblings= returns a tree of headline strings that matches the
