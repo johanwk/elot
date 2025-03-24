@@ -40,6 +40,11 @@ Electrical CIM: equipment ontology from [[https://github.com/Sveino/Inst4CIM-KG/
 Basic Formal Ontology (BFO-2020) from https://github.com/BFO-ontology/BFO-2020/releases/tag/release-2024-01-29.
 An "About" section has been added after conversion.
 
+** Plant Ontology
+[[file:plant-ontology.obo.org]]: 1.8M
+
+Plant Ontology from https://github.com/Planteome/plant-ontology/releases
+
 * Other examples
 These examples were made before the ~elot-exporter~ was available. They
 will eventually be updated, once the exporter is more complete.
