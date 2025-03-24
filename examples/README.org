@@ -41,7 +41,7 @@ Basic Formal Ontology (BFO-2020) from https://github.com/BFO-ontology/BFO-2020/r
 An "About" section has been added after conversion.
 
 ** Plant Ontology
-[[file:plant-ontology.obo.org][plant-ontology.obo.org]]: 1.8M
+[[plant-ontology.obo.org][plant-ontology.obo.org]]: 1.8M
 
 Plant Ontology from https://github.com/Planteome/plant-ontology/releases
 
