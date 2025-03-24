@@ -2,7 +2,7 @@
 #+title: Core Equipment Vocabulary
 #+subtitle: An OWL ontology
 #+author: 
-#+date: WIP (version of 2025-03-24 02:27)
+#+date: WIP (version of 2025-03-24 02:44)
 #+call: theme-readtheorg()
 
 * Ontology
@@ -11,7 +11,7 @@
 :ELOT-context-type: ontology
 :ELOT-context-localname: Ontology
 :ELOT-default-prefix: Ontology
-:header-args:omn: :tangle ./61970-600-2_Equipment-AP-Voc-RDFS2020_v3-0-0.omn :noweb yes
+:header-args:omn: :tangle ./Ontology.omn :noweb yes
 :header-args:emacs-lisp: :tangle no :exports results
 :header-args: :padline yes
 :END:
@@ -369,8 +369,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - rdfs:comment :: "A power system resource (PSR) can be an item of equipment such as a switch, an equipment container containing many individual items of equipment such as a substation, or an organisational entity such as sub-control area. Power system resources can have measurements associated."@en
 ***** BoundaryPoint (eu:BoundaryPoint)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
- - cims:stereotype :: European
  - cims:stereotype :: uml:concrete
+ - cims:stereotype :: European
  - rdfs:comment :: "Designates a connection point at which one or more model authority sets shall connect to. The location of the connection point as well as other properties are agreed between organisations responsible for the interconnection, hence all attributes of the class represent this agreement.  It is primarily used in a boundary model authority set which can contain one or many BoundaryPoint-s among other Equipment-s and their connections."@en
 ***** CAESPlant (cim:CAESPlant)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
@@ -793,8 +793,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
       Angle sign convention (general): Positive value indicates a positive phase shift from the winding where the tap is located to the other winding (for a two-winding transformer)."@en
 ***** WindPowerPlant (eu:WindPowerPlant)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
- - cims:stereotype :: European
  - cims:stereotype :: uml:concrete
+ - cims:stereotype :: European
  - rdfs:comment :: "Wind power plant."@en
 **** RatioTapChangerTable (cim:RatioTapChangerTable)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
@@ -2508,8 +2508,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - Characteristics :: Functional
 *** energyIdentCodeEic (eu:IdentifiedObject.energyIdentCodeEic)
  - cims:multiplicity :: cims:M:0..1
- - cims:stereotype :: European
  - cims:stereotype :: uml:attribute
+ - cims:stereotype :: European
  - owl:deprecated :: true
  - rdfs:comment :: "The attribute is used for an exchange of the EIC code (Energy identification Code). The length of the string is 16 characters as defined by the EIC code. For details on EIC scheme please refer to ENTSO-E web site."@en
  - Domain :: cim:IdentifiedObject
@@ -2538,8 +2538,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - Characteristics :: Functional
 *** fromEndIsoCode (eu:BoundaryPoint.fromEndIsoCode)
  - cims:multiplicity :: cims:M:1..1
- - cims:stereotype :: uml:attribute
  - cims:stereotype :: European
+ - cims:stereotype :: uml:attribute
  - rdfs:comment :: "The ISO code of the region which the \"From\" side of the Boundary point belongs to or it is connected to.
       The ISO code is a two-character country code as defined by ISO 3166 (http://www.iso.org/iso/country_codes). The length of the string is 2 characters maximum."@en
  - Domain :: eu:BoundaryPoint
@@ -2547,8 +2547,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - Characteristics :: Functional
 *** fromEndName (eu:BoundaryPoint.fromEndName)
  - cims:multiplicity :: cims:M:1..1
- - cims:stereotype :: uml:attribute
  - cims:stereotype :: European
+ - cims:stereotype :: uml:attribute
  - rdfs:comment :: "A human readable name with length of the string 64 characters maximum. It covers the following two cases:
       -if the Boundary point is placed on a tie-line, it is the name (IdentifiedObject.name) of the substation at which the \"From\" side of the tie-line is connected to.
       -if the Boundary point is placed in a substation, it is the name (IdentifiedObject.name) of the element (e.g. PowerTransformer, ACLineSegment, Switch, etc.) at which the \"From\" side of the Boundary point is connected to."@en
@@ -2733,16 +2733,16 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - Characteristics :: Functional
 *** isDirectCurrent (eu:BoundaryPoint.isDirectCurrent)
  - cims:multiplicity :: cims:M:0..1
- - cims:stereotype :: uml:attribute
  - cims:stereotype :: European
+ - cims:stereotype :: uml:attribute
  - rdfs:comment :: "If true, this boundary point is a point of common coupling (PCC) of a direct current (DC) interconnection, otherwise the interconnection is AC (default)."@en
  - Domain :: eu:BoundaryPoint
  - Range :: xsd:boolean
  - Characteristics :: Functional
 *** isExcludedFromAreaInterchange (eu:BoundaryPoint.isExcludedFromAreaInterchange)
  - cims:multiplicity :: cims:M:0..1
- - cims:stereotype :: European
  - cims:stereotype :: uml:attribute
+ - cims:stereotype :: European
  - rdfs:comment :: "If true, this boundary point is on the interconnection that is excluded from control area interchange calculation and consequently has no related tie flows. Otherwise, the interconnection is included in control area interchange and a TieFlow is required at all sides of the boundary point (default)."@en
  - Domain :: eu:BoundaryPoint
  - Range :: xsd:boolean
@@ -3827,8 +3827,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - Characteristics :: Functional
 *** shortName (eu:IdentifiedObject.shortName)
  - cims:multiplicity :: cims:M:0..1
- - cims:stereotype :: uml:attribute
  - cims:stereotype :: European
+ - cims:stereotype :: uml:attribute
  - owl:deprecated :: true
  - rdfs:comment :: "The attribute is used for an exchange of a human readable short name with length of the string 12 characters maximum."@en
  - Domain :: cim:IdentifiedObject
@@ -3942,8 +3942,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - Characteristics :: Functional
 *** toEndIsoCode (eu:BoundaryPoint.toEndIsoCode)
  - cims:multiplicity :: cims:M:1..1
- - cims:stereotype :: uml:attribute
  - cims:stereotype :: European
+ - cims:stereotype :: uml:attribute
  - rdfs:comment :: "The ISO code of the region which the \"To\" side of the Boundary point belongs to or is connected to.
       The ISO code is a two-character country code as defined by ISO 3166 (http://www.iso.org/iso/country_codes). The length of the string is 2 characters maximum."@en
  - Domain :: eu:BoundaryPoint
@@ -3951,8 +3951,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - Characteristics :: Functional
 *** toEndName (eu:BoundaryPoint.toEndName)
  - cims:multiplicity :: cims:M:1..1
- - cims:stereotype :: uml:attribute
  - cims:stereotype :: European
+ - cims:stereotype :: uml:attribute
  - rdfs:comment :: "A human readable name with length of the string 64 characters maximum. It covers the following two cases:
       -if the Boundary point is placed on a tie-line, it is the name (IdentifiedObject.name) of the substation at which the \"To\" side of the tie-line is connected to.
       -if the Boundary point is placed in a substation, it is the name (IdentifiedObject.name) of the element (e.g. PowerTransformer, ACLineSegment, Switch, etc.) at which the \"To\" side of the Boundary point is connected to."@en
@@ -4245,15 +4245,15 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 *** "ControlAreaTypeKind"@                                        :nodeclare:
 **** AGC (cim:ControlAreaTypeKind.AGC)
  - Types :: cim:ControlAreaTypeKind
+ - rdfs:label :: AGC
  - rdfs:comment :: "Used for automatic generation control."@en
  - cims:stereotype :: enum
- - rdfs:label :: AGC
 
 **** Forecast (cim:ControlAreaTypeKind.Forecast)
  - Types :: cim:ControlAreaTypeKind
  - rdfs:label :: Forecast
- - rdfs:comment :: "Used for load forecast."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Used for load forecast."@en
 
 **** Interchange (cim:ControlAreaTypeKind.Interchange)
  - Types :: cim:ControlAreaTypeKind
@@ -4264,27 +4264,27 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 *** "Currency"@                                                   :nodeclare:
 **** AED (cim:Currency.AED)
  - Types :: cim:Currency
+ - cims:stereotype :: enum
  - rdfs:label :: AED
  - rdfs:comment :: "United Arab Emirates dirham."@en
- - cims:stereotype :: enum
 
 **** AFN (cim:Currency.AFN)
  - Types :: cim:Currency
- - rdfs:label :: AFN
- - cims:stereotype :: enum
  - rdfs:comment :: "Afghan afghani."@en
+ - cims:stereotype :: enum
+ - rdfs:label :: AFN
 
 **** ALL (cim:Currency.ALL)
  - Types :: cim:Currency
+ - cims:stereotype :: enum
  - rdfs:label :: ALL
  - rdfs:comment :: "Albanian lek."@en
- - cims:stereotype :: enum
 
 **** AMD (cim:Currency.AMD)
  - Types :: cim:Currency
- - rdfs:comment :: "Armenian dram."@en
- - cims:stereotype :: enum
  - rdfs:label :: AMD
+ - cims:stereotype :: enum
+ - rdfs:comment :: "Armenian dram."@en
 
 **** ANG (cim:Currency.ANG)
  - Types :: cim:Currency
@@ -4300,21 +4300,21 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** ARS (cim:Currency.ARS)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:label :: ARS
+ - cims:stereotype :: enum
  - rdfs:comment :: "Argentine peso."@en
 
 **** AUD (cim:Currency.AUD)
  - Types :: cim:Currency
- - cims:stereotype :: enum
- - rdfs:label :: AUD
  - rdfs:comment :: "Australian dollar."@en
+ - rdfs:label :: AUD
+ - cims:stereotype :: enum
 
 **** AWG (cim:Currency.AWG)
  - Types :: cim:Currency
- - rdfs:comment :: "Aruban florin."@en
- - rdfs:label :: AWG
  - cims:stereotype :: enum
+ - rdfs:label :: AWG
+ - rdfs:comment :: "Aruban florin."@en
 
 **** AZN (cim:Currency.AZN)
  - Types :: cim:Currency
@@ -4330,14 +4330,14 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** BBD (cim:Currency.BBD)
  - Types :: cim:Currency
- - rdfs:comment :: "Barbados dollar."@en
  - rdfs:label :: BBD
  - cims:stereotype :: enum
+ - rdfs:comment :: "Barbados dollar."@en
 
 **** BDT (cim:Currency.BDT)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:comment :: "Bangladeshi taka."@en
+ - cims:stereotype :: enum
  - rdfs:label :: BDT
 
 **** BGN (cim:Currency.BGN)
@@ -4349,44 +4349,44 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** BHD (cim:Currency.BHD)
  - Types :: cim:Currency
  - rdfs:comment :: "Bahraini dinar."@en
- - rdfs:label :: BHD
  - cims:stereotype :: enum
+ - rdfs:label :: BHD
 
 **** BIF (cim:Currency.BIF)
  - Types :: cim:Currency
- - rdfs:comment :: "Burundian franc."@en
- - cims:stereotype :: enum
  - rdfs:label :: BIF
+ - cims:stereotype :: enum
+ - rdfs:comment :: "Burundian franc."@en
 
 **** BMD (cim:Currency.BMD)
  - Types :: cim:Currency
  - rdfs:comment :: "Bermudian dollar (customarily known as Bermuda dollar)."@en
- - rdfs:label :: BMD
  - cims:stereotype :: enum
+ - rdfs:label :: BMD
 
 **** BND (cim:Currency.BND)
  - Types :: cim:Currency
  - cims:stereotype :: enum
- - rdfs:comment :: "Brunei dollar."@en
  - rdfs:label :: BND
+ - rdfs:comment :: "Brunei dollar."@en
 
 **** BOB (cim:Currency.BOB)
  - Types :: cim:Currency
- - rdfs:label :: BOB
- - cims:stereotype :: enum
  - rdfs:comment :: "Boliviano."@en
+ - cims:stereotype :: enum
+ - rdfs:label :: BOB
 
 **** BOV (cim:Currency.BOV)
  - Types :: cim:Currency
- - rdfs:comment :: "Bolivian Mvdol (funds code)."@en
  - rdfs:label :: BOV
+ - rdfs:comment :: "Bolivian Mvdol (funds code)."@en
  - cims:stereotype :: enum
 
 **** BRL (cim:Currency.BRL)
  - Types :: cim:Currency
- - rdfs:comment :: "Brazilian real."@en
  - rdfs:label :: BRL
  - cims:stereotype :: enum
+ - rdfs:comment :: "Brazilian real."@en
 
 **** BSD (cim:Currency.BSD)
  - Types :: cim:Currency
@@ -4396,15 +4396,15 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** BTN (cim:Currency.BTN)
  - Types :: cim:Currency
- - rdfs:label :: BTN
  - cims:stereotype :: enum
+ - rdfs:label :: BTN
  - rdfs:comment :: "Bhutanese ngultrum."@en
 
 **** BWP (cim:Currency.BWP)
  - Types :: cim:Currency
+ - rdfs:label :: BWP
  - cims:stereotype :: enum
  - rdfs:comment :: "Botswana pula."@en
- - rdfs:label :: BWP
 
 **** BYR (cim:Currency.BYR)
  - Types :: cim:Currency
@@ -4414,21 +4414,21 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** BZD (cim:Currency.BZD)
  - Types :: cim:Currency
- - rdfs:comment :: "Belize dollar."@en
- - rdfs:label :: BZD
  - cims:stereotype :: enum
+ - rdfs:label :: BZD
+ - rdfs:comment :: "Belize dollar."@en
 
 **** CAD (cim:Currency.CAD)
  - Types :: cim:Currency
  - rdfs:comment :: "Canadian dollar."@en
- - cims:stereotype :: enum
  - rdfs:label :: CAD
+ - cims:stereotype :: enum
 
 **** CDF (cim:Currency.CDF)
  - Types :: cim:Currency
  - rdfs:comment :: "Congolese franc."@en
- - cims:stereotype :: enum
  - rdfs:label :: CDF
+ - cims:stereotype :: enum
 
 **** CHF (cim:Currency.CHF)
  - Types :: cim:Currency
@@ -4438,98 +4438,98 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** CLF (cim:Currency.CLF)
  - Types :: cim:Currency
- - cims:stereotype :: enum
- - rdfs:comment :: "Unidad de Fomento (funds code), Chile."@en
  - rdfs:label :: CLF
+ - rdfs:comment :: "Unidad de Fomento (funds code), Chile."@en
+ - cims:stereotype :: enum
 
 **** CLP (cim:Currency.CLP)
  - Types :: cim:Currency
+ - rdfs:comment :: "Chilean peso."@en
  - cims:stereotype :: enum
  - rdfs:label :: CLP
- - rdfs:comment :: "Chilean peso."@en
 
 **** CNY (cim:Currency.CNY)
  - Types :: cim:Currency
- - rdfs:comment :: "Chinese yuan."@en
  - rdfs:label :: CNY
+ - rdfs:comment :: "Chinese yuan."@en
  - cims:stereotype :: enum
 
 **** COP (cim:Currency.COP)
  - Types :: cim:Currency
- - rdfs:comment :: "Colombian peso."@en
- - cims:stereotype :: enum
  - rdfs:label :: COP
+ - cims:stereotype :: enum
+ - rdfs:comment :: "Colombian peso."@en
 
 **** COU (cim:Currency.COU)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:label :: COU
+ - cims:stereotype :: enum
  - rdfs:comment :: "Unidad de Valor Real."@en
 
 **** CRC (cim:Currency.CRC)
  - Types :: cim:Currency
- - rdfs:comment :: "Costa Rican colon."@en
  - rdfs:label :: CRC
  - cims:stereotype :: enum
+ - rdfs:comment :: "Costa Rican colon."@en
 
 **** CUC (cim:Currency.CUC)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:label :: CUC
  - rdfs:comment :: "Cuban convertible peso."@en
+ - cims:stereotype :: enum
 
 **** CUP (cim:Currency.CUP)
  - Types :: cim:Currency
- - rdfs:label :: CUP
  - rdfs:comment :: "Cuban peso."@en
+ - rdfs:label :: CUP
  - cims:stereotype :: enum
 
 **** CVE (cim:Currency.CVE)
  - Types :: cim:Currency
+ - rdfs:label :: CVE
  - cims:stereotype :: enum
  - rdfs:comment :: "Cape Verde escudo."@en
- - rdfs:label :: CVE
 
 **** CZK (cim:Currency.CZK)
  - Types :: cim:Currency
+ - rdfs:comment :: "Czech koruna."@en
  - rdfs:label :: CZK
  - cims:stereotype :: enum
- - rdfs:comment :: "Czech koruna."@en
 
 **** DJF (cim:Currency.DJF)
  - Types :: cim:Currency
- - rdfs:label :: DJF
- - cims:stereotype :: enum
  - rdfs:comment :: "Djiboutian franc."@en
+ - cims:stereotype :: enum
+ - rdfs:label :: DJF
 
 **** DKK (cim:Currency.DKK)
  - Types :: cim:Currency
  - rdfs:comment :: "Danish krone."@en
- - cims:stereotype :: enum
  - rdfs:label :: DKK
+ - cims:stereotype :: enum
 
 **** DOP (cim:Currency.DOP)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:comment :: "Dominican peso."@en
  - rdfs:label :: DOP
+ - cims:stereotype :: enum
 
 **** DZD (cim:Currency.DZD)
  - Types :: cim:Currency
+ - cims:stereotype :: enum
  - rdfs:label :: DZD
  - rdfs:comment :: "Algerian dinar."@en
- - cims:stereotype :: enum
 
 **** EEK (cim:Currency.EEK)
  - Types :: cim:Currency
+ - rdfs:label :: EEK
  - rdfs:comment :: "Estonian kroon."@en
  - cims:stereotype :: enum
- - rdfs:label :: EEK
 
 **** EGP (cim:Currency.EGP)
  - Types :: cim:Currency
- - rdfs:label :: EGP
  - rdfs:comment :: "Egyptian pound."@en
+ - rdfs:label :: EGP
  - cims:stereotype :: enum
 
 **** ERN (cim:Currency.ERN)
@@ -4540,9 +4540,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** ETB (cim:Currency.ETB)
  - Types :: cim:Currency
- - cims:stereotype :: enum
- - rdfs:comment :: "Ethiopian birr."@en
  - rdfs:label :: ETB
+ - rdfs:comment :: "Ethiopian birr."@en
+ - cims:stereotype :: enum
 
 **** EUR (cim:Currency.EUR)
  - Types :: cim:Currency
@@ -4552,8 +4552,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** FJD (cim:Currency.FJD)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:label :: FJD
+ - cims:stereotype :: enum
  - rdfs:comment :: "Fiji dollar."@en
 
 **** FKP (cim:Currency.FKP)
@@ -4564,15 +4564,15 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** GBP (cim:Currency.GBP)
  - Types :: cim:Currency
- - rdfs:comment :: "Pound sterling."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Pound sterling."@en
  - rdfs:label :: GBP
 
 **** GEL (cim:Currency.GEL)
  - Types :: cim:Currency
+ - cims:stereotype :: enum
  - rdfs:comment :: "Georgian lari."@en
  - rdfs:label :: GEL
- - cims:stereotype :: enum
 
 **** GHS (cim:Currency.GHS)
  - Types :: cim:Currency
@@ -4582,15 +4582,15 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** GIP (cim:Currency.GIP)
  - Types :: cim:Currency
- - rdfs:label :: GIP
  - cims:stereotype :: enum
+ - rdfs:label :: GIP
  - rdfs:comment :: "Gibraltar pound."@en
 
 **** GMD (cim:Currency.GMD)
  - Types :: cim:Currency
- - rdfs:comment :: "Gambian dalasi."@en
- - rdfs:label :: GMD
  - cims:stereotype :: enum
+ - rdfs:label :: GMD
+ - rdfs:comment :: "Gambian dalasi."@en
 
 **** GNF (cim:Currency.GNF)
  - Types :: cim:Currency
@@ -4600,9 +4600,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** GTQ (cim:Currency.GTQ)
  - Types :: cim:Currency
- - rdfs:comment :: "Guatemalan quetzal."@en
  - cims:stereotype :: enum
  - rdfs:label :: GTQ
+ - rdfs:comment :: "Guatemalan quetzal."@en
 
 **** GYD (cim:Currency.GYD)
  - Types :: cim:Currency
@@ -4613,8 +4613,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** HKD (cim:Currency.HKD)
  - Types :: cim:Currency
  - cims:stereotype :: enum
- - rdfs:comment :: "Hong Kong dollar."@en
  - rdfs:label :: HKD
+ - rdfs:comment :: "Hong Kong dollar."@en
 
 **** HNL (cim:Currency.HNL)
  - Types :: cim:Currency
@@ -4624,21 +4624,21 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** HRK (cim:Currency.HRK)
  - Types :: cim:Currency
- - rdfs:label :: HRK
- - rdfs:comment :: "Croatian kuna."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Croatian kuna."@en
+ - rdfs:label :: HRK
 
 **** HTG (cim:Currency.HTG)
  - Types :: cim:Currency
- - cims:stereotype :: enum
- - rdfs:label :: HTG
  - rdfs:comment :: "Haitian gourde."@en
+ - rdfs:label :: HTG
+ - cims:stereotype :: enum
 
 **** HUF (cim:Currency.HUF)
  - Types :: cim:Currency
+ - rdfs:comment :: "Hungarian forint."@en
  - cims:stereotype :: enum
  - rdfs:label :: HUF
- - rdfs:comment :: "Hungarian forint."@en
 
 **** IDR (cim:Currency.IDR)
  - Types :: cim:Currency
@@ -4648,69 +4648,69 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** ILS (cim:Currency.ILS)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:comment :: "Israeli new sheqel."@en
+ - cims:stereotype :: enum
  - rdfs:label :: ILS
 
 **** INR (cim:Currency.INR)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:label :: INR
+ - cims:stereotype :: enum
  - rdfs:comment :: "Indian rupee."@en
 
 **** IQD (cim:Currency.IQD)
  - Types :: cim:Currency
  - cims:stereotype :: enum
- - rdfs:comment :: "Iraqi dinar."@en
  - rdfs:label :: IQD
+ - rdfs:comment :: "Iraqi dinar."@en
 
 **** IRR (cim:Currency.IRR)
  - Types :: cim:Currency
+ - rdfs:label :: IRR
  - cims:stereotype :: enum
  - rdfs:comment :: "Iranian rial."@en
- - rdfs:label :: IRR
 
 **** ISK (cim:Currency.ISK)
  - Types :: cim:Currency
- - rdfs:label :: ISK
  - cims:stereotype :: enum
+ - rdfs:label :: ISK
  - rdfs:comment :: "Icelandic króna."@en
 
 **** JMD (cim:Currency.JMD)
  - Types :: cim:Currency
- - cims:stereotype :: enum
- - rdfs:comment :: "Jamaican dollar."@en
  - rdfs:label :: JMD
+ - rdfs:comment :: "Jamaican dollar."@en
+ - cims:stereotype :: enum
 
 **** JOD (cim:Currency.JOD)
  - Types :: cim:Currency
- - cims:stereotype :: enum
- - rdfs:label :: JOD
  - rdfs:comment :: "Jordanian dinar."@en
+ - rdfs:label :: JOD
+ - cims:stereotype :: enum
 
 **** JPY (cim:Currency.JPY)
  - Types :: cim:Currency
  - rdfs:comment :: "Japanese yen."@en
- - rdfs:label :: JPY
  - cims:stereotype :: enum
+ - rdfs:label :: JPY
 
 **** KES (cim:Currency.KES)
  - Types :: cim:Currency
  - rdfs:comment :: "Kenyan shilling."@en
- - cims:stereotype :: enum
  - rdfs:label :: KES
+ - cims:stereotype :: enum
 
 **** KGS (cim:Currency.KGS)
  - Types :: cim:Currency
+ - rdfs:label :: KGS
  - cims:stereotype :: enum
  - rdfs:comment :: "Kyrgyzstani som."@en
- - rdfs:label :: KGS
 
 **** KHR (cim:Currency.KHR)
  - Types :: cim:Currency
+ - cims:stereotype :: enum
  - rdfs:comment :: "Cambodian riel."@en
  - rdfs:label :: KHR
- - cims:stereotype :: enum
 
 **** KMF (cim:Currency.KMF)
  - Types :: cim:Currency
@@ -4720,87 +4720,87 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** KPW (cim:Currency.KPW)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:comment :: "North Korean won."@en
+ - cims:stereotype :: enum
  - rdfs:label :: KPW
 
 **** KRW (cim:Currency.KRW)
  - Types :: cim:Currency
- - rdfs:label :: KRW
  - rdfs:comment :: "South Korean won."@en
+ - rdfs:label :: KRW
  - cims:stereotype :: enum
 
 **** KWD (cim:Currency.KWD)
  - Types :: cim:Currency
- - rdfs:label :: KWD
- - rdfs:comment :: "Kuwaiti dinar."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Kuwaiti dinar."@en
+ - rdfs:label :: KWD
 
 **** KYD (cim:Currency.KYD)
  - Types :: cim:Currency
+ - rdfs:comment :: "Cayman Islands dollar."@en
  - cims:stereotype :: enum
  - rdfs:label :: KYD
- - rdfs:comment :: "Cayman Islands dollar."@en
 
 **** KZT (cim:Currency.KZT)
  - Types :: cim:Currency
- - rdfs:comment :: "Kazakhstani tenge."@en
  - cims:stereotype :: enum
  - rdfs:label :: KZT
+ - rdfs:comment :: "Kazakhstani tenge."@en
 
 **** LAK (cim:Currency.LAK)
  - Types :: cim:Currency
+ - rdfs:comment :: "Lao kip."@en
  - rdfs:label :: LAK
  - cims:stereotype :: enum
- - rdfs:comment :: "Lao kip."@en
 
 **** LBP (cim:Currency.LBP)
  - Types :: cim:Currency
- - cims:stereotype :: enum
- - rdfs:label :: LBP
  - rdfs:comment :: "Lebanese pound."@en
+ - rdfs:label :: LBP
+ - cims:stereotype :: enum
 
 **** LKR (cim:Currency.LKR)
  - Types :: cim:Currency
- - cims:stereotype :: enum
- - rdfs:label :: LKR
  - rdfs:comment :: "Sri Lanka rupee."@en
+ - rdfs:label :: LKR
+ - cims:stereotype :: enum
 
 **** LRD (cim:Currency.LRD)
  - Types :: cim:Currency
- - rdfs:comment :: "Liberian dollar."@en
- - cims:stereotype :: enum
  - rdfs:label :: LRD
+ - cims:stereotype :: enum
+ - rdfs:comment :: "Liberian dollar."@en
 
 **** LSL (cim:Currency.LSL)
  - Types :: cim:Currency
- - rdfs:comment :: "Lesotho loti."@en
- - rdfs:label :: LSL
  - cims:stereotype :: enum
+ - rdfs:label :: LSL
+ - rdfs:comment :: "Lesotho loti."@en
 
 **** LTL (cim:Currency.LTL)
  - Types :: cim:Currency
- - rdfs:label :: LTL
- - rdfs:comment :: "Lithuanian litas."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Lithuanian litas."@en
+ - rdfs:label :: LTL
 
 **** LVL (cim:Currency.LVL)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:label :: LVL
  - rdfs:comment :: "Latvian lats."@en
+ - cims:stereotype :: enum
 
 **** LYD (cim:Currency.LYD)
  - Types :: cim:Currency
- - cims:stereotype :: enum
- - rdfs:label :: LYD
  - rdfs:comment :: "Libyan dinar."@en
+ - rdfs:label :: LYD
+ - cims:stereotype :: enum
 
 **** MAD (cim:Currency.MAD)
  - Types :: cim:Currency
  - rdfs:comment :: "Moroccan dirham."@en
- - cims:stereotype :: enum
  - rdfs:label :: MAD
+ - cims:stereotype :: enum
 
 **** MDL (cim:Currency.MDL)
  - Types :: cim:Currency
@@ -4810,33 +4810,33 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** MGA (cim:Currency.MGA)
  - Types :: cim:Currency
+ - rdfs:comment :: "Malagasy ariary."@en
  - rdfs:label :: MGA
  - cims:stereotype :: enum
- - rdfs:comment :: "Malagasy ariary."@en
 
 **** MKD (cim:Currency.MKD)
  - Types :: cim:Currency
- - rdfs:comment :: "Macedonian denar."@en
  - rdfs:label :: MKD
  - cims:stereotype :: enum
+ - rdfs:comment :: "Macedonian denar."@en
 
 **** MMK (cim:Currency.MMK)
  - Types :: cim:Currency
- - rdfs:comment :: "Myanma kyat."@en
  - cims:stereotype :: enum
  - rdfs:label :: MMK
+ - rdfs:comment :: "Myanma kyat."@en
 
 **** MNT (cim:Currency.MNT)
  - Types :: cim:Currency
+ - cims:stereotype :: enum
  - rdfs:label :: MNT
  - rdfs:comment :: "Mongolian tugrik."@en
- - cims:stereotype :: enum
 
 **** MOP (cim:Currency.MOP)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:label :: MOP
  - rdfs:comment :: "Macanese pataca."@en
+ - cims:stereotype :: enum
 
 **** MRO (cim:Currency.MRO)
  - Types :: cim:Currency
@@ -4847,25 +4847,25 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** MUR (cim:Currency.MUR)
  - Types :: cim:Currency
  - rdfs:comment :: "Mauritian rupee."@en
- - cims:stereotype :: enum
  - rdfs:label :: MUR
+ - cims:stereotype :: enum
 
 **** MVR (cim:Currency.MVR)
  - Types :: cim:Currency
- - rdfs:comment :: "Maldivian rufiyaa."@en
  - cims:stereotype :: enum
  - rdfs:label :: MVR
+ - rdfs:comment :: "Maldivian rufiyaa."@en
 
 **** MWK (cim:Currency.MWK)
  - Types :: cim:Currency
- - rdfs:comment :: "Malawian kwacha."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Malawian kwacha."@en
  - rdfs:label :: MWK
 
 **** MXN (cim:Currency.MXN)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:comment :: "Mexican peso."@en
+ - cims:stereotype :: enum
  - rdfs:label :: MXN
 
 **** MYR (cim:Currency.MYR)
@@ -4876,134 +4876,134 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** MZN (cim:Currency.MZN)
  - Types :: cim:Currency
- - rdfs:label :: MZN
  - cims:stereotype :: enum
  - rdfs:comment :: "Mozambican metical."@en
+ - rdfs:label :: MZN
 
 **** NAD (cim:Currency.NAD)
  - Types :: cim:Currency
- - cims:stereotype :: enum
- - rdfs:comment :: "Namibian dollar."@en
  - rdfs:label :: NAD
+ - rdfs:comment :: "Namibian dollar."@en
+ - cims:stereotype :: enum
 
 **** NGN (cim:Currency.NGN)
  - Types :: cim:Currency
  - rdfs:comment :: "Nigerian naira."@en
- - rdfs:label :: NGN
  - cims:stereotype :: enum
+ - rdfs:label :: NGN
 
 **** NIO (cim:Currency.NIO)
  - Types :: cim:Currency
+ - cims:stereotype :: enum
  - rdfs:label :: NIO
  - rdfs:comment :: "Cordoba oro."@en
- - cims:stereotype :: enum
 
 **** NOK (cim:Currency.NOK)
  - Types :: cim:Currency
  - cims:stereotype :: enum
- - rdfs:label :: NOK
  - rdfs:comment :: "Norwegian krone."@en
+ - rdfs:label :: NOK
 
 **** NPR (cim:Currency.NPR)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:label :: NPR
+ - cims:stereotype :: enum
  - rdfs:comment :: "Nepalese rupee."@en
 
 **** NZD (cim:Currency.NZD)
  - Types :: cim:Currency
+ - rdfs:comment :: "New Zealand dollar."@en
  - rdfs:label :: NZD
  - cims:stereotype :: enum
- - rdfs:comment :: "New Zealand dollar."@en
 
 **** OMR (cim:Currency.OMR)
  - Types :: cim:Currency
+ - rdfs:comment :: "Omani rial."@en
  - cims:stereotype :: enum
  - rdfs:label :: OMR
- - rdfs:comment :: "Omani rial."@en
 
 **** PAB (cim:Currency.PAB)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:label :: PAB
+ - cims:stereotype :: enum
  - rdfs:comment :: "Panamanian balboa."@en
 
 **** PEN (cim:Currency.PEN)
  - Types :: cim:Currency
- - cims:stereotype :: enum
- - rdfs:label :: PEN
  - rdfs:comment :: "Peruvian nuevo sol."@en
+ - rdfs:label :: PEN
+ - cims:stereotype :: enum
 
 **** PGK (cim:Currency.PGK)
  - Types :: cim:Currency
- - rdfs:label :: PGK
  - rdfs:comment :: "Papua New Guinean kina."@en
  - cims:stereotype :: enum
+ - rdfs:label :: PGK
 
 **** PHP (cim:Currency.PHP)
  - Types :: cim:Currency
- - rdfs:label :: PHP
  - rdfs:comment :: "Philippine peso."@en
  - cims:stereotype :: enum
+ - rdfs:label :: PHP
 
 **** PKR (cim:Currency.PKR)
  - Types :: cim:Currency
- - rdfs:comment :: "Pakistani rupee."@en
- - cims:stereotype :: enum
  - rdfs:label :: PKR
+ - cims:stereotype :: enum
+ - rdfs:comment :: "Pakistani rupee."@en
 
 **** PLN (cim:Currency.PLN)
  - Types :: cim:Currency
- - rdfs:label :: PLN
  - cims:stereotype :: enum
+ - rdfs:label :: PLN
  - rdfs:comment :: "Polish zloty."@en
 
 **** PYG (cim:Currency.PYG)
  - Types :: cim:Currency
+ - cims:stereotype :: enum
  - rdfs:comment :: "Paraguayan guaraní."@en
  - rdfs:label :: PYG
- - cims:stereotype :: enum
 
 **** QAR (cim:Currency.QAR)
  - Types :: cim:Currency
- - rdfs:comment :: "Qatari rial."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Qatari rial."@en
  - rdfs:label :: QAR
 
 **** RON (cim:Currency.RON)
  - Types :: cim:Currency
- - rdfs:label :: RON
  - cims:stereotype :: enum
  - rdfs:comment :: "Romanian new leu."@en
+ - rdfs:label :: RON
 
 **** RSD (cim:Currency.RSD)
  - Types :: cim:Currency
- - rdfs:comment :: "Serbian dinar."@en
- - rdfs:label :: RSD
  - cims:stereotype :: enum
+ - rdfs:label :: RSD
+ - rdfs:comment :: "Serbian dinar."@en
 
 **** RUB (cim:Currency.RUB)
  - Types :: cim:Currency
  - cims:stereotype :: enum
- - rdfs:comment :: "Russian rouble."@en
  - rdfs:label :: RUB
+ - rdfs:comment :: "Russian rouble."@en
 
 **** RWF (cim:Currency.RWF)
  - Types :: cim:Currency
- - rdfs:comment :: "Rwandan franc."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Rwandan franc."@en
  - rdfs:label :: RWF
 
 **** SAR (cim:Currency.SAR)
  - Types :: cim:Currency
  - rdfs:label :: SAR
- - cims:stereotype :: enum
  - rdfs:comment :: "Saudi riyal."@en
+ - cims:stereotype :: enum
 
 **** SBD (cim:Currency.SBD)
  - Types :: cim:Currency
- - rdfs:comment :: "Solomon Islands dollar."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Solomon Islands dollar."@en
  - rdfs:label :: SBD
 
 **** SCR (cim:Currency.SCR)
@@ -5015,32 +5015,32 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** SDG (cim:Currency.SDG)
  - Types :: cim:Currency
  - rdfs:label :: SDG
- - rdfs:comment :: "Sudanese pound."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Sudanese pound."@en
 
 **** SEK (cim:Currency.SEK)
  - Types :: cim:Currency
+ - rdfs:label :: SEK
  - cims:stereotype :: enum
  - rdfs:comment :: "Swedish krona/kronor."@en
- - rdfs:label :: SEK
 
 **** SGD (cim:Currency.SGD)
  - Types :: cim:Currency
  - rdfs:label :: SGD
- - rdfs:comment :: "Singapore dollar."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Singapore dollar."@en
 
 **** SHP (cim:Currency.SHP)
  - Types :: cim:Currency
- - rdfs:label :: SHP
- - cims:stereotype :: enum
  - rdfs:comment :: "Saint Helena pound."@en
+ - cims:stereotype :: enum
+ - rdfs:label :: SHP
 
 **** SLL (cim:Currency.SLL)
  - Types :: cim:Currency
- - rdfs:label :: SLL
- - cims:stereotype :: enum
  - rdfs:comment :: "Sierra Leonean leone."@en
+ - cims:stereotype :: enum
+ - rdfs:label :: SLL
 
 **** SOS (cim:Currency.SOS)
  - Types :: cim:Currency
@@ -5050,9 +5050,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** SRD (cim:Currency.SRD)
  - Types :: cim:Currency
+ - rdfs:label :: SRD
  - rdfs:comment :: "Surinamese dollar."@en
  - cims:stereotype :: enum
- - rdfs:label :: SRD
 
 **** STD (cim:Currency.STD)
  - Types :: cim:Currency
@@ -5062,8 +5062,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** SYP (cim:Currency.SYP)
  - Types :: cim:Currency
- - rdfs:comment :: "Syrian pound."@en
  - rdfs:label :: SYP
+ - rdfs:comment :: "Syrian pound."@en
  - cims:stereotype :: enum
 
 **** SZL (cim:Currency.SZL)
@@ -5074,9 +5074,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** THB (cim:Currency.THB)
  - Types :: cim:Currency
+ - rdfs:comment :: "Thai baht."@en
  - rdfs:label :: THB
  - cims:stereotype :: enum
- - rdfs:comment :: "Thai baht."@en
 
 **** TJS (cim:Currency.TJS)
  - Types :: cim:Currency
@@ -5087,8 +5087,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** TMT (cim:Currency.TMT)
  - Types :: cim:Currency
  - rdfs:label :: TMT
- - rdfs:comment :: "Turkmenistani manat."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Turkmenistani manat."@en
 
 **** TND (cim:Currency.TND)
  - Types :: cim:Currency
@@ -5098,21 +5098,21 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** TOP (cim:Currency.TOP)
  - Types :: cim:Currency
+ - rdfs:label :: TOP
  - rdfs:comment :: "Tongan pa'anga."@en
  - cims:stereotype :: enum
- - rdfs:label :: TOP
 
 **** TRY (cim:Currency.TRY)
  - Types :: cim:Currency
+ - rdfs:label :: TRY
  - rdfs:comment :: "Turkish lira."@en
  - cims:stereotype :: enum
- - rdfs:label :: TRY
 
 **** TTD (cim:Currency.TTD)
  - Types :: cim:Currency
  - cims:stereotype :: enum
- - rdfs:comment :: "Trinidad and Tobago dollar."@en
  - rdfs:label :: TTD
+ - rdfs:comment :: "Trinidad and Tobago dollar."@en
 
 **** TWD (cim:Currency.TWD)
  - Types :: cim:Currency
@@ -5123,50 +5123,50 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** TZS (cim:Currency.TZS)
  - Types :: cim:Currency
  - rdfs:label :: TZS
- - rdfs:comment :: "Tanzanian shilling."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Tanzanian shilling."@en
 
 **** UAH (cim:Currency.UAH)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:comment :: "Ukrainian hryvnia."@en
+ - cims:stereotype :: enum
  - rdfs:label :: UAH
 
 **** UGX (cim:Currency.UGX)
  - Types :: cim:Currency
- - cims:stereotype :: enum
- - rdfs:label :: UGX
  - rdfs:comment :: "Ugandan shilling."@en
+ - rdfs:label :: UGX
+ - cims:stereotype :: enum
 
 **** USD (cim:Currency.USD)
  - Types :: cim:Currency
- - rdfs:label :: USD
  - rdfs:comment :: "United States dollar."@en
  - cims:stereotype :: enum
+ - rdfs:label :: USD
 
 **** UYU (cim:Currency.UYU)
  - Types :: cim:Currency
+ - cims:stereotype :: enum
  - rdfs:label :: UYU
  - rdfs:comment :: "Uruguayan peso."@en
- - cims:stereotype :: enum
 
 **** UZS (cim:Currency.UZS)
  - Types :: cim:Currency
- - cims:stereotype :: enum
- - rdfs:comment :: "Uzbekistan som."@en
  - rdfs:label :: UZS
+ - rdfs:comment :: "Uzbekistan som."@en
+ - cims:stereotype :: enum
 
 **** VEF (cim:Currency.VEF)
  - Types :: cim:Currency
- - rdfs:label :: VEF
  - cims:stereotype :: enum
+ - rdfs:label :: VEF
  - rdfs:comment :: "Venezuelan bolívar fuerte."@en
 
 **** VND (cim:Currency.VND)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:comment :: "Vietnamese Dong."@en
  - rdfs:label :: VND
+ - cims:stereotype :: enum
 
 **** VUV (cim:Currency.VUV)
  - Types :: cim:Currency
@@ -5176,27 +5176,27 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** WST (cim:Currency.WST)
  - Types :: cim:Currency
- - rdfs:label :: WST
  - cims:stereotype :: enum
+ - rdfs:label :: WST
  - rdfs:comment :: "Samoan tala."@en
 
 **** XAF (cim:Currency.XAF)
  - Types :: cim:Currency
- - rdfs:comment :: "CFA franc BEAC."@en
  - rdfs:label :: XAF
+ - rdfs:comment :: "CFA franc BEAC."@en
  - cims:stereotype :: enum
 
 **** XCD (cim:Currency.XCD)
  - Types :: cim:Currency
- - rdfs:label :: XCD
- - cims:stereotype :: enum
  - rdfs:comment :: "East Caribbean dollar."@en
+ - cims:stereotype :: enum
+ - rdfs:label :: XCD
 
 **** XOF (cim:Currency.XOF)
  - Types :: cim:Currency
  - rdfs:comment :: "CFA Franc BCEAO."@en
- - cims:stereotype :: enum
  - rdfs:label :: XOF
+ - cims:stereotype :: enum
 
 **** XPF (cim:Currency.XPF)
  - Types :: cim:Currency
@@ -5212,21 +5212,21 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** ZAR (cim:Currency.ZAR)
  - Types :: cim:Currency
- - rdfs:label :: ZAR
- - cims:stereotype :: enum
  - rdfs:comment :: "South African rand."@en
+ - cims:stereotype :: enum
+ - rdfs:label :: ZAR
 
 **** ZMK (cim:Currency.ZMK)
  - Types :: cim:Currency
- - rdfs:comment :: "Zambian kwacha."@en
  - rdfs:label :: ZMK
+ - rdfs:comment :: "Zambian kwacha."@en
  - cims:stereotype :: enum
 
 **** ZWL (cim:Currency.ZWL)
  - Types :: cim:Currency
+ - rdfs:label :: ZWL
  - cims:stereotype :: enum
  - rdfs:comment :: "Zimbabwe dollar."@en
- - rdfs:label :: ZWL
 
 *** "CurveStyle"@                                                 :nodeclare:
 **** constantYValue (cim:CurveStyle.constantYValue)
@@ -5245,26 +5245,26 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** bipolar (cim:DCConverterOperatingModeKind.bipolar)
  - Types :: cim:DCConverterOperatingModeKind
  - cims:stereotype :: enum
- - rdfs:label :: bipolar
  - rdfs:comment :: "Bipolar operation."@en
+ - rdfs:label :: bipolar
 
 **** monopolarGroundReturn (cim:DCConverterOperatingModeKind.monopolarGroundReturn)
  - Types :: cim:DCConverterOperatingModeKind
- - rdfs:label :: monopolarGroundReturn
- - cims:stereotype :: enum
  - rdfs:comment :: "Monopolar operation with ground return."@en
+ - cims:stereotype :: enum
+ - rdfs:label :: monopolarGroundReturn
 
 **** monopolarMetallicReturn (cim:DCConverterOperatingModeKind.monopolarMetallicReturn)
  - Types :: cim:DCConverterOperatingModeKind
  - cims:stereotype :: enum
- - rdfs:comment :: "Monopolar operation with metallic return."@en
  - rdfs:label :: monopolarMetallicReturn
+ - rdfs:comment :: "Monopolar operation with metallic return."@en
 
 *** "DCPolarityKind"@                                             :nodeclare:
 **** middle (cim:DCPolarityKind.middle)
  - Types :: cim:DCPolarityKind
- - rdfs:comment :: "Middle pole. The converter terminal is the midpoint in a bipolar or symmetric monopole configuration. The midpoint can be grounded and/or have a metallic return."@en
  - rdfs:label :: middle
+ - rdfs:comment :: "Middle pole. The converter terminal is the midpoint in a bipolar or symmetric monopole configuration. The midpoint can be grounded and/or have a metallic return."@en
  - cims:stereotype :: enum
 
 **** negative (cim:DCPolarityKind.negative)
@@ -5276,21 +5276,21 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** positive (cim:DCPolarityKind.positive)
  - Types :: cim:DCPolarityKind
  - rdfs:label :: positive
- - rdfs:comment :: "Positive pole. The converter terminal is intended to operate at a positive voltage relative the midpoint or negative terminal."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Positive pole. The converter terminal is intended to operate at a positive voltage relative the midpoint or negative terminal."@en
 
 *** "FuelType"@                                                   :nodeclare:
 **** brownCoalLignite (cim:FuelType.brownCoalLignite)
  - Types :: cim:FuelType
- - rdfs:comment :: "Brown coal lignite."@en
- - rdfs:label :: brownCoalLignite
  - cims:stereotype :: enum
+ - rdfs:label :: brownCoalLignite
+ - rdfs:comment :: "Brown coal lignite."@en
 
 **** coal (cim:FuelType.coal)
  - Types :: cim:FuelType
- - cims:stereotype :: enum
  - rdfs:label :: coal
  - rdfs:comment :: "Generic coal, not including lignite type."@en
+ - cims:stereotype :: enum
 
 **** coalDerivedGas (cim:FuelType.coalDerivedGas)
  - Types :: cim:FuelType
@@ -5301,14 +5301,14 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** gas (cim:FuelType.gas)
  - Types :: cim:FuelType
  - rdfs:comment :: "Natural gas."@en
- - cims:stereotype :: enum
  - rdfs:label :: gas
+ - cims:stereotype :: enum
 
 **** hardCoal (cim:FuelType.hardCoal)
  - Types :: cim:FuelType
- - rdfs:label :: hardCoal
- - rdfs:comment :: "Hard coal."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Hard coal."@en
+ - rdfs:label :: hardCoal
 
 **** lignite (cim:FuelType.lignite)
  - Types :: cim:FuelType
@@ -5318,15 +5318,15 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** oil (cim:FuelType.oil)
  - Types :: cim:FuelType
- - cims:stereotype :: enum
  - rdfs:comment :: "Oil."@en
  - rdfs:label :: oil
+ - cims:stereotype :: enum
 
 **** oilShale (cim:FuelType.oilShale)
  - Types :: cim:FuelType
- - rdfs:comment :: "Oil Shale."@en
- - rdfs:label :: oilShale
  - cims:stereotype :: enum
+ - rdfs:label :: oilShale
+ - rdfs:comment :: "Oil Shale."@en
 
 **** other (cim:FuelType.other)
  - Types :: cim:FuelType
@@ -5336,22 +5336,22 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** peat (cim:FuelType.peat)
  - Types :: cim:FuelType
- - rdfs:comment :: "Peat."@en
  - cims:stereotype :: enum
  - rdfs:label :: peat
+ - rdfs:comment :: "Peat."@en
 
 *** "GeneratorControlSource"@                                     :nodeclare:
 **** offAGC (cim:GeneratorControlSource.offAGC)
  - Types :: cim:GeneratorControlSource
- - cims:stereotype :: enum
- - rdfs:label :: offAGC
  - rdfs:comment :: "Off of automatic generation control (AGC)."@en
+ - rdfs:label :: offAGC
+ - cims:stereotype :: enum
 
 **** onAGC (cim:GeneratorControlSource.onAGC)
  - Types :: cim:GeneratorControlSource
- - cims:stereotype :: enum
- - rdfs:label :: onAGC
  - rdfs:comment :: "On automatic generation control (AGC)."@en
+ - rdfs:label :: onAGC
+ - cims:stereotype :: enum
 
 **** plantControl (cim:GeneratorControlSource.plantControl)
  - Types :: cim:GeneratorControlSource
@@ -5361,35 +5361,35 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** unavailable (cim:GeneratorControlSource.unavailable)
  - Types :: cim:GeneratorControlSource
+ - rdfs:comment :: "Not available."@en
  - rdfs:label :: unavailable
  - cims:stereotype :: enum
- - rdfs:comment :: "Not available."@en
 
 *** "HydroEnergyConversionKind"@                                  :nodeclare:
 **** generator (cim:HydroEnergyConversionKind.generator)
  - Types :: cim:HydroEnergyConversionKind
- - cims:stereotype :: enum
  - rdfs:comment :: "Able to generate power, but not able to pump water for energy storage."@en
+ - cims:stereotype :: enum
  - rdfs:label :: generator
 
 **** pumpAndGenerator (cim:HydroEnergyConversionKind.pumpAndGenerator)
  - Types :: cim:HydroEnergyConversionKind
- - rdfs:comment :: "Able to both generate power and pump water for energy storage."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Able to both generate power and pump water for energy storage."@en
  - rdfs:label :: pumpAndGenerator
 
 *** "HydroPlantStorageKind"@                                      :nodeclare:
 **** pumpedStorage (cim:HydroPlantStorageKind.pumpedStorage)
  - Types :: cim:HydroPlantStorageKind
- - rdfs:label :: pumpedStorage
- - rdfs:comment :: "Pumped storage."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Pumped storage."@en
+ - rdfs:label :: pumpedStorage
 
 **** runOfRiver (cim:HydroPlantStorageKind.runOfRiver)
  - Types :: cim:HydroPlantStorageKind
- - rdfs:label :: runOfRiver
- - cims:stereotype :: enum
  - rdfs:comment :: "Run of river."@en
+ - cims:stereotype :: enum
+ - rdfs:label :: runOfRiver
 
 **** storage (cim:HydroPlantStorageKind.storage)
  - Types :: cim:HydroPlantStorageKind
@@ -5400,78 +5400,77 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 *** "HydroTurbineKind"@                                           :nodeclare:
 **** francis (cim:HydroTurbineKind.francis)
  - Types :: cim:HydroTurbineKind
- - cims:stereotype :: enum
  - rdfs:label :: francis
  - rdfs:comment :: "Francis."@en
+ - cims:stereotype :: enum
 
 **** kaplan (cim:HydroTurbineKind.kaplan)
  - Types :: cim:HydroTurbineKind
+ - rdfs:label :: kaplan
  - cims:stereotype :: enum
  - rdfs:comment :: "Kaplan."@en
- - rdfs:label :: kaplan
 
 **** pelton (cim:HydroTurbineKind.pelton)
  - Types :: cim:HydroTurbineKind
  - rdfs:label :: pelton
- - cims:stereotype :: enum
  - rdfs:comment :: "Pelton."@en
+ - cims:stereotype :: enum
 
 *** "LimitKind"@                                                  :nodeclare:
 **** alarmVoltage (eu:LimitKind.alarmVoltage)
  - Types :: eu:LimitKind
- - rdfs:label :: alarmVoltage
- - cims:stereotype :: European
- - rdfs:comment :: "Voltage alarm."@en
  - cims:stereotype :: enum
+ - cims:stereotype :: European
+ - rdfs:label :: alarmVoltage
+ - rdfs:comment :: "Voltage alarm."@en
 
 **** highVoltage (eu:LimitKind.highVoltage)
  - Types :: eu:LimitKind
- - rdfs:label :: highVoltage
  - cims:stereotype :: enum
- - cims:stereotype :: European
  - rdfs:comment :: "Referring to the rating of the equipments, a voltage too high can lead to accelerated ageing or the destruction of the equipment.
       This limit type may or may not have duration."@en
+ - cims:stereotype :: European
+ - rdfs:label :: highVoltage
 
 **** lowVoltage (eu:LimitKind.lowVoltage)
  - Types :: eu:LimitKind
+ - cims:stereotype :: European
  - rdfs:label :: lowVoltage
  - rdfs:comment :: "A too low voltage can disturb the normal operation of some protections and transformer equipped with on-load tap changers, electronic power devices or can affect the behaviour of the auxiliaries of generation units.
       This limit type may or may not have duration."@en
  - cims:stereotype :: enum
- - cims:stereotype :: European
 
 **** operationalVoltageLimit (eu:LimitKind.operationalVoltageLimit)
  - Types :: eu:LimitKind
- - cims:stereotype :: European
  - rdfs:label :: operationalVoltageLimit
- - cims:stereotype :: enum
  - rdfs:comment :: "Operational voltage limit."@en
+ - cims:stereotype :: European
+ - cims:stereotype :: enum
 
 **** patl (eu:LimitKind.patl)
  - Types :: eu:LimitKind
+ - rdfs:label :: patl
  - rdfs:comment :: "The Permanent Admissible Transmission Loading (PATL) is the loading in amperes, MVA or MW that can be accepted by a network branch for an unlimited duration without any risk for the material.
       The OperationnalLimitType.isInfiniteDuration is set to true. There shall be only one OperationalLimitType of kind PATL per OperationalLimitSet if the PATL is ApparentPowerLimit, ActivePowerLimit, or CurrentLimit for a given Terminal or Equipment."@en
  - cims:stereotype :: European
- - rdfs:label :: patl
  - cims:stereotype :: enum
 
 **** patlt (eu:LimitKind.patlt)
  - Types :: eu:LimitKind
- - cims:stereotype :: enum
- - cims:stereotype :: European
  - rdfs:label :: patlt
+ - cims:stereotype :: European
  - rdfs:comment :: "Permanent Admissible Transmission Loading Threshold  (PATLT) is a value in engineering units defined for PATL and calculated using a percentage less than 100 % of the PATL type intended to alert operators of an arising condition. The percentage should be given in the name of the OperationalLimitSet. The aceptableDuration is another way to express the severity of the limit."@en
+ - cims:stereotype :: enum
 
 **** stability (eu:LimitKind.stability)
  - Types :: eu:LimitKind
- - cims:stereotype :: enum
- - cims:stereotype :: European
- - rdfs:comment :: "Stability."@en
  - rdfs:label :: stability
+ - cims:stereotype :: enum
+ - rdfs:comment :: "Stability."@en
+ - cims:stereotype :: European
 
 **** tatl (eu:LimitKind.tatl)
  - Types :: eu:LimitKind
- - cims:stereotype :: enum
  - rdfs:comment :: "Temporarily Admissible Transmission Loading (TATL) which is the loading in amperes, MVA or MW that can be accepted by a branch for a certain limited duration.
       The TATL can be defined in different ways:
       <ul>
@@ -5482,57 +5481,58 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
       </ul>
       Such a definition of TATL can depend on the initial operating conditions of the network element (sag situation of a line).
       The duration attribute can be used to define several TATL limit types. Hence multiple TATL limit values may exist having different durations."@en
- - rdfs:label :: tatl
  - cims:stereotype :: European
+ - rdfs:label :: tatl
+ - cims:stereotype :: enum
 
 **** tc (eu:LimitKind.tc)
  - Types :: eu:LimitKind
+ - cims:stereotype :: enum
  - rdfs:comment :: "Tripping Current (TC) is the ultimate intensity without any delay. It is defined as the threshold the line will trip without any possible remedial actions.
       The tripping of the network element is ordered by protections against short circuits or by overload protections, but in any case, the activation delay of these protections is not compatible with the reaction delay of an operator (less than one minute).
       The duration is always zero if the OperationalLimitType.acceptableDuration is exchanged. Only one limit value exists for the TC type."@en
  - cims:stereotype :: European
  - rdfs:label :: tc
- - cims:stereotype :: enum
 
 **** tct (eu:LimitKind.tct)
  - Types :: eu:LimitKind
- - cims:stereotype :: European
- - cims:stereotype :: enum
- - rdfs:comment :: "Tripping Current Threshold  (TCT) is a value in engineering units defined for TC and calculated using a percentage less than 100 % of the TC type intended to alert operators of an arising condition. The percentage should be given in the name of the OperationalLimitSet. The aceptableDuration is another way to express the severity of the limit."@en
  - rdfs:label :: tct
+ - cims:stereotype :: enum
+ - cims:stereotype :: European
+ - rdfs:comment :: "Tripping Current Threshold  (TCT) is a value in engineering units defined for TC and calculated using a percentage less than 100 % of the TC type intended to alert operators of an arising condition. The percentage should be given in the name of the OperationalLimitSet. The aceptableDuration is another way to express the severity of the limit."@en
 
 **** warningVoltage (eu:LimitKind.warningVoltage)
  - Types :: eu:LimitKind
  - cims:stereotype :: European
- - rdfs:comment :: "Voltage warning."@en
  - rdfs:label :: warningVoltage
+ - rdfs:comment :: "Voltage warning."@en
  - cims:stereotype :: enum
 
 *** "OperationalLimitDirectionKind"@                              :nodeclare:
 **** absoluteValue (cim:OperationalLimitDirectionKind.absoluteValue)
  - Types :: cim:OperationalLimitDirectionKind
+ - rdfs:comment :: "An absoluteValue limit means that a monitored absolute value above the limit value is a violation."@en
  - cims:stereotype :: enum
  - rdfs:label :: absoluteValue
- - rdfs:comment :: "An absoluteValue limit means that a monitored absolute value above the limit value is a violation."@en
 
 **** high (cim:OperationalLimitDirectionKind.high)
  - Types :: cim:OperationalLimitDirectionKind
+ - rdfs:label :: high
  - rdfs:comment :: "High means that a monitored value above the limit value is a violation.   If applied to a terminal flow, the positive direction is into the terminal."@en
  - cims:stereotype :: enum
- - rdfs:label :: high
 
 **** low (cim:OperationalLimitDirectionKind.low)
  - Types :: cim:OperationalLimitDirectionKind
  - cims:stereotype :: enum
- - rdfs:label :: low
  - rdfs:comment :: "Low means a monitored value below the limit is a violation.  If applied to a terminal flow, the positive direction is into the terminal."@en
+ - rdfs:label :: low
 
 *** "PhaseCode"@                                                  :nodeclare:
 **** A (cim:PhaseCode.A)
  - Types :: cim:PhaseCode
+ - rdfs:comment :: "Phase A."@en
  - rdfs:label :: A
  - cims:stereotype :: enum
- - rdfs:comment :: "Phase A."@en
 
 **** AB (cim:PhaseCode.AB)
  - Types :: cim:PhaseCode
@@ -5543,32 +5543,32 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** ABC (cim:PhaseCode.ABC)
  - Types :: cim:PhaseCode
  - rdfs:label :: ABC
- - cims:stereotype :: enum
  - rdfs:comment :: "Phases A, B, and C."@en
+ - cims:stereotype :: enum
 
 **** ABCN (cim:PhaseCode.ABCN)
  - Types :: cim:PhaseCode
- - rdfs:label :: ABCN
  - cims:stereotype :: enum
  - rdfs:comment :: "Phases A, B, C, and N."@en
+ - rdfs:label :: ABCN
 
 **** ABN (cim:PhaseCode.ABN)
  - Types :: cim:PhaseCode
- - rdfs:comment :: "Phases A, B, and neutral."@en
- - cims:stereotype :: enum
  - rdfs:label :: ABN
+ - cims:stereotype :: enum
+ - rdfs:comment :: "Phases A, B, and neutral."@en
 
 **** AC (cim:PhaseCode.AC)
  - Types :: cim:PhaseCode
- - rdfs:label :: AC
- - cims:stereotype :: enum
  - rdfs:comment :: "Phases A and C."@en
+ - cims:stereotype :: enum
+ - rdfs:label :: AC
 
 **** ACN (cim:PhaseCode.ACN)
  - Types :: cim:PhaseCode
- - cims:stereotype :: enum
  - rdfs:comment :: "Phases A, C and neutral."@en
  - rdfs:label :: ACN
+ - cims:stereotype :: enum
 
 **** AN (cim:PhaseCode.AN)
  - Types :: cim:PhaseCode
@@ -5578,69 +5578,69 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** B (cim:PhaseCode.B)
  - Types :: cim:PhaseCode
- - rdfs:label :: B
- - rdfs:comment :: "Phase B."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Phase B."@en
+ - rdfs:label :: B
 
 **** BC (cim:PhaseCode.BC)
  - Types :: cim:PhaseCode
- - rdfs:comment :: "Phases B and C."@en
- - rdfs:label :: BC
  - cims:stereotype :: enum
+ - rdfs:label :: BC
+ - rdfs:comment :: "Phases B and C."@en
 
 **** BCN (cim:PhaseCode.BCN)
  - Types :: cim:PhaseCode
  - cims:stereotype :: enum
- - rdfs:comment :: "Phases B, C, and neutral."@en
  - rdfs:label :: BCN
+ - rdfs:comment :: "Phases B, C, and neutral."@en
 
 **** BN (cim:PhaseCode.BN)
  - Types :: cim:PhaseCode
- - rdfs:comment :: "Phases B and neutral."@en
  - rdfs:label :: BN
  - cims:stereotype :: enum
+ - rdfs:comment :: "Phases B and neutral."@en
 
 **** C (cim:PhaseCode.C)
  - Types :: cim:PhaseCode
- - rdfs:comment :: "Phase C."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Phase C."@en
  - rdfs:label :: C
 
 **** CN (cim:PhaseCode.CN)
  - Types :: cim:PhaseCode
  - cims:stereotype :: enum
- - rdfs:comment :: "Phases C and neutral."@en
  - rdfs:label :: CN
+ - rdfs:comment :: "Phases C and neutral."@en
 
 **** N (cim:PhaseCode.N)
  - Types :: cim:PhaseCode
- - cims:stereotype :: enum
- - rdfs:comment :: "Neutral phase."@en
  - rdfs:label :: N
+ - rdfs:comment :: "Neutral phase."@en
+ - cims:stereotype :: enum
 
 **** none (cim:PhaseCode.none)
  - Types :: cim:PhaseCode
- - rdfs:comment :: "No phases specified."@en
- - cims:stereotype :: enum
  - rdfs:label :: none
+ - cims:stereotype :: enum
+ - rdfs:comment :: "No phases specified."@en
 
 **** s1 (cim:PhaseCode.s1)
  - Types :: cim:PhaseCode
- - rdfs:label :: s1
  - cims:stereotype :: enum
+ - rdfs:label :: s1
  - rdfs:comment :: "Secondary phase 1."@en
 
 **** s12 (cim:PhaseCode.s12)
  - Types :: cim:PhaseCode
+ - rdfs:label :: s12
  - rdfs:comment :: "Secondary phase 1 and 2."@en
  - cims:stereotype :: enum
- - rdfs:label :: s12
 
 **** s12N (cim:PhaseCode.s12N)
  - Types :: cim:PhaseCode
- - rdfs:comment :: "Secondary phases 1, 2, and neutral."@en
- - cims:stereotype :: enum
  - rdfs:label :: s12N
+ - cims:stereotype :: enum
+ - rdfs:comment :: "Secondary phases 1, 2, and neutral."@en
 
 **** s1N (cim:PhaseCode.s1N)
  - Types :: cim:PhaseCode
@@ -5656,27 +5656,27 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** s2N (cim:PhaseCode.s2N)
  - Types :: cim:PhaseCode
- - cims:stereotype :: enum
- - rdfs:comment :: "Secondary phase 2 and neutral."@en
  - rdfs:label :: s2N
+ - rdfs:comment :: "Secondary phase 2 and neutral."@en
+ - cims:stereotype :: enum
 
 **** X (cim:PhaseCode.X)
  - Types :: cim:PhaseCode
- - rdfs:label :: X
  - rdfs:comment :: "Unknown non-neutral phase."@en
+ - rdfs:label :: X
  - cims:stereotype :: enum
 
 **** XN (cim:PhaseCode.XN)
  - Types :: cim:PhaseCode
  - rdfs:comment :: "Unknown non-neutral phase plus neutral."@en
- - rdfs:label :: XN
  - cims:stereotype :: enum
+ - rdfs:label :: XN
 
 **** XY (cim:PhaseCode.XY)
  - Types :: cim:PhaseCode
  - cims:stereotype :: enum
- - rdfs:comment :: "Two unknown non-neutral phases."@en
  - rdfs:label :: XY
+ - rdfs:comment :: "Two unknown non-neutral phases."@en
 
 **** XYN (cim:PhaseCode.XYN)
  - Types :: cim:PhaseCode
@@ -5699,33 +5699,33 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** currentFlow (cim:RegulatingControlModeKind.currentFlow)
  - Types :: cim:RegulatingControlModeKind
- - rdfs:comment :: "Current flow is specified."@en
  - rdfs:label :: currentFlow
+ - rdfs:comment :: "Current flow is specified."@en
  - cims:stereotype :: enum
 
 **** powerFactor (cim:RegulatingControlModeKind.powerFactor)
  - Types :: cim:RegulatingControlModeKind
  - rdfs:comment :: "Power factor is specified."@en
- - cims:stereotype :: enum
  - rdfs:label :: powerFactor
+ - cims:stereotype :: enum
 
 **** reactivePower (cim:RegulatingControlModeKind.reactivePower)
  - Types :: cim:RegulatingControlModeKind
  - cims:stereotype :: enum
- - rdfs:label :: reactivePower
  - rdfs:comment :: "Reactive power is specified."@en
+ - rdfs:label :: reactivePower
 
 **** temperature (cim:RegulatingControlModeKind.temperature)
  - Types :: cim:RegulatingControlModeKind
- - rdfs:label :: temperature
  - cims:stereotype :: enum
  - rdfs:comment :: "Control switches on/off based on the local temperature (i.e., a thermostat)."@en
+ - rdfs:label :: temperature
 
 **** timeScheduled (cim:RegulatingControlModeKind.timeScheduled)
  - Types :: cim:RegulatingControlModeKind
- - rdfs:label :: timeScheduled
- - rdfs:comment :: "Control switches on/off by time of day. The times may change on the weekend, or in different seasons."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Control switches on/off by time of day. The times may change on the weekend, or in different seasons."@en
+ - rdfs:label :: timeScheduled
 
 **** voltage (cim:RegulatingControlModeKind.voltage)
  - Types :: cim:RegulatingControlModeKind
@@ -5736,8 +5736,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 *** "SVCControlMode"@                                             :nodeclare:
 **** reactivePower (cim:SVCControlMode.reactivePower)
  - Types :: cim:SVCControlMode
- - cims:stereotype :: enum
  - rdfs:comment :: "Reactive power control."@en
+ - cims:stereotype :: enum
  - rdfs:label :: reactivePower
 
 **** voltage (cim:SVCControlMode.voltage)
@@ -5756,14 +5756,14 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** generator (cim:SynchronousMachineKind.generator)
  - Types :: cim:SynchronousMachineKind
  - cims:stereotype :: enum
- - rdfs:comment :: "Indicates the synchronous machine can operate as a generator."@en
  - rdfs:label :: generator
+ - rdfs:comment :: "Indicates the synchronous machine can operate as a generator."@en
 
 **** generatorOrCondenser (cim:SynchronousMachineKind.generatorOrCondenser)
  - Types :: cim:SynchronousMachineKind
- - rdfs:comment :: "Indicates the synchronous machine can operate as a generator or as a condenser."@en
- - cims:stereotype :: enum
  - rdfs:label :: generatorOrCondenser
+ - cims:stereotype :: enum
+ - rdfs:comment :: "Indicates the synchronous machine can operate as a generator or as a condenser."@en
 
 **** generatorOrCondenserOrMotor (cim:SynchronousMachineKind.generatorOrCondenserOrMotor)
  - Types :: cim:SynchronousMachineKind
@@ -5779,58 +5779,58 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** motor (cim:SynchronousMachineKind.motor)
  - Types :: cim:SynchronousMachineKind
- - rdfs:label :: motor
- - rdfs:comment :: "Indicates the synchronous machine can operate as a motor."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Indicates the synchronous machine can operate as a motor."@en
+ - rdfs:label :: motor
 
 **** motorOrCondenser (cim:SynchronousMachineKind.motorOrCondenser)
  - Types :: cim:SynchronousMachineKind
+ - rdfs:comment :: "Indicates the synchronous machine can operate as a motor or as a condenser."@en
  - rdfs:label :: motorOrCondenser
  - cims:stereotype :: enum
- - rdfs:comment :: "Indicates the synchronous machine can operate as a motor or as a condenser."@en
 
 *** "UnitMultiplier"@                                             :nodeclare:
 **** a (cim:UnitMultiplier.a)
  - Types :: cim:UnitMultiplier
- - cims:stereotype :: enum
  - rdfs:label :: a
+ - cims:stereotype :: enum
  - rdfs:comment :: "Atto 10**-18."@en
 
 **** c (cim:UnitMultiplier.c)
  - Types :: cim:UnitMultiplier
- - cims:stereotype :: enum
  - rdfs:comment :: "Centi 10**-2."@en
+ - cims:stereotype :: enum
  - rdfs:label :: c
 
 **** d (cim:UnitMultiplier.d)
  - Types :: cim:UnitMultiplier
+ - rdfs:label :: d
  - cims:stereotype :: enum
  - rdfs:comment :: "Deci 10**-1."@en
- - rdfs:label :: d
 
 **** da (cim:UnitMultiplier.da)
  - Types :: cim:UnitMultiplier
  - rdfs:label :: da
- - cims:stereotype :: enum
  - rdfs:comment :: "Deca 10**1."@en
+ - cims:stereotype :: enum
 
 **** E (cim:UnitMultiplier.E)
  - Types :: cim:UnitMultiplier
- - rdfs:label :: E
  - rdfs:comment :: "Exa 10**18."@en
  - cims:stereotype :: enum
+ - rdfs:label :: E
 
 **** f (cim:UnitMultiplier.f)
  - Types :: cim:UnitMultiplier
- - cims:stereotype :: enum
  - rdfs:label :: f
+ - cims:stereotype :: enum
  - rdfs:comment :: "Femto 10**-15."@en
 
 **** G (cim:UnitMultiplier.G)
  - Types :: cim:UnitMultiplier
+ - rdfs:label :: G
  - cims:stereotype :: enum
  - rdfs:comment :: "Giga 10**9."@en
- - rdfs:label :: G
 
 **** h (cim:UnitMultiplier.h)
  - Types :: cim:UnitMultiplier
@@ -5840,50 +5840,50 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** k (cim:UnitMultiplier.k)
  - Types :: cim:UnitMultiplier
- - rdfs:comment :: "Kilo 10**3."@en
- - qudt:prefixMultiplier :: "1000.0"^^xsd:double
+ - cims:stereotype :: enum
  - skos:exactMatch :: prefix:Kilo
  - rdfs:label :: k
- - cims:stereotype :: enum
+ - qudt:prefixMultiplier :: "1000.0"^^xsd:double
+ - rdfs:comment :: "Kilo 10**3."@en
 
 **** m (cim:UnitMultiplier.m)
  - Types :: cim:UnitMultiplier
- - rdfs:label :: m
  - cims:stereotype :: enum
  - rdfs:comment :: "Milli 10**-3."@en
+ - rdfs:label :: m
 
 **** M (cim:UnitMultiplier.M)
  - Types :: cim:UnitMultiplier
  - cims:stereotype :: enum
  - qudt:prefixMultiplier :: "1000000.0"^^xsd:double
- - skos:exactMatch :: prefix:Mega
  - rdfs:label :: M
+ - skos:exactMatch :: prefix:Mega
  - rdfs:comment :: "Mega 10**6."@en
 
 **** micro (cim:UnitMultiplier.micro)
  - Types :: cim:UnitMultiplier
+ - rdfs:comment :: "Micro 10**-6."@en
  - cims:stereotype :: enum
  - rdfs:label :: micro
- - rdfs:comment :: "Micro 10**-6."@en
 
 **** n (cim:UnitMultiplier.n)
  - Types :: cim:UnitMultiplier
- - rdfs:comment :: "Nano 10**-9."@en
  - rdfs:label :: n
+ - rdfs:comment :: "Nano 10**-9."@en
  - cims:stereotype :: enum
 
 **** none (cim:UnitMultiplier.none)
  - Types :: cim:UnitMultiplier
- - cims:stereotype :: enum
+ - rdfs:label :: none
  - rdfs:comment :: "No multiplier or equivalently multiply by 1."@en
  - qudt:prefixMultiplier :: "1.0"^^xsd:double
- - rdfs:label :: none
+ - cims:stereotype :: enum
 
 **** p (cim:UnitMultiplier.p)
  - Types :: cim:UnitMultiplier
+ - cims:stereotype :: enum
  - rdfs:label :: p
  - rdfs:comment :: "Pico 10**-12."@en
- - cims:stereotype :: enum
 
 **** P (cim:UnitMultiplier.P)
  - Types :: cim:UnitMultiplier
@@ -5893,59 +5893,59 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** T (cim:UnitMultiplier.T)
  - Types :: cim:UnitMultiplier
- - rdfs:comment :: "Tera 10**12."@en
  - cims:stereotype :: enum
  - rdfs:label :: T
+ - rdfs:comment :: "Tera 10**12."@en
 
 **** Y (cim:UnitMultiplier.Y)
  - Types :: cim:UnitMultiplier
  - cims:stereotype :: enum
- - rdfs:comment :: "Yotta 10**24."@en
  - rdfs:label :: Y
+ - rdfs:comment :: "Yotta 10**24."@en
 
 **** y (cim:UnitMultiplier.y)
  - Types :: cim:UnitMultiplier
  - cims:stereotype :: enum
- - rdfs:comment :: "Yocto 10**-24."@en
  - rdfs:label :: y
+ - rdfs:comment :: "Yocto 10**-24."@en
 
 **** Z (cim:UnitMultiplier.Z)
  - Types :: cim:UnitMultiplier
+ - cims:stereotype :: enum
  - rdfs:label :: Z
  - rdfs:comment :: "Zetta 10**21."@en
- - cims:stereotype :: enum
 
 **** z (cim:UnitMultiplier.z)
  - Types :: cim:UnitMultiplier
- - rdfs:comment :: "Zepto 10**-21."@en
- - rdfs:label :: z
  - cims:stereotype :: enum
+ - rdfs:label :: z
+ - rdfs:comment :: "Zepto 10**-21."@en
 
 *** "UnitSymbol"@                                                 :nodeclare:
 **** A (cim:UnitSymbol.A)
  - Types :: cim:UnitSymbol
+ - skos:exactMatch :: unit:A
  - rdfs:comment :: "Current in amperes."@en
  - cims:stereotype :: enum
  - rdfs:label :: A
- - skos:exactMatch :: unit:A
 
 **** A2 (cim:UnitSymbol.A2)
  - Types :: cim:UnitSymbol
+ - rdfs:label :: A2
  - cims:stereotype :: enum
  - rdfs:comment :: "Amperes squared (A²)."@en
- - rdfs:label :: A2
 
 **** A2h (cim:UnitSymbol.A2h)
  - Types :: cim:UnitSymbol
  - rdfs:comment :: "Ampere-squared hour, ampere-squared hour."@en
- - cims:stereotype :: enum
  - rdfs:label :: A2h
+ - cims:stereotype :: enum
 
 **** A2s (cim:UnitSymbol.A2s)
  - Types :: cim:UnitSymbol
+ - cims:stereotype :: enum
  - rdfs:comment :: "Ampere squared time in square amperes (A²s)."@en
  - rdfs:label :: A2s
- - cims:stereotype :: enum
 
 **** Ah (cim:UnitSymbol.Ah)
  - Types :: cim:UnitSymbol
@@ -5955,118 +5955,118 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** anglemin (cim:UnitSymbol.anglemin)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Plane angle, minutes."@en
  - rdfs:label :: anglemin
+ - rdfs:comment :: "Plane angle, minutes."@en
  - cims:stereotype :: enum
 
 **** anglesec (cim:UnitSymbol.anglesec)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Plane angle, seconds."@en
- - cims:stereotype :: enum
  - rdfs:label :: anglesec
+ - cims:stereotype :: enum
+ - rdfs:comment :: "Plane angle, seconds."@en
 
 **** APerA (cim:UnitSymbol.APerA)
  - Types :: cim:UnitSymbol
+ - rdfs:comment :: "Current, ratio of amperages.   Note: Users may need to supply a prefix such as ‘m’ to show rates such as ‘mA/A’."@en
  - rdfs:label :: APerA
  - cims:stereotype :: enum
- - rdfs:comment :: "Current, ratio of amperages.   Note: Users may need to supply a prefix such as ‘m’ to show rates such as ‘mA/A’."@en
 
 **** APerm (cim:UnitSymbol.APerm)
  - Types :: cim:UnitSymbol
- - rdfs:label :: APerm
- - rdfs:comment :: "A/m, magnetic field strength, amperes per metre."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "A/m, magnetic field strength, amperes per metre."@en
+ - rdfs:label :: APerm
 
 **** As (cim:UnitSymbol.As)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:label :: As
  - rdfs:comment :: "Ampere seconds (A·s)."@en
+ - cims:stereotype :: enum
 
 **** bar (cim:UnitSymbol.bar)
  - Types :: cim:UnitSymbol
+ - rdfs:comment :: "Pressure in bars, (1 bar = 100 kPa)."@en
  - cims:stereotype :: enum
  - rdfs:label :: bar
- - rdfs:comment :: "Pressure in bars, (1 bar = 100 kPa)."@en
 
 **** Bq (cim:UnitSymbol.Bq)
  - Types :: cim:UnitSymbol
- - rdfs:label :: Bq
- - rdfs:comment :: "Radioactivity in becquerels (1/s)."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Radioactivity in becquerels (1/s)."@en
+ - rdfs:label :: Bq
 
 **** Btu (cim:UnitSymbol.Btu)
  - Types :: cim:UnitSymbol
- - rdfs:label :: Btu
  - rdfs:comment :: "Energy, British Thermal Units."@en
  - cims:stereotype :: enum
+ - rdfs:label :: Btu
 
 **** C (cim:UnitSymbol.C)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:comment :: "Electric charge in coulombs (A·s)."@en
+ - cims:stereotype :: enum
  - rdfs:label :: C
 
 **** cd (cim:UnitSymbol.cd)
  - Types :: cim:UnitSymbol
  - rdfs:label :: cd
- - cims:stereotype :: enum
  - rdfs:comment :: "Luminous intensity in candelas."@en
+ - cims:stereotype :: enum
 
 **** character (cim:UnitSymbol.character)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Number of characters."@en
  - rdfs:label :: character
+ - rdfs:comment :: "Number of characters."@en
  - cims:stereotype :: enum
 
 **** charPers (cim:UnitSymbol.charPers)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:label :: charPers
  - rdfs:comment :: "Data rate (baud) in characters per second."@en
+ - cims:stereotype :: enum
 
 **** cosPhi (cim:UnitSymbol.cosPhi)
  - Types :: cim:UnitSymbol
+ - rdfs:label :: cosPhi
  - rdfs:comment :: "Power factor, dimensionless.
       Note 1: This definition of power factor only holds for balanced systems. See the alternative definition under code 153.
       Note 2 : Beware of differing sign conventions in use between the IEC and EEI. It is assumed that the data consumer understands the type of meter in use and the sign convention in use by the utility."@en
- - rdfs:label :: cosPhi
  - cims:stereotype :: enum
 
 **** count (cim:UnitSymbol.count)
  - Types :: cim:UnitSymbol
+ - rdfs:comment :: "Amount of substance, Counter value."@en
  - rdfs:label :: count
  - cims:stereotype :: enum
- - rdfs:comment :: "Amount of substance, Counter value."@en
 
 **** CPerkg (cim:UnitSymbol.CPerkg)
  - Types :: cim:UnitSymbol
+ - rdfs:comment :: "Exposure (x rays), coulombs per kilogram."@en
  - rdfs:label :: CPerkg
  - cims:stereotype :: enum
- - rdfs:comment :: "Exposure (x rays), coulombs per kilogram."@en
 
 **** CPerm2 (cim:UnitSymbol.CPerm2)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Surface charge density, coulombs per square metre."@en
  - rdfs:label :: CPerm2
  - cims:stereotype :: enum
+ - rdfs:comment :: "Surface charge density, coulombs per square metre."@en
 
 **** CPerm3 (cim:UnitSymbol.CPerm3)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
- - rdfs:label :: CPerm3
  - rdfs:comment :: "Electric charge density, coulombs per cubic metre."@en
+ - rdfs:label :: CPerm3
+ - cims:stereotype :: enum
 
 **** d (cim:UnitSymbol.d)
  - Types :: cim:UnitSymbol
  - rdfs:label :: d
- - cims:stereotype :: enum
  - rdfs:comment :: "Time in days, day = 24 h = 86400 s."@en
+ - cims:stereotype :: enum
 
 **** dB (cim:UnitSymbol.dB)
  - Types :: cim:UnitSymbol
- - rdfs:label :: dB
  - cims:stereotype :: enum
+ - rdfs:label :: dB
  - rdfs:comment :: "Sound pressure level in decibels. Note:  multiplier “d” is included in this unit symbol for compatibility with IEC 61850-7-3."@en
 
 **** dBm (cim:UnitSymbol.dBm)
@@ -6077,72 +6077,72 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** deg (cim:UnitSymbol.deg)
  - Types :: cim:UnitSymbol
- - rdfs:label :: deg
  - rdfs:comment :: "Plane angle in degrees."@en
  - cims:stereotype :: enum
+ - rdfs:label :: deg
  - skos:exactMatch :: unit:DEG
 
 **** degC (cim:UnitSymbol.degC)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:comment :: "Relative temperature in degrees Celsius.
       In the SI unit system the symbol is °C. Electric charge is measured in coulomb that has the unit symbol C. To distinguish degree Celsius from coulomb the symbol used in the UML is degC. The reason for not using °C is that the special character ° is difficult to manage in software."@en
  - rdfs:label :: degC
  - skos:exactMatch :: unit:DEG_C
+ - cims:stereotype :: enum
 
 **** F (cim:UnitSymbol.F)
  - Types :: cim:UnitSymbol
  - skos:exactMatch :: unit:FARAD
  - rdfs:comment :: "Electric capacitance in farads (C/V)."@en
- - cims:stereotype :: enum
  - rdfs:label :: F
+ - cims:stereotype :: enum
 
 **** FPerm (cim:UnitSymbol.FPerm)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Permittivity, farads per metre."@en
- - cims:stereotype :: enum
  - rdfs:label :: FPerm
+ - cims:stereotype :: enum
+ - rdfs:comment :: "Permittivity, farads per metre."@en
 
 **** ft3 (cim:UnitSymbol.ft3)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:comment :: "Volume, cubic feet."@en
  - rdfs:label :: ft3
+ - cims:stereotype :: enum
 
 **** G (cim:UnitSymbol.G)
  - Types :: cim:UnitSymbol
  - cims:stereotype :: enum
- - rdfs:label :: G
  - rdfs:comment :: "Magnetic flux density, gausses (1 G = 10-4 T)."@en
+ - rdfs:label :: G
 
 **** gal (cim:UnitSymbol.gal)
  - Types :: cim:UnitSymbol
  - rdfs:label :: gal
- - rdfs:comment :: "Volume in gallons, US gallon (1 gal = 231 in3 = 128 fl ounce)."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Volume in gallons, US gallon (1 gal = 231 in3 = 128 fl ounce)."@en
 
 **** gPerg (cim:UnitSymbol.gPerg)
  - Types :: cim:UnitSymbol
  - rdfs:label :: gPerg
- - rdfs:comment :: "Concentration, The ratio of the mass of a solute divided by the mass of  the solution. Note: Users may need use a prefix such a ‘µ’ to express a quantity such as ‘µg/g’."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Concentration, The ratio of the mass of a solute divided by the mass of  the solution. Note: Users may need use a prefix such a ‘µ’ to express a quantity such as ‘µg/g’."@en
 
 **** Gy (cim:UnitSymbol.Gy)
  - Types :: cim:UnitSymbol
  - rdfs:comment :: "Absorbed dose in grays (J/kg)."@en
- - cims:stereotype :: enum
  - rdfs:label :: Gy
+ - cims:stereotype :: enum
 
 **** GyPers (cim:UnitSymbol.GyPers)
  - Types :: cim:UnitSymbol
- - rdfs:label :: GyPers
  - cims:stereotype :: enum
  - rdfs:comment :: "Absorbed dose rate, grays per second."@en
+ - rdfs:label :: GyPers
 
 **** H (cim:UnitSymbol.H)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:comment :: "Electric inductance in henrys (Wb/A)."@en
+ - cims:stereotype :: enum
  - rdfs:label :: H
 
 **** h (cim:UnitSymbol.h)
@@ -6153,9 +6153,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** ha (cim:UnitSymbol.ha)
  - Types :: cim:UnitSymbol
+ - rdfs:comment :: "Area, hectares."@en
  - rdfs:label :: ha
  - cims:stereotype :: enum
- - rdfs:comment :: "Area, hectares."@en
 
 **** HPerm (cim:UnitSymbol.HPerm)
  - Types :: cim:UnitSymbol
@@ -6173,15 +6173,15 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** HzPerHz (cim:UnitSymbol.HzPerHz)
  - Types :: cim:UnitSymbol
+ - rdfs:label :: HzPerHz
  - rdfs:comment :: "Frequency, rate of frequency change.   Note: Users may need to supply a prefix such as ‘m’ to show rates such as ‘mHz/Hz’."@en
  - cims:stereotype :: enum
- - rdfs:label :: HzPerHz
 
 **** HzPers (cim:UnitSymbol.HzPers)
  - Types :: cim:UnitSymbol
+ - cims:stereotype :: enum
  - rdfs:label :: HzPers
  - rdfs:comment :: "Rate of change of frequency in hertz per second."@en
- - cims:stereotype :: enum
 
 **** J (cim:UnitSymbol.J)
  - Types :: cim:UnitSymbol
@@ -6191,92 +6191,92 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** JPerK (cim:UnitSymbol.JPerK)
  - Types :: cim:UnitSymbol
- - rdfs:label :: JPerK
  - cims:stereotype :: enum
  - rdfs:comment :: "Heat capacity in joules/kelvin."@en
+ - rdfs:label :: JPerK
 
 **** JPerkg (cim:UnitSymbol.JPerkg)
  - Types :: cim:UnitSymbol
+ - rdfs:label :: JPerkg
  - rdfs:comment :: "Specific energy, Joules / kg."@en
  - cims:stereotype :: enum
- - rdfs:label :: JPerkg
 
 **** JPerkgK (cim:UnitSymbol.JPerkgK)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
- - rdfs:comment :: "Specific heat capacity, specific entropy, joules per kilogram Kelvin."@en
  - rdfs:label :: JPerkgK
+ - rdfs:comment :: "Specific heat capacity, specific entropy, joules per kilogram Kelvin."@en
+ - cims:stereotype :: enum
 
 **** JPerm2 (cim:UnitSymbol.JPerm2)
  - Types :: cim:UnitSymbol
  - rdfs:label :: JPerm2
- - rdfs:comment :: "Insulation energy density, joules per square metre or watt second per square metre."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Insulation energy density, joules per square metre or watt second per square metre."@en
 
 **** JPerm3 (cim:UnitSymbol.JPerm3)
  - Types :: cim:UnitSymbol
- - rdfs:label :: JPerm3
- - rdfs:comment :: "Energy density, joules per cubic metre."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Energy density, joules per cubic metre."@en
+ - rdfs:label :: JPerm3
 
 **** JPermol (cim:UnitSymbol.JPermol)
  - Types :: cim:UnitSymbol
  - rdfs:label :: JPermol
- - cims:stereotype :: enum
  - rdfs:comment :: "Molar energy, joules per mole."@en
+ - cims:stereotype :: enum
 
 **** JPermolK (cim:UnitSymbol.JPermolK)
  - Types :: cim:UnitSymbol
+ - cims:stereotype :: enum
  - rdfs:label :: JPermolK
  - rdfs:comment :: "Molar entropy, molar heat capacity, joules per mole kelvin."@en
- - cims:stereotype :: enum
 
 **** JPers (cim:UnitSymbol.JPers)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Energy rate in joules per second (J/s)."@en
  - rdfs:label :: JPers
+ - rdfs:comment :: "Energy rate in joules per second (J/s)."@en
  - cims:stereotype :: enum
 
 **** K (cim:UnitSymbol.K)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Temperature in kelvins."@en
  - rdfs:label :: K
  - cims:stereotype :: enum
+ - rdfs:comment :: "Temperature in kelvins."@en
 
 **** kat (cim:UnitSymbol.kat)
  - Types :: cim:UnitSymbol
- - rdfs:label :: kat
- - cims:stereotype :: enum
  - rdfs:comment :: "Catalytic activity, katal = mol / s."@en
+ - cims:stereotype :: enum
+ - rdfs:label :: kat
 
 **** katPerm3 (cim:UnitSymbol.katPerm3)
  - Types :: cim:UnitSymbol
- - rdfs:label :: katPerm3
- - cims:stereotype :: enum
  - rdfs:comment :: "Catalytic activity concentration, katals per cubic metre."@en
+ - cims:stereotype :: enum
+ - rdfs:label :: katPerm3
 
 **** kg (cim:UnitSymbol.kg)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
- - rdfs:label :: kg
  - rdfs:comment :: "Mass in kilograms.  Note: multiplier “k” is included in this unit symbol for compatibility with IEC 61850-7-3."@en
+ - rdfs:label :: kg
+ - cims:stereotype :: enum
 
 **** kgm (cim:UnitSymbol.kgm)
  - Types :: cim:UnitSymbol
+ - rdfs:label :: kgm
  - rdfs:comment :: "Moment of mass in kilogram metres (kg·m) (first moment of mass). Note: multiplier “k” is included in this unit symbol for compatibility with IEC 61850-7-3."@en
  - cims:stereotype :: enum
- - rdfs:label :: kgm
 
 **** kgm2 (cim:UnitSymbol.kgm2)
  - Types :: cim:UnitSymbol
  - cims:stereotype :: enum
- - rdfs:label :: kgm2
  - rdfs:comment :: "Moment of mass in kilogram square metres (kg·m²) (Second moment of mass, commonly called the moment of inertia). Note: multiplier “k” is included in this unit symbol for compatibility with IEC 61850-7-3."@en
+ - rdfs:label :: kgm2
 
 **** kgPerJ (cim:UnitSymbol.kgPerJ)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:label :: kgPerJ
+ - cims:stereotype :: enum
  - rdfs:comment :: "Weight per energy in kilograms per joule (kg/J). Note: multiplier “k” is included in this unit symbol for compatibility with IEC 61850-7-3."@en
 
 **** kgPerm3 (cim:UnitSymbol.kgPerm3)
@@ -6287,15 +6287,15 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** kn (cim:UnitSymbol.kn)
  - Types :: cim:UnitSymbol
- - rdfs:label :: kn
- - rdfs:comment :: "Speed, knots (1 kn = 1852/3600) m/s."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Speed, knots (1 kn = 1852/3600) m/s."@en
+ - rdfs:label :: kn
 
 **** KPers (cim:UnitSymbol.KPers)
  - Types :: cim:UnitSymbol
+ - rdfs:comment :: "Temperature change rate in kelvins per second."@en
  - cims:stereotype :: enum
  - rdfs:label :: KPers
- - rdfs:comment :: "Temperature change rate in kelvins per second."@en
 
 **** l (cim:UnitSymbol.l)
  - Types :: cim:UnitSymbol
@@ -6305,15 +6305,15 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** lm (cim:UnitSymbol.lm)
  - Types :: cim:UnitSymbol
+ - rdfs:label :: lm
  - rdfs:comment :: "Luminous flux in lumens (cd·sr)."@en
  - cims:stereotype :: enum
- - rdfs:label :: lm
 
 **** lPerh (cim:UnitSymbol.lPerh)
  - Types :: cim:UnitSymbol
  - cims:stereotype :: enum
- - rdfs:comment :: "Volumetric flow rate, litres per hour."@en
  - rdfs:label :: lPerh
+ - rdfs:comment :: "Volumetric flow rate, litres per hour."@en
 
 **** lPerl (cim:UnitSymbol.lPerl)
  - Types :: cim:UnitSymbol
@@ -6323,33 +6323,33 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** lPers (cim:UnitSymbol.lPers)
  - Types :: cim:UnitSymbol
+ - rdfs:comment :: "Volumetric flow rate in litres per second."@en
  - cims:stereotype :: enum
  - rdfs:label :: lPers
- - rdfs:comment :: "Volumetric flow rate in litres per second."@en
 
 **** lx (cim:UnitSymbol.lx)
  - Types :: cim:UnitSymbol
  - cims:stereotype :: enum
- - rdfs:comment :: "Illuminance in lux (lm/m²)."@en
  - rdfs:label :: lx
+ - rdfs:comment :: "Illuminance in lux (lm/m²)."@en
 
 **** M (cim:UnitSymbol.M)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
- - rdfs:label :: M
  - rdfs:comment :: "Length, nautical miles (1 M = 1852 m)."@en
+ - rdfs:label :: M
+ - cims:stereotype :: enum
 
 **** m (cim:UnitSymbol.m)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - skos:exactMatch :: unit:M
  - rdfs:label :: m
  - rdfs:comment :: "Length in metres."@en
+ - cims:stereotype :: enum
 
 **** m2 (cim:UnitSymbol.m2)
  - Types :: cim:UnitSymbol
- - rdfs:label :: m2
  - skos:exactMatch :: unit:M2
+ - rdfs:label :: m2
  - cims:stereotype :: enum
  - rdfs:comment :: "Area in square metres (m²)."@en
 
@@ -6362,20 +6362,20 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** m3 (cim:UnitSymbol.m3)
  - Types :: cim:UnitSymbol
  - rdfs:comment :: "Volume in cubic metres (m³)."@en
- - cims:stereotype :: enum
  - rdfs:label :: m3
+ - cims:stereotype :: enum
 
 **** m3Compensated (cim:UnitSymbol.m3Compensated)
  - Types :: cim:UnitSymbol
+ - rdfs:label :: m3Compensated
  - rdfs:comment :: "Volume, cubic metres, with the value compensated for weather effects."@en
  - cims:stereotype :: enum
- - rdfs:label :: m3Compensated
 
 **** m3Perh (cim:UnitSymbol.m3Perh)
  - Types :: cim:UnitSymbol
  - rdfs:comment :: "Volumetric flow rate, cubic metres per hour."@en
- - rdfs:label :: m3Perh
  - cims:stereotype :: enum
+ - rdfs:label :: m3Perh
 
 **** m3Perkg (cim:UnitSymbol.m3Perkg)
  - Types :: cim:UnitSymbol
@@ -6386,69 +6386,69 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** m3Pers (cim:UnitSymbol.m3Pers)
  - Types :: cim:UnitSymbol
  - cims:stereotype :: enum
- - rdfs:comment :: "Volumetric flow rate in cubic metres per second (m³/s)."@en
  - skos:exactMatch :: unit:M3-PER-SEC
  - rdfs:label :: m3Pers
+ - rdfs:comment :: "Volumetric flow rate in cubic metres per second (m³/s)."@en
 
 **** m3Uncompensated (cim:UnitSymbol.m3Uncompensated)
  - Types :: cim:UnitSymbol
- - rdfs:label :: m3Uncompensated
  - rdfs:comment :: "Volume, cubic metres, with the value uncompensated for weather effects."@en
+ - rdfs:label :: m3Uncompensated
  - cims:stereotype :: enum
 
 **** min (cim:UnitSymbol.min)
  - Types :: cim:UnitSymbol
  - cims:stereotype :: enum
- - rdfs:comment :: "Time in minutes, minute  = 60 s."@en
  - rdfs:label :: min
+ - rdfs:comment :: "Time in minutes, minute  = 60 s."@en
 
 **** mmHg (cim:UnitSymbol.mmHg)
  - Types :: cim:UnitSymbol
+ - cims:stereotype :: enum
  - rdfs:label :: mmHg
  - rdfs:comment :: "Pressure, millimetres of mercury (1 mmHg is approximately 133.3 Pa)."@en
- - cims:stereotype :: enum
 
 **** mol (cim:UnitSymbol.mol)
  - Types :: cim:UnitSymbol
  - cims:stereotype :: enum
- - rdfs:label :: mol
  - rdfs:comment :: "Amount of substance in moles."@en
+ - rdfs:label :: mol
 
 **** molPerkg (cim:UnitSymbol.molPerkg)
  - Types :: cim:UnitSymbol
- - rdfs:label :: molPerkg
  - rdfs:comment :: "Concentration, Molality, the amount of solute in moles and the amount of solvent in kilograms."@en
+ - rdfs:label :: molPerkg
  - cims:stereotype :: enum
 
 **** molPerm3 (cim:UnitSymbol.molPerm3)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:comment :: "Concentration, The amount of substance concentration, (c), the amount of solvent in moles divided by the volume of solution in m³."@en
  - rdfs:label :: molPerm3
+ - cims:stereotype :: enum
 
 **** molPermol (cim:UnitSymbol.molPermol)
  - Types :: cim:UnitSymbol
  - rdfs:comment :: "Concentration, Molar fraction, the ratio of the molar amount of a solute divided by the molar amount of the solution."@en
- - rdfs:label :: molPermol
  - cims:stereotype :: enum
+ - rdfs:label :: molPermol
 
 **** mPerm3 (cim:UnitSymbol.mPerm3)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:comment :: "Fuel efficiency in metres per cubic metres (m/m³)."@en
+ - cims:stereotype :: enum
  - rdfs:label :: mPerm3
 
 **** mPers (cim:UnitSymbol.mPers)
  - Types :: cim:UnitSymbol
+ - rdfs:label :: mPers
  - cims:stereotype :: enum
  - rdfs:comment :: "Velocity in metres per second (m/s)."@en
- - rdfs:label :: mPers
 
 **** mPers2 (cim:UnitSymbol.mPers2)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Acceleration in metres per second squared (m/s²)."@en
- - rdfs:label :: mPers2
  - cims:stereotype :: enum
+ - rdfs:label :: mPers2
+ - rdfs:comment :: "Acceleration in metres per second squared (m/s²)."@en
 
 **** Mx (cim:UnitSymbol.Mx)
  - Types :: cim:UnitSymbol
@@ -6459,14 +6459,14 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** N (cim:UnitSymbol.N)
  - Types :: cim:UnitSymbol
  - cims:stereotype :: enum
- - rdfs:label :: N
  - rdfs:comment :: "Force in newtons (kg·m/s²)."@en
+ - rdfs:label :: N
 
 **** Nm (cim:UnitSymbol.Nm)
  - Types :: cim:UnitSymbol
+ - cims:stereotype :: enum
  - rdfs:comment :: "Moment of force, newton metres."@en
  - rdfs:label :: Nm
- - cims:stereotype :: enum
 
 **** none (cim:UnitSymbol.none)
  - Types :: cim:UnitSymbol
@@ -6477,20 +6477,20 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** NPerm (cim:UnitSymbol.NPerm)
  - Types :: cim:UnitSymbol
  - rdfs:comment :: "Surface tension, newton per metre."@en
- - rdfs:label :: NPerm
  - cims:stereotype :: enum
+ - rdfs:label :: NPerm
 
 **** Oe (cim:UnitSymbol.Oe)
  - Types :: cim:UnitSymbol
+ - rdfs:label :: Oe
  - rdfs:comment :: "Magnetic field in oersteds, (1 Oe = (103/4p) A/m)."@en
  - cims:stereotype :: enum
- - rdfs:label :: Oe
 
 **** ohm (cim:UnitSymbol.ohm)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
- - rdfs:comment :: "Electric resistance in ohms (V/A)."@en
  - skos:exactMatch :: unit:OHM
+ - rdfs:comment :: "Electric resistance in ohms (V/A)."@en
+ - cims:stereotype :: enum
  - rdfs:label :: ohm
 
 **** ohmm (cim:UnitSymbol.ohmm)
@@ -6501,65 +6501,65 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** ohmPerm (cim:UnitSymbol.ohmPerm)
  - Types :: cim:UnitSymbol
- - rdfs:label :: ohmPerm
- - cims:stereotype :: enum
  - rdfs:comment :: "Electric resistance per length in ohms per metre ((V/A)/m)."@en
+ - cims:stereotype :: enum
+ - rdfs:label :: ohmPerm
 
 **** onePerHz (cim:UnitSymbol.onePerHz)
  - Types :: cim:UnitSymbol
- - rdfs:label :: onePerHz
  - rdfs:comment :: "Reciprocal of frequency (1/Hz)."@en
+ - rdfs:label :: onePerHz
  - cims:stereotype :: enum
 
 **** onePerm (cim:UnitSymbol.onePerm)
  - Types :: cim:UnitSymbol
  - rdfs:comment :: "Wavenumber, reciprocal metres,  (1/m)."@en
- - cims:stereotype :: enum
  - rdfs:label :: onePerm
+ - cims:stereotype :: enum
 
 **** Pa (cim:UnitSymbol.Pa)
  - Types :: cim:UnitSymbol
+ - skos:exactMatch :: unit:PA
  - cims:stereotype :: enum
  - rdfs:comment :: "Pressure in pascals (N/m²). Note: the absolute or relative measurement of pressure is implied with this entry. See below for more explicit forms."@en
- - skos:exactMatch :: unit:PA
  - rdfs:label :: Pa
 
 **** PaPers (cim:UnitSymbol.PaPers)
  - Types :: cim:UnitSymbol
  - rdfs:label :: PaPers
- - cims:stereotype :: enum
  - rdfs:comment :: "Pressure change rate in pascals per second."@en
+ - cims:stereotype :: enum
 
 **** Pas (cim:UnitSymbol.Pas)
  - Types :: cim:UnitSymbol
  - cims:stereotype :: enum
- - rdfs:label :: Pas
  - rdfs:comment :: "Dynamic viscosity, pascal seconds."@en
+ - rdfs:label :: Pas
 
 **** ppm (cim:UnitSymbol.ppm)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Concentration in parts per million."@en
  - cims:stereotype :: enum
  - rdfs:label :: ppm
+ - rdfs:comment :: "Concentration in parts per million."@en
 
 **** Q (cim:UnitSymbol.Q)
  - Types :: cim:UnitSymbol
+ - rdfs:comment :: "Quantity power, Q."@en
  - cims:stereotype :: enum
  - rdfs:label :: Q
- - rdfs:comment :: "Quantity power, Q."@en
 
 **** Qh (cim:UnitSymbol.Qh)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Quantity energy, Qh."@en
  - rdfs:label :: Qh
+ - rdfs:comment :: "Quantity energy, Qh."@en
  - cims:stereotype :: enum
 
 **** rad (cim:UnitSymbol.rad)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Plane angle in radians (m/m)."@en
- - skos:exactMatch :: unit:RAD
  - cims:stereotype :: enum
  - rdfs:label :: rad
+ - rdfs:comment :: "Plane angle in radians (m/m)."@en
+ - skos:exactMatch :: unit:RAD
 
 **** radPers (cim:UnitSymbol.radPers)
  - Types :: cim:UnitSymbol
@@ -6569,8 +6569,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** radPers2 (cim:UnitSymbol.radPers2)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Angular acceleration, radians per second squared."@en
  - rdfs:label :: radPers2
+ - rdfs:comment :: "Angular acceleration, radians per second squared."@en
  - cims:stereotype :: enum
 
 **** rev (cim:UnitSymbol.rev)
@@ -6581,40 +6581,40 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** rotPers (cim:UnitSymbol.rotPers)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
- - rdfs:label :: rotPers
  - rdfs:comment :: "Rotations per second (1/s). See also Hz (1/s)."@en
+ - rdfs:label :: rotPers
+ - cims:stereotype :: enum
 
 **** S (cim:UnitSymbol.S)
  - Types :: cim:UnitSymbol
- - skos:exactMatch :: unit:S
- - rdfs:label :: S
  - cims:stereotype :: enum
+ - skos:exactMatch :: unit:S
  - rdfs:comment :: "Conductance in siemens."@en
+ - rdfs:label :: S
 
 **** s (cim:UnitSymbol.s)
  - Types :: cim:UnitSymbol
- - skos:exactMatch :: unit:SEC
- - rdfs:comment :: "Time in seconds."@en
  - rdfs:label :: s
  - cims:stereotype :: enum
+ - rdfs:comment :: "Time in seconds."@en
+ - skos:exactMatch :: unit:SEC
 
 **** SPerm (cim:UnitSymbol.SPerm)
  - Types :: cim:UnitSymbol
- - rdfs:label :: SPerm
  - rdfs:comment :: "Conductance per length (F/m)."@en
+ - rdfs:label :: SPerm
  - cims:stereotype :: enum
 
 **** sPers (cim:UnitSymbol.sPers)
  - Types :: cim:UnitSymbol
  - rdfs:comment :: "Time, Ratio of time.  Note: Users may need to supply a prefix such as ‘&#181;’ to show rates such as ‘&#181;s/s’."@en
- - rdfs:label :: sPers
  - cims:stereotype :: enum
+ - rdfs:label :: sPers
 
 **** sr (cim:UnitSymbol.sr)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Solid angle in steradians (m2/m2)."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Solid angle in steradians (m2/m2)."@en
  - rdfs:label :: sr
 
 **** Sv (cim:UnitSymbol.Sv)
@@ -6626,66 +6626,66 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** T (cim:UnitSymbol.T)
  - Types :: cim:UnitSymbol
  - rdfs:comment :: "Magnetic flux density in teslas (Wb/m2)."@en
- - cims:stereotype :: enum
  - rdfs:label :: T
+ - cims:stereotype :: enum
 
 **** therm (cim:UnitSymbol.therm)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:comment :: "Energy, therms."@en
+ - cims:stereotype :: enum
  - rdfs:label :: therm
 
 **** tonne (cim:UnitSymbol.tonne)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:comment :: "Mass in tons, “tonne” or “metric  ton” (1000 kg = 1 Mg)."@en
+ - cims:stereotype :: enum
  - rdfs:label :: tonne
 
 **** V (cim:UnitSymbol.V)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Electric potential in volts (W/A)."@en
  - cims:stereotype :: enum
- - skos:exactMatch :: unit:V
  - rdfs:label :: V
+ - rdfs:comment :: "Electric potential in volts (W/A)."@en
+ - skos:exactMatch :: unit:V
 
 **** V2 (cim:UnitSymbol.V2)
  - Types :: cim:UnitSymbol
+ - cims:stereotype :: enum
  - rdfs:comment :: "Volt squared (W²/A²)."@en
  - rdfs:label :: V2
- - cims:stereotype :: enum
 
 **** V2h (cim:UnitSymbol.V2h)
  - Types :: cim:UnitSymbol
- - rdfs:label :: V2h
  - cims:stereotype :: enum
+ - rdfs:label :: V2h
  - rdfs:comment :: "Volt-squared hour, volt-squared-hours."@en
 
 **** VA (cim:UnitSymbol.VA)
  - Types :: cim:UnitSymbol
- - skos:exactMatch :: unit:V-A
+ - rdfs:comment :: "Apparent power in volt amperes. See also real power and reactive power."@en
  - cims:stereotype :: enum
  - rdfs:label :: VA
- - rdfs:comment :: "Apparent power in volt amperes. See also real power and reactive power."@en
+ - skos:exactMatch :: unit:V-A
 
 **** VAh (cim:UnitSymbol.VAh)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:comment :: "Apparent energy in volt ampere hours."@en
  - rdfs:label :: VAh
+ - cims:stereotype :: enum
 
 **** VAr (cim:UnitSymbol.VAr)
  - Types :: cim:UnitSymbol
+ - rdfs:label :: VAr
  - cims:stereotype :: enum
  - rdfs:comment :: "Reactive power in volt amperes reactive. The “reactive” or “imaginary” component of electrical power (VIsin(phi)). (See also real power and apparent power).
       Note: Different meter designs use different methods to arrive at their results. Some meters may compute reactive power as an arithmetic value, while others compute the value vectorially. The data consumer should determine the method in use and the suitability of the measurement for the intended purpose."@en
- - rdfs:label :: VAr
  - skos:exactMatch :: unit:V-A_Reactive
 
 **** VArh (cim:UnitSymbol.VArh)
  - Types :: cim:UnitSymbol
- - rdfs:label :: VArh
  - cims:stereotype :: enum
  - rdfs:comment :: "Reactive energy in volt ampere reactive hours."@en
+ - rdfs:label :: VArh
 
 **** Vh (cim:UnitSymbol.Vh)
  - Types :: cim:UnitSymbol
@@ -6695,34 +6695,34 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** VPerHz (cim:UnitSymbol.VPerHz)
  - Types :: cim:UnitSymbol
+ - cims:stereotype :: enum
  - rdfs:comment :: "Magnetic flux in volt per hertz."@en
  - rdfs:label :: VPerHz
- - cims:stereotype :: enum
 
 **** VPerm (cim:UnitSymbol.VPerm)
  - Types :: cim:UnitSymbol
- - rdfs:label :: VPerm
- - rdfs:comment :: "Electric field strength, volts per metre."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Electric field strength, volts per metre."@en
+ - rdfs:label :: VPerm
 
 **** VPerV (cim:UnitSymbol.VPerV)
  - Types :: cim:UnitSymbol
  - cims:stereotype :: enum
- - rdfs:comment :: "Voltage, ratio of voltages.  Note: Users may need to supply a prefix such as ‘m’ to show rates such as ‘mV/V’."@en
  - rdfs:label :: VPerV
+ - rdfs:comment :: "Voltage, ratio of voltages.  Note: Users may need to supply a prefix such as ‘m’ to show rates such as ‘mV/V’."@en
 
 **** VPerVA (cim:UnitSymbol.VPerVA)
  - Types :: cim:UnitSymbol
+ - cims:stereotype :: enum
  - rdfs:comment :: "Power factor, PF, the ratio of the active power to the apparent power.  Note: The sign convention used for power factor will differ between IEC meters and EEI (ANSI) meters. It is assumed that the data consumers understand the type of meter being used and agree on the sign convention in use at any given utility."@en
  - rdfs:label :: VPerVA
- - cims:stereotype :: enum
 
 **** VPerVAr (cim:UnitSymbol.VPerVAr)
  - Types :: cim:UnitSymbol
- - rdfs:label :: VPerVAr
+ - cims:stereotype :: enum
  - skos:exactMatch :: unit:V-PER-V-A_Reactive
  - rdfs:comment :: "Power factor, PF, the ratio of the active power to the apparent power. Note: The sign convention used for power factor will differ between IEC meters and EEI (ANSI) meters. It is assumed that the data consumers understand the type of meter being used and agree on the sign convention in use at any given utility."@en
- - cims:stereotype :: enum
+ - rdfs:label :: VPerVAr
 
 **** Vs (cim:UnitSymbol.Vs)
  - Types :: cim:UnitSymbol
@@ -6732,472 +6732,472 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** W (cim:UnitSymbol.W)
  - Types :: cim:UnitSymbol
- - rdfs:label :: W
- - skos:exactMatch :: unit:W
- - rdfs:comment :: "Real power in watts (J/s). Electrical power may have real and reactive components. The real portion of electrical power (I&#178;R or VIcos(phi)), is expressed in Watts. See also apparent power and reactive power."@en
  - cims:stereotype :: enum
+ - rdfs:label :: W
+ - rdfs:comment :: "Real power in watts (J/s). Electrical power may have real and reactive components. The real portion of electrical power (I&#178;R or VIcos(phi)), is expressed in Watts. See also apparent power and reactive power."@en
+ - skos:exactMatch :: unit:W
 
 **** Wb (cim:UnitSymbol.Wb)
  - Types :: cim:UnitSymbol
  - rdfs:label :: Wb
- - cims:stereotype :: enum
  - rdfs:comment :: "Magnetic flux in webers (V·s)."@en
+ - cims:stereotype :: enum
 
 **** Wh (cim:UnitSymbol.Wh)
  - Types :: cim:UnitSymbol
+ - rdfs:label :: Wh
  - cims:stereotype :: enum
  - rdfs:comment :: "Real energy in watt hours."@en
  - skos:exactMatch :: unit:W-HR
- - rdfs:label :: Wh
 
 **** WPerA (cim:UnitSymbol.WPerA)
  - Types :: cim:UnitSymbol
- - rdfs:label :: WPerA
  - skos:exactMatch :: unit:W-PER-A
  - rdfs:comment :: "Active power per current flow, watts per Ampere."@en
+ - rdfs:label :: WPerA
  - cims:stereotype :: enum
 
 **** WPerHz (cim:UnitSymbol.WPerHz)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Active power variation with frequency in watts per hertz."@en
- - skos:exactMatch :: unit:W-PER-HZ
- - rdfs:label :: WPerHz
  - cims:stereotype :: enum
+ - rdfs:comment :: "Active power variation with frequency in watts per hertz."@en
+ - rdfs:label :: WPerHz
+ - skos:exactMatch :: unit:W-PER-HZ
 
 **** WPerm2 (cim:UnitSymbol.WPerm2)
  - Types :: cim:UnitSymbol
- - rdfs:label :: WPerm2
  - rdfs:comment :: "Heat flux density, irradiance, watts per square metre."@en
  - cims:stereotype :: enum
+ - rdfs:label :: WPerm2
 
 **** WPerm2sr (cim:UnitSymbol.WPerm2sr)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:comment :: "Radiance, watts per square metre steradian."@en
+ - cims:stereotype :: enum
  - rdfs:label :: WPerm2sr
 
 **** WPermK (cim:UnitSymbol.WPermK)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:label :: WPermK
  - rdfs:comment :: "Thermal conductivity in watt/metres kelvin."@en
+ - cims:stereotype :: enum
 
 **** WPers (cim:UnitSymbol.WPers)
  - Types :: cim:UnitSymbol
- - skos:exactMatch :: unit:W-PER-SEC
- - rdfs:label :: WPers
  - rdfs:comment :: "Ramp rate in watts per second."@en
+ - skos:exactMatch :: unit:W-PER-SEC
  - cims:stereotype :: enum
+ - rdfs:label :: WPers
 
 **** WPersr (cim:UnitSymbol.WPersr)
  - Types :: cim:UnitSymbol
- - rdfs:label :: WPersr
  - cims:stereotype :: enum
+ - rdfs:label :: WPersr
  - rdfs:comment :: "Radiant intensity, watts per steradian."@en
 
 **** WPerW (cim:UnitSymbol.WPerW)
  - Types :: cim:UnitSymbol
  - rdfs:label :: WPerW
- - rdfs:comment :: "Signal Strength, ratio of power.   Note: Users may need to supply a prefix such as ‘m’ to show rates such as ‘mW/W’."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Signal Strength, ratio of power.   Note: Users may need to supply a prefix such as ‘m’ to show rates such as ‘mW/W’."@en
 
 *** "WindGenUnitKind"@                                            :nodeclare:
 **** offshore (cim:WindGenUnitKind.offshore)
  - Types :: cim:WindGenUnitKind
- - rdfs:comment :: "The wind generating unit is located offshore."@en
  - cims:stereotype :: enum
  - rdfs:label :: offshore
+ - rdfs:comment :: "The wind generating unit is located offshore."@en
 
 **** onshore (cim:WindGenUnitKind.onshore)
  - Types :: cim:WindGenUnitKind
+ - rdfs:comment :: "The wind generating unit is located onshore."@en
  - rdfs:label :: onshore
  - cims:stereotype :: enum
- - rdfs:comment :: "The wind generating unit is located onshore."@en
 
 *** "WindingConnection"@                                          :nodeclare:
 **** A (cim:WindingConnection.A)
  - Types :: cim:WindingConnection
+ - rdfs:comment :: "Autotransformer common winding."@en
  - cims:stereotype :: enum
  - rdfs:label :: A
- - rdfs:comment :: "Autotransformer common winding."@en
 
 **** D (cim:WindingConnection.D)
  - Types :: cim:WindingConnection
  - cims:stereotype :: enum
- - rdfs:label :: D
  - rdfs:comment :: "Delta."@en
+ - rdfs:label :: D
 
 **** I (cim:WindingConnection.I)
  - Types :: cim:WindingConnection
+ - rdfs:label :: I
  - rdfs:comment :: "Independent winding, for single-phase connections."@en
  - cims:stereotype :: enum
- - rdfs:label :: I
 
 **** Y (cim:WindingConnection.Y)
  - Types :: cim:WindingConnection
+ - cims:stereotype :: enum
  - rdfs:comment :: "Wye."@en
  - rdfs:label :: Y
- - cims:stereotype :: enum
 
 **** Yn (cim:WindingConnection.Yn)
  - Types :: cim:WindingConnection
- - rdfs:label :: Yn
- - cims:stereotype :: enum
  - rdfs:comment :: "Wye, with neutral brought out for grounding."@en
+ - cims:stereotype :: enum
+ - rdfs:label :: Yn
 
 **** Z (cim:WindingConnection.Z)
  - Types :: cim:WindingConnection
+ - cims:stereotype :: enum
  - rdfs:comment :: "ZigZag."@en
  - rdfs:label :: Z
- - cims:stereotype :: enum
 
 **** Zn (cim:WindingConnection.Zn)
  - Types :: cim:WindingConnection
+ - cims:stereotype :: enum
  - rdfs:label :: Zn
  - rdfs:comment :: "ZigZag, with neutral brought out for grounding."@en
- - cims:stereotype :: enum
 
 *** cims:ClassCategory                                            :nodeclare:
 **** CoreEquipmentProfile (eq:Package_CoreEquipmentProfile)
  - Types :: cims:ClassCategory
- - rdfs:label :: CoreEquipmentProfile
  - rdfs:comment :: "This is the IEC 61970-452 core equipment profile."@en
+ - rdfs:label :: CoreEquipmentProfile
 
 *** qudt:QuantityKind                                             :nodeclare:
 **** ActivePower (cim:ActivePower)
  - Types :: qudt:QuantityKind
- - skos:exactMatch :: quantitykind:ActivePower
- - rdfs:label :: ActivePower
- - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - qudt:applicableUnit :: cim:UnitSymbol.W
+ - skos:exactMatch :: quantitykind:ActivePower
  - rdfs:comment :: "Product of RMS value of the voltage and the RMS value of the in-phase component of the current."@en
+ - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - rdfs:label :: ActivePower
 
 **** ActivePowerPerCurrentFlow (cim:ActivePowerPerCurrentFlow)
  - Types :: qudt:QuantityKind
- - skos:exactMatch :: quantitykind:ActivePowerPerCurrentFlow
- - rdfs:label :: ActivePowerPerCurrentFlow
  - rdfs:comment :: "Active power variation with current flow."@en
  - qudt:applicableUnit :: cim:UnitSymbol.WPerA
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - skos:exactMatch :: quantitykind:ActivePowerPerCurrentFlow
+ - rdfs:label :: ActivePowerPerCurrentFlow
 
 **** ActivePowerPerFrequency (cim:ActivePowerPerFrequency)
  - Types :: qudt:QuantityKind
- - qudt:applicableUnit :: cim:UnitSymbol.WPerHz
- - rdfs:comment :: "Active power variation with frequency."@en
- - rdfs:label :: ActivePowerPerFrequency
- - skos:exactMatch :: quantitykind:ActivePowerPerFrequency
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - rdfs:label :: ActivePowerPerFrequency
+ - qudt:applicableUnit :: cim:UnitSymbol.WPerHz
+ - skos:exactMatch :: quantitykind:ActivePowerPerFrequency
+ - rdfs:comment :: "Active power variation with frequency."@en
 
 **** AngleDegrees (cim:AngleDegrees)
  - Types :: qudt:QuantityKind
- - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
- - rdfs:label :: AngleDegrees
- - qudt:applicableUnit :: cim:UnitSymbol.deg
  - rdfs:comment :: "Measurement of angle in degrees."@en
+ - qudt:applicableUnit :: cim:UnitSymbol.deg
+ - rdfs:label :: AngleDegrees
+ - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - skos:exactMatch :: quantitykind:Angle
 
 **** ApparentPower (cim:ApparentPower)
  - Types :: qudt:QuantityKind
- - rdfs:label :: ApparentPower
- - skos:exactMatch :: quantitykind:ApparentPower
- - rdfs:comment :: "Product of the RMS value of the voltage and the RMS value of the current."@en
  - qudt:applicableUnit :: cim:UnitSymbol.VA
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - skos:exactMatch :: quantitykind:ApparentPower
+ - rdfs:label :: ApparentPower
+ - rdfs:comment :: "Product of the RMS value of the voltage and the RMS value of the current."@en
 
 **** Capacitance (cim:Capacitance)
  - Types :: qudt:QuantityKind
- - skos:exactMatch :: quantitykind:Capacitance
+ - rdfs:label :: Capacitance
  - qudt:applicableUnit :: cim:UnitSymbol.F
  - rdfs:comment :: "Capacitive part of reactance (imaginary part of impedance), at rated frequency."@en
- - rdfs:label :: Capacitance
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - skos:exactMatch :: quantitykind:Capacitance
 
 **** Conductance (cim:Conductance)
  - Types :: qudt:QuantityKind
- - rdfs:label :: Conductance
- - skos:exactMatch :: quantitykind:Conductance
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - qudt:applicableUnit :: cim:UnitSymbol.S
  - rdfs:comment :: "Factor by which voltage must be multiplied to give corresponding power lost from a circuit. Real part of admittance."@en
+ - rdfs:label :: Conductance
+ - skos:exactMatch :: quantitykind:Conductance
 
 **** CurrentFlow (cim:CurrentFlow)
  - Types :: qudt:QuantityKind
- - rdfs:comment :: "Electrical current with sign convention: positive flow is out of the conducting equipment into the connectivity node. Can be both AC and DC."@en
  - skos:exactMatch :: quantitykind:ElectricCurrent
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
- - rdfs:label :: CurrentFlow
  - qudt:applicableUnit :: cim:UnitSymbol.A
+ - rdfs:label :: CurrentFlow
+ - rdfs:comment :: "Electrical current with sign convention: positive flow is out of the conducting equipment into the connectivity node. Can be both AC and DC."@en
 
 **** Frequency (cim:Frequency)
  - Types :: qudt:QuantityKind
- - rdfs:label :: Frequency
  - rdfs:comment :: "Cycles per second."@en
  - qudt:applicableUnit :: cim:UnitSymbol.Hz
- - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - rdfs:label :: Frequency
  - skos:exactMatch :: quantitykind:Frequency
+ - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
 
 **** Inductance (cim:Inductance)
  - Types :: qudt:QuantityKind
- - rdfs:label :: Inductance
- - rdfs:comment :: "Inductive part of reactance (imaginary part of impedance), at rated frequency."@en
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - rdfs:label :: Inductance
  - qudt:applicableUnit :: cim:UnitSymbol.H
+ - rdfs:comment :: "Inductive part of reactance (imaginary part of impedance), at rated frequency."@en
 
 **** Length (cim:Length)
  - Types :: qudt:QuantityKind
+ - skos:exactMatch :: quantitykind:Length
+ - qudt:applicableUnit :: cim:UnitSymbol.m
+ - rdfs:comment :: "Unit of length. It shall be a positive value or zero."@en
  - rdfs:label :: Length
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
- - skos:exactMatch :: quantitykind:Length
- - rdfs:comment :: "Unit of length. It shall be a positive value or zero."@en
- - qudt:applicableUnit :: cim:UnitSymbol.m
 
 **** Money (cim:Money)
  - Types :: qudt:QuantityKind
- - qudt:applicableUnit :: cim:Currency.LRD
- - qudt:applicableUnit :: cim:Currency.NAD
- - qudt:applicableUnit :: cim:Currency.SOS
- - rdfs:comment :: "Amount of money."@en
- - qudt:applicableUnit :: cim:Currency.AED
- - qudt:applicableUnit :: cim:Currency.TRY
- - qudt:applicableUnit :: cim:Currency.HRK
- - qudt:applicableUnit :: cim:Currency.MUR
- - qudt:applicableUnit :: cim:Currency.ERN
- - qudt:applicableUnit :: cim:Currency.UZS
- - qudt:applicableUnit :: cim:Currency.KWD
- - qudt:applicableUnit :: cim:Currency.GHS
- - qudt:applicableUnit :: cim:Currency.CHF
- - qudt:applicableUnit :: cim:Currency.SCR
- - qudt:applicableUnit :: cim:Currency.BRL
- - qudt:applicableUnit :: cim:Currency.COU
- - qudt:applicableUnit :: cim:Currency.LBP
- - qudt:applicableUnit :: cim:Currency.LTL
- - qudt:applicableUnit :: cim:Currency.MMK
- - skos:exactMatch :: quantitykind:Currency
- - qudt:applicableUnit :: cim:Currency.AZN
- - qudt:applicableUnit :: cim:Currency.MDL
- - qudt:applicableUnit :: cim:Currency.BTN
- - qudt:applicableUnit :: cim:Currency.DZD
- - qudt:applicableUnit :: cim:Currency.QAR
- - qudt:applicableUnit :: cim:Currency.PAB
- - qudt:applicableUnit :: cim:Currency.NPR
- - qudt:applicableUnit :: cim:Currency.PHP
- - qudt:applicableUnit :: cim:Currency.YER
- - qudt:applicableUnit :: cim:Currency.HTG
- - qudt:applicableUnit :: cim:Currency.BDT
- - qudt:applicableUnit :: cim:Currency.MRO
- - qudt:applicableUnit :: cim:Currency.GTQ
- - qudt:applicableUnit :: cim:Currency.UGX
- - qudt:applicableUnit :: cim:Currency.BOV
- - qudt:applicableUnit :: cim:Currency.IQD
- - qudt:applicableUnit :: cim:Currency.ANG
- - qudt:applicableUnit :: cim:Currency.TMT
- - qudt:applicableUnit :: cim:Currency.SAR
- - qudt:applicableUnit :: cim:Currency.PEN
- - qudt:applicableUnit :: cim:Currency.AUD
- - qudt:applicableUnit :: cim:Currency.ILS
- - qudt:applicableUnit :: cim:Currency.NGN
- - qudt:applicableUnit :: cim:Currency.PGK
- - qudt:applicableUnit :: cim:Currency.MKD
- - qudt:applicableUnit :: cim:Currency.INR
- - qudt:applicableUnit :: cim:Currency.MAD
- - qudt:applicableUnit :: cim:Currency.PKR
- - qudt:applicableUnit :: cim:Currency.BIF
- - qudt:applicableUnit :: cim:Currency.FKP
- - qudt:applicableUnit :: cim:Currency.SLL
- - qudt:applicableUnit :: cim:Currency.RWF
- - qudt:applicableUnit :: cim:Currency.CRC
- - qudt:applicableUnit :: cim:Currency.DKK
- - qudt:applicableUnit :: cim:Currency.UYU
- - qudt:applicableUnit :: cim:Currency.CDF
- - qudt:applicableUnit :: cim:Currency.CAD
- - qudt:applicableUnit :: cim:Currency.KYD
- - qudt:applicableUnit :: cim:Currency.PLN
- - qudt:applicableUnit :: cim:Currency.MOP
- - qudt:applicableUnit :: cim:Currency.LKR
- - qudt:applicableUnit :: cim:Currency.VEF
- - qudt:applicableUnit :: cim:Currency.BOB
- - qudt:applicableUnit :: cim:Currency.PYG
- - qudt:applicableUnit :: cim:Currency.LVL
- - qudt:applicableUnit :: cim:Currency.KHR
- - qudt:applicableUnit :: cim:Currency.BWP
- - qudt:applicableUnit :: cim:Currency.WST
- - qudt:applicableUnit :: cim:Currency.SDG
- - qudt:applicableUnit :: cim:Currency.CLF
- - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
- - qudt:applicableUnit :: cim:Currency.EEK
- - qudt:applicableUnit :: cim:Currency.BHD
- - qudt:applicableUnit :: cim:Currency.BGN
- - qudt:applicableUnit :: cim:Currency.KPW
- - qudt:applicableUnit :: cim:Currency.XCD
- - qudt:applicableUnit :: cim:Currency.BSD
- - qudt:applicableUnit :: cim:Currency.DOP
- - qudt:applicableUnit :: cim:Currency.MVR
  - qudt:applicableUnit :: cim:Currency.XOF
- - qudt:applicableUnit :: cim:Currency.ZWL
- - qudt:applicableUnit :: cim:Currency.XPF
- - qudt:applicableUnit :: cim:Currency.NOK
- - qudt:applicableUnit :: cim:Currency.CNY
- - qudt:applicableUnit :: cim:Currency.MNT
- - qudt:applicableUnit :: cim:Currency.CVE
- - qudt:applicableUnit :: cim:Currency.BZD
- - qudt:applicableUnit :: cim:Currency.SRD
- - qudt:applicableUnit :: cim:Currency.GEL
- - qudt:applicableUnit :: cim:Currency.KGS
- - qudt:applicableUnit :: cim:Currency.GBP
- - qudt:applicableUnit :: cim:Currency.NZD
- - qudt:applicableUnit :: cim:Currency.JMD
- - qudt:applicableUnit :: cim:Currency.HNL
- - qudt:applicableUnit :: cim:Currency.MZN
- - qudt:applicableUnit :: cim:Currency.DJF
+ - qudt:applicableUnit :: cim:Currency.KES
  - qudt:applicableUnit :: cim:Currency.ETB
- - qudt:applicableUnit :: cim:Currency.JOD
- - qudt:applicableUnit :: cim:Currency.COP
- - qudt:applicableUnit :: cim:Currency.SBD
- - qudt:applicableUnit :: cim:Currency.TZS
+ - qudt:applicableUnit :: cim:Currency.USD
+ - qudt:applicableUnit :: cim:Currency.SZL
  - qudt:applicableUnit :: cim:Currency.VUV
- - qudt:applicableUnit :: cim:Currency.AFN
- - qudt:applicableUnit :: cim:Currency.KMF
- - qudt:applicableUnit :: cim:Currency.RSD
- - qudt:applicableUnit :: cim:Currency.SGD
- - qudt:applicableUnit :: cim:Currency.FJD
- - qudt:applicableUnit :: cim:Currency.VND
- - qudt:applicableUnit :: cim:Currency.GNF
- - qudt:applicableUnit :: cim:Currency.KZT
- - qudt:applicableUnit :: cim:Currency.SEK
+ - qudt:applicableUnit :: cim:Currency.KRW
+ - qudt:applicableUnit :: cim:Currency.AMD
+ - qudt:applicableUnit :: cim:Currency.KGS
+ - qudt:applicableUnit :: cim:Currency.KPW
+ - qudt:applicableUnit :: cim:Currency.MXN
+ - qudt:applicableUnit :: cim:Currency.CZK
+ - qudt:applicableUnit :: cim:Currency.EGP
+ - qudt:applicableUnit :: cim:Currency.DKK
  - qudt:applicableUnit :: cim:Currency.TND
+ - qudt:applicableUnit :: cim:Currency.ARS
+ - qudt:applicableUnit :: cim:Currency.JPY
+ - rdfs:comment :: "Amount of money."@en
+ - qudt:applicableUnit :: cim:Currency.SGD
+ - qudt:applicableUnit :: cim:Currency.BND
+ - qudt:applicableUnit :: cim:Currency.BHD
+ - qudt:applicableUnit :: cim:Currency.BOV
+ - qudt:applicableUnit :: cim:Currency.DJF
+ - qudt:applicableUnit :: cim:Currency.BSD
+ - qudt:applicableUnit :: cim:Currency.MDL
+ - qudt:applicableUnit :: cim:Currency.LKR
+ - qudt:applicableUnit :: cim:Currency.MMK
+ - qudt:applicableUnit :: cim:Currency.SRD
+ - qudt:applicableUnit :: cim:Currency.PYG
+ - qudt:applicableUnit :: cim:Currency.LSL
+ - qudt:applicableUnit :: cim:Currency.COU
+ - qudt:applicableUnit :: cim:Currency.SHP
+ - qudt:applicableUnit :: cim:Currency.MNT
+ - qudt:applicableUnit :: cim:Currency.FKP
+ - qudt:applicableUnit :: cim:Currency.HRK
+ - qudt:applicableUnit :: cim:Currency.AED
+ - qudt:applicableUnit :: cim:Currency.KWD
+ - qudt:applicableUnit :: cim:Currency.XPF
+ - qudt:applicableUnit :: cim:Currency.TOP
+ - qudt:applicableUnit :: cim:Currency.ZAR
+ - qudt:applicableUnit :: cim:Currency.NOK
+ - qudt:applicableUnit :: cim:Currency.YER
+ - qudt:applicableUnit :: cim:Currency.UAH
+ - qudt:applicableUnit :: cim:Currency.NIO
+ - qudt:applicableUnit :: cim:Currency.ZWL
+ - qudt:applicableUnit :: cim:Currency.AOA
+ - qudt:applicableUnit :: cim:Currency.NZD
+ - qudt:applicableUnit :: cim:Currency.RUB
+ - qudt:applicableUnit :: cim:Currency.INR
+ - qudt:applicableUnit :: cim:Currency.CRC
+ - qudt:applicableUnit :: cim:Currency.PLN
+ - qudt:applicableUnit :: cim:Currency.MUR
+ - qudt:applicableUnit :: cim:Currency.MRO
+ - qudt:applicableUnit :: cim:Currency.SEK
+ - qudt:applicableUnit :: cim:Currency.GIP
+ - qudt:applicableUnit :: cim:Currency.CHF
+ - qudt:applicableUnit :: cim:Currency.GMD
+ - qudt:applicableUnit :: cim:Currency.CAD
+ - qudt:applicableUnit :: cim:Currency.ZMK
+ - qudt:applicableUnit :: cim:Currency.IDR
+ - qudt:applicableUnit :: cim:Currency.CUP
+ - qudt:applicableUnit :: cim:Currency.SCR
+ - qudt:applicableUnit :: cim:Currency.MGA
+ - qudt:applicableUnit :: cim:Currency.CLF
+ - qudt:applicableUnit :: cim:Currency.GNF
+ - qudt:applicableUnit :: cim:Currency.SDG
+ - qudt:applicableUnit :: cim:Currency.BWP
+ - qudt:applicableUnit :: cim:Currency.FJD
+ - qudt:applicableUnit :: cim:Currency.PHP
+ - qudt:applicableUnit :: cim:Currency.UGX
+ - qudt:applicableUnit :: cim:Currency.NGN
+ - qudt:applicableUnit :: cim:Currency.MKD
+ - qudt:applicableUnit :: cim:Currency.SBD
+ - qudt:applicableUnit :: cim:Currency.BMD
+ - qudt:applicableUnit :: cim:Currency.MOP
+ - qudt:applicableUnit :: cim:Currency.OMR
+ - qudt:applicableUnit :: cim:Currency.AZN
+ - qudt:applicableUnit :: cim:Currency.LYD
+ - qudt:applicableUnit :: cim:Currency.ANG
  - qudt:applicableUnit :: cim:Currency.TWD
  - qudt:applicableUnit :: cim:Currency.ISK
- - qudt:applicableUnit :: cim:Currency.JPY
- - qudt:applicableUnit :: cim:Currency.BBD
- - qudt:applicableUnit :: cim:Currency.HUF
- - qudt:applicableUnit :: cim:Currency.BAM
- - qudt:applicableUnit :: cim:Currency.MYR
- - qudt:applicableUnit :: cim:Currency.TTD
- - qudt:applicableUnit :: cim:Currency.GMD
- - qudt:applicableUnit :: cim:Currency.ALL
- - qudt:applicableUnit :: cim:Currency.GIP
- - qudt:applicableUnit :: cim:Currency.AMD
- - qudt:applicableUnit :: cim:Currency.USD
- - qudt:applicableUnit :: cim:Currency.OMR
- - qudt:applicableUnit :: cim:Currency.MWK
- - qudt:applicableUnit :: cim:Currency.IRR
- - qudt:applicableUnit :: cim:Currency.BND
- - qudt:applicableUnit :: cim:Currency.CZK
- - qudt:applicableUnit :: cim:Currency.AOA
- - qudt:applicableUnit :: cim:Currency.HKD
- - qudt:applicableUnit :: cim:Currency.MGA
- - qudt:applicableUnit :: cim:Currency.TJS
- - qudt:applicableUnit :: cim:Currency.UAH
- - qudt:applicableUnit :: cim:Currency.TOP
- - qudt:applicableUnit :: cim:Currency.BYR
- - qudt:applicableUnit :: cim:Currency.RUB
- - qudt:applicableUnit :: cim:Currency.NIO
- - qudt:applicableUnit :: cim:Currency.ZMK
- - qudt:applicableUnit :: cim:Currency.ARS
- - qudt:applicableUnit :: cim:Currency.EGP
- - qudt:applicableUnit :: cim:Currency.THB
- - qudt:applicableUnit :: cim:Currency.CUP
- - qudt:applicableUnit :: cim:Currency.STD
- - rdfs:label :: Money
- - qudt:applicableUnit :: cim:Currency.KRW
- - qudt:applicableUnit :: cim:Currency.SYP
- - qudt:applicableUnit :: cim:Currency.SHP
- - qudt:applicableUnit :: cim:Currency.BMD
+ - qudt:applicableUnit :: cim:Currency.LBP
+ - qudt:applicableUnit :: cim:Currency.AUD
+ - skos:exactMatch :: quantitykind:Currency
+ - qudt:applicableUnit :: cim:Currency.MVR
  - qudt:applicableUnit :: cim:Currency.CUC
- - qudt:applicableUnit :: cim:Currency.LSL
- - qudt:applicableUnit :: cim:Currency.ZAR
+ - qudt:applicableUnit :: cim:Currency.MWK
+ - qudt:applicableUnit :: cim:Currency.MZN
  - qudt:applicableUnit :: cim:Currency.EUR
- - qudt:applicableUnit :: cim:Currency.LYD
+ - qudt:applicableUnit :: cim:Currency.GBP
+ - qudt:applicableUnit :: cim:Currency.THB
+ - qudt:applicableUnit :: cim:Currency.DOP
+ - qudt:applicableUnit :: cim:Currency.NAD
+ - qudt:applicableUnit :: cim:Currency.BOB
+ - qudt:applicableUnit :: cim:Currency.TMT
+ - qudt:applicableUnit :: cim:Currency.BTN
+ - qudt:applicableUnit :: cim:Currency.EEK
+ - qudt:applicableUnit :: cim:Currency.SAR
+ - qudt:applicableUnit :: cim:Currency.QAR
+ - qudt:applicableUnit :: cim:Currency.TJS
+ - qudt:applicableUnit :: cim:Currency.MYR
+ - qudt:applicableUnit :: cim:Currency.IQD
+ - qudt:applicableUnit :: cim:Currency.VND
+ - qudt:applicableUnit :: cim:Currency.GEL
+ - qudt:applicableUnit :: cim:Currency.RWF
+ - qudt:applicableUnit :: cim:Currency.CNY
+ - qudt:applicableUnit :: cim:Currency.BIF
+ - qudt:applicableUnit :: cim:Currency.MAD
+ - qudt:applicableUnit :: cim:Currency.LRD
+ - qudt:applicableUnit :: cim:Currency.KHR
+ - qudt:applicableUnit :: cim:Currency.LTL
+ - qudt:applicableUnit :: cim:Currency.SOS
+ - qudt:applicableUnit :: cim:Currency.GHS
+ - qudt:applicableUnit :: cim:Currency.HUF
+ - qudt:applicableUnit :: cim:Currency.BRL
+ - qudt:applicableUnit :: cim:Currency.GTQ
+ - qudt:applicableUnit :: cim:Currency.SYP
+ - qudt:applicableUnit :: cim:Currency.TRY
+ - qudt:applicableUnit :: cim:Currency.ILS
+ - qudt:applicableUnit :: cim:Currency.RSD
+ - qudt:applicableUnit :: cim:Currency.NPR
+ - qudt:applicableUnit :: cim:Currency.UYU
  - qudt:applicableUnit :: cim:Currency.CLP
- - qudt:applicableUnit :: cim:Currency.AWG
- - qudt:applicableUnit :: cim:Currency.KES
- - qudt:applicableUnit :: cim:Currency.LAK
- - qudt:applicableUnit :: cim:Currency.XAF
- - qudt:applicableUnit :: cim:Currency.MXN
+ - qudt:applicableUnit :: cim:Currency.AFN
+ - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - qudt:applicableUnit :: cim:Currency.CVE
+ - qudt:applicableUnit :: cim:Currency.BBD
+ - qudt:applicableUnit :: cim:Currency.LVL
+ - qudt:applicableUnit :: cim:Currency.PAB
+ - qudt:applicableUnit :: cim:Currency.KMF
+ - qudt:applicableUnit :: cim:Currency.TTD
+ - qudt:applicableUnit :: cim:Currency.SLL
  - qudt:applicableUnit :: cim:Currency.GYD
- - qudt:applicableUnit :: cim:Currency.SZL
+ - qudt:applicableUnit :: cim:Currency.HTG
+ - qudt:applicableUnit :: cim:Currency.JOD
+ - rdfs:label :: Money
+ - qudt:applicableUnit :: cim:Currency.KYD
+ - qudt:applicableUnit :: cim:Currency.LAK
+ - qudt:applicableUnit :: cim:Currency.KZT
+ - qudt:applicableUnit :: cim:Currency.JMD
+ - qudt:applicableUnit :: cim:Currency.ALL
+ - qudt:applicableUnit :: cim:Currency.UZS
+ - qudt:applicableUnit :: cim:Currency.WST
+ - qudt:applicableUnit :: cim:Currency.HNL
+ - qudt:applicableUnit :: cim:Currency.ERN
+ - qudt:applicableUnit :: cim:Currency.DZD
+ - qudt:applicableUnit :: cim:Currency.STD
+ - qudt:applicableUnit :: cim:Currency.XAF
+ - qudt:applicableUnit :: cim:Currency.PEN
+ - qudt:applicableUnit :: cim:Currency.HKD
+ - qudt:applicableUnit :: cim:Currency.IRR
+ - qudt:applicableUnit :: cim:Currency.VEF
+ - qudt:applicableUnit :: cim:Currency.CDF
+ - qudt:applicableUnit :: cim:Currency.XCD
+ - qudt:applicableUnit :: cim:Currency.BAM
+ - qudt:applicableUnit :: cim:Currency.COP
+ - qudt:applicableUnit :: cim:Currency.BDT
+ - qudt:applicableUnit :: cim:Currency.PKR
+ - qudt:applicableUnit :: cim:Currency.AWG
+ - qudt:applicableUnit :: cim:Currency.BYR
+ - qudt:applicableUnit :: cim:Currency.TZS
+ - qudt:applicableUnit :: cim:Currency.BZD
+ - qudt:applicableUnit :: cim:Currency.BGN
+ - qudt:applicableUnit :: cim:Currency.PGK
  - qudt:applicableUnit :: cim:Currency.RON
- - qudt:applicableUnit :: cim:Currency.IDR
 
 **** PerCent (cim:PerCent)
  - Types :: qudt:QuantityKind
  - rdfs:comment :: "Percentage on a defined base.   For example, specify as 100 to indicate at the defined base."@en
- - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - skos:exactMatch :: quantitykind:DimensionlessRatio
  - qudt:applicableUnit :: cim:UnitSymbol.none
  - rdfs:label :: PerCent
- - skos:exactMatch :: quantitykind:DimensionlessRatio
+ - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
 
 **** Reactance (cim:Reactance)
  - Types :: qudt:QuantityKind
- - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - rdfs:comment :: "Reactance (imaginary part of impedance), at rated frequency."@en
- - qudt:applicableUnit :: cim:UnitSymbol.ohm
- - skos:exactMatch :: quantitykind:Reactance
  - rdfs:label :: Reactance
+ - qudt:applicableUnit :: cim:UnitSymbol.ohm
+ - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - skos:exactMatch :: quantitykind:Reactance
 
 **** ReactivePower (cim:ReactivePower)
  - Types :: qudt:QuantityKind
- - rdfs:comment :: "Product of RMS value of the voltage and the RMS value of the quadrature component of the current."@en
- - skos:exactMatch :: quantitykind:ReactivePower
- - rdfs:label :: ReactivePower
- - qudt:applicableUnit :: cim:UnitSymbol.VAr
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - rdfs:label :: ReactivePower
+ - skos:exactMatch :: quantitykind:ReactivePower
+ - rdfs:comment :: "Product of RMS value of the voltage and the RMS value of the quadrature component of the current."@en
+ - qudt:applicableUnit :: cim:UnitSymbol.VAr
 
 **** RealEnergy (cim:RealEnergy)
  - Types :: qudt:QuantityKind
- - rdfs:label :: RealEnergy
  - rdfs:comment :: "Real electrical energy."@en
+ - rdfs:label :: RealEnergy
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - qudt:applicableUnit :: cim:UnitSymbol.Wh
  - skos:exactMatch :: quantitykind:Energy
 
 **** Resistance (cim:Resistance)
  - Types :: qudt:QuantityKind
+ - rdfs:comment :: "Resistance (real part of impedance)."@en
  - rdfs:label :: Resistance
  - qudt:applicableUnit :: cim:UnitSymbol.ohm
  - skos:exactMatch :: quantitykind:Resistance
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
- - rdfs:comment :: "Resistance (real part of impedance)."@en
 
 **** RotationSpeed (cim:RotationSpeed)
  - Types :: qudt:QuantityKind
- - rdfs:label :: RotationSpeed
- - rdfs:comment :: "Number of revolutions per second."@en
- - qudt:applicableUnit :: cim:UnitSymbol.Hz
- - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - skos:exactMatch :: quantitykind:AngularVelocity
+ - rdfs:comment :: "Number of revolutions per second."@en
+ - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - rdfs:label :: RotationSpeed
+ - qudt:applicableUnit :: cim:UnitSymbol.Hz
 
 **** Seconds (cim:Seconds)
  - Types :: qudt:QuantityKind
- - skos:exactMatch :: quantitykind:Time
- - rdfs:comment :: "Time, in seconds."@en
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
- - qudt:applicableUnit :: cim:UnitSymbol.s
  - rdfs:label :: Seconds
+ - qudt:applicableUnit :: cim:UnitSymbol.s
+ - rdfs:comment :: "Time, in seconds."@en
+ - skos:exactMatch :: quantitykind:Time
 
 **** Susceptance (cim:Susceptance)
  - Types :: qudt:QuantityKind
- - skos:exactMatch :: quantitykind:Susceptance
- - rdfs:label :: Susceptance
+ - qudt:applicableUnit :: cim:UnitSymbol.S
  - rdfs:comment :: "Imaginary part of admittance."@en
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
- - qudt:applicableUnit :: cim:UnitSymbol.S
+ - skos:exactMatch :: quantitykind:Susceptance
+ - rdfs:label :: Susceptance
 
 **** Voltage (cim:Voltage)
  - Types :: qudt:QuantityKind
  - rdfs:comment :: "Electrical voltage, can be both AC and DC."@en
- - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
- - rdfs:label :: Voltage
  - qudt:applicableUnit :: cim:UnitSymbol.V
  - skos:exactMatch :: quantitykind:Voltage
+ - rdfs:label :: Voltage
+ - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
 
 **** VoltagePerReactivePower (cim:VoltagePerReactivePower)
  - Types :: qudt:QuantityKind
- - qudt:applicableUnit :: cim:UnitSymbol.VPerVAr
- - skos:exactMatch :: quantitykind:VoltagePerReactivePower
  - rdfs:label :: VoltagePerReactivePower
- - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - rdfs:comment :: "Voltage variation with reactive power."@en
+ - skos:exactMatch :: quantitykind:VoltagePerReactivePower
+ - qudt:applicableUnit :: cim:UnitSymbol.VPerVAr
+ - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
 
 
 
