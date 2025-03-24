@@ -268,13 +268,15 @@ The function is used to check whether the list contains ELT."
       (substring-no-properties (org-element-interpret-data (org-element-property :tag x)))))
 (defun elot-org-elt-item-pars-str (x)
   "For an item X in an `org-element-map', return the paragraphs as one string."
-  (replace-regexp-in-string " *\\([^
-]\\)\n[ \t]*" "\\1:newline:"
- (string-trim (apply #'concat
+  (string-join 
+   (split-string
+    (string-trim (apply #'concat
                      (org-element-map x '(paragraph plain-list)
                        (lambda (y) (substring-no-properties
                                     (org-element-interpret-data y)))
-                       nil nil 'plain-list)))))
+                       nil nil 'plain-list)))
+    "[ \t]*\n[ \t]*" nil)
+   ":newline: "))
 (defun elot-org-elt-item-str (x)
   "For X in an `org-element-map', return pair of strings (tag, paragraph content)."
   (list (elot-org-elt-item-tag-str x) (elot-org-elt-item-pars-str x)))
@@ -342,65 +344,67 @@ unless it is an ontology section."
 (defconst elot-puri-re "^\\([-a-z_A-Z0-9]*\\):\\([a-z_A-Z0-9.:-]*\\)$")
 
 (defun elot-unprefix-uri (puri abbrev-alist)
-	"Replace prefix in PURI with full form from ABBREV-ALIST, if there's a match."
-	(if (eq abbrev-alist nil) puri
-		(if (string-match elot-puri-re puri)
-				(let* ((this-prefix (match-string-no-properties 1 puri))
-							 (this-localname (match-string-no-properties 2 puri))
-							 (this-ns (cdr (assoc this-prefix abbrev-alist))))
-					(if this-ns
-							(concat "<" this-ns this-localname ">")
-						puri))
-			puri)))
+ "Replace prefix in PURI with full form from ABBREV-ALIST, if there's a match."
+ (if (eq abbrev-alist nil) puri
+  (if (string-match elot-puri-re puri)
+    (let* ((this-prefix (match-string-no-properties 1 puri))
+        (this-localname (match-string-no-properties 2 puri))
+        (this-ns (cdr (assoc this-prefix abbrev-alist))))
+     (if this-ns
+       (concat "<" this-ns this-localname ">")
+      puri))
+   puri)))
 
 (defun elot-annotation-string-or-uri (str)
-	"Expand STR to be used as an annotation value in Manchester Syntax.
+  "Expand STR to be used as an annotation value in Manchester Syntax.
 Expand uri, or return number, or wrap in quotes."
-	;; maybe this entry contains string representation of meta-annotations, remove them
-	(setq str (replace-regexp-in-string " - [^ ]+ ::.*$" "" str))
-	;; maybe there's macros in the string, expand them
-	(if (string-match "{{{.+}}}" str)
-			(let ((omt org-macro-templates))
-				(with-temp-buffer (org-mode)
-													(insert str) (org-macro-replace-all omt)
-													(setq str (buffer-string)))))
-	(cond (; a number -- return the string
-				 (string-match "^[[:digit:]]+[.]?[[:digit:]]*$" str)
-				 (concat "  " str))
-				(; a bare URI, which org-mode wraps in double brackets -- wrap in angles
-				 (string-match "^[[][[]\\(http[^ ]*\\)[]][]]$" str)
-				 (concat "  <" (match-string 1 str) ">"))
-				(; a bare URI, but no double brackets -- wrap in angles
-				 (string-match "^\\(http[^ ]*\\)$" str)
-				 (concat "  <" (match-string 1 str) ">"))
-				(; a bare URI, in angles
-				 (string-match "^\\(<http[^ ]*>\\)$" str)
-				 (concat "  " (match-string 1 str)))
-				(; a bare URN, in angles
-				 (string-match "^\\(<urn:[^ ]*>\\)$" str)
-				 (concat "  " (match-string 1 str)))
-				(; true -- make it an explicit boolean
-				 (string-match "^true$" str) " \"true\"^^xsd:boolean")
-				(; false -- make it an explicit boolean
-				 (string-match "^false$" str) " \"false\"^^xsd:boolean")
-				(; string with datatype -- return unchanged
-				 (string-match "^\".*\"^^[-_[:alnum:]]*:[-_[:alnum:]]+$" str)
-				 (concat "  " str))
-				(; not a puri -- normal string, wrap in quotes
-				 (equal str (elot-unprefix-uri str org-link-abbrev-alist-local))
-				 ;; if a language tag @en is present, return unchanged
-				 (replace-regexp-in-string ":newline:" "\n"
-																	 (if (string-match "\"\\(.*\n\\)*.*\"@[a-z]+" str)
-																			 (concat " " str)
-																		 ;; escape all quotes with \", note this gives invalid results if some are already escaped
-																		 (concat "  \"" (replace-regexp-in-string "\"" "\\\\\"" str) "\""))))
-				(; else, a puri -- wrap in angles
-				 t (concat "  " (elot-unprefix-uri str org-link-abbrev-alist-local)))))
+  ;; maybe this entry contains string representation of meta-annotations, remove them
+  (setq str (replace-regexp-in-string " - [^ ]+ ::.*$" "" str))
+  ;; maybe there's macros in the string, expand them
+  (if (string-match "{{{.+}}}" str)
+      (let ((omt org-macro-templates))
+        (with-temp-buffer (org-mode)
+                          (insert str) (org-macro-replace-all omt)
+                          (setq str (buffer-string)))))
+  (cond (; a number -- return the string
+         (string-match "^[[:digit:]]+[.]?[[:digit:]]*$" str)
+         (concat "  " str))
+        (; a bare URI, which org-mode wraps in double brackets -- wrap in angles
+         (string-match "^[[][[]\\(http[^ ]*\\)[]][]]$" str)
+         (concat "  <" (match-string 1 str) ">"))
+        (; a bare URI, but no double brackets -- wrap in angles
+         (string-match "^\\(http[^ ]*\\)$" str)
+         (concat "  <" (match-string 1 str) ">"))
+        (; a bare URI, in angles
+         (string-match "^\\(<http[^ ]*>\\)$" str)
+         (concat "  " (match-string 1 str)))
+        (; a bare URN, in angles
+         (string-match "^\\(<urn:[^>]+>\\)$" str)
+         (concat "  " (match-string 1 str)))
+        (; true -- make it an explicit boolean
+         (string-match "^true$" str) " \"true\"^^xsd:boolean")
+        (; false -- make it an explicit boolean
+         (string-match "^false$" str) " \"false\"^^xsd:boolean")
+        (; string with datatype -- return unchanged
+         (string-match "^\".*\"^^[-_[:alnum:]]*:[-_[:alnum:]]+$" str)
+         (concat "  " str))
+        (; not a puri -- normal string, wrap in quotes
+         (equal str (elot-unprefix-uri str org-link-abbrev-alist-local))
+         ;; if a language tag @en is present, return unchanged
+         (replace-regexp-in-string ":newline:" ""
+                                   (replace-regexp-in-string
+                                    ":newline: " "\n"
+                                    (if (string-match "\"\\(.*\n\\)*.*\"@[a-z]+" str)
+                                        (concat " " str)
+                                      ;; escape all quotes with \", note this gives invalid results if some are already escaped
+                                      (concat "  \"" (replace-regexp-in-string "\"" "\\\\\"" str) "\"")))))
+        (; else, a puri -- wrap in angles
+         t (concat "  " (elot-unprefix-uri str org-link-abbrev-alist-local)))))
 
 (defun elot-omn-restriction-string (str)
-	"STR is wanted as an OMN value.  Strip any meta-annotations, or return unchanged."
-	(setq str (replace-regexp-in-string " - [^ ]+ ::.*$" "" str))
-	(replace-regexp-in-string ":newline:" "\n" str))
+ "STR is wanted as an OMN value.  Strip any meta-annotations, or return unchanged."
+ (setq str (replace-regexp-in-string " - [^ ]+ ::.*$" "" str))
+ (replace-regexp-in-string ":newline:" "\n" str))
 ;; src-puri-expand ends here
 
 ;; [[file:../elot-defs.org::src-heading-to-list][src-heading-to-list]]
@@ -432,7 +436,7 @@ Note, you can always (goto-char (point-min)) to collect all siblings."
 (defun elot-entity-from-header (str)
   "From header string STR return a CURIE or a full-form URI in angle brackets."
   (let* ((curie-regex "[-_./[:alnum:]]*:[-_/.[:alnum:]]*")
-         (full-uri-regex "http[s]?://[-A-Za-z0-9._~:/?#\\@!$&'()*+,;=%]*"))
+         (full-uri-regex "http[s]?://[-[:alnum:]._~:/?#\\@!$&'()*+,;=%]*"))
     (cond
      ;; single URI, beginning of line
      ((string-match (format "^<?\\(%s\\)>?" full-uri-regex) str)
@@ -529,7 +533,7 @@ This is a helper function for `elot-resource-declarations'."
          (suri (elot-entity-from-header str))
          (prefix (if (string-match "\\(.*\\):\\(.*\\)" suri)
                      (match-string 1 suri) ""))
-         (localname (if (string= prefix "") suri (match-string 2 suri)))
+         (localname (match-string 2 suri))
          (label (if (string-match "\\(.+\\) (.*)" str)
                     (match-string 1 str) localname))
          (resource-annotations
@@ -916,12 +920,12 @@ Return output file name."
 ;; [[file:../elot-defs.org::src-tempo-docheader][src-tempo-docheader]]
 (tempo-define-template "elot-doc-header"
                        '("# -*- eval: (load-library \"elot-defaults\") -*-" > n
-      	               "#+title: " (p "Document title: " doctitle) > n
-      	               "#+subtitle: An OWL ontology" > n
-      	               "#+author: " (p "Author name: " authname) > n
-      	               "#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
+    	                 "#+title: " (p "Document title: " doctitle) > n
+    	                 "#+subtitle: An OWL ontology" > n
+    	                 "#+author: " (p "Author name: " authname) > n
+    	                 "#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
                          "#+call: theme-readtheorg()" n n
-      	               (progn (load-library "elot-defaults") (message "Loaded ELOT") ""))
+    	                 (progn (load-library "elot-defaults") (message "Loaded ELOT") ""))
                        "<odh"
                        "ELOT document header"
                        'org-tempo-tags)
