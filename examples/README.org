@@ -8,6 +8,8 @@ These examples are generated with the ~elot-exporter~ (see https://github.com/jo
 java -jar elot-exporter-0.3-SNAPSHOT.jar ontology.ttl > ontology.org
 #+end_src
 
+[[file:plant-ontology.png]]
+
 ** Cell Ontology
 [[./cl-basic.org][cl-basic.org]]: 2.2Mb
 
