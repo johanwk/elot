@@ -314,13 +314,15 @@ the ID string.
         (substring-no-properties (org-element-interpret-data (org-element-property :tag x)))))
   (defun elot-org-elt-item-pars-str (x)
     "For an item X in an `org-element-map', return the paragraphs as one string."
-    (replace-regexp-in-string " *\\([^
-  ]\\)\n[ \t]*" "\\1:newline:"
-   (string-trim (apply #'concat
+    (string-join 
+     (split-string
+      (string-trim (apply #'concat
                        (org-element-map x '(paragraph plain-list)
                          (lambda (y) (substring-no-properties
                                       (org-element-interpret-data y)))
-                         nil nil 'plain-list)))))
+                         nil nil 'plain-list)))
+      "[ \t]*\n[ \t]*" nil)
+     ":newline: "))
   (defun elot-org-elt-item-str (x)
     "For X in an `org-element-map', return pair of strings (tag, paragraph content)."
     (list (elot-org-elt-item-tag-str x) (elot-org-elt-item-pars-str x)))
@@ -437,7 +439,7 @@ the ID string.
       (; not a puri -- normal string, wrap in quotes
        (equal str (elot-unprefix-uri str org-link-abbrev-alist-local))
        ;; if a language tag @en is present, return unchanged
-       (replace-regexp-in-string ":newline:" "\n"
+       (replace-regexp-in-string ":newline:" "" (replace-regexp-in-string ":newline: " "\n"
             (if (string-match "\"\\(.*\n\\)*.*\"@[a-z]+" str)
                       (concat " " str)
                      ;; escape all quotes with \", note this gives invalid results if some are already escaped
@@ -590,7 +592,7 @@ annotations in a future improved version, from sub-items.
            (suri (elot-entity-from-header str))
            (prefix (if (string-match "\\(.*\\):\\(.*\\)" suri)
                        (match-string 1 suri) ""))
-           (localname (if (string= prefix "") suri (match-string 2 suri)))
+           (localname (match-string 2 suri))
            (label (if (string-match "\\(.+\\) (.*)" str)
                       (match-string 1 str) localname))
            (resource-annotations
