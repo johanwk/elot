@@ -572,7 +572,7 @@ resource type, is `<ontology>-class-hierarchy' for the Class outline,
 and accordingly for `object-property', `data-property', and
 `annotation-property'; for individuals, `<ontology>-individuals'."
   (save-excursion
-    (org-id-goto header-id)
+    (elot-org-link-search header-id)
     (let ((entity-l (elot-org-subsection-descriptions)))
       (if (or entity-l (string= owl-type "Ontology"))
           (elot-resource-declarations entity-l owl-type)
@@ -740,7 +740,7 @@ resource type, is `<ontology>-class-hierarchy' for the Class outline,
 and accordingly for `object-property', `data-property', and
 `annotation-property'."
   (save-excursion
-    (org-id-goto header-id)
+    (elot-org-link-search header-id)
     (if (org-goto-first-child)
         (let ((hierarchy-l (elot-org-list-siblings)))
           (elot-resource-taxonomy-from-l hierarchy-l owl-type owl-relation))

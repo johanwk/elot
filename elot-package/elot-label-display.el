@@ -52,6 +52,14 @@ Arguments are a list SUBSECTION-DESCRIPTIONS produced by
                (append `("rdf:label" ,label "rdf:type" ,owl-type) annotations-plist))))
           subsection-descriptions))
 
+(defun elot-org-link-search (&rest strings)
+  "Search for a `custom_id' heading in current buffer.
+The concatenation of STRINGS is searched using `org-link-search'.
+Return `nil'."
+  (prog1 nil
+    (ignore-errors (org-link-search (concat "#"
+                                            (apply #'concat strings))))))
+
 (defun elot-slurp-entities ()
   "Return a list of lists (URI, label, plist of attributes).
 Uses `elot-org-subsection-descriptions' to read class, property, and
@@ -59,14 +67,14 @@ individual sections from an ELOT buffer.  If not in an ELOT buffer,
 read using `elot-slurp-global'"
   (save-excursion
     (goto-char (point-min))
-    (if (search-forward ":ELOT-context-type: ontology" nil :noerror)
+    (if (re-search-forward ":ELOT-context-type: ontology" nil :noerror)
         (let ((context (elot-context-localname)))
           (append
-           (org-id-goto (concat context "-class-hierarchy")) (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:Class")
-           (org-id-goto (concat context "-object-property-hierarchy")) (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:ObjectProperty")
-           (org-id-goto (concat context "-data-property-hierarchy")) (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:DatatypeProperty")
-           (org-id-goto (concat context "-annotation-property-hierarchy")) (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:AnnotationProperty")
-           (org-id-goto (concat context "-individuals")) (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:NamedIndividual")))
+           (elot-org-link-search context "-class-hierarchy")               (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:Class")
+           (elot-org-link-search context "-object-property-hierarchy")     (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:ObjectProperty")
+           (elot-org-link-search context "-data-property-hierarchy")       (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:DatatypeProperty")
+           (elot-org-link-search context "-annotation-property-hierarchy") (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:AnnotationProperty")
+           (elot-org-link-search context "-individuals")                   (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:NamedIndividual")))
       '())))
 
 (defun elot-codelist-from-slurp (slurp)
