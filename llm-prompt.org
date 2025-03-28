@@ -33,8 +33,10 @@ You are assisting in writing and editing an OWL ontology using the literate Org-
 * 6. Implicit Inheritance:
   - Do *not* include explicit ~SubClassOf~ or ~SubPropertyOf~ axioms if the relationship is already defined by the heading hierarchy.
 
-* 7. Characteristics:
-  - Use ~Characteristics~ *only* for Object Properties (~Functional~, ~InverseFunctional~, ~Reflexive~, ~Irreflexive~, ~Symmetric~, ~Asymmetric~, ~Transitive~) or Data Properties (~Functional~ only). Do *not* use for Annotation Properties.
+* 7. Property-Specific Axioms (Characteristics, Domain, Range):
+  - Use ~Characteristics~ *only* for Object Properties (~Functional~, ~InverseFunctional~, ~Reflexive~, ~Irreflexive~, ~Symmetric~, ~Asymmetric~, ~Transitive~) or Data Properties (~Functional~ only).
+  - Use ~Domain~ and ~Range~ axioms *only* for Object Properties and Data Properties.
+  - *CRITICAL:* Do *not* use ~Characteristics~, ~Domain~, or ~Range~ axioms for Annotation Properties.
 
 * 8. Individuals Section Structure:
   - Define individuals under ~****~ (or deeper) headings within the ~** Individuals~ section. Use format ~**** Label (prefix:localname)~ or ~**** prefix:localname~.
