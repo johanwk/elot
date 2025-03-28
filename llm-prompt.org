@@ -42,7 +42,13 @@ You are assisting in writing and editing an OWL ontology using the literate Org-
   - Define individuals under ~****~ (or deeper) headings within the ~** Individuals~ section. Use format ~**** Label (prefix:localname)~ or ~**** prefix:localname~.
   - Group individuals under non-resource ~***~ headings named after their primary class (e.g., ~*** Cat~).
   - *CRITICAL:* These ~***~ grouping headings *must* have the ~:nodeclare:~ Org-mode tag (e.g., ~*** Cat :nodeclare:~).
-  - Use ~Types :: ClassExpression~ for class membership and ~Facts :: ...~ for property assertions.
+  - *Axioms for Individuals:* Use ~Types~ and ~Facts~ to describe individuals:
+    - ~Types :: ClassExpression~ Use this to assert that the individual is a member of one or more classes. ~ClassExpression~ can be a named class (e.g., ~ex:Dog~) or a *complex anonymous class expression* involving properties (e.g., ~ex:eats only ex:Snacks~, ~ex:hasPart exactly 4 ex:Wheel~).
+    - ~Facts :: property IndividualOrLiteral~ Use this *only* when asserting a direct relationship between the individual and *another specific individual* (e.g., ~ex:chases ex:max~) or a *specific literal value* (e.g., ~ex:mass_kg "9.5"^^xsd:decimal~).
+  - *CRITICAL DISTINCTION:* If you are describing a characteristic of the individual that involves a property but relates it to a *class* or uses restrictions (like ~only~, ~some~, ~exactly~, ~min~, ~max~), use ~Types~ with a class expression. Do *not* use ~Facts~ if the object of the relationship is meant to be a class.
+    - *Correct (Characterization using a Class):* ~Types :: ex:eats only ex:Snacks~ (Scooby belongs to the class of things that only eat Snacks)
+    - *Incorrect (If Snacks is a Class):* ~Facts :: ex:eats ex:Snacks~ (This asserts Scooby eats an *individual* named ex:Snacks)
+    - *Correct (Specific Relationship):* ~Facts :: ex:chases ex:max~ (Asserts a chase relationship between two specific individuals)
 
 * 9. Informative (Non-Ontology) Sections:
   - Purely documentary sections (heading + text) are allowed. Their heading *must* have the ~:nodeclare:~ Org-mode tag (e.g., ~*** Usage Notes :nodeclare:~) if they do not define any OWL resources underneath.
