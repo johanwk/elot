@@ -55,7 +55,6 @@ in SPARQL select results.
    ;;; Code:
 #+end_src
 
-
 *** Require packages
 #+name: src-require
 #+begin_src emacs-lisp
@@ -1164,10 +1163,8 @@ Insert a skeleton with =<ods=.
        "  ## Ontology declaration" > n
        "  <<resource-declarations(hierarchy=\"" (s ontlocalname) "-ontology-declaration\", owl-type=\"Ontology\", owl-relation=\"\")>>" > n
        "" > n
-       "  ## Data type declarations" > n
-       "  Datatype: xsd:dateTime" > n
-       "  Datatype: xsd:date" > n
-       "  Datatype: xsd:boolean" > n
+       "  ## Datatype declarations" > n
+       "  <<resource-declarations(hierarchy=\"" (s ontlocalname) "-datatypes\", owl-type=\"Datatype\")>>" > n
        "" > n
        "  ## Class declarations" > n
        "  <<resource-declarations(hierarchy=\"" (s ontlocalname) "-class-hierarchy\", owl-type=\"Class\")>>" > n
@@ -1250,6 +1247,12 @@ Insert a skeleton with =<ods=.
    - dc:rights :: Copyright info here
    - dcterms:description :: The " (s ontlocalname) " ontology is ...
    - rdfs:comment :: The " (s ontlocalname) " ontology is ...
+  ,** Datatypes
+  :PROPERTIES:
+  :ID:       " (s ontlocalname) "-datatypes
+  :custom_id: " (s ontlocalname) "-datatypes
+  :resourcedefs: yes
+  :END:
   ,** Classes
   :PROPERTIES:
   :ID:       " (s ontlocalname) "-class-hierarchy

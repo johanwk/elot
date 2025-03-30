@@ -954,10 +954,8 @@ Return output file name."
      "  ## Ontology declaration" > n
      "  <<resource-declarations(hierarchy=\"" (s ontlocalname) "-ontology-declaration\", owl-type=\"Ontology\", owl-relation=\"\")>>" > n
      "" > n
-     "  ## Data type declarations" > n
-     "  Datatype: xsd:dateTime" > n
-     "  Datatype: xsd:date" > n
-     "  Datatype: xsd:boolean" > n
+     "  ## Datatype declarations" > n
+     "  <<resource-declarations(hierarchy=\"" (s ontlocalname) "-datatypes\", owl-type=\"Datatype\")>>" > n
      "" > n
      "  ## Class declarations" > n
      "  <<resource-declarations(hierarchy=\"" (s ontlocalname) "-class-hierarchy\", owl-type=\"Class\")>>" > n
@@ -1040,6 +1038,12 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - dc:rights :: Copyright info here
  - dcterms:description :: The " (s ontlocalname) " ontology is ...
  - rdfs:comment :: The " (s ontlocalname) " ontology is ...
+** Datatypes
+:PROPERTIES:
+:ID:       " (s ontlocalname) "-datatypes
+:custom_id: " (s ontlocalname) "-datatypes
+:resourcedefs: yes
+:END:
 ** Classes
 :PROPERTIES:
 :ID:       " (s ontlocalname) "-class-hierarchy
