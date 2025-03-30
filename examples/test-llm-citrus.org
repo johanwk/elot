@@ -1,0 +1,346 @@
+# -*- eval: (load-library "elot-defaults") -*-
+#+title: Citrus Ontology
+#+subtitle: An OWL Ontology about Citrus Fruits
+#+author: AI Assistant
+#+date: WIP (version of 2025-03-30 15:46)
+#+call: theme-readtheorg()
+
+
+* citrus
+:PROPERTIES:
+:ID: citrus
+:ELOT-context-type: ontology
+:ELOT-context-localname: citrus
+:ELOT-default-prefix: ex
+:header-args:omn: :tangle ./citrus.omn :noweb yes
+:header-args:emacs-lisp: :tangle no :exports results
+:header-args: :padline yes
+:END:
+:OMN:
+#+begin_src omn :exports none
+##
+## This is the citrus ontology
+## This document is in OWL 2 Manchester Syntax, see https://www.w3.org/TR/owl2-manchester-syntax/
+##
+
+## Prefixes
+<<omn-prefixes()>>
+
+## Ontology declaration
+<<resource-declarations(hierarchy="citrus-ontology-declaration", owl-type="Ontology", owl-relation="")>>
+
+## Datatype declarations
+<<resource-declarations(hierarchy="citrus-datatypes", owl-type="Datatype")>>
+
+## Class declarations
+<<resource-declarations(hierarchy="citrus-class-hierarchy", owl-type="Class")>>
+
+## Object property declarations
+<<resource-declarations(hierarchy="citrus-object-property-hierarchy", owl-type="ObjectProperty")>>
+
+## Data property declarations
+<<resource-declarations(hierarchy="citrus-data-property-hierarchy", owl-type="DataProperty")>>
+
+## Annotation property declarations
+<<resource-declarations(hierarchy="citrus-annotation-property-hierarchy", owl-type="AnnotationProperty")>>
+
+## Individual declarations
+<<resource-declarations(hierarchy="citrus-individuals", owl-type="Individual")>>
+
+## Resource taxonomies
+<<resource-taxonomy(hierarchy="citrus-class-hierarchy", owl-type="Class", owl-relation="SubClassOf")>>
+<<resource-taxonomy(hierarchy="citrus-object-property-hierarchy", owl-type="ObjectProperty", owl-relation="SubPropertyOf")>>
+<<resource-taxonomy(hierarchy="citrus-data-property-hierarchy", owl-type="DataProperty", owl-relation="SubPropertyOf")>>
+<<resource-taxonomy(hierarchy="citrus-annotation-property-hierarchy", owl-type="AnnotationProperty", owl-relation="SubPropertyOf")>>
+#+end_src
+:END:
+** Prefixes
+The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
+
+#+name: prefix-table
+#+attr_latex: :align lp{.8\textwidth} :font  mall
+#+caption: OWL ontology prefixes
+| prefix   | uri                                                                            |
+|----------+--------------------------------------------------------------------------------|
+| owl:     | http://www.w3.org/2002/07/owl#                                                 |
+| rdf:     | http://www.w3.org/1999/02/22-rdf-syntax-ns#                                    |
+| xml:     | http://www.w3.org/XML/1998/namespace                                           |
+| xsd:     | http://www.w3.org/2001/XMLSchema#                                              |
+| rdfs:    | http://www.w3.org/2000/01/rdf-schema#                                          |
+| skos:    | http://www.w3.org/2004/02/skos/core#                                           |
+| pav:     | http://purl.org/pav/                                                           |
+| foaf:    | http://xmlns.com/foaf/0.1/                                                     |
+| dc:      | http://purl.org/dc/elements/1.1/                                               |
+| dcterms: | http://purl.org/dc/terms/                                                      |
+| prov:    | http://www.w3.org/ns/prov#                                                     |
+| iof-av:  | https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/ |
+| ex:      | http://example.org/citrus/                                                     |
+*** Source blocks for prefixes                                     :noexport:
+:PROPERTIES:
+:header-args:omn: :tangle no
+:END:
+#+name: sparql-prefixes
+#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+  (elot-prefix-block-from-alist prefixes 'sparql)
+#+end_src
+#+name: omn-prefixes
+#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+  (elot-prefix-block-from-alist prefixes 'omn)
+#+end_src
+#+name: ttl-prefixes
+#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+  (elot-prefix-block-from-alist prefixes 'ttl)
+#+end_src
+
+** citrus ontology (ex:citrus ex:citrus/0.1)
+:PROPERTIES:
+:ID:       citrus-ontology-declaration
+:custom_id: citrus-ontology-declaration
+:resourcedefs: yes
+:END:
+ - Imports :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/
+ - owl:versionInfo :: 0.1 Basic citrus types and properties
+ - dcterms:title :: "Citrus Ontology"@en
+ - pav:lastUpdateOn :: {{{modification-time("%Y-%m-%dT%H:%M:%SZ",t)}}}^^xsd:dateTime
+ - dcterms:license :: [[https://creativecommons.org/licenses/by-sa/4.0/]]
+ - dcterms:creator :: {{{author}}}
+ - dcterms:modified :: {{{modification-time("%Y-%m-%d",t)}}}^^xsd:date
+ - dcterms:publisher :: https://example.org/thepublisher
+ - dc:rights :: Copyright info here
+ - dcterms:description :: The citrus ontology defines types of citrus fruits, their properties like acidity, and regions of origin.
+ - rdfs:comment :: An example ontology about citrus fruits.
+** Datatypes
+:PROPERTIES:
+:ID:       citrus-datatypes
+:custom_id: citrus-datatypes
+:resourcedefs: yes
+:END:
+** Classes
+:PROPERTIES:
+:ID:       citrus-class-hierarchy
+:custom_id: citrus-class-hierarchy
+:resourcedefs: yes
+:END:
+*** Citrus fruit (ex:CitrusFruit)
+ - rdfs:label :: "Citrus fruit"@en
+ - skos:definition :: A fruit from a plant of the genus Citrus.
+**** Orange (ex:Orange)
+ - rdfs:label :: "Orange"@en
+ - SubClassOf :: ex:acidity_pH some xsd:decimal[>= 3.0 , <= 4.0]
+ - ex:originatesFrom :: ex:SoutheastAsia
+ - skos:definition :: A citrus fruit known for its sweet taste and orange color, typically Citrus × sinensis.
+ - rdfs:comment :: Oranges are technically a type of berry (a hesperidium).
+ - rdfs:comment :: The color "orange" was named after the fruit. Before that, it was called "geoluhread" (yellow-red) in Old English.
+ - rdfs:comment :: There are over 600 varieties of oranges worldwide.
+***** Valencia Orange (ex:ValenciaOrange)
+  - rdfs:label :: "Valencia Orange"@en
+  - SubClassOf :: ex:Orange
+  - skos:definition :: A sweet orange variety primarily grown for juice production.
+  - rdfs:comment :: Despite the name, Valencia oranges were first hybridized in California, not Valencia, Spain. They are often called "summer oranges".
+  - ex:grownIn :: ex:CaliforniaCitrusBelt
+***** Navel Orange (ex:NavelOrange)
+  - rdfs:label :: "Navel Orange"@en
+  - SubClassOf :: ex:Orange
+  - skos:definition :: A seedless orange characterized by a "navel" at the blossom end, which is a rudimentary second fruit.
+  - rdfs:comment :: All navel oranges are clones originating from a single mutated tree discovered in Brazil in the 1820s.
+  - ex:grownIn :: ex:BahiaCitrusDistrict
+
+****** Cara Cara Orange (ex:CaraCaraOrange)
+  - rdfs:label :: "Cara Cara Orange"@en
+  - SubClassOf :: ex:NavelOrange
+  - skos:definition :: A type of navel orange known for its pinkish-red flesh, lower acidity, and complex flavor notes.
+  - rdfs:comment :: Discovered at Hacienda Cara Cara in Valencia, Venezuela, in 1976. Often called the "pink navel".
+  - ex:grownIn :: ex:ValenciaCitrusDistrict
+
+***** Blood Orange (ex:BloodOrange)
+  - rdfs:label :: "Blood Orange"@en
+  - SubClassOf :: ex:Orange
+  - skos:definition :: An orange variety with crimson, blood-colored flesh due to anthocyanins.
+  - rdfs:comment :: The distinctive red color only develops during cool nights, typical of Mediterranean climates. They often have a raspberry-like undertone.
+  - ex:grownIn :: ex:SicilyCitrusDistrict
+**** Lemon (ex:Lemon)
+ - rdfs:label :: "Lemon"@en
+ - SubClassOf :: ex:acidity_pH some xsd:decimal[>= 2.0 , <= 3.0]
+ - ex:originatesFrom :: ex:SoutheastAsia
+ - skos:definition :: A yellow, oval citrus fruit with thick skin and fragrant, acidic juice, typically Citrus limon.
+**** Grapefruit (ex:Grapefruit)
+ - rdfs:label :: "Grapefruit"@en
+ - SubClassOf :: ex:acidity_pH some xsd:decimal[>= 3.0 , <= 3.8]
+ - ex:originatesFrom :: ex:Caribbean
+ - skos:definition :: A large, round, yellow-skinned citrus fruit with an acidic, juicy pulp, typically Citrus × paradisi.
+**** Lime (ex:Lime)
+ - rdfs:label :: "Lime"@en
+ - SubClassOf :: ex:acidity_pH some xsd:decimal[>= 2.0 , <= 2.8]
+ - ex:originatesFrom :: ex:SoutheastAsia
+ - skos:definition :: A green citrus fruit, typically round and smaller than a lemon, with acidic juice, various species including Citrus aurantiifolia.
+**** Mandarin (ex:Mandarin)
+ - rdfs:label :: "Mandarin"@en
+ - SubClassOf :: ex:acidity_pH some xsd:decimal[>= 3.5 , <= 4.5]
+ - ex:originatesFrom :: ex:China
+ - skos:definition :: A small citrus fruit with a loose skin, also known as mandarin orange, typically Citrus reticulata.
+***** Satsuma (ex:Satsuma)
+  - rdfs:label :: "Satsuma"@en
+  - SubClassOf :: ex:Mandarin
+  - skos:definition :: A seedless and easy-peeling mandarin orange, often grown in warm climates with cooler autumns to develop sweetness.
+  - ex:grownIn :: ex:JapanCitrusDistrict
+***** Clementine (ex:Clementine)
+  - rdfs:label :: "Clementine"@en
+  - SubClassOf :: ex:Mandarin
+  - skos:definition :: A small, sweet, and seedless mandarin variety, usually less acidic than other mandarins.
+  - ex:grownIn :: ex:MorocconCitrusDistrict
+***** Tangor (ex:Tangor)
+  - rdfs:label :: "Tangor"@en
+  - SubClassOf :: ex:Mandarin
+  - skos:definition :: A hybrid fruit, the result of crossing mandarins with sweet oranges, known for its tangy flavor and ease of peeling.
+  - ex:grownIn :: ex:FloridaCitrusDistrict
+*** Region (ex:Region)
+ - rdfs:label :: "Region"@en
+ - skos:definition :: A geographical area.
+*** Citrus District (ex:CitrusDistrict)
+ - rdfs:label :: "Citrus District"@en
+ - skos:definition :: A district primarily known for citrus production.
+ - SubClassOf :: ex:locatedInRegion some ex:Region
+** Object properties
+:PROPERTIES:
+:ID:       citrus-object-property-hierarchy
+:custom_id: citrus-object-property-hierarchy
+:resourcedefs: yes
+:END:
+*** located in region (ex:locatedInRegion)
+ - rdfs:label :: "located in region"@en
+ - rdfs:comment :: The annotation property that denotes the geographic region in which a citrus district is situated.
+ - Domain :: ex:CitrusDistrict
+ - Range :: ex:Region
+** Data properties
+:PROPERTIES:
+:ID:       citrus-data-property-hierarchy
+:custom_id: citrus-data-property-hierarchy
+:resourcedefs: yes
+:END:
+*** Acidity (pH) (ex:acidity_pH)
+ - rdfs:label :: "Acidity (pH)"@en
+ - rdfs:comment :: The typical acidity level measured in pH. Lower values indicate higher acidity.
+ - Range :: xsd:decimal
+** Annotation properties
+:PROPERTIES:
+:ID:       citrus-annotation-property-hierarchy
+:custom_id: citrus-annotation-property-hierarchy
+:resourcedefs: yes
+:END:
+*** grown in (ex:grownIn)
+ - rdfs:comment :: annotation for citrus fruit variants to indicate the districts where these are commonly grown.
+*** originates from (ex:originatesFrom)
+ - rdfs:label :: "originates from"@en
+ - rdfs:comment :: Relates a type of citrus fruit to the geographical region where it is believed to have first originated or been cultivated.
+*** owl:versionInfo
+*** dcterms:title
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dcterms:license
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dcterms:creator
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dcterms:modified
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dcterms:publisher
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dcterms:description
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dc:rights
+ - rdfs:isDefinedBy :: http://purl.org/dc/elements/1.1/
+*** pav:lastUpdateOn
+ - rdfs:isDefinedBy :: http://purl.org/pav/
+*** skos:example
+ - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
+*** skos:prefLabel
+ - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
+*** skos:altLabel
+ - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
+*** iof-av:isPrimitive
+ - rdfs:isDefinedBy :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary
+*** skos:definition
+ - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
+**** iof-av:naturalLanguageDefinition
+ - rdfs:isDefinedBy :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary
+**** iof-av:primitiveRationale
+ - rdfs:isDefinedBy :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary
+** Individuals
+:PROPERTIES:
+:ID:       citrus-individuals
+:custom_id: citrus-individuals
+:resourcedefs: yes
+:END:
+*** Citrus Region                                                    :nodeclare:
+**** Southeast Asia (ex:SoutheastAsia)
+ - Types :: ex:Region
+ - rdfs:label :: "Southeast Asia"@en
+**** Mediterranean Basin (ex:MediterraneanBasin)
+ - Types :: ex:Region
+ - rdfs:label :: "Mediterranean Basin"@en
+**** India (ex:India)
+ - Types :: ex:Region
+ - rdfs:label :: "India"@en
+**** China (ex:China)
+ - Types :: ex:Region
+ - rdfs:label :: "China"@en
+**** Caribbean (ex:Caribbean)
+ - Types :: ex:Region
+ - rdfs:label :: "Caribbean"@en
+**** United States (ex:UnitedStates)
+ - Types :: ex:Region
+ - rdfs:label :: "United States"@en
+**** Spain (ex:Spain)
+ - Types :: ex:Region
+ - rdfs:label :: "Spain"@en
+**** Italy (ex:Italy)
+ - Types :: ex:Region
+ - rdfs:label :: "Italy"@en
+**** Brazil (ex:Brazil)
+ - Types :: ex:Region
+ - rdfs:label :: "Brazil"@en
+**** Japan (ex:Japan)
+ - Types :: ex:Region
+ - rdfs:label :: "Japan"@en
+**** Morocco (ex:Morocco)
+ - Types :: ex:Region
+ - rdfs:label :: "Morocco"@en
+**** Florida (ex:Florida)
+ - Types :: ex:Region
+ - rdfs:label :: "Florida"@en
+
+*** Citrus District                                                :nodeclare:
+**** California Citrus Belt (ex:CaliforniaCitrusBelt)
+ - Types :: ex:CitrusDistrict
+ - rdfs:label :: "California Citrus Belt"@en
+ - Facts :: ex:locatedInRegion ex:UnitedStates
+**** Valencia Citrus District (ex:ValenciaCitrusDistrict)
+ - Types :: ex:CitrusDistrict
+ - rdfs:label :: "Valencia Citrus District"@en
+ - Facts :: ex:locatedInRegion ex:Spain
+**** Sicily Citrus District (ex:SicilyCitrusDistrict)
+ - Types :: ex:CitrusDistrict
+ - rdfs:label :: "Sicily Citrus District"@en
+ - Facts :: ex:locatedInRegion ex:Italy
+**** Seville Citrus District (ex:SevilleCitrusDistrict)
+ - Types :: ex:CitrusDistrict
+ - rdfs:label :: "Seville Citrus District"@en
+ - Facts :: ex:locatedInRegion ex:Spain
+**** Bahia Citrus District (ex:BahiaCitrusDistrict)
+ - Types :: ex:CitrusDistrict
+ - rdfs:label :: "Bahia Citrus District"@en
+ - Facts :: ex:locatedInRegion ex:Brazil
+**** Riverside Citrus District (ex:RiversideCitrusDistrict)
+ - Types :: ex:CitrusDistrict
+ - rdfs:label :: "Riverside Citrus District"@en
+ - Facts :: ex:locatedInRegion ex:UnitedStates
+**** Japan Citrus District (ex:JapanCitrusDistrict)
+ - Types :: ex:CitrusDistrict
+ - rdfs:label :: "Japan Citrus District"@en
+ - Facts :: ex:locatedInRegion ex:Japan
+**** Moroccon Citrus District (ex:MorocconCitrusDistrict)
+ - Types :: ex:CitrusDistrict
+ - rdfs:label :: "Moroccon Citrus District"@en
+ - Facts :: ex:locatedInRegion ex:Morocco
+**** Florida Citrus District (ex:FloridaCitrusDistrict)
+ - Types :: ex:CitrusDistrict
+ - rdfs:label :: "Florida Citrus District"@en
+ - Facts :: ex:locatedInRegion ex:Florida
