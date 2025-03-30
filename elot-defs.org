@@ -193,27 +193,34 @@ keywords. However, there the keyword "Import" is placed in the
 "property" list. It also includes "DisjointUnion", which doesn't apply
 in ELOT, since not dependent on any particular resource.
 
-ELOT isn't set up (2024-03-24) for declaring individuals, but this
-will change, so the appropriate keywords are included.
+The "misc" keywords are not tied to a particular resource declaration.
 #+name: src-omn-keywords
 #+begin_src emacs-lisp
-  (defvar elot-omn-property-keywords
-  '(
-      "EquivalentTo"
-      "SubClassOf"
-      "Characteristics"
-      "DisjointWith"
-      "Domain"
-      "Range"
-      "InverseOf"
-      "SubPropertyOf"
-      "SubPropertyChain"
-      "SameAs"
-      "DifferentFrom"
-      "Types"
-      "Facts"
-      "HasKey"
-      "Import"))
+	(defvar elot-omn-property-keywords
+	'(
+			"EquivalentTo"
+			"SubClassOf"
+			"Characteristics"
+			"DisjointWith"
+			"Domain"
+			"Range"
+			"InverseOf"
+			"SubPropertyOf"
+			"SubPropertyChain"
+			"SameAs"
+			"DifferentFrom"
+			"Types"
+			"Facts"
+			"HasKey"
+			"Import"))
+	(defvar elot-omn-misc-keywords
+	'("DisjointClasses"
+		"EquivalentClasses"
+		"DisjointProperties"
+		"EquivalentProperties"
+		"SameIndividual"
+		"DifferentIndividuals"
+		"Rule"))
 #+end_src
 
 We add a filter to make OMN in description lists =\ttfamily=. See the Org [[https://orgmode.org/manual/Advanced-Export-Configuration.html][manual]].
