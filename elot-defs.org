@@ -96,6 +96,11 @@ tangling to OMN.
     :type 'string)
   (defvar elot-exporter-command-str
     (concat "java -jar " elot-exporter-jar-path))
+  (defvar elot-last-org-source nil
+    "Path to the last Org-mode file that generated an OMN file.")
+  (defun elot--remember-org-source ()
+    "Remember the current Org file for use after tangling."
+    (setq elot-last-org-source (buffer-file-name)))
   (defun elot-robot-command (cmd)
     "Execute ROBOT command CMD using `shell-command'.
   Check whether `elot-robot-jar-path` is set and points to an existing file.
@@ -1639,6 +1644,7 @@ metrics.
     ;;
     (modify-syntax-entry ?\: "w")
     (modify-syntax-entry ?\_ "w")
+    (add-hook 'org-babel-pre-tangle-hook #'elot--remember-org-source)
     (add-hook 'org-babel-post-tangle-hook #'elot-tangled-omn-to-ttl
               'local) ;; make it a local hook only
     (add-hook 'org-babel-after-execute-hook #'org-redisplay-inline-images 'local)
