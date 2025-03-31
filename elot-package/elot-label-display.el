@@ -121,9 +121,14 @@ ELOT-ATTRIBLIST-HT (hashtable).  Outside ELOT buffers, use ELOT-SLURP-GLOBAL."
                       ;; lookup includes the global list
                       (append slurp elot-slurp-global))))))
 
+(defun elot--strip-lang-tag (s)
+  "Strip quotes and language/datatype tags from string literal like \"abc\"@en."
+  (if (and (stringp s) (string-prefix-p "\"" s))
+      (replace-regexp-in-string "^\"\\([^\"]+\\)\".*" "\\1" s)
+    s))
 (defun elot-codelist-id-label (idstring)
   "Given curie IDSTRING, return label if found."
-  (ht-get elot-codelist-ht idstring))
+  (elot--strip-lang-tag (ht-get elot-codelist-ht idstring)))
 (defun elot-attriblist-label-value (idstring prop)
   "Given label IDSTRING and PROP, return puri if found."
   (plist-get (ht-get elot-attriblist-ht idstring) prop 'equal))
