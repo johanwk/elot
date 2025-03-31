@@ -436,8 +436,9 @@ unless it is an ontology section."
         (this-localname (match-string-no-properties 2 puri))
         (this-ns (cdr (assoc this-prefix abbrev-alist))))
      (if this-ns
-       (concat "<" this-ns this-localname ">")
-      puri))
+         (concat "<" this-ns this-localname ">")
+       (error "Fail! Prefix \"%s\" is not defined" this-prefix)))
+       ;; puri))
    puri)))
 
 (defun elot-annotation-string-or-uri (str)
