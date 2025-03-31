@@ -78,6 +78,11 @@
   :type 'string)
 (defvar elot-exporter-command-str
   (concat "java -jar " elot-exporter-jar-path))
+(defvar elot-last-org-source nil
+  "Path to the last Org-mode file that generated an OMN file.")
+(defun elot--remember-org-source ()
+  "Remember the current Org file for use after tangling."
+  (setq elot-last-org-source (buffer-file-name)))
 (defun elot-robot-command (cmd)
   "Execute ROBOT command CMD using `shell-command'.
 Check whether `elot-robot-jar-path` is set and points to an existing file.
@@ -86,17 +91,89 @@ It not set, return an error."
       (error "ROBOT not found.  Set elot-robot-jar-path with M-x customize-variable"))
   (shell-command (concat elot-robot-command-str " " cmd)))
 (defun elot-robot-omn-to-ttl (omnfile)
-  "Call ROBOT to make a Turtle file from OMNFILE."
-  (cond
-   ((or (string= elot-robot-jar-path "") (not (file-exists-p elot-robot-jar-path)))
-    (message "ROBOT not found, not converting to Turtle.  Set elot-robot-jar-path with M-x customize-variable."))
-   ((not (file-exists-p omnfile))
-    (message (concat omnfile " not found, nothing for ROBOT to convert")))
-   (t (shell-command
-       (concat elot-robot-command-str
-               " convert --verbose"
-               " --input " omnfile
-               " --output " (file-name-sans-extension omnfile) ".ttl")))))
+  "Call ROBOT to convert OMNFILE (Manchester Syntax) to Turtle.
+If there's a parse error, display the error and jump
+to the corresponding Org-mode heading."
+  (let* ((output-file (concat (file-name-sans-extension omnfile) ".ttl"))
+         (buffer-name "*ROBOT Errors*")
+         (buffer (get-buffer-create buffer-name)))
+    (with-current-buffer buffer (erase-buffer))
+    (make-process
+     :name "robot-convert"
+     :buffer buffer
+     :command (list "java" "-jar" elot-robot-jar-path
+                    "convert" "-vvv"
+                    "--input" omnfile
+                    "--output" output-file)
+     :stderr buffer
+     :noquery t
+     :sentinel
+     (lambda (proc event)
+       (when (not (process-live-p proc))
+         (if (= (process-exit-status proc) 0)
+             (message "ROBOT: Conversion successful: %s" output-file)
+           (with-current-buffer buffer
+             (goto-char (point-min))
+             (if (and (re-search-forward
+                       "^Parser: org\\.semanticweb\\.owlapi\\.manchestersyntax\\.parser\\.ManchesterOWLSyntaxOntologyParser" nil t)
+                      (re-search-forward "Encountered"))
+                 (let* ((start (line-beginning-position))
+                        (end (or (and (re-search-forward
+                                       "org\\.semanticweb\\.owlapi\\.manchestersyntax\\.parser\\.ManchesterOWLSyntaxOntologyParser" nil t)
+                                      (line-beginning-position))
+                                 (point-max)))
+                        (error-text (buffer-substring-no-properties start end))
+                        (loc (elot--parse-robot-error-location error-text)))
+                   (message "ROBOT parse error:\n%s" error-text)
+                   (when loc
+                     (elot--jump-to-omn-error omnfile (car loc) (cadr loc))
+                     (elot--jump-to-org-heading-for-identifier omnfile (car loc))))
+               (message "ROBOT failed, but no parse error could be extracted. See %s." buffer-name)))))))))
+
+(defun elot--parse-robot-error-location (text)
+  "Extract (line column) from ROBOT error TEXT. Returns list of integers or nil."
+  (when (string-match "Line \\([0-9]+\\) column \\([0-9]+\\)" text)
+    (list (string-to-number (match-string 1 text))
+          (string-to-number (match-string 2 text)))))
+
+(defun elot--jump-to-omn-error (omnfile line col)
+  "Open OMNFILE and move point to LINE and COL."
+  (let ((buf (find-file-other-window omnfile)))
+    (with-current-buffer buf
+      (goto-char (point-min))
+      (forward-line (1- line))
+      (forward-char (1- col))
+      (pulse-momentary-highlight-one-line (point)))))
+
+(defun elot--jump-to-org-heading-for-identifier (omnfile line)
+  "From OMNFILE and error LINE, search upward for a declaration
+and jump to the Org-mode heading defining that identifier."
+  (let ((identifier nil))
+    (save-excursion
+      (with-current-buffer (find-file-noselect omnfile)
+        (goto-char (point-min))
+        (forward-line (1- line))
+        (end-of-line)
+        (when (re-search-backward "^[^ \t]" nil t)
+          (let ((line-text (buffer-substring-no-properties
+                            (line-beginning-position) (line-end-position))))
+            (when (string-match "^\\([A-Za-z]+\\):[ \t]+\\(.+\\)" line-text)
+              (setq identifier (match-string 2 line-text)))))))
+    (when (and identifier elot-last-org-source (file-exists-p elot-last-org-source))
+      (let ((buf (find-file-other-window elot-last-org-source)))
+        (with-current-buffer buf
+          (goto-char (point-min))
+          (if (re-search-forward 
+               (format "^\\(?:\\*+ .*\\b%s\\b\\|.*::.*%s\\)"
+                       (regexp-quote identifier)
+                       (regexp-quote identifier))
+               nil t)
+              (progn
+                (beginning-of-line)
+                (pulse-momentary-highlight-one-line (point))
+                ;;(message "Parse error traced to heading: %s" (match-string 0))
+                )
+            (message "Could not find Org heading for: %s" identifier)))))))
 (defun elot-tangled-omn-to-ttl ()
   "After tangling to OMN, call ROBOT to convert to Turtle."
   (let* ((omnfile (buffer-file-name))  ;; will run in the tangled buffer
