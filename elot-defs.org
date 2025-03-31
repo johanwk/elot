@@ -196,31 +196,31 @@ in ELOT, since not dependent on any particular resource.
 The "misc" keywords are not tied to a particular resource declaration.
 #+name: src-omn-keywords
 #+begin_src emacs-lisp
-	(defvar elot-omn-property-keywords
-	'(
-			"EquivalentTo"
-			"SubClassOf"
-			"Characteristics"
-			"DisjointWith"
-			"Domain"
-			"Range"
-			"InverseOf"
-			"SubPropertyOf"
-			"SubPropertyChain"
-			"SameAs"
-			"DifferentFrom"
-			"Types"
-			"Facts"
-			"HasKey"
-			"Import"))
-	(defvar elot-omn-misc-keywords
-	'("DisjointClasses"
-		"EquivalentClasses"
-		"DisjointProperties"
-		"EquivalentProperties"
-		"SameIndividual"
-		"DifferentIndividuals"
-		"Rule"))
+  (defvar elot-omn-property-keywords
+    '(
+      "EquivalentTo"
+      "SubClassOf"
+      "Characteristics"
+      "DisjointWith"
+      "Domain"
+      "Range"
+      "InverseOf"
+      "SubPropertyOf"
+      "SubPropertyChain"
+      "SameAs"
+      "DifferentFrom"
+      "Types"
+      "Facts"
+      "HasKey"
+      "Import"))
+  (defvar elot-omn-misc-keywords
+    '("DisjointClasses"
+      "EquivalentClasses"
+      "DisjointProperties"
+      "EquivalentProperties"
+      "SameIndividual"
+      "DifferentIndividuals"
+      "Rule"))
 #+end_src
 
 We add a filter to make OMN in description lists =\ttfamily=. See the Org [[https://orgmode.org/manual/Advanced-Export-Configuration.html][manual]].
@@ -531,9 +531,6 @@ annotations in a future improved version, from sub-items.
                (org-entry-get-with-inheritance "ID"))))))
 #+end_src
 
-*** Notes:
-- *Error Handling:* The error messages are more User-friendly now; it directly mentions the malformed heading.
-- *Clarity:* The use of =cond= instead of nested =if= improves readability.
 *** Write entity declarations
 #+name: src-resource-declare
 #+BEGIN_SRC emacs-lisp :results silent
@@ -623,6 +620,28 @@ annotations in a future improved version, from sub-items.
         (elot-omn-restrict x)))
      l "\n"))
 
+  (defun elot-misc-axioms ()
+    "Output OMN axioms for `elot-omn-misc-keywords' in buffer.
+  These are axioms not tied to a single resource.
+  If no axioms are found, return nil."
+    (save-restriction
+      (org-narrow-to-subtree)
+      (let ((misc-axioms
+             (mapconcat
+              (lambda (l)
+                (concat (car l) ": "
+                        (replace-regexp-in-string ":newline:" " " (cadr l))))
+              (org-element-map (org-element-parse-buffer) 'item
+                (lambda (item)
+                  (let* ((pair (elot-org-elt-item-str item))
+                         (tag (car pair)))
+                    (if (member tag elot-omn-misc-keywords)
+                        pair)))
+                nil nil)
+              "\n")))
+        (unless (string-empty-p misc-axioms)
+          misc-axioms))))
+
   (defun elot-resource-declarations-from-header (header-id owl-type)
     "Output OMN declarations for Class, Property, or Individual Org trees.
   This function is called from the `org-babel' block in file
@@ -632,7 +651,7 @@ annotations in a future improved version, from sub-items.
   are handled by function `elot-resource-taxonomy-from-header'.
 
   HEADER-ID is an org location id, OWL-TYPE is `Class', `ObjectProperty',
-  `DataProperty', `AnnotationProperty', or `Individual'.
+  `DataProperty', `AnnotationProperty', `Individual', or `Datatype'.
 
   The org location id, embedded in the `PROPERTIES' drawer for each OWL
   resource type, is `<ontology>-class-hierarchy' for the Class outline,
@@ -640,9 +659,15 @@ annotations in a future improved version, from sub-items.
   `annotation-property'; for individuals, `<ontology>-individuals'."
     (save-excursion
       (elot-org-link-search header-id)
-      (let ((entity-l (elot-org-subsection-descriptions)))
-        (if (or entity-l (string= owl-type "Ontology"))
-            (elot-resource-declarations entity-l owl-type)
+      (let ((entity-l (elot-org-subsection-descriptions))
+            (misc-axioms (elot-misc-axioms)))
+        (if (or entity-l misc-axioms (string= owl-type "Ontology"))
+            (string-join
+             (list
+              (elot-resource-declarations entity-l owl-type)
+              (if misc-axioms
+                  (concat "\n#### Miscellaneous axioms under " owl-type " declarations\n"))
+              misc-axioms))
           "## (none)"))))
 #+END_SRC
 *** Update link alist from prefix-table

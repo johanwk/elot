@@ -171,7 +171,7 @@ JSON-LD, OWL Functional Syntax, or Manchester Syntax."
 
 ;; [[file:../elot-defs.org::src-omn-keywords][src-omn-keywords]]
 (defvar elot-omn-property-keywords
-'(
+  '(
     "EquivalentTo"
     "SubClassOf"
     "Characteristics"
@@ -187,6 +187,14 @@ JSON-LD, OWL Functional Syntax, or Manchester Syntax."
     "Facts"
     "HasKey"
     "Import"))
+(defvar elot-omn-misc-keywords
+  '("DisjointClasses"
+    "EquivalentClasses"
+    "DisjointProperties"
+    "EquivalentProperties"
+    "SameIndividual"
+    "DifferentIndividuals"
+    "Rule"))
 ;; src-omn-keywords ends here
 
 ;; [[file:../elot-defs.org::src-omn-latex-tt][src-omn-latex-tt]]
@@ -556,6 +564,28 @@ This is a helper function for `elot-resource-declarations'."
       (elot-omn-restrict x)))
    l "\n"))
 
+(defun elot-misc-axioms ()
+  "Output OMN axioms for `elot-omn-misc-keywords' in buffer.
+These are axioms not tied to a single resource.
+If no axioms are found, return nil."
+  (save-restriction
+    (org-narrow-to-subtree)
+    (let ((misc-axioms
+           (mapconcat
+            (lambda (l)
+              (concat (car l) ": "
+                      (replace-regexp-in-string ":newline:" " " (cadr l))))
+            (org-element-map (org-element-parse-buffer) 'item
+              (lambda (item)
+                (let* ((pair (elot-org-elt-item-str item))
+                       (tag (car pair)))
+                  (if (member tag elot-omn-misc-keywords)
+                      pair)))
+              nil nil)
+            "\n")))
+      (unless (string-empty-p misc-axioms)
+        misc-axioms))))
+
 (defun elot-resource-declarations-from-header (header-id owl-type)
   "Output OMN declarations for Class, Property, or Individual Org trees.
 This function is called from the `org-babel' block in file
@@ -565,7 +595,7 @@ This function does not output subclass or subproperty axioms, as these
 are handled by function `elot-resource-taxonomy-from-header'.
 
 HEADER-ID is an org location id, OWL-TYPE is `Class', `ObjectProperty',
-`DataProperty', `AnnotationProperty', or `Individual'.
+`DataProperty', `AnnotationProperty', `Individual', or `Datatype'.
 
 The org location id, embedded in the `PROPERTIES' drawer for each OWL
 resource type, is `<ontology>-class-hierarchy' for the Class outline,
@@ -573,9 +603,15 @@ and accordingly for `object-property', `data-property', and
 `annotation-property'; for individuals, `<ontology>-individuals'."
   (save-excursion
     (elot-org-link-search header-id)
-    (let ((entity-l (elot-org-subsection-descriptions)))
-      (if (or entity-l (string= owl-type "Ontology"))
-          (elot-resource-declarations entity-l owl-type)
+    (let ((entity-l (elot-org-subsection-descriptions))
+          (misc-axioms (elot-misc-axioms)))
+      (if (or entity-l misc-axioms (string= owl-type "Ontology"))
+          (string-join
+           (list
+            (elot-resource-declarations entity-l owl-type)
+            (if misc-axioms
+                (concat "\n#### Miscellaneous axioms under " owl-type " declarations\n"))
+            misc-axioms))
         "## (none)"))))
 ;; src-resource-declare ends here
 
