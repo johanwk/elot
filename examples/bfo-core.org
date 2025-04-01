@@ -51,9 +51,6 @@ some important changes have been made after conversion.
 ## Ontology declaration
 <<resource-declarations(hierarchy="bfo.owl-ontology-declaration", owl-type="Ontology", owl-relation="")>>
 
-## Data type declarations
-Datatype: rdf:langString
-Datatype: xsd:string
 ## Class declarations
 <<resource-declarations(hierarchy="bfo.owl-class-hierarchy", owl-type="Class")>>
 
@@ -163,18 +160,11 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 :END:
 
 *** Disjointness clauses                                          :nodeclare:
-#+begin_src omn
-DisjointClasses:
-    :BFO_0000004,:BFO_0000020,:BFO_0000031
-DisjointClasses:
-    :BFO_0000142,:BFO_0000146,:BFO_0000147
-DisjointClasses:
-    :BFO_0000008,:BFO_0000011,:BFO_0000015,:BFO_0000035
-DisjointClasses:
-    :BFO_0000009,:BFO_0000018,:BFO_0000026,:BFO_0000028
-DisjointClasses:
-    :BFO_0000006,:BFO_0000029,:BFO_0000140
-#+end_src
+ - DisjointClasses :: :BFO_0000004,:BFO_0000020,:BFO_0000031
+ - DisjointClasses :: :BFO_0000142,:BFO_0000146,:BFO_0000147
+ - DisjointClasses :: :BFO_0000008,:BFO_0000011,:BFO_0000015,:BFO_0000035
+ - DisjointClasses :: :BFO_0000009,:BFO_0000018,:BFO_0000026,:BFO_0000028
+ - DisjointClasses :: :BFO_0000006,:BFO_0000029,:BFO_0000140
 
 *** "entity"@en (:BFO_0000001)
  - dc11:identifier :: 001-BFO
@@ -709,7 +699,6 @@ DisjointClasses:
 :custom_id: bfo.owl-data-property-hierarchy
 :resourcedefs: yes
 :END:
-
 
 ** Annotation properties
 :PROPERTIES:
