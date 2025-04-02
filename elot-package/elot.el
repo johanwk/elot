@@ -143,7 +143,8 @@ to the corresponding Org-mode heading."
       (goto-char (point-min))
       (forward-line (1- line))
       (forward-char (1- col))
-      (pulse-momentary-highlight-one-line (point)))))
+      ;;(pulse-momentary-highlight-one-line (point))
+      )))
 
 (defun elot--jump-to-org-heading-for-identifier (omnfile line)
   "From OMNFILE and error LINE, search upward for a declaration
@@ -170,7 +171,7 @@ and jump to the Org-mode heading defining that identifier."
                nil t)
               (progn
                 (beginning-of-line)
-                (pulse-momentary-highlight-one-line (point))
+                ;;(pulse-momentary-highlight-one-line (point))
                 ;;(message "Parse error traced to heading: %s" (match-string 0))
                 )
             (message "Could not find Org heading for: %s" identifier)))))))
@@ -472,7 +473,7 @@ Expand uri, or return number, or wrap in quotes."
         (; false -- make it an explicit boolean
          (string-match "^false$" str) " \"false\"^^xsd:boolean")
         (; string with datatype -- return unchanged
-         (string-match "^\".*\"^^[-_[:alnum:]]*:[-_[:alnum:]]+$" str)
+         (string-match "^\".*\"[^][^][-_[:alnum:]]*:[-_[:alnum:]]+$" str)
          (concat "  " str))
         (; not a puri -- normal string, wrap in quotes
          (equal str (elot-unprefix-uri str org-link-abbrev-alist-local))
