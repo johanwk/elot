@@ -618,8 +618,8 @@ Special treatment for `Import' on an ontology resource."
 This is a helper function for `elot-resource-declarations'."
   (let* ((str (car l))
          (suri (elot-entity-from-header str))
-         ;; (prefix (if (string-match "\\(.*\\):\\(.*\\)" suri)
-         ;;            (match-string 1 suri) ""))
+         (prefix (if (string-match "\\(.*\\):\\(.*\\)" suri)
+                    (match-string 1 suri) ""))
          (localname (match-string 2 suri))
          (label (if (string-match "\\(.+\\) (.*)" str)
                     (match-string 1 str) localname))
