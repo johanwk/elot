@@ -167,7 +167,24 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - rdfs:label :: "Grapefruit"@en
  - SubClassOf :: ex:acidity_pH some xsd:decimal[>= 3.0 , <= 3.8]
  - ex:originatesFrom :: ex:Caribbean
- - skos:definition :: A large, round, yellow-skinned citrus fruit with an acidic, juicy pulp, typically Citrus × paradisi.
+ - skos:definition :: A large, round, yellow-skinned citrus fruit with an acidic, juicy pulp, typically Citrus × paradisi. It is a hybrid, likely resulting from an accidental cross between a sweet orange and a pomelo.
+ - rdfs:comment :: The name "grapefruit" is thought to refer to the way the fruit grows in clusters resembling grapes.
+ - rdfs:comment :: Grapefruit contains compounds that can interfere with the absorption of certain medications.
+***** White Grapefruit (ex:WhiteGrapefruit)
+  - rdfs:label :: "White Grapefruit"@en
+  - SubClassOf :: ex:Grapefruit
+  - skos:definition :: Grapefruit varieties with pale yellow or white flesh, generally more tart than pigmented varieties. Example: Duncan.
+  - ex:grownIn :: ex:FloridaCitrusDistrict
+***** Pink Grapefruit (ex:PinkGrapefruit)
+  - rdfs:label :: "Pink Grapefruit"@en
+  - SubClassOf :: ex:Grapefruit
+  - skos:definition :: Grapefruit varieties with pink-hued flesh, typically sweeter and less acidic than white varieties due to lower levels of naringin. Example: Marsh Pink.
+  - ex:grownIn :: ex:FloridaCitrusDistrict
+***** Red Grapefruit (ex:RedGrapefruit)
+  - rdfs:label :: "Red Grapefruit"@en
+  - SubClassOf :: ex:Grapefruit
+  - skos:definition :: Grapefruit varieties with deep red flesh, generally the sweetest type due to higher lycopene content. Example: Ruby Red, Star Ruby.
+  - ex:grownIn :: ex:FloridaCitrusDistrict
 **** Lime (ex:Lime)
  - rdfs:label :: "Lime"@en
  - SubClassOf :: ex:acidity_pH some xsd:decimal[>= 2.0 , <= 2.8]
@@ -306,7 +323,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** Florida (ex:Florida)
  - Types :: ex:Region
  - rdfs:label :: "Florida"@en
-
+ - rdfs:comment :: Florida's political landscape often influences its citrus industry, particularly through agricultural policies and trade regulations that can affect the production and distribution of oranges.
 *** Citrus District                                                :nodeclare:
 **** California Citrus Belt (ex:CaliforniaCitrusBelt)
  - Types :: ex:CitrusDistrict
@@ -344,3 +361,13 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - Types :: ex:CitrusDistrict
  - rdfs:label :: "Florida Citrus District"@en
  - Facts :: ex:locatedInRegion ex:Florida
+*** Lemon Individuals (ex:LemonIndividuals) :nodeclare:
+**** MyLemon (ex:MyLemon)
+ - Types :: ex:Lemon
+ - rdfs:label :: "My Lemon"@en
+ - Facts :: ex:acidity_pH "2.5"^^xsd:decimal  # within the range of 2.0 to 3.0
+
+**** SpecialLemon (ex:SpecialLemon)
+ - Types :: ex:Lemon
+ - rdfs:label :: "Special Lemon"@en
+ - Facts :: ex:acidity_pH "2.8"^^xsd:decimal  # within the range of 2.0 to 3.0
