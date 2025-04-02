@@ -122,7 +122,7 @@ ELOT-ATTRIBLIST-HT (hashtable).  Outside ELOT buffers, use ELOT-SLURP-GLOBAL."
                       (append slurp elot-slurp-global))))))
 
 (defun elot--strip-lang-tag (s)
-  "Strip quotes and language/datatype tags from string literal like \"abc\"@en."
+  "Strip quotes and language/datatype tags from string S like \"abc\"@en."
   (if (and (stringp s) (string-prefix-p "\"" s))
       (replace-regexp-in-string "^\"\\([^\"]+\\)\".*" "\\1" s)
     s))

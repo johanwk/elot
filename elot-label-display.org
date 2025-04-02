@@ -168,7 +168,7 @@ Note that we use ~ht<-plist~ for the id--label list, and ~ht<-alist~ for id--pli
 #+name: src-slurp-get
 #+begin_src emacs-lisp
   (defun elot--strip-lang-tag (s)
-    "Strip quotes and language/datatype tags from string literal like \"abc\"@en."
+    "Strip quotes and language/datatype tags from string S like \"abc\"@en."
     (if (and (stringp s) (string-prefix-p "\"" s))
         (replace-regexp-in-string "^\"\\([^\"]+\\)\".*" "\\1" s)
       s))
