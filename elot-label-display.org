@@ -77,7 +77,7 @@ The following works well for getting all /in-buffer/ entities into a list.
   (defun elot-org-link-search (&rest strings)
     "Search for a `custom_id' heading in current buffer.
   The concatenation of STRINGS is searched using `org-link-search'.
-  Return `nil'."
+  Return nil."
     (prog1 nil
       (ignore-errors (org-link-search (concat "#"
                                               (apply #'concat strings))))))
@@ -207,6 +207,18 @@ identifiers using ~regexp-opt~.
   (defvar elot-fontify-keyword nil
     "Variable holding font-lock pattern.")
 
+  (defface elot-label-face
+    '((t :inherit italic))
+    "Default face used to fontify labels in ELOT overlays."
+    :group 'elot)
+
+  (defcustom elot-label-display-face 'elot-label-face
+    "Customizable face used for ELOT label fontification.
+  You can choose any face (e.g. `italic', `shadow', `underline')"
+    :group 'elot
+    :version "29.2"
+    :type 'face)
+
   (defun elot-update-fontify-keyword ()
     "Update `elot-fontify-keyword' from collected identifier-label pairs."
     (setq elot-fontify-keyword
@@ -217,18 +229,18 @@ identifiers using ~regexp-opt~.
                 ;; add tooltip
                 (put-text-property (match-beginning 0) (match-end 0)
                                    'help-echo (concat (match-string 0) "  "
-                                                    (elot-codelist-id-label (match-string 0)) "  ("
-                                                    (elot-attriblist-label-value
-                                                     (elot-codelist-id-label (match-string 0)) "rdf:type")
-                                                    ")"))
+                                                      (elot-codelist-id-label (match-string 0)) "  ("
+                                                      (elot-attriblist-label-value
+                                                       (elot-codelist-id-label (match-string 0)) "rdf:type")
+                                                      ")"))
                 (if (eq elot-label-display 'on)
                     (progn
                       ;; label in text property, using 'elot-label-display as alias for 'display
                       (put-text-property (match-beginning 0) (match-end 0)
                                          'elot-label-display (elot-codelist-id-label (match-string 0)))
-                      ;; use italic shape
+                      ;; use customizable face
                       (put-text-property (match-beginning 0) (match-end 0)
-                                         'face 'italic)))))))))
+                                         'face elot-label-display-face)))))))))
 #+end_src
 ** Apply fontification
 #+name: src-fontify-add
