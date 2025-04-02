@@ -131,7 +131,7 @@ to the corresponding Org-mode heading."
                (message "ROBOT failed, but no parse error could be extracted. See %s." buffer-name)))))))))
 
 (defun elot--parse-robot-error-location (text)
-  "Extract (line column) from ROBOT error TEXT. Returns list of integers or nil."
+  "Extract (line column) from ROBOT error TEXT.  Return list of integers or nil."
   (when (string-match "Line \\([0-9]+\\) column \\([0-9]+\\)" text)
     (list (string-to-number (match-string 1 text))
           (string-to-number (match-string 2 text)))))
@@ -147,8 +147,8 @@ to the corresponding Org-mode heading."
       )))
 
 (defun elot--jump-to-org-heading-for-identifier (omnfile line)
-  "From OMNFILE and error LINE, search upward for a declaration
-and jump to the Org-mode heading defining that identifier."
+  "From OMNFILE and error LINE, search upward for a declaration.
+Jump to the Org-mode heading defining the identifier found."
   (let ((identifier nil))
     (save-excursion
       (with-current-buffer (find-file-noselect omnfile)
@@ -164,7 +164,7 @@ and jump to the Org-mode heading defining that identifier."
       (let ((buf (find-file-other-window elot-last-org-source)))
         (with-current-buffer buf
           (goto-char (point-min))
-          (if (re-search-forward 
+          (if (re-search-forward
                (format "^\\(?:\\*+ .*\\b%s\\b\\|.*::.*%s\\)"
                        (regexp-quote identifier)
                        (regexp-quote identifier))
@@ -354,7 +354,7 @@ The function is used to check whether the list contains ELT."
       (substring-no-properties (org-element-interpret-data (org-element-property :tag x)))))
 (defun elot-org-elt-item-pars-str (x)
   "For an item X in an `org-element-map', return the paragraphs as one string."
-  (string-join 
+  (string-join
    (split-string
     (string-trim (apply #'concat
                      (org-element-map x '(paragraph plain-list)
@@ -893,15 +893,15 @@ are passed on to `org-get-heading'."
 
 ;; [[file:../elot-defs.org::src-get-description-entry :tangle no][src-get-description-entry :tangle no]]
 (defun elot-org-get-description-entry (tag)
-	"Search forward for TAG and return text of Org element found, no decorations.
-Newlines are replaced by spaces in the result."
-	(save-excursion
-		(if (search-forward-regexp tag nil t)
-				(let* ((element (org-element-at-point))
-							 (beg (org-element-property :contents-begin element))
-							 (end (org-element-property :contents-end element))
-							 (entry-text (buffer-substring-no-properties beg end)))
-					(replace-regexp-in-string "\n\s*" " " entry-text)))))
+  "Search forward for TAG and return text of Org element found.
+Remove string decorations.  Newlines are replaced by spaces in the result."
+  (save-excursion
+    (if (search-forward-regexp tag nil t)
+	(let* ((element (org-element-at-point))
+	       (beg (org-element-property :contents-begin element))
+	       (end (org-element-property :contents-end element))
+	       (entry-text (buffer-substring-no-properties beg end)))
+	  (replace-regexp-in-string "\n\s*" " " entry-text)))))
 ;; src-get-description-entry :tangle no ends here
 
 ;; [[file:../elot-defs.org::src-latex-export-replacenames][src-latex-export-replacenames]]
