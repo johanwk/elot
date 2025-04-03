@@ -14,6 +14,10 @@ example ELOT files with queries and diagrams, or check out the files in [[https:
 
 ELOT works on Windows, MacOS, and Linux (tested in WSL).
 
+*Visual Studio Code Integration*:
+For instructions on how to run ELOT commands directly from within VS
+Code on your own projects, please see the detailed 
+[[file:vscode-support/README.md][README]].
 
 [[https://en.wikipedia.org/wiki/Literate_programming][Literate programming]] is a paradigm where the creator of some technical artefact focuses on the explanation and readability of each technical construct, rather than its formal machine-readable definition.
 The machine-readable artefacts are then extracted through a process called "tangling".
