@@ -186,7 +186,7 @@ Ensures output directory exists."
     success))
 
 ;; ============================================================================
-;; --- Command Dispatch (Copied from older script) ---
+;; --- Command Dispatch ---
 ;; ============================================================================
 
 (let* (;; Get args, handle "--"
@@ -216,25 +216,26 @@ Ensures output directory exists."
            (input-file-abs (expand-file-name input-file-raw)))
       (unless (file-exists-p input-file-abs)
         (error "Input file not found: %s (from %s)" input-file-abs input-file-raw))
-      ;; Call the tangle function
-      ;; Errors within the function will propagate and exit Emacs batch non-zero
       (elot-batch-tangle-file input-file-abs)
       (message "Tangle command finished for: %s" input-file-abs)
       ))
 
    ;; --- Export HTML Command ---
    ((string= command "export-html")
-    (unless (= (length command-args) 2)
-      (error "Usage for export-html: export-html <input-file> <output-file>. Got %d args: %S" (length command-args) command-args))
-    (let* ((input-file-raw (nth 0 command-args))
-           (output-file-raw (nth 1 command-args))
+    ;; **MODIFIED: Expect only 1 argument**
+    (unless (= (length command-args) 1)
+      (error "Usage for export-html: export-html <input-org-file>. Got %d args: %S" (length command-args) command-args))
+    (let* ((input-file-raw (car command-args))
            (input-file-abs (expand-file-name input-file-raw))
-           (output-file-abs (expand-file-name output-file-raw)))
+           ;; **MODIFIED: Derive output file automatically**
+           (output-file-abs (concat (file-name-directory input-file-abs) ; Same directory
+                                    (file-name-sans-extension (file-name-nondirectory input-file-abs))
+                                    ".html")))
       (unless (file-exists-p input-file-abs)
         (error "Input file not found: %s (from %s)" input-file-abs input-file-raw))
-      ;; Call the export function
+      ;; Call the export function with the derived output path
       (elot-batch-export-html input-file-abs output-file-abs)
-      (message "Export command finished for: %s" input-file-abs)
+      (message "Export command finished for: %s -> %s" input-file-abs output-file-abs) ; Log derived output
       ))
 
    ;; --- Unknown Command (Shouldn't happen due to validation above) ---
