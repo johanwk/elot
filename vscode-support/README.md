@@ -107,6 +107,20 @@ You are now ready to use the tasks on your project's files.
     *   Check the terminal for success messages or any errors reported by Emacs or ROBOT.
     *   Look in your project's file explorer for the generated output files (e.g., `.omn`, `.ttl`, `.html`) in the same directory as the source `.org` file.
 
+## Limitations in VS Code Integration
+
+The VS Code tasks provide a convenient way to run **non-interactive batch processes** like tangling and exporting. However, they do **not** replicate the full interactive experience of using ELOT within GNU Emacs.
+
+Features **not** available via the VS Code tasks include:
+
+*   **Interactive Label Display:** Switching between showing full identifiers (IRIs) and their labels directly within the editor buffer (`elot-label-display-mode`).
+*   **Interactive ROBOT/SPARQL Commands:** Running arbitrary ROBOT commands or SPARQL queries on the current buffer or region using ELOT's interactive Emacs functions.
+*   **Diagram Generation:** Generating diagrams (e.g., using `rdfpuml`) based on the buffer content.
+
+While diagrams and other derived artifacts can still be *included* in your Org files (e.g., as images), the dynamic generation features require the interactive Emacs environment.
+
+**For the full set of ELOT features, including interactive commands and display modes, using GNU Emacs directly is recommended.** The VS Code integration focuses on automating the core batch processing workflows.
+
 ## Troubleshooting
 
 *   **Task fails with "command not found" (referring to `elot-run.sh` or `elot-run.ps1`):**
