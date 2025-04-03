@@ -1,0 +1,74 @@
+{
+    // Template tasks.json for using ELOT CLI Tools
+    // INSTRUCTIONS:
+    // 1. Ensure you have installed the ELOT CLI tools and run its setup script.
+    // 2. Set the environment variable 'ELOT_CLI_HOME' to point to the root directory
+    //    of your ELOT CLI installation (where elot-run.sh/ps1 reside).
+    // 3. Copy this file into your project's '.vscode/' directory and rename it to 'tasks.json'.
+    // 4. Restart VS Code if you just set the environment variable.
+    "version": "2.0.0",
+    "tasks": [
+        {
+            // --- Task to Tangle the Currently Open Org File ---
+            "label": "ELOT: Tangle Current File",
+            "type": "process", // Use 'shell' type for better platform handling if needed, but process is often okay
+            "windows": { // Settings specific to Windows
+                "command": "${env:ELOT_CLI_HOME}\\elot-run.ps1" // Use powershell script via env var path
+            },
+            "linux": { // Settings specific to Linux/WSL
+                "command": "${env:ELOT_CLI_HOME}/elot-run.sh" // Use bash script via env var path
+            },
+            "osx": { // Settings specific to macOS
+                "command": "${env:ELOT_CLI_HOME}/elot-run.sh" // Use bash script via env var path
+            },
+            "args": [
+                // Arguments passed to the runner script
+                "tangle",    // The ELOT command
+                "${file}"    // VS Code variable: Full path to the currently active editor file
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            // --- Task to Export the Currently Open Org File to HTML ---
+            "label": "ELOT: Export Current File to HTML",
+            "type": "process",
+            "windows": {
+                "command": "${env:ELOT_CLI_HOME}\\elot-run.ps1"
+            },
+            "linux": {
+                "command": "${env:ELOT_CLI_HOME}/elot-run.sh"
+            },
+            "osx": {
+                "command": "${env:ELOT_CLI_HOME}/elot-run.sh"
+            },
+            "args": [
+                // Arguments passed to the runner script
+                "export-html",
+                "${file}" // Input Org file
+            ],
+            "problemMatcher": [],
+            "presentation": { // Same presentation options as above
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "group": "build"
+        }
+        // Add more tasks as needed
+    ]
+}
