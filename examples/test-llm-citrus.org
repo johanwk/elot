@@ -121,6 +121,33 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 :custom_id: citrus-class-hierarchy
 :resourcedefs: yes
 :END:
+*** Apple (ex:Apple)
+ - rdfs:label :: "Apple"@en
+ - skos:definition :: A sweet fruit from the species Malus domestica, typically round, and comes in various colors, including red, green, and yellow.
+
+**** Aurland (ex:Aurland)
+ - rdfs:label :: "Aurland Apple"@en
+ - rdfs:label :: "Aurlandski eple"@no
+ - skos:definition :: A local favorite from the Aurland region, known for its refreshing taste and crisp texture, often enjoyed fresh or in desserts.
+ - skos:definition :: "Et lokalt favoritteple fra Aurland-regionen, kjent for sin forfriskende smak og sprø tekstur, ofte nytes ferskt eller i desserter."@no
+
+**** Gravenstein (ex:Gravenstein)
+ - rdfs:label :: "Gravenstein Apple"@en
+ - rdfs:label :: "Gravenstein-eple"@no
+ - skos:definition :: A traditional variety appreciated by Norwegians for its rich flavor and juiciness, ideal for cooking and cider production.
+ - skos:definition :: "En tradisjonell variant som nordmenn setter pris på for sin rike smak og saftighet, ideell for matlaging og produksjon av cider."@no
+
+**** Sävstaholm (ex:Sävstaholm)
+ - rdfs:label :: "Sävstaholm Apple"@en
+ - rdfs:label :: "Sävstaholm-eple"@no
+ - skos:definition :: A hardy apple variety cultivated in Norway, favored for its balance of sweetness and tartness, commonly used in homemade cider and sauces.
+ - skos:definition :: "En hardfør eplevariant dyrket i Norge, foretrukket for sin balanse mellom sødme og syrlighet, ofte brukt i hjemmelaget cider og sauser."@no
+
+**** Discovery (ex:Discovery)
+ - rdfs:label :: "Discovery Apple"@en
+ - rdfs:label :: "Discovery-eple"@no
+ - skos:definition :: A popular early-season apple in Norway, known for its bright red color and sweet flavor, perfect for snacking and salads.
+ - skos:definition :: "Et populært tidligsesong-eple i Norge, kjent for sin lyse røde farge og søte smak, perfekt for snacks og salater."@no
 *** Citrus fruit (ex:CitrusFruit)
  - rdfs:label :: "Citrus fruit"@en
  - skos:definition :: A fruit from a plant of the genus Citrus.
