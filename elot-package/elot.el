@@ -85,50 +85,132 @@
   (setq elot-last-org-source (buffer-file-name)))
 (defun elot-robot-command (cmd)
   "Execute ROBOT command CMD using `shell-command'.
-Check whether `elot-robot-jar-path` is set and points to an existing file.
-It not set, return an error."
+  Check whether `elot-robot-jar-path` is set and points to an existing file.
+  It not set, return an error."
   (if (or (string= elot-robot-jar-path "") (not (file-exists-p elot-robot-jar-path)))
       (error "ROBOT not found.  Set elot-robot-jar-path with M-x customize-variable"))
   (shell-command (concat elot-robot-command-str " " cmd)))
-(defun elot-robot-omn-to-ttl (omnfile)
-  "Call ROBOT to convert OMNFILE (Manchester Syntax) to Turtle.
-If there's a parse error, display the error and jump
-to the corresponding Org-mode heading."
-  (let* ((output-file (concat (file-name-sans-extension omnfile) ".ttl"))
-         (buffer-name "*ROBOT Errors*")
+
+;; Helper function for synchronous batch execution
+(defun elot-robot-omn-to-ttl--batch (omnfile output-file command-args)
+  "Perform synchronous ROBOT conversion for batch mode.
+Handles process execution via `call-process`, output parsing on error,
+and calls `kill-emacs` on failure.
+OMNFILE, OUTPUT-FILE are file paths. COMMAND-ARGS is the full
+list of arguments for the process, starting with \"java\"."
+  (let* ((output-buffer (generate-new-buffer "*ROBOT Output (Batch)*"))
+         (process-connection-type nil) ; Important for batch stability
+         (exit-code nil))
+    (message "[elot-robot-omn-to-ttl Batch] Executing synchronously: %s" (mapconcat #'shell-quote-argument command-args " "))
+    (unwind-protect ; Ensure buffer cleanup
+        (progn
+          ;; Execute: program is first element, rest are args
+          (setq exit-code (apply #'call-process (car command-args) nil output-buffer t (cdr command-args)))
+          (message "[elot-robot-omn-to-ttl Batch] ROBOT process finished with exit code: %d" exit-code)
+
+          (if (= exit-code 0)
+              ;; Success Case (Batch)
+              (message "ROBOT: Conversion successful: %s" output-file)
+
+            ;; Failure Case (Batch)
+            (progn
+              (message "ROBOT: Conversion failed (exit code %d)." exit-code)
+              ;; Try to extract specific error, suppress full output
+              (with-current-buffer output-buffer
+                (goto-char (point-min))
+                (if (and (re-search-forward ; Look for specific parser error
+                          "^Parser: org\\.semanticweb\\.owlapi\\.manchestersyntax\\.parser\\.ManchesterOWLSyntaxOntologyParser" nil t)
+                         (re-search-forward "Encountered"))
+                    ;; Found specific error - extract and print ONLY that
+                    (let* ((start (line-beginning-position))
+                           (end (or (and (re-search-forward
+                                          "org\\.semanticweb\\.owlapi\\.manchestersyntax\\.parser\\.ManchesterOWLSyntaxOntologyParser" nil t)
+                                         (line-beginning-position))
+                                    (point-max)))
+                           (error-text (buffer-substring-no-properties start end)))
+                      (message "ROBOT parse error detected:\n%s" error-text))
+                  ;; Didn't find specific error - print generic failure message
+                  (message "ROBOT failed. Full output suppressed. No specific parse error found.")))
+              ;; Exit Emacs directly with non-zero status using kill-emacs
+              (kill-emacs 1))) ; <--- Signal failure without Elisp error
+          )
+      ;; Cleanup (called by unwind-protect)
+      (when (buffer-live-p output-buffer)
+        (kill-buffer output-buffer)))))
+
+;; Helper function for asynchronous interactive execution
+(defun elot-robot-omn-to-ttl--interactive (omnfile output-file command-args)
+  "Perform asynchronous ROBOT conversion for interactive mode.
+Handles process execution via `make-process` and sets up a sentinel
+for feedback and error handling (including potential jumping).
+OMNFILE, OUTPUT-FILE are file paths. COMMAND-ARGS is the full
+list of arguments for the process, starting with \"java\"."
+  (let* ((buffer-name "*ROBOT Errors (Interactive)*")
          (buffer (get-buffer-create buffer-name)))
+    (message "[elot-robot-omn-to-ttl Interactive] Starting asynchronous process.")
     (with-current-buffer buffer (erase-buffer))
     (make-process
-     :name "robot-convert"
+     :name "robot-convert-interactive"
      :buffer buffer
-     :command (list "java" "-jar" elot-robot-jar-path
-                    "convert" "-vvv"
-                    "--input" omnfile
-                    "--output" output-file)
+     :command command-args ; Pass the full list including "java"
      :stderr buffer
      :noquery t
      :sentinel
+     ;; Sentinel logic - suitable for interactive use
      (lambda (proc event)
        (when (not (process-live-p proc))
          (if (= (process-exit-status proc) 0)
              (message "ROBOT: Conversion successful: %s" output-file)
+           ;; --- Failure Case (Interactive) ---
            (with-current-buffer buffer
              (goto-char (point-min))
              (if (and (re-search-forward
                        "^Parser: org\\.semanticweb\\.owlapi\\.manchestersyntax\\.parser\\.ManchesterOWLSyntaxOntologyParser" nil t)
                       (re-search-forward "Encountered"))
+                 ;; Found specific error - show it and try to jump
                  (let* ((start (line-beginning-position))
                         (end (or (and (re-search-forward
                                        "org\\.semanticweb\\.owlapi\\.manchestersyntax\\.parser\\.ManchesterOWLSyntaxOntologyParser" nil t)
                                       (line-beginning-position))
                                  (point-max)))
                         (error-text (buffer-substring-no-properties start end))
-                        (loc (elot--parse-robot-error-location error-text)))
+                        ;; Attempt parsing location, ignore errors if it fails
+                        (loc (ignore-errors (elot--parse-robot-error-location error-text))))
                    (message "ROBOT parse error:\n%s" error-text)
-                   (when loc
+                   (when loc ; Only jump if location parsing worked
                      (elot--jump-to-omn-error omnfile (car loc) (cadr loc))
                      (elot--jump-to-org-heading-for-identifier omnfile (car loc))))
-               (message "ROBOT failed, but no parse error could be extracted. See %s." buffer-name)))))))))
+               ;; Didn't find specific error - show generic message & buffer name
+               (message "ROBOT failed, but no parse error could be extracted. See buffer %s." buffer-name))
+             ;; Optional: Display the error buffer for the user interactively
+             ;; (display-buffer buffer)
+             )))))))
+
+;; Main dispatcher function
+(defun elot-robot-omn-to-ttl (omnfile)
+  "Convert OMNFILE (Manchester Syntax) to Turtle using ROBOT.
+Dispatches to synchronous batch or asynchronous interactive helpers.
+Checks for `elot-robot-jar-path`."
+
+  ;; --- Common Setup ---
+  (message "[elot-robot-omn-to-ttl] Starting conversion for: %s (Mode: %s)"
+           omnfile (if noninteractive "Batch" "Interactive"))
+  (unless (and (boundp 'elot-robot-jar-path) elot-robot-jar-path (file-exists-p elot-robot-jar-path))
+    (error "elot-robot-jar-path is not set or invalid: %s" elot-robot-jar-path))
+
+  (let* ((output-file (concat (file-name-sans-extension omnfile) ".ttl"))
+         ;; Base command arguments list (suitable for both helpers)
+         (command-args (list "java" "-jar" elot-robot-jar-path
+                             "convert" "-vvv" ; Keep verbose ROBOT output for parsing
+                             "--input" omnfile
+                             "--output" output-file)))
+
+    (message "[elot-robot-omn-to-ttl] Target ttlfile: %s" output-file)
+
+    ;; --- Dispatch based on mode ---
+    (if noninteractive
+        (elot-robot-omn-to-ttl--batch omnfile output-file command-args)
+      (elot-robot-omn-to-ttl--interactive omnfile output-file command-args))))
 
 (defun elot--parse-robot-error-location (text)
   "Extract (line column) from ROBOT error TEXT.  Return list of integers or nil."
@@ -148,7 +230,7 @@ to the corresponding Org-mode heading."
 
 (defun elot--jump-to-org-heading-for-identifier (omnfile line)
   "From OMNFILE and error LINE, search upward for a declaration.
-Jump to the Org-mode heading defining the identifier found."
+  Jump to the Org-mode heading defining the identifier found."
   (let ((identifier nil))
     (save-excursion
       (with-current-buffer (find-file-noselect omnfile)
@@ -193,15 +275,15 @@ Jump to the Org-mode heading defining the identifier found."
   :type 'string)
 (defcustom elot-rdfpuml-options
   "hide empty members
-hide circle
-skinparam classAttributeIconSize 0"
+  hide circle
+  skinparam classAttributeIconSize 0"
   "Default options for rdfpuml."
   :group 'elot
   :version "29.2"
   :type 'string)
 (defcustom elot-rdfpuml-command-str
   (if (executable-find "rdfpuml") ;; rdfpuml.exe available
-    "rdfpuml"  ;; LC_ALL=C should be added, but not available in Windows
+      "rdfpuml"  ;; LC_ALL=C should be added, but not available in Windows
     (concat "perl -C -S " elot-rdfpuml-path))
   "Command to execute `rdfpuml'."
   :group 'elot
