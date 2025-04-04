@@ -117,7 +117,6 @@ fi
 echo "Elisp package installation step completed successfully."
 
 # --- Download ROBOT JAR ---
-# (Remains the same)
 echo "Downloading latest ROBOT JAR..."
 API_URL="https://api.github.com/repos/ontodev/robot/releases/latest"
 ROBOT_JAR_PATH="${BIN_DIR}/robot.jar"
@@ -138,6 +137,23 @@ if [ $CURL_EXIT_CODE -ne 0 ]; then
 fi
 chmod +r "$ROBOT_JAR_PATH"
 echo "ROBOT JAR download completed."
+
+# --- Download elot-exporter.jar ---
+echo "Downloading elot-exporter.jar..."
+# Specify the exact URL provided
+EXPORTER_URL="https://github.com/johanwk/elot/releases/download/v1.0.5/elot-exporter-0.6-SNAPSHOT.jar"
+EXPORTER_JAR_PATH="${BIN_DIR}/elot-exporter.jar" # Use a clean name
+
+echo "Downloading from $EXPORTER_URL to '$EXPORTER_JAR_PATH'..."
+curl --location --output "$EXPORTER_JAR_PATH" "$EXPORTER_URL" --fail
+CURL_EXIT_CODE=$?
+if [ $CURL_EXIT_CODE -ne 0 ]; then
+    echo "Error: Failed to download elot-exporter.jar (curl exit code: $CURL_EXIT_CODE)." >&2
+    # Consider if this failure should stop the whole script or just warn
+    exit 1
+fi
+chmod +r "$EXPORTER_JAR_PATH"
+echo "elot-exporter.jar download completed."
 
 # --- Finish ---
 echo ""

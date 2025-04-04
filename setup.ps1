@@ -142,6 +142,21 @@ try {
     exit 1
 }
 
+# --- Download elot-exporter.jar ---
+Write-Host "Downloading elot-exporter.jar..." -ForegroundColor Cyan
+$ExporterUrl = "https://github.com/johanwk/elot/releases/download/v1.0.5/elot-exporter-0.6-SNAPSHOT.jar"
+$ExporterJarPath = Join-Path $BinDir "elot-exporter.jar" # Use a clean name
+
+Write-Host "Downloading from $ExporterUrl to '$ExporterJarPath'..."
+try {
+    Invoke-WebRequest -Uri $ExporterUrl -OutFile $ExporterJarPath -UseBasicParsing -ErrorAction Stop
+    Write-Host "elot-exporter.jar download completed." -ForegroundColor Green
+} catch {
+    Write-Error "Error downloading elot-exporter.jar: $_"
+    # Consider if this failure should stop the whole script or just warn
+    exit 1
+}
+
 # --- Finish ---
 Write-Host ""
 Write-Host "--- ELOT Environment Setup Complete ---" -ForegroundColor Yellow
