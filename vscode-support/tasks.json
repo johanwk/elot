@@ -27,7 +27,7 @@
             "type": "shell",
             "command": "echo",
             "args": [
-                "${env:ELOT_CLI_HOME}"
+                "ELOT_CLI_HOME is: ${env:ELOT_CLI_HOME}"
             ],
             "problemMatcher": [],
             "presentation": {
@@ -41,8 +41,8 @@
         },
         {
             // --- Task to Tangle the Currently Open Org File ---
-            "label": "ELOT: Tangle Current File",
-            "type": "process",
+            "label": "ELOT: Tangle Current File to OWL (OMN and Turtle)",
+            "type": "shell", 
             "command": "${env:ELOT_CLI_HOME}/elot-run.sh", 
             "windows": {
                 "command": "${env:ELOT_CLI_HOME}\\elot-run.ps1"
@@ -55,7 +55,7 @@
             },
             "args": [
                 "tangle",
-                "${file}"
+                "${file}" // Pass the file path as an argument
             ],
             "problemMatcher": [],
             "presentation": {
@@ -74,9 +74,10 @@
         {
             // --- Task to Export the Currently Open Org File to HTML ---
             "label": "ELOT: Export Current File to HTML",
-            "type": "process",
+            "type": "shell", 
             "command": "${env:ELOT_CLI_HOME}/elot-run.sh",
             "windows": {
+
                 "command": "${env:ELOT_CLI_HOME}\\elot-run.ps1"
             },
             "linux": {
@@ -87,7 +88,7 @@
             },
             "args": [
                 "export-html",
-                "${file}"
+                "${file}" // Pass the file path as an argument
             ],
             "problemMatcher": [],
             "presentation": {
@@ -102,7 +103,9 @@
         },
         {
             "label": "ELOT: Import Ontology to Org File (elot-exporter.jar)",
-            "type": "shell",
+            // This one runs java directly, so type: shell is appropriate
+            "type": "shell", 
+
             "command": "java -jar \"${env:ELOT_CLI_HOME}/bin/elot-exporter.jar\" \"${input:ontologySource}\" -o \"${input:outputOrgFile}\"",
             "windows": {
                 "command": "java -jar \"${env:ELOT_CLI_HOME}\\bin\\elot-exporter.jar\" \"${input:ontologySource}\" -o \"${input:outputOrgFile}\" ; if ($?) { Write-Host \"Output file: ${input:outputOrgFile}\" }"
@@ -122,5 +125,6 @@
                 "showReuseMessage": false,
                 "clear": true
             }
-h    ]
+        }
+    ]
 }
