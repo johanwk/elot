@@ -1,8 +1,8 @@
 # Using ELOT Batch Processing with Visual Studio Code
 
-This guide explains how to set up your environment to run ELOT's batch processing commands (like tangling Org files) directly from within Visual Studio Code on **your own projects**.
+This guide explains how to set up your environment to run ELOT's batch processing commands (like tangling Org files) and use helpful snippets directly from within Visual Studio Code on **your own projects**.
 
-**Goal:** You will be able to open an `.org` file in your project within VS Code and run a command (a "Task") that uses the separate ELOT tooling installation to generate the corresponding output (`.omn`, `.ttl`, `.html`, etc.).
+**Goal:** You will be able to open an `.org` file in your project within VS Code, use snippets to create new ontology structures, and run commands (a "Task") that use the separate ELOT tooling installation to generate corresponding outputs (`.omn`, `.ttl`, `.html`, etc.).
 
 ## Prerequisites
 
@@ -15,6 +15,7 @@ Ensure the following software is installed on your system:
 4.  **Setup Script Dependencies:**
     *   **Windows:** PowerShell is typically built-in.
     *   **Linux/macOS:** `curl` and `jq`. Install using your package manager (e.g., `sudo apt install curl jq`, `brew install curl jq`).
+5.  **(Recommended) VS Code Org Mode Extension:** For the best experience editing `.org` files, install the [Org Mode extension](https://marketplace.visualstudio.com/items?itemName=vscode-org-mode.org-mode) from the VS Code Marketplace.
 
 ## Step 1: Install ELOT Command-Line Tools
 
@@ -80,54 +81,66 @@ The VS Code tasks need to know where you installed the ELOT CLI tools. You **mus
 
 ## Step 3: Configure Your Project in VS Code
 
-Now, configure the specific project where you will be working with `.org` files.
+Now, configure the specific project where you will be working with `.org` files to use the provided VS Code helpers (Tasks and Snippets).
 
 1.  **Open Your Project:** Launch VS Code and use **File** > **Open Folder...** to open *your* project's main directory (NOT the ELOT CLI installation directory).
-2.  **Create `.vscode` Directory (if needed):** In the VS Code Explorer panel, check if your project root has a `.vscode` subfolder. If not, right-click in the empty space of the Explorer panel and select "New Folder", naming it `.vscode`.
-3.  **Copy Task Template:**
-    *   Locate the example `tasks.json` file provided within the ELOT CLI tool distribution (it should be in the `vscode-support/` directory of the ELOT repository you cloned/downloaded).
-    *   Copy this `tasks.json` file.
-4.  **Paste and Rename:**
-    *   Paste the copied file *inside* your project's `.vscode` directory.
-    *   Ensure the pasted file is named exactly `tasks.json`.
+2.  **Create `.vscode` Directory (if needed):** In the VS Code Explorer panel, check if your project root has a `.vscode` subfolder. If not, right-click in the empty space of the Explorer panel and select "New Folder", naming it `.vscode`. This directory is where VS Code automatically looks for project-specific settings.
+3.  **Copy Helper Files:**
+    *   Locate the example `tasks.json` and `elot.code-snippets` files provided within the ELOT CLI tool distribution (they should be in the `vscode-support/` directory of the ELOT repository you cloned/downloaded).
+    *   Copy **both** `tasks.json` and `elot.code-snippets` from the source `vscode-support/` directory.
+4.  **Paste into Project:**
+    *   Paste the copied files *inside* your project's `.vscode` directory.
+    *   Ensure the pasted files are named exactly `tasks.json` and `elot.code-snippets`.
 
-## Step 4: Run ELOT Tasks
+## Using ELOT Features in VS Code
 
-You are now ready to use the tasks on your project's files or external sources.
+Once the setup (Steps 1-3) is complete, you can leverage the integrated features within VS Code for your project:
 
-1.  **Open Your Project:** Ensure your project folder is open in VS Code.
-2.  **Run Task:**
-    *   Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P` / `F1`).
-    *   Type `Run Task` and select **Tasks: Run Task**.
-    *   Choose the desired task from the list:
-        *   `ELOT: Tangle Current File`: Processes the *currently active* Org file editor to generate `.omn`/`.ttl` files.
-        *   `ELOT: Export Current File to HTML`: Exports the *currently active* Org file editor to HTML (output file is named automatically).
-        *   **`ELOT: Import Ontology to Org File (elot-exporter.jar)`**: Use this to read an ontology from a URL or file and save it as an ELOT-structured Org file.
-3.  **Provide Input (if prompted):**
-    *   If you selected the `ELOT: Import Ontology to Org File` task, **two prompts** will appear sequentially at the top of VS Code:
-        1.  **"Enter Ontology URI or local file path (Input for elot-exporter)"**: Type or paste the source ontology URL or local path (e.g., `.owl`, `.ttl` file) and press Enter.
-        2.  **"Enter desired Output Org file path"**: Type the path where you want to save the generated Org file (e.g., `my-ontology.org`, `../ontologies/imported-pizza.org`). Relative paths are usually based on your workspace root. A default (`output.org` in the workspace root) is suggested. Press Enter.
-4.  **Observe & Check:**
-    *   The integrated **Terminal** panel will open.
-    *   For Tangle/Export tasks, check the terminal for success/error messages and look for generated files in your project explorer.
-    *   For the Import task:
-        *   The terminal will show output from `elot-exporter.jar`. Check for success messages or errors.
-        *   Look in the VS Code Explorer panel for the **output `.org` file** you specified (e.g., `output.org`). You can click on it to open and view the imported ontology structure in Org-mode format.
+### 1. Creating New Ontologies with Snippets
 
+The `elot.code-snippets` file provides a template for quickly scaffolding a new ELOT Ontology Org file.
+
+**Usage:**
+
+1.  **Create/Open Org File:** Create a new file within your project and save it with an `.org` extension (e.g., `my-ontology.org`), or open an existing one.
+2.  **Type Prefix:** In the Org file, start typing the snippet prefix: `elotOntologyTemplate`
+3.  **Trigger Snippet:** VS Code's IntelliSense will suggest the snippet ("Creates a new ELOT Ontology Org file structure..."). Press `Tab` or `Enter` to insert the full template.
+4.  **Fill Placeholders:** The template will be inserted. Use the `Tab` key to navigate through the highlighted placeholders and fill in the required information:
+    *   **Label:** The human-readable title (e.g., "My Awesome Ontology").
+    *   **Localname:** The technical identifier, often lowercase and hyphenated (e.g., `my-awesome-ontology`). Used for IDs and the `.omn` filename.
+    *   **Prefix:** The short namespace prefix (e.g., `awe` or `mao`). *Do not include the colon (`:`) here; the snippet adds it where needed.*
+    *   **Namespace URI:** The full URI for the ontology's default namespace (e.g., `http://myorg.com/ontologies/awesome#`).
+    *   **Author:** Your name or identifier.
+5.  **Start Editing:** Once all placeholders are filled by pressing `Tab` sequentially, the cursor will land at the final position, ready for you to add specific ontology content (like classes or properties).
+
+### 2. Running Batch Processing Tasks
+
+The `tasks.json` file defines commands to run ELOT's batch processing tools.
+
+**How to Run:**
+
+1.  **Open the Command Palette:** Use `Ctrl+Shift+P` (Windows/Linux) or `Cmd+Shift+P` (macOS), or press `F1`.
+2.  **Select "Run Task":** Type `Run Task` and select **Tasks: Run Task** from the list.
+3.  **Choose ELOT Task:** Select one of the available tasks prefixed with `ELOT:`:
+    *   `ELOT: Tangle Current File`: Processes the *currently active* Org file editor to generate `.omn`/`.ttl` files according to the `:tangle` headers.
+    *   `ELOT: Export Current File to HTML`: Exports the *currently active* Org file editor to HTML (output file is named automatically based on the Org filename).
+    *   `ELOT: Import Ontology to Org File (elot-exporter.jar)`: Reads an external ontology (URL or local file) and converts it into an ELOT-structured Org file.
+        *   **Prompts:** This task will ask for two inputs sequentially via the Command Palette: the source ontology URI/path and the desired output `.org` filename.
+4.  **Observe Terminal:** The integrated **Terminal** panel will open and show the output of the running task. Check here for success or error messages. Generated files (e.g., `.omn`, `.html`, the imported `.org`) will appear in your project's file explorer.
 
 ## Limitations in VS Code Integration
 
-The VS Code tasks provide a convenient way to run **non-interactive batch processes** like tangling and exporting. However, they do **not** replicate the full interactive experience of using ELOT within GNU Emacs.
+The VS Code tasks and snippets provide convenient ways to run **non-interactive batch processes** and **scaffold files**. However, they do **not** replicate the full interactive experience of using ELOT within GNU Emacs.
 
-Features **not** available via the VS Code tasks include:
+Features **not** available via the VS Code integration include:
 
 *   **Interactive Label Display:** Switching between showing full identifiers (IRIs) and their labels directly within the editor buffer (`elot-label-display-mode`).
 *   **Interactive ROBOT/SPARQL Commands:** Running arbitrary ROBOT commands or SPARQL queries on the current buffer or region using ELOT's interactive Emacs functions.
-*   **Diagram Generation:** Generating diagrams (e.g., using `rdfpuml`) based on the buffer content.
+*   **Diagram Generation:** Dynamically generating diagrams (e.g., using `rdfpuml`) based on the buffer content.
 
-While diagrams and other derived artifacts can still be *included* in your Org files (e.g., as images), the dynamic generation features require the interactive Emacs environment.
+While diagrams and other derived artifacts can still be *included* in your Org files (e.g., as images), the dynamic generation and interactive features require the full Emacs environment.
 
-**For the full set of ELOT features, including interactive commands and display modes, using GNU Emacs directly is recommended.** The VS Code integration focuses on automating the core batch processing workflows.
+**For the complete set of ELOT features, using GNU Emacs directly is recommended.** The VS Code integration focuses on automating core batch processing and file creation workflows.
 
 ## Troubleshooting
 
@@ -138,6 +151,11 @@ While diagrams and other derived artifacts can still be *included* in your Org f
     *   Ensure the setup script (`setup.sh`/`.ps1`) was run successfully within the `ELOT_CLI_HOME` directory.
 *   **Task fails with "emacs: command not found":**
     *   Ensure Emacs is installed and its `bin` directory is correctly added to your system `PATH`. Restart VS Code if you recently changed the PATH.
+*   **Snippet `elotOntologyTemplate` does not appear:**
+    *   Ensure the file `.vscode/elot.code-snippets` exists in your project root.
+    *   Ensure you are editing a file with the `.org` extension.
+    *   Try restarting VS Code.
+    *   Check the `elot.code-snippets` file for JSON syntax errors (VS Code might highlight them).
 *   **Task runs but fails with errors in the terminal:**
     *   Read the error messages carefully. They might come from Emacs Lisp (`cli_runner.el` or ELOT code), ROBOT (during conversion), or the shell script wrapper.
     *   Check that the `lib/` and `bin/` directories within your `ELOT_CLI_HOME` contain the expected dependencies. You may need to re-run the setup script.
