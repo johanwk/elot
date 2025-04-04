@@ -7,24 +7,55 @@
     // 3. Copy this file into your project's '.vscode/' directory and rename it to 'tasks.json'.
     // 4. Restart VS Code if you just set the environment variable.
     "version": "2.0.0",
+    "inputs": [
+        {
+            "id": "ontologySource",
+            "type": "promptString",
+            "description": "Enter Ontology URI or local file path (Input for elot-exporter)",
+            "default": "http://"
+        },
+        {
+            "id": "outputOrgFile",
+            "type": "promptString",
+            "description": "Enter desired Output Org file path (e.g., ./output.org)",
+            "default": "${workspaceFolder}/output.org"
+        }
+    ],
     "tasks": [
+        {
+            "label": "Print ELOT_CLI_HOME",
+            "type": "shell",
+            "command": "echo",
+            "args": [
+                "${env:ELOT_CLI_HOME}"
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true
+            }
+        },
         {
             // --- Task to Tangle the Currently Open Org File ---
             "label": "ELOT: Tangle Current File",
-            "type": "process", // Use 'shell' type for better platform handling if needed, but process is often okay
-            "windows": { // Settings specific to Windows
-                "command": "${env:ELOT_CLI_HOME}\\elot-run.ps1" // Use powershell script via env var path
+            "type": "process",
+            "command": "${env:ELOT_CLI_HOME}/elot-run.sh", 
+            "windows": {
+                "command": "${env:ELOT_CLI_HOME}\\elot-run.ps1"
             },
-            "linux": { // Settings specific to Linux/WSL
-                "command": "${env:ELOT_CLI_HOME}/elot-run.sh" // Use bash script via env var path
+            "linux": {
+                "command": "${env:ELOT_CLI_HOME}/elot-run.sh"
             },
-            "osx": { // Settings specific to macOS
-                "command": "${env:ELOT_CLI_HOME}/elot-run.sh" // Use bash script via env var path
+            "osx": {
+                "command": "${env:ELOT_CLI_HOME}/elot-run.sh"
             },
             "args": [
-                // Arguments passed to the runner script
-                "tangle",    // The ELOT command
-                "${file}"    // VS Code variable: Full path to the currently active editor file
+                "tangle",
+                "${file}"
             ],
             "problemMatcher": [],
             "presentation": {
@@ -44,6 +75,7 @@
             // --- Task to Export the Currently Open Org File to HTML ---
             "label": "ELOT: Export Current File to HTML",
             "type": "process",
+            "command": "${env:ELOT_CLI_HOME}/elot-run.sh",
             "windows": {
                 "command": "${env:ELOT_CLI_HOME}\\elot-run.ps1"
             },
@@ -54,12 +86,11 @@
                 "command": "${env:ELOT_CLI_HOME}/elot-run.sh"
             },
             "args": [
-                // Arguments passed to the runner script
                 "export-html",
-                "${file}" // Input Org file
+                "${file}"
             ],
             "problemMatcher": [],
-            "presentation": { // Same presentation options as above
+            "presentation": {
                 "echo": true,
                 "reveal": "always",
                 "focus": false,
@@ -68,7 +99,28 @@
                 "clear": true
             },
             "group": "build"
-        }
-        // Add more tasks as needed
-    ]
+        },
+        {
+            "label": "ELOT: Import Ontology to Org File (elot-exporter.jar)",
+            "type": "shell",
+            "command": "java -jar \"${env:ELOT_CLI_HOME}/bin/elot-exporter.jar\" \"${input:ontologySource}\" -o \"${input:outputOrgFile}\"",
+            "windows": {
+                "command": "java -jar \"${env:ELOT_CLI_HOME}\\bin\\elot-exporter.jar\" \"${input:ontologySource}\" -o \"${input:outputOrgFile}\" ; if ($?) { Write-Host \"Output file: ${input:outputOrgFile}\" }"
+            },
+            "linux": {
+                "command": "java -jar \"${env:ELOT_CLI_HOME}/bin/elot-exporter.jar\" \"${input:ontologySource}\" -o \"${input:outputOrgFile}\" && echo Output file: ${input:outputOrgFile}"
+            },
+            "osx": {
+                "command": "java -jar \"${env:ELOT_CLI_HOME}/bin/elot-exporter.jar\" \"${input:ontologySource}\" -o \"${input:outputOrgFile}\" && echo Output file: ${input:outputOrgFile}"
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "dedicated",
+                "showReuseMessage": false,
+                "clear": true
+            }
+h    ]
 }
