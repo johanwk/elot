@@ -1,0 +1,192 @@
+// In file: .vscode/elot.code-snippets
+{
+  "ELOT Ontology Template": {
+    "prefix": "elotOntologyTemplate",
+    "scope": "org", // Restricts the snippet to Org mode files
+    "body": [
+      "# -*- eval: (load-library \\\"elot-defaults\\\") -*-",
+      "#+title: ${1:My New Ontology}",                  // $1: Label
+      "#+subtitle: An OWL ontology",
+      "#+author: ${5:$USER}",                           // $5: Author (was $3)
+      "#+date: WIP (version of ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE} ${CURRENT_HOUR}:${CURRENT_MINUTE})",
+      "#+call: theme-readtheorg()",
+      "",
+      "",
+      "* ${1:My New Ontology}",                          // $1: Label
+      ":PROPERTIES:",
+      ":ID: ${2:my-new-ontology}",                      // $2: Localname
+      ":ELOT-context-type: ontology",
+      ":ELOT-context-localname: ${2:my-new-ontology}",  // $2: Localname
+      ":ELOT-default-prefix: ${3:ex}",                  // $3: Prefix
+      ":header-args:omn: :tangle ./${2:my-new-ontology}.omn :noweb yes", // $2: Localname
+      ":header-args:emacs-lisp: :tangle no :exports results",
+      ":header-args: :padline yes",
+      ":END:",
+      ":OMN:",
+      "#+begin_src omn :exports none",
+      "##",
+      "## This is the ${2:my-new-ontology} ontology", // $2: Localname
+      "## This document is in OWL 2 Manchester Syntax, see https://www.w3.org/TR/owl2-manchester-syntax/",
+      "##",
+      "",
+      "## Prefixes",
+      "<<omn-prefixes()>>",
+      "",
+      "## Ontology declaration",
+      "<<resource-declarations(hierarchy=\"${2:my-new-ontology}-ontology-declaration\", owl-type=\"Ontology\", owl-relation=\"\")>>", // $2: Localname
+      "",
+      "## Datatype declarations",
+      "<<resource-declarations(hierarchy=\"${2:my-new-ontology}-datatypes\", owl-type=\"Datatype\")>>", // $2: Localname
+      "",
+      "## Class declarations",
+      "<<resource-declarations(hierarchy=\"${2:my-new-ontology}-class-hierarchy\", owl-type=\"Class\")>>", // $2: Localname
+      "",
+      "## Object property declarations",
+      "<<resource-declarations(hierarchy=\"${2:my-new-ontology}-object-property-hierarchy\", owl-type=\"ObjectProperty\")>>", // $2: Localname
+      "",
+      "## Data property declarations",
+      "<<resource-declarations(hierarchy=\"${2:my-new-ontology}-data-property-hierarchy\", owl-type=\"DataProperty\")>>", // $2: Localname
+      "",
+      "## Annotation property declarations",
+      "<<resource-declarations(hierarchy=\"${2:my-new-ontology}-annotation-property-hierarchy\", owl-type=\"AnnotationProperty\")>>", // $2: Localname
+      "",
+      "## Individual declarations",
+      "<<resource-declarations(hierarchy=\"${2:my-new-ontology}-individuals\", owl-type=\"Individual\")>>", // $2: Localname
+      "",
+      "## Resource taxonomies",
+      "<<resource-taxonomy(hierarchy=\"${2:my-new-ontology}-class-hierarchy\", owl-type=\"Class\", owl-relation=\"SubClassOf\")>>", // $2: Localname
+      "<<resource-taxonomy(hierarchy=\"${2:my-new-ontology}-object-property-hierarchy\", owl-type=\"ObjectProperty\", owl-relation=\"SubPropertyOf\")>>", // $2: Localname
+      "<<resource-taxonomy(hierarchy=\"${2:my-new-ontology}-data-property-hierarchy\", owl-type=\"DataProperty\", owl-relation=\"SubPropertyOf\")>>", // $2: Localname
+      "<<resource-taxonomy(hierarchy=\"${2:my-new-ontology}-annotation-property-hierarchy\", owl-type=\"AnnotationProperty\", owl-relation=\"SubPropertyOf\")>>", // $2: Localname
+      "#+end_src",
+      ":END:",
+      "** Prefixes",
+      "The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].",
+      "",
+      "#+name: prefix-table",
+      "#+attr_latex: :align lp{.8\\textwidth} :font  mall",
+      "#+caption: OWL ontology prefixes",
+      "| prefix    | uri                                                                            |",
+      "|-----------+--------------------------------------------------------------------------------|",
+      "| owl:      | http://www.w3.org/2002/07/owl#                                                 |",
+      "| rdf:      | http://www.w3.org/1999/02/22-rdf-syntax-ns#                                    |",
+      "| xml:      | http://www.w3.org/XML/1998/namespace                                           |",
+      "| xsd:      | http://www.w3.org/2001/XMLSchema#                                              |",
+      "| rdfs:     | http://www.w3.org/2000/01/rdf-schema#                                          |",
+      "| skos:     | http://www.w3.org/2004/02/skos/core#                                           |",
+      "| pav:      | http://purl.org/pav/                                                           |",
+      "| foaf:     | http://xmlns.com/foaf/0.1/                                                     |",
+      "| dc:       | http://purl.org/dc/elements/1.1/                                               |",
+      "| dcterms:  | http://purl.org/dc/terms/                                                      |",
+      "| prov:     | http://www.w3.org/ns/prov#                                                     |",
+      "| iof-av:   | https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/ |",
+      "| ${3:ex}:      | ${4:http://example.org/}                                                            |", // $3: Prefix, $4: Namespace URI
+      "*** Source blocks for prefixes                                     :noexport:",
+      ":PROPERTIES:",
+      ":header-args:omn: :tangle no",
+      ":END:",
+      "#+name: sparql-prefixes",
+      "#+begin_src emacs-lisp :var prefixes=prefix-table :exports none",
+      "  (elot-prefix-block-from-alist prefixes 'sparql)",
+      "#+end_src",
+      "#+name: omn-prefixes",
+      "#+begin_src emacs-lisp :var prefixes=prefix-table :exports none",
+      "  (elot-prefix-block-from-alist prefixes 'omn)",
+      "#+end_src",
+      "#+name: ttl-prefixes",
+      "#+begin_src emacs-lisp :var prefixes=prefix-table :exports none",
+      "  (elot-prefix-block-from-alist prefixes 'ttl)",
+      "#+end_src",
+      "",
+      // Use $1 (Label) for the human-readable part, $3 (Prefix) and $2 (Localname) for technical IDs
+      "** ${1:My New Ontology} ontology (${3:ex}:${2:my-new-ontology} ${3:ex}:${2:my-new-ontology}/0.0)",
+      ":PROPERTIES:",
+      ":ID:       ${2:my-new-ontology}-ontology-declaration", // $2: Localname
+      ":custom_id: ${2:my-new-ontology}-ontology-declaration", // $2: Localname
+      ":resourcedefs: yes",
+      ":END:",
+      " # - Import :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/",
+      " - owl:versionInfo :: 0.0 start of ${1:My New Ontology}", // $1: Label
+      " - dcterms:title :: \\\"${1:My New Ontology} ontology\\\"@en", // $1: Label
+      " - pav:lastUpdateOn :: {{{modification-time(\\\"%Y-%m-%dT%H:%M:%SZ\\\",t)}}}^^xsd:dateTime",
+      " - dcterms:license :: [[https://creativecommons.org/licenses/by-sa/4.0/]]",
+      " - dcterms:creator :: {{{author}}}",
+      " - dcterms:modified ::  {{{modification-time(\\\"%Y-%m-%d\\\",t)}}}^^xsd:date",
+      " - dcterms:publisher :: https://example.org/thepublisher", // Consider if this should also be a placeholder? $6?
+      " - dc:rights :: Copyright info here",                     // Consider if this should also be a placeholder? $7?
+      " - dcterms:description :: The ${1:My New Ontology} ontology is ...", // $1: Label
+      " - rdfs:comment :: The ${1:My New Ontology} ontology is ...", // $1: Label
+      "** Datatypes",
+      ":PROPERTIES:",
+      ":ID:       ${2:my-new-ontology}-datatypes", // $2: Localname
+      ":custom_id: ${2:my-new-ontology}-datatypes", // $2: Localname
+      ":resourcedefs: yes",
+      ":END:",
+      "** Classes",
+      ":PROPERTIES:",
+      ":ID:       ${2:my-new-ontology}-class-hierarchy", // $2: Localname
+      ":custom_id: ${2:my-new-ontology}-class-hierarchy", // $2: Localname
+      ":resourcedefs: yes",
+      ":END:",
+      "*** My class (${3:ex}:MyClass)", // $3: Prefix
+      " - rdfs:comment :: $0", // $0: Final cursor position
+      "** Object properties",
+      ":PROPERTIES:",
+      ":ID:       ${2:my-new-ontology}-object-property-hierarchy", // $2: Localname
+      ":custom_id: ${2:my-new-ontology}-object-property-hierarchy", // $2: Localname
+      ":resourcedefs: yes",
+      ":END:",
+      "** Data properties",
+      ":PROPERTIES:",
+      ":ID:       ${2:my-new-ontology}-data-property-hierarchy", // $2: Localname
+      ":custom_id: ${2:my-new-ontology}-data-property-hierarchy", // $2: Localname
+      ":resourcedefs: yes",
+      ":END:",
+      "** Annotation properties",
+      ":PROPERTIES:",
+      ":ID:       ${2:my-new-ontology}-annotation-property-hierarchy", // $2: Localname
+      ":custom_id: ${2:my-new-ontology}-annotation-property-hierarchy", // $2: Localname
+      ":resourcedefs: yes",
+      ":END:",
+      // Standard Annotation Properties (Prefix doesn't apply here)
+      "*** owl:versionInfo",
+      "*** dcterms:title",
+      " - rdfs:isDefinedBy :: http://purl.org/dc/terms/",
+      "*** dcterms:license",
+      " - rdfs:isDefinedBy :: http://purl.org/dc/terms/",
+      "*** dcterms:creator",
+      " - rdfs:isDefinedBy :: http://purl.org/dc/terms/",
+      "*** dcterms:modified",
+      " - rdfs:isDefinedBy :: http://purl.org/dc/terms/",
+      "*** dcterms:publisher",
+      " - rdfs:isDefinedBy :: http://purl.org/dc/terms/",
+      "*** dcterms:description",
+      " - rdfs:isDefinedBy :: http://purl.org/dc/terms/",
+      "*** dc:rights",
+      " - rdfs:isDefinedBy :: http://purl.org/dc/elements/1.1/",
+      "*** pav:lastUpdateOn",
+      " - rdfs:isDefinedBy :: http://purl.org/pav/",
+      "*** skos:example",
+      " - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core",
+      "*** skos:prefLabel",
+      " - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core",
+      "*** skos:altLabel",
+      " - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core",
+      "*** iof-av:isPrimitive",
+      " - rdfs:isDefinedBy :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary",
+      "*** skos:definition",
+      " - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core",
+      "**** iof-av:naturalLanguageDefinition",
+      " - rdfs:isDefinedBy :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary",
+      "**** iof-av:primitiveRationale",
+      " - rdfs:isDefinedBy :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary",
+      "** Individuals",
+      ":PROPERTIES:",
+      ":ID:       ${2:my-new-ontology}-individuals", // $2: Localname
+      ":custom_id: ${2:my-new-ontology}-individuals", // $2: Localname
+      ":resourcedefs: yes",
+      ":END:"
+    ],
+    "description": "Creates a new ELOT Ontology Org file structure (prompts for Label, Localname, Prefix, Namespace, Author)"
+  }
+}
