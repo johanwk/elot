@@ -93,19 +93,27 @@ Now, configure the specific project where you will be working with `.org` files.
 
 ## Step 4: Run ELOT Tasks
 
-You are now ready to use the tasks on your project's files.
+You are now ready to use the tasks on your project's files or external sources.
 
-1.  **Open Your Org File:** In VS Code, open one of your project's `.org` files. Make sure its editor tab is the active one.
+1.  **Open Your Project:** Ensure your project folder is open in VS Code.
 2.  **Run Task:**
     *   Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P` / `F1`).
     *   Type `Run Task` and select **Tasks: Run Task**.
     *   Choose the desired task from the list:
-        *   `ELOT: Tangle Current File`
-        *   `ELOT: Export Current File to HTML`
-3.  **Observe & Check:**
-    *   The integrated **Terminal** panel will open, showing the output from the ELOT runner script.
-    *   Check the terminal for success messages or any errors reported by Emacs or ROBOT.
-    *   Look in your project's file explorer for the generated output files (e.g., `.omn`, `.ttl`, `.html`) in the same directory as the source `.org` file.
+        *   `ELOT: Tangle Current File`: Processes the *currently active* Org file editor to generate `.omn`/`.ttl` files.
+        *   `ELOT: Export Current File to HTML`: Exports the *currently active* Org file editor to HTML (output file is named automatically).
+        *   **`ELOT: Import Ontology to Org File (elot-exporter.jar)`**: Use this to read an ontology from a URL or file and save it as an ELOT-structured Org file.
+3.  **Provide Input (if prompted):**
+    *   If you selected the `ELOT: Import Ontology to Org File` task, **two prompts** will appear sequentially at the top of VS Code:
+        1.  **"Enter Ontology URI or local file path (Input for elot-exporter)"**: Type or paste the source ontology URL or local path (e.g., `.owl`, `.ttl` file) and press Enter.
+        2.  **"Enter desired Output Org file path"**: Type the path where you want to save the generated Org file (e.g., `my-ontology.org`, `../ontologies/imported-pizza.org`). Relative paths are usually based on your workspace root. A default (`output.org` in the workspace root) is suggested. Press Enter.
+4.  **Observe & Check:**
+    *   The integrated **Terminal** panel will open.
+    *   For Tangle/Export tasks, check the terminal for success/error messages and look for generated files in your project explorer.
+    *   For the Import task:
+        *   The terminal will show output from `elot-exporter.jar`. Check for success messages or errors.
+        *   Look in the VS Code Explorer panel for the **output `.org` file** you specified (e.g., `output.org`). You can click on it to open and view the imported ontology structure in Org-mode format.
+
 
 ## Limitations in VS Code Integration
 
