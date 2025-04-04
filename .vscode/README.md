@@ -1,6 +1,6 @@
 # Using ELOT Batch Processing with Visual Studio Code
 
-This guide explains how to set up your environment to run ELOT's batch processing commands (like tangling Org files) and use helpful snippets directly from within Visual Studio Code on **your own projects**.
+This guide explains how to set up your environment to run ELOT's batch processing commands (like tangling Org files) and use helpful snippets directly from within Visual Studio Code on **your own projects** using the ELOT CLI tools.
 
 **Goal:** You will be able to open an `.org` file in your project within VS Code, use snippets to create new ontology structures, and run commands (a "Task") that use the separate ELOT tooling installation to generate corresponding outputs (`.omn`, `.ttl`, `.html`, etc.).
 
@@ -19,7 +19,7 @@ Ensure the following software is installed on your system:
 
 ## Step 1: Install ELOT Command-Line Tools
 
-First, get the ELOT CLI scripts and dependencies into a dedicated location on your system. This is separate from your individual projects.
+First, get the ELOT CLI scripts and dependencies into a dedicated location on your system. This is separate from your individual projects where you will use these tools.
 
 1.  **Choose Installation Location:** Decide where you want to keep the ELOT CLI tools (e.g., `~/tools/elot-cli`, `C:\tools\elot-cli`, `~/elot`). This directory will be referred to as your `<ELOT_CLI_Installation_Directory>`.
 2.  **Get the Tools:**
@@ -79,26 +79,23 @@ The VS Code tasks need to know where you installed the ELOT CLI tools. You **mus
     4.  Apply the changes: Either run `source ~/.your_config_file` (e.g., `source ~/.zshrc`) in your current terminal or simply open a new terminal window.
     5.  **Important:** Launch VS Code *from a terminal window* where this variable is set, or **restart VS Code** to ensure it inherits the new environment variable.
 
-## Step 3: Configure Your Project in VS Code
+## Step 3: Open Your Project in VS Code
 
-Now, configure the specific project where you will be working with `.org` files to use the provided VS Code helpers (Tasks and Snippets).
+Now you are ready to work on your specific project using ELOT features within VS Code.
 
-1.  **Open Your Project:** Launch VS Code and use **File** > **Open Folder...** to open *your* project's main directory (NOT the ELOT CLI installation directory).
-2.  **Create `.vscode` Directory (if needed):** In the VS Code Explorer panel, check if your project root has a `.vscode` subfolder. If not, right-click in the empty space of the Explorer panel and select "New Folder", naming it `.vscode`. This directory is where VS Code automatically looks for project-specific settings.
-3.  **Copy Helper Files:**
-    *   Locate the example `tasks.json` and `elot.code-snippets` files provided within the ELOT CLI tool distribution (they should be in the `vscode-support/` directory of the ELOT repository you cloned/downloaded).
-    *   Copy **both** `tasks.json` and `elot.code-snippets` from the source `vscode-support/` directory.
-4.  **Paste into Project:**
-    *   Paste the copied files *inside* your project's `.vscode` directory.
-    *   Ensure the pasted files are named exactly `tasks.json` and `elot.code-snippets`.
+1.  **Open Your Project:** Launch VS Code and use **File** > **Open Folder...** to open *your* project's main directory (the one containing your `.org` files, NOT the ELOT CLI installation directory).
+2.  **Automatic Configuration:** VS Code automatically detects the `.vscode` directory within your project. This directory contains:
+    *   `tasks.json`: Defines custom commands (Tasks) for running ELOT tools.
+    *   `elot.code-snippets`: Provides code snippets for quickly generating ELOT structures.
+    *(If you cloned this repository or are using a project template that includes the `.vscode` folder with these files, no further configuration is needed here. If starting a brand new project, you would copy these files from the ELOT distribution's `vscode-support` directory into your new project's `.vscode` folder.)*
 
 ## Using ELOT Features in VS Code
 
-Once the setup (Steps 1-3) is complete, you can leverage the integrated features within VS Code for your project:
+With the ELOT CLI tools installed, the `ELOT_CLI_HOME` environment variable set, and your project open in VS Code, you can now use the integrated features:
 
 ### 1. Creating New Ontologies with Snippets
 
-The `elot.code-snippets` file provides a template for quickly scaffolding a new ELOT Ontology Org file.
+The `elot.code-snippets` file (located in `.vscode/`) provides a template for quickly scaffolding a new ELOT Ontology Org file.
 
 **Usage:**
 
@@ -115,7 +112,7 @@ The `elot.code-snippets` file provides a template for quickly scaffolding a new 
 
 ### 2. Running Batch Processing Tasks
 
-The `tasks.json` file defines commands to run ELOT's batch processing tools.
+The `tasks.json` file (located in `.vscode/`) defines commands to run ELOT's batch processing tools.
 
 **How to Run:**
 
@@ -152,10 +149,14 @@ While diagrams and other derived artifacts can still be *included* in your Org f
 *   **Task fails with "emacs: command not found":**
     *   Ensure Emacs is installed and its `bin` directory is correctly added to your system `PATH`. Restart VS Code if you recently changed the PATH.
 *   **Snippet `elotOntologyTemplate` does not appear:**
-    *   Ensure the file `.vscode/elot.code-snippets` exists in your project root.
+    *   Ensure the file `.vscode/elot.code-snippets` exists in your project root. VS Code should detect this automatically when the project folder is opened.
     *   Ensure you are editing a file with the `.org` extension.
     *   Try restarting VS Code.
     *   Check the `elot.code-snippets` file for JSON syntax errors (VS Code might highlight them).
+*   **Tasks are not listed in "Run Task":**
+    *   Ensure the file `.vscode/tasks.json` exists in your project root. VS Code should detect this automatically.
+    *   Try restarting VS Code.
+    *   Check the `tasks.json` file for JSON syntax errors.
 *   **Task runs but fails with errors in the terminal:**
     *   Read the error messages carefully. They might come from Emacs Lisp (`cli_runner.el` or ELOT code), ROBOT (during conversion), or the shell script wrapper.
     *   Check that the `lib/` and `bin/` directories within your `ELOT_CLI_HOME` contain the expected dependencies. You may need to re-run the setup script.
