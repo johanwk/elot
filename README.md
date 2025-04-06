@@ -26,22 +26,22 @@ ELOT takes inspiration from this paradigm and uses the excellent Emacs Orgmode p
 Ontological constructs are generated from narrative sections and Manchester Notation (OMN) fragments. Diagrams are generated from Turtle examples or SPARQL queries by using the rdfpuml tool.
 The tool then extracts ontological definitions (OMN or Turtle) and documentation (HTML or PDF).
 
--   [Prerequisites in brief](#org6a4644c)
--   [Installation](#org8f4bf2f)
-    -   [Get Emacs](#org2803595)
-    -   [Install ELOT in Emacs](#orgf286161)
-    -   [Install ELOT auxiliaries](#org51e93d5)
-    -   [NEW: Convert existing OWL files to ELOT format](#orgd1828ae)
--   [Quick start using ELOT](#org6b78d12)
-    -   [Adding an ontology](#org49d0162)
-    -   [Adding classes and relations](#orgfde06d4)
-    -   [Adding annotations](#org96bb83c)
-    -   [Querying the ontology](#orgacc5ce0)
-    -   [Making a diagram](#orge199c79)
-    -   [Display labels instead of identifiers](#orga63be9f)
+-   [Prerequisites in brief](#org9937a06)
+-   [Installation](#org521afa8)
+    -   [Get Emacs](#org9fe6948)
+    -   [Install ELOT in Emacs](#org65788d0)
+    -   [Install ELOT auxiliaries](#orga39d6fa)
+    -   [NEW: Convert existing OWL files to ELOT format](#org842995b)
+-   [Quick start using ELOT](#org914aaae)
+    -   [Adding an ontology](#org0c7e4d2)
+    -   [Adding classes and relations](#orgd198edf)
+    -   [Adding annotations](#org5274e79)
+    -   [Querying the ontology](#org828577a)
+    -   [Making a diagram](#org7b3d364)
+    -   [Display labels instead of identifiers](#org800a751)
 
 
-<a id="org6a4644c"></a>
+<a id="org9937a06"></a>
 
 ## Prerequisites in brief
 
@@ -57,12 +57,12 @@ If you are new to Emacs, the book [Mastering Emacs](https://www.masteringemacs.o
 recommended.
 
 
-<a id="org8f4bf2f"></a>
+<a id="org521afa8"></a>
 
 ## Installation
 
 
-<a id="org2803595"></a>
+<a id="org9fe6948"></a>
 
 ### Get Emacs
 
@@ -80,7 +80,7 @@ for Linux).
 For MacOS users: See the [GNU Emacs downloads](https://www.gnu.org/software/emacs/download.html) page under "macOS".
 
 
-<a id="orgf286161"></a>
+<a id="org65788d0"></a>
 
 ### Install ELOT in Emacs
 
@@ -110,7 +110,7 @@ The following steps will get you started editing OWL ontologies.
         `~/elisp/elot/elot-package/` to your `load-path`.
 
 
-<a id="org51e93d5"></a>
+<a id="orga39d6fa"></a>
 
 ### Install ELOT auxiliaries
 
@@ -150,7 +150,7 @@ Get the tools:
         `elot-exporter.jar` in your `bin` folder.
 
 
-<a id="orgd1828ae"></a>
+<a id="org842995b"></a>
 
 ### NEW: Convert existing OWL files to ELOT format
 
@@ -161,12 +161,12 @@ easy to work on existing ontologies in your favourite editor.
 The `jar` file can be downloaded from [ELOT releases](https://github.com/johanwk/elot/releases).
 
 
-<a id="org6b78d12"></a>
+<a id="org914aaae"></a>
 
 ## Quick start using ELOT
 
 
-<a id="org49d0162"></a>
+<a id="org0c7e4d2"></a>
 
 ### Adding an ontology
 
@@ -220,7 +220,7 @@ Now create an OWL file from your new document.
 ![img](./documentation/images/firefox-skeleton1.png)
 
 
-<a id="orgfde06d4"></a>
+<a id="orgd198edf"></a>
 
 ### Adding classes and relations
 
@@ -238,7 +238,7 @@ Now create an OWL file from your new document.
 ![img](documentation/images/elot-animal1.png)
 
 
-<a id="org96bb83c"></a>
+<a id="org5274e79"></a>
 
 ### Adding annotations
 
@@ -249,7 +249,7 @@ In this screenshot, two annotations are added to the "transitive" characteristic
 ![img](documentation/images/elot-annotate-axiom1.png)
 
 
-<a id="orgacc5ce0"></a>
+<a id="org828577a"></a>
 
 ### Querying the ontology
 
@@ -262,7 +262,7 @@ In this screenshot, two annotations are added to the "transitive" characteristic
 ![img](documentation/images/elot-query1.png)
 
 
-<a id="orge199c79"></a>
+<a id="org7b3d364"></a>
 
 ### Making a diagram
 
@@ -286,7 +286,7 @@ In this screenshot, two annotations are added to the "transitive" characteristic
 ![img](documentation/images/firefox-diagram1.png)
 
 
-<a id="orga63be9f"></a>
+<a id="org800a751"></a>
 
 ### Display labels instead of identifiers
 
