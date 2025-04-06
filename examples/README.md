@@ -1,20 +1,20 @@
 
 # Table of Contents
 
-1.  [Examples made with `elot-exporter` jar](#orgc9b2f13)
-    1.  [Cell Ontology](#org5091d65)
-    2.  [Units of Measure](#orgad892fc)
-    3.  [UBERON](#orgba6f815)
-    4.  [CIM Equipment](#org6466803)
-    5.  [BFO-2020](#org0382951)
-    6.  [Plant Ontology](#orgaf5d2ca)
-2.  [Other examples](#org91f8ba0)
-    1.  [Maintenance](#org4deda8d)
-    2.  [Pizza](#orga7b3148)
+1.  [Examples made with `elot-exporter` jar](#org0bc519f)
+    1.  [Cell Ontology](#orgcc1ed85)
+    2.  [Units of Measure](#org5e44daf)
+    3.  [UBERON](#org1231102)
+    4.  [CIM Equipment](#org903be80)
+    5.  [BFO-2020](#org7929aba)
+    6.  [Plant Ontology](#orgc9a3963)
+2.  [Other examples](#org13ceae4)
+    1.  [Maintenance](#org97df47e)
+    2.  [Pizza](#orgce9b009)
 
 
 
-<a id="orgc9b2f13"></a>
+<a id="org0bc519f"></a>
 
 # Examples made with `elot-exporter` jar
 
@@ -25,7 +25,7 @@ These examples are generated with the `elot-exporter` (see <https://github.com/j
 ![img](plant-ontology.png)
 
 
-<a id="org5091d65"></a>
+<a id="orgcc1ed85"></a>
 
 ## Cell Ontology
 
@@ -35,7 +35,7 @@ CL-basic from <http://purl.obolibrary.org/obo/cl/cl-basic.owl>.
 This is part of the Cell Ontology, see <https://www.ebi.ac.uk/ols4/ontologies/cl> and <http://purl.obolibrary.org/obo/cl.owl>.
 
 
-<a id="orgad892fc"></a>
+<a id="org5e44daf"></a>
 
 ## Units of Measure
 
@@ -44,7 +44,7 @@ This is part of the Cell Ontology, see <https://www.ebi.ac.uk/ols4/ontologies/cl
 Ontology of Units of Measure from <http://www.ontology-of-units-of-measure.org/page/om-2>
 
 
-<a id="orgba6f815"></a>
+<a id="org1231102"></a>
 
 ## UBERON
 
@@ -58,7 +58,7 @@ Warning:
 -   But still, Emacs may hang for a very long time before responding (eg 10 minutes). So it's perhaps better to use `find-file-literally` to avoid that.
 
 
-<a id="org6466803"></a>
+<a id="org903be80"></a>
 
 ## CIM Equipment
 
@@ -67,7 +67,7 @@ Warning:
 Electrical CIM: equipment ontology from [61970-600-2\_Equipment-AP-Voc-RDFS2020\_v3-0-0.ttl](https://github.com/Sveino/Inst4CIM-KG/blob/develop/rdfs-improved/CGMES/ttl/61970-600-2_Equipment-AP-Voc-RDFS2020_v3-0-0.ttl)
 
 
-<a id="org0382951"></a>
+<a id="org7929aba"></a>
 
 ## BFO-2020
 
@@ -77,7 +77,7 @@ Basic Formal Ontology (BFO-2020) from <https://github.com/BFO-ontology/BFO-2020/
 An "About" section has been added after conversion.
 
 
-<a id="orgaf5d2ca"></a>
+<a id="orgc9a3963"></a>
 
 ## Plant Ontology
 
@@ -86,7 +86,7 @@ An "About" section has been added after conversion.
 Plant Ontology from <https://github.com/Planteome/plant-ontology/releases>
 
 
-<a id="org91f8ba0"></a>
+<a id="org13ceae4"></a>
 
 # Other examples
 
@@ -94,7 +94,7 @@ These examples were made before the `elot-exporter` was available. They
 will eventually be updated, once the exporter is more complete.
 
 
-<a id="org4deda8d"></a>
+<a id="org97df47e"></a>
 
 ## Maintenance
 
@@ -112,7 +112,7 @@ which is much better than
 > -   **SubClassOf:** obo:BFO\_0000062 some (iof-maint:FailureEvent or iof-maint:FailureProcess)
 
 
-<a id="orga7b3148"></a>
+<a id="orgce9b009"></a>
 
 ## Pizza
 

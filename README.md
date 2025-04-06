@@ -26,22 +26,22 @@ ELOT takes inspiration from this paradigm and uses the excellent Emacs Orgmode p
 Ontological constructs are generated from narrative sections and Manchester Notation (OMN) fragments. Diagrams are generated from Turtle examples or SPARQL queries by using the rdfpuml tool.
 The tool then extracts ontological definitions (OMN or Turtle) and documentation (HTML or PDF).
 
--   [Prerequisites in brief](#org9937a06)
--   [Installation](#org521afa8)
-    -   [Get Emacs](#org9fe6948)
-    -   [Install ELOT in Emacs](#org65788d0)
-    -   [Install ELOT auxiliaries](#orga39d6fa)
-    -   [NEW: Convert existing OWL files to ELOT format](#org842995b)
--   [Quick start using ELOT](#org914aaae)
-    -   [Adding an ontology](#org0c7e4d2)
-    -   [Adding classes and relations](#orgd198edf)
-    -   [Adding annotations](#org5274e79)
-    -   [Querying the ontology](#org828577a)
-    -   [Making a diagram](#org7b3d364)
-    -   [Display labels instead of identifiers](#org800a751)
+-   [Prerequisites in brief](#org61692d2)
+-   [Installation](#org312cfcc)
+    -   [Get Emacs](#org6abdf2f)
+    -   [Install ELOT in Emacs](#orgd1f457b)
+    -   [Install ELOT auxiliaries](#org444a08e)
+    -   [NEW: Convert existing OWL files to ELOT format](#org05d5489)
+-   [Quick start using ELOT](#org34fab14)
+    -   [Adding an ontology](#org78188f4)
+    -   [Adding classes and relations](#org0ff29d6)
+    -   [Adding annotations](#orgfa625ef)
+    -   [Querying the ontology](#orgb80f734)
+    -   [Making a diagram](#orgc2e4f06)
+    -   [Display labels instead of identifiers](#org1c7d68e)
 
 
-<a id="org9937a06"></a>
+<a id="org61692d2"></a>
 
 ## Prerequisites in brief
 
@@ -57,12 +57,12 @@ If you are new to Emacs, the book [Mastering Emacs](https://www.masteringemacs.o
 recommended.
 
 
-<a id="org521afa8"></a>
+<a id="org312cfcc"></a>
 
 ## Installation
 
 
-<a id="org9fe6948"></a>
+<a id="org6abdf2f"></a>
 
 ### Get Emacs
 
@@ -80,7 +80,7 @@ for Linux).
 For MacOS users: See the [GNU Emacs downloads](https://www.gnu.org/software/emacs/download.html) page under "macOS".
 
 
-<a id="org65788d0"></a>
+<a id="orgd1f457b"></a>
 
 ### Install ELOT in Emacs
 
@@ -110,7 +110,7 @@ The following steps will get you started editing OWL ontologies.
         `~/elisp/elot/elot-package/` to your `load-path`.
 
 
-<a id="orga39d6fa"></a>
+<a id="org444a08e"></a>
 
 ### Install ELOT auxiliaries
 
@@ -150,7 +150,7 @@ Get the tools:
         `elot-exporter.jar` in your `bin` folder.
 
 
-<a id="org842995b"></a>
+<a id="org05d5489"></a>
 
 ### NEW: Convert existing OWL files to ELOT format
 
@@ -161,12 +161,12 @@ easy to work on existing ontologies in your favourite editor.
 The `jar` file can be downloaded from [ELOT releases](https://github.com/johanwk/elot/releases).
 
 
-<a id="org914aaae"></a>
+<a id="org34fab14"></a>
 
 ## Quick start using ELOT
 
 
-<a id="org0c7e4d2"></a>
+<a id="org78188f4"></a>
 
 ### Adding an ontology
 
@@ -181,7 +181,7 @@ To create a new ontology, do this in Emacs:
     file, for instance `myontology.org`.
 -   Insert the ELOT template for a document header.
     You can do this in two ways:
-    -   Press the `F4` key. A menu is displayed at the bottom of the Emacs window.
+    -   Press `Shift-F5`. A menu is displayed at the bottom of the Emacs window.
         The letters in blue represent *key sequences* that will call up templates or execute commands.
     -   Type the same sequence (including `<`) at the beginning of a line and press `TAB`.
 
@@ -196,7 +196,7 @@ To create a new ontology, do this in Emacs:
         #+author: John Doe
         #+date: WIP (version of 2024-04-04 12:34)
 -   Insert the ELOT template for an ontology skeleton: Below the
-    header, press `F4` and then `ods`. Answer the prompts &#x2013; be
+    header, press `Shift-F5` and then `ods`. Answer the prompts &#x2013; be
     ready to provide namespaces/prefixes for your ontology and the
     resources it will contain. You should see something like this
     screenshot:
@@ -205,7 +205,7 @@ To create a new ontology, do this in Emacs:
 
 Now create an OWL file from your new document.
 
--   Press `F4` and then `t`, to "tangle" the ontology to a file. The
+-   Press `Shift-F5` and then `t`, to "tangle" the ontology to a file. The
     ontology will be in OWL Manchester Syntax, e.g., with filename
     `myontology.omn`.
 -   If you have installed ROBOT, a Turtle file named `myontology.ttl`
@@ -214,23 +214,23 @@ Now create an OWL file from your new document.
 
 ![img](./documentation/images/protege-skeleton1.png)
 
--   Export to an HTML document with `F4`, then the `h` key. The document
+-   Export to an HTML document with `Shift-F5`, then the `h` key. The document
     will open in your web browser.
 
 ![img](./documentation/images/firefox-skeleton1.png)
 
 
-<a id="orgd198edf"></a>
+<a id="org0ff29d6"></a>
 
 ### Adding classes and relations
 
 -   Navigate to the `Classes` heading
--   Press `F4` followed by `ocp` to insert headings for defining primitive
+-   Press `Shift-F5` followed by `ocp` to insert headings for defining primitive
     classes, with some appropriate annotation properties added. Hit `ocd`
     for non-primitive classes. The templates reveal the ELOT authors'
     preference for the [Industrial Ontology Foundry Annotation Vocabulary (IOF-AV)](https://spec.industrialontologies.org/iof/ontology/core/meta/AnnotationVocabulary/).
 -   Navigate to the `Object properties` heading
--   `F4` followed by `op` will insert a relation (object, data, or
+-   `Shift-F5` followed by `op` will insert a relation (object, data, or
     annotation property).
 -   The screenshot shows how checkboxes are included for tracking
     progress..
@@ -238,7 +238,7 @@ Now create an OWL file from your new document.
 ![img](documentation/images/elot-animal1.png)
 
 
-<a id="org5274e79"></a>
+<a id="orgfa625ef"></a>
 
 ### Adding annotations
 
@@ -249,30 +249,30 @@ In this screenshot, two annotations are added to the "transitive" characteristic
 ![img](documentation/images/elot-annotate-axiom1.png)
 
 
-<a id="org828577a"></a>
+<a id="orgb80f734"></a>
 
 ### Querying the ontology
 
 -   Navigate to the `Prefixes` heading and insert a new heading named
     "Queries".
--   Hit `F4`, then `obs` to insert a SPARQL *select* code block. Write a query over
+-   Hit `Shift-F5`, then `obs` to insert a SPARQL *select* code block. Write a query over
     the ontology.
 -   Hit `C-c C-c` to run the query.
 
 ![img](documentation/images/elot-query1.png)
 
 
-<a id="org7b3d364"></a>
+<a id="orgc2e4f06"></a>
 
 ### Making a diagram
 
--   Hit `F4`, then `obc` to insert another query, this time SPARQL
+-   Hit `Shift-F5`, then `obc` to insert another query, this time SPARQL
     *construct*.
 -   Write a query and hit `C-c C-c` to run it.
 
 ![img](documentation/images/elot-query2.png)
 
--   Hit `F4`, then `obd` to insert an *rdfpuml* diagram block.
+-   Hit `Shift-F5`, then `obd` to insert an *rdfpuml* diagram block.
 -   When prompted, provide the name of the Turtle source (the name of
     the construct query) and the figure caption.
 -   Place the cursor on the row of the  `#+call:` and hit `C-c C-c`. A
@@ -280,13 +280,13 @@ In this screenshot, two annotations are added to the "transitive" characteristic
 
 ![img](documentation/images/elot-rdfpuml1.png)
 
--   Hit `F4`, then `h` to view the query results and diagram in your
+-   Hit `Shift-F5`, then `h` to view the query results and diagram in your
     browser.
 
 ![img](documentation/images/firefox-diagram1.png)
 
 
-<a id="org800a751"></a>
+<a id="org1c7d68e"></a>
 
 ### Display labels instead of identifiers
 
