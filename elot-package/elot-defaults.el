@@ -109,9 +109,8 @@
   (declare-function elot-label-display-setup "elot-label-display.el")
   (elot-label-display-setup)
   (declare-function elot-hydra/body "elot.el")
-  (local-set-key (kbd "<f4>") #'elot-hydra/body)
   (declare-function elot-toggle-label-display "elot-label-display.el")
-  (local-set-key (kbd "<f5>") #'elot-toggle-label-display))
+  (elot-setup-org-keybindings))
 ;; src-settings-defaults ends here
 
 (provide 'elot-defaults)
