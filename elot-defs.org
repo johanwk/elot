@@ -10,49 +10,49 @@ allows for local variables to be accessed -- relevant for
 in SPARQL select results.
 #+name: src-package-header
 #+begin_src emacs-lisp :comments nil
-   ;;; elot.el --- Emacs Literate Ontology Tool (ELOT)   -*- lexical-binding: t; no-native-compile: t; -*-
+	;;; elot.el --- Emacs Literate Ontology Tool (ELOT)   -*- lexical-binding: t; no-native-compile: t; -*-
 
-   ;; Copyright (C) 2024, 2025 Johan W. Klüwer
+	;; Copyright (C) 2024, 2025 Johan W. Klüwer
 
-   ;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
-   ;; URL: https://github.com/johanwk/elot
-   ;; Version: 1.0.5
-   ;; Package-Requires: ((emacs "29.1") (htmlize "1.58") (ht "2.3") (omn-mode "1.3") (hydra "0.15.0") (sparql-mode "4.0.2"))
-   ;; Keywords: languages outlines tools org ontology
+	;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
+	;; URL: https://github.com/johanwk/elot
+	;; Version: 1.0.5
+	;; Package-Requires: ((emacs "29.1") (htmlize "1.58") (ht "2.3") (omn-mode "1.3") (hydra "0.15.0") (sparql-mode "4.0.2"))
+	;; Keywords: languages outlines tools org ontology
 
-   ;; This file is not part of GNU Emacs.
+	;; This file is not part of GNU Emacs.
 
-   ;; This program is free software; you can redistribute it and/or modify
-   ;; it under the terms of the GNU General Public License as published by
-   ;; the Free Software Foundation, either version 3 of the License, or
-   ;; (at your option) any later version.
+	;; This program is free software; you can redistribute it and/or modify
+	;; it under the terms of the GNU General Public License as published by
+	;; the Free Software Foundation, either version 3 of the License, or
+	;; (at your option) any later version.
 
-   ;; This program is distributed in the hope that it will be useful,
-   ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-   ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   ;; GNU General Public License for more details.
+	;; This program is distributed in the hope that it will be useful,
+	;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+	;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	;; GNU General Public License for more details.
 
-   ;; You should have received a copy of the GNU General Public License
-   ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	;; You should have received a copy of the GNU General Public License
+	;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-   ;;; Commentary:
+	;;; Commentary:
 
-   ;; This package is for authoring OWL ontologies using org-mode.
+	;; This package is for authoring OWL ontologies using org-mode.
 
-   ;; To start an ontology from scratch using ELOT, open an Org file and
-   ;; use predefined "tempo" templates.
+	;; To start an ontology from scratch using ELOT, open an Org file and
+	;; use predefined "tempo" templates.
 
-   ;;  - insert `<odh' and hit <Tab> to add a header for the document
-   ;;  - insert `<ods' and hit <Tab> to insert headers for the ontology,
-   ;;    classes, properties, and individuals.
+	;;  - insert `<odh' and hit <Tab> to add a header for the document
+	;;  - insert `<ods' and hit <Tab> to insert headers for the ontology,
+	;;    classes, properties, and individuals.
 
-   ;; The F4 key will open a "hydra" menu with more templates and functions
-   ;; for exporting to an ontology file or HTML.
+	;; Shift-<F5> will open a "hydra" menu with more templates and
+	;; functions for exporting to an ontology file or HTML.
 
-   ;; Please consult the package Github site for more information:
-   ;;        <https://github.com/johanwk/elot>
-   
-   ;;; Code:
+	;; Please consult the package Github site for more information:
+	;;        <https://github.com/johanwk/elot>
+
+	;;; Code:
 #+end_src
 
 *** Require packages
@@ -1621,7 +1621,7 @@ completion cookies.
    "ELOT ontology metrics from ROBOT"
    'org-tempo-tags)
 #+end_src
-**** Hydra interface F4
+**** Hydra interface S-F5
 First "forward declare" the functions referenced in the Hydra, to
 avoid byte compiler warnings.
 #+name: src-tempo-fwd-declare
@@ -1636,35 +1636,53 @@ avoid byte compiler warnings.
 
 #+name: src-hydra-menu
 #+begin_src emacs-lisp
-  (defhydra elot-hydra (:color blue :hint nil)
-    "
-   --- ELOT helpdesk --- press F5 to toggle labels ---
+	(defhydra elot-hydra (:color blue :hint nil)
+		"
+	 --- ELOT helpdesk --- press F5 to toggle labels ---
 
-   Insert                    Code block             Document         ^^^^^Output       
-  ------------------------------------------------------------------------------
-   [_r_] resource id        <_obm_ metrics             <_odh_ header     [_t_] ontology
-  <_ocp_ primitive class    <_obs_ sparql select       <_ods_ ontology   [_h_] HTML    
-  <_ocd_ defined class      <_obc_ sparql construct                                    
-   <_op_ property           <_obd_ rdfpuml diagram                                     
-  "
-    ("r" (elot-label-lookup))
-    ("ocp" (progn (outline-next-heading) (tempo-template-elot-class-iof-primitive)))
-    ("ocd" (progn (outline-next-heading) (tempo-template-elot-class-iof-defined)))
-    ("op" (progn (outline-next-heading) (tempo-template-elot-property-iof)))
-    ("t" (org-babel-tangle))
-    ("h" (browse-url-of-file (expand-file-name (org-html-export-to-html))))
-    ("obm" (tempo-template-elot-block-robot-metrics))
-    ("obs" (tempo-template-elot-block-sparql-select))
-    ("obc" (tempo-template-elot-block-sparql-construct))
-    ("obd" (tempo-template-elot-block-rdfpuml-diagram))
-    ("odh" (tempo-template-elot-doc-header))
-    ("ods" (tempo-template-elot-ont-skeleton)))
+	 Output:  [_t_] ontology    [_h_] HTML
 
-  ;; The key <f4> is assigned to elot-hydra in elot-defaults.el
+	 Insert                    Code block             Document
+	--------------------------------------------------------------
+	 [_r_] resource id        <_obm_ metrics             <_odh_ header
+	<_ocp_ primitive class    <_obs_ sparql select       <_ods_ ontology
+	<_ocd_ defined class      <_obc_ sparql construct
+	 <_op_ property           <_obd_ rdfpuml diagram
+	"
+		("r" (elot-label-lookup))
+		("ocp" (progn (outline-next-heading) (tempo-template-elot-class-iof-primitive)))
+		("ocd" (progn (outline-next-heading) (tempo-template-elot-class-iof-defined)))
+		("op" (progn (outline-next-heading) (tempo-template-elot-property-iof)))
+		("t" (org-babel-tangle))
+		("h" (browse-url-of-file (expand-file-name (org-html-export-to-html))))
+		("obm" (tempo-template-elot-block-robot-metrics))
+		("obs" (tempo-template-elot-block-sparql-select))
+		("obc" (tempo-template-elot-block-sparql-construct))
+		("obd" (tempo-template-elot-block-rdfpuml-diagram))
+		("odh" (tempo-template-elot-doc-header))
+		("ods" (tempo-template-elot-ont-skeleton)))
 #+end_src
 
 #+RESULTS:
 : elot-hydra/body
+
+Keybinding, customizable.
+#+name: src-hydra-keybinding
+#+begin_src emacs-lisp
+	(defcustom elot-key-open-hydra (kbd "S-<f5>")
+		"Keybinding to open the ELOT hydra."
+		:type 'key-sequence
+		:group 'elot)
+
+	(defcustom elot-key-toggle-labels (kbd "<f5>")
+		"Keybinding to toggle label display in ELOT buffers."
+		:type 'key-sequence
+		:group 'elot)
+
+	(defun elot-setup-org-keybindings ()
+		(local-set-key elot-key-open-hydra #'elot-hydra/body)
+		(local-set-key elot-key-toggle-labels #'elot-toggle-label-display))
+#+end_src
 
 *** ROBOT
 **** Read tsv into org table
@@ -1823,9 +1841,8 @@ metrics.
     (declare-function elot-label-display-setup "elot-label-display.el")
     (elot-label-display-setup)
     (declare-function elot-hydra/body "elot.el")
-    (local-set-key (kbd "<f4>") #'elot-hydra/body)
     (declare-function elot-toggle-label-display "elot-label-display.el")
-    (local-set-key (kbd "<f5>") #'elot-toggle-label-display))
+    (elot-setup-org-keybindings))
 #+end_src
 *** End with "provides"
 #+name: src-provide-library
