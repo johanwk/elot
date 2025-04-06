@@ -1622,6 +1622,18 @@ completion cookies.
    'org-tempo-tags)
 #+end_src
 **** Hydra interface F4
+First "forward declare" the functions referenced in the Hydra, to
+avoid byte compiler warnings.
+#+name: src-tempo-fwd-declare
+#+begin_src emacs-lisp
+(declare-function tempo-template-elot-block-robot-metrics "tempo")
+(declare-function tempo-template-elot-block-sparql-select "tempo")
+(declare-function tempo-template-elot-block-sparql-construct "tempo")
+(declare-function tempo-template-elot-block-rdfpuml-diagram "tempo")
+(declare-function tempo-template-elot-doc-header "tempo")
+(declare-function tempo-template-elot-ont-skeleton "tempo")
+#+end_src
+
 #+name: src-hydra-menu
 #+begin_src emacs-lisp
   (defhydra elot-hydra (:color blue :hint nil)

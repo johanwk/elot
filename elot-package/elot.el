@@ -1117,12 +1117,12 @@ Return output file name."
 ;; [[file:../elot-defs.org::src-tempo-docheader][src-tempo-docheader]]
 (tempo-define-template "elot-doc-header"
                        '("# -*- eval: (load-library \"elot-defaults\") -*-" > n
-    	                 "#+title: " (p "Document title: " doctitle) > n
-    	                 "#+subtitle: An OWL ontology" > n
-    	                 "#+author: " (p "Author name: " authname) > n
-    	                 "#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
+      	               "#+title: " (p "Document title: " doctitle) > n
+      	               "#+subtitle: An OWL ontology" > n
+      	               "#+author: " (p "Author name: " authname) > n
+      	               "#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
                          "#+call: theme-readtheorg()" n n
-    	                 (progn (load-library "elot-defaults") (message "Loaded ELOT") ""))
+      	               (progn (load-library "elot-defaults") (message "Loaded ELOT") ""))
                        "<odh"
                        "ELOT document header"
                        'org-tempo-tags)
@@ -1411,6 +1411,15 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  "ELOT ontology metrics from ROBOT"
  'org-tempo-tags)
 ;; src-tempo-codeblock ends here
+
+;; [[file:../elot-defs.org::src-tempo-fwd-declare][src-tempo-fwd-declare]]
+(declare-function tempo-template-elot-block-robot-metrics "tempo")
+(declare-function tempo-template-elot-block-sparql-select "tempo")
+(declare-function tempo-template-elot-block-sparql-construct "tempo")
+(declare-function tempo-template-elot-block-rdfpuml-diagram "tempo")
+(declare-function tempo-template-elot-doc-header "tempo")
+(declare-function tempo-template-elot-ont-skeleton "tempo")
+;; src-tempo-fwd-declare ends here
 
 ;; [[file:../elot-defs.org::src-hydra-menu][src-hydra-menu]]
 (defhydra elot-hydra (:color blue :hint nil)
