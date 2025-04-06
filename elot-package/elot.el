@@ -34,8 +34,8 @@
 ;;  - insert `<ods' and hit <Tab> to insert headers for the ontology,
 ;;    classes, properties, and individuals.
 
-;; The F4 key will open a "hydra" menu with more templates and functions
-;; for exporting to an ontology file or HTML.
+;; Shift-<F5> will open a "hydra" menu with more templates and
+;; functions for exporting to an ontology file or HTML.
 
 ;; Please consult the package Github site for more information:
 ;;        <https://github.com/johanwk/elot>
@@ -979,11 +979,11 @@ are passed on to `org-get-heading'."
 Remove string decorations.  Newlines are replaced by spaces in the result."
   (save-excursion
     (if (search-forward-regexp tag nil t)
-	(let* ((element (org-element-at-point))
-	       (beg (org-element-property :contents-begin element))
-	       (end (org-element-property :contents-end element))
-	       (entry-text (buffer-substring-no-properties beg end)))
-	  (replace-regexp-in-string "\n\s*" " " entry-text)))))
+  (let* ((element (org-element-at-point))
+  	     (beg (org-element-property :contents-begin element))
+  	     (end (org-element-property :contents-end element))
+  	     (entry-text (buffer-substring-no-properties beg end)))
+  	(replace-regexp-in-string "\n\s*" " " entry-text)))))
 ;; src-get-description-entry :tangle no ends here
 
 ;; [[file:../elot-defs.org::src-latex-export-replacenames][src-latex-export-replacenames]]
@@ -1423,31 +1423,47 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 ;; [[file:../elot-defs.org::src-hydra-menu][src-hydra-menu]]
 (defhydra elot-hydra (:color blue :hint nil)
-  "
+	"
  --- ELOT helpdesk --- press F5 to toggle labels ---
 
- Insert                    Code block             Document         ^^^^^Output       
-------------------------------------------------------------------------------
- [_r_] resource id        <_obm_ metrics             <_odh_ header     [_t_] ontology
-<_ocp_ primitive class    <_obs_ sparql select       <_ods_ ontology   [_h_] HTML    
-<_ocd_ defined class      <_obc_ sparql construct                                    
- <_op_ property           <_obd_ rdfpuml diagram                                     
-"
-  ("r" (elot-label-lookup))
-  ("ocp" (progn (outline-next-heading) (tempo-template-elot-class-iof-primitive)))
-  ("ocd" (progn (outline-next-heading) (tempo-template-elot-class-iof-defined)))
-  ("op" (progn (outline-next-heading) (tempo-template-elot-property-iof)))
-  ("t" (org-babel-tangle))
-  ("h" (browse-url-of-file (expand-file-name (org-html-export-to-html))))
-  ("obm" (tempo-template-elot-block-robot-metrics))
-  ("obs" (tempo-template-elot-block-sparql-select))
-  ("obc" (tempo-template-elot-block-sparql-construct))
-  ("obd" (tempo-template-elot-block-rdfpuml-diagram))
-  ("odh" (tempo-template-elot-doc-header))
-  ("ods" (tempo-template-elot-ont-skeleton)))
+ Output:  [_t_] ontology    [_h_] HTML
 
-;; The key <f4> is assigned to elot-hydra in elot-defaults.el
+ Insert                    Code block             Document
+--------------------------------------------------------------
+ [_r_] resource id        <_obm_ metrics             <_odh_ header
+<_ocp_ primitive class    <_obs_ sparql select       <_ods_ ontology
+<_ocd_ defined class      <_obc_ sparql construct
+ <_op_ property           <_obd_ rdfpuml diagram
+"
+	("r" (elot-label-lookup))
+	("ocp" (progn (outline-next-heading) (tempo-template-elot-class-iof-primitive)))
+	("ocd" (progn (outline-next-heading) (tempo-template-elot-class-iof-defined)))
+	("op" (progn (outline-next-heading) (tempo-template-elot-property-iof)))
+	("t" (org-babel-tangle))
+	("h" (browse-url-of-file (expand-file-name (org-html-export-to-html))))
+	("obm" (tempo-template-elot-block-robot-metrics))
+	("obs" (tempo-template-elot-block-sparql-select))
+	("obc" (tempo-template-elot-block-sparql-construct))
+	("obd" (tempo-template-elot-block-rdfpuml-diagram))
+	("odh" (tempo-template-elot-doc-header))
+	("ods" (tempo-template-elot-ont-skeleton)))
 ;; src-hydra-menu ends here
+
+;; [[file:../elot-defs.org::src-hydra-keybinding][src-hydra-keybinding]]
+(defcustom elot-key-open-hydra (kbd "S-<f5>")
+	"Keybinding to open the ELOT hydra."
+	:type 'key-sequence
+	:group 'elot)
+
+(defcustom elot-key-toggle-labels (kbd "<f5>")
+	"Keybinding to toggle label display in ELOT buffers."
+	:type 'key-sequence
+	:group 'elot)
+
+(defun elot-setup-org-keybindings ()
+	(local-set-key elot-key-open-hydra #'elot-hydra/body)
+	(local-set-key elot-key-toggle-labels #'elot-toggle-label-display))
+;; src-hydra-keybinding ends here
 
 ;; [[file:../elot-defs.org::src-tsv-table][src-tsv-table]]
 (defun elot-tsv-to-table (filename)
