@@ -110,7 +110,7 @@ list of arguments for the process, starting with \"java\"."
 
           (if (= exit-code 0)
               ;; Success Case (Batch)
-              (message "ROBOT: Conversion successful: %s" output-file)
+              (message "ROBOT: Conversion of %s successful: %s" omnfile output-file)
 
             ;; Failure Case (Batch)
             (progn
@@ -979,11 +979,11 @@ are passed on to `org-get-heading'."
 Remove string decorations.  Newlines are replaced by spaces in the result."
   (save-excursion
     (if (search-forward-regexp tag nil t)
-  (let* ((element (org-element-at-point))
-  	     (beg (org-element-property :contents-begin element))
-  	     (end (org-element-property :contents-end element))
-  	     (entry-text (buffer-substring-no-properties beg end)))
-  	(replace-regexp-in-string "\n\s*" " " entry-text)))))
+	(let* ((element (org-element-at-point))
+	       (beg (org-element-property :contents-begin element))
+	       (end (org-element-property :contents-end element))
+	       (entry-text (buffer-substring-no-properties beg end)))
+	  (replace-regexp-in-string "\n\s*" " " entry-text)))))
 ;; src-get-description-entry :tangle no ends here
 
 ;; [[file:../elot-defs.org::src-latex-export-replacenames][src-latex-export-replacenames]]
@@ -1117,12 +1117,12 @@ Return output file name."
 ;; [[file:../elot-defs.org::src-tempo-docheader][src-tempo-docheader]]
 (tempo-define-template "elot-doc-header"
                        '("# -*- eval: (load-library \"elot-defaults\") -*-" > n
-      	               "#+title: " (p "Document title: " doctitle) > n
-      	               "#+subtitle: An OWL ontology" > n
-      	               "#+author: " (p "Author name: " authname) > n
-      	               "#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
+    	                 "#+title: " (p "Document title: " doctitle) > n
+    	                 "#+subtitle: An OWL ontology" > n
+    	                 "#+author: " (p "Author name: " authname) > n
+    	                 "#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
                          "#+call: theme-readtheorg()" n n
-      	               (progn (load-library "elot-defaults") (message "Loaded ELOT") ""))
+    	                 (progn (load-library "elot-defaults") (message "Loaded ELOT") ""))
                        "<odh"
                        "ELOT document header"
                        'org-tempo-tags)

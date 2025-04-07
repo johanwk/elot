@@ -128,7 +128,7 @@ tangling to OMN.
 
             (if (= exit-code 0)
                 ;; Success Case (Batch)
-                (message "ROBOT: Conversion successful: %s" output-file)
+                (message "ROBOT: Conversion of %s successful: %s" omnfile output-file)
 
               ;; Failure Case (Batch)
               (progn
