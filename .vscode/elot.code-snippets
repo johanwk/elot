@@ -4,7 +4,7 @@
     "prefix": "elotOntologyTemplate",
     "scope": "org", // Restricts the snippet to Org mode files
     "body": [
-      "# -*- eval: (load-library \\\"elot-defaults\\\") -*-",
+      "# -*- eval: (load-library \"elot-defaults\") -*-",
       "#+title: ${1:My New Ontology}",                  // $1: Label
       "#+subtitle: An OWL ontology",
       "#+author: ${5:$USER}",                           // $5: Author (was $3)
