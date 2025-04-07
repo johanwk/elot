@@ -108,10 +108,10 @@
       " # - Import :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/",
       " - owl:versionInfo :: 0.0 start of ${1:My New Ontology}", // $1: Label
       " - dcterms:title :: \"${1:My New Ontology} ontology\"@en", // $1: Label
-      " - pav:lastUpdateOn :: {{{modification-time(\"%Y-%m-%dT%H:%M:%SZ\",t)}}}^^xsd:dateTime,
-      " - dcterms:license :: https://creativecommons.org/licenses/by-sa/4.0/,
+      " - pav:lastUpdateOn :: {{{modification-time(\"%Y-%m-%dT%H:%M:%SZ\",t)}}}^^xsd:dateTime",
+      " - dcterms:license :: https://creativecommons.org/licenses/by-sa/4.0/",
       " - dcterms:creator :: {{{author}}}",
-      " - dcterms:modified ::  {{{modification-time(\"%Y-%m-%d\",t)}}}^^xsd:date,
+      " - dcterms:modified :: {{{modification-time(\"%Y-%m-%d\",t)}}}^^xsd:date",
       " - dcterms:publisher :: https://example.org/thepublisher", // Consider if this should also be a placeholder? $6?
       " - dc:rights :: Copyright info here",                     // Consider if this should also be a placeholder? $7?
       " - dcterms:description :: The ${1:My New Ontology} ontology is ...", // $1: Label
