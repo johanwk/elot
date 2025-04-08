@@ -1,0 +1,41 @@
+type: software
+cff-version: 1.2.0
+title: "Emacs Literate Ontology Tool"
+authors:
+  - family-names: Klüwer
+    given-names: Johan Wilhelm
+    orcid: https://orcid.org/0000-0002-7167-7321
+    email: johan.w.kluwer@gmail.com
+    affiliation: DNV
+  - family-names: Alexiev
+    given-names: Vladimir
+    orcid: https://orcid.org/0000-0001-7508-7428
+    email: vladimir.alexiev@ontotext.com
+    affiliation: Ontotext Corp
+  - family-names: Melinda
+    given-names: Hodkiewicz
+    orcid: https://orcid.org/0000-0002-7336-3932
+    email: melinda.hodkiewicz@uwa.edu.au
+    affiliation: The University of Western Australia
+version: 1.0.6-pre
+date-released: 2025-04-08
+license: GPL-3.0
+repository-code: https://github.com/johanwk/elot
+url: https://github.com/johanwk/elot
+keywords:
+  - Emacs
+  - Ontology
+  - Literate Programming
+  - Semantic Web
+  - Knowledge Representation
+  - RDF (Resource Description Framework)
+  - Formal Ontologies
+  - Documentation
+  - Software Tool
+  - Lisp
+references:
+  - type: conference-paper
+    title: "ELOT: Literate Ontology Engineering with Org-mode"
+    year: "2025"
+    status: "in preparation"
+    
