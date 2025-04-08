@@ -66,7 +66,7 @@
       (error "ELOT_BIN_DIR does not point to a valid directory: %s" absolute-bin-dir))
     (if (file-exists-p potential-jar-path)
         (progn
-          ;; Assuming elot.el defines elot-robot-jar-path via defcustom/defvar
+          ;; For interactive use, elot.el defines elot-robot-jar-path via defcustom
           (setq elot-robot-jar-path potential-jar-path)
           (message "ROBOT JAR located successfully at: %s" elot-robot-jar-path))
       (error "robot.jar was not found in the specified bin directory: %s (Expected: %s)"
@@ -74,11 +74,10 @@
 
 
 ;; --- ENABLE Debugging ---
-(setq debug-on-error t)
+;; (setq debug-on-error t)
 ;; (setq message-log-max (* 1024 1024)) ; Optional: Increase message log size
 
-;; --- Ingest Core ELOT Library Definitions ---
-;; (Keep this logic if elot-lob.org is used)
+;; --- Ingest Core ELOT Library of Babel Definitions ---
 (let ((elot-lob-path (concat (file-name-directory (locate-library "elot")) "elot-lob.org")))
   (if (file-exists-p elot-lob-path)
       (progn
