@@ -109,6 +109,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - dc:rights :: Copyright info here
  - dcterms:description :: The citrus ontology defines types of citrus fruits, their properties like acidity, and regions of origin.
  - rdfs:comment :: An example ontology about citrus fruits.
+
+[[file:images/lemon.jpg]]
 ** Datatypes
 :PROPERTIES:
 :ID:       citrus-datatypes
@@ -190,6 +192,18 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: ex:acidity_pH some xsd:decimal[>= 2.0 , <= 3.0]
  - ex:originatesFrom :: ex:SoutheastAsia
  - skos:definition :: A yellow, oval citrus fruit with thick skin and fragrant, acidic juice, typically Citrus limon.
+ 
+***** Eureka Lemon (ex:EurekaLemon)
+ - rdfs:label :: "Eureka Lemon"@en
+ - rdfs:comment :: A widely cultivated lemon variety known for its bright flavor, often used in lemonade and dressings.
+
+***** Lisbon Lemon (ex:LisbonLemon)
+ - rdfs:label :: "Lisbon Lemon"@en
+ - rdfs:comment :: A robust lemon variety with a tart flavor, ideal for baking, marinades, and citrus sauces.
+
+***** Meyer Lemon (ex:MeyerLemon)
+ - rdfs:label :: "Meyer Lemon"@en
+ - rdfs:comment :: A sweeter variety of lemon, perfect for desserts, cocktails, and salad dressings due to its fragrant aroma and lower acidity.
 **** Grapefruit (ex:Grapefruit)
  - rdfs:label :: "Grapefruit"@en
  - SubClassOf :: ex:acidity_pH some xsd:decimal[>= 3.0 , <= 3.8]
