@@ -117,6 +117,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 :custom_id: citrus-datatypes
 :resourcedefs: yes
 :END:
+*** NegInt (ex:NegInt)
+ - EquivalentTo :: xsd:integer[< 0]
 ** Classes
 :PROPERTIES:
 :ID:       citrus-class-hierarchy
@@ -211,6 +213,15 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:definition :: A large, round, yellow-skinned citrus fruit with an acidic, juicy pulp, typically Citrus × paradisi. It is a hybrid, likely resulting from an accidental cross between a sweet orange and a pomelo.
  - rdfs:comment :: The name "grapefruit" is thought to refer to the way the fruit grows in clusters resembling grapes.
  - rdfs:comment :: Grapefruit contains compounds that can interfere with the absorption of certain medications.
+
+ #+begin_src clojure
+ ... Tawny code ...
+ #+end_src
+
+ #+begin_src omn
+
+ #+end_src
+
 ***** White Grapefruit (ex:WhiteGrapefruit)
   - rdfs:label :: "White Grapefruit"@en
   - SubClassOf :: ex:Grapefruit
