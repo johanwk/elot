@@ -1,0 +1,699 @@
+# -*- eval: (load-library "elot-defaults") -*-
+#+title: DOLCE-Lite.owl ontology
+#+subtitle: An OWL ontology
+#+author: 
+#+date: WIP (version of 2025-04-11 20:57)
+#+call: theme-readtheorg()
+
+# This org-mode file was created using elot-exporter version 0.6-SNAPSHOT.
+# Source ontology: [Local File] DOLCE-Lite.owl.omn
+
+# Change the output file location by editing the :header-args:omn: :tangle property below.
+
+* DOLCE-Lite.owl
+:PROPERTIES:
+:ID:       DOLCE-Lite.owl
+:ELOT-context-type: ontology
+:ELOT-context-localname: DOLCE-Lite.owl
+:ELOT-default-prefix: DOLCE-Lite.owl
+:header-args:omn: :tangle ./DOLCE-Lite.owl.omn :noweb yes
+:header-args:emacs-lisp: :tangle no :exports results
+:header-args: :padline yes
+:END:
+:OMN:
+#+begin_src omn :exports none
+##
+## This is the DOLCE-Lite.owl ontology
+## This document is in OWL 2 Manchester Syntax, see https://www.w3.org/TR/owl2-manchester-syntax/
+##
+
+## Prefixes
+<<omn-prefixes()>>
+
+## Ontology declaration
+<<resource-declarations(hierarchy="DOLCE-Lite.owl-ontology-declaration", owl-type="Ontology", owl-relation="")>>
+
+## Datatype declarations
+<<resource-declarations(hierarchy="DOLCE-Lite.owl-datatypes", owl-type="Datatype")>>
+
+## Class declarations
+<<resource-declarations(hierarchy="DOLCE-Lite.owl-class-hierarchy", owl-type="Class")>>
+
+## Object property declarations
+<<resource-declarations(hierarchy="DOLCE-Lite.owl-object-property-hierarchy", owl-type="ObjectProperty")>>
+
+## Data property declarations
+<<resource-declarations(hierarchy="DOLCE-Lite.owl-data-property-hierarchy", owl-type="DataProperty")>>
+
+## Annotation property declarations
+<<resource-declarations(hierarchy="DOLCE-Lite.owl-annotation-property-hierarchy", owl-type="AnnotationProperty")>>
+
+## Individual declarations
+<<resource-declarations(hierarchy="DOLCE-Lite.owl-individuals", owl-type="Individual")>>
+
+## Resource taxonomies
+<<resource-taxonomy(hierarchy="DOLCE-Lite.owl-class-hierarchy", owl-type="Class", owl-relation="SubClassOf")>>
+<<resource-taxonomy(hierarchy="DOLCE-Lite.owl-object-property-hierarchy", owl-type="ObjectProperty", owl-relation="SubPropertyOf")>>
+<<resource-taxonomy(hierarchy="DOLCE-Lite.owl-data-property-hierarchy", owl-type="DataProperty", owl-relation="SubPropertyOf")>>
+<<resource-taxonomy(hierarchy="DOLCE-Lite.owl-annotation-property-hierarchy", owl-type="AnnotationProperty", owl-relation="SubPropertyOf")>>
+<<resource-taxonomy(hierarchy="DOLCE-Lite.owl-datatypes", owl-type="Datatype", owl-relation="")>>
+#+end_src
+:END:
+
+** Prefixes
+The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
+
+#+name: prefix-table
+#+attr_latex: :align lp{.8\textwidth} :font small
+#+caption: OWL ontology prefixes
+| prefix   | uri |
+|----------+-----|
+| : | http://www.loa-cnr.it/ontologies/DOLCE-Lite.owl# |
+| dol: | http://www.loa-cnr.it/ontologies/DOLCE-Lite.owl# |
+| owl: | http://www.w3.org/2002/07/owl# |
+| rdf: | http://www.w3.org/1999/02/22-rdf-syntax-ns# |
+| rdfs: | http://www.w3.org/2000/01/rdf-schema# |
+| xml: | http://www.w3.org/XML/1998/namespace |
+| xsd: | http://www.w3.org/2001/XMLSchema# |
+
+*** Source blocks for prefixes                                     :noexport:
+:PROPERTIES:
+:header-args:omn: :tangle no
+:END:
+#+name: sparql-prefixes
+#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+  (elot-prefix-block-from-alist prefixes 'sparql)
+#+end_src
+
+#+name: omn-prefixes
+#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+  (elot-prefix-block-from-alist prefixes 'omn)
+#+end_src
+
+#+name: ttl-prefixes
+#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+  (elot-prefix-block-from-alist prefixes 'ttl)
+#+end_src
+
+** DOLCE-Lite.owl ontology (<http://www.loa-cnr.it/ontologies/DOLCE-Lite.owl>)
+:PROPERTIES:
+:ID:       dolce-lite.owl-ontology-declaration
+:custom_id: dolce-lite.owl-ontology-declaration
+:resourcedefs: yes
+:END:
+ - rdfs:comment :: The DOLCE and DnS ontologies. OWL engineering by Aldo Gangemi.
+ - rdfs:label :: DOLCE-Lite.owl ontology
+ - owl:versionInfo :: "397"^^xsd:integer
+ - owl:versionInfo :: classified
+
+** Datatypes
+:PROPERTIES:
+:ID:       DOLCE-Lite.owl-datatypes
+:custom_id: DOLCE-Lite.owl-datatypes
+:resourcedefs: yes
+:END:
+
+*** xsd:integer
+*** xsd:string
+
+** Classes
+:PROPERTIES:
+:ID:       DOLCE-Lite.owl-class-hierarchy
+:custom_id: DOLCE-Lite.owl-class-hierarchy
+:resourcedefs: yes
+:END:
+
+*** Disjointness clauses                                          :nodeclare:
+#+begin_src omn
+#+end_src
+
+*** particular (dol:particular)
+ - rdfs:comment :: AKA 'entity'.Any individual in the DOLCE domain of discourse. The extensional coverage of DOLCE is as large as possible, since it ranges on 'possibilia', i.e all possible individuals that can be postulated by means of DOLCE axioms. Possibilia include physical objects, substances, processes, qualities,  conceptual regions, non-physical objects, collections and even arbitrary sums of objects.The class 'particular' features a covering partition that includes: endurant, perdurant, quality, and abstract. There are also some subclasses defined as unions of subclasses of 'particular' for special purposes: spatio-temporal-particular (any particular except abstracts)- physical-realization (any realization of an information object, defined in the ExtendedDnS ontology).
+**** abstract (dol:abstract)
+ - rdfs:comment :: The main characteristic of abstract entities is that  they do not have spatial nor temporal qualities, and they are not qualities themselves.  The only class of abstract entities we consider in the present version of the upper  ontology is that of quality regions (or simply regions). Quality spaces are special  kinds of quality regions, being mereological sums of all the regions related to a certain quality type. The other examples of abstract entities (sets and facts) are only  indicative.
+ - SubClassOf :: dol:has-quality only (not (dol:spatial-location_q))
+ - SubClassOf :: dol:has-quality only (not (dol:temporal-location_q))
+ - DisjointWith :: dol:endurant, dol:perdurant, dol:quality
+***** proposition (dol:proposition)
+ - rdfs:comment :: The abstract content of a proposition. Abstract content is purely combinatorial: from this viewpoint, any content that can be generated by means of combinatorial rules is assumed to exist in the domain of quantification (reified abstracts).
+***** region (dol:region)
+ - rdfs:comment :: We distinguish between a quality (e.g., the color  of a specific rose), and its value (e.g., a particular shade of red). The latter  is called quale, and describes the position of an individual quality within a certain  conceptual space (called here quality space) Gardenfors (2000). So when we say that  two roses have (exactly) the same color, we mean that their color qualities, which  are distinct, have the same position in the color space, that is they have the same  color quale.
+ - SubClassOf :: dol:part only dol:region
+****** abstract-region (dol:abstract-region)
+ - rdfs:comment :: A region at which only abstract qualities can be directly located. It assumes some metrics for abstract (neither physical nor temporal) properties.
+ - SubClassOf :: dol:part only dol:abstract-region
+ - SubClassOf :: dol:q-location-of only dol:abstract-quality
+ - DisjointWith :: dol:physical-region, dol:temporal-region
+****** physical-region (dol:physical-region)
+ - rdfs:comment :: A region at which only physical qualities can be  directly located. It assumes some metrics for physical properties.
+ - SubClassOf :: dol:part only dol:physical-region
+ - SubClassOf :: dol:q-location-of only dol:physical-quality
+ - DisjointWith :: dol:abstract-region, dol:temporal-region
+******* space-region (dol:space-region)
+ - rdfs:comment :: An ordinary space: geographical, cosmological, anatomical, topographic, etc.
+ - SubClassOf :: dol:part only dol:space-region
+ - SubClassOf :: dol:q-location-of only dol:spatial-location_q
+******** spatio-temporal-region (dol:spatio-temporal-region)
+ - rdfs:comment :: Any region resulting from the composition of a space region with a temporal region, i.e. being present in region r at time t.
+****** quale (dol:quale)
+ - rdfs:comment :: An atomic region.
+ - EquivalentTo :: dol:region
+           and (dol:atomic-part-of some dol:region)
+****** quality-space (dol:quality-space)
+ - rdfs:comment :: A quality space is a topologically maximal region. The constraint of maximality cannot be given completely in OWL, but a constraint is given that creates a partition out of all quality spaces (e.g. no two quality spaces can overlap mereologically).
+ - EquivalentTo :: dol:region
+           and (dol:overlaps only (not (dol:quality-space)))
+****** temporal-region (dol:temporal-region)
+ - rdfs:comment :: A region at which only temporal qualities can be  directly located. It assumes a metrics for time.
+ - SubClassOf :: dol:part only dol:temporal-region
+ - SubClassOf :: dol:q-location-of only dol:temporal-quality
+ - DisjointWith :: dol:abstract-region, dol:physical-region
+******* time-interval (dol:time-interval)
+ - rdfs:comment :: A temporal region, measured according to a calendar.
+***** set (dol:set)
+ - rdfs:comment :: A mathematical set.
+**** spatio-temporal-particular (dol:spatio-temporal-particular)
+ - rdfs:comment :: Dummy class for optimizing some property universes. It includes all entities that are not reifications of universals ('abstracts'), i.e. those entities that are in space-time.
+ - EquivalentTo :: dol:particular
+           and (dol:endurant or dol:perdurant or dol:quality)
+***** endurant (dol:endurant)
+ - rdfs:comment :: The main characteristic of endurants is that all of them are independent essential wholes. This does not mean that the corresponding property (being an endurant) carries proper unity, since there is  no common unity criterion for endurants. Endurants can 'genuinely' change in time,  in the sense that the very same endurant as a whole can have incompatible properties at different times. To see this, suppose that an endurant - say 'this paper' - has a  property at a time t 'it's white', and a different, incompatible property at time t'  'it's yellow': in both cases we refer to the whole object, without picking up any  particular part of it. Within endurants, we distinguish between physical and non-physical  endurants, according to whether they have direct spatial qualities. Within physical  endurants, we distinguish between amounts of matter, objects, and features.
+ - SubClassOf :: dol:part only dol:endurant
+ - SubClassOf :: dol:participant-in some dol:perdurant
+ - SubClassOf :: dol:specific-constant-constituent only dol:endurant
+ - DisjointWith :: dol:abstract, dol:perdurant, dol:quality
+****** arbitrary-sum (dol:arbitrary-sum)
+ - rdfs:comment :: AKA arbitrary-collection.The mereological sum of any two or more endurants (physical or not). Arbitrary sums have no unity criterion (they are 'extensional').
+ - SubClassOf :: dol:part some dol:endurant
+ - DisjointWith :: dol:non-physical-endurant, dol:physical-endurant
+****** non-physical-endurant (dol:non-physical-endurant)
+ - rdfs:comment :: An endurant with no mass, generically constantly depending on some agent. Non-physical endurants can have physical constituents (e.g. in the case of members of a collection).
+ - SubClassOf :: dol:has-quality only dol:abstract-quality
+ - SubClassOf :: dol:part only dol:non-physical-endurant
+ - DisjointWith :: dol:arbitrary-sum, dol:physical-endurant
+******* non-physical-object (dol:non-physical-object)
+ - rdfs:comment :: Formerly known as description. A unitary endurant with no mass (non-physical), generically constantly depending on some agent, on some communication act, and indirectly on some agent participating in that act. Both descriptions (in the now current sense) and concepts are non-physical objects.
+ - SubClassOf :: dol:generically-dependent-on some dol:physical-endurant
+ - SubClassOf :: dol:part only dol:non-physical-object
+****** physical-endurant (dol:physical-endurant)
+ - rdfs:comment :: An endurant having a direct physical (at least spatial) quality.
+ - SubClassOf :: dol:has-quality only dol:physical-quality
+ - SubClassOf :: dol:has-quality some dol:physical-quality
+ - SubClassOf :: dol:has-quality some dol:spatial-location_q
+ - SubClassOf :: dol:part only dol:physical-endurant
+ - SubClassOf :: dol:specific-constant-constituent only dol:physical-endurant
+ - DisjointWith :: dol:arbitrary-sum, dol:non-physical-endurant
+******* amount-of-matter (dol:amount-of-matter)
+ - rdfs:comment :: The common trait of amounts of matter is that they are endurants with no unity (according to Gangemi et a. 2001 none of them is an essential  whole). Amounts of matter - 'stuffs' referred to by mass nouns like 'gold', 'iron', 'wood',  'sand', 'meat', etc. - are mereologically  invariant, in the sense that they change their  identity when they change some parts.
+ - DisjointWith :: dol:feature, dol:physical-object
+******* feature (dol:feature)
+ - rdfs:comment :: Features are 'parasitic entities', that exist insofar their host exists. Typical examples of features are holes, bumps, boundaries, or spots of color. Features may be relevant parts of their host, like a bump or an edge, or dependent regions like a hole in a piece of cheese, the underneath of a table, the front of a house, or the shadow of a tree, which are not parts of their host. All features are essential wholes, but no common unity criterion may exist for all of them. However, typical features have a topological unity, as they are singular entities.Here only features of physical endurants are considered.
+ - SubClassOf :: dol:host some dol:physical-endurant
+ - DisjointWith :: dol:amount-of-matter, dol:physical-object
+******** dependent-place (dol:dependent-place)
+ - rdfs:comment :: A feature that is not part of its host, like a hole in a piece of cheese, the underneath of a table, the front of a house, or the shadow of a tree.
+******** relevant-part (dol:relevant-part)
+ - rdfs:comment :: Features that are relevant parts of their host, like a bump or an edge.
+******* physical-object (dol:physical-object)
+ - rdfs:comment :: The main characteristic of physical objects is that  they are endurants with unity. However, they have no common unity criterion, since  different subtypes of objects may  have different unity criteria. Differently from  aggregates, (most) physical objects change some of their parts while keeping their  identity, they can have therefore temporary parts. Often physical objects (indeed,  all endurants) are ontologically independent from occurrences (discussed below).  However, if we admit that every object has a life, it is hard to exclude a mutual  specific constant dependence between the two. Nevertheless, we may still use the  notion of dependence to (weakly) characterize objects as being not specifically  constantly dependent on other objects.
+ - DisjointWith :: dol:amount-of-matter, dol:feature
+***** perdurant (dol:perdurant)
+ - rdfs:comment :: Perdurants (AKA occurrences) comprise what are variously called events, processes, phenomena, activities and states. They can have temporal parts or spatial parts. For instance, the first movement of (an execution of) a symphony is a temporal part of the symphony. On the other hand, the play performed by the left side of the orchestra is a spatial part. In both cases, these parts are occurrences themselves. We assume that objects cannot be parts of occurrences, but rather they participate in them. Perdurants extend in time by accumulating different temporal parts, so that, at any time they are present, they are only partially present, in  the sense that some of their proper temporal parts (e.g., their previous or future phases) may be not present. E.g., the piece of paper you are reading now is wholly present, while some temporal parts of your reading are not present yet, or any more. Philosophers say that endurants are entities that are in time, while lacking temporal parts (so to speak, all their parts flow with them in time). Perdurants, on the contrary, are entities that happen in time, and can have temporal parts (all their parts are fixed in time).
+ - SubClassOf :: dol:has-quality only dol:temporal-quality
+ - SubClassOf :: dol:has-quality some dol:temporal-location_q
+ - SubClassOf :: dol:part only dol:perdurant
+ - SubClassOf :: dol:participant some dol:endurant
+ - SubClassOf :: dol:specific-constant-constituent only dol:perdurant
+ - DisjointWith :: dol:abstract, dol:endurant, dol:quality
+****** event (dol:event)
+ - rdfs:comment :: An occurrence-type is stative or eventive according  to whether it holds of the mereological sum of two of its instances, i.e. if it is cumulative or not. A sitting occurrence is stative since the sum of two sittings is still a sitting occurrence.In general, events differ from situations because they are not assumed to have a description from which they depend. They can be sequenced by some course, but they do not require a description as a unifying criterion.On the other hand, at any time, one can conceive a description that asserts the constraints by which an event of a certian type is such, and in this case, it becomes a situation.Since the decision of designing an explicit description that unifies a perdurant depends on context, task, interest, application, etc., when aligning an ontology do DLP, there can be indecision on where to align an event-oriented class. For example, in the WordNet alignment, we have decided to put only some physical events under 'event', e.g. 'discharge', in order to stress the social orientedness of DLP. But whereas we need to talk explicitly of the criteria by which we conceive discharge events, these will be put under 'situation'.Similar considerations are made for the other types of perdurants in DOLCE.A different notion of event (dealing with change) is currently investigated for further developments: being 'achievement', 'accomplishment', 'state', 'event', etc. can be also considered 'aspects' of processes or of parts of them. For example, the same process 'rock erosion in the Sinni valley' can be conceptualized as an accomplishment (what has brought the current state that e.g. we are trying to explain), as an achievement (the erosion process as the result of a previous accomplishment), as a state (if we collapse the time interval of the erosion into a time point), or as an event (what has changed our focus from a state to another).In the erosion case, we could have good motivations to shift from one aspect to another: a) causation focus, b) effectual focus, c) condensation d) transition (causality).If we want to consider all the aspects of a process together, we need to postulate a unifying descriptive set of criteria (i.e. a 'description'), according to which that process is circumstantiated in a 'situation'. The different aspects will arise as a parts of a same situation.
+******* accomplishment (dol:accomplishment)
+ - rdfs:comment :: Eventive occurrences (events) are called achievements if they are atomic, otherwise they are accomplishments.Further developments: being 'achievement', 'accomplishment', 'state', 'event', etc. can be also considered 'aspects' of processes or of parts of them. For example, the same process 'rock erosion in the Sinni valley' can be seen as an accomplishment (what has brought the current state that e.g. we are trying to explain), as an achievement (the erosion process as the result of a previous accomplishment), as a state (collapsing the time interval of the erosion into a time point), as an event (what has changed our focus from a state to another).In the erosion case, we could have good motivations to shift from one aspect to another: a) causation focus, b) effectual focus, c) condensation d) transition (causality).
+******* achievement (dol:achievement)
+ - rdfs:comment :: Eventive occurrences (events) are called achievements  if they are atomic, otherwise they are accomplishments.Further developments: being 'achievement', 'accomplishment', 'state', 'event', etc. can be also considered 'aspects' of processes or of parts of them. For example, the same process 'rock erosion in the Sinni valley' can be seen as an accomplishment (what has brought the current state that e.g. we are trying to explain), as an achievement (the erosion process as the result of a previous accomplishment), as a state (collapsing the time interval of the erosion into a time point), as an event (what has changed our focus from a state to another).In the erosion case, we could have good motivations to shift from one aspect to another: a) causation focus, b) effectual focus, c) condensation d) transition (causality).
+****** stative (dol:stative)
+ - rdfs:comment :: An occurrence-type is stative or eventive according  to whether it holds of the mereological sum of two of its instances, i.e. if it is  cumulative or not. A sitting occurrence is stative since the sum of two sittings  is still a sitting occurrence.
+******* process (dol:process)
+ - rdfs:comment :: Within stative occurrences, we distinguish between states and processes     according to homeomericity: sitting is classified as a state but running     is classified as a process, since there are (very short) temporal parts of     a running that are not themselves runnings. In general, processes differ     from situations because they are not assumed to have a description from     which they depend. They can be sequenced by some course, but they do not     require a description as a unifying criterion. On the other hand, at any     time, one can conceive a description that asserts the constraints by which     a process of a certian type is such, and in this case, it becomes a     situation. Since the decision of designing an explicit description that     unifies a perdurant depends on context, task, interest, application, etc.,     when aligning an ontology do DLP, there can be indecision on where to     align a process-oriented class. For example, in the WordNet alignment, we     have decided to put only some physical processes under 'process', e.g.     'organic process', in order to stress the social orientedness of DLP. But     whereas we need to talk explicitly of the criteria by which we conceive     organic processes, these will be put under 'situation'. Similar     considerations are made for the other types of perdurants in DOLCE. A     different notion of event (dealing with change) is currently investigated     for further developments: being 'achievement', 'accomplishment', 'state',     'event', etc. can be also considered 'aspects' of processes or of parts of     them. For example, the same process 'rock erosion in the Sinni valley' can     be conceptualized as an accomplishment (what has brought the current state     that e.g. we are trying to explain), as an achievement (the erosion     process as the result of a previous accomplishment), as a state (if we     collapse the time interval of the erosion into a time point), or as an     event (what has changed our focus from a state to another). In the erosion     case, we could have good motivations to shift from one aspect to another:     a) causation focus, b) effectual focus, c) condensation d) transition     (causality). If we want to consider all the aspects of a process together,     we need to postulate a unifying descriptive set of criteria (i.e. a     'description'), according to which that process is circumstantiated in a     'situation'. The different aspects will arise as a parts of a same situation.
+******* state (dol:state)
+ - rdfs:comment :: Within stative occurrences, we distinguish between  states and processes according to homeomericity: sitting is classified as a state  but running is classified as a process, since there are (very short) temporal parts  of a running that are not themselves runnings.In general, states differ from situations because they are not assumed to have a description from which they depend. They can be sequenced by some course, but they do not require a description as a unifying criterion.On the other hand, at any time, one can conceive a description that asserts the constraints by which a state of a certian type is such, and in this case, it becomes a situation.Since the decision of designing an explicit description that unifies a perdurant depends on context, task, interest, application, etc., when aligning an ontology do DLP, there can be indecision on where to align a state-oriented class. For example, in the WordNet alignment, we have decided to put only some physical states under 'state', e.g. 'turgor', in order to stress the social orientedness of DLP. But whereas we need to talk explicitly of the criteria by which we conceive turgor states, these will be put under 'situation'.Similar considerations are made for the other types of perdurants in DOLCE.A different notion of event (dealing with change) is currently investigated for further developments: being 'achievement', 'accomplishment', 'state', 'event', etc. can be also considered 'aspects' of processes or of parts of them. For example, the same process 'rock erosion in the Sinni valley' can be conceptualized as an accomplishment (what has brought the current state that e.g. we are trying to explain), as an achievement (the erosion process as the result of a previous accomplishment), as a state (if we collapse the time interval of the erosion into a time point), or as an event (what has changed our focus from a state to another).In the erosion case, we could have good motivations to shift from one aspect to another: a) causation focus, b) effectual focus, c) condensation d) transition (causality).If we want to consider all the aspects of a process together, we need to postulate a unifying descriptive set of criteria (i.e. a 'description'), according to which that process is circumstantiated in a 'situation'. The different aspects will arise as a parts of a same situation.
+***** quality (dol:quality)
+ - rdfs:comment :: Qualities can be seen as the basic entities we can  perceive or measure: shapes, colors, sizes, sounds, smells, as well as weights, lengths,  electrical charges... 'Quality' is often used as a synonymous of 'property', but this is  not the case in this upper ontology: qualities are particulars, properties are universals.  Qualities inhere to entities: every entity (including qualities themselves) comes with  certain qualities, which exist as long as the entity exists.
+ - SubClassOf :: dol:inherent-in some dol:particular
+ - DisjointWith :: dol:abstract, dol:endurant, dol:perdurant
+****** abstract-quality (dol:abstract-quality)
+ - rdfs:comment :: A quality inherent in a non-physical endurant.
+ - SubClassOf :: dol:has-quality only dol:abstract-quality
+ - SubClassOf :: dol:inherent-in some dol:non-physical-endurant
+ - SubClassOf :: dol:q-location only dol:abstract-region
+ - DisjointWith :: dol:physical-quality, dol:temporal-quality
+****** physical-quality (dol:physical-quality)
+ - rdfs:comment :: A quality inherent in a physical endurant.
+ - SubClassOf :: dol:has-quality only dol:physical-quality
+ - SubClassOf :: dol:inherent-in some dol:physical-endurant
+ - SubClassOf :: dol:q-location only dol:physical-region
+ - DisjointWith :: dol:abstract-quality, dol:temporal-quality
+******* spatial-location_q (dol:spatial-location_q)
+ - rdfs:comment :: A physical quality, q-located in (whose value is given within) ordinary spaces (geographical coordinates, cosmological positions, anatomical axes, etc.).
+****** temporal-quality (dol:temporal-quality)
+ - rdfs:comment :: A quality inherent in a perdurant.
+ - SubClassOf :: dol:has-quality only dol:temporal-quality
+ - SubClassOf :: dol:inherent-in some dol:perdurant
+ - SubClassOf :: dol:q-location only dol:temporal-region
+ - DisjointWith :: dol:abstract-quality, dol:physical-quality
+******* temporal-location_q (dol:temporal-location_q)
+ - rdfs:comment :: A temporal location quality.
+
+** Object properties
+:PROPERTIES:
+:ID:       DOLCE-Lite.owl-object-property-hierarchy
+:custom_id: DOLCE-Lite.owl-object-property-hierarchy
+:resourcedefs: yes
+:END:
+
+*** immediate-relation (dol:immediate-relation)
+ - rdfs:comment :: A relation that holds without  additional mediating individuals. In logical terms, a non-composed relation.
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:immediate-relation-i
+**** generic-constituent (dol:generic-constituent)
+ - rdfs:comment :: 'Constituent' should depend on some layering of  the ontology. For example, scientific granularities or ontological 'strata' are  typical layerings. A constituent is a part belonging to a lower layer. Since layering is actually a partition of the ontology, constituents are not properly classified as parts, although this kinship can be intuitive for common sense. Example of specific constant constituents are the entities constituting a setting (a situation), whilethe entities constituting a collection are examples of generic constant constituents.
+ - SubPropertyOf :: dol:immediate-relation
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:generic-constituent-of
+**** generic-dependent (dol:generic-dependent)
+ - rdfs:comment :: The dependence on an individual of a given type at some time. This is traditionally a relation between particulars and universals, but this one states that x generically depends on y if a z different from y, but with the same properties, can be equivalently its depend-on.This is a temporally-indexed relation (embedded in this syntax).
+ - SubPropertyOf :: dol:immediate-relation
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:generically-dependent-on
+**** identity-c (dol:identity-c)
+ - rdfs:comment :: Any pair of individuals are ontologically identical if they are identical to themselves. Reflexive, symmetric, and transitive.
+ - SubPropertyOf :: dol:immediate-relation
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:identity-c
+ - Characteristics :: Transitive
+**** identity-n (dol:identity-n)
+ - rdfs:comment :: Any pair of individuals are notionally identical iff they instantiate all and only the same concepts.
+ - SubPropertyOf :: dol:immediate-relation
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:identity-n
+ - Characteristics :: Transitive
+**** inherent-in (dol:inherent-in)
+ - rdfs:comment :: The immediate relation holding for qualities and entities.
+ - SubPropertyOf :: dol:immediate-relation
+ - Domain :: dol:quality
+ - Range :: dol:particular
+ - InverseOf :: dol:has-quality
+***** t-inherent-in (dol:t-inherent-in)
+ - rdfs:comment :: The immediate relation holding for qualities and entities at time t.
+ - SubPropertyOf :: dol:inherent-in
+ - Domain :: dol:quality
+ - Range :: dol:particular
+ - InverseOf :: dol:has-t-quality
+**** part (dol:part)
+ - rdfs:comment :: The most generic part relation, reflexive, asymmetric, and transitive.
+ - SubPropertyOf :: dol:immediate-relation
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:part-of
+ - Characteristics :: Transitive
+***** atomic-part (dol:atomic-part)
+ - rdfs:comment :: The part relation between a particular and an atom.
+ - SubPropertyOf :: dol:part
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:atomic-part-of
+***** proper-part (dol:proper-part)
+ - rdfs:comment :: The proper part relation: irreflexive, antisymmetric, and transitive.
+ - SubPropertyOf :: dol:part
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:proper-part-of
+ - Characteristics :: Transitive
+****** boundary (dol:boundary)
+ - SubPropertyOf :: dol:proper-part
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:boundary-of
+****** temporary-proper-part (dol:temporary-proper-part)
+ - rdfs:comment :: Being proper part at time t. It holds for endurants only. This is important to model proper parts that can change or be lost over time without affecting the identity of the whole.
+ - SubPropertyOf :: dol:proper-part
+ - SubPropertyOf :: dol:temporary-part
+ - Domain :: dol:endurant
+ - Range :: dol:endurant
+ - InverseOf :: dol:temporary-proper-part-of
+******* temporary-atomic-part (dol:temporary-atomic-part)
+ - rdfs:comment :: Having an atom as part at a time t.
+ - SubPropertyOf :: dol:temporary-proper-part
+ - Domain :: dol:endurant
+ - Range :: dol:endurant
+ - InverseOf :: dol:temporary-atomic-part-of
+***** temporary-part (dol:temporary-part)
+ - rdfs:comment :: Being part at time t. It holds for endurants only. This is important to model parts that can change or be lost over time without affecting the identity of the whole. In FOL, this is expressed as a ternary relation, but in DLs we only can reason with binary relations, then only the necessary axiom of compresence is represented here.
+ - SubPropertyOf :: dol:part
+ - SubPropertyOf :: dol:partly-compresent
+ - Domain :: dol:endurant
+ - Range :: dol:endurant
+ - InverseOf :: dol:temporary-part-of
+****** mereologically-coincides (dol:mereologically-coincides)
+ - rdfs:comment :: Having the same parts at time t.
+ - SubPropertyOf :: dol:temporary-part
+ - Domain :: dol:endurant
+ - Range :: dol:endurant
+ - InverseOf :: dol:mereologically-coincides
+**** participant (dol:participant)
+ - rdfs:comment :: The immediate relation holding between endurants and perdurants (e.g. in 'the car is running').Participation can be constant (in all parts of the perdurant, e.g. in 'the car is running'), or temporary (in only some parts, e.g. in 'I'm electing the president').A 'functional' participant is specialized for those forms of participation that depend on the nature of participants, processes, or on the intentionality of agentive participants. Traditional 'thematic role' should be mapped to functional participation.For relations holding between participants in a same perdurant, see the co-participates relation.
+ - SubPropertyOf :: dol:immediate-relation
+ - Domain :: dol:perdurant
+ - Range :: dol:endurant
+ - InverseOf :: dol:participant-in
+***** constant-participant (dol:constant-participant)
+ - rdfs:comment :: Anytime x is present, x has participant y. In other words, all parts of x have a same participant.Participation can be constant (in all parts of the perdurant, e.g. in 'the car is running'), or temporary (in only some parts, e.g. in 'I'm electing the president').
+ - SubPropertyOf :: dol:participant
+ - Domain :: dol:perdurant
+ - Range :: dol:endurant
+ - InverseOf :: dol:constant-participant-in
+****** life-of (dol:life-of)
+ - SubPropertyOf :: dol:constant-participant
+ - Domain :: dol:perdurant
+ - Range :: dol:endurant
+ - InverseOf :: dol:life
+****** total-constant-participant (dol:total-constant-participant)
+ - rdfs:comment :: The perdurant p has a participant e that constantly participates in p with all its parts, e.g. in 'I played the concert' (where the concert is a solo concert).
+ - SubPropertyOf :: dol:constant-participant
+ - Domain :: dol:perdurant
+ - Range :: dol:endurant
+ - InverseOf :: dol:total-constant-participant-in
+***** temporary-participant (dol:temporary-participant)
+ - rdfs:comment :: Only some parts of the perdurant p have a participant e.In fact, participation can be constant (in all parts of the perdurant, e.g. in 'the car is running'), or temporary (in only some parts, e.g. in 'I'm electing the president').Implicitly, this relation has a temporal indexing.If needed, in OWL one can derive such indexing by expliciting what parts of p have e as _constant_ participant.An appropriate OWL axiom is created to bind this relation to a proper part of it, which has the temporary-participant as a constant one.
+ - SubPropertyOf :: dol:participant
+ - Domain :: dol:perdurant
+ - Range :: dol:endurant
+ - InverseOf :: dol:temporary-participant-in
+****** total-temporary-participant (dol:total-temporary-participant)
+ - rdfs:comment :: The perdurant p has a participant e that temporarily participates in p with all its parts, e.g. in 'I played the concert' (where I actually played just an ouverture).See also 'temporary-participant'.
+ - SubPropertyOf :: dol:temporary-participant
+ - Domain :: dol:perdurant
+ - Range :: dol:endurant
+ - InverseOf :: dol:total-temporary-participant-in
+**** q-location (dol:q-location)
+ - rdfs:comment :: The immediate relation holding for qualities and regions. See 'generic location' branching for the various mediated relations that embed q-location.
+ - SubPropertyOf :: dol:immediate-relation
+ - Domain :: dol:quality
+ - Range :: dol:region
+ - InverseOf :: dol:q-location-of
+***** has-quale (dol:has-quale)
+ - rdfs:comment :: A quality having a q-location at an atomic region.
+ - SubPropertyOf :: dol:q-location
+ - Domain :: dol:quality
+ - Range :: dol:quale
+ - InverseOf :: dol:quale-of
+**** r-location (dol:r-location)
+ - rdfs:comment :: A relation for representing regions within other regions, e.g. in measurement spaces (space composition).The result of r-location composition is a new 'composed region', which can either preserve the same region type (e.g. physical+physical->physical, or  physical+abstract->physical), or not (e.g. physical+abstract->abstract). See 'composition description' for more details.In some cases, space composition is conventional, i.e. a space is just 'located' at another space, as in the case of measurement spaces:(direct composition):   r r-location r1In other cases, r-location implies a complex path, e.g. :(homogeneous composition):   r q-location-of q inherent-in x has-quality q1 q-location r1(heterogeneous composition across endurants and perdurants):   r q-location-of q inherent-in e participant-in p has-quality q1 q-location r1(heterogeneous composition across physical and non-physical endurants):   r q-location-of q inherent-in pe specific-constant-dependent npe has-quality q1 q-location r1
+ - SubPropertyOf :: dol:immediate-relation
+ - Domain :: dol:region
+ - Range :: dol:region
+ - InverseOf :: dol:r-location-of
+**** specific-constant-constituent (dol:specific-constant-constituent)
+ - rdfs:comment :: 'Constituent' should depend on some layering of  the ontology. For example, scientific granularities or ontological 'strata' are  typical layerings. A constituent is a part belonging to a lower layer. Since layering is actually a partition of the ontology, constituents are not properly classified as parts, although this kinship can be intuitive for common sense. Example of specific constant constituents are the entities constituting a setting (a situation), whilethe entities constituting a collection are examples of generic constant constituents.
+ - SubPropertyOf :: dol:immediate-relation
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:specific-constant-constituent-of
+**** specific-constant-dependent (dol:specific-constant-dependent)
+ - rdfs:comment :: The constant dependence between two individuals. Taken here as primitive.
+ - SubPropertyOf :: dol:immediate-relation
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:specifically-constantly-dependent-on
+***** host-of (dol:host-of)
+ - SubPropertyOf :: dol:specific-constant-dependent
+ - Domain :: dol:physical-endurant
+ - Range :: dol:feature
+ - InverseOf :: dol:host
+**** weak-connection (dol:weak-connection)
+ - rdfs:comment :: The basic connection, not requiring a  common boundary.
+ - SubPropertyOf :: dol:immediate-relation
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:weak-connection
+*** immediate-relation-i (dol:immediate-relation-i)
+ - rdfs:comment :: A relation that holds without additional mediating individuals. In logical terms, a non-composed relation.
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:immediate-relation
+**** generic-constituent-of (dol:generic-constituent-of)
+ - SubPropertyOf :: dol:immediate-relation-i
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:generic-constituent
+**** generically-dependent-on (dol:generically-dependent-on)
+ - SubPropertyOf :: dol:immediate-relation-i
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:generic-dependent
+**** has-quality (dol:has-quality)
+ - SubPropertyOf :: dol:immediate-relation-i
+ - Domain :: dol:particular
+ - Range :: dol:quality
+ - InverseOf :: dol:inherent-in
+***** has-t-quality (dol:has-t-quality)
+ - SubPropertyOf :: dol:has-quality
+ - Domain :: dol:particular
+ - Range :: dol:quality
+ - InverseOf :: dol:t-inherent-in
+**** part-of (dol:part-of)
+ - SubPropertyOf :: dol:immediate-relation-i
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:part
+ - Characteristics :: Transitive
+***** atomic-part-of (dol:atomic-part-of)
+ - SubPropertyOf :: dol:part-of
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:atomic-part
+***** proper-part-of (dol:proper-part-of)
+ - SubPropertyOf :: dol:part-of
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:proper-part
+ - Characteristics :: Transitive
+****** boundary-of (dol:boundary-of)
+ - rdfs:comment :: A boundary here is taken to be a part (mereological treatment). Consequently, in the case of endurants, (reified) boundaries are features.
+ - SubPropertyOf :: dol:proper-part-of
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:boundary
+****** temporary-proper-part-of (dol:temporary-proper-part-of)
+ - SubPropertyOf :: dol:proper-part-of
+ - SubPropertyOf :: dol:temporary-part-of
+ - Domain :: dol:endurant
+ - Range :: dol:endurant
+ - InverseOf :: dol:temporary-proper-part
+******* temporary-atomic-part-of (dol:temporary-atomic-part-of)
+ - SubPropertyOf :: dol:temporary-proper-part-of
+ - Domain :: dol:endurant
+ - Range :: dol:endurant
+ - InverseOf :: dol:temporary-atomic-part
+***** temporary-part-of (dol:temporary-part-of)
+ - SubPropertyOf :: dol:part-of
+ - SubPropertyOf :: dol:partly-compresent
+ - Domain :: dol:endurant
+ - Range :: dol:endurant
+ - InverseOf :: dol:temporary-part
+**** participant-in (dol:participant-in)
+ - SubPropertyOf :: dol:immediate-relation-i
+ - Domain :: dol:endurant
+ - Range :: dol:perdurant
+ - InverseOf :: dol:participant
+***** constant-participant-in (dol:constant-participant-in)
+ - SubPropertyOf :: dol:participant-in
+ - Domain :: dol:endurant
+ - Range :: dol:perdurant
+ - InverseOf :: dol:constant-participant
+****** life (dol:life)
+ - rdfs:comment :: Total constant participation applied to the mereological sum of the perdurants in which an endurant participates.
+ - SubPropertyOf :: dol:constant-participant-in
+ - Domain :: dol:endurant
+ - Range :: dol:perdurant
+ - InverseOf :: dol:life-of
+****** total-constant-participant-in (dol:total-constant-participant-in)
+ - SubPropertyOf :: dol:constant-participant-in
+ - Domain :: dol:endurant
+ - Range :: dol:perdurant
+ - InverseOf :: dol:total-constant-participant
+***** temporary-participant-in (dol:temporary-participant-in)
+ - rdfs:comment :: x participates in some of y's parts.
+ - SubPropertyOf :: dol:participant-in
+ - Domain :: dol:endurant
+ - Range :: dol:perdurant
+ - InverseOf :: dol:temporary-participant
+****** total-temporary-participant-in (dol:total-temporary-participant-in)
+ - SubPropertyOf :: dol:temporary-participant-in
+ - Domain :: dol:endurant
+ - Range :: dol:perdurant
+ - InverseOf :: dol:total-temporary-participant
+**** q-location-of (dol:q-location-of)
+ - SubPropertyOf :: dol:immediate-relation-i
+ - Domain :: dol:region
+ - Range :: dol:quality
+ - InverseOf :: dol:q-location
+***** quale-of (dol:quale-of)
+ - SubPropertyOf :: dol:q-location-of
+ - Domain :: dol:quale
+ - Range :: dol:quality
+ - InverseOf :: dol:has-quale
+**** r-location-of (dol:r-location-of)
+ - SubPropertyOf :: dol:immediate-relation-i
+ - Domain :: dol:region
+ - Range :: dol:region
+ - InverseOf :: dol:r-location
+**** specific-constant-constituent-of (dol:specific-constant-constituent-of)
+ - SubPropertyOf :: dol:immediate-relation-i
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:specific-constant-constituent
+**** specifically-constantly-dependent-on (dol:specifically-constantly-dependent-on)
+ - SubPropertyOf :: dol:immediate-relation-i
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:specific-constant-dependent
+***** host (dol:host)
+ - rdfs:comment :: The immediate relation holding for features and entities.
+ - SubPropertyOf :: dol:specifically-constantly-dependent-on
+ - Domain :: dol:feature
+ - Range :: dol:physical-endurant
+ - InverseOf :: dol:host-of
+*** mediated-relation (dol:mediated-relation)
+ - rdfs:comment :: A relation that composes other  relations. For example, a participation relation composed with a representation relation.Composed relation cannot be directly expressed in OWL-DL, then (at least some) compositions are expressed as class or restriction axioms.
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:mediated-relation-i
+**** generic-location (dol:generic-location)
+ - rdfs:comment :: The most generic location relation, probably equivalent to more than one image schema in a cognitive system (e.g. containment for exact location, proximity for approximate location).This is meant to reason on generalized, common sense as well as formal locations, including naive localization, between any kinds of entities. Generic location is branched into 'exact' location, ranging on regions, and 'approximate' (naive) location, ranging on non-regions.
+ - SubPropertyOf :: dol:mediated-relation
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:generic-location-of
+***** exact-location (dol:exact-location)
+ - rdfs:comment :: A location relation bounded to regions and defined analytically through the composition of inherence and q-location. This is the analytical version of 'generic location'.
+ - SubPropertyOf :: dol:generic-location
+ - Domain :: dol:particular
+ - Range :: dol:region
+ - InverseOf :: dol:exact-location-of
+****** abstract-location (dol:abstract-location)
+ - rdfs:comment :: Analytical location holding between non-physical endurants and abstract regions.
+ - SubPropertyOf :: dol:exact-location
+ - Domain :: dol:non-physical-endurant
+ - Range :: dol:abstract-region
+ - InverseOf :: dol:abstract-location-of
+****** physical-location (dol:physical-location)
+ - rdfs:comment :: Analytical location holding between physical endurants and physical regions.
+ - SubPropertyOf :: dol:exact-location
+ - Domain :: dol:physical-endurant
+ - Range :: dol:physical-region
+ - InverseOf :: dol:physical-location-of
+****** spatio-temporally-present-at (dol:spatio-temporally-present-at)
+ - SubPropertyOf :: dol:exact-location
+ - Domain :: dol:particular
+ - Range :: dol:spatio-temporal-region
+ - InverseOf :: dol:spatio-temporal-presence-of
+**** overlaps (dol:overlaps)
+ - rdfs:comment :: Mereological overlap: having a common part.
+ - SubPropertyOf :: dol:mediated-relation
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:overlaps
+**** partly-compresent (dol:partly-compresent)
+ - rdfs:comment :: A composed (mediated) relation used here to make relations 'temporary': by adding it as a superrelation, the effect is that the two related endurants cannot be present at all the same time intervals, but are compresent at least at some time interval (see related axiom).In FOL, the same constraint can be stated directly by coreference.This workaround can be used to index time of relations that involve reciprocal dependency, but it cannot be used in general with relations involving multiple strata of reality. For example, _about_ relation can be temporally indexed, without involving that the time of the information object overlaps with the time of the entity the information is about (but this works for e.g. the _realizes_ relation between information objects and entities whatsoever). The different temporal constraints of about vs. expresses probably derive from the dependency of aboutness from conception (to be about x, an information object should also express a description d that is satisfied by a situation including x, then temporal overlapping of _about_ is true in virtue of d). On the other hand, even conceives cannot be indexed in this way, because overlapping does not hold between the time og the conceiving agent, and the conceived description (or situation).
+ - SubPropertyOf :: dol:mediated-relation
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:partly-compresent
+**** q-present-at (dol:q-present-at)
+ - rdfs:comment :: Presence of a physical quality when inheres in  an endurant.
+ - SubPropertyOf :: dol:mediated-relation
+ - Domain :: dol:physical-quality
+ - Range :: dol:time-interval
+ - InverseOf :: dol:time-of-q-presence-of
+**** sibling-part (dol:sibling-part)
+ - rdfs:comment :: Mereological sibling: having a common whole
+ - SubPropertyOf :: dol:mediated-relation
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:sibling-part
+**** strong-connection (dol:strong-connection)
+ - rdfs:comment :: By strong connection here we mean a connection between  two entities that share a boundary.
+ - SubPropertyOf :: dol:mediated-relation
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:strong-connection
+*** mediated-relation-i (dol:mediated-relation-i)
+ - rdfs:comment :: A relation that composes other relations. For example, a participation relation composed with a representation relation. Composed relation cannot be directly expressed in OWL-DL, then (at least some) compositions are expressed as class or restriction axioms.
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:mediated-relation
+**** generic-location-of (dol:generic-location-of)
+ - SubPropertyOf :: dol:mediated-relation-i
+ - Domain :: dol:particular
+ - Range :: dol:particular
+ - InverseOf :: dol:generic-location
+***** exact-location-of (dol:exact-location-of)
+ - SubPropertyOf :: dol:generic-location-of
+ - Domain :: dol:region
+ - Range :: dol:particular
+ - InverseOf :: dol:exact-location
+****** abstract-location-of (dol:abstract-location-of)
+ - SubPropertyOf :: dol:exact-location-of
+ - Domain :: dol:abstract-region
+ - Range :: dol:non-physical-endurant
+ - InverseOf :: dol:abstract-location
+****** physical-location-of (dol:physical-location-of)
+ - SubPropertyOf :: dol:exact-location-of
+ - Domain :: dol:physical-region
+ - Range :: dol:physical-endurant
+ - InverseOf :: dol:physical-location
+****** spatio-temporal-presence-of (dol:spatio-temporal-presence-of)
+ - SubPropertyOf :: dol:exact-location-of
+ - Domain :: dol:spatio-temporal-region
+ - Range :: dol:particular
+ - InverseOf :: dol:spatio-temporally-present-at
+**** time-of-q-presence-of (dol:time-of-q-presence-of)
+ - SubPropertyOf :: dol:mediated-relation-i
+ - Domain :: dol:time-interval
+ - Range :: dol:physical-quality
+ - InverseOf :: dol:q-present-at
+
+** Data properties
+:PROPERTIES:
+:ID:       DOLCE-Lite.owl-data-property-hierarchy
+:custom_id: DOLCE-Lite.owl-data-property-hierarchy
+:resourcedefs: yes
+:END:
+
+
+** Annotation properties
+:PROPERTIES:
+:ID:       DOLCE-Lite.owl-annotation-property-hierarchy
+:custom_id: DOLCE-Lite.owl-annotation-property-hierarchy
+:resourcedefs: yes
+:END:
+
+*** comment (rdfs:comment)
+*** rdfs:label
+*** versionInfo (owl:versionInfo)
+
+** Individuals
+:PROPERTIES:
+:ID:       DOLCE-Lite.owl-individuals
+:custom_id: DOLCE-Lite.owl-individuals
+:resourcedefs: yes
+:END:
+
+
+
