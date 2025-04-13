@@ -60,6 +60,134 @@
 #+end_src
 :END:
 
+** ROBOT metrics
+#+call: robot-metrics(omnfile="DOLCE-Lite.owl.omn")
+
+#+RESULTS:
+| metric                         |                                    metric_value | metric_type  |
+|--------------------------------+-------------------------------------------------+--------------|
+| abox_axiom_count               |                                               0 | single_value |
+| abox_axiom_count_incl          |                                               0 | single_value |
+| annotation_property_count      |                                               3 | single_value |
+| annotation_property_count_incl |                                               3 | single_value |
+| axiom_count                    |                                             650 | single_value |
+| axiom_count_incl               |                                             650 | single_value |
+| class_count                    |                                              37 | single_value |
+| class_count_incl               |                                              37 | single_value |
+| dataproperty_count             |                                               0 | single_value |
+| dataproperty_count_incl        |                                               0 | single_value |
+| datatypes_count                |                                               3 | single_value |
+| datatypes_count_incl           |                                               3 | single_value |
+| individual_count               |                                               0 | single_value |
+| individual_count_incl          |                                               0 | single_value |
+| logical_axiom_count            |                                             352 | single_value |
+| logical_axiom_count_incl       |                                             352 | single_value |
+| obj_property_count             |                                              70 | single_value |
+| obj_property_count_incl        |                                              70 | single_value |
+| ontology_anno_count            |                                               4 | single_value |
+| ontology_iri                   | http://www.loa-cnr.it/ontologies/DOLCE-Lite.owl | single_value |
+| ontology_version_iri           |                                          no.iri | single_value |
+| owl2                           |                                            true | single_value |
+| owl2_dl                        |                                            true | single_value |
+| owl2_el                        |                                           false | single_value |
+| owl2_ql                        |                                           false | single_value |
+| owl2_rl                        |                                           false | single_value |
+| rbox_axiom_count               |                                             115 | single_value |
+| rbox_axiom_count_incl          |                                             115 | single_value |
+| rdfs                           |                                           false | single_value |
+| rule_count                     |                                               0 | single_value |
+| rule_count_incl                |                                               0 | single_value |
+| signature_entity_count         |                                             113 | single_value |
+| signature_entity_count_incl    |                                             113 | single_value |
+| tbox_axiom_count               |                                             237 | single_value |
+| tbox_axiom_count_incl          |                                             237 | single_value |
+| tboxrbox_axiom_count           |                                             352 | single_value |
+| tboxrbox_axiom_count_incl      |                                             352 | single_value |
+
+** ROBOT queries
+*** select query
+#+begin_src sparql :url "DOLCE-Lite.owl.omn"
+  select ?class ?label {
+    ?class a owl:Class ; rdfs:label ?label
+    filter not exists { 
+      ?class rdfs:subClassOf/rdfs:subClassOf/rdfs:subClassOf ?x }
+  } order by ?class
+#+end_src
+
+#+RESULTS:
+| class                       | label                      |
+|-----------------------------+----------------------------|
+| :abstract                   | abstract                   |
+| :endurant                   | endurant                   |
+| :particular                 | particular                 |
+| :perdurant                  | perdurant                  |
+| :proposition                | proposition                |
+| :quality                    | quality                    |
+| :region                     | region                     |
+| :set                        | set                        |
+| :spatio-temporal-particular | spatio-temporal-particular |
+*** construct query
+#+name: dolce-top-construct
+#+begin_src sparql :url "DOLCE-Lite.owl.omn" :format ttl :wrap "src ttl" :cache no :post kill-prefixes(data=*this*)
+  construct { ?class a owl:Class ; rdfs:label ?label ; rdfs:subClassOf ?superclass .
+              ?superclass rdfs:label ?superlabel .
+  }
+  { ?class a owl:Class ; rdfs:label ?label
+    filter not exists { 
+      ?class rdfs:subClassOf/rdfs:subClassOf/rdfs:subClassOf ?x }
+    optional { ?class rdfs:subClassOf ?superclass .
+               ?superclass rdfs:label ?superlabel .
+    }
+  }
+#+end_src
+
+#+RESULTS[9ec363e694dade7e820b043e7c8c5a83ec2a6e37]: dolce-top-construct
+#+begin_src ttl
+dol:perdurant  a         owl:Class ;
+        rdfs:label       "perdurant" ;
+        rdfs:subClassOf  dol:spatio-temporal-particular .
+
+dol:quality  a           owl:Class ;
+        rdfs:label       "quality" ;
+        rdfs:subClassOf  dol:spatio-temporal-particular .
+
+dol:endurant  a          owl:Class ;
+        rdfs:label       "endurant" ;
+        rdfs:subClassOf  dol:spatio-temporal-particular .
+
+dol:proposition  a       owl:Class ;
+        rdfs:label       "proposition" ;
+        rdfs:subClassOf  dol:abstract .
+
+dol:abstract  a          owl:Class ;
+        rdfs:label       "abstract" ;
+        rdfs:subClassOf  dol:particular .
+
+dol:spatio-temporal-particular
+        a                owl:Class ;
+        rdfs:label       "spatio-temporal-particular" ;
+        rdfs:subClassOf  dol:particular .
+
+dol:particular  a   owl:Class ;
+        rdfs:label  "particular" .
+
+dol:region  a            owl:Class ;
+        rdfs:label       "region" ;
+        rdfs:subClassOf  dol:abstract .
+
+dol:set  a               owl:Class ;
+        rdfs:label       "set" ;
+        rdfs:subClassOf  dol:abstract .
+#+end_src
+
+** rdfpuml diagram
+Note the use of quotes around the Turtle block name in =ttlblock=.
+#+call: rdfpuml-block(ttlblock="dolce-top-construct")
+
+#+RESULTS:
+[[file:./images/dolce-top-construct.svg]]
+
+
 ** Prefixes
 The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
 
