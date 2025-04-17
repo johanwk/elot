@@ -219,3 +219,25 @@ and
 offers quick search across the ontology resources.
 
 [[file:documentation/images/elot-label-display1.png]]
+** Navigating Ontologies with Xref
+
+ELOT supports cross-referencing and navigation using Emacs’s built-in
+~xref~ system. This allows users to find where a resource is used
+and to jump directly to its definition from anywhere in an ELOT buffer.
+
+To find all references to a CURIE (e.g., ~:BFO_0000015~), place the cursor
+on it and type ~M-?~ (~xref-find-references~). The ~*xref*~ buffer will open
+and show each occurrence, along with the heading and flattened description
+list entry for context.
+
+Inside the ~*xref*~ buffer:
+- Press ~RET~ to jump to the occurrence.
+- Move the cursor to any other CURIE and press ~M-.~ (~xref-find-definitions~)
+  to jump to its definition (typically the Org headline where it's declared).
+
+Label overlays are enabled automatically in the ~*xref*~ buffer, so
+identifiers appear with readable labels if available. This makes it easier
+to explore large ontologies interactively.
+
+This functionality is activated automatically for Org files exported with
+ELOT startup code and does not require additional setup.
