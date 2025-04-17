@@ -1027,6 +1027,130 @@ function =elot-class-disjoint-from-header= is intended to be used in
             (elot-resource-taxonomy-from-l hierarchy-l owl-type owl-relation))
         (concat "## no " owl-type "taxonomy"))))
 #+END_SRC
+*** xref support
+This section defines xref backend support for ELOT buffers. It enables
+cross-referencing identifiers such as CURIEs (e.g., ~:BFO_0000015~) within
+Org-mode ontology documents.
+
+References are collected from description list entries, formatted with
+their preceding Org heading, and shown in the ~*xref*~ buffer. Multi-line
+entries are flattened to improve readability.
+
+Definitions are resolved by searching open buffers for headings that contain
+the identifier. This allows users to press ~M-.~ on any CURIE—even inside the
+~*xref*~ buffer—to jump to its defining section.
+
+Label overlays are automatically enabled in the ~*xref*~ buffer, using context
+from the originating ELOT buffer. Hooks and advice ensure the xref backend is
+registered and the correct context is preserved across jumps.
+#+name: src-elot-xref
+#+begin_src emacs-lisp
+	(cl-defmethod xref-backend-references ((_backend (eql elot)) identifier)
+		"Return all references to IDENTIFIER in the current ELOT Org-mode buffer.
+
+	Each result shows the nearest preceding Org heading and the complete
+	description list entry in which the identifier occurs. Multiline items
+	are flattened into a single line for clarity in the xref buffer."
+		(save-excursion
+			(goto-char (point-min))
+			(let ((case-fold-search nil)
+						(pattern (concat "\\b" (regexp-quote identifier) "\\b"))
+						matches)
+				(while (re-search-forward pattern nil t)
+					(unless (org-at-heading-p)
+						(let* ((heading (save-excursion
+															(or (outline-previous-heading)
+																	(goto-char (point-min)))
+															(org-get-heading t t t t)))
+									 (item (org-element-lineage (org-element-context) '(item) t))
+									 (entry-text (if item
+																	 (buffer-substring-no-properties
+																		(org-element-property :begin item)
+																		(org-element-property :end item))
+																 (thing-at-point 'line t)))
+									 (entry-one-line (replace-regexp-in-string
+																		"\n\\s-*" " " entry-text))
+									 (context (format "%s\n %s\n"
+																		heading
+																		(string-trim entry-one-line)))
+									 (loc (xref-make-buffer-location (current-buffer)
+																									 (line-beginning-position))))
+							(push (xref-make context loc) matches))))
+				(nreverse matches))))
+
+	(cl-defmethod xref-backend-identifier-completion-table ((_backend (eql elot)))
+		"Disable identifier completion for ELOT xref backends.
+
+	This prevents Emacs from prompting with completions in xref commands
+	like `xref-find-references'."
+		nil)
+
+	(defun elot--capture-slurp (&rest _args)
+		"Copy the current buffer's `elot-slurp' into `elot-slurp-global'.
+
+	This is used before xref is invoked so that label overlays can be shown
+	in the `*xref*' buffer based on the current ELOT context."
+		(when (boundp 'elot-slurp)
+			(setq elot-slurp-global elot-slurp)))
+
+
+	(advice-add 'xref-find-references :before #'elot--capture-slurp)
+
+	(defun elot--xref-label-overlay-setup ()
+		"Setup label overlays in the xref buffer using `elot-slurp-global'."
+		(when (and (equal (buffer-name) "*xref*")
+							 (fboundp 'elot-label-display-setup))
+			(elot-label-display-setup)))
+
+	(add-hook 'xref-after-update-hook #'elot--xref-label-overlay-setup)
+
+	(defun elot--xref-buffer-enable-backend ()
+		"Enable `elot` xref backend in the `*xref*` buffer."
+		(when (equal (buffer-name) "*xref*")
+			(add-hook 'xref-backend-functions #'elot-xref-backend nil t)))
+
+	(add-hook 'xref-after-update-hook #'elot--xref-buffer-enable-backend)
+
+	(cl-defmethod xref-backend-definitions ((_backend (eql elot)) identifier)
+		"Return xref locations for the Org headline that defines IDENTIFIER.
+
+	Searches across all open buffers with `elot-slurp' defined."
+		(let (matches)
+			(dolist (buf (buffer-list))
+				(with-current-buffer buf
+					(when (and (derived-mode-p 'org-mode)
+										 (boundp 'elot-slurp))  ;; only search ELOT-style buffers
+						(save-excursion
+							(goto-char (point-min))
+							(while (re-search-forward
+											(concat "^\\*+ .*\\b" (regexp-quote identifier) "\\b") nil t)
+								(let* ((heading (org-get-heading t t t t))
+											 (loc (xref-make-buffer-location
+														 buf
+														 (line-beginning-position))))
+									(push (xref-make heading loc) matches)))))))
+			(nreverse matches)))
+
+	(defun elot--xref-buffer-enable-backend ()
+		"Enable the ELOT xref backend in the `*xref*` buffer.
+
+	This ensures `xref-find-definitions` works on CURIEs inside the xref buffer."
+		(when (equal (buffer-name) "*xref*")
+			(with-current-buffer (current-buffer)
+				(make-local-variable 'xref-backend-functions)
+				(add-hook 'xref-backend-functions #'elot-xref-backend nil t))))
+
+	(add-hook 'xref-after-update-hook #'elot--xref-buffer-enable-backend)
+
+	(cl-defmethod xref-backend-identifier-at-point ((_backend (eql elot)))
+		"Return a CURIE at point, like :BFO_0000015, or nil if not found."
+		(let ((curie-regex "\\(?:\\sw\\|\\s_\\|:\\)+"))
+			(save-excursion
+				(skip-chars-backward "-_A-Za-z0-9:")
+				(when (looking-at curie-regex)
+					(match-string-no-properties 0)))))
+
+#+end_src
 *** Headings in LaTeX export
 We format headings with indentation to match the subtype level in the
 ontology: for each level down we add a full stop and a space.
