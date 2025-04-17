@@ -976,6 +976,23 @@ function =elot-class-disjoint-from-header= is intended to be used in
                          (cdr l) ", ")))
 #+END_SRC
 *** Write entity taxonomy
+This section defines functions to generate OWL taxonomy axioms from an
+Org-mode outline representing classes or properties.
+
+The function ~elot-resource-taxonomy-from-header~ is called from Babel
+blocks in ~elot-lob.org~ to produce subtype axioms in OMN syntax. It
+recursively traverses an Org subtree identified by a ~:ID:~ property and
+outputs ~SubClassOf~ or ~SubPropertyOf~ axioms based on the header
+structure.
+
+Headers may include Org tags such as ~:oneof:~ or ~:disjoint:~ to indicate
+special axioms, which are handled by calling
+~elot-class-oneof-from-header~ or ~elot-class-disjoint-from-header~.
+
+The helper function ~elot-resource-taxonomy-from-l~ performs the recursive
+traversal and formatting. Tags are extracted using
+~elot-org-tags-in-string~, which identifies any tag-like suffixes in the
+header text.
 #+name: src-write-taxonomy
 #+BEGIN_SRC emacs-lisp :results silent
   (defun elot-org-tags-in-string (str)
