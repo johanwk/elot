@@ -1,13 +1,12 @@
-[main] INFO org.semanticweb.owlapi.rdf.rdfxml.parser.AbstractState - Notice: root element does not have an xml:base. Relative IRIs will be resolved against file:/var/folders/56/rly_hr9x0dg65l9lmsrhyv_c0000gn/T/elot-ontology-jSSTlp.owl
 # -*- eval: (load-library "elot-defaults") -*-
 #+title: Untitled Ontology
 #+subtitle: An OWL ontology
 #+author: 
-#+date: WIP (version of 2025-04-18 08:19)
+#+date: WIP (version of 2025-04-18 09:00)
 #+call: theme-readtheorg()
 
 # This org-mode file was created using elot-exporter version 0.7-SNAPSHOT.
-# Source ontology: [Local File] /var/folders/56/rly_hr9x0dg65l9lmsrhyv_c0000gn/T/elot-ontology-jSSTlp.owl
+# Source ontology: [Local File] c:/Users/jowik/AppData/Local/Temp/elot-ontology-rf0XaO.owl
 
 # Change the output file location by editing the :header-args:omn: :tangle property below.
 
@@ -153,12 +152,12 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 #+begin_src omn
 #+end_src
 
-*** gist:Artifact
+*** Artifact (gist:Artifact)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: An intentional, person-made thing, which could be physical or content
  - skos:prefLabel :: Artifact
  - SubClassOf :: gist:hasGoal some gist:Function
-**** gist:Building
+**** Building (gist:Building)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A relatively permanent man-made structure situated on a plot of land, having a roof and walls, commonly used for dwelling, entertaining, or working.
  - skos:example :: Negative examples: houseboats (not built on land), caves (not man-made), food trucks and RVs (not permanently situated).
@@ -166,30 +165,30 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:prefLabel :: Building
  - skos:scopeNote :: User discretion can be applied to edge cases: e.g., is a traditional yurt 'relatively permanently situated' although it is portable and has a tent-like construction?
  - SubClassOf :: gist:Landmark
-**** gist:Component
+**** Component (gist:Component)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A component is an artifact that contributes to a system.  Could be a simple mechanical component, such as the float contributing to the toilet tank maintaining a constant level, or much more complex as in the internet of things.
  - skos:prefLabel :: Component
  - EquivalentTo :: gist:Artifact
            and (gist:contributesTo some gist:System)
-**** gist:Content
+**** Content (gist:Content)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A document, program, image, etc.  (Categories are not content until they are written down.)
  - skos:prefLabel :: Content
  - DisjointWith :: gist:GeoPoint, gist:GeoRegion, gist:Organization, gist:PhysicalIdentifiableItem, gist:PhysicalSubstance, gist:UnitOfMeasure
-***** gist:Address
+***** Address (gist:Address)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A reference to a place (real or virtual) that can be located by some routing algorithm and where messages or things can be sent to or received from.
  - skos:example :: A PO Box, a URL to a PDF file.
  - skos:prefLabel :: Address
-****** gist:ElectronicAddress
+****** Electronic Address (gist:ElectronicAddress)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:altLabel :: Virtual Address
  - skos:definition :: An address referring to a locatable virtual place that does not physically exist but is made by software or electronics to appear to do so.
  - skos:example :: A path to a file in a file system, a website URL, an IP address, an email address, a mobile or landline telephone number.
  - skos:prefLabel :: Electronic Address
  - DisjointWith :: gist:PhysicalAddress
-****** gist:PhysicalAddress
+****** Physical Address (gist:PhysicalAddress)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: An address that refers to a locatable place within the physical universe.
  - skos:example :: A street address, a PO box address.
@@ -197,19 +196,19 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - DisjointWith :: gist:ElectronicAddress
  - EquivalentTo :: gist:Address
            and (gist:refersTo some gist:Place)
-***** gist:ContentExpression
+***** Content Expression (gist:ContentExpression)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Intellectual Property reduced to text, audio etc.  If it contains text (written or spoken), it may be in a language.
  - skos:prefLabel :: Content Expression
  - SubClassOf :: gist:isCategorizedBy some gist:GeneralMediaType
  - SubClassOf :: gist:isExpressedIn some gist:Language
-****** gist:FormattedContent
+****** Formatted Content (gist:FormattedContent)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Content which is in a particular format. (E.g., HTML, PDF, JPG.)
  - skos:prefLabel :: Formatted Content
  - EquivalentTo :: gist:ContentExpression
            and (gist:isExpressedIn some gist:MediaType)
-****** gist:Message
+****** Message (gist:Message)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A specific instance of content sent from a sender to at least one other recipient.
  - skos:example :: An email message, a phone call, a voice message, or a Web Service message.
@@ -219,14 +218,14 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
               (gist:Organization or gist:Person))
            and (gist:goesToAgent some 
               (gist:Organization or gist:Person))
-****** gist:RenderedContent
+****** Rendered Content (gist:RenderedContent)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Content which has been expressed, either to print, or through speakers, or on a monitor.
  - skos:prefLabel :: Rendered Content
  - EquivalentTo :: gist:ContentExpression
            and (gist:isExpressedIn some gist:MediaType)
            and (gist:isRenderedOn some gist:Medium)
-***** gist:ID
+***** ID (gist:ID)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Content that is used to uniquely identify something or someone.
  - skos:example :: SSN for a person; serial number for a product; employee ID.
@@ -236,28 +235,28 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
            and (gist:isAllocatedBy some 
               (gist:IntellectualProperty or gist:Organization or gist:Person))
            and (gist:uniqueText some xsd:string)
-***** gist:Text
+***** Text (gist:Text)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Content expressed as words and numbers (not graphics).
  - skos:prefLabel :: Text
  - EquivalentTo :: gist:Content
            and (gist:isExpressedIn some gist:Language)
            and (gist:containedText some xsd:string)
-**** gist:Equipment
+**** Equipment (gist:Equipment)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Tangible property other than land or buildings.  Any kind of equipment, could be machine, router, car etc.
  - skos:prefLabel :: Equipment
  - EquivalentTo :: gist:Artifact
            and gist:PhysicalIdentifiableItem
            and (gist:isCategorizedBy some gist:EquipmentType)
-**** gist:IntellectualProperty
+**** Intellectual Property (gist:IntellectualProperty)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A work, invention or concept, independent of its being expressed in text, audio, video, image, or live performance.  IP can also be tacit knowledge, know-how, or skill. Also includes Brands.
  - skos:example :: The Old Man and The Sea; the Page Rank algorithm; Coca Cola
  - skos:prefLabel :: Intellectual Property
  - skos:scopeNote :: For literature this could be called the ?Work?, except that ?work? is a highly overloaded term (expenditure of energy, resource consumption, art).  Often the first expression precedes our recognition of the IP, but subsequent expressions are known to be derivatives of the IP, even if they are expression-to-expression translations (or copies).
  - DisjointWith :: gist:GeoPoint, gist:GeoRegion, gist:Intention, gist:Magnitude, gist:Organization, gist:PhysicalIdentifiableItem, gist:PhysicalSubstance, gist:UnitOfMeasure
-**** gist:Network
+**** Network (gist:Network)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A network is a set of nodes connected by links.
  - skos:example :: A physical network could include connected computers or routers, whereas a social network would consist of related Person or Organization instances.
@@ -265,18 +264,18 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - EquivalentTo :: gist:Artifact
            and ( inverse (gist:isMemberOf) some 
               (gist:NetworkLink or gist:NetworkNode))
-**** gist:System
+**** System (gist:System)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A system is an artifact with component parts where the parts contribute to the goal of the system
  - skos:prefLabel :: System
  - EquivalentTo :: gist:Artifact
            and ( inverse (gist:isDirectPartOf) some gist:Component)
-*** gist:Aspect
+*** Aspect (gist:Aspect)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A measurable characteristic such as length, weight, cost, cycle time, or defect rate.
  - skos:prefLabel :: Aspect
  - skos:scopeNote :: Every aspect should be related to a broader aspect or to a unit group. For example, angle of incidence should be related to the broader concept of angle, which in turn is related to a unit group.
-*** gist:Category
+*** Category (gist:Category)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A concept or label used to categorize other instances without specifying any formal semantics. Things that can be thought of as types are often categories.
  - skos:example :: Tags used in folksonomies; formal definitions from other systems.
@@ -284,41 +283,41 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:scopeNote :: Often a type can be modeled either as an owl:Class or as a gist:Category. Use the latter if you don't care much about the formal structure of the different types, or if there is a whole hierarchy of types that are going to be managed by a group separate from the ontology developers. The formal structure may be defined elsewhere and linked to, if necessary.
  - SubClassOf :: gist:isAllocatedBy some 
           (gist:IntellectualProperty or gist:Organization or gist:Person)
-**** gist:AddressUsageType
+**** Address Usage Type (gist:AddressUsageType)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A category indicating the context or manner in which an address may be used.
  - skos:example :: Billing, business, personal, postal, residence.
  - skos:prefLabel :: Address Usage Type
  - skos:scopeNote :: If you are using temporal relations involving addresses, this category should be used to qualify the temporal relation rather than the address itself, since the same address may have different uses in different contexts, by different people and organizations, or at different times.
-**** gist:Behavior
+**** Behavior (gist:Behavior)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A way of categorizing events.  E.g., differentiating drilling versus cutting.
  - skos:prefLabel :: Behavior
-**** gist:DegreeOfCommitment
+**** Degree Of Commitment (gist:DegreeOfCommitment)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The difficulty of reversing a commitment.
  - skos:example :: A car rental typically has a lower degree of commitment than an airfare reservation.
  - skos:prefLabel :: Degree Of Commitment
-**** gist:Discipline
+**** Discipline (gist:Discipline)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: An area of study or practice, such as accounting.
  - skos:example :: Finance, accounting, project management, acoustics, ballistics, etc.
  - skos:prefLabel :: Discipline
-**** gist:ElectronicAddressType
+**** Electronic Address Type (gist:ElectronicAddressType)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A category indicating a kind of electronic address. Such a category is usually based on the technology that enables routing to the address referent.
  - skos:example :: URL, file system path, email address, mobile telephone number.
  - skos:prefLabel :: Electronic Address Type
-**** gist:EquipmentType
+**** Equipment Type (gist:EquipmentType)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Categories of equipment
  - skos:prefLabel :: Equipment Type
-**** gist:GeneralMediaType
+**** General Media Type (gist:GeneralMediaType)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The real-world media type for content.
  - skos:example :: Audio, still image, video, textual, physical (e.g., a statue), or performance (i.e. a play).  Or it could be oil or pastel for a painting.
  - skos:prefLabel :: General Media Type
-**** gist:MediaType
+**** Media Type (gist:MediaType)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - rdfs:seeAlso :: https://www.iana.org/assignments/media-types/media-types.xhtml
  - skos:definition :: A digitized type that computer applications can recognize.
@@ -326,37 +325,37 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:prefLabel :: Media Type
  - skos:scopeNote :: The unique text for an IANA media type is the concatenation of the 'Type name', a slash '/', and the 'Subtype name' as provided on the page displayed when you resolve the URI of the media type.
  - SubClassOf :: gist:uniqueText some xsd:string
-**** gist:Medium
+**** Medium (gist:Medium)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A physicality on which a work could be implemented or exposed. E.g., paper, clay, or a computer monitor.
  - skos:prefLabel :: Medium
-**** gist:PhysicalActionType
+**** Physical Action Type (gist:PhysicalActionType)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The effects to be realized in the real world, such as lifting a garage door, turning off a valve, dropping cadmium rods, etc.
  - skos:prefLabel :: Physical Action Type
-**** gist:PhysicalAddressType
+**** Physical Address Type (gist:PhysicalAddressType)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A category indicating local customary characterizations of physical addresses.
  - skos:example :: Street address, PO box, FPO code.
  - skos:prefLabel :: Physical Address Type
-**** gist:ProductCategory
+**** Product Category (gist:ProductCategory)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Any of many ways of categorizing products, including models, NATO product codes, and the like.
  - skos:prefLabel :: Product Category
-**** gist:Tag
+**** Tag (gist:Tag)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A term in a folksonomy used to categorize things. Tags can be made up on the fly by users.
  - skos:prefLabel :: Tag
  - skos:scopeNote :: Whether to use gist:containedText or gist:uniqueText on tags is an implementation decision.
  - EquivalentTo :: gist:Category
            and (gist:containedText some xsd:string)
-*** gist:Collection
+*** Collection (gist:Collection)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A grouping of things.
  - skos:example :: A jury is a group of people, a financial ledger is a collection of transaction entries; a route is an (ordered) collection of segments.
  - skos:prefLabel :: Collection
  - skos:scopeNote :: Individuals are placed in the collection using the gist:isMemberOf property. Collections typically are created because the members are functionally connected in some way. This definition allows a collection to have zero members.
-**** gist:ControlledVocabulary
+**** Controlled Vocabulary (gist:ControlledVocabulary)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A collection of terms approved and managed by some organization or person.
  - skos:prefLabel :: Controlled Vocabulary
@@ -364,7 +363,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
            and (gist:isGovernedBy some 
               (gist:Organization or gist:Person))
            and ( inverse (gist:isMemberOf) some gist:Category)
-***** gist:Taxonomy
+***** Taxonomy (gist:Taxonomy)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A controlled vocabulary arranged as a hierarchy of concepts.
  - skos:prefLabel :: Taxonomy
@@ -372,7 +371,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
            and ( inverse (gist:isMemberOf) some 
               (gist:Category
                and ((gist:hasBroader some gist:Category) or ( inverse (gist:hasBroader) some gist:Category))))
-**** gist:OrderedCollection
+**** Ordered Collection (gist:OrderedCollection)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A collection in which the members are sequentially ordered. All members of an OrderedCollection are OrderedMembers.
  - skos:prefLabel :: Ordered Collection
@@ -380,14 +379,14 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - EquivalentTo :: gist:Collection
            and (( inverse (gist:isFirstMemberOf) some gist:OrderedMember) or ( inverse (gist:isMemberOf) exactly 0 owl:Thing))
            and ( inverse (gist:isMemberOf) only gist:OrderedMember)
-***** gist:GeoRoute
+***** Geo Route (gist:GeoRoute)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: An ordered set of GeoPoints that defines a path from starting point to ending point.
  - skos:prefLabel :: Geo Route
  - EquivalentTo :: gist:OrderedCollection
            and gist:Place
            and ( inverse (gist:isDirectPartOf) some gist:GeoSegment)
-*** gist:Commitment
+*** Commitment (gist:Commitment)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: An obligation (possibly unilateral).
  - skos:prefLabel :: Commitment
@@ -395,7 +394,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
            and (gist:hasGiver some 
               (gist:Organization or gist:Person))
            and (gist:isCategorizedBy some gist:DegreeOfCommitment)
-**** gist:Agreement
+**** Agreement (gist:Agreement)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Something which two or more People or Organizations mutually commit to do.
  - skos:prefLabel :: Agreement
@@ -403,7 +402,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
            and (gist:hasParty some 
               (gist:Organization or gist:Person))
            and ( inverse (gist:isDirectPartOf) min 2 gist:Obligation)
-***** gist:Account
+***** Account (gist:Account)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: An agreement having a balance, as in a bank account, or credit card account, or Accounts Receivable account.
  - skos:prefLabel :: Account
@@ -411,13 +410,13 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
            and (gist:hasMagnitude some 
               (gist:Magnitude
                and (gist:hasAspect value gistd:_Aspect_financial_balance)))
-***** gist:Contract
+***** Contract (gist:Contract)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: An Agreement which can be enforced by law
  - skos:prefLabel :: Contract
  - EquivalentTo :: gist:Agreement
            and (gist:isUnderJurisdictionOf some gist:GovernmentOrganization)
-**** gist:ContingentObligation
+**** Contingent Obligation (gist:ContingentObligation)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: An obligation that is not yet firm.  There is some contingent event, the occurrence of which will cause the obligation to become firm.
  - skos:prefLabel :: Contingent Obligation
@@ -426,7 +425,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
            and (gist:hasGiver some 
               (gist:Organization or gist:Person))
            and (gist:isTriggeredBy some gist:Event)
-***** gist:Offer
+***** Offer (gist:Offer)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A commitment to buy or sell a described or identified part or service.
  - skos:prefLabel :: Offer
@@ -439,7 +438,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
            and (gist:offers some gist:CatalogItem)
            and (gist:plannedEndDateTime exactly 1 rdfs:Literal)
            and (gist:plannedStartDateTime exactly 1 rdfs:Literal)
-**** gist:Obligation
+**** Obligation (gist:Obligation)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A future commitment from one organization or person to another. Contracts are sets of obligations to do or forbear, or to indemnify or warrant.
  - skos:prefLabel :: Obligation
@@ -449,15 +448,15 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
               (gist:Organization or gist:Person))
            and (gist:hasRecipient some 
               (gist:Organization or gist:Person))
-*** gist:Event
+*** Event (gist:Event)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Something that occurs over a period of time, often characterized as an activity being carried out by some person, organization, or software application or brought about by natural forces.
  - skos:editorialNote :: See guidance on removing the term in the next major release at https://github.com/semanticarts/gist/issues/947#issuecomment-1679565100.
  - skos:example :: A transaction, conference, baseball game, earthquake.
  - skos:prefLabel :: Event
- - skos:scopeNote :: An event does not necessarily have either planned or actual start or end datetimes. For example, a conference can be in the planning phase without any dates selected, but is nevertheless an (unscheduled) event. The subclasses of Event state particular restrictions on planned and actual start and end dates.
  - skos:scopeNote :: An event occurs during a time interval, which is distinct from the event.
-**** gist:ContemporaryEvent
+ - skos:scopeNote :: An event does not necessarily have either planned or actual start or end datetimes. For example, a conference can be in the planning phase without any dates selected, but is nevertheless an (unscheduled) event. The subclasses of Event state particular restrictions on planned and actual start and end dates.
+**** Contemporary Event (gist:ContemporaryEvent)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: An event that has started but has not yet ended.
  - skos:prefLabel :: Contemporary Event
@@ -465,53 +464,53 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - EquivalentTo :: gist:Event
            and (gist:actualStartDateTime exactly 1 rdfs:Literal)
            and (gist:actualEndDateTime max 0 rdfs:Literal)
-**** gist:ContingentEvent
+**** Contingent Event (gist:ContingentEvent)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: An event with a probability of happening in the future, and usually dependent upon some other event or condition.
  - skos:example :: The death benefit payout on a life insurance policy following the death of a specific person.
- - skos:example :: Sell 20 shares of stock in a given company when the price drops below $200/share.
  - skos:example :: Fire insurance is contingent on a particular building burning down
+ - skos:example :: Sell 20 shares of stock in a given company when the price drops below $200/share.
  - skos:prefLabel :: Contingent Event
  - EquivalentTo :: gist:Event
            and (gist:hasMagnitude some 
               (gist:Magnitude
                and (gist:hasAspect value gistd:_Aspect_probability)))
            and (gist:isTriggeredBy some gist:Event)
-**** gist:Determination
+**** Determination (gist:Determination)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: An event whose purpose is to establish a specific result, value, or outcome, usually by research, measuring, evaluating, or calculating.
  - skos:example :: Measuring the sulphur content of crude oil. Evaluating a loan application for approval. Estimating the price of gas for the next three months. Determining whether and by how much an interest rate should change. Classifying something.
  - skos:prefLabel :: Determination
-**** gist:HistoricalEvent
+**** Historical Event (gist:HistoricalEvent)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: An event which occurred in time, with an actual end earlier than the present moment.
  - skos:prefLabel :: Historical Event
  - EquivalentTo :: gist:Event
            and (gist:actualEndDateTime exactly 1 rdfs:Literal)
            and (gist:actualStartDateTime exactly 1 rdfs:Literal)
-**** gist:PhysicalEvent
+**** Physical Event (gist:PhysicalEvent)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: An event that can be said to have occurred at some place in space.
- - skos:example :: A meeting, a car accident.
  - skos:example :: Negative examples: Excludes events that have no meaningful location, such as financial events or project milestones.
+ - skos:example :: A meeting, a car accident.
  - skos:prefLabel :: Physical Event
  - EquivalentTo :: gist:Event
            and (gist:occursIn some gist:Place)
-**** gist:ScheduledEvent
+**** Scheduled Event (gist:ScheduledEvent)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: An event with a planned start datetime.
  - skos:prefLabel :: Scheduled Event
  - skos:scopeNote :: If the event already started, but has not yet ended, it is a contemporary event with an actual start datetime. If the event is over, it is a historical event having an actual end datetime. The event always retains its planned start datetime, and thus continues to be a scheduled event.
  - EquivalentTo :: gist:Event
            and (gist:plannedStartDateTime exactly 1 rdfs:Literal)
-***** gist:ScheduledTask
+***** Scheduled Task (gist:ScheduledTask)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A task with a planned start datetime.
  - skos:prefLabel :: Scheduled Task
  - skos:scopeNote :: If work on the task has already started, but has not yet ended, it will have an actual start datetime. If the task is completed, it will also have an actual end datetime. The task always retains its planned start time, and thus continues to be a scheduled task.
  - EquivalentTo :: gist:ScheduledEvent
            and gist:Task
-**** gist:Task
+**** Task (gist:Task)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A piece of work that is either proposed, planned, scheduled, underway, or completed.
  - skos:prefLabel :: Task
@@ -519,19 +518,19 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:scopeNote :: Something that could potentially be executed, which is merely described but not proposed in any specific way, such as a business process for onboarding a new employee, or the steps in a recipe for making polyethylene from ethylene, is not a task but rather a task template.
  - EquivalentTo :: gist:Event
            and (gist:hasGoal some gist:Intention)
-***** gist:Project
+***** Project (gist:Project)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A task, usually of longer duration, made up of other tasks.
  - skos:example :: Designing an insurance product, adding a new feature to a software application, assessing the level of risk for a mortgage application.
  - skos:prefLabel :: Project
  - EquivalentTo :: gist:Task
            and ( inverse (gist:isPartOf) some gist:Task)
-**** gist:Transaction
+**** Transaction (gist:Transaction)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: An exchange or transfer of goods, services, or funds.
  - skos:prefLabel :: Transaction
  - skos:scopeNote :: Different sorts of transactions can have different datetime precisions. For example, an electronic transaction would have a gist:actualEndMicrosecond.
-*** gist:GeoRegion
+*** Geo Region (gist:GeoRegion)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A bounded region (or set of regions) on the surface of the Earth.
  - skos:example :: The bounded shape that defines the region occupied by Crater Lake; the bounded area known as the contiguous USA.
@@ -542,90 +541,90 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
           (gist:Magnitude
            and (gist:hasAspect value gistd:_Aspect_area)))
  - DisjointWith :: gist:Content, gist:IntellectualProperty, gist:Intention, gist:Language, gist:Magnitude, gist:Organization, gist:PhysicalIdentifiableItem, gist:PhysicalSubstance, gist:Template, gist:UnitOfMeasure
-**** gist:GovernedGeoRegion
+**** Governed Geo-Region (gist:GovernedGeoRegion)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A defined geographic area or areas governed by at least one government organization.
  - skos:prefLabel :: Governed Geo-Region
  - skos:scopeNote :: Geographic regions do not need not be physically contiguous in order to constitute a governed geo-region; e.g., Alaska and Hawaii.
  - EquivalentTo :: gist:GeoRegion
            and (gist:isGovernedBy min 1 gist:GovernmentOrganization)
-***** gist:CountryGeoRegion
+***** Country Geo-Region (gist:CountryGeoRegion)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A defined geographical area (or areas) governed by exactly one country government.
  - skos:prefLabel :: Country Geo-Region
  - EquivalentTo :: gist:GovernedGeoRegion
            and (gist:isGovernedBy exactly 1 gist:CountryGovernment)
-*** gist:Intention
+*** Intention (gist:Intention)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Goal, desire, aspiration. This is the "teleologic" aspect of the system that indicates things are done with a purpose.
  - skos:prefLabel :: Intention
  - DisjointWith :: gist:GeoPoint, gist:GeoRegion, gist:IntellectualProperty, gist:Magnitude, gist:Organization, gist:PhysicalIdentifiableItem, gist:PhysicalSubstance, gist:UnitOfMeasure
-**** gist:Function
+**** Function (gist:Function)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A function is what a specific made item is intended to do.  For instance: transmit electricity, provide ballast, control ambient temperature.
  - skos:prefLabel :: Function
-**** gist:Permission
+**** Permission (gist:Permission)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A description of things one is permitted to do. This could be broad, such as free speech, but more often is very specific, such as the right of egress through a particular property.
  - skos:prefLabel :: Permission
  - EquivalentTo :: gist:Intention
            and (gist:allows some gist:Behavior)
-**** gist:Requirement
+**** Requirement (gist:Requirement)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The obligation of a person or organization to behave in a certain way (e.g., drive on the right side of the road).
  - skos:prefLabel :: Requirement
-**** gist:Restriction
+**** Restriction (gist:Restriction)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A description of things one is prevented from doing.  Most laws are restrictions.
  - skos:prefLabel :: Restriction
  - EquivalentTo :: gist:Intention
            and (gist:prevents some gist:Behavior)
-**** gist:Specification
+**** Specification (gist:Specification)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: One or more characteristics that specify what it means to be a particular type of thing, such as a material, product, service or event. A specification is sufficiently precise to allow evaluating conformance to the specification.
  - skos:example :: The specification of the iPhone 14; hypothetical events covered by a homeowner's insurance policy.
  - skos:prefLabel :: Specification
  - skos:scopeNote :: Although a characterization of how to do something is often called a specification, the intended meaning here is limited to specifying what something is. The focus is on the what, not the how. Use the TaskTemplate class for specifying the how, such as a plan or process specification.
-***** gist:CatalogItem
+***** Catalog Item (gist:CatalogItem)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A description of a product or service to be delivered, given in a sufficient level of detail that a receiver could determine whether delivery constituted discharge of the obligation to deliver.
  - skos:prefLabel :: Catalog Item
  - skos:scopeNote :: In short, an unambiguous characterization of what it is that a potential buyer is paying for.
-****** gist:BundledCatalogItem
+****** Bundled Catalog Item (gist:BundledCatalogItem)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Any combination of descriptions of things offered together.  Could be a kit (several parts offered together), but could also be a product plus a warranty.
  - skos:prefLabel :: Bundled Catalog Item
  - EquivalentTo :: gist:CatalogItem
            and ( inverse (gist:isDirectPartOf) some gist:CatalogItem)
-****** gist:ProductSpecification
+****** Product Specification (gist:ProductSpecification)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Offering something which could be physically warehoused or digitally stored.
  - skos:prefLabel :: Product Specification
  - EquivalentTo :: gist:CatalogItem
            and (gist:isCategorizedBy some gist:ProductCategory)
-****** gist:ServiceSpecification
+****** Service Specification (gist:ServiceSpecification)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A description of something that can be done for a person or organization (which produces some form of an act).
  - skos:prefLabel :: Service Specification
  - EquivalentTo :: gist:CatalogItem
            and ( inverse (gist:isBasedOn) some gist:Event)
-***** gist:ContractTerm
+***** Contract Term (gist:ContractTerm)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A specification of some aspect of a contract.
  - skos:prefLabel :: Contract Term
-***** gist:EventSpecification
+***** Event Specification (gist:EventSpecification)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A characterization of an event that might happen.
  - skos:example :: An insurance company defines the characteristics of a weather event that must be satisfied for it to qualify as a hail storm covered in its homeowner's policy. Defaulting on a loan.
  - skos:prefLabel :: Event Specification
  - skos:scopeNote :: This concept is useful for risk assessment and insurance policies.
-*** gist:Language
+*** Language (gist:Language)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A recognized, organized set of symbols and grammar.
  - skos:example :: Natural languages such as English and Spanish; computer languages such as OWL, Python, and XML.
  - skos:prefLabel :: Language
  - DisjointWith :: gist:GeoPoint, gist:GeoRegion, gist:Magnitude, gist:Organization, gist:PhysicalIdentifiableItem, gist:PhysicalSubstance, gist:UnitOfMeasure
-*** gist:Magnitude
+*** Magnitude (gist:Magnitude)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - rdfs:seeAlso :: gist:hasAccuracy
  - skos:definition :: The amount of a measurable characteristic (aspect).
@@ -636,11 +635,11 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - EquivalentTo :: (gist:hasAspect some gist:Aspect)
            and (gist:hasUnitOfMeasure some gist:UnitOfMeasure)
            and (gist:numericValue some rdfs:Literal)
-**** gist:ReferenceValue
+**** Reference Value (gist:ReferenceValue)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A measure that was neither measured nor estimated but set by fiat. For instance, a goal. There is no measurement associated with a reference value.
  - skos:prefLabel :: Reference Value
-*** gist:NetworkLink
+*** Network Link (gist:NetworkLink)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: An abstract representation of the connection between two or more nodes in a network.
  - skos:example :: A network link may be physical, such as pipes, wired or wireless networks, but may also be a link in a non-physical network, such as organizational structures or social networks.
@@ -649,13 +648,13 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - EquivalentTo :: (gist:isMemberOf some gist:Network)
            and (gist:links only gist:NetworkNode)
            and (gist:links exactly 2 gist:NetworkNode)
-*** gist:NetworkNode
+*** Network Node (gist:NetworkNode)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A node in a network.
  - skos:example :: A person is a node in a social network; a valve is a node in a network of pipes.
  - skos:prefLabel :: Network Node
  - SubClassOf :: gist:isMemberOf some gist:Network
-*** gist:OrderedMember
+*** Ordered Member (gist:OrderedMember)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A member of an ordered collection serving as a proxy for a real world item, which can appear in different orders in different collections. The ordered member appears in exactly one ordered collection.
  - skos:example :: A person may rank 12th in the Boston Marathon but 29th in the New York City Marathon.
@@ -665,21 +664,21 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
            and (gist:providesOrderFor some owl:Thing)
            and (gist:isMemberOf only gist:OrderedCollection)
            and (gist:isMemberOf exactly 1 owl:Thing)
-*** gist:Organization
+*** Organization (gist:Organization)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A generic organization that can be formal or informal, legal or non-legal. It can have members, or not.
  - skos:example :: Legal entities like companies; non-legal entities like clubs, committees, or departments.
  - skos:prefLabel :: Organization
  - skos:scopeNote :: There are a plethora of different kinds of organizations that differ along many facets, including members, structure, purpose, legal vs. non-legal, etc.
  - DisjointWith :: gist:Content, gist:GeoPoint, gist:GeoRegion, gist:IntellectualProperty, gist:Intention, gist:Language, gist:Magnitude, gist:PhysicalIdentifiableItem, gist:PhysicalSubstance, gist:SchemaMetaData, gist:UnitOfMeasure
-**** gist:GovernmentOrganization
+**** Government Organization (gist:GovernmentOrganization)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: An organization which exercises political and/or regulatory authority over a political unit, people, geo-region, etc., as well as performing certain functions for this unit or body. Differs from a corporation in that it cannot be owned.
  - skos:example :: The State of Washington Office of Financial Management; the Food and Drug Administration; the Scottish Parliament.
  - skos:prefLabel :: Government Organization
  - skos:scopeNote :: Includes administrative, regulatory, and enforcement organizations created or sanctioned by Country or SubCountry Governments.
  - DisjointWith :: gist:IntergovernmentalOrganization
-***** gist:CountryGovernment
+***** Country Government (gist:CountryGovernment)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A Government Organization which asserts both sovereignty (i.e., it is not governed by some other government organization) and governance over an entity generally recognized as a 'country'.
  - skos:prefLabel :: Country Government
@@ -688,18 +687,18 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - EquivalentTo :: gist:GovernmentOrganization
            and ( inverse (gist:isGovernedBy) exactly 1 gist:CountryGeoRegion)
            and (gist:isGovernedBy max 0 gist:GovernmentOrganization)
-***** gist:SubCountryGovernment
+***** Sub-Country Government (gist:SubCountryGovernment)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A government of a governed geo-region other than a country, which is under the direct or indirect control of a country government.
  - skos:prefLabel :: Sub-Country Government
- - skos:scopeNote :: Across the world, there are a variety of types of subsections of a country and the governments thereof (as well as different terms, like 'province' and 'state', which refer to essentially the same type of thing). We should not automatically assume 'state', 'county', and 'city'.  It is more future-proof just to mint the instances using the generic SubCountryGovernment and, where greater specificity is needed, define categories or subclasses.
- - skos:scopeNote :: Note that the predicate 'governs' is used both for the relationship a government has to a governed geo-region, and for the relationship one government has to the governments of its sub-regions.
  - skos:scopeNote :: This class applies only to organizations governing geo-regions. Regulatory and bureaucratic organizations are members of the more generic GovernmentOrganization class.
+ - skos:scopeNote :: Note that the predicate 'governs' is used both for the relationship a government has to a governed geo-region, and for the relationship one government has to the governments of its sub-regions.
+ - skos:scopeNote :: Across the world, there are a variety of types of subsections of a country and the governments thereof (as well as different terms, like 'province' and 'state', which refer to essentially the same type of thing). We should not automatically assume 'state', 'county', and 'city'.  It is more future-proof just to mint the instances using the generic SubCountryGovernment and, where greater specificity is needed, define categories or subclasses.
  - DisjointWith :: gist:CountryGovernment
  - EquivalentTo :: gist:GovernmentOrganization
            and (gist:isGovernedBy some gist:CountryGovernment)
            and ( inverse (gist:isGovernedBy) some gist:GeoRegion)
-**** gist:IntergovernmentalOrganization
+**** Intergovernmental Organization (gist:IntergovernmentalOrganization)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: An organization whose members are government organizations. This can comprise regional, municipal, state/province, or national level entities.
  - skos:example :: The United Nations, the European Union, the MTA (Metropolitan Transit Authority)
@@ -707,7 +706,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - DisjointWith :: gist:GovernmentOrganization
  - EquivalentTo :: gist:Organization
            and ( inverse (gist:isMemberOf) min 2 gist:GovernmentOrganization)
-*** gist:PhysicalIdentifiableItem
+*** Physical Identifiable Item (gist:PhysicalIdentifiableItem)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A discrete physical object which, if subdivided, will result in parts that are distinguishable in nature from the whole and in general also from the other parts.
  - skos:example :: A computer, book, car.
@@ -721,7 +720,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
            and (gist:hasAspect value gistd:_Aspect_volume))
  - SubClassOf :: gist:isMadeUpOf some gist:PhysicalSubstance
  - DisjointWith :: gist:Content, gist:GeoPoint, gist:GeoRegion, gist:IntellectualProperty, gist:Intention, gist:Language, gist:Magnitude, gist:Organization, gist:SchemaMetaData, gist:UnitOfMeasure
-**** gist:LivingThing
+**** Living Thing (gist:LivingThing)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Something that is currently, or at some point in time was, alive.
  - skos:example :: Negative examples: fictional life forms such as unicorns or Mickey Mouse.
@@ -731,14 +730,14 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - EquivalentTo :: gist:PhysicalIdentifiableItem
            and (gist:hasBiologicalParent some gist:LivingThing)
            and (gist:birthDate exactly 1 rdfs:Literal)
-***** gist:Person
+***** Person (gist:Person)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A human being that may or may not still be alive.
  - skos:example :: Negative example:fictional characters.
  - skos:prefLabel :: Person
  - EquivalentTo :: gist:LivingThing
            and (gist:hasBiologicalParent only gist:Person)
-*** gist:PhysicalSubstance
+*** Physical Substance (gist:PhysicalSubstance)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: An undifferentiated amount of physical material which, when subdivided, results in each part being indistinguishable in nature from the whole and from every other part.
  - skos:example :: An amount of water, penicillin, sand, gold: an actual piece of gold, not the concept of gold.
@@ -752,11 +751,11 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
           (gist:Magnitude
            and (gist:hasAspect value gistd:_Aspect_volume))
  - DisjointWith :: gist:Content, gist:GeoPoint, gist:GeoRegion, gist:IntellectualProperty, gist:Intention, gist:Language, gist:Magnitude, gist:Organization, gist:UnitOfMeasure
-*** gist:Place
+*** Place (gist:Place)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Union of all the geo classes
  - skos:prefLabel :: Place
-**** gist:GeoPoint
+**** Geo Point (gist:GeoPoint)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: An individual point on the Earth's surface, identified by latitude, longitude and altitude. If altitude is missing, it is assumed to be at the Earth's surface.  However, altitude is measured from sea level.  these points are to the WGS-84 coordinate system using the GPS decimal lat/long
  - skos:prefLabel :: Geo Point
@@ -767,13 +766,13 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
                and (gist:hasAspect value gistd:_Aspect_altitude)))
            and (gist:latitude some xsd:double)
            and (gist:longitude some xsd:double)
-**** gist:GeoSegment
+**** Geo Segment (gist:GeoSegment)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A single portion of a GeoRegion which has been divided (i.e., segmented).
  - skos:prefLabel :: Geo Segment
  - EquivalentTo :: (gist:comesFromPlace exactly 1 gist:GeoPoint)
            and (gist:goesToPlace exactly 1 gist:GeoPoint)
-**** gist:GeoVolume
+**** Geo Volume (gist:GeoVolume)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A three-dimensional space on or near the surface of the Earth, such as an oil reservoir, the body of a lake, or an airspace.
  - skos:prefLabel :: Geo Volume
@@ -781,7 +780,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
               (gist:Magnitude
                and (gist:hasAspect value gistd:_Aspect_volume)))
            and ( inverse (gist:isGeoContainedIn) some gist:GeoPoint)
-**** gist:Landmark
+**** Landmark (gist:Landmark)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Something permanently attached to the Earth.
  - skos:editorialNote :: See guidance on removing the term in the next major release at https://github.com/semanticarts/gist/issues/947#issuecomment-1679566885.
@@ -789,50 +788,50 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - EquivalentTo :: gist:PhysicalIdentifiableItem
            and (gist:hasPhysicalLocation some 
               (gist:GeoRegion or gist:GeoVolume))
-*** gist:SchemaMetaData
+*** Schema Meta Data (gist:SchemaMetaData)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Superclass for all types of metadata, including owl concepts (such as class) and relational (tables, elements) and tool related (queries, R2RML maps etc etc)
  - skos:prefLabel :: Schema Meta Data
  - DisjointWith :: gist:Organization, gist:PhysicalIdentifiableItem, gist:UnitOfMeasure
-*** gist:Template
+*** Template (gist:Template)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Something used to make objects in its own image.
- - skos:example :: A form. A filled-in form has the structure of the form with data entered into some or all of the fields.
- - skos:example :: A die in manufacturing that is used to make stamped parts.
  - skos:example :: Cookie cutters are templates for cookies.
+ - skos:example :: A die in manufacturing that is used to make stamped parts.
+ - skos:example :: A form. A filled-in form has the structure of the form with data entered into some or all of the fields.
  - skos:prefLabel :: Template
  - skos:scopeNote :: Use gist:isBasedOn to link the object made from the template back to the template.
  - DisjointWith :: gist:GeoRegion, gist:UnitOfMeasure
-**** gist:TaskTemplate
+**** Task Template (gist:TaskTemplate)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: An outline of a task of a particular type, which is the basis for executing such tasks.
  - skos:example :: A business process for onboarding new employees.
  - skos:prefLabel :: Task Template
- - skos:scopeNote :: A task template may define a single activity or a series of activities; the level of granularity can be varied according to use case. For example, in a new employee onboarding process, signing up for benefits might be one activity, or it might be broken down into signing up for health insurance, signing up for dental insurance, etc.
  - skos:scopeNote :: Use the property isBasedOn to link the Task back to the TaskTemplate.
+ - skos:scopeNote :: A task template may define a single activity or a series of activities; the level of granularity can be varied according to use case. For example, in a new employee onboarding process, signing up for benefits might be one activity, or it might be broken down into signing up for health insurance, signing up for dental insurance, etc.
  - EquivalentTo :: gist:Template
            and (gist:hasGoal some gist:Intention)
-*** gist:TemporalRelation
+*** Temporal Relation (gist:TemporalRelation)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A relationship existing for a period of time.
  - skos:example :: employs-Employment, hasAddress-EstablishedLocation. One important context for reifying a property.
  - skos:prefLabel :: Temporal Relation
- - skos:scopeNote :: A temporal relation must have a minimum of two participants. For example, both the employer and the employee are participants in a temporal relation representing a period of employment.
  - skos:scopeNote :: Note that 'participant' does not imply agency; a non-sentient being can be participate in a temporal relation. For example, both a person and a house could be participants in a hypothetical relation 'lives at.'
+ - skos:scopeNote :: A temporal relation must have a minimum of two participants. For example, both the employer and the employee are participants in a temporal relation representing a period of employment.
  - SubClassOf :: gist:hasParticipant min 2 owl:Thing
  - SubClassOf :: gist:startDateTime exactly 1 rdfs:Literal
-*** gist:TimeInterval
+*** Time Interval (gist:TimeInterval)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A span of time with a known start time, end time, and duration. As long as two of the three are known, the third can be inferred.
  - skos:example :: 7pm to 9pm on Jan 1, 2001; fiscal year 2023 (according to some particular definition of fiscal year); the week starting at midnight of January 12, 2023 and lasting exactly 168 hours.
  - skos:prefLabel :: Time Interval
- - skos:scopeNote :: This is distinct from a duration, which describes how long a time interval lasts (e.g., one hour; 3 days; 22 minutes).
  - skos:scopeNote :: An ongoing state of affairs with an unknown end time in the future cannot be a time interval; e.g. the lifespan of a living person cannot be a time interval, as the end time is unknown.
+ - skos:scopeNote :: This is distinct from a duration, which describes how long a time interval lasts (e.g., one hour; 3 days; 22 minutes).
  - SubClassOf :: gist:endDateTime exactly 1 rdfs:Literal
  - SubClassOf :: gist:hasMagnitude exactly 1 (gist:Magnitude
        and (gist:hasAspect value gistd:_Aspect_duration))
  - SubClassOf :: gist:startDateTime exactly 1 rdfs:Literal
-*** gist:UnitGroup
+*** Unit Group (gist:UnitGroup)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A collection of units of measure that can all be used to measure the same aspects.
  - skos:example :: The units of measure bit, byte, kilobit, kilobyte, etc. are all in the same unit group because they can all be used to measure an amount of data.
@@ -841,7 +840,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: gist:Collection
        and ( inverse (gist:isMemberOf) some gist:UnitOfMeasure)
  - DisjointWith :: gist:UnitOfMeasure
-*** gist:UnitOfMeasure
+*** Unit of Measure (gist:UnitOfMeasure)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A standard amount used to measure or specify things.
  - skos:example :: An acre is a unit for measuring area.
@@ -855,34 +854,34 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 :resourcedefs: yes
 :END:
 
-*** gist:accepts
+*** accepts (gist:accepts)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The types of input messages that will be allowed.
  - skos:prefLabel :: accepts
-*** gist:allows
+*** allows (gist:allows)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The intention (say a grant) allows a particular kind of activity (for instance egress)
  - skos:prefLabel :: allows
-*** gist:comesFromPlace
+*** comes from place (gist:comesFromPlace)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Origin
  - skos:prefLabel :: comes from place
  - Range :: gist:Address or gist:Place
-*** gist:conformsTo
+*** conforms to (gist:conformsTo)
  - gist:rangeIncludes :: gist:Intention
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The subject conforms to the Object, e.g. meet an obligation, meet terms of an offer, adhere to a specification
  - skos:prefLabel :: conforms to
-*** gist:contributesTo
+*** contributes to (gist:contributesTo)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The parts of a system contribute to the goal/ function of the whole system
  - skos:prefLabel :: contributes to
-*** gist:goesToPlace
+*** goes to place (gist:goesToPlace)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Destination
  - skos:prefLabel :: goes to place
  - Range :: gist:Address or gist:Place
-*** gist:hasAccuracy
+*** has accuracy (gist:hasAccuracy)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates a magnitude to the accuracy of its numeric value.
  - skos:example :: Temperature accurate to tenth of a degree C; length accurate to the nearest centimeter.
@@ -892,162 +891,162 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
           Note that the unit of measure of the accuracy has to be compatible with the unit of measure of the original magnitude (e.g. something measured in meters could have a accuracy in terms of millimeters or any other unit that measures distance).
  - Range :: gist:Magnitude
  - Characteristics :: Functional
-*** gist:hasAddend
+*** has addend (gist:hasAddend)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates an aspect to another aspect that is an additive component of it.
  - skos:example :: In the equation 'profit = revenue - expenses', revenue is an addend and expenses is a subtrahend.
  - skos:prefLabel :: has addend
  - skos:scopeNote :: Commonly used with financial metrics.
-*** gist:hasAddress
+*** has address (gist:hasAddress)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates something to its physical or electronic address.
  - skos:example :: A brick-and-mortar store has a street address. A person can be contacted electronically via an email address.
  - skos:prefLabel :: has address
  - Range :: gist:Address
-*** gist:hasAspect
+*** has aspect (gist:hasAspect)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates a magnitude to its aspect (measurable characteristic).
  - skos:prefLabel :: has aspect
  - Range :: gist:Aspect
  - Characteristics :: Functional
-*** gist:hasBiologicalParent
+*** has biological parent (gist:hasBiologicalParent)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates a living thing to its biological parent.
  - skos:prefLabel :: has biological parent
  - Domain :: gist:LivingThing
  - Range :: gist:LivingThing
-*** gist:hasBroader
+*** has broader (gist:hasBroader)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates a thing to another thing with a broader meaning.
  - skos:example :: The aspect distance is broader than the aspect height.
  - skos:prefLabel :: has broader
  - Characteristics :: Transitive
-**** gist:hasDirectBroader
+**** has direct broader (gist:hasDirectBroader)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates a thing to another thing with a broader meaning, when there is no intermediate between them.
  - skos:prefLabel :: has direct broader
  - skos:scopeNote :: Unlike gist:hasBroader, this property is not transitive. It is safest to use this property when semantic directness is inherent in the relationship. Otherwise, there is a risk of making a hasDirectBroader assertion and then later inserting an intermediate part; this will result in making an asserted triple false even though there was no change in the world. When in doubt, use the transitive version gist:hasBroader.
  - SubPropertyOf :: gist:hasBroader
-**** gist:hasUniqueBroader
+**** has unique broader (gist:hasUniqueBroader)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates a thing to a unique other thing with a broader meaning.
  - skos:prefLabel :: has unique broader
  - SubPropertyOf :: gist:hasBroader
  - Characteristics :: Functional
-*** gist:hasDivisor
+*** has divisor (gist:hasDivisor)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates a unit of measure to another unit of measure that is a divisor, or relates an aspect to another aspect that is a divisor.
- - skos:example :: Speed has distance as a multiplier and duration as a divisor.
  - skos:example :: Miles per hour has miles as a multiplier and hour as a divisor.
+ - skos:example :: Speed has distance as a multiplier and duration as a divisor.
  - skos:prefLabel :: has divisor
  - skos:scopeNote :: Provides a supplemental method of decomposing a unit of measure or an aspect into component factors. Enables dimensional analysis such as miles per hour x hours = miles.
-*** gist:hasGoal
+*** has goal (gist:hasGoal)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The reason for doing something
  - skos:prefLabel :: has goal
-*** gist:hasIncumbent
+*** has incumbent (gist:hasIncumbent)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: What equipment or person is currently in this node.  Note to create a temporal view make a TemporalRelation for this property
  - skos:prefLabel :: has incumbent
-*** gist:hasMagnitude
+*** has magnitude (gist:hasMagnitude)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates a thing to a magnitude.
  - skos:example :: A car or a model of car has a magnitude for length, one for width, one for weight, etc.
  - skos:prefLabel :: has magnitude
  - Range :: gist:Magnitude
-*** gist:hasMultiplier
+*** has multiplier (gist:hasMultiplier)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates a unit of measure to another unit of measure that is a factor, or relates an aspect to another aspect that is a factor.
- - skos:example :: Miles per hour has miles as a multiplier and hour as a divisor.
  - skos:example :: Speed has distance as a multiplier and duration as a divisor.
+ - skos:example :: Miles per hour has miles as a multiplier and hour as a divisor.
  - skos:prefLabel :: has multiplier
  - skos:scopeNote :: Provides a supplemental method of decomposing a unit of measure or aspect into component factors. Enables dimensional analysis such as miles per hour x hours = miles.
-*** gist:hasNavigationalParent
+*** has navigational parent (gist:hasNavigationalParent)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates a child category to a parent category in an informal (e.g., faceted) hierarchy.
  - skos:example :: Refrigerator handles are not refrigerators, but it may be useful to represent their relationship hierarchically for a faceted UI filter.
  - skos:prefLabel :: has navigational parent
-**** gist:hasUniqueNavigationalParent
+**** has unique navigational parent (gist:hasUniqueNavigationalParent)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates a subject category to a unique parent category in an informal (e.g., faceted) hierarchy.
  - skos:prefLabel :: has unique navigational parent
  - SubPropertyOf :: gist:hasNavigationalParent
  - Characteristics :: Functional
-*** gist:hasParticipant
+*** has participant (gist:hasParticipant)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates something (e.g. an agreement) to things that play a role, or take part or are otherwise involved in some way.
  - skos:example :: An event of transferring money has a participating account that receives the money.
  - skos:prefLabel :: has participant
- - skos:scopeNote :: This will most often be used as an abstract property. Use subproperties that indicate the nature of the participation (e.g. hasBorrower, hasVenue).
  - skos:scopeNote :: The thing with participants will often be an agreement, event or obligation. Participation does not imply agency.
-**** gist:comesFromAgent
+ - skos:scopeNote :: This will most often be used as an abstract property. Use subproperties that indicate the nature of the participation (e.g. hasBorrower, hasVenue).
+**** comes from agent (gist:comesFromAgent)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The party that is the source of something (e.g. a message, shipment, etc.)
  - skos:prefLabel :: comes from agent
  - skos:scopeNote :: This is not the inverse of gist:goesToAgent. A message can be to someone. If we made it the inverse the person would be "from" the message
  - SubPropertyOf :: gist:hasParticipant
  - Range :: gist:Organization or gist:Person
-**** gist:goesToAgent
+**** goes to agent (gist:goesToAgent)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The party that is the recipient of something (e.g. a message, shipment, etc.)
  - skos:prefLabel :: goes to agent
  - skos:scopeNote :: This is not the inverse of gist:comesFromAgent. A message can be from someone. If we made it the inverse the person would be "to" the message
  - SubPropertyOf :: gist:hasParticipant
  - Range :: gist:Organization or gist:Person
-**** gist:hasGiver
+**** has giver (gist:hasGiver)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The active party, the one with the obligation or the one initiating the transfer
  - skos:prefLabel :: has giver
  - SubPropertyOf :: gist:hasParticipant
-**** gist:hasParty
+**** has party (gist:hasParty)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The people or organizations participating in an event, agreement or obligation
  - skos:example :: For loan agreements, one might create hasLender and hasBorrower as subproperties of hasParty.
  - skos:prefLabel :: has party
  - SubPropertyOf :: gist:hasParticipant
  - Range :: gist:Organization or gist:Person
-**** gist:hasRecipient
+**** has recipient (gist:hasRecipient)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The recipient
  - skos:prefLabel :: has recipient
  - SubPropertyOf :: gist:hasParticipant
-*** gist:hasPhysicalLocation
+*** has physical location (gist:hasPhysicalLocation)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates something to its physical location.
  - skos:prefLabel :: has physical location
  - skos:scopeNote :: This property does not distinguish between things whose locations are stable and those whose locations change over time; e.g., a fire hydrant vs. a car.
  - Range :: gist:Place
  - Characteristics :: Transitive
-*** gist:hasSubtrahend
+*** has subtrahend (gist:hasSubtrahend)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates an aspect to another aspect that is a subtracted component of it.
  - skos:example :: In the equation 'profit = revenue - expenses', revenue is an addend and expenses is a subtrahend.
  - skos:prefLabel :: has subtrahend
  - skos:scopeNote :: Commonly used with financial metrics.
-*** gist:hasUnitGroup
+*** has unit group (gist:hasUnitGroup)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates an aspect to a unit group. The aspect can be measured using any of the members of the unit group.
  - skos:example :: The aspect distance can have a unit group that includes the units meter, inch, foot, etc.
  - skos:prefLabel :: has unit group
  - Domain :: gist:Aspect
  - Range :: gist:UnitGroup
-*** gist:hasUnitOfMeasure
+*** has unit of measure (gist:hasUnitOfMeasure)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
- - skos:definition :: The magnitude 87 inches of height has unit of measure inches.
  - skos:definition :: Relates a magnitude to a unit of measure.
+ - skos:definition :: The magnitude 87 inches of height has unit of measure inches.
  - skos:prefLabel :: has unit of measure
  - Domain :: gist:Magnitude
  - Range :: gist:UnitOfMeasure
-*** gist:isAbout
+*** is about (gist:isAbout)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Subject matter of a document.
  - skos:prefLabel :: is about
  - Domain :: gist:Content
-*** gist:isAffectedBy
+*** is affected by (gist:isAffectedBy)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Where the effect came from
  - skos:prefLabel :: is affected by
-*** gist:isAllocatedBy
+*** is allocated by (gist:isAllocatedBy)
  - gist:domainIncludes :: gist:ID
  - gist:domainIncludes :: gist:Category
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
@@ -1056,56 +1055,56 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:prefLabel :: is allocated by
  - skos:scopeNote :: The allocator may be a person, organization, or automated process.
  - Range :: gist:IntellectualProperty or gist:Organization or gist:Person
-*** gist:isBasedOn
+*** is based on (gist:isBasedOn)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The Object is a foundation for, a starting point for, gave rise to or justifies the Subject
  - skos:example :: A document is based on a document template. A metric computing the average income of a population is based on the metric for individual income.
  - skos:prefLabel :: is based on
-*** gist:isCategorizedBy
+*** is categorized by (gist:isCategorizedBy)
  - gist:rangeIncludes :: gist:Category
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Points to a taxonomy item or other less formally defined class.
  - skos:prefLabel :: is categorized by
-*** gist:isConnectedTo
+*** is connected to (gist:isConnectedTo)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A non-owning, non-causal, non-subordinate (i.e., peer-to-peer) relationship.
  - skos:prefLabel :: is connected to
  - Characteristics :: Symmetric
-*** gist:isExpressedIn
+*** is expressed in (gist:isExpressedIn)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The language something was expressed in
  - skos:prefLabel :: is expressed in
-*** gist:isGeoContainedIn
+*** is geographically contained in (gist:isGeoContainedIn)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates one place to another that contains it.
  - skos:prefLabel :: is geographically contained in
  - Domain :: gist:Place
  - Range :: gist:Place
  - Characteristics :: Transitive
-*** gist:isGovernedBy
+*** is governed by (gist:isGovernedBy)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates a thing governed to the governor.
  - skos:example :: A country geo-region is governed by a country government.
  - skos:prefLabel :: is governed by
-*** gist:isIdentifiedBy
+*** is identified by (gist:isIdentifiedBy)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: This is like a URI: a thing can have more than one ID, but each of the IDs must refer to a unique thing.
  - skos:prefLabel :: is identified by
  - Range :: gist:ID
  - Characteristics :: InverseFunctional
-*** gist:isMadeUpOf
+*** is made up of (gist:isMadeUpOf)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates something to a substance that it is made up of.
  - skos:example :: The vase is made up of clay. Water is made up of hydrogen and oxygen.
  - skos:prefLabel :: is made up of
  - Range :: gist:PhysicalSubstance
-*** gist:isMemberOf
+*** is member of (gist:isMemberOf)
  - gist:rangeIncludes :: gist:Organization
  - gist:rangeIncludes :: gist:Collection
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates a member individual to the thing, such as a collection or organization, that it is a member of.
  - skos:prefLabel :: is member of
-**** gist:isFirstMemberOf
+**** is first member of (gist:isFirstMemberOf)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates the first member of an ordered collection to the collection.
  - skos:prefLabel :: is first member of
@@ -1114,70 +1113,70 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - Domain :: gist:OrderedMember
  - Range :: gist:OrderedCollection
  - Characteristics :: Functional
-*** gist:isPartOf
+*** is part of (gist:isPartOf)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The relationship between a part and a whole where the part has independent existence.
  - skos:prefLabel :: is part of
- - skos:scopeNote :: The transitive version of gist:isDirectPartOf.
  - skos:scopeNote :: Because the part has independent existence, there is no cascading delete.
+ - skos:scopeNote :: The transitive version of gist:isDirectPartOf.
  - Characteristics :: Transitive
-**** gist:isDirectPartOf
+**** is direct part of (gist:isDirectPartOf)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The relationship between a part and a whole where the part has independent existence and there are no other parts in between.
  - skos:prefLabel :: is direct part of
- - skos:scopeNote :: Because the part has independent existence, there is no cascading delete.
  - skos:scopeNote :: It is safest to use this property when semantic directness is inherent in the relationship, rather than simply expressing a chosen granularity. For example, a spark plug is a direct part of an engine block; there cannot be any intermediate parts. Otherwise, there is a risk of making an isDirectPartOf assertion and then later inserting an intermediate part; this will result in making an asserted triple false even though there was no change in the world. When in doubt, use the transitive version gist:isPartOf.
+ - skos:scopeNote :: Because the part has independent existence, there is no cascading delete.
  - SubPropertyOf :: gist:isPartOf
-*** gist:isRecognizedBy
+*** is recognized by (gist:isRecognizedBy)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates something to a party that formally acknowledges its existence, validity, or legality.
  - skos:example :: The existence of a particular company is recognized by the state.
  - skos:prefLabel :: is recognized by
  - Range :: gist:Organization or gist:Person
-*** gist:isRenderedOn
+*** is rendered on (gist:isRenderedOn)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: What media something was rendered On
  - skos:prefLabel :: is rendered on
-*** gist:isTriggeredBy
+*** is triggered by (gist:isTriggeredBy)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates a contingency, such as an event or obligation, to the event that gives rise to it.
- - skos:example :: Fire insurance is contingent on a particular building burning down
  - skos:example :: The death benefit payout on a life insurance policy following the death of a specific person.
+ - skos:example :: Fire insurance is contingent on a particular building burning down
  - skos:prefLabel :: is triggered by
  - skos:scopeNote :: For obligations, this property describes what must happen to trigger the contingent obligation. Other uses include controls, processes, etc.
-*** gist:isUnderJurisdictionOf
+*** is under jurisdiction of (gist:isUnderJurisdictionOf)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates a law, contract, etc., to the system of law or government which has the power, right, or authority to interpret and apply it.
  - skos:prefLabel :: is under jurisdiction of
-*** gist:links
+*** links (gist:links)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates a NetworkLink to a NetworkNode that it connects to another node. Used when the connections are undirected, or the direction is not known.
  - skos:prefLabel :: links
-**** gist:linksFrom
+**** links from (gist:linksFrom)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates a NetworkLink to its origin NetworkNode. Unlike the superproperty, this represents a directed connection.
  - skos:prefLabel :: links from
  - SubPropertyOf :: gist:links
-**** gist:linksTo
+**** links to (gist:linksTo)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates a NetworkLink to its destination NetworkNode. Unlike the superproperty, this represents a directed connection.
  - skos:prefLabel :: links to
  - SubPropertyOf :: gist:links
-*** gist:occursIn
+*** occurs in (gist:occursIn)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The geospatial place where something happened or will happen
  - skos:prefLabel :: occurs in
-*** gist:offers
+*** offers (gist:offers)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates something to a thing that is being made available for acceptance or rejection.
  - skos:example :: An instance of gist:Offer offers a specific product at a particular price; a company offers an employee benefit; Honda offers vehicles for sale.
  - skos:prefLabel :: offers
-*** gist:owns
+*** owns (gist:owns)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Possessing and controlling.  Ultimate form of ownership is the right to destroy.  Long list of potential Range classes
  - skos:prefLabel :: owns
  - Domain :: gist:Organization or gist:Person
-*** gist:precedes
+*** precedes (gist:precedes)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A generic ordering relation indicating that the subject comes before the object.
  - skos:prefLabel :: precedes
@@ -1185,36 +1184,36 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:scopeNote :: The less-than symbol is often used to represent this relation.
  - skos:scopeNote :: This is the transitive version of gist:precedesDirectly.
  - Characteristics :: Transitive
-**** gist:precedesDirectly
+**** precedes directly (gist:precedesDirectly)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A generic ordering relation indicating that the subject comes immediately before the object.
  - skos:prefLabel :: precedes directly
- - skos:scopeNote :: Typically this predicate would be used asymmetricallly and irreflexively, but the ontology does not formalize this.
  - skos:scopeNote :: If two items in an ordered collection share the same position, they both directly precede the following element.
  - skos:scopeNote :: It is safest to use this property only when the directness has a semantic correspondence with the world. Only break a direct link by inserting an intermediate item when that change corresponds to a change in the world.
+ - skos:scopeNote :: Typically this predicate would be used asymmetricallly and irreflexively, but the ontology does not formalize this.
  - SubPropertyOf :: gist:precedes
-*** gist:prevents
+*** prevents (gist:prevents)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The intention (say a law) is intended to prevent this kind of behavior (say jay-walking)
  - skos:prefLabel :: prevents
  - Domain :: gist:Intention
  - Range :: gist:Behavior
-*** gist:produces
+*** produces (gist:produces)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The subject creates the object.
  - skos:example :: A task produces a deliverable.
  - skos:prefLabel :: produces
-*** gist:providesOrderFor
+*** provides order for (gist:providesOrderFor)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Links a member of an ordered collection to the real-world item it represents in that collection.
  - skos:prefLabel :: provides order for
  - Domain :: gist:OrderedMember
  - Characteristics :: Functional
-*** gist:refersTo
+*** refers to (gist:refersTo)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates something to another resource that it points to, indicates, or references.
  - skos:prefLabel :: refers to
-*** gist:requires
+*** requires (gist:requires)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The subject needs the object or makes it necessary, mandatory, or compulsory.
  - skos:example :: Humans require air; solar power requires sunshine.
@@ -1234,7 +1233,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 :resourcedefs: yes
 :END:
 
-*** gist:atDateTime
+*** at date time (gist:atDateTime)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The date and time at which something did or will occur, with variants for precision, start and end, and actual vs. planned.
  - skos:prefLabel :: at date time
@@ -1257,7 +1256,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
           	- *Minute refers to clock time; e.g., a meeting will start at 9:15 with a timezone offset. Precision is assumed to have precision of one minute.
           	- *Microsecond refers to system time, and it will be as precise as the system can supply; typically at least milliseconds, sometime microseconds.
  - Range :: xsd:dateTime
-**** gist:endDateTime
+**** end date time (gist:endDateTime)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The date and time that something ends.
  - skos:prefLabel :: end date time
@@ -1265,14 +1264,14 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:scopeNote :: This property is neutral along two dimensions: precision (e.g., day, second, millisecond) and actual vs. planned. As such, it will generally not be asserted directly except in special cases (e.g., for time intervals).
  - SubPropertyOf :: gist:atDateTime
  - Range :: xsd:dateTime
-***** gist:actualEndDateTime
+***** actual end date time (gist:actualEndDateTime)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The actual date and time that something ended, with no implied precision.
  - skos:prefLabel :: actual end date time
  - skos:scopeNote :: This is an abstraction over the various precisions of actual end time, and is not expected to be asserted directly. Values of predicates with different precisions can be compared since they are all formally xsd:datetimes.
  - SubPropertyOf :: gist:endDateTime
  - Range :: xsd:dateTime
-****** gist:actualEndDate
+****** actual end date (gist:actualEndDate)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The actual date that something ended, with precision of one day.
  - skos:example :: '2021-06-01T00:00:00-6:00'^^xsd:dateTime
@@ -1280,7 +1279,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:scopeNote :: Used for things where the precision of a date is sufficient, such as most projects, tasks, and the like. Recommended usage is to zero out the hours through microseconds to avoid spurious precision.
  - SubPropertyOf :: gist:actualEndDateTime
  - Range :: xsd:dateTime
-******* gist:deathDate
+******* death date (gist:deathDate)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The date some living thing died.
  - skos:example :: '2021-06-01T00:00:00-6:00'^^xsd:dateTime
@@ -1288,7 +1287,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:scopeNote :: Refers to a calendar date and is assumed to have precision of one day (time zone offset is allowed). Recommended usage is to zero out the hours through microseconds to avoid spurious precision. Implementations requiring a death date to the minute can define a subproperty.
  - SubPropertyOf :: gist:actualEndDate
  - Range :: xsd:dateTime
-****** gist:actualEndMicrosecond
+****** actual end microsecond (gist:actualEndMicrosecond)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The actual time that something ended, expressed as a system time used for timestamps.
  - skos:example :: '2021-06-01T08:03:27.12324-6:00'^^xsd:dateTime
@@ -1296,7 +1295,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:scopeNote :: A system time will be as precise as the system can supply, typically at least milliseconds, sometimes microseconds. The convention for timestamps, such as recording a transaction, is to specify just the end point; the start time is rarely needed.
  - SubPropertyOf :: gist:actualEndDateTime
  - Range :: xsd:dateTime
-****** gist:actualEndMinute
+****** actual end minute (gist:actualEndMinute)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The actual date and time that something ended, with precision of one minute.
  - skos:example :: '2021-06-01T08:32:00-6:00'^^xsd:dateTime
@@ -1304,16 +1303,16 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:scopeNote :: Used for things like meetings and time card entries, where the hour and minute are important. Recommended usage is to zero out the seconds and microseconds to avoid spurious precision.
  - SubPropertyOf :: gist:actualEndDateTime
  - Range :: xsd:dateTime
-****** gist:actualEndYear
+****** actual end year (gist:actualEndYear)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The actual date that something ended, with precision of one year.
- - skos:example :: The tenure of the previous chairman of the board ended in 2021.
  - skos:example :: '2021-01-01T00:00:00-6:00'^^xsd:dateTime
+ - skos:example :: The tenure of the previous chairman of the board ended in 2021.
  - skos:prefLabel :: actual end year
  - skos:scopeNote :: Used for things where the precision of a year is sufficient. Recommended usage is to zero out the hours through microseconds to avoid spurious precision. Note that it is not valid to zero out months and days, so arbitrary values must be included.
  - SubPropertyOf :: gist:actualEndDateTime
  - Range :: xsd:dateTime
-***** gist:plannedEndDateTime
+***** planned end date time (gist:plannedEndDateTime)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The date that something is or was planned to end, with no implied precision.
  - skos:prefLabel :: planned end date time
@@ -1321,7 +1320,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:scopeNote :: This is an abstraction over the various precisions of planned end time, and is not expected to be asserted directly. Values of predicates with different precisions can be compared since they are all formally xsd:datetimes.
  - SubPropertyOf :: gist:endDateTime
  - Range :: xsd:dateTime
-****** gist:plannedEndDate
+****** planned end date (gist:plannedEndDate)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The date that something is or was planned to end, with precision of one day.
  - skos:example :: '2021-06-01T00:00:00-6:00'^^xsd:dateTime
@@ -1329,7 +1328,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:scopeNote :: Used for anything with a planned end date, such as when a lease will expire, when an offer is no longer available, etc. Typically a planned date is in the future when first captured, but when tasks run late, we leave the plan where it was and compare it to the actual. Recommended usage is to zero out the hours through microseconds to avoid spurious precision.
  - SubPropertyOf :: gist:plannedEndDateTime
  - Range :: xsd:dateTime
-****** gist:plannedEndMinute
+****** planned end minute (gist:plannedEndMinute)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The date and time that something is or was planned to end, with precision of one minute.
  - skos:example :: '2021-06-01T08:32:00-6:00'^^xsd:dateTime
@@ -1337,7 +1336,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:scopeNote :: Used for things like meetings and time card entries, where the hour and minute are important. Recommended usage is to zero out the seconds and microseconds to avoid spurious precision.Typically a planned date is in the future when first captured, but when tasks run late, we leave the plan where it was and compare it to the actual.
  - SubPropertyOf :: gist:plannedEndDateTime
  - Range :: xsd:dateTime
-****** gist:plannedEndYear
+****** planned end year (gist:plannedEndYear)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The date that something is or was planned to end, with precision of one year.
  - skos:example :: The automobile manufacturer announced that it will stop producing gas-powered vehicles in 2035.
@@ -1346,28 +1345,28 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:scopeNote :: Used for anything with a planned end date where precision of one year is sufficient. Typically a planned date is in the future when first captured, but when tasks run late, we leave the plan where it was and compare it to the actual. Recommended usage is to zero out the hours through microseconds to avoid spurious precision. Note that it is not valid to zero out months and days, so arbitrary values must be included.
  - SubPropertyOf :: gist:plannedEndDateTime
  - Range :: xsd:dateTime
-**** gist:isRecordedAt
+**** is recorded at (gist:isRecordedAt)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Date that something was posted, not necessarily the date it occurred. Must be after the date of occurrence, but could be before or after the planned date. (Unusual, but I could record today that I expected to be paid last week.)
  - skos:prefLabel :: is recorded at
  - skos:scopeNote :: Precision may vary according to context.
  - SubPropertyOf :: gist:atDateTime
-**** gist:startDateTime
+**** start date time (gist:startDateTime)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The date and time that something starts.
  - skos:prefLabel :: start date time
- - skos:scopeNote :: Values of predicates with different precisions can be compared since they are all formally xsd:datetimes.
  - skos:scopeNote :: This property is neutral along two dimensions: precision (e.g., day, second, millisecond) and actual vs. planned. As such, it will generally not be asserted directly except in special cases (e.g., for time intervals).
+ - skos:scopeNote :: Values of predicates with different precisions can be compared since they are all formally xsd:datetimes.
  - SubPropertyOf :: gist:atDateTime
  - Range :: xsd:dateTime
-***** gist:actualStartDateTime
+***** actual start date time (gist:actualStartDateTime)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The actual date and time that something started, with no implied precision.
  - skos:prefLabel :: actual start date time
  - skos:scopeNote :: This is an abstraction over the various precisions of actual start time, and is not expected to be asserted directly. Values of predicates with different precisions can be compared since they are all formally xsd:datetimes.
  - SubPropertyOf :: gist:startDateTime
  - Range :: xsd:dateTime
-****** gist:actualStartDate
+****** actual start date (gist:actualStartDate)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The actual date that something started, with precision of one day.
  - skos:example :: '2021-06-01T00:00:00-6:00'^^xsd:dateTime
@@ -1375,7 +1374,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:scopeNote :: Used for things where the precision of a date is sufficient, such as most projects, tasks, and the like. Recommended usage is to zero out the hours through microseconds to avoid spurious precision.
  - SubPropertyOf :: gist:actualStartDateTime
  - Range :: xsd:dateTime
-****** gist:actualStartMicrosecond
+****** actual start microsecond (gist:actualStartMicrosecond)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The actual time that something started, expressed as a system time used for timestamps.
  - skos:example :: '2021-06-01T08:03:27.12324-6:00'^^xsd:dateTime
@@ -1383,7 +1382,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:scopeNote :: A system time will be as precise as the system can supply, typically at least milliseconds, sometimes microseconds. The convention for timestamps, such as recording a transaction, is to specify just the end point; the start time is rarely needed. This property is defined for the cases when you do need to capture the runtime of a system process, and is then used in conjunction with gist:actualEndMicrosecond.
  - SubPropertyOf :: gist:actualStartDateTime
  - Range :: xsd:dateTime
-****** gist:actualStartMinute
+****** actual start minute (gist:actualStartMinute)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The actual date and time that something started, with precision of one minute.
  - skos:example :: '2021-06-01T08:32:00-6:00'^^xsd:dateTime
@@ -1391,16 +1390,16 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:scopeNote :: Used for things like meetings and time card entries, where the hour and minute are important. Recommended usage is to zero out the seconds and microseconds to avoid spurious precision.
  - SubPropertyOf :: gist:actualStartDateTime
  - Range :: xsd:dateTime
-****** gist:actualStartYear
+****** actual start year (gist:actualStartYear)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The actual date that something started, with precision of one year.
- - skos:example :: The tenure of the current chairman of the board began in 2021.
  - skos:example :: '2021-01-01T00:00:00-6:00'^^xsd:dateTime
+ - skos:example :: The tenure of the current chairman of the board began in 2021.
  - skos:prefLabel :: actual start year
  - skos:scopeNote :: Used for things where the precision of a year is sufficient. Recommended usage is to zero out the hours through microseconds to avoid spurious precision. Note that it is not valid to zero out months and days, so arbitrary values must be included.
  - SubPropertyOf :: gist:actualStartDateTime
  - Range :: xsd:dateTime
-***** gist:birthDate
+***** birth date (gist:birthDate)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The date some living thing was or will be born, with precision of one day.
  - skos:example :: '2021-06-01T00:00:00-6:00'^^xsd:dateTime
@@ -1408,7 +1407,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:scopeNote :: This is a subproperty of gist:startDateTime rather than gist:actualStartDate because some living things have yet to be born. This property refers to a calendar date and is assumed to precision of one day (time zone offset is allowed). It is recommended to zero out the hours through microseconds to avoid spurious precision. Implementations requiring a birthdate to the minute can define a subproperty.
  - SubPropertyOf :: gist:startDateTime
  - Range :: xsd:dateTime
-***** gist:plannedStartDateTime
+***** planned start date time (gist:plannedStartDateTime)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The date and time that something is or was planned to start, with no implied precision.
  - skos:prefLabel :: planned start date time
@@ -1416,7 +1415,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:scopeNote :: This property, unlike gist:actualStartDateTime, does not have a subproperty for microsecond precision, because planned times typically are not expressed at that level of granularity. Typically a planned date is in the future when first captured, but when tasks run late, we leave the plan where it was and compare it to the actual.
  - SubPropertyOf :: gist:startDateTime
  - Range :: xsd:dateTime
-****** gist:plannedStartDate
+****** planned start date (gist:plannedStartDate)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The date that something is or was planned to start, with precision of one day.
  - skos:example :: '2021-06-01T00:00:00-6:00'^^xsd:dateTime
@@ -1424,7 +1423,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:scopeNote :: Used for anything with a planned start date, such as when a lease will start, when a configuration becomes available, etc. Typically a planned date is in the future when first captured, but when tasks run late, we leave the plan where it was and compare it to the actual. Recommended usage is to zero out the hours through microseconds to avoid spurious precision.
  - SubPropertyOf :: gist:plannedStartDateTime
  - Range :: xsd:dateTime
-****** gist:plannedStartMinute
+****** planned start minute (gist:plannedStartMinute)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The date and time that something is or was planned to start, with precision of one minute.
  - skos:example :: '2021-06-01T08:32:00-6:00'^^xsd:dateTime
@@ -1432,7 +1431,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:scopeNote :: Used for things like meetings and time card entries, where the hour and minute are important. Typically a planned date is in the future when first captured, but when tasks run late, we leave the plan where it was and compare it to the actual. Recommended usage is to zero out the seconds and microseconds to avoid spurious precision.
  - SubPropertyOf :: gist:plannedStartDateTime
  - Range :: xsd:dateTime
-****** gist:plannedStartYear
+****** planned start year (gist:plannedStartYear)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The date that something is or was planned to start, with precision of one year.
  - skos:example :: '2021-01-01T00:00:00-6:00'^^xsd:dateTime
@@ -1441,26 +1440,26 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:scopeNote :: Used for anything with a planned start date where precision of one year is sufficient. Typically a planned date is in the future when first captured, but when tasks run late, we leave the plan where it was and compare it to the actual. Recommended usage is to zero out the hours through microseconds to avoid spurious precision. Note that it is not valid to zero out months and days, so arbitrary values must be included.
  - SubPropertyOf :: gist:plannedStartDateTime
  - Range :: xsd:dateTime
-*** gist:containedText
- - gist:domainIncludes :: gist:Tag
+*** contained text (gist:containedText)
  - gist:domainIncludes :: gist:Text
+ - gist:domainIncludes :: gist:Tag
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A string that is closely associated with an individual.
  - skos:example :: The string associated with a tag.
  - skos:example :: The string associated with text content.
  - skos:prefLabel :: contained text
  - Range :: xsd:string
-**** gist:encryptedText
+**** encrypted text (gist:encryptedText)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Links to the string corresponding to EncryptedText
  - skos:prefLabel :: encrypted text
  - SubPropertyOf :: gist:containedText
  - Range :: xsd:string
-**** gist:uniqueText
- - gist:domainIncludes :: gist:MediaType
- - gist:domainIncludes :: gist:Text
- - gist:domainIncludes :: gist:Tag
+**** unique text (gist:uniqueText)
  - gist:domainIncludes :: gist:ID
+ - gist:domainIncludes :: gist:Tag
+ - gist:domainIncludes :: gist:Text
+ - gist:domainIncludes :: gist:MediaType
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The unique string value of some content object, to be used when there is no possibility of having more than one value.
  - skos:example :: The unique string for a vehicle identification number.
@@ -1469,7 +1468,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubPropertyOf :: gist:containedText
  - Range :: xsd:string
  - Characteristics :: Functional
-*** gist:conversionFactor
+*** conversion factor (gist:conversionFactor)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - rdfs:seeAlso :: gist:conversionOffset
  - skos:definition :: A value that relates a unit of measure to units of the International System of Units. For example, in the equation 1 inch = 0.0254 meters, the value 0.0254 is the conversion factor of inch.
@@ -1487,7 +1486,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - Domain :: gist:UnitOfMeasure
  - Range :: (xsd:decimal or xsd:double)
  - Characteristics :: Functional
-*** gist:conversionOffset
+*** conversion offset (gist:conversionOffset)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A value used along with a conversion factor to relate a unit to its corresponding unit in the International System of Units. In the equation below, the conversion offset is 459.669607 and the conversion factor is 5/9.
           
@@ -1500,13 +1499,13 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - Domain :: gist:UnitOfMeasure
  - Range :: xsd:decimal
  - Characteristics :: Functional
-*** gist:description
+*** description (gist:description)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A statement about someone or something's attributes or characteristics.
  - skos:example :: The Empire State Building is a 102-story Art Deco skyscraper in Midtown Manhattan in New York City, United States. It was designed by Shreve, Lamb & Harmon and built from 1930 to 1931.
  - skos:prefLabel :: description
  - skos:scopeNote :: This property is used to provide a description of an individual in greater detail than a label.
-*** gist:exponentOfAmpere
+*** exponent of ampere (gist:exponentOfAmpere)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The exponent of ampere in a product of powers of base units.
  - skos:example :: In the equation '1 milliampere = 0.001 x ampere'
@@ -1519,7 +1518,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:prefLabel :: exponent of ampere
  - Domain :: gist:UnitGroup or gist:UnitOfMeasure
  - Range :: xsd:decimal
-*** gist:exponentOfBit
+*** exponent of bit (gist:exponentOfBit)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The exponent of bit in a product of powers of base units.
  - skos:example :: In the equation '1 megabit per second = 1000000 x bit per second'
@@ -1533,7 +1532,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:prefLabel :: exponent of bit
  - Domain :: gist:UnitGroup or gist:UnitOfMeasure
  - Range :: xsd:decimal
-*** gist:exponentOfCandela
+*** exponent of candela (gist:exponentOfCandela)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The exponent of candela in a product of powers of base units.
  - skos:example :: In the equation '1 candlepower = 1 x candela'
@@ -1546,7 +1545,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:prefLabel :: exponent of candela
  - Domain :: gist:UnitGroup or gist:UnitOfMeasure
  - Range :: xsd:decimal
-*** gist:exponentOfKelvin
+*** exponent of Kelvin (gist:exponentOfKelvin)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The exponent of Kelvin in a product of powers of base units.
  - skos:example :: In the equation 'y degrees Fahrenheit = (y + 459.6669607) x 5/9 degrees Kelvin'
@@ -1560,7 +1559,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:prefLabel :: exponent of Kelvin
  - Domain :: gist:UnitGroup or gist:UnitOfMeasure
  - Range :: xsd:decimal
-*** gist:exponentOfKilogram
+*** exponent of kilogram (gist:exponentOfKilogram)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The exponent of kilogram in a product of powers of base units.
  - skos:example :: In the equation '1 millimole per gram = 1 x mole per kilogram'
@@ -1574,7 +1573,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:prefLabel :: exponent of kilogram
  - Domain :: gist:UnitGroup or gist:UnitOfMeasure
  - Range :: xsd:decimal
-*** gist:exponentOfMeter
+*** exponent of meter (gist:exponentOfMeter)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The exponent of meter in a product of powers of base units.
  - skos:example :: In the equation '1 microgram per milliliter = 0.001 x kilogram per meterCubed'
@@ -1588,7 +1587,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:prefLabel :: exponent of meter
  - Domain :: gist:UnitGroup or gist:UnitOfMeasure
  - Range :: xsd:decimal
-*** gist:exponentOfMole
+*** exponent of mole (gist:exponentOfMole)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The exponent of mole in a product of powers of base units.
  - skos:example :: In the equation '1 katal = 1 x mole per second'
@@ -1602,7 +1601,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:prefLabel :: exponent of mole
  - Domain :: gist:UnitGroup or gist:UnitOfMeasure
  - Range :: xsd:decimal
-*** gist:exponentOfNumber
+*** exponent of number (gist:exponentOfNumber)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The exponent of number in a product of powers of base units.
  - skos:example :: In the equation '1 beat per minute = 0.016667 x number per second'
@@ -1617,7 +1616,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:scopeNote :: Use when the unit of measure involves a count or other number.
  - Domain :: gist:UnitGroup or gist:UnitOfMeasure
  - Range :: xsd:decimal
-*** gist:exponentOfOther
+*** exponent of other (gist:exponentOfOther)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Indicates whether a unit of measure can be expressed in terms of the standard exponents (as shown in the examples).
  - skos:example :: Decibel, pH, and octave are units of measure that are logarithmic. Their unit groups have exponent of other = 1.
@@ -1627,7 +1626,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
           		Otherwise set the value to 1, which typically means the units of measure in the group use a logarithmic scale.
  - Domain :: gist:UnitGroup or gist:UnitOfMeasure
  - Range :: xsd:decimal
-*** gist:exponentOfRadian
+*** exponent of radian (gist:exponentOfRadian)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The exponent of radian in a product of powers of base units.
  - skos:example :: In the equation '1 revolution = 6.283 x radian'
@@ -1640,7 +1639,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:prefLabel :: exponent of radian
  - Domain :: gist:UnitGroup or gist:UnitOfMeasure
  - Range :: xsd:decimal
-*** gist:exponentOfSecond
+*** exponent of second (gist:exponentOfSecond)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The exponent of second in a product of powers of base units.
  - skos:example :: In the equation '1 watt-hour = 3600 x kilogram meterSquared per secondSquared'
@@ -1655,7 +1654,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:prefLabel :: exponent of second
  - Domain :: gist:UnitGroup or gist:UnitOfMeasure
  - Range :: xsd:decimal
-*** gist:exponentOfSteradian
+*** exponent of steradian (gist:exponentOfSteradian)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The exponent of steradian in a product of powers of base units.
  - skos:example :: In the equation '1 watt per square meter steradian = 1 x kilogram per secondCubed steradian'
@@ -1671,7 +1670,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:scopeNote :: Steradian is a measure of solid angle.
  - Domain :: gist:UnitGroup or gist:UnitOfMeasure
  - Range :: xsd:decimal
-*** gist:exponentOfUSDollar
+*** exponent of US dollar (gist:exponentOfUSDollar)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The exponent of US Dollar in a product of powers of base units.
  - skos:example :: In the equation '1 million dollars per week = 1.65344 x dollar per second'
@@ -1686,44 +1685,44 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - skos:scopeNote :: The factors for converting from one currency to another change constantly.
  - Domain :: gist:UnitGroup or gist:UnitOfMeasure
  - Range :: xsd:decimal
-*** gist:idText
+*** id text (gist:idText)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates an individual to a text string that identifies it.
- - skos:example :: The id text for the HR department for Company X is H31415
  - skos:example :: The id text for a car is '4Y1SL65848Z411439'
+ - skos:example :: The id text for the HR department for Company X is H31415
  - skos:prefLabel :: id text
+ - skos:scopeNote :: Often, there will be just one identifying text string. More would be appropriate if the individual had different identifiers, such as employee number and social security number. A good way to model that would be to have functional subproperties of idText, such as departmentNumber.
  - skos:scopeNote :: This property is an alternative to using the property isIdentifiedBy in conjunction with instances of the class ID.
  - skos:scopeNote :: A common use case would be for pre-existing internal company identifiers.
- - skos:scopeNote :: Often, there will be just one identifying text string. More would be appropriate if the individual had different identifiers, such as employee number and social security number. A good way to model that would be to have functional subproperties of idText, such as departmentNumber.
  - Range :: xsd:string
-*** gist:latitude
+*** latitude (gist:latitude)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Degrees above or below equator
  - skos:prefLabel :: latitude
  - Domain :: gist:GeoPoint
  - Range :: xsd:double
-*** gist:longitude
+*** longitude (gist:longitude)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Degrees from GM
  - skos:prefLabel :: longitude
  - Domain :: gist:GeoPoint
  - Range :: xsd:double
-*** gist:name
+*** name (gist:name)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates an individual to (one of) its name(s).
  - skos:prefLabel :: name
  - Range :: xsd:string
-*** gist:numericValue
+*** numeric value (gist:numericValue)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: The actual value of a magnitude.
  - skos:prefLabel :: numeric value
  - Range :: (xsd:byte or xsd:decimal or xsd:double or xsd:float or xsd:int or xsd:integer or xsd:long or xsd:negativeInteger or xsd:nonNegativeInteger or xsd:nonPositiveInteger or xsd:positiveInteger or xsd:short or xsd:unsignedByte or xsd:unsignedInt or xsd:unsignedLong or xsd:unsignedShort or owl:rational or owl:real)
-*** gist:sequence
+*** sequence (gist:sequence)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: For ordering ordered lists.
  - skos:prefLabel :: sequence
  - Range :: xsd:integer
-*** gist:symbol
+*** symbol (gist:symbol)
  - gist:domainIncludes :: gist:UnitOfMeasure
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: A symbol for something using only ASCII characters.
@@ -1743,33 +1742,33 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 *** skos:editorialNote
 *** skos:example
 *** skos:historyNote
-*** rdfs:isDefinedBy
-*** gist:isSupersededBy
+*** is superseded by (gist:isSupersededBy)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates a deprecated term to a term that replaces it, which is either an exact (in the case of simple renaming) or approximate (in the case of renaming and some semantic change) semantic match.
  - skos:example :: gist:connectedTo gist:isSupersededBy gist:isConnectedTo (renaming with no semantic change).
  - skos:prefLabel :: is superseded by
-*** gist:license
+*** rdfs:isDefinedBy
+*** license (gist:license)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: An annotation for providing the licensing on this or derivative ontologies
  - skos:prefLabel :: license
 *** skos:prefLabel
 *** skos:scopeNote
-**** gist:domainIncludes
+**** domain includes (gist:domainIncludes)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates a property to a class that the property is expected to be used on.
  - skos:example :: The domain of the property gist:containedText includes gist:Tag and gist:Text.
  - skos:prefLabel :: domain includes
- - skos:scopeNote :: This property is used to guide the ontology user; like all annotation properties, it does not play a role in inference.
  - skos:scopeNote :: There may be multiple domainIncludes assertions on a single property.
+ - skos:scopeNote :: This property is used to guide the ontology user; like all annotation properties, it does not play a role in inference.
  - SubPropertyOf :: skos:scopeNote
-**** gist:rangeIncludes
+**** range includes (gist:rangeIncludes)
  - rdfs:isDefinedBy :: https://w3id.org/semanticarts/ontology/gistCore
  - skos:definition :: Relates a property to a class that is an expected type of its values.
  - skos:example :: The range of the property gist:isCategorizedBy includes gist:Category.
  - skos:prefLabel :: range includes
- - skos:scopeNote :: This property is used to guide the ontology user; like all annotation properties, it does not play a role in inference.
  - skos:scopeNote :: There may be multiple rangeIncludes assertions on a single property.
+ - skos:scopeNote :: This property is used to guide the ontology user; like all annotation properties, it does not play a role in inference.
  - SubPropertyOf :: skos:scopeNote
 *** rdfs:seeAlso
 
@@ -1781,52 +1780,52 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 :END:
 
 *** gist:Aspect                                                   :nodeclare:
-**** gistd:_Aspect_altitude
+**** area (gistd:_Aspect_altitude)
  - Types :: gist:Aspect
+ - skos:prefLabel :: area
  - skos:definition :: The aspect altitude.
- - skos:prefLabel :: area
  - skos:editorialNote :: This instance has been duplicated from reference data so it can be used in property restrictions.
 
-**** gistd:_Aspect_area
+**** area (gistd:_Aspect_area)
  - Types :: gist:Aspect
  - skos:editorialNote :: This instance has been duplicated from reference data so it can be used in property restrictions.
- - skos:definition :: The aspect area.
  - skos:prefLabel :: area
+ - skos:definition :: The aspect area.
 
-**** gistd:_Aspect_duration
+**** balance (gistd:_Aspect_financial_balance)
+ - Types :: gist:Aspect
+ - skos:prefLabel :: balance
+ - skos:editorialNote :: This instance has been duplicated from reference data so it can be used in property restrictions.
+ - skos:definition :: The aspect financial balance.
+
+**** duration (gistd:_Aspect_duration)
  - Types :: gist:Aspect
  - skos:prefLabel :: duration
  - skos:definition :: The aspect duration.
  - skos:editorialNote :: This instance has been duplicated from reference data so it can be used in property restrictions.
 
-**** gistd:_Aspect_financial_balance
- - Types :: gist:Aspect
- - skos:definition :: The aspect financial balance.
- - skos:prefLabel :: balance
- - skos:editorialNote :: This instance has been duplicated from reference data so it can be used in property restrictions.
-
-**** gistd:_Aspect_mass
+**** mass (gistd:_Aspect_mass)
  - Types :: gist:Aspect
  - skos:prefLabel :: mass
- - skos:definition :: The aspect mass.
  - skos:editorialNote :: This instance has been duplicated from reference data so it can be used in property restrictions.
+ - skos:definition :: The aspect mass.
 
-**** gistd:_Aspect_monetary_value
+**** monetary value (gistd:_Aspect_monetary_value)
  - Types :: gist:Aspect
- - skos:definition :: The aspect monetary value.
  - skos:prefLabel :: monetary value
  - skos:editorialNote :: This instance has been duplicated from reference data so it can be used in property restrictions.
+ - skos:definition :: The aspect monetary value.
 
-**** gistd:_Aspect_probability
+**** probability (gistd:_Aspect_probability)
  - Types :: gist:Aspect
+ - skos:definition :: The aspect probability.
  - skos:prefLabel :: probability
  - skos:editorialNote :: This instance has been duplicated from reference data so it can be used in property restrictions.
- - skos:definition :: The aspect probability.
 
-**** gistd:_Aspect_volume
+**** volume (gistd:_Aspect_volume)
  - Types :: gist:Aspect
- - skos:prefLabel :: volume
  - skos:definition :: The aspect volume.
+ - skos:prefLabel :: volume
  - skos:editorialNote :: This instance has been duplicated from reference data so it can be used in property restrictions.
 
 
