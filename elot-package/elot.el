@@ -56,6 +56,7 @@
 (require 'ht) ; hashtable, for label display
 (require 'url) ; for opening online ontologies
 (require 'url-http) ; for opening online ontologies
+(require 'xref) ; jump around
 ;; src-require ends here
 
 ;; [[file:../elot-defs.org::src-settings-externals][src-settings-externals]]
@@ -1046,21 +1047,26 @@ This ensures `xref-find-definitions` works on CURIEs inside the xref buffer."
 
 (add-hook 'xref-after-update-hook #'elot--xref-buffer-enable-backend)
 
-(defun elot--xref-reveal-org-entry (_xrefs _display-action)
+(defun elot--xref-reveal-org-entry ()
   "Ensure the Org heading at point is visible after jumping to an xref.
 This applies only in buffers where `elot-slurp` is bound, i.e., ELOT buffers."
-  ;; Defer unfolding slightly to ensure jump is finished
+  ;; Defer unfolding slightly using run-at-time to ensure jump mechanics are settled.
   (run-at-time
    0 nil
    (lambda ()
      (when (and (derived-mode-p 'org-mode)
-                (boundp 'elot-slurp))
-       ;; Reveal the current entry and its context using the new folding functions
+                (boundp 'elot-slurp)
+                ;; Add a check to ensure we are actually at a heading
+                (org-at-heading-p))
+       ;; Go to the beginning of the line xref jumped to
+       (beginning-of-line)
+       ;; Reveal the context around point (should unfold ancestors)
        (org-reveal)
-       (org-fold-show-entry)
-       (org-fold-show-context)))))
+       ;; Optional: Center the view after revealing
+       ;; (recenter-top-bottom)
+       ))))
 
-(advice-add 'xref--show-xrefs :after #'elot--xref-reveal-org-entry)
+(add-hook 'xref-after-jump-hook #'elot--xref-reveal-org-entry)
 ;; src-elot-xref ends here
 
 ;; [[file:../elot-defs.org::src-latex-section-export][src-latex-section-export]]
