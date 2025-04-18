@@ -1036,6 +1036,8 @@ Searches across all open buffers with `elot-slurp' defined."
                 (push (xref-make heading loc) matches)))))))
     (nreverse matches)))
 
+(add-hook 'xref-backend-functions #'elot-xref-backend)
+
 (defun elot--xref-buffer-enable-backend ()
   "Enable the ELOT xref backend in the `*xref*` buffer.
 
@@ -1046,27 +1048,6 @@ This ensures `xref-find-definitions` works on CURIEs inside the xref buffer."
       (add-hook 'xref-backend-functions #'elot-xref-backend nil t))))
 
 (add-hook 'xref-after-update-hook #'elot--xref-buffer-enable-backend)
-
-(defun elot--xref-reveal-org-entry ()
-  "Ensure the Org heading at point is visible after jumping to an xref.
-This applies only in buffers where `elot-slurp` is bound, i.e., ELOT buffers."
-  ;; Defer unfolding slightly using run-at-time to ensure jump mechanics are settled.
-  (run-at-time
-   0 nil
-   (lambda ()
-     (when (and (derived-mode-p 'org-mode)
-                (boundp 'elot-slurp)
-                ;; Add a check to ensure we are actually at a heading
-                (org-at-heading-p))
-       ;; Go to the beginning of the line xref jumped to
-       (beginning-of-line)
-       ;; Reveal the context around point (should unfold ancestors)
-       (org-reveal)
-       ;; Optional: Center the view after revealing
-       ;; (recenter-top-bottom)
-       ))))
-
-(add-hook 'xref-after-jump-hook #'elot--xref-reveal-org-entry)
 ;; src-elot-xref ends here
 
 ;; [[file:../elot-defs.org::src-latex-section-export][src-latex-section-export]]
