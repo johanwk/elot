@@ -946,70 +946,109 @@ and accordingly for `object-property', `data-property', and
 
 ;; [[file:../elot-defs.org::src-elot-xref][src-elot-xref]]
 (cl-defmethod xref-backend-references ((_backend (eql elot)) identifier)
-	"Return all references to IDENTIFIER in the current ELOT Org-mode buffer.
+  "Return all references to IDENTIFIER in the current ELOT Org-mode buffer.
 
 Each result shows the nearest preceding Org heading and the complete
 description list entry in which the identifier occurs. Multiline items
 are flattened into a single line for clarity in the xref buffer."
-	(save-excursion
-		(goto-char (point-min))
-		(let ((case-fold-search nil)
-					(pattern (concat "\\b" (regexp-quote identifier) "\\b"))
-					matches)
-			(while (re-search-forward pattern nil t)
-				(unless (org-at-heading-p)
-					(let* ((heading (save-excursion
-														(or (outline-previous-heading)
-																(goto-char (point-min)))
-														(org-get-heading t t t t)))
-								 (item (org-element-lineage (org-element-context) '(item) t))
-								 (entry-text (if item
-																 (buffer-substring-no-properties
-																	(org-element-property :begin item)
-																	(org-element-property :end item))
-															 (thing-at-point 'line t)))
-								 (entry-one-line (replace-regexp-in-string
-																	"\n\\s-*" " " entry-text))
-								 (context (format "%s\n %s\n"
-																	heading
-																	(string-trim entry-one-line)))
-								 (loc (xref-make-buffer-location (current-buffer)
-																								 (line-beginning-position))))
-						(push (xref-make context loc) matches))))
-			(nreverse matches))))
+  (save-excursion
+    (goto-char (point-min))
+    (let ((case-fold-search nil)
+          (pattern (concat "\\b" (regexp-quote identifier) "\\b"))
+          matches)
+      (while (re-search-forward pattern nil t)
+        (unless (org-at-heading-p)
+          (let* ((heading (save-excursion
+                            (or (outline-previous-heading)
+                                (goto-char (point-min)))
+                            (org-get-heading t t t t)))
+                 (item (org-element-lineage (org-element-context) '(item) t))
+                 (entry-text (if item
+                                 (buffer-substring-no-properties
+                                  (org-element-property :begin item)
+                                  (org-element-property :end item))
+                               (thing-at-point 'line t)))
+                 (entry-one-line (replace-regexp-in-string
+                                  "\n\\s-*" " " entry-text))
+                 (context (format "%s\n %s\n"
+                                  heading
+                                  (string-trim entry-one-line)))
+                 (loc (xref-make-buffer-location (current-buffer)
+                                                 (line-beginning-position))))
+            (push (xref-make context loc) matches))))
+      (nreverse matches))))
 
 (cl-defmethod xref-backend-identifier-completion-table ((_backend (eql elot)))
-	"Disable identifier completion for ELOT xref backends.
+  "Disable identifier completion for ELOT xref backends.
 
 This prevents Emacs from prompting with completions in xref commands
 like `xref-find-references'."
-	nil)
+  nil)
 
 (defun elot--capture-slurp (&rest _args)
-	"Copy the current buffer's `elot-slurp' into `elot-slurp-global'.
+  "Copy the current buffer's `elot-slurp' into `elot-slurp-global'.
 
 This is used before xref is invoked so that label overlays can be shown
 in the `*xref*' buffer based on the current ELOT context."
-	(when (boundp 'elot-slurp)
-		(setq elot-slurp-global elot-slurp)))
+  (when (boundp 'elot-slurp)
+    (setq elot-slurp-global elot-slurp)))
 
 
 (advice-add 'xref-find-references :before #'elot--capture-slurp)
 
 (defun elot--xref-label-overlay-setup ()
-	"Setup label overlays in the xref buffer using `elot-slurp-global'."
-	(when (and (equal (buffer-name) "*xref*")
-						 (fboundp 'elot-label-display-setup))
-		(elot-label-display-setup)))
+  "Setup label overlays in the xref buffer using `elot-slurp-global'."
+  (when (and (equal (buffer-name) "*xref*")
+             (fboundp 'elot-label-display-setup))
+    (elot-label-display-setup)))
 
 (add-hook 'xref-after-update-hook #'elot--xref-label-overlay-setup)
 
 (defun elot--xref-buffer-enable-backend ()
-	"Enable `elot` xref backend in the `*xref*` buffer."
-	(when (equal (buffer-name) "*xref*")
-		(add-hook 'xref-backend-functions #'elot-xref-backend nil t)))
+  "Enable `elot` xref backend in the `*xref*` buffer."
+  (when (equal (buffer-name) "*xref*")
+    (add-hook 'xref-backend-functions #'elot-xref-backend nil t)))
 
 (add-hook 'xref-after-update-hook #'elot--xref-buffer-enable-backend)
+
+(cl-defmethod xref-backend-definitions ((_backend (eql elot)) identifier)
+  "Return xref locations for the Org headline that defines IDENTIFIER.
+
+Searches across all open buffers with `elot-slurp' defined."
+  (let (matches)
+    (dolist (buf (buffer-list))
+      (with-current-buffer buf
+        (when (and (derived-mode-p 'org-mode)
+                   (boundp 'elot-slurp))  ;; only search ELOT-style buffers
+          (save-excursion
+            (goto-char (point-min))
+            (while (re-search-forward
+                    (concat "^\\*+ .*\\b" (regexp-quote identifier) "\\b") nil t)
+              (let* ((heading (org-get-heading t t t t))
+                     (loc (xref-make-buffer-location
+                           buf
+                           (line-beginning-position))))
+                (push (xref-make heading loc) matches)))))))
+    (nreverse matches)))
+
+(defun elot--xref-buffer-enable-backend ()
+  "Enable the ELOT xref backend in the `*xref*` buffer.
+
+This ensures `xref-find-definitions` works on CURIEs inside the xref buffer."
+  (when (equal (buffer-name) "*xref*")
+    (with-current-buffer (current-buffer)
+      (make-local-variable 'xref-backend-functions)
+      (add-hook 'xref-backend-functions #'elot-xref-backend nil t))))
+
+(add-hook 'xref-after-update-hook #'elot--xref-buffer-enable-backend)
+
+(cl-defmethod xref-backend-identifier-at-point ((_backend (eql elot)))
+  "Return a CURIE at point, like :BFO_0000015, or nil if not found."
+  (let ((curie-regex "\\(?:\\sw\\|\\s_\\|:\\)+"))
+    (save-excursion
+      (skip-chars-backward "-_A-Za-z0-9:")
+      (when (looking-at curie-regex)
+        (match-string-no-properties 0)))))
 ;; src-elot-xref ends here
 
 ;; [[file:../elot-defs.org::src-latex-section-export][src-latex-section-export]]
@@ -1047,11 +1086,11 @@ are passed on to `org-get-heading'."
 Remove string decorations.  Newlines are replaced by spaces in the result."
   (save-excursion
     (if (search-forward-regexp tag nil t)
-  (let* ((element (org-element-at-point))
-  	     (beg (org-element-property :contents-begin element))
-  	     (end (org-element-property :contents-end element))
-  	     (entry-text (buffer-substring-no-properties beg end)))
-  	(replace-regexp-in-string "\n\s*" " " entry-text)))))
+	(let* ((element (org-element-at-point))
+	       (beg (org-element-property :contents-begin element))
+	       (end (org-element-property :contents-end element))
+	       (entry-text (buffer-substring-no-properties beg end)))
+	  (replace-regexp-in-string "\n\s*" " " entry-text)))))
 ;; src-get-description-entry :tangle no ends here
 
 ;; [[file:../elot-defs.org::src-latex-export-replacenames][src-latex-export-replacenames]]
@@ -1185,12 +1224,12 @@ Return output file name."
 ;; [[file:../elot-defs.org::src-tempo-docheader][src-tempo-docheader]]
 (tempo-define-template "elot-doc-header"
                        '("# -*- eval: (load-library \"elot-defaults\") -*-" > n
-      	               "#+title: " (p "Document title: " doctitle) > n
-      	               "#+subtitle: An OWL ontology" > n
-      	               "#+author: " (p "Author name: " authname) > n
-      	               "#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
+    	                 "#+title: " (p "Document title: " doctitle) > n
+    	                 "#+subtitle: An OWL ontology" > n
+    	                 "#+author: " (p "Author name: " authname) > n
+    	                 "#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
                          "#+call: theme-readtheorg()" n n
-      	               (progn (load-library "elot-defaults") (message "Loaded ELOT") ""))
+    	                 (progn (load-library "elot-defaults") (message "Loaded ELOT") ""))
                        "<odh"
                        "ELOT document header"
                        'org-tempo-tags)
