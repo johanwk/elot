@@ -58,20 +58,22 @@ in SPARQL select results.
 *** Require packages
 #+name: src-require
 #+begin_src emacs-lisp
-  (require 'ob-lob) ; Library of Babel
-  (require 'ox) ; export functions
-  (require 'ol) ; link functions
-  (require 'org-tempo) ; document templates
-  (require 'htmlize) ; fontify blocks
-  (require 'omn-mode) ; OWL Manchester Syntax (OMN) support
-  (require 'sparql-mode) ; SPARQL
-  (require 'ob-sparql) ; SPARQL in org-babel
-  (require 'ob-plantuml) ; PlantUML in org-babel
-  (require 'hydra) ; hydra menu
-  (require 'ht) ; hashtable, for label display
-  (require 'url) ; for opening online ontologies
-  (require 'url-http) ; for opening online ontologies
-  (require 'xref) ; jump around
+	(require 'ob-lob) ; Library of Babel
+	(require 'ox) ; export functions
+	(require 'ol) ; link functions
+	(require 'org-tempo) ; document templates
+	(require 'htmlize) ; fontify blocks
+	(require 'omn-mode) ; OWL Manchester Syntax (OMN) support
+	(require 'sparql-mode) ; SPARQL
+	(require 'ob-sparql) ; SPARQL in org-babel
+	(require 'ob-plantuml) ; PlantUML in org-babel
+	(require 'hydra) ; hydra menu
+	(require 'ht) ; hashtable, for label display
+	(require 'url) ; for opening online ontologies
+	(require 'url-http) ; for opening online ontologies
+	(require 'xref) ; jump around
+	(require 'button) ; for text‑buttons
+	(require 'help-mode) ; nice keymap & look
 #+end_src
 *** Setting for post-processing with ROBOT, rdfpuml; import OWL with elot-exporter
 Se below under [[*Default settings][Default settings]] for a hook to convert to Turtle after
@@ -1165,6 +1167,101 @@ registered and the correct context is preserved across jumps.
 				(add-hook 'xref-backend-functions #'elot-xref-backend nil t))))
 
 	(add-hook 'xref-after-update-hook #'elot--xref-buffer-enable-backend)
+
+
+	(cl-defun elot-describe-curie-at-point (&optional curie)
+		"Pop up a *Help* buffer describing CURIE at point (or prompt).
+	Shows the defining headline and a few reference examples, each as
+	a clickable button.  Label overlays are rendered inside the help
+	buffer exactly like they are in the *xref* buffer."
+		(interactive
+		 (list
+			(or (cl-letf* ((backend 'elot)
+										 (id-fn (symbol-function
+														 'xref-backend-identifier-at-point)))
+						(funcall id-fn backend))
+					(read-string "ELOT CURIE: "))))
+		(unless (and curie (stringp curie) (not (string-empty-p curie)))
+			(user-error "No CURIE given"))
+		;; ------------------------------------------------------------------
+		;; 1. Capture current elot-slurp so we can reuse it in Help buffer
+		;; ------------------------------------------------------------------
+		(let ((elot-slurp-global (when (boundp 'elot-slurp) elot-slurp)))
+			;; ----------------------------------------------------------------
+			;; 2. Gather xref data
+			;; ----------------------------------------------------------------
+			(let* ((defns   (elot--xref-find-matches curie :find-definition t))
+						 (refs    (elot--xref-find-matches curie))
+						 (buffer  (get-buffer-create "*ELOT Describe*"))
+						 (max-ref 10))
+				;; ----------------------------------------------------------------
+				;; 3. Build the Help buffer
+				;; ----------------------------------------------------------------
+				(with-help-window buffer
+					(with-current-buffer buffer
+						(help-mode)
+						(setq truncate-lines t)
+						;; make elot-slurp visible in this buffer for overlay code
+						(setq-local elot-slurp elot-slurp-global)
+						;; ------------------------------------
+						;; 3a. Header & definition
+						;; ------------------------------------
+						(princ (format "%s\n\n" curie))
+						(if defns
+								(progn
+									(princ (propertize "Defined in:\n" 'face 'bold))
+									(elot--describe--insert-xref-button (car defns) 2))
+							(princ (propertize "No definition found.\n" 'face 'warning)))
+						(princ "\n")
+						;; ------------------------------------
+						;; 3b. References (first N)
+						;; ------------------------------------
+						(princ (propertize "Selected references:\n" 'face 'bold))
+						(if refs
+								(let ((count 0))
+									(dolist (xref refs)
+										(when (< count max-ref)
+											(elot--describe--insert-xref-button xref 4)
+											(setq count (1+ count))))
+									(when (> (length refs) max-ref)
+										(princ (format "  …and %d more\n"
+																	 (- (length refs) max-ref)))))
+							(princ "  (none)\n"))
+						(princ
+						 "\n----\n`q' to quit, `RET' to visit location.\n")
+						;; ------------------------------------
+						;; 3c. Paint label overlays right now
+						;; ------------------------------------
+						(when (fboundp 'elot-label-display-setup)
+							(elot-label-display-setup)))))))
+
+	(defun elot--describe--insert-xref-button (xref indent)
+		"Insert XREF as an indented bullet with filename and a clickable link."
+		(let* ((summary (xref-item-summary xref))
+					 (loc     (xref-item-location  xref))
+					 (marker  (xref-location-marker loc))
+					 (buf     (marker-buffer marker))
+					 (file    (or (buffer-file-name buf) (buffer-name buf)))
+					 (short   (file-name-nondirectory file))
+					 (line    (with-current-buffer buf
+											(line-number-at-pos marker))))
+			;; bullet + file prefix
+			(insert (make-string indent ?\s) "• "
+							(propertize (concat short ": ") 'face 'font-lock-keyword-face))
+			;; clickable summary
+			(insert-text-button
+			 summary
+			 'follow-link t
+			 'elot-target-buffer buf
+			 'elot-target-pos    (marker-position marker)
+			 'action (lambda (btn)
+								 (let ((target-buf (button-get btn 'elot-target-buffer))
+											 (pos        (button-get btn 'elot-target-pos)))
+									 (pop-to-buffer target-buf)
+									 (goto-char pos)
+									 (xref-pulse-momentarily)))
+			 'help-echo (format "%s:%d" short line))
+			(insert "\n")))
 #+end_src
 *** Headings in LaTeX export
 We format headings with indentation to match the subtype level in the
