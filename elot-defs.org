@@ -10,49 +10,49 @@ allows for local variables to be accessed -- relevant for
 in SPARQL select results.
 #+name: src-package-header
 #+begin_src emacs-lisp :comments nil
-	;;; elot.el --- Emacs Literate Ontology Tool (ELOT)   -*- lexical-binding: t; no-native-compile: t; -*-
+  ;;; elot.el --- Emacs Literate Ontology Tool (ELOT)   -*- lexical-binding: t; no-native-compile: t; -*-
 
-	;; Copyright (C) 2024, 2025 Johan W. Klüwer
+  ;; Copyright (C) 2024, 2025 Johan W. Klüwer
 
-	;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
-	;; URL: https://github.com/johanwk/elot
-	;; Version: 1.0.6
-	;; Package-Requires: ((emacs "29.1") (htmlize "1.58") (ht "2.3") (omn-mode "1.3") (hydra "0.15.0") (sparql-mode "4.0.2"))
-	;; Keywords: languages outlines tools org ontology
+  ;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
+  ;; URL: https://github.com/johanwk/elot
+  ;; Version: 1.0.6
+  ;; Package-Requires: ((emacs "29.1") (htmlize "1.58") (ht "2.3") (omn-mode "1.3") (hydra "0.15.0") (sparql-mode "4.0.2"))
+  ;; Keywords: languages outlines tools org ontology
 
-	;; This file is not part of GNU Emacs.
+  ;; This file is not part of GNU Emacs.
 
-	;; This program is free software; you can redistribute it and/or modify
-	;; it under the terms of the GNU General Public License as published by
-	;; the Free Software Foundation, either version 3 of the License, or
-	;; (at your option) any later version.
+  ;; This program is free software; you can redistribute it and/or modify
+  ;; it under the terms of the GNU General Public License as published by
+  ;; the Free Software Foundation, either version 3 of the License, or
+  ;; (at your option) any later version.
 
-	;; This program is distributed in the hope that it will be useful,
-	;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-	;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	;; GNU General Public License for more details.
+  ;; This program is distributed in the hope that it will be useful,
+  ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ;; GNU General Public License for more details.
 
-	;; You should have received a copy of the GNU General Public License
-	;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  ;; You should have received a copy of the GNU General Public License
+  ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-	;;; Commentary:
+  ;;; Commentary:
 
-	;; This package is for authoring OWL ontologies using org-mode.
+  ;; This package is for authoring OWL ontologies using org-mode.
 
-	;; To start an ontology from scratch using ELOT, open an Org file and
-	;; use predefined "tempo" templates.
+  ;; To start an ontology from scratch using ELOT, open an Org file and
+  ;; use predefined "tempo" templates.
 
-	;;  - insert `<odh' and hit <Tab> to add a header for the document
-	;;  - insert `<ods' and hit <Tab> to insert headers for the ontology,
-	;;    classes, properties, and individuals.
+  ;;  - insert `<odh' and hit <Tab> to add a header for the document
+  ;;  - insert `<ods' and hit <Tab> to insert headers for the ontology,
+  ;;    classes, properties, and individuals.
 
-	;; Shift-<F5> will open a "hydra" menu with more templates and
-	;; functions for exporting to an ontology file or HTML.
+  ;; Shift-<F5> will open a "hydra" menu with more templates and
+  ;; functions for exporting to an ontology file or HTML.
 
-	;; Please consult the package Github site for more information:
-	;;        <https://github.com/johanwk/elot>
+  ;; Please consult the package Github site for more information:
+  ;;        <https://github.com/johanwk/elot>
 
-	;;; Code:
+  ;;; Code:
 #+end_src
 
 *** Require packages
@@ -1062,41 +1062,41 @@ from the originating ELOT buffer. Hooks and advice ensure the xref backend is
 registered and the correct context is preserved across jumps.
 #+name: src-elot-xref
 #+begin_src emacs-lisp
-	(defun elot-xref-backend ()
-		"Return the ELOT xref backend identifier."
-		'elot)
+  (defun elot-xref-backend ()
+    "Return the ELOT xref backend identifier."
+    'elot)
 
-	(cl-defmethod xref-backend-identifier-at-point ((_backend (eql elot)))
-		"Return the identifier at point for ELOT buffers.
+  (cl-defmethod xref-backend-identifier-at-point ((_backend (eql elot)))
+    "Return the identifier at point for ELOT buffers.
 
-	This returns the symbol under point, which is assumed to be a CURIE-like
-	identifier (e.g., `:BFO_0000015'). You may customize this to use a more
-	specific parser if needed."
-		(thing-at-point 'symbol t))
+  This returns the symbol under point, which is assumed to be a CURIE-like
+  identifier (e.g., `:BFO_0000015'). You may customize this to use a more
+  specific parser if needed."
+    (thing-at-point 'symbol t))
 
-	(cl-defmethod xref-backend-definitions ((_backend (eql elot)) identifier)
-		"Return definition locations for IDENTIFIER in the current buffer.
+  (cl-defmethod xref-backend-definitions ((_backend (eql elot)) identifier)
+    "Return definition locations for IDENTIFIER in the current buffer.
 
-	This searches from the beginning of the buffer for an Org headline
-	containing IDENTIFIER. Results are returned as xref locations pointing
-	to the matching line."
-		(save-excursion
-			(goto-char (point-min))
-			(let ((case-fold-search nil)
-						(pattern (concat "^\\*+.*\\b" (regexp-quote identifier) "\\b"))
-						matches)
-				(while (re-search-forward pattern nil t)
-					(push (xref-make identifier
-													 (xref-make-buffer-location
-														(current-buffer)
-														(line-beginning-position)))
-								matches))
-				(nreverse matches))))
+  This searches from the beginning of the buffer for an Org headline
+  containing IDENTIFIER. Results are returned as xref locations pointing
+  to the matching line."
+    (save-excursion
+      (goto-char (point-min))
+      (let ((case-fold-search nil)
+            (pattern (concat "^\\*+.*\\b" (regexp-quote identifier) "\\b"))
+            matches)
+        (while (re-search-forward pattern nil t)
+          (push (xref-make identifier
+                           (xref-make-buffer-location
+                            (current-buffer)
+                            (line-beginning-position)))
+                matches))
+        (nreverse matches))))
 
-	(add-hook 'xref-backend-functions #'elot-xref-backend)
+  (add-hook 'xref-backend-functions #'elot-xref-backend)
 
-	(cl-defmethod xref-backend-references ((_backend (eql elot)) identifier)
-		"Return all references to IDENTIFIER in the current ELOT Org-mode buffer.
+  (cl-defmethod xref-backend-references ((_backend (eql elot)) identifier)
+    "Return all references to IDENTIFIER in the current ELOT Org-mode buffer.
 
   Each result shows the nearest preceding Org heading and the complete
   description list entry in which the identifier occurs. Multiline items
@@ -1143,7 +1143,6 @@ registered and the correct context is preserved across jumps.
     (when (boundp 'elot-slurp)
       (setq elot-slurp-global elot-slurp)))
 
-
   (advice-add 'xref-find-references :before #'elot--capture-slurp)
 
   (defun elot--xref-label-overlay-setup ()
@@ -1153,13 +1152,6 @@ registered and the correct context is preserved across jumps.
       (elot-label-display-setup)))
 
   (add-hook 'xref-after-update-hook #'elot--xref-label-overlay-setup)
-
-  (defun elot--xref-buffer-enable-backend ()
-    "Enable `elot` xref backend in the `*xref*` buffer."
-    (when (equal (buffer-name) "*xref*")
-      (add-hook 'xref-backend-functions #'elot-xref-backend nil t)))
-
-  (add-hook 'xref-after-update-hook #'elot--xref-buffer-enable-backend)
 
   (cl-defmethod xref-backend-definitions ((_backend (eql elot)) identifier)
     "Return xref locations for the Org headline that defines IDENTIFIER.
@@ -1200,23 +1192,23 @@ registered and the correct context is preserved across jumps.
         (when (looking-at curie-regex)
           (match-string-no-properties 0)))))
 
-	(defun elot--xref-reveal-org-entry (xrefs display-action)
-		"Ensure the Org heading at point is visible after jumping to an xref.
+  (defun elot--xref-reveal-org-entry (xrefs display-action)
+    "Ensure the Org heading at point is visible after jumping to an xref.
 
-	This only applies in buffers where `elot-slurp` is bound, i.e., ELOT
-	buffers."
-		;; Defer unfolding slightly to ensure jump is finished
-		(run-at-time
-		 0 nil
-		 (lambda ()
-			 (let ((buf (current-buffer)))
-				 (when (and (derived-mode-p 'org-mode)
-										(boundp 'elot-slurp))
-					 (save-excursion
-						 (org-fold-show-context)
-						 (org-fold-show-entry)))))))
+        This only applies in buffers where `elot-slurp` is bound, i.e., ELOT
+        buffers."
+    ;; Defer unfolding slightly to ensure jump is finished
+    (run-at-time
+     0 nil
+     (lambda ()
+       (let ((buf (current-buffer)))
+         (when (and (derived-mode-p 'org-mode)
+                    (boundp 'elot-slurp))
+           (save-excursion
+             (org-fold-show-context)
+             (org-fold-show-entry)))))))
 
-	(advice-add 'xref--show-xrefs :after #'elot--xref-reveal-org-entry)
+  (advice-add 'xref--show-xrefs :after #'elot--xref-reveal-org-entry)
 
 #+end_src
 *** Headings in LaTeX export
@@ -1287,11 +1279,11 @@ This function is not in use.
   Remove string decorations.  Newlines are replaced by spaces in the result."
     (save-excursion
       (if (search-forward-regexp tag nil t)
-  	(let* ((element (org-element-at-point))
-  	       (beg (org-element-property :contents-begin element))
-  	       (end (org-element-property :contents-end element))
-  	       (entry-text (buffer-substring-no-properties beg end)))
-  	  (replace-regexp-in-string "\n\s*" " " entry-text)))))
+          (let* ((element (org-element-at-point))
+                 (beg (org-element-property :contents-begin element))
+                 (end (org-element-property :contents-end element))
+                 (entry-text (buffer-substring-no-properties beg end)))
+            (replace-regexp-in-string "\n\s*" " " entry-text)))))
 #+end_src
 *** Exporting with replacements of description list tags
 <<exporting-dlists>>
@@ -1512,12 +1504,12 @@ Insert a document header with =<oh=.
 #+begin_src emacs-lisp :results none
   (tempo-define-template "elot-doc-header"
                          '("# -*- eval: (load-library \"elot-defaults\") -*-" > n
-      	                 "#+title: " (p "Document title: " doctitle) > n
-      	                 "#+subtitle: An OWL ontology" > n
-      	                 "#+author: " (p "Author name: " authname) > n
-      	                 "#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
+                         "#+title: " (p "Document title: " doctitle) > n
+                         "#+subtitle: An OWL ontology" > n
+                         "#+author: " (p "Author name: " authname) > n
+                         "#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
                            "#+call: theme-readtheorg()" n n
-      	                 (progn (load-library "elot-defaults") (message "Loaded ELOT") ""))
+                         (progn (load-library "elot-defaults") (message "Loaded ELOT") ""))
                          "<odh"
                          "ELOT document header"
                          'org-tempo-tags)
@@ -1828,31 +1820,31 @@ avoid byte compiler warnings.
 
 #+name: src-hydra-menu
 #+begin_src emacs-lisp
-	(defhydra elot-hydra (:color blue :hint nil)
-		"
-	 --- ELOT helpdesk --- press F5 to toggle labels ---
+  (defhydra elot-hydra (:color blue :hint nil)
+    "
+   --- ELOT helpdesk --- press F5 to toggle labels ---
 
-	 Output:  [_t_] ontology    [_h_] HTML
+   Output:  [_t_] ontology    [_h_] HTML
 
-	 Insert                    Code block             Document
-	--------------------------------------------------------------
-	 [_r_] resource id        <_obm_ metrics             <_odh_ header
-	<_ocp_ primitive class    <_obs_ sparql select       <_ods_ ontology
-	<_ocd_ defined class      <_obc_ sparql construct
-	 <_op_ property           <_obd_ rdfpuml diagram
-	"
-		("r" (elot-label-lookup))
-		("ocp" (progn (outline-next-heading) (tempo-template-elot-class-iof-primitive)))
-		("ocd" (progn (outline-next-heading) (tempo-template-elot-class-iof-defined)))
-		("op" (progn (outline-next-heading) (tempo-template-elot-property-iof)))
-		("t" (org-babel-tangle))
-		("h" (browse-url-of-file (expand-file-name (org-html-export-to-html))))
-		("obm" (tempo-template-elot-block-robot-metrics))
-		("obs" (tempo-template-elot-block-sparql-select))
-		("obc" (tempo-template-elot-block-sparql-construct))
-		("obd" (tempo-template-elot-block-rdfpuml-diagram))
-		("odh" (tempo-template-elot-doc-header))
-		("ods" (tempo-template-elot-ont-skeleton)))
+   Insert                    Code block             Document
+  --------------------------------------------------------------
+   [_r_] resource id        <_obm_ metrics             <_odh_ header
+  <_ocp_ primitive class    <_obs_ sparql select       <_ods_ ontology
+  <_ocd_ defined class      <_obc_ sparql construct
+   <_op_ property           <_obd_ rdfpuml diagram
+  "
+    ("r" (elot-label-lookup))
+    ("ocp" (progn (outline-next-heading) (tempo-template-elot-class-iof-primitive)))
+    ("ocd" (progn (outline-next-heading) (tempo-template-elot-class-iof-defined)))
+    ("op" (progn (outline-next-heading) (tempo-template-elot-property-iof)))
+    ("t" (org-babel-tangle))
+    ("h" (browse-url-of-file (expand-file-name (org-html-export-to-html))))
+    ("obm" (tempo-template-elot-block-robot-metrics))
+    ("obs" (tempo-template-elot-block-sparql-select))
+    ("obc" (tempo-template-elot-block-sparql-construct))
+    ("obd" (tempo-template-elot-block-rdfpuml-diagram))
+    ("odh" (tempo-template-elot-doc-header))
+    ("ods" (tempo-template-elot-ont-skeleton)))
 #+end_src
 
 #+RESULTS:
@@ -1861,19 +1853,19 @@ avoid byte compiler warnings.
 Keybinding, customizable.
 #+name: src-hydra-keybinding
 #+begin_src emacs-lisp
-	(defcustom elot-key-open-hydra (kbd "S-<f5>")
-		"Keybinding to open the ELOT hydra."
-		:type 'key-sequence
-		:group 'elot)
+  (defcustom elot-key-open-hydra (kbd "S-<f5>")
+    "Keybinding to open the ELOT hydra."
+    :type 'key-sequence
+    :group 'elot)
 
-	(defcustom elot-key-toggle-labels (kbd "<f5>")
-		"Keybinding to toggle label display in ELOT buffers."
-		:type 'key-sequence
-		:group 'elot)
+  (defcustom elot-key-toggle-labels (kbd "<f5>")
+    "Keybinding to toggle label display in ELOT buffers."
+    :type 'key-sequence
+    :group 'elot)
 
-	(defun elot-setup-org-keybindings ()
-		(local-set-key elot-key-open-hydra #'elot-hydra/body)
-		(local-set-key elot-key-toggle-labels #'elot-toggle-label-display))
+  (defun elot-setup-org-keybindings ()
+    (local-set-key elot-key-open-hydra #'elot-hydra/body)
+    (local-set-key elot-key-toggle-labels #'elot-toggle-label-display))
 #+end_src
 
 *** ROBOT
