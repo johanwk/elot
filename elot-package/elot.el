@@ -945,8 +945,41 @@ and accordingly for `object-property', `data-property', and
 ;; src-write-taxonomy ends here
 
 ;; [[file:../elot-defs.org::src-elot-xref][src-elot-xref]]
+(defun elot-xref-backend ()
+	"Return the ELOT xref backend identifier."
+	'elot)
+
+(cl-defmethod xref-backend-identifier-at-point ((_backend (eql elot)))
+	"Return the identifier at point for ELOT buffers.
+
+This returns the symbol under point, which is assumed to be a CURIE-like
+identifier (e.g., `:BFO_0000015'). You may customize this to use a more
+specific parser if needed."
+	(thing-at-point 'symbol t))
+
+(cl-defmethod xref-backend-definitions ((_backend (eql elot)) identifier)
+	"Return definition locations for IDENTIFIER in the current buffer.
+
+This searches from the beginning of the buffer for an Org headline
+containing IDENTIFIER. Results are returned as xref locations pointing
+to the matching line."
+	(save-excursion
+		(goto-char (point-min))
+		(let ((case-fold-search nil)
+					(pattern (concat "^\\*+.*\\b" (regexp-quote identifier) "\\b"))
+					matches)
+			(while (re-search-forward pattern nil t)
+				(push (xref-make identifier
+												 (xref-make-buffer-location
+													(current-buffer)
+													(line-beginning-position)))
+							matches))
+			(nreverse matches))))
+
+(add-hook 'xref-backend-functions #'elot-xref-backend)
+
 (cl-defmethod xref-backend-references ((_backend (eql elot)) identifier)
-  "Return all references to IDENTIFIER in the current ELOT Org-mode buffer.
+	"Return all references to IDENTIFIER in the current ELOT Org-mode buffer.
 
 Each result shows the nearest preceding Org heading and the complete
 description list entry in which the identifier occurs. Multiline items
@@ -1049,6 +1082,24 @@ This ensures `xref-find-definitions` works on CURIEs inside the xref buffer."
       (skip-chars-backward "-_A-Za-z0-9:")
       (when (looking-at curie-regex)
         (match-string-no-properties 0)))))
+
+(defun elot--xref-reveal-org-entry (xrefs display-action)
+	"Ensure the Org heading at point is visible after jumping to an xref.
+
+This only applies in buffers where `elot-slurp` is bound, i.e., ELOT
+buffers."
+	;; Defer unfolding slightly to ensure jump is finished
+	(run-at-time
+	 0 nil
+	 (lambda ()
+		 (let ((buf (current-buffer)))
+			 (when (and (derived-mode-p 'org-mode)
+									(boundp 'elot-slurp))
+				 (save-excursion
+					 (org-fold-show-context)
+					 (org-fold-show-entry)))))))
+
+(advice-add 'xref--show-xrefs :after #'elot--xref-reveal-org-entry)
 ;; src-elot-xref ends here
 
 ;; [[file:../elot-defs.org::src-latex-section-export][src-latex-section-export]]
@@ -1086,11 +1137,11 @@ are passed on to `org-get-heading'."
 Remove string decorations.  Newlines are replaced by spaces in the result."
   (save-excursion
     (if (search-forward-regexp tag nil t)
-	(let* ((element (org-element-at-point))
-	       (beg (org-element-property :contents-begin element))
-	       (end (org-element-property :contents-end element))
-	       (entry-text (buffer-substring-no-properties beg end)))
-	  (replace-regexp-in-string "\n\s*" " " entry-text)))))
+  (let* ((element (org-element-at-point))
+  	     (beg (org-element-property :contents-begin element))
+  	     (end (org-element-property :contents-end element))
+  	     (entry-text (buffer-substring-no-properties beg end)))
+  	(replace-regexp-in-string "\n\s*" " " entry-text)))))
 ;; src-get-description-entry :tangle no ends here
 
 ;; [[file:../elot-defs.org::src-latex-export-replacenames][src-latex-export-replacenames]]
@@ -1224,12 +1275,12 @@ Return output file name."
 ;; [[file:../elot-defs.org::src-tempo-docheader][src-tempo-docheader]]
 (tempo-define-template "elot-doc-header"
                        '("# -*- eval: (load-library \"elot-defaults\") -*-" > n
-    	                 "#+title: " (p "Document title: " doctitle) > n
-    	                 "#+subtitle: An OWL ontology" > n
-    	                 "#+author: " (p "Author name: " authname) > n
-    	                 "#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
+      	               "#+title: " (p "Document title: " doctitle) > n
+      	               "#+subtitle: An OWL ontology" > n
+      	               "#+author: " (p "Author name: " authname) > n
+      	               "#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
                          "#+call: theme-readtheorg()" n n
-    	                 (progn (load-library "elot-defaults") (message "Loaded ELOT") ""))
+      	               (progn (load-library "elot-defaults") (message "Loaded ELOT") ""))
                        "<odh"
                        "ELOT document header"
                        'org-tempo-tags)
