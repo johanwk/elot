@@ -641,6 +641,9 @@ non-nil, return NIL.  Otherwise raise an error."
       (match-string 1 str))
      ;; URN identifier: return as-is if the string is a URN, e.g. <urn:isbn:0943396611>
      ((string-match "^<urn:[^>]+>$" str) str)
+     ;; URN in parentheses
+     ((string-match "(\\(<urn:[^>]+>\\))" str)
+      (match-string 1 str))
      ;; two CURIEs in parentheses (ontology and ontology version)
      ((string-match (format "(\\(%s\\) \\(%s\\))" curie-regex curie-regex) str)
       (format "%s %s" (match-string 1 str) (match-string 2 str)))
@@ -649,7 +652,7 @@ non-nil, return NIL.  Otherwise raise an error."
           nil
         (error "Fail! Heading \"%s\" in %s is not well-formed"
                str
-               (org-entry-get-with-inheritance \"ID\")))))))
+               (org-entry-get-with-inheritance "ID")))))))
 ;; src-heading-to-list ends here
 
 ;; [[file:../elot-defs.org::src-resource-declare][src-resource-declare]]

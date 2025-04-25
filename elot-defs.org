@@ -695,6 +695,9 @@ annotations in a future improved version, from sub-items.
         (match-string 1 str))
        ;; URN identifier: return as-is if the string is a URN, e.g. <urn:isbn:0943396611>
        ((string-match "^<urn:[^>]+>$" str) str)
+       ;; URN in parentheses
+       ((string-match "(\\(<urn:[^>]+>\\))" str)
+        (match-string 1 str))
        ;; two CURIEs in parentheses (ontology and ontology version)
        ((string-match (format "(\\(%s\\) \\(%s\\))" curie-regex curie-regex) str)
         (format "%s %s" (match-string 1 str) (match-string 2 str)))
@@ -703,7 +706,7 @@ annotations in a future improved version, from sub-items.
             nil
           (error "Fail! Heading \"%s\" in %s is not well-formed"
                  str
-                 (org-entry-get-with-inheritance \"ID\")))))))
+                 (org-entry-get-with-inheritance "ID")))))))
 #+end_src
 
 *** Write entity declarations
