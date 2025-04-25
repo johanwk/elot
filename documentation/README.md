@@ -1,13 +1,13 @@
 
 # Table of Contents
 
-1.  [More documentation is needed](#org0681f24)
-2.  [Introductory presentation, 2024](#org912b2b4)
-3.  [Installation](#orgce65bcb)
+1.  [More documentation is needed](#org58f6586)
+2.  [Introductory presentation, 2024](#org50bba09)
+3.  [Installation](#org5fe1027)
 
 
 
-<a id="org0681f24"></a>
+<a id="org58f6586"></a>
 
 # More documentation is needed
 
@@ -23,7 +23,7 @@
     -   integrating templates for generated ontology content
 
 
-<a id="org912b2b4"></a>
+<a id="org50bba09"></a>
 
 # Introductory presentation, 2024
 
@@ -33,7 +33,7 @@ This presentation can be a good starting point for a quick look at main features
 -   [Presentation slides in HTML format](20240525T181908--elot-presented-to-iof-tob__elot_emacs_iof.html) *to view the presentation, download a copy and open in a web browser*.
 
 
-<a id="orgce65bcb"></a>
+<a id="org5fe1027"></a>
 
 # Installation
 
