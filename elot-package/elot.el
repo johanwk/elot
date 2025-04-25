@@ -558,7 +558,7 @@ Expand uri, or return number, or wrap in quotes."
         (; false -- make it an explicit boolean
          (string-match "^false$" str) " \"false\"^^xsd:boolean")
         (; string with datatype -- return unchanged
-         (string-match "^\".*\"[^][^][-_[:alnum:]]*:[-_[:alnum:]]+$" str)
+         (string-match "^\".*\"\\^\\^[-_[:alnum:]]*:[-_[:alnum:]]+$" str)
          (concat "  " str))
         (; not a puri -- normal string, wrap in quotes
          (equal str (elot-unprefix-uri str org-link-abbrev-alist-local))
