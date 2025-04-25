@@ -193,13 +193,37 @@ identifiers using ~regexp-opt~.
     "A regular expression used to match identifiers, for use with label-display.")
 
   (defun elot-update-codelist-fontify-regexp ()
-    "Update `elot-codelist-fontify-regexp' from identifiers using `regexp-opt'."
-    (if (listp elot-slurp)
-        (setq elot-codelist-fontify-regexp
-              (regexp-opt
-               (flatten-tree
-                (mapcar (lambda (row) (car row)) elot-slurp))))
-      (error "List of resources `elot-slurp' is missing, can't make regexp")))
+    "Populate `elot-codelist-fontify-regexp'.
+
+  • First try to build a tight union-of-identifiers regexp with
+    `regexp-opt' and *eagerly* compile it once.
+  • If compilation signals “regular expression too big” (or any other
+    error), fall back to a generic CURIE pattern:
+
+    \"\\\\<\\\\([-a-z_A-Z0-9]*\\\\):\\\\([a-z_A-Z0-9.-]*\\\\)\\\\>\"
+
+  This guarantees that the value stored is always usable during
+  font-lock and export."
+    (let ((fallback "\\<\\([-a-z_A-Z0-9]*\\):\\([a-z_A-Z0-9.-]*\\)\\>"))
+      (condition-case err
+          (progn
+            (unless (listp elot-slurp)
+              (error "List of resources `elot-slurp' is missing"))
+
+            ;; Build the precise regexp …
+            (let* ((ids (flatten-tree (mapcar #'car elot-slurp)))
+                   (precise (regexp-opt ids)))
+
+              ;; … and *force* Emacs to compile it once.  Any size error
+              ;; happens right here.
+              (string-match-p precise "")
+
+              ;; If we got here, it’s safe to use.
+              (setq elot-codelist-fontify-regexp precise)))
+
+        (error
+         (message "elot: %s – using generic CURIE regexp." (error-message-string err))
+         (setq elot-codelist-fontify-regexp fallback)))))
 #+end_src
 ** The font-lock pattern
 #+name: src-fontify-keyword
