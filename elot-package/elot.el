@@ -605,8 +605,17 @@ Note, you can always (goto-char (point-min)) to collect all siblings."
              (org-goto-sibling)))
     (nreverse ret)))
 
-(defun elot-entity-from-header (str)
-  "From header string STR return a CURIE or a full-form URI in angle brackets."
+(defun elot-entity-from-header (str &optional noerror)
+  "Given a heading text STR, return the identifier it declares.
+
+The returned value is either
+  - a CURIE (e.g. \"ex:Apple\"), or
+  - a full URI wrapped in \"<>\" (e.g. \"<http://example.org/Apple>\"), or
+  - a composite string like \"ex:Ont <http://…/0.9>\" for ontology/version
+    pairs.
+
+If the heading contains *no* recognisable identifier and NOERROR is
+non-nil, return NIL.  Otherwise raise an error."
   (let* ((curie-regex "[-_./[:alnum:]]*:[-_/.[:alnum:]]*")
          (full-uri-regex "http[s]?://[-[:alnum:]._~:/?#\\@!$&'()*+,;=%]*"))
     (cond
@@ -636,9 +645,11 @@ Note, you can always (goto-char (point-min)) to collect all siblings."
      ((string-match (format "(\\(%s\\) \\(%s\\))" curie-regex curie-regex) str)
       (format "%s %s" (match-string 1 str) (match-string 2 str)))
      (t
-      (error "Fail! Heading \"%s\" in %s is not well-formed"
-             str
-             (org-entry-get-with-inheritance "ID"))))))
+      (if noerror
+          nil
+        (error "Fail! Heading \"%s\" in %s is not well-formed"
+               str
+               (org-entry-get-with-inheritance \"ID\")))))))
 ;; src-heading-to-list ends here
 
 ;; [[file:../elot-defs.org::src-resource-declare][src-resource-declare]]
@@ -1146,6 +1157,69 @@ buffer exactly like they are in the *xref* buffer."
 		 'help-echo (format "%s:%d" short line))
 		(insert "\n")))
 ;; src-elot-xref ends here
+
+;; [[file:../elot-defs.org::src-stable-links-export][src-stable-links-export]]
+(defun elot--prepare-export-buffer (backend)
+  "Prepare the export clone for Elot:
+
+  - Give each resource-declaring headline a CUSTOM_ID (if missing).
+  - Replace every visible CURIE with an internal link to that ID,
+    except when the CURIE is inside a src/example/fixed-width block."
+  (when (org-export-derived-backend-p backend 'latex)
+    (cl-return-from elot--prepare-export-buffer))
+  ;; ------------------------------------------------------------
+  ;; 0  Reveal and synchronously fontify the whole clone
+  ;; ------------------------------------------------------------
+  (org-fold-show-all)
+  (elot-label-display-setup)
+  (font-lock-fontify-buffer)
+
+  ;; ------------------------------------------------------------
+  ;; 1  Ensure CUSTOM_ID drawers
+  ;; ------------------------------------------------------------
+  (let (pending)                                   ; (marker . id) pairs
+    (org-with-wide-buffer
+     (org-element-map (org-element-parse-buffer 'headline) 'headline
+       (lambda (hl)
+         (let* ((title (org-element-property :raw-value hl))
+                (id    (elot-entity-from-header title t)))
+           (when id
+             (let ((m (copy-marker (org-element-property :begin hl))))
+               (unless (org-entry-get m "CUSTOM_ID")
+                 (push (cons m id) pending)))))))
+     ;; Insert from bottom to top so earlier insertions don’t shift markers
+     (dolist (cell (nreverse pending))
+       (org-with-point-at (car cell)
+         (org-entry-put (car cell) "CUSTOM_ID" (cdr cell)))))
+
+    ;; ------------------------------------------------------------
+    ;; 2  Link-ify CURIEs, skipping literal blocks
+    ;; ------------------------------------------------------------
+    (goto-char (point-min))
+    (while-let ((match (text-property-search-forward 'elot-label-display)))
+      (let* ((label (prop-match-value match))
+             (start (prop-match-beginning match))
+             (end   (prop-match-end match))
+             (container
+              (org-element-lineage
+               (org-element-context)
+               '(src-block example-block fixed-width) t)))
+        ;; If we’re inside a literal block, jump to its end and continue
+        (if container
+            (goto-char (org-element-property :end container))
+          ;; Otherwise build the internal link
+          (let* ((resource (buffer-substring-no-properties start end)) ; ex:Apple
+                 (target   (concat "#" resource))
+                 (link     (if (and (stringp label)
+                                    (not (string= label resource)))
+                               (concat "[[" target "][" label "]]")
+                             (concat "[[" target "][" resource "]]"))))
+            (delete-region start end)
+            (goto-char start)
+            (insert link)))))))
+
+(add-hook 'org-export-before-processing-hook #'elot--prepare-export-buffer)
+;; src-stable-links-export ends here
 
 ;; [[file:../elot-defs.org::src-latex-section-export][src-latex-section-export]]
 (defun elot-ontology-resource-section (level numbered-p)
