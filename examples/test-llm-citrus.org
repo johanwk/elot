@@ -152,6 +152,30 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - rdfs:label :: "Discovery-eple"@no
  - skos:definition :: A popular early-season apple in Norway, known for its bright red color and sweet flavor, perfect for snacking and salads.
  - skos:definition :: "Et populært tidligsesong-eple i Norge, kjent for sin lyse røde farge og søte smak, perfekt for snacks og salater."@no
+
+
+***** test                                                        :nodeclare:
+| id           | super       | rdfs:comment           | rdfs:seeAlso | dcterms:modified^^xsd:date | skos:example@en |
+|--------------+-------------+------------------------+--------------+----------------------------+-----------------|
+| ex:Uncovery  |             | an example entry       |              |                 1955-01-01 | Hello           |
+| ex:Uncovery1 | ex:Uncovery | subproperty number one | ex:Apple     |                            | there           |
+| ex:Uncovery2 | ex:Uncovery | subproperty number two | ex:Orange    |                 1956-01-01 | again           |
+
+****** ex:Uncovery
+- rdfs:comment :: an example entry
+- dcterms:modified :: "1955-01-01"^^xsd:date
+- skos:example :: "Hello"@en
+******* ex:Uncovery1
+- rdfs:comment :: subproperty number one
+- rdfs:seeAlso :: ex:Apple
+- skos:example :: "there"@en
+******* ex:Uncovery2
+- rdfs:comment :: subproperty number two
+- rdfs:seeAlso :: ex:Orange
+- dcterms:modified :: "1956-01-01"^^xsd:date
+- skos:example :: "again"@en
+
+
 *** Citrus fruit (ex:CitrusFruit)
  - rdfs:label :: "Citrus fruit"@en
  - skos:definition :: A fruit from a plant of the genus Citrus.
