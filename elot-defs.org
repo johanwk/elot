@@ -646,7 +646,7 @@ annotations in a future improved version, from sub-items.
                (unless (looking-at "[*]* *COMMENT")
                  (setq ret
                        (if (member "nodeclare" (org-get-tags (point) t)) ; tagged to be skipped, proceed down
-                           (cons (save-excursion
+                           (append (save-excursion
                                            (when (org-goto-first-child)
                                              (elot-org-list-siblings))) ret)
                          (cons (append (list
