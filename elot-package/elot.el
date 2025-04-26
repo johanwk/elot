@@ -592,7 +592,7 @@ Note, you can always (goto-char (point-min)) to collect all siblings."
              (unless (looking-at "[*]* *COMMENT")
                (setq ret
                      (if (member "nodeclare" (org-get-tags (point) t)) ; tagged to be skipped, proceed down
-                         (cons (save-excursion
+                         (append (save-excursion
                                          (when (org-goto-first-child)
                                            (elot-org-list-siblings))) ret)
                        (cons (append (list
@@ -1323,6 +1323,160 @@ conducted."
                  (or (string= item-tag "item-translate-start") (string= item-tag "item-translate-stop")))
       (org-latex-item item c info))))
 ;; src-latex-export-replacenames ends here
+
+;; [[file:../elot-defs.org::src-elot-template][src-elot-template]]
+(defun elot--coerce-literal (header value)
+  "Return VALUE coerced per HEADER decoration.
+
+If HEADER has no decoration the original VALUE is returned
+unchanged (so numbers stay numbers, symbols stay symbols, etc.)."
+  (cond
+   ;; language tag
+   ((string-match "@\\([[:alnum:]-]+\\)\\'" header)
+    (let ((lang (match-string 0 header)))             ; includes leading @
+      (if (or (null value) (and (stringp value) (string= value "")))
+          value                                       ; keep empty cell empty
+        (format "\"%s\"%s" (format "%s" value) lang))))
+
+   ;; datatype
+   ((string-match "\\^\\^\\(.+\\)\\'" header)
+    (let ((dtype (match-string 0 header)))            ; includes leading ^^
+      (if (or (null value) (and (stringp value) (string= value "")))
+          value
+        (format "\"%s\"%s" (format "%s" value) dtype))))
+
+   (t value)))                                        ; no decoration → untouched
+
+(defun elot--strip-decoration (header)
+  "Return HEADER without trailing @lang or ^^dtype part."
+  (cond ((string-match "@[[:alnum:]-]+\\'" header)
+         (substring header 0 (match-beginning 0)))
+        ((string-match "\\^\\^.+\\'" header)
+         (substring header 0 (match-beginning 0)))
+        (t header)))
+
+(defun elot--table->forest (mini-table)
+  "Convert MINI-TABLE (Org-babel list) to a forest of plists.
+
+- Header suffixes “@lang” / “^^datatype” decorate the cell value
+  but are **removed** from the stored key.
+- Warns if a row’s SUPER value never appears as an ID.
+- Skips `hline` markers that `org-table-to-lisp` inserts."
+  (let* ((headers (car mini-table))
+         (rows    (cdr mini-table))
+         (id-col  (cl-position "id"    headers :test #'string=))
+         (sup-col (cl-position "super" headers :test #'string=))
+         (id->obj (make-hash-table :test 'equal))
+         triples)
+
+    ;; ── pass 1: build node plists and register them ───────────────
+    (dolist (row rows)
+      (when (listp row)                         ; skip `hline`
+        (let* ((id  (nth id-col  row))
+               (sup (nth sup-col row))
+               (pl  (append
+                     ;; copy columns: stripped key / decorated value
+                     (apply #'append
+                            (cl-mapcar (lambda (hdr val)
+                                         (list (elot--strip-decoration hdr)
+                                               (elot--coerce-literal hdr val)))
+                                       headers row))
+                     (list :subs nil)))
+               )
+          (push (list id sup pl) triples)
+          (puthash id pl id->obj))))
+
+    (setq triples (nreverse triples))
+
+    ;; ── pass 2: link children to parents, warn on missing parents ─
+    (dolist (tr triples)
+      (cl-destructuring-bind (id sup child) tr
+        (unless (string= sup "")
+          (let ((parent (gethash sup id->obj)))
+            (if parent
+                (setf (plist-get parent :subs)
+                      (append (plist-get parent :subs) (list child)))
+              (message "elot--table->forest: WARNING – parent id \"%s\" referenced by \"%s\" not found"
+                       sup id)
+              (setf (nth 1 tr) ""))))))         ; promote to root
+
+    ;; ── pass 3: collect root nodes in original order ──────────────
+    (let (forest)
+      (dolist (tr triples)
+        (cl-destructuring-bind (_id sup pl) tr
+          (when (string= sup "") (push pl forest))))
+      (nreverse forest))))
+
+(defun elot--prop (plist key)
+  "Return KEY’s value in PLIST, comparing keys with `string=`."
+  (cl-loop for (k v) on plist by #'cddr
+           when (and (stringp k) (string= k key))
+           return v))
+
+(defun elot-forest->org (forest &optional level)
+  "Render FOREST (from `elot--table->forest`) as Org headlines.
+
+LEVEL is the asterisk depth for root nodes (default 4)."
+  (setq level (or level 4))
+  (let ((lines '()))
+    (cl-labels
+        ((emit (node depth)
+           (let* ((stars   (make-string (+ level depth) ?*))
+                  (id      (elot--prop node "id"))
+                  (label   (elot--prop node "rdfs:label"))
+                  (name    (if (and label (not (string= label "")))
+                               (format "%s (%s)" label id)
+                             id)))
+             ;; headline
+             (push (concat stars " " name) lines)
+             ;; description list (skip empty values and certain keys)
+             (cl-loop for (k v) on node by #'cddr
+                      when (and (stringp k)
+                                (not (member k '("id" "super")))
+                                v
+                                (not (string= v "")))
+                      do (push (format "- %s :: %s" k v) lines))
+             ;; children
+             (dolist (child (plist-get node :subs))
+               (emit child (1+ depth))))))
+      (dolist (root forest) (emit root 0)))
+    (mapconcat #'identity (nreverse lines) "\n")))
+
+(defun elot-headings-from-table ()
+  "Convert the Org table at point to subordinate Elot headings."
+  (interactive)
+  (unless (org-at-table-p)
+    (user-error "Point is not inside an Org table"))
+
+  ;; 1. read the table as lisp
+  (let* ((mini-table (org-table-to-lisp))
+         (headers     (car mini-table)))
+    ;; 2. must contain \"id\"
+    (unless (member "id" headers)
+      (user-error "Table lacks required \"id\" column – cannot create headings"))
+
+    ;; 3. outline depth = one deeper than containing headline
+    (let ((target-level (save-excursion
+                          (org-back-to-heading t)
+                          (1+ (org-outline-level)))))
+
+      ;; 4. position after table & any TBLFM lines
+      (let ((insert-pos
+             (save-excursion
+               (goto-char (org-table-end))          ; end of last | row
+               ;; skip following #+tblfm lines
+               (while (and (not (eobp))
+                           (progn (beginning-of-line)
+                                  (looking-at "^[ \t]*#\\+tblfm:")))
+                 (forward-line 1))
+               (point))))
+
+        ;; 5. build forest → org text and insert
+        (let* ((forest   (elot--table->forest mini-table))
+               (org-text (elot-forest->org forest target-level)))
+          (goto-char insert-pos)
+          (insert "\n" org-text "\n"))))))
+;; src-elot-template ends here
 
 ;; [[file:../elot-defs.org::src-babel-passthrough][src-babel-passthrough]]
 (defun elot-org-babel-execute-passthrough (body params)
