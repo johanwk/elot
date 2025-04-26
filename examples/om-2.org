@@ -2,7 +2,7 @@
 #+title: Ontologie van Maateenheden (OM)
 #+subtitle: An OWL ontology
 #+author: 
-#+date: WIP (version of 2025-04-26 01:22)
+#+date: WIP (version of 2025-04-26 20:26)
 #+call: theme-readtheorg()
 
 # This org-mode file was created using elot-exporter version 0.7-SNAPSHOT.
@@ -66,22 +66,22 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 #+name: prefix-table
 #+attr_latex: :align lp{.8\textwidth} :font small
 #+caption: OWL ontology prefixes
-| prefix   | uri |
-|----------+-----|
-| : | http://www.ontology-of-units-of-measure.org/resource/om-2/ |
-| bibo: | http://purl.org/ontology/bibo/ |
-| dc: | http://purl.org/dc/elements/1.1/ |
-| dct: | http://purl.org/dc/terms/ |
-| foaf: | http://xmlns.com/foaf/0.1/ |
-| om: | http://www.ontology-of-units-of-measure.org/resource/om-2/ |
-| ombibo: | http://www.wurvoc.org/bibliography/om-2/ |
-| owl: | http://www.w3.org/2002/07/owl# |
-| rdf: | http://www.w3.org/1999/02/22-rdf-syntax-ns# |
-| rdfs: | http://www.w3.org/2000/01/rdf-schema# |
-| skos: | http://www.w3.org/2004/02/skos/core# |
-| wv: | http://www.wurvoc.org/vocabularies/WV/ |
-| xml: | http://www.w3.org/XML/1998/namespace |
-| xsd: | http://www.w3.org/2001/XMLSchema# |
+| prefix  | uri                                                        |
+|---------+------------------------------------------------------------|
+| :       | http://www.ontology-of-units-of-measure.org/resource/om-2/ |
+| bibo:   | http://purl.org/ontology/bibo/                             |
+| dc:     | http://purl.org/dc/elements/1.1/                           |
+| dct:    | http://purl.org/dc/terms/                                  |
+| foaf:   | http://xmlns.com/foaf/0.1/                                 |
+| om:     | http://www.ontology-of-units-of-measure.org/resource/om-2/ |
+| ombibo: | http://www.wurvoc.org/bibliography/om-2/                   |
+| owl:    | http://www.w3.org/2002/07/owl#                             |
+| rdf:    | http://www.w3.org/1999/02/22-rdf-syntax-ns#                |
+| rdfs:   | http://www.w3.org/2000/01/rdf-schema#                      |
+| skos:   | http://www.w3.org/2004/02/skos/core#                       |
+| wv:     | http://www.wurvoc.org/vocabularies/WV/                     |
+| xml:    | http://www.w3.org/XML/1998/namespace                       |
+| xsd:    | http://www.w3.org/2001/XMLSchema#                          |
 
 *** Source blocks for prefixes                                     :noexport:
 :PROPERTIES:
