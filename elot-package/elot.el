@@ -1846,6 +1846,50 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  'org-tempo-tags)
 ;; src-tempo-codeblock ends here
 
+;; [[file:../elot-defs.org::src-table-of-resources][src-table-of-resources]]
+(tempo-define-template "elot-table-of-resources"
+ '(
+   (org-open-line 1)
+   "#+name: tbl:" (p "Name of resource table: " tblname) > n
+   "| id  | super | rdfs:label |" > n
+   "|-----+-------+------------|" > n
+   "| " (elot-default-prefix) ": | " (elot-default-prefix) ":   |            |" > n
+   (progn (previous-line) (forward-word)
+          (message "Insert outline with M-x elot-headings-from-table") ""))
+ "<otr"
+ "ELOT table of resources"
+ 'org-tempo-tags)
+;; src-table-of-resources ends here
+
+;; [[file:../elot-defs.org::src-easy-menu][src-easy-menu]]
+(easy-menu-define elot-menu org-mode-map
+  "ELOT Ontology Authoring Menu"
+  '("ELOT"
+    ["Export to OWL" org-babel-tangle t]
+    ["Export to HTML" (lambda () (interactive) (browse-url-of-file (expand-file-name (org-html-export-to-html)))) t]
+    ["Import OWL ontology" elot-open-owl t]
+    "---"
+    ["Insert Existing Resource ID" elot-label-lookup t]
+    ["Insert Primitive Class template" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-class-iof-primitive)) t]
+    ["Insert Defined Class template" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-class-iof-defined)) t]
+    ["Insert Property template" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-property-iof)) t]
+    "---"
+    ["Toggle Label-Display" elot-toggle-label-display t]
+    ["Jump to Resource Definition" xref-find-definitions t]
+    ["Find References to Resource" xref-find-references t]
+    ["Quick-Describe Resource" elot-describe-curie-at-point t]
+    ["Refresh List of Labels" elot-label-display-setup t]
+    "---"
+    ["Insert Table of Resources" tempo-template-elot-table-of-resources t]
+    ["Generate Outline from Table of Resources " elot-headings-from-table t]
+    "---"
+    ["Insert SPARQL Select Block" tempo-template-elot-block-sparql-select t]
+    ["Insert SPARQL Construct Block" tempo-template-elot-block-sparql-construct t]
+    ["Insert RDFPUML Diagram Block" tempo-template-elot-block-rdfpuml-diagram t]
+    "---"
+    ))
+;; src-easy-menu ends here
+
 ;; [[file:../elot-defs.org::src-tempo-fwd-declare][src-tempo-fwd-declare]]
 (declare-function tempo-template-elot-block-robot-metrics "tempo")
 (declare-function tempo-template-elot-block-sparql-select "tempo")
@@ -1866,7 +1910,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 --------------------------------------------------------------
  [_r_] resource id        <_obm_ metrics             <_odh_ header
 <_ocp_ primitive class    <_obs_ sparql select       <_ods_ ontology
-<_ocd_ defined class      <_obc_ sparql construct
+<_ocd_ defined class      <_obc_ sparql construct    <_otr_ resource table
  <_op_ property           <_obd_ rdfpuml diagram
 "
   ("r" (elot-label-lookup))
@@ -1880,7 +1924,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
   ("obc" (tempo-template-elot-block-sparql-construct))
   ("obd" (tempo-template-elot-block-rdfpuml-diagram))
   ("odh" (tempo-template-elot-doc-header))
-  ("ods" (tempo-template-elot-ont-skeleton)))
+  ("ods" (tempo-template-elot-ont-skeleton))
+  ("otr" (tempo-template-elot-table-of-resources)))
 ;; src-hydra-menu ends here
 
 ;; [[file:../elot-defs.org::src-hydra-keybinding][src-hydra-keybinding]]
