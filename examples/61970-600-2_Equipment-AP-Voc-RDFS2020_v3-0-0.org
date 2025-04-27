@@ -2,8 +2,13 @@
 #+title: Core Equipment Vocabulary
 #+subtitle: An OWL ontology
 #+author: 
-#+date: WIP (version of 2025-03-24 14:45)
+#+date: WIP (version of 2025-04-27 22:47)
 #+call: theme-readtheorg()
+
+# This org-mode file was created using elot-exporter version 0.7-SNAPSHOT.
+# Source ontology: [Local File] /var/folders/56/rly_hr9x0dg65l9lmsrhyv_c0000gn/T/elot-ontology-v8Xecf.owl
+
+# Change the output file location by editing the :header-args:omn: :tangle property below.
 
 * Ontology
 :PROPERTIES:
@@ -11,7 +16,7 @@
 :ELOT-context-type: ontology
 :ELOT-context-localname: Ontology
 :ELOT-default-prefix: Ontology
-:header-args:omn: :tangle ./61970-600-2_Equipment-AP-Voc-RDFS2020_v3-0-0.omn :noweb yes
+:header-args:omn: :tangle ./Ontology.omn :noweb yes
 :header-args:emacs-lisp: :tangle no :exports results
 :header-args: :padline yes
 :END:
@@ -28,17 +33,9 @@
 ## Ontology declaration
 <<resource-declarations(hierarchy="Ontology-ontology-declaration", owl-type="Ontology", owl-relation="")>>
 
-## Data type declarations
-Datatype: rdf:langString
-Datatype: xsd:boolean
-Datatype: xsd:date
-Datatype: xsd:dateTime
-Datatype: xsd:decimal
-Datatype: xsd:double
-Datatype: xsd:float
-Datatype: xsd:gMonthDay
-Datatype: xsd:integer
-Datatype: xsd:string
+## Datatype declarations
+<<resource-declarations(hierarchy="Ontology-datatypes", owl-type="Datatype")>>
+
 ## Class declarations
 <<resource-declarations(hierarchy="Ontology-class-hierarchy", owl-type="Class")>>
 
@@ -59,6 +56,7 @@ Datatype: xsd:string
 <<resource-taxonomy(hierarchy="Ontology-object-property-hierarchy", owl-type="ObjectProperty", owl-relation="SubPropertyOf")>>
 <<resource-taxonomy(hierarchy="Ontology-data-property-hierarchy", owl-type="DataProperty", owl-relation="SubPropertyOf")>>
 <<resource-taxonomy(hierarchy="Ontology-annotation-property-hierarchy", owl-type="AnnotationProperty", owl-relation="SubPropertyOf")>>
+<<resource-taxonomy(hierarchy="Ontology-datatypes", owl-type="Datatype", owl-relation="")>>
 #+end_src
 :END:
 
@@ -135,6 +133,24 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - dcat:keyword :: EQ
  - dcat:landingPage :: <https://www.entsoe.eu/digital/cim/cim-for-grid-models-exchange/>
  - dcat:theme :: "vocabulary"@en
+
+** Datatypes
+:PROPERTIES:
+:ID:       Ontology-datatypes
+:custom_id: Ontology-datatypes
+:resourcedefs: yes
+:END:
+
+*** xsd:boolean
+*** xsd:date
+*** xsd:dateTime
+*** xsd:decimal
+*** xsd:double
+*** xsd:float
+*** xsd:gMonthDay
+*** xsd:integer
+*** rdf:langString
+*** xsd:string
 
 ** Classes
 :PROPERTIES:
@@ -319,22 +335,22 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:concrete
  - rdfs:comment :: "Models the characteristic response of the load demand due to changes in system conditions such as voltage and frequency. It is not related to demand response.
-      If LoadResponseCharacteristic.exponentModel is True, the exponential voltage or frequency dependent models are specified and used as to calculate active and reactive power components of the load model.
-      The equations to calculate active and reactive power components of the load model are internal to the power flow calculation, hence they use different quantities depending on the use case of the data exchange. 
-      The equations for exponential voltage dependent load model injected power are: 
-      pInjection= Pnominal* (Voltage/cim:BaseVoltage.nominalVoltage) ** cim:LoadResponseCharacteristic.pVoltageExponent
-      qInjection= Qnominal* (Voltage/cim:BaseVoltage.nominalVoltage) ** cim:LoadResponseCharacteristic.qVoltageExponent
-      Where: 
-      1) * means \"multiply\" and ** is \"raised to power of\";
-      2) Pnominal and Qnominal represent the active power and reactive power at nominal voltage as any load described by the voltage exponential model shall be given at nominal voltage.  This means that EnergyConsumer.p and EnergyConsumer.q  are at nominal voltage.
-      3) After power flow is solved: 
-      -pInjection and qInjection correspond to SvPowerflow.p and SvPowerflow.q respectively.  
-      - Voltage corresponds to SvVoltage.v at the TopologicalNode where the load is connected."@en
+          If LoadResponseCharacteristic.exponentModel is True, the exponential voltage or frequency dependent models are specified and used as to calculate active and reactive power components of the load model.
+          The equations to calculate active and reactive power components of the load model are internal to the power flow calculation, hence they use different quantities depending on the use case of the data exchange. 
+          The equations for exponential voltage dependent load model injected power are: 
+          pInjection= Pnominal* (Voltage/cim:BaseVoltage.nominalVoltage) ** cim:LoadResponseCharacteristic.pVoltageExponent
+          qInjection= Qnominal* (Voltage/cim:BaseVoltage.nominalVoltage) ** cim:LoadResponseCharacteristic.qVoltageExponent
+          Where: 
+          1) * means \"multiply\" and ** is \"raised to power of\";
+          2) Pnominal and Qnominal represent the active power and reactive power at nominal voltage as any load described by the voltage exponential model shall be given at nominal voltage.  This means that EnergyConsumer.p and EnergyConsumer.q  are at nominal voltage.
+          3) After power flow is solved: 
+          -pInjection and qInjection correspond to SvPowerflow.p and SvPowerflow.q respectively.  
+          - Voltage corresponds to SvVoltage.v at the TopologicalNode where the load is connected."@en
 **** OperationalLimit (cim:OperationalLimit)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - rdfs:comment :: "A value and normal value associated with a specific kind of limit.
-      The sub class value and normalValue attributes vary inversely to the associated OperationalLimitType.acceptableDuration (acceptableDuration for short).  
-      If a particular piece of equipment has multiple operational limits of the same kind (apparent power, current, etc.), the limit with the greatest acceptableDuration shall have the smallest limit value and the limit with the smallest acceptableDuration shall have the largest limit value.  Note: A large current can only be allowed to flow through a piece of equipment for a short duration without causing damage, but a lesser current can be allowed to flow for a longer duration."@en
+          The sub class value and normalValue attributes vary inversely to the associated OperationalLimitType.acceptableDuration (acceptableDuration for short).  
+          If a particular piece of equipment has multiple operational limits of the same kind (apparent power, current, etc.), the limit with the greatest acceptableDuration shall have the smallest limit value and the limit with the smallest acceptableDuration shall have the largest limit value.  Note: A large current can only be allowed to flow through a piece of equipment for a short duration without causing damage, but a lesser current can be allowed to flow for a longer duration."@en
 ***** ActivePowerLimit (cim:ActivePowerLimit)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:concrete
@@ -351,7 +367,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:concrete
  - rdfs:comment :: "Operational limit applied to voltage.
-      The use of operational VoltageLimit is preferred instead of limits defined at VoltageLevel. The operational VoltageLimits are used, if present."@en
+          The use of operational VoltageLimit is preferred instead of limits defined at VoltageLevel. The operational VoltageLimits are used, if present."@en
 **** OperationalLimitSet (cim:OperationalLimitSet)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:concrete
@@ -369,8 +385,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - rdfs:comment :: "A power system resource (PSR) can be an item of equipment such as a switch, an equipment container containing many individual items of equipment such as a substation, or an organisational entity such as sub-control area. Power system resources can have measurements associated."@en
 ***** BoundaryPoint (eu:BoundaryPoint)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
- - cims:stereotype :: uml:concrete
  - cims:stereotype :: European
+ - cims:stereotype :: uml:concrete
  - rdfs:comment :: "Designates a connection point at which one or more model authority sets shall connect to. The location of the connection point as well as other properties are agreed between organisations responsible for the interconnection, hence all attributes of the class represent this agreement.  It is primarily used in a boundary model authority set which can contain one or many BoundaryPoint-s among other Equipment-s and their connections."@en
 ***** CAESPlant (cim:CAESPlant)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
@@ -425,17 +441,17 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:concrete
  - rdfs:comment :: "A control area is a grouping of generating units and/or loads and a cutset of tie lines (as terminals) which may be used for a variety of purposes including automatic generation control, power flow solution area interchange control specification, and input to load forecasting. All generation and load within the area defined by the terminals on the border are considered in the area interchange control. Note that any number of overlapping control area specifications can be superimposed on the physical model. The following general principles apply to ControlArea:
-      1.  The control area orientation for net interchange is positive for an import, negative for an export.
-      2.  The control area net interchange is determined by summing flows in Terminals. The Terminals are identified by creating a set of TieFlow objects associated with a ControlArea object. Each TieFlow object identifies one Terminal.
-      3.  In a single network model, a tie between two control areas must be modelled in both control area specifications, such that the two representations of the tie flow sum to zero.
-      4.  The normal orientation of Terminal flow is positive for flow into the conducting equipment that owns the Terminal. (i.e. flow from a bus into a device is positive.) However, the orientation of each flow in the control area specification must align with the control area convention, i.e. import is positive. If the orientation of the Terminal flow referenced by a TieFlow is positive into the control area, then this is confirmed by setting TieFlow.positiveFlowIn flag TRUE. If not, the orientation must be reversed by setting the TieFlow.positiveFlowIn flag FALSE."@en
+          1.  The control area orientation for net interchange is positive for an import, negative for an export.
+          2.  The control area net interchange is determined by summing flows in Terminals. The Terminals are identified by creating a set of TieFlow objects associated with a ControlArea object. Each TieFlow object identifies one Terminal.
+          3.  In a single network model, a tie between two control areas must be modelled in both control area specifications, such that the two representations of the tie flow sum to zero.
+          4.  The normal orientation of Terminal flow is positive for flow into the conducting equipment that owns the Terminal. (i.e. flow from a bus into a device is positive.) However, the orientation of each flow in the control area specification must align with the control area convention, i.e. import is positive. If the orientation of the Terminal flow referenced by a TieFlow is positive into the control area, then this is confirmed by setting TieFlow.positiveFlowIn flag TRUE. If not, the orientation must be reversed by setting the TieFlow.positiveFlowIn flag FALSE."@en
 ***** Equipment (cim:Equipment)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - rdfs:comment :: "The parts of a power system that are physical devices, electronic or mechanical."@en
 ****** AuxiliaryEquipment (cim:AuxiliaryEquipment)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - rdfs:comment :: "AuxiliaryEquipment describe equipment that is not performing any primary functions but support for the equipment performing the primary function.
-      AuxiliaryEquipment is attached to primary equipment via an association with Terminal."@en
+          AuxiliaryEquipment is attached to primary equipment via an association with Terminal."@en
 ******* FaultIndicator (cim:FaultIndicator)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:concrete
@@ -473,10 +489,10 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:concrete
  - rdfs:comment :: "DC side of the current source converter (CSC).
-      The firing angle controls the dc voltage at the converter, both for rectifier and inverter. The difference between the dc voltages of the rectifier and inverter determines the dc current. The extinction angle is used to limit the dc voltage at the inverter, if needed, and is not used in active power control. The firing angle, transformer tap position and number of connected filters are the primary means to control a current source dc line. Higher level controls are built on top, e.g. dc voltage, dc current and active power. From a steady state perspective it is sufficient to specify the wanted active power transfer (ACDCConverter.targetPpcc) and the control functions will set the dc voltage, dc current, firing angle, transformer tap position and number of connected filters to meet this. Therefore attributes targetAlpha and targetGamma are not applicable in this case.
-      The reactive power consumed by the converter is a function of the firing angle, transformer tap position and number of connected filter, which can be approximated with half of the active power. The losses is a function of the dc voltage and dc current.
-      The attributes minAlpha and maxAlpha define the range of firing angles for rectifier operation between which no discrete tap changer action takes place. The range is typically 10-18 degrees.
-      The attributes minGamma and maxGamma define the range of extinction angles for inverter operation between which no discrete tap changer action takes place. The range is typically 17-20 degrees."@en
+          The firing angle controls the dc voltage at the converter, both for rectifier and inverter. The difference between the dc voltages of the rectifier and inverter determines the dc current. The extinction angle is used to limit the dc voltage at the inverter, if needed, and is not used in active power control. The firing angle, transformer tap position and number of connected filters are the primary means to control a current source dc line. Higher level controls are built on top, e.g. dc voltage, dc current and active power. From a steady state perspective it is sufficient to specify the wanted active power transfer (ACDCConverter.targetPpcc) and the control functions will set the dc voltage, dc current, firing angle, transformer tap position and number of connected filters to meet this. Therefore attributes targetAlpha and targetGamma are not applicable in this case.
+          The reactive power consumed by the converter is a function of the firing angle, transformer tap position and number of connected filter, which can be approximated with half of the active power. The losses is a function of the dc voltage and dc current.
+          The attributes minAlpha and maxAlpha define the range of firing angles for rectifier operation between which no discrete tap changer action takes place. The range is typically 10-18 degrees.
+          The attributes minGamma and maxGamma define the range of extinction angles for inverter operation between which no discrete tap changer action takes place. The range is typically 17-20 degrees."@en
 ******** VsConverter (cim:VsConverter)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:concrete
@@ -485,7 +501,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:concrete
  - rdfs:comment :: "A Clamp is a galvanic connection at a line segment where other equipment is connected. A Clamp does not cut the line segment.
-      A Clamp is ConductingEquipment and has one Terminal with an associated ConnectivityNode. Any other ConductingEquipment can be connected to the Clamp ConnectivityNode."@en
+          A Clamp is ConductingEquipment and has one Terminal with an associated ConnectivityNode. Any other ConductingEquipment can be connected to the Clamp ConnectivityNode."@en
 ******* Conductor (cim:Conductor)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - rdfs:comment :: "Combination of conducting material with consistent electrical characteristics, building a single electrical system, used to carry current between points in the power system."@en
@@ -493,8 +509,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:concrete
  - rdfs:comment :: "A wire or combination of wires, with consistent electrical characteristics, building a single electrical system, used to carry alternating current between points in the power system.
-      For symmetrical, transposed three phase lines, it is sufficient to use attributes of the line segment, which describe impedances and admittances for the entire length of the segment.  Additionally impedances can be computed by using length and associated per length impedances.
-      The BaseVoltage at the two ends of ACLineSegments in a Line shall have the same BaseVoltage.nominalVoltage. However, boundary lines may have slightly different BaseVoltage.nominalVoltages and variation is allowed. Larger voltage difference in general requires use of an equivalent branch."@en
+          For symmetrical, transposed three phase lines, it is sufficient to use attributes of the line segment, which describe impedances and admittances for the entire length of the segment.  Additionally impedances can be computed by using length and associated per length impedances.
+          The BaseVoltage at the two ends of ACLineSegments in a Line shall have the same BaseVoltage.nominalVoltage. However, boundary lines may have slightly different BaseVoltage.nominalVoltages and variation is allowed. Larger voltage difference in general requires use of an equivalent branch."@en
 ******* Connector (cim:Connector)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - rdfs:comment :: "A conductor, or group of conductors, with negligible impedance, that serve to connect other conducting equipment within a single substation and are modelled with a single logical terminal."@en
@@ -502,7 +518,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:concrete
  - rdfs:comment :: "A conductor, or group of conductors, with negligible impedance, that serve to connect other conducting equipment within a single substation.
-      Voltage measurements are typically obtained from voltage transformers that are connected to busbar sections. A bus bar section may have many physical terminals but for analysis is modelled with exactly one logical terminal."@en
+          Voltage measurements are typically obtained from voltage transformers that are connected to busbar sections. A bus bar section may have many physical terminals but for analysis is modelled with exactly one logical terminal."@en
 ******** Junction (cim:Junction)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:concrete
@@ -525,7 +541,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:concrete
  - rdfs:comment :: "Generic user of energy - a  point of consumption on the power system model.
-      EnergyConsumer.pfixed, .qfixed, .pfixedPct and .qfixedPct have meaning only if there is no LoadResponseCharacteristic associated with EnergyConsumer or if LoadResponseCharacteristic.exponentModel is set to False."@en
+          EnergyConsumer.pfixed, .qfixed, .pfixedPct and .qfixedPct have meaning only if there is no LoadResponseCharacteristic associated with EnergyConsumer or if LoadResponseCharacteristic.exponentModel is set to False."@en
 ********* ConformLoad (cim:ConformLoad)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:concrete
@@ -579,8 +595,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:concrete
  - rdfs:comment :: "A facility for providing variable and controllable shunt reactive power. The SVC typically consists of a stepdown transformer, filter, thyristor-controlled reactor, and thyristor-switched capacitor arms.
-      
-      The SVC may operate in fixed MVar output mode or in voltage control mode. When in voltage control mode, the output of the SVC will be proportional to the deviation of voltage at the controlled bus from the voltage setpoint.  The SVC characteristic slope defines the proportion.  If the voltage at the controlled bus is equal to the voltage setpoint, the SVC MVar output is zero."@en
+          
+          The SVC may operate in fixed MVar output mode or in voltage control mode. When in voltage control mode, the output of the SVC will be proportional to the deviation of voltage at the controlled bus from the voltage setpoint.  The SVC characteristic slope defines the proportion.  If the voltage at the controlled bus is equal to the voltage setpoint, the SVC MVar output is zero."@en
 ******* EquivalentEquipment (cim:EquivalentEquipment)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - rdfs:comment :: "The class represents equivalent objects that are the result of a network reduction. The class is the base for equivalent objects of different types."@en
@@ -604,9 +620,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:concrete
  - rdfs:comment :: "An electrical device consisting of  two or more coupled windings, with or without a magnetic core, for introducing mutual coupling between electric circuits. Transformers can be used to control voltage and phase shift (active power flow).
-      A power transformer may be composed of separate transformer tanks that need not be identical.
-      A power transformer can be modelled with or without tanks and is intended for use in both balanced and unbalanced representations.   A power transformer typically has two terminals, but may have one (grounding), three or more terminals.
-      The inherited association ConductingEquipment.BaseVoltage should not be used.  The association from TransformerEnd to BaseVoltage should be used instead."@en
+          A power transformer may be composed of separate transformer tanks that need not be identical.
+          A power transformer can be modelled with or without tanks and is intended for use in both balanced and unbalanced representations.   A power transformer typically has two terminals, but may have one (grounding), three or more terminals.
+          The inherited association ConductingEquipment.BaseVoltage should not be used.  The association from TransformerEnd to BaseVoltage should be used instead."@en
 ******* SeriesCompensator (cim:SeriesCompensator)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:concrete
@@ -619,8 +635,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:concrete
  - rdfs:comment :: "A cut separates a line segment into two parts. The cut appears as a switch inserted between these two parts and connects them together. As the cut is normally open there is no galvanic connection between the two line segment parts. But it is possible to close the cut to get galvanic connection.
-      The cut terminals are oriented towards the line segment terminals with the same sequence number. Hence the cut terminal with sequence number equal to 1 is oriented to the line segment's terminal with sequence number equal to 1.
-      The cut terminals also act as connection points for jumpers and other equipment, e.g. a mobile generator. To enable this, connectivity nodes are placed at the cut terminals. Once the connectivity nodes are in place any conducting equipment can be connected at them."@en
+          The cut terminals are oriented towards the line segment terminals with the same sequence number. Hence the cut terminal with sequence number equal to 1 is oriented to the line segment's terminal with sequence number equal to 1.
+          The cut terminals also act as connection points for jumpers and other equipment, e.g. a mobile generator. To enable this, connectivity nodes are placed at the cut terminals. Once the connectivity nodes are in place any conducting equipment can be connected at them."@en
 ******** Disconnector (cim:Disconnector)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:concrete
@@ -742,13 +758,13 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:concrete
  - rdfs:comment :: "Specifies a set of equipment that works together to control a power system quantity such as voltage or flow.
-      Remote bus voltage control is possible by specifying the controlled terminal located at some place remote from the controlling equipment.
-      The specified terminal shall be associated with the connectivity node of the controlled point.  The most specific subtype of RegulatingControl shall be used in case such equipment participate in the control, e.g. TapChangerControl for tap changers.
-      For flow control, load sign convention is used, i.e. positive sign means flow out from a TopologicalNode (bus) into the conducting equipment.
-      The attribute minAllowedTargetValue and maxAllowedTargetValue are required in the following cases:
-      - For a power generating module operated in power factor control mode to specify maximum and minimum power factor values;
-      - Whenever it is necessary to have an off center target voltage for the tap changer regulator. For instance, due to long cables to off shore wind farms and the need to have a simpler setup at the off shore transformer platform, the voltage is controlled from the land at the connection point for the off shore wind farm. Since there usually is a voltage rise along the cable, there is typical and overvoltage of up 3-4 kV compared to the on shore station. Thus in normal operation the tap changer on the on shore station is operated with a target set point, which is in the lower parts of the dead band.
-      The attributes minAllowedTargetValue and maxAllowedTargetValue are not related to the attribute targetDeadband and thus they are not treated as an alternative of the targetDeadband. They are needed due to limitations in the local substation controller. The attribute targetDeadband is used to prevent the power flow from move the tap position in circles (hunting) that is to be used regardless of the attributes minAllowedTargetValue and maxAllowedTargetValue."@en
+          Remote bus voltage control is possible by specifying the controlled terminal located at some place remote from the controlling equipment.
+          The specified terminal shall be associated with the connectivity node of the controlled point.  The most specific subtype of RegulatingControl shall be used in case such equipment participate in the control, e.g. TapChangerControl for tap changers.
+          For flow control, load sign convention is used, i.e. positive sign means flow out from a TopologicalNode (bus) into the conducting equipment.
+          The attribute minAllowedTargetValue and maxAllowedTargetValue are required in the following cases:
+          - For a power generating module operated in power factor control mode to specify maximum and minimum power factor values;
+          - Whenever it is necessary to have an off center target voltage for the tap changer regulator. For instance, due to long cables to off shore wind farms and the need to have a simpler setup at the off shore transformer platform, the voltage is controlled from the land at the connection point for the off shore wind farm. Since there usually is a voltage rise along the cable, there is typical and overvoltage of up 3-4 kV compared to the on shore station. Thus in normal operation the tap changer on the on shore station is operated with a target set point, which is in the lower parts of the dead band.
+          The attributes minAllowedTargetValue and maxAllowedTargetValue are not related to the attribute targetDeadband and thus they are not treated as an alternative of the targetDeadband. They are needed due to limitations in the local substation controller. The attribute targetDeadband is used to prevent the power flow from move the tap position in circles (hunting) that is to be used regardless of the attributes minAllowedTargetValue and maxAllowedTargetValue."@en
 ****** TapChangerControl (cim:TapChangerControl)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:concrete
@@ -768,8 +784,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:concrete
  - rdfs:comment :: "Describes a tap changer with a linear relation between the tap step and the phase angle difference across the transformer. This is a mathematical model that is an approximation of a real phase tap changer.
-      The phase angle is computed as stepPhaseShiftIncrement times the tap position.
-      The voltage magnitude of both sides is the same."@en
+          The phase angle is computed as stepPhaseShiftIncrement times the tap position.
+          The voltage magnitude of both sides is the same."@en
 ******* PhaseTapChangerNonLinear (cim:PhaseTapChangerNonLinear)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - rdfs:comment :: "The non-linear phase tap changer describes the non-linear behaviour of a phase tap changer. This is a base class for the symmetrical and asymmetrical phase tap changer models. The details of these models can be found in IEC 61970-301."@en
@@ -789,12 +805,12 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:concrete
  - rdfs:comment :: "A tap changer that changes the voltage ratio impacting the voltage magnitude but not the phase angle across the transformer.
-      
-      Angle sign convention (general): Positive value indicates a positive phase shift from the winding where the tap is located to the other winding (for a two-winding transformer)."@en
+          
+          Angle sign convention (general): Positive value indicates a positive phase shift from the winding where the tap is located to the other winding (for a two-winding transformer)."@en
 ***** WindPowerPlant (eu:WindPowerPlant)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
- - cims:stereotype :: European
  - cims:stereotype :: uml:concrete
+ - cims:stereotype :: European
  - rdfs:comment :: "Wind power plant."@en
 **** RatioTapChangerTable (cim:RatioTapChangerTable)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
@@ -823,12 +839,12 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:concrete
  - rdfs:comment :: "A PowerTransformerEnd is associated with each Terminal of a PowerTransformer.
-      The impedance values r, r0, x, and x0 of a PowerTransformerEnd represents a star equivalent as follows.
-      1) for a two Terminal PowerTransformer the high voltage (TransformerEnd.endNumber=1) PowerTransformerEnd has non zero values on r, r0, x, and x0 while the low voltage (TransformerEnd.endNumber=2) PowerTransformerEnd has zero values for r, r0, x, and x0.  Parameters are always provided, even if the PowerTransformerEnds have the same rated voltage.  In this case, the parameters are provided at the PowerTransformerEnd which has TransformerEnd.endNumber equal to 1.
-      2) for a three Terminal PowerTransformer the three PowerTransformerEnds represent a star equivalent with each leg in the star represented by r, r0, x, and x0 values.
-      3) For a three Terminal transformer each PowerTransformerEnd shall have g, g0, b and b0 values corresponding to the no load losses distributed on the three PowerTransformerEnds. The total no load loss shunt impedances may also be placed at one of the PowerTransformerEnds, preferably the end numbered 1, having the shunt values on end 1.  This is the preferred way.
-      4) for a PowerTransformer with more than three Terminals the PowerTransformerEnd impedance values cannot be used. Instead use the TransformerMeshImpedance or split the transformer into multiple PowerTransformers.
-      Each PowerTransformerEnd must be contained by a PowerTransformer. Because a PowerTransformerEnd (or any other object) can not be contained by more than one parent, a PowerTransformerEnd can not have an association to an EquipmentContainer (Substation, VoltageLevel, etc)."@en
+          The impedance values r, r0, x, and x0 of a PowerTransformerEnd represents a star equivalent as follows.
+          1) for a two Terminal PowerTransformer the high voltage (TransformerEnd.endNumber=1) PowerTransformerEnd has non zero values on r, r0, x, and x0 while the low voltage (TransformerEnd.endNumber=2) PowerTransformerEnd has zero values for r, r0, x, and x0.  Parameters are always provided, even if the PowerTransformerEnds have the same rated voltage.  In this case, the parameters are provided at the PowerTransformerEnd which has TransformerEnd.endNumber equal to 1.
+          2) for a three Terminal PowerTransformer the three PowerTransformerEnds represent a star equivalent with each leg in the star represented by r, r0, x, and x0 values.
+          3) For a three Terminal transformer each PowerTransformerEnd shall have g, g0, b and b0 values corresponding to the no load losses distributed on the three PowerTransformerEnds. The total no load loss shunt impedances may also be placed at one of the PowerTransformerEnds, preferably the end numbered 1, having the shunt values on end 1.  This is the preferred way.
+          4) for a PowerTransformer with more than three Terminals the PowerTransformerEnd impedance values cannot be used. Instead use the TransformerMeshImpedance or split the transformer into multiple PowerTransformers.
+          Each PowerTransformerEnd must be contained by a PowerTransformer. Because a PowerTransformerEnd (or any other object) can not be contained by more than one parent, a PowerTransformerEnd can not have an association to an EquipmentContainer (Substation, VoltageLevel, etc)."@en
 *** LimitKind (eu:LimitKind)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:enumeration
@@ -846,8 +862,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:enumeration
  - rdfs:comment :: "An unordered enumeration of phase identifiers.  Allows designation of phases for both transmission and distribution equipment, circuits and loads.   The enumeration, by itself, does not describe how the phases are connected together or connected to ground.  Ground is not explicitly denoted as a phase.
-      Residential and small commercial loads are often served from single-phase, or split-phase, secondary circuits. For the example of s12N, phases 1 and 2 refer to hot wires that are 180 degrees out of phase, while N refers to the neutral wire. Through single-phase transformer connections, these secondary circuits may be served from one or two of the primary phases A, B, and C. For three-phase loads, use the A, B, C phase codes instead of s12N.
-      The integer values are from IEC 61968-9 to support revenue metering applications."@en
+          Residential and small commercial loads are often served from single-phase, or split-phase, secondary circuits. For the example of s12N, phases 1 and 2 refer to hot wires that are 180 degrees out of phase, while N refers to the neutral wire. Through single-phase transformer connections, these secondary circuits may be served from one or two of the primary phases A, B, and C. For three-phase loads, use the A, B, C phase codes instead of s12N.
+          The integer values are from IEC 61968-9 to support revenue metering applications."@en
 *** qudt:QuantityKind
 *** RegularTimePoint (cim:RegularTimePoint)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
@@ -881,18 +897,18 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:enumeration
  - rdfs:comment :: "The unit multipliers defined for the CIM.  When applied to unit symbols, the unit symbol is treated as a derived unit. Regardless of the contents of the unit symbol text, the unit symbol shall be treated as if it were a single-character unit symbol. Unit symbols should not contain multipliers, and it should be left to the multiplier to define the multiple for an entire data type.
-      
-      For example, if a unit symbol is \"m2Pers\" and the multiplier is \"k\", then the value is k(m**2/s), and the multiplier applies to the entire final value, not to any individual part of the value. This can be conceptualized by substituting a derived unit symbol for the unit type. If one imagines that the symbol \"Þ\" represents the derived unit \"m2Pers\", then applying the multiplier \"k\" can be conceptualized simply as \"kÞ\".
-      
-      For example, the SI unit for mass is \"kg\" and not \"g\".  If the unit symbol is defined as \"kg\", then the multiplier is applied to \"kg\" as a whole and does not replace the \"k\" in front of the \"g\". In this case, the multiplier of \"m\" would be used with the unit symbol of \"kg\" to represent one gram.  As a text string, this violates the instructions in IEC 80000-1. However, because the unit symbol in CIM is treated as a derived unit instead of as an SI unit, it makes more sense to conceptualize the \"kg\" as if it were replaced by one of the proposed replacements for the SI mass symbol. If one imagines that the \"kg\" were replaced by a symbol \"Þ\", then it is easier to conceptualize the multiplier \"m\" as creating the proper unit \"mÞ\", and not the forbidden unit \"mkg\"."@en
+          
+          For example, if a unit symbol is \"m2Pers\" and the multiplier is \"k\", then the value is k(m**2/s), and the multiplier applies to the entire final value, not to any individual part of the value. This can be conceptualized by substituting a derived unit symbol for the unit type. If one imagines that the symbol \"Þ\" represents the derived unit \"m2Pers\", then applying the multiplier \"k\" can be conceptualized simply as \"kÞ\".
+          
+          For example, the SI unit for mass is \"kg\" and not \"g\".  If the unit symbol is defined as \"kg\", then the multiplier is applied to \"kg\" as a whole and does not replace the \"k\" in front of the \"g\". In this case, the multiplier of \"m\" would be used with the unit symbol of \"kg\" to represent one gram.  As a text string, this violates the instructions in IEC 80000-1. However, because the unit symbol in CIM is treated as a derived unit instead of as an SI unit, it makes more sense to conceptualize the \"kg\" as if it were replaced by one of the proposed replacements for the SI mass symbol. If one imagines that the \"kg\" were replaced by a symbol \"Þ\", then it is easier to conceptualize the multiplier \"m\" as creating the proper unit \"mÞ\", and not the forbidden unit \"mkg\"."@en
 *** UnitSymbol (cim:UnitSymbol)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:enumeration
  - rdfs:comment :: "The derived units defined for usage in the CIM. In some cases, the derived unit is equal to an SI unit. Whenever possible, the standard derived symbol is used instead of the formula for the derived unit. For example, the unit symbol Farad is defined as \"F\" instead of \"CPerV\". In cases where a standard symbol does not exist for a derived unit, the formula for the unit is used as the unit symbol. For example, density does not have a standard symbol and so it is represented as \"kgPerm3\". With the exception of the \"kg\", which is an SI unit, the unit symbols do not contain multipliers and therefore represent the base derived unit to which a multiplier can be applied as a whole.
-      Every unit symbol is treated as an unparseable text as if it were a single-letter symbol. The meaning of each unit symbol is defined by the accompanying descriptive text and not by the text contents of the unit symbol.
-      To allow the widest possible range of serializations without requiring special character handling, several substitutions are made which deviate from the format described in IEC 80000-1. The division symbol \"/\" is replaced by the letters \"Per\". Exponents are written in plain text after the unit as \"m3\" instead of being formatted as \"m\" with a superscript of 3  or introducing a symbol as in \"m^3\". The degree symbol \"°\" is replaced with the letters \"deg\". Any clarification of the meaning for a substitution is included in the description for the unit symbol.
-      Non-SI units are included in list of unit symbols to allow sources of data to be correctly labelled with their non-SI units (for example, a GPS sensor that is reporting numbers that represent feet instead of meters). This allows software to use the unit symbol information correctly convert and scale the raw data of those sources into SI-based units. 
-      The integer values are used for harmonization with IEC 61850."@en
+          Every unit symbol is treated as an unparseable text as if it were a single-letter symbol. The meaning of each unit symbol is defined by the accompanying descriptive text and not by the text contents of the unit symbol.
+          To allow the widest possible range of serializations without requiring special character handling, several substitutions are made which deviate from the format described in IEC 80000-1. The division symbol \"/\" is replaced by the letters \"Per\". Exponents are written in plain text after the unit as \"m3\" instead of being formatted as \"m\" with a superscript of 3  or introducing a symbol as in \"m^3\". The degree symbol \"°\" is replaced with the letters \"deg\". Any clarification of the meaning for a substitution is included in the description for the unit symbol.
+          Non-SI units are included in list of unit symbols to allow sources of data to be correctly labelled with their non-SI units (for example, a GPS sensor that is reporting numbers that represent feet instead of meters). This allows software to use the unit symbol information correctly convert and scale the raw data of those sources into SI-based units. 
+          The integer values are used for harmonization with IEC 61850."@en
 *** WindGenUnitKind (cim:WindGenUnitKind)
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - cims:stereotype :: uml:enumeration
@@ -1507,8 +1523,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - Characteristics :: Functional
 *** kind (eu:OperationalLimitType.kind)
  - cims:multiplicity :: cims:M:1..1
- - cims:stereotype :: European
  - cims:stereotype :: uml:attribute
+ - cims:stereotype :: European
  - rdfs:comment :: "Types of limits defined in the ENTSO-E Operational Handbook Policy 3."@en
  - Domain :: cim:OperationalLimitType
  - Range :: eu:LimitKind
@@ -1667,7 +1683,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:multiplicity :: cims:M:0..1
  - cims:stereotype :: uml:attribute
  - rdfs:comment :: "Represents the normal network phasing condition. If the attribute is missing, three phases (ABC) shall be assumed, except for terminals of grounding classes (specializations of EarthFaultCompensator, GroundDisconnector, and Ground) which will be assumed to be N. Therefore, phase code ABCN is explicitly declared when needed, e.g. for star point grounding equipment.
-      The phase code on terminals connecting same ConnectivityNode or same TopologicalNode as well as for equipment between two terminals shall be consistent."@en
+          The phase code on terminals connecting same ConnectivityNode or same TopologicalNode as well as for equipment between two terminals shall be consistent."@en
  - Domain :: cim:Terminal
  - Range :: cim:PhaseCode
  - Characteristics :: Functional
@@ -1715,8 +1731,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:multiplicity :: cims:M:1..1
  - cims:stereotype :: uml:attribute
  - rdfs:comment :: "Represents the normal network polarity condition. Depending on the converter configuration the value shall be set as follows:
-      - For a monopole with two converter terminals use DCPolarityKind “positive” and “negative”.
-      - For a bi-pole or symmetric monopole with three converter terminals use DCPolarityKind “positive”, “middle” and “negative”."@en
+          - For a monopole with two converter terminals use DCPolarityKind “positive” and “negative”.
+          - For a bi-pole or symmetric monopole with three converter terminals use DCPolarityKind “positive”, “middle” and “negative”."@en
  - Domain :: cim:ACDCConverterDCTerminal
  - Range :: cim:DCPolarityKind
  - Characteristics :: Functional
@@ -2330,7 +2346,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:multiplicity :: cims:M:0..1
  - cims:stereotype :: uml:attribute
  - rdfs:comment :: "The aggregate flag provides an alternative way of representing an aggregated (equivalent) element. It is applicable in cases when the dedicated classes for equivalent equipment do not have all of the attributes necessary to represent the required level of detail.  In case the flag is set to “true” the single instance of equipment represents multiple pieces of equipment that have been modelled together as an aggregate equivalent obtained by a network reduction procedure. Examples would be power transformers or synchronous machines operating in parallel modelled as a single aggregate power transformer or aggregate synchronous machine.
-      The attribute is not used for EquivalentBranch, EquivalentShunt and EquivalentInjection."@en
+          The attribute is not used for EquivalentBranch, EquivalentShunt and EquivalentInjection."@en
  - Domain :: cim:Equipment
  - Range :: xsd:boolean
  - Characteristics :: Functional
@@ -2397,7 +2413,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - qudt:hasQuantityKind :: cim:PerCent
  - qudt:hasUnit :: unit:PERCENT
  - rdfs:comment :: "The magnetizing branch susceptance deviation as a percentage of nominal value. The actual susceptance is calculated as follows:
-      calculated magnetizing susceptance = b(nominal) * (1 + b(from this class)/100).   The b(nominal) is defined as the static magnetizing susceptance on the associated power transformer end or ends.  This model assumes the star impedance (pi model) form."@en
+          calculated magnetizing susceptance = b(nominal) * (1 + b(from this class)/100).   The b(nominal) is defined as the static magnetizing susceptance on the associated power transformer end or ends.  This model assumes the star impedance (pi model) form."@en
  - Domain :: cim:TapChangerTablePoint
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -2508,8 +2524,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - Characteristics :: Functional
 *** energyIdentCodeEic (eu:IdentifiedObject.energyIdentCodeEic)
  - cims:multiplicity :: cims:M:0..1
- - cims:stereotype :: European
  - cims:stereotype :: uml:attribute
+ - cims:stereotype :: European
  - owl:deprecated :: true
  - rdfs:comment :: "The attribute is used for an exchange of the EIC code (Energy identification Code). The length of the string is 16 characters as defined by the EIC code. For details on EIC scheme please refer to ENTSO-E web site."@en
  - Domain :: cim:IdentifiedObject
@@ -2519,29 +2535,29 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:multiplicity :: cims:M:1..1
  - cims:stereotype :: uml:attribute
  - rdfs:comment :: "Indicates the exponential voltage dependency model is to be used. If false, the coefficient model is to be used.
-      The exponential voltage dependency model consist of the attributes:
-      - pVoltageExponent
-      - qVoltageExponent
-      - pFrequencyExponent
-      - qFrequencyExponent.
-      The coefficient model consist of the attributes:
-      - pConstantImpedance
-      - pConstantCurrent
-      - pConstantPower
-      - qConstantImpedance
-      - qConstantCurrent
-      - qConstantPower.
-      The sum of pConstantImpedance, pConstantCurrent and pConstantPower shall equal 1.
-      The sum of qConstantImpedance, qConstantCurrent and qConstantPower shall equal 1."@en
+          The exponential voltage dependency model consist of the attributes:
+          - pVoltageExponent
+          - qVoltageExponent
+          - pFrequencyExponent
+          - qFrequencyExponent.
+          The coefficient model consist of the attributes:
+          - pConstantImpedance
+          - pConstantCurrent
+          - pConstantPower
+          - qConstantImpedance
+          - qConstantCurrent
+          - qConstantPower.
+          The sum of pConstantImpedance, pConstantCurrent and pConstantPower shall equal 1.
+          The sum of qConstantImpedance, qConstantCurrent and qConstantPower shall equal 1."@en
  - Domain :: cim:LoadResponseCharacteristic
  - Range :: xsd:boolean
  - Characteristics :: Functional
 *** fromEndIsoCode (eu:BoundaryPoint.fromEndIsoCode)
  - cims:multiplicity :: cims:M:1..1
- - cims:stereotype :: uml:attribute
  - cims:stereotype :: European
+ - cims:stereotype :: uml:attribute
  - rdfs:comment :: "The ISO code of the region which the \"From\" side of the Boundary point belongs to or it is connected to.
-      The ISO code is a two-character country code as defined by ISO 3166 (http://www.iso.org/iso/country_codes). The length of the string is 2 characters maximum."@en
+          The ISO code is a two-character country code as defined by ISO 3166 (http://www.iso.org/iso/country_codes). The length of the string is 2 characters maximum."@en
  - Domain :: eu:BoundaryPoint
  - Range :: xsd:string
  - Characteristics :: Functional
@@ -2550,8 +2566,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:stereotype :: European
  - cims:stereotype :: uml:attribute
  - rdfs:comment :: "A human readable name with length of the string 64 characters maximum. It covers the following two cases:
-      -if the Boundary point is placed on a tie-line, it is the name (IdentifiedObject.name) of the substation at which the \"From\" side of the tie-line is connected to.
-      -if the Boundary point is placed in a substation, it is the name (IdentifiedObject.name) of the element (e.g. PowerTransformer, ACLineSegment, Switch, etc.) at which the \"From\" side of the Boundary point is connected to."@en
+          -if the Boundary point is placed on a tie-line, it is the name (IdentifiedObject.name) of the substation at which the \"From\" side of the tie-line is connected to.
+          -if the Boundary point is placed in a substation, it is the name (IdentifiedObject.name) of the element (e.g. PowerTransformer, ACLineSegment, Switch, etc.) at which the \"From\" side of the Boundary point is connected to."@en
  - Domain :: eu:BoundaryPoint
  - Range :: xsd:string
  - Characteristics :: Functional
@@ -2604,7 +2620,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - qudt:hasQuantityKind :: cim:PerCent
  - qudt:hasUnit :: unit:PERCENT
  - rdfs:comment :: "The magnetizing branch conductance deviation as a percentage of nominal value. The actual conductance is calculated as follows:
-      calculated magnetizing conductance = g(nominal) * (1 + g(from this class)/100).   The g(nominal) is defined as the static magnetizing conductance on the associated power transformer end or ends.  This model assumes the star impedance (pi model) form."@en
+          calculated magnetizing conductance = g(nominal) * (1 + g(from this class)/100).   The g(nominal) is defined as the static magnetizing conductance on the associated power transformer end or ends.  This model assumes the star impedance (pi model) form."@en
  - Domain :: cim:TapChangerTablePoint
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -2663,7 +2679,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:multiplicity :: cims:M:1..1
  - cims:stereotype :: uml:attribute
  - rdfs:comment :: "Highest possible tap step position, advance from neutral.
-      The attribute shall be greater than lowStep."@en
+          The attribute shall be greater than lowStep."@en
  - Domain :: cim:TapChanger
  - Range :: xsd:integer
  - Characteristics :: Functional
@@ -2675,7 +2691,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - qudt:hasQuantityKind :: cim:Voltage
  - qudt:hasUnit :: unit:KiloV
  - rdfs:comment :: "The bus bar's high voltage limit.
-      The limit applies to all equipment and nodes contained in a given VoltageLevel. It is not required that it is exchanged in pair with lowVoltageLimit. It is preferable to use operational VoltageLimit, which prevails, if present."@en
+          The limit applies to all equipment and nodes contained in a given VoltageLevel. It is not required that it is exchanged in pair with lowVoltageLimit. It is preferable to use operational VoltageLimit, which prevails, if present."@en
  - Domain :: cim:VoltageLevel
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -2733,8 +2749,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - Characteristics :: Functional
 *** isDirectCurrent (eu:BoundaryPoint.isDirectCurrent)
  - cims:multiplicity :: cims:M:0..1
- - cims:stereotype :: European
  - cims:stereotype :: uml:attribute
+ - cims:stereotype :: European
  - rdfs:comment :: "If true, this boundary point is a point of common coupling (PCC) of a direct current (DC) interconnection, otherwise the interconnection is AC (default)."@en
  - Domain :: eu:BoundaryPoint
  - Range :: xsd:boolean
@@ -2820,7 +2836,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - qudt:hasQuantityKind :: cim:Voltage
  - qudt:hasUnit :: unit:KiloV
  - rdfs:comment :: "The bus bar's low voltage limit.
-      The limit applies to all equipment and nodes contained in a given VoltageLevel. It is not required that it is exchanged in pair with highVoltageLimit. It is preferable to use operational VoltageLimit, which prevails, if present."@en
+          The limit applies to all equipment and nodes contained in a given VoltageLevel. It is not required that it is exchanged in pair with highVoltageLimit. It is preferable to use operational VoltageLimit, which prevails, if present."@en
  - Domain :: cim:VoltageLevel
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -3146,7 +3162,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:multiplicity :: cims:M:1..1
  - cims:stereotype :: uml:attribute
  - rdfs:comment :: "Master resource identifier issued by a model authority. The mRID is unique within an exchange context. Global uniqueness is easily achieved by using a UUID, as specified in RFC 4122, for the mRID. The use of UUID is strongly recommended.
-      For CIMXML data files in RDF syntax conforming to IEC 61970-552, the mRID is mapped to rdf:ID or rdf:about attributes that identify CIM object elements."@en
+          For CIMXML data files in RDF syntax conforming to IEC 61970-552, the mRID is mapped to rdf:ID or rdf:about attributes that identify CIM object elements."@en
  - Domain :: cim:IdentifiedObject
  - Range :: xsd:string
  - Characteristics :: Functional
@@ -3161,8 +3177,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:multiplicity :: cims:M:1..1
  - cims:stereotype :: uml:attribute
  - rdfs:comment :: "The neutral tap step position for this winding.
-      The attribute shall be equal to or greater than lowStep and equal or less than highStep.
-      It is the step position where the voltage is neutralU when the other terminals of the transformer are at the ratedU.  If there are other tap changers on the transformer those taps are kept constant at their neutralStep."@en
+          The attribute shall be equal to or greater than lowStep and equal or less than highStep.
+          It is the step position where the voltage is neutralU when the other terminals of the transformer are at the ratedU.  If there are other tap changers on the transformer those taps are kept constant at their neutralStep."@en
  - Domain :: cim:TapChanger
  - Range :: xsd:integer
  - Characteristics :: Functional
@@ -3174,7 +3190,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - qudt:hasQuantityKind :: cim:Voltage
  - qudt:hasUnit :: unit:KiloV
  - rdfs:comment :: "Voltage at which the winding operates at the neutral tap setting. It is the voltage at the terminal of the PowerTransformerEnd associated with the tap changer when all tap changers on the transformer are at their neutralStep position.  Normally neutralU of the tap changer is the same as ratedU of the PowerTransformerEnd, but it can differ in special cases such as when the tapping mechanism is separate from the winding more common on lower voltage transformers.
-      This attribute is not relevant for PhaseTapChangerAsymmetrical, PhaseTapChangerSymmetrical and PhaseTapChangerLinear."@en
+          This attribute is not relevant for PhaseTapChangerAsymmetrical, PhaseTapChangerSymmetrical and PhaseTapChangerLinear."@en
  - Domain :: cim:TapChanger
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -3197,7 +3213,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - qudt:hasQuantityKind :: cim:ActivePower
  - qudt:hasUnit :: unit:MegaW
  - rdfs:comment :: "The nominal power of the generating unit.  Used to give precise meaning to percentage based attributes such as the governor speed change droop (governorSCD attribute).
-      The attribute shall be a positive value equal to or less than RotatingMachine.ratedS."@en
+          The attribute shall be a positive value equal to or less than RotatingMachine.ratedS."@en
  - Domain :: cim:GeneratingUnit
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -3270,7 +3286,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:multiplicity :: cims:M:1..1
  - cims:stereotype :: uml:attribute
  - rdfs:comment :: "The tap step position used in \"normal\" network operation for this winding. For a \"Fixed\" tap changer indicates the current physical tap setting.
-      The attribute shall be equal to or greater than lowStep and equal to or less than highStep."@en
+          The attribute shall be equal to or greater than lowStep and equal to or less than highStep."@en
  - Domain :: cim:TapChanger
  - Range :: xsd:integer
  - Characteristics :: Functional
@@ -3527,7 +3543,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - qudt:hasQuantityKind :: cim:Resistance
  - qudt:hasUnit :: unit:OHM
  - rdfs:comment :: "Resistance (star-model) of the transformer end.
-      The attribute shall be equal to or greater than zero for non-equivalent transformers."@en
+          The attribute shall be equal to or greater than zero for non-equivalent transformers."@en
  - Domain :: cim:PowerTransformerEnd
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -3550,7 +3566,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - qudt:hasQuantityKind :: cim:PerCent
  - qudt:hasUnit :: unit:PERCENT
  - rdfs:comment :: "The resistance deviation as a percentage of nominal value. The actual reactance is calculated as follows:
-      calculated resistance = r(nominal) * (1 + r(from this class)/100).   The r(nominal) is defined as the static resistance on the associated power transformer end or ends.  This model assumes the star impedance (pi model) form."@en
+          calculated resistance = r(nominal) * (1 + r(from this class)/100).   The r(nominal) is defined as the static resistance on the associated power transformer end or ends.  This model assumes the star impedance (pi model) form."@en
  - Domain :: cim:TapChangerTablePoint
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -3562,7 +3578,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - qudt:hasQuantityKind :: cim:Resistance
  - qudt:hasUnit :: unit:OHM
  - rdfs:comment :: "Resistance from terminal sequence 2 to terminal sequence 1 .Used for steady state power flow. This attribute is optional and represent unbalanced network such as off-nominal phase shifter. If only EquivalentBranch.r is given, then EquivalentBranch.r21 is assumed equal to EquivalentBranch.r.
-      Usage rule : EquivalentBranch is a result of network reduction prior to the data exchange."@en
+          Usage rule : EquivalentBranch is a result of network reduction prior to the data exchange."@en
  - Domain :: cim:EquivalentBranch
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -3574,7 +3590,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - qudt:hasQuantityKind :: cim:CurrentFlow
  - qudt:hasUnit :: unit:A
  - rdfs:comment :: "The maximum continuous current carrying capacity in amps governed by the device material and construction.
-      The attribute shall be a positive value."@en
+          The attribute shall be a positive value."@en
  - Domain :: cim:Switch
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -3597,7 +3613,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - qudt:hasQuantityKind :: cim:ActivePower
  - qudt:hasUnit :: unit:MegaW
  - rdfs:comment :: "The unit's gross rated maximum capacity (book value).
-      The attribute shall be a positive value."@en
+          The attribute shall be a positive value."@en
  - Domain :: cim:GeneratingUnit
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -3609,7 +3625,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - qudt:hasQuantityKind :: cim:ActivePower
  - qudt:hasUnit :: unit:MegaW
  - rdfs:comment :: "The gross rated minimum generation level which the unit can safely operate at while delivering power to the transmission grid.
-      The attribute shall be a positive value."@en
+          The attribute shall be a positive value."@en
  - Domain :: cim:GeneratingUnit
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -3632,7 +3648,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - qudt:hasQuantityKind :: cim:ActivePower
  - qudt:hasUnit :: unit:MegaW
  - rdfs:comment :: "The net rated maximum capacity determined by subtracting the auxiliary power used to operate the internal plant machinery from the rated gross maximum capacity.
-      The attribute shall be a positive value."@en
+          The attribute shall be a positive value."@en
  - Domain :: cim:GeneratingUnit
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -3651,7 +3667,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - qudt:hasQuantityKind :: cim:ApparentPower
  - qudt:hasUnit :: unit:MegaV-A
  - rdfs:comment :: "Nameplate apparent power rating for the unit.
-      The attribute shall have a positive value."@en
+          The attribute shall have a positive value."@en
  - Domain :: cim:PowerElectronicsConnection
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -3663,7 +3679,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - qudt:hasQuantityKind :: cim:ApparentPower
  - qudt:hasUnit :: unit:MegaV-A
  - rdfs:comment :: "Normal apparent power rating.
-      The attribute shall be a positive value. For a two-winding transformer the values for the high and low voltage sides shall be identical."@en
+          The attribute shall be a positive value. For a two-winding transformer the values for the high and low voltage sides shall be identical."@en
  - Domain :: cim:PowerTransformerEnd
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -3675,7 +3691,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - qudt:hasQuantityKind :: cim:ApparentPower
  - qudt:hasUnit :: unit:MegaV-A
  - rdfs:comment :: "Nameplate apparent power rating for the unit.
-      The attribute shall have a positive value."@en
+          The attribute shall have a positive value."@en
  - Domain :: cim:RotatingMachine
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -3687,7 +3703,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - qudt:hasQuantityKind :: cim:Voltage
  - qudt:hasUnit :: unit:KiloV
  - rdfs:comment :: "Rated voltage (nameplate data, Ur in IEC 60909-0). It is primarily used for short circuit data exchange according to IEC 60909.
-      The attribute shall be a positive value."@en
+          The attribute shall be a positive value."@en
  - Domain :: cim:PowerElectronicsConnection
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -3699,8 +3715,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - qudt:hasQuantityKind :: cim:Voltage
  - qudt:hasUnit :: unit:KiloV
  - rdfs:comment :: "Rated voltage: phase-phase for three-phase windings, and either phase-phase or phase-neutral for single-phase windings.
-      A high voltage side, as given by TransformerEnd.endNumber, shall have a ratedU that is greater than or equal to ratedU for the lower voltage sides.
-      The attribute shall be a positive value."@en
+          A high voltage side, as given by TransformerEnd.endNumber, shall have a ratedU that is greater than or equal to ratedU for the lower voltage sides.
+          The attribute shall be a positive value."@en
  - Domain :: cim:PowerTransformerEnd
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -3712,7 +3728,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - qudt:hasQuantityKind :: cim:Voltage
  - qudt:hasUnit :: unit:KiloV
  - rdfs:comment :: "Rated voltage (nameplate data, Ur in IEC 60909-0). It is primarily used for short circuit data exchange according to IEC 60909.
-      The attribute shall be a positive value."@en
+          The attribute shall be a positive value."@en
  - Domain :: cim:RotatingMachine
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -3742,7 +3758,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:multiplicity :: cims:M:0..1
  - cims:stereotype :: uml:attribute
  - rdfs:comment :: "The voltage at the tap step divided by rated voltage of the transformer end having the tap changer. Hence this is a value close to one.
-      For example, if the ratio at step 1 is 1.01, and the rated voltage of the transformer end is 110kV, then the voltage obtained by setting the tap changer to step 1 to is 111.1kV."@en
+          For example, if the ratio at step 1 is 1.01, and the rated voltage of the transformer end is 110kV, then the voltage obtained by setting the tap changer to step 1 to is 111.1kV."@en
  - Domain :: cim:TapChangerTablePoint
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -3849,7 +3865,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - qudt:hasQuantityKind :: cim:VoltagePerReactivePower
  - qudt:hasUnit :: unit:KiloV-PER-V-A_Reactive
  - rdfs:comment :: "The characteristics slope of an SVC defines how the reactive power output changes in proportion to the difference between the regulated bus voltage and the voltage setpoint.
-      The attribute shall be a positive value or zero."@en
+          The attribute shall be a positive value or zero."@en
  - Domain :: cim:StaticVarCompensator
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -3902,7 +3918,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - qudt:hasQuantityKind :: cim:AngleDegrees
  - qudt:hasUnit :: unit:DEG
  - rdfs:comment :: "Phase shift per step position. A positive value indicates a positive angle variation from the Terminal at the  PowerTransformerEnd,  where the TapChanger is located, into the transformer.
-      The actual phase shift increment might be more accurately computed from the symmetrical or asymmetrical models or a tap step table lookup if those are available."@en
+          The actual phase shift increment might be more accurately computed from the symmetrical or asymmetrical models or a tap step table lookup if those are available."@en
  - Domain :: cim:PhaseTapChangerLinear
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -3914,7 +3930,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - qudt:hasQuantityKind :: cim:PerCent
  - qudt:hasUnit :: unit:PERCENT
  - rdfs:comment :: "Tap step increment, in per cent of rated voltage of the power transformer end, per step position.
-      When the increment is negative, the voltage decreases when the tap step increases."@en
+          When the increment is negative, the voltage decreases when the tap step increases."@en
  - Domain :: cim:RatioTapChanger
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -3942,10 +3958,10 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - Characteristics :: Functional
 *** toEndIsoCode (eu:BoundaryPoint.toEndIsoCode)
  - cims:multiplicity :: cims:M:1..1
- - cims:stereotype :: uml:attribute
  - cims:stereotype :: European
+ - cims:stereotype :: uml:attribute
  - rdfs:comment :: "The ISO code of the region which the \"To\" side of the Boundary point belongs to or is connected to.
-      The ISO code is a two-character country code as defined by ISO 3166 (http://www.iso.org/iso/country_codes). The length of the string is 2 characters maximum."@en
+          The ISO code is a two-character country code as defined by ISO 3166 (http://www.iso.org/iso/country_codes). The length of the string is 2 characters maximum."@en
  - Domain :: eu:BoundaryPoint
  - Range :: xsd:string
  - Characteristics :: Functional
@@ -3954,15 +3970,15 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cims:stereotype :: uml:attribute
  - cims:stereotype :: European
  - rdfs:comment :: "A human readable name with length of the string 64 characters maximum. It covers the following two cases:
-      -if the Boundary point is placed on a tie-line, it is the name (IdentifiedObject.name) of the substation at which the \"To\" side of the tie-line is connected to.
-      -if the Boundary point is placed in a substation, it is the name (IdentifiedObject.name) of the element (e.g. PowerTransformer, ACLineSegment, Switch, etc.) at which the \"To\" side of the Boundary point is connected to."@en
+          -if the Boundary point is placed on a tie-line, it is the name (IdentifiedObject.name) of the substation at which the \"To\" side of the tie-line is connected to.
+          -if the Boundary point is placed in a substation, it is the name (IdentifiedObject.name) of the element (e.g. PowerTransformer, ACLineSegment, Switch, etc.) at which the \"To\" side of the Boundary point is connected to."@en
  - Domain :: eu:BoundaryPoint
  - Range :: xsd:string
  - Characteristics :: Functional
 *** toEndNameTso (eu:BoundaryPoint.toEndNameTso)
  - cims:multiplicity :: cims:M:1..1
- - cims:stereotype :: European
  - cims:stereotype :: uml:attribute
+ - cims:stereotype :: European
  - rdfs:comment :: "Identifies the name of the transmission system operator, distribution system operator or other entity at which the \"To\" side of the interconnection is connected to. The length of the string is 64 characters maximum."@en
  - Domain :: eu:BoundaryPoint
  - Range :: xsd:string
@@ -4043,7 +4059,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - qudt:hasQuantityKind :: cim:PerCent
  - qudt:hasUnit :: unit:PERCENT
  - rdfs:comment :: "The voltage step increment on the out of phase winding (the PowerTransformerEnd where the TapChanger is located) specified in percent of rated voltage of the PowerTransformerEnd. A positive value means a positive voltage variation from the Terminal at the PowerTransformerEnd, where the TapChanger is located, into the transformer.
-      When the increment is negative, the voltage decreases when the tap step increases."@en
+          When the increment is negative, the voltage decreases when the tap step increases."@en
  - Domain :: cim:PhaseTapChangerNonLinear
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -4110,7 +4126,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - qudt:hasQuantityKind :: cim:PerCent
  - qudt:hasUnit :: unit:PERCENT
  - rdfs:comment :: "The series reactance deviation as a percentage of nominal value. The actual reactance is calculated as follows:
-      calculated reactance = x(nominal) * (1 + x(from this class)/100).   The x(nominal) is defined as the static series reactance on the associated power transformer end or ends.  This model assumes the star impedance (pi model) form."@en
+          calculated reactance = x(nominal) * (1 + x(from this class)/100).   The x(nominal) is defined as the static series reactance on the associated power transformer end or ends.  This model assumes the star impedance (pi model) form."@en
  - Domain :: cim:TapChangerTablePoint
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -4122,7 +4138,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - qudt:hasQuantityKind :: cim:Reactance
  - qudt:hasUnit :: unit:OHM
  - rdfs:comment :: "Reactance from terminal sequence 2 to terminal sequence 1. Used for steady state power flow. This attribute is optional and represents an unbalanced network such as off-nominal phase shifter. If only EquivalentBranch.x is given, then EquivalentBranch.x21 is assumed equal to EquivalentBranch.x.
-      Usage rule: EquivalentBranch is a result of network reduction prior to the data exchange."@en
+          Usage rule: EquivalentBranch is a result of network reduction prior to the data exchange."@en
  - Domain :: cim:EquivalentBranch
  - Range :: xsd:float
  - Characteristics :: Functional
@@ -4251,14 +4267,14 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 *** ControlAreaTypeKind                                           :nodeclare:
 **** AGC (cim:ControlAreaTypeKind.AGC)
  - Types :: cim:ControlAreaTypeKind
- - rdfs:label :: AGC
  - cims:stereotype :: enum
+ - rdfs:label :: AGC
  - rdfs:comment :: "Used for automatic generation control."@en
 
 **** Forecast (cim:ControlAreaTypeKind.Forecast)
  - Types :: cim:ControlAreaTypeKind
- - cims:stereotype :: enum
  - rdfs:comment :: "Used for load forecast."@en
+ - cims:stereotype :: enum
  - rdfs:label :: Forecast
 
 **** Interchange (cim:ControlAreaTypeKind.Interchange)
@@ -4271,20 +4287,20 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** AED (cim:Currency.AED)
  - Types :: cim:Currency
  - rdfs:label :: AED
- - cims:stereotype :: enum
  - rdfs:comment :: "United Arab Emirates dirham."@en
+ - cims:stereotype :: enum
 
 **** AFN (cim:Currency.AFN)
  - Types :: cim:Currency
  - cims:stereotype :: enum
- - rdfs:label :: AFN
  - rdfs:comment :: "Afghan afghani."@en
+ - rdfs:label :: AFN
 
 **** ALL (cim:Currency.ALL)
  - Types :: cim:Currency
+ - rdfs:comment :: "Albanian lek."@en
  - cims:stereotype :: enum
  - rdfs:label :: ALL
- - rdfs:comment :: "Albanian lek."@en
 
 **** AMD (cim:Currency.AMD)
  - Types :: cim:Currency
@@ -4294,9 +4310,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** ANG (cim:Currency.ANG)
  - Types :: cim:Currency
- - rdfs:comment :: "Netherlands Antillean guilder."@en
- - cims:stereotype :: enum
  - rdfs:label :: ANG
+ - cims:stereotype :: enum
+ - rdfs:comment :: "Netherlands Antillean guilder."@en
 
 **** AOA (cim:Currency.AOA)
  - Types :: cim:Currency
@@ -4306,8 +4322,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** ARS (cim:Currency.ARS)
  - Types :: cim:Currency
- - rdfs:comment :: "Argentine peso."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Argentine peso."@en
  - rdfs:label :: ARS
 
 **** AUD (cim:Currency.AUD)
@@ -4318,15 +4334,15 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** AWG (cim:Currency.AWG)
  - Types :: cim:Currency
- - rdfs:label :: AWG
- - cims:stereotype :: enum
  - rdfs:comment :: "Aruban florin."@en
+ - cims:stereotype :: enum
+ - rdfs:label :: AWG
 
 **** AZN (cim:Currency.AZN)
  - Types :: cim:Currency
  - rdfs:comment :: "Azerbaijani manat."@en
- - rdfs:label :: AZN
  - cims:stereotype :: enum
+ - rdfs:label :: AZN
 
 **** BAM (cim:Currency.BAM)
  - Types :: cim:Currency
@@ -4336,15 +4352,15 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** BBD (cim:Currency.BBD)
  - Types :: cim:Currency
+ - rdfs:comment :: "Barbados dollar."@en
  - cims:stereotype :: enum
  - rdfs:label :: BBD
- - rdfs:comment :: "Barbados dollar."@en
 
 **** BDT (cim:Currency.BDT)
  - Types :: cim:Currency
- - rdfs:label :: BDT
- - rdfs:comment :: "Bangladeshi taka."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Bangladeshi taka."@en
+ - rdfs:label :: BDT
 
 **** BGN (cim:Currency.BGN)
  - Types :: cim:Currency
@@ -4354,8 +4370,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** BHD (cim:Currency.BHD)
  - Types :: cim:Currency
- - rdfs:label :: BHD
  - rdfs:comment :: "Bahraini dinar."@en
+ - rdfs:label :: BHD
  - cims:stereotype :: enum
 
 **** BIF (cim:Currency.BIF)
@@ -4366,15 +4382,15 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** BMD (cim:Currency.BMD)
  - Types :: cim:Currency
- - cims:stereotype :: enum
- - rdfs:comment :: "Bermudian dollar (customarily known as Bermuda dollar)."@en
  - rdfs:label :: BMD
+ - rdfs:comment :: "Bermudian dollar (customarily known as Bermuda dollar)."@en
+ - cims:stereotype :: enum
 
 **** BND (cim:Currency.BND)
  - Types :: cim:Currency
  - rdfs:comment :: "Brunei dollar."@en
- - cims:stereotype :: enum
  - rdfs:label :: BND
+ - cims:stereotype :: enum
 
 **** BOB (cim:Currency.BOB)
  - Types :: cim:Currency
@@ -4402,15 +4418,15 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** BTN (cim:Currency.BTN)
  - Types :: cim:Currency
+ - cims:stereotype :: enum
  - rdfs:label :: BTN
  - rdfs:comment :: "Bhutanese ngultrum."@en
- - cims:stereotype :: enum
 
 **** BWP (cim:Currency.BWP)
  - Types :: cim:Currency
- - cims:stereotype :: enum
- - rdfs:comment :: "Botswana pula."@en
  - rdfs:label :: BWP
+ - rdfs:comment :: "Botswana pula."@en
+ - cims:stereotype :: enum
 
 **** BYR (cim:Currency.BYR)
  - Types :: cim:Currency
@@ -4421,20 +4437,20 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** BZD (cim:Currency.BZD)
  - Types :: cim:Currency
  - rdfs:comment :: "Belize dollar."@en
- - cims:stereotype :: enum
  - rdfs:label :: BZD
+ - cims:stereotype :: enum
 
 **** CAD (cim:Currency.CAD)
  - Types :: cim:Currency
- - cims:stereotype :: enum
- - rdfs:comment :: "Canadian dollar."@en
  - rdfs:label :: CAD
+ - rdfs:comment :: "Canadian dollar."@en
+ - cims:stereotype :: enum
 
 **** CDF (cim:Currency.CDF)
  - Types :: cim:Currency
- - rdfs:label :: CDF
- - rdfs:comment :: "Congolese franc."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Congolese franc."@en
+ - rdfs:label :: CDF
 
 **** CHF (cim:Currency.CHF)
  - Types :: cim:Currency
@@ -4444,39 +4460,39 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** CLF (cim:Currency.CLF)
  - Types :: cim:Currency
+ - cims:stereotype :: enum
  - rdfs:comment :: "Unidad de Fomento (funds code), Chile."@en
  - rdfs:label :: CLF
- - cims:stereotype :: enum
 
 **** CLP (cim:Currency.CLP)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:label :: CLP
+ - cims:stereotype :: enum
  - rdfs:comment :: "Chilean peso."@en
 
 **** CNY (cim:Currency.CNY)
  - Types :: cim:Currency
+ - cims:stereotype :: enum
  - rdfs:label :: CNY
  - rdfs:comment :: "Chinese yuan."@en
- - cims:stereotype :: enum
 
 **** COP (cim:Currency.COP)
  - Types :: cim:Currency
- - rdfs:label :: COP
  - cims:stereotype :: enum
  - rdfs:comment :: "Colombian peso."@en
+ - rdfs:label :: COP
 
 **** COU (cim:Currency.COU)
  - Types :: cim:Currency
  - cims:stereotype :: enum
- - rdfs:label :: COU
  - rdfs:comment :: "Unidad de Valor Real."@en
+ - rdfs:label :: COU
 
 **** CRC (cim:Currency.CRC)
  - Types :: cim:Currency
  - rdfs:comment :: "Costa Rican colon."@en
- - cims:stereotype :: enum
  - rdfs:label :: CRC
+ - cims:stereotype :: enum
 
 **** CUC (cim:Currency.CUC)
  - Types :: cim:Currency
@@ -4486,93 +4502,93 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** CUP (cim:Currency.CUP)
  - Types :: cim:Currency
- - rdfs:comment :: "Cuban peso."@en
  - rdfs:label :: CUP
+ - rdfs:comment :: "Cuban peso."@en
  - cims:stereotype :: enum
 
 **** CVE (cim:Currency.CVE)
  - Types :: cim:Currency
+ - rdfs:label :: CVE
  - cims:stereotype :: enum
  - rdfs:comment :: "Cape Verde escudo."@en
- - rdfs:label :: CVE
 
 **** CZK (cim:Currency.CZK)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:label :: CZK
  - rdfs:comment :: "Czech koruna."@en
+ - cims:stereotype :: enum
 
 **** DJF (cim:Currency.DJF)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:label :: DJF
  - rdfs:comment :: "Djiboutian franc."@en
+ - cims:stereotype :: enum
 
 **** DKK (cim:Currency.DKK)
  - Types :: cim:Currency
- - rdfs:label :: DKK
- - rdfs:comment :: "Danish krone."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Danish krone."@en
+ - rdfs:label :: DKK
 
 **** DOP (cim:Currency.DOP)
  - Types :: cim:Currency
- - rdfs:comment :: "Dominican peso."@en
  - cims:stereotype :: enum
  - rdfs:label :: DOP
+ - rdfs:comment :: "Dominican peso."@en
 
 **** DZD (cim:Currency.DZD)
  - Types :: cim:Currency
+ - cims:stereotype :: enum
  - rdfs:comment :: "Algerian dinar."@en
  - rdfs:label :: DZD
- - cims:stereotype :: enum
 
 **** EEK (cim:Currency.EEK)
  - Types :: cim:Currency
- - rdfs:comment :: "Estonian kroon."@en
- - cims:stereotype :: enum
  - rdfs:label :: EEK
+ - cims:stereotype :: enum
+ - rdfs:comment :: "Estonian kroon."@en
 
 **** EGP (cim:Currency.EGP)
  - Types :: cim:Currency
+ - rdfs:label :: EGP
  - cims:stereotype :: enum
  - rdfs:comment :: "Egyptian pound."@en
- - rdfs:label :: EGP
 
 **** ERN (cim:Currency.ERN)
  - Types :: cim:Currency
- - rdfs:comment :: "Eritrean nakfa."@en
- - rdfs:label :: ERN
  - cims:stereotype :: enum
+ - rdfs:label :: ERN
+ - rdfs:comment :: "Eritrean nakfa."@en
 
 **** ETB (cim:Currency.ETB)
  - Types :: cim:Currency
  - rdfs:label :: ETB
- - cims:stereotype :: enum
  - rdfs:comment :: "Ethiopian birr."@en
+ - cims:stereotype :: enum
 
 **** EUR (cim:Currency.EUR)
  - Types :: cim:Currency
+ - rdfs:label :: EUR
  - rdfs:comment :: "Euro."@en
  - cims:stereotype :: enum
- - rdfs:label :: EUR
 
 **** FJD (cim:Currency.FJD)
  - Types :: cim:Currency
- - rdfs:label :: FJD
  - cims:stereotype :: enum
+ - rdfs:label :: FJD
  - rdfs:comment :: "Fiji dollar."@en
 
 **** FKP (cim:Currency.FKP)
  - Types :: cim:Currency
- - cims:stereotype :: enum
- - rdfs:label :: FKP
  - rdfs:comment :: "Falkland Islands pound."@en
+ - rdfs:label :: FKP
+ - cims:stereotype :: enum
 
 **** GBP (cim:Currency.GBP)
  - Types :: cim:Currency
+ - cims:stereotype :: enum
  - rdfs:comment :: "Pound sterling."@en
  - rdfs:label :: GBP
- - cims:stereotype :: enum
 
 **** GEL (cim:Currency.GEL)
  - Types :: cim:Currency
@@ -4582,26 +4598,26 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** GHS (cim:Currency.GHS)
  - Types :: cim:Currency
- - rdfs:comment :: "Ghanaian cedi."@en
- - cims:stereotype :: enum
  - rdfs:label :: GHS
+ - cims:stereotype :: enum
+ - rdfs:comment :: "Ghanaian cedi."@en
 
 **** GIP (cim:Currency.GIP)
  - Types :: cim:Currency
  - rdfs:label :: GIP
- - rdfs:comment :: "Gibraltar pound."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Gibraltar pound."@en
 
 **** GMD (cim:Currency.GMD)
  - Types :: cim:Currency
- - rdfs:label :: GMD
- - cims:stereotype :: enum
  - rdfs:comment :: "Gambian dalasi."@en
+ - cims:stereotype :: enum
+ - rdfs:label :: GMD
 
 **** GNF (cim:Currency.GNF)
  - Types :: cim:Currency
- - rdfs:label :: GNF
  - cims:stereotype :: enum
+ - rdfs:label :: GNF
  - rdfs:comment :: "Guinean franc."@en
 
 **** GTQ (cim:Currency.GTQ)
@@ -4612,39 +4628,39 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** GYD (cim:Currency.GYD)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:comment :: "Guyanese dollar."@en
  - rdfs:label :: GYD
+ - cims:stereotype :: enum
 
 **** HKD (cim:Currency.HKD)
  - Types :: cim:Currency
- - cims:stereotype :: enum
- - rdfs:comment :: "Hong Kong dollar."@en
  - rdfs:label :: HKD
+ - rdfs:comment :: "Hong Kong dollar."@en
+ - cims:stereotype :: enum
 
 **** HNL (cim:Currency.HNL)
  - Types :: cim:Currency
- - rdfs:label :: HNL
  - rdfs:comment :: "Honduran lempira."@en
+ - rdfs:label :: HNL
  - cims:stereotype :: enum
 
 **** HRK (cim:Currency.HRK)
  - Types :: cim:Currency
  - cims:stereotype :: enum
- - rdfs:label :: HRK
  - rdfs:comment :: "Croatian kuna."@en
+ - rdfs:label :: HRK
 
 **** HTG (cim:Currency.HTG)
  - Types :: cim:Currency
- - rdfs:comment :: "Haitian gourde."@en
  - cims:stereotype :: enum
  - rdfs:label :: HTG
+ - rdfs:comment :: "Haitian gourde."@en
 
 **** HUF (cim:Currency.HUF)
  - Types :: cim:Currency
+ - rdfs:comment :: "Hungarian forint."@en
  - cims:stereotype :: enum
  - rdfs:label :: HUF
- - rdfs:comment :: "Hungarian forint."@en
 
 **** IDR (cim:Currency.IDR)
  - Types :: cim:Currency
@@ -4654,21 +4670,21 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** ILS (cim:Currency.ILS)
  - Types :: cim:Currency
- - cims:stereotype :: enum
- - rdfs:comment :: "Israeli new sheqel."@en
  - rdfs:label :: ILS
+ - rdfs:comment :: "Israeli new sheqel."@en
+ - cims:stereotype :: enum
 
 **** INR (cim:Currency.INR)
  - Types :: cim:Currency
  - rdfs:comment :: "Indian rupee."@en
- - cims:stereotype :: enum
  - rdfs:label :: INR
+ - cims:stereotype :: enum
 
 **** IQD (cim:Currency.IQD)
  - Types :: cim:Currency
  - rdfs:label :: IQD
- - cims:stereotype :: enum
  - rdfs:comment :: "Iraqi dinar."@en
+ - cims:stereotype :: enum
 
 **** IRR (cim:Currency.IRR)
  - Types :: cim:Currency
@@ -4678,9 +4694,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** ISK (cim:Currency.ISK)
  - Types :: cim:Currency
+ - cims:stereotype :: enum
  - rdfs:comment :: "Icelandic króna."@en
  - rdfs:label :: ISK
- - cims:stereotype :: enum
 
 **** JMD (cim:Currency.JMD)
  - Types :: cim:Currency
@@ -4691,32 +4707,32 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** JOD (cim:Currency.JOD)
  - Types :: cim:Currency
  - rdfs:comment :: "Jordanian dinar."@en
- - cims:stereotype :: enum
  - rdfs:label :: JOD
+ - cims:stereotype :: enum
 
 **** JPY (cim:Currency.JPY)
  - Types :: cim:Currency
+ - rdfs:label :: JPY
  - rdfs:comment :: "Japanese yen."@en
  - cims:stereotype :: enum
- - rdfs:label :: JPY
 
 **** KES (cim:Currency.KES)
  - Types :: cim:Currency
- - rdfs:label :: KES
  - rdfs:comment :: "Kenyan shilling."@en
  - cims:stereotype :: enum
+ - rdfs:label :: KES
 
 **** KGS (cim:Currency.KGS)
  - Types :: cim:Currency
- - rdfs:label :: KGS
  - rdfs:comment :: "Kyrgyzstani som."@en
  - cims:stereotype :: enum
+ - rdfs:label :: KGS
 
 **** KHR (cim:Currency.KHR)
  - Types :: cim:Currency
- - rdfs:comment :: "Cambodian riel."@en
- - cims:stereotype :: enum
  - rdfs:label :: KHR
+ - cims:stereotype :: enum
+ - rdfs:comment :: "Cambodian riel."@en
 
 **** KMF (cim:Currency.KMF)
  - Types :: cim:Currency
@@ -4726,44 +4742,44 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** KPW (cim:Currency.KPW)
  - Types :: cim:Currency
- - rdfs:comment :: "North Korean won."@en
- - cims:stereotype :: enum
  - rdfs:label :: KPW
+ - cims:stereotype :: enum
+ - rdfs:comment :: "North Korean won."@en
 
 **** KRW (cim:Currency.KRW)
  - Types :: cim:Currency
- - rdfs:label :: KRW
- - rdfs:comment :: "South Korean won."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "South Korean won."@en
+ - rdfs:label :: KRW
 
 **** KWD (cim:Currency.KWD)
  - Types :: cim:Currency
- - rdfs:comment :: "Kuwaiti dinar."@en
  - cims:stereotype :: enum
  - rdfs:label :: KWD
+ - rdfs:comment :: "Kuwaiti dinar."@en
 
 **** KYD (cim:Currency.KYD)
  - Types :: cim:Currency
- - rdfs:label :: KYD
  - cims:stereotype :: enum
+ - rdfs:label :: KYD
  - rdfs:comment :: "Cayman Islands dollar."@en
 
 **** KZT (cim:Currency.KZT)
  - Types :: cim:Currency
- - rdfs:label :: KZT
- - rdfs:comment :: "Kazakhstani tenge."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Kazakhstani tenge."@en
+ - rdfs:label :: KZT
 
 **** LAK (cim:Currency.LAK)
  - Types :: cim:Currency
- - rdfs:label :: LAK
- - cims:stereotype :: enum
  - rdfs:comment :: "Lao kip."@en
+ - cims:stereotype :: enum
+ - rdfs:label :: LAK
 
 **** LBP (cim:Currency.LBP)
  - Types :: cim:Currency
- - rdfs:label :: LBP
  - rdfs:comment :: "Lebanese pound."@en
+ - rdfs:label :: LBP
  - cims:stereotype :: enum
 
 **** LKR (cim:Currency.LKR)
@@ -4774,14 +4790,14 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** LRD (cim:Currency.LRD)
  - Types :: cim:Currency
+ - rdfs:label :: LRD
  - cims:stereotype :: enum
  - rdfs:comment :: "Liberian dollar."@en
- - rdfs:label :: LRD
 
 **** LSL (cim:Currency.LSL)
  - Types :: cim:Currency
- - rdfs:comment :: "Lesotho loti."@en
  - rdfs:label :: LSL
+ - rdfs:comment :: "Lesotho loti."@en
  - cims:stereotype :: enum
 
 **** LTL (cim:Currency.LTL)
@@ -4799,8 +4815,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** LYD (cim:Currency.LYD)
  - Types :: cim:Currency
  - rdfs:comment :: "Libyan dinar."@en
- - cims:stereotype :: enum
  - rdfs:label :: LYD
+ - cims:stereotype :: enum
 
 **** MAD (cim:Currency.MAD)
  - Types :: cim:Currency
@@ -4810,15 +4826,15 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** MDL (cim:Currency.MDL)
  - Types :: cim:Currency
- - rdfs:comment :: "Moldovan leu."@en
- - rdfs:label :: MDL
  - cims:stereotype :: enum
+ - rdfs:label :: MDL
+ - rdfs:comment :: "Moldovan leu."@en
 
 **** MGA (cim:Currency.MGA)
  - Types :: cim:Currency
+ - cims:stereotype :: enum
  - rdfs:label :: MGA
  - rdfs:comment :: "Malagasy ariary."@en
- - cims:stereotype :: enum
 
 **** MKD (cim:Currency.MKD)
  - Types :: cim:Currency
@@ -4829,26 +4845,26 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** MMK (cim:Currency.MMK)
  - Types :: cim:Currency
  - rdfs:label :: MMK
- - rdfs:comment :: "Myanma kyat."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Myanma kyat."@en
 
 **** MNT (cim:Currency.MNT)
  - Types :: cim:Currency
+ - cims:stereotype :: enum
  - rdfs:comment :: "Mongolian tugrik."@en
  - rdfs:label :: MNT
- - cims:stereotype :: enum
 
 **** MOP (cim:Currency.MOP)
  - Types :: cim:Currency
- - cims:stereotype :: enum
- - rdfs:label :: MOP
  - rdfs:comment :: "Macanese pataca."@en
+ - rdfs:label :: MOP
+ - cims:stereotype :: enum
 
 **** MRO (cim:Currency.MRO)
  - Types :: cim:Currency
- - rdfs:comment :: "Mauritanian ouguiya."@en
- - cims:stereotype :: enum
  - rdfs:label :: MRO
+ - cims:stereotype :: enum
+ - rdfs:comment :: "Mauritanian ouguiya."@en
 
 **** MUR (cim:Currency.MUR)
  - Types :: cim:Currency
@@ -4870,33 +4886,33 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** MXN (cim:Currency.MXN)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:label :: MXN
  - rdfs:comment :: "Mexican peso."@en
+ - cims:stereotype :: enum
 
 **** MYR (cim:Currency.MYR)
  - Types :: cim:Currency
- - rdfs:label :: MYR
  - rdfs:comment :: "Malaysian ringgit."@en
  - cims:stereotype :: enum
+ - rdfs:label :: MYR
 
 **** MZN (cim:Currency.MZN)
  - Types :: cim:Currency
- - rdfs:label :: MZN
  - cims:stereotype :: enum
+ - rdfs:label :: MZN
  - rdfs:comment :: "Mozambican metical."@en
 
 **** NAD (cim:Currency.NAD)
  - Types :: cim:Currency
- - cims:stereotype :: enum
- - rdfs:label :: NAD
  - rdfs:comment :: "Namibian dollar."@en
+ - rdfs:label :: NAD
+ - cims:stereotype :: enum
 
 **** NGN (cim:Currency.NGN)
  - Types :: cim:Currency
- - rdfs:label :: NGN
  - rdfs:comment :: "Nigerian naira."@en
  - cims:stereotype :: enum
+ - rdfs:label :: NGN
 
 **** NIO (cim:Currency.NIO)
  - Types :: cim:Currency
@@ -4906,63 +4922,63 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** NOK (cim:Currency.NOK)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:label :: NOK
  - rdfs:comment :: "Norwegian krone."@en
+ - cims:stereotype :: enum
 
 **** NPR (cim:Currency.NPR)
  - Types :: cim:Currency
- - cims:stereotype :: enum
- - rdfs:label :: NPR
  - rdfs:comment :: "Nepalese rupee."@en
+ - rdfs:label :: NPR
+ - cims:stereotype :: enum
 
 **** NZD (cim:Currency.NZD)
  - Types :: cim:Currency
- - rdfs:comment :: "New Zealand dollar."@en
  - cims:stereotype :: enum
  - rdfs:label :: NZD
+ - rdfs:comment :: "New Zealand dollar."@en
 
 **** OMR (cim:Currency.OMR)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:comment :: "Omani rial."@en
+ - cims:stereotype :: enum
  - rdfs:label :: OMR
 
 **** PAB (cim:Currency.PAB)
  - Types :: cim:Currency
  - rdfs:comment :: "Panamanian balboa."@en
- - cims:stereotype :: enum
  - rdfs:label :: PAB
+ - cims:stereotype :: enum
 
 **** PEN (cim:Currency.PEN)
  - Types :: cim:Currency
- - rdfs:label :: PEN
  - cims:stereotype :: enum
  - rdfs:comment :: "Peruvian nuevo sol."@en
+ - rdfs:label :: PEN
 
 **** PGK (cim:Currency.PGK)
  - Types :: cim:Currency
  - cims:stereotype :: enum
- - rdfs:comment :: "Papua New Guinean kina."@en
  - rdfs:label :: PGK
+ - rdfs:comment :: "Papua New Guinean kina."@en
 
 **** PHP (cim:Currency.PHP)
  - Types :: cim:Currency
  - cims:stereotype :: enum
- - rdfs:label :: PHP
  - rdfs:comment :: "Philippine peso."@en
+ - rdfs:label :: PHP
 
 **** PKR (cim:Currency.PKR)
  - Types :: cim:Currency
  - cims:stereotype :: enum
- - rdfs:comment :: "Pakistani rupee."@en
  - rdfs:label :: PKR
+ - rdfs:comment :: "Pakistani rupee."@en
 
 **** PLN (cim:Currency.PLN)
  - Types :: cim:Currency
  - rdfs:label :: PLN
- - cims:stereotype :: enum
  - rdfs:comment :: "Polish zloty."@en
+ - cims:stereotype :: enum
 
 **** PYG (cim:Currency.PYG)
  - Types :: cim:Currency
@@ -4973,80 +4989,80 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** QAR (cim:Currency.QAR)
  - Types :: cim:Currency
  - rdfs:label :: QAR
- - rdfs:comment :: "Qatari rial."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Qatari rial."@en
 
 **** RON (cim:Currency.RON)
  - Types :: cim:Currency
  - rdfs:label :: RON
- - rdfs:comment :: "Romanian new leu."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Romanian new leu."@en
 
 **** RSD (cim:Currency.RSD)
  - Types :: cim:Currency
- - rdfs:comment :: "Serbian dinar."@en
  - rdfs:label :: RSD
  - cims:stereotype :: enum
+ - rdfs:comment :: "Serbian dinar."@en
 
 **** RUB (cim:Currency.RUB)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:comment :: "Russian rouble."@en
  - rdfs:label :: RUB
+ - cims:stereotype :: enum
 
 **** RWF (cim:Currency.RWF)
  - Types :: cim:Currency
+ - rdfs:comment :: "Rwandan franc."@en
  - rdfs:label :: RWF
  - cims:stereotype :: enum
- - rdfs:comment :: "Rwandan franc."@en
 
 **** SAR (cim:Currency.SAR)
  - Types :: cim:Currency
+ - rdfs:label :: SAR
  - rdfs:comment :: "Saudi riyal."@en
  - cims:stereotype :: enum
- - rdfs:label :: SAR
 
 **** SBD (cim:Currency.SBD)
  - Types :: cim:Currency
- - rdfs:label :: SBD
  - rdfs:comment :: "Solomon Islands dollar."@en
+ - rdfs:label :: SBD
  - cims:stereotype :: enum
 
 **** SCR (cim:Currency.SCR)
  - Types :: cim:Currency
- - cims:stereotype :: enum
- - rdfs:comment :: "Seychelles rupee."@en
  - rdfs:label :: SCR
+ - rdfs:comment :: "Seychelles rupee."@en
+ - cims:stereotype :: enum
 
 **** SDG (cim:Currency.SDG)
  - Types :: cim:Currency
- - rdfs:label :: SDG
- - rdfs:comment :: "Sudanese pound."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Sudanese pound."@en
+ - rdfs:label :: SDG
 
 **** SEK (cim:Currency.SEK)
  - Types :: cim:Currency
+ - cims:stereotype :: enum
  - rdfs:label :: SEK
  - rdfs:comment :: "Swedish krona/kronor."@en
- - cims:stereotype :: enum
 
 **** SGD (cim:Currency.SGD)
  - Types :: cim:Currency
- - rdfs:comment :: "Singapore dollar."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Singapore dollar."@en
  - rdfs:label :: SGD
 
 **** SHP (cim:Currency.SHP)
  - Types :: cim:Currency
  - cims:stereotype :: enum
- - rdfs:comment :: "Saint Helena pound."@en
  - rdfs:label :: SHP
+ - rdfs:comment :: "Saint Helena pound."@en
 
 **** SLL (cim:Currency.SLL)
  - Types :: cim:Currency
+ - rdfs:label :: SLL
  - cims:stereotype :: enum
  - rdfs:comment :: "Sierra Leonean leone."@en
- - rdfs:label :: SLL
 
 **** SOS (cim:Currency.SOS)
  - Types :: cim:Currency
@@ -5056,44 +5072,44 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** SRD (cim:Currency.SRD)
  - Types :: cim:Currency
+ - rdfs:label :: SRD
  - rdfs:comment :: "Surinamese dollar."@en
  - cims:stereotype :: enum
- - rdfs:label :: SRD
 
 **** STD (cim:Currency.STD)
  - Types :: cim:Currency
- - rdfs:comment :: "São Tomé and Príncipe dobra."@en
- - rdfs:label :: STD
  - cims:stereotype :: enum
+ - rdfs:label :: STD
+ - rdfs:comment :: "São Tomé and Príncipe dobra."@en
 
 **** SYP (cim:Currency.SYP)
  - Types :: cim:Currency
- - rdfs:comment :: "Syrian pound."@en
  - rdfs:label :: SYP
+ - rdfs:comment :: "Syrian pound."@en
  - cims:stereotype :: enum
 
 **** SZL (cim:Currency.SZL)
  - Types :: cim:Currency
+ - rdfs:label :: SZL
  - cims:stereotype :: enum
  - rdfs:comment :: "Lilangeni."@en
- - rdfs:label :: SZL
 
 **** THB (cim:Currency.THB)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:comment :: "Thai baht."@en
  - rdfs:label :: THB
+ - cims:stereotype :: enum
 
 **** TJS (cim:Currency.TJS)
  - Types :: cim:Currency
+ - cims:stereotype :: enum
  - rdfs:label :: TJS
  - rdfs:comment :: "Tajikistani somoni."@en
- - cims:stereotype :: enum
 
 **** TMT (cim:Currency.TMT)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:label :: TMT
+ - cims:stereotype :: enum
  - rdfs:comment :: "Turkmenistani manat."@en
 
 **** TND (cim:Currency.TND)
@@ -5110,68 +5126,68 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** TRY (cim:Currency.TRY)
  - Types :: cim:Currency
- - rdfs:comment :: "Turkish lira."@en
  - cims:stereotype :: enum
  - rdfs:label :: TRY
+ - rdfs:comment :: "Turkish lira."@en
 
 **** TTD (cim:Currency.TTD)
  - Types :: cim:Currency
  - rdfs:label :: TTD
- - rdfs:comment :: "Trinidad and Tobago dollar."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Trinidad and Tobago dollar."@en
 
 **** TWD (cim:Currency.TWD)
  - Types :: cim:Currency
  - rdfs:comment :: "New Taiwan dollar."@en
- - cims:stereotype :: enum
  - rdfs:label :: TWD
+ - cims:stereotype :: enum
 
 **** TZS (cim:Currency.TZS)
  - Types :: cim:Currency
- - rdfs:comment :: "Tanzanian shilling."@en
  - rdfs:label :: TZS
  - cims:stereotype :: enum
+ - rdfs:comment :: "Tanzanian shilling."@en
 
 **** UAH (cim:Currency.UAH)
  - Types :: cim:Currency
  - cims:stereotype :: enum
- - rdfs:comment :: "Ukrainian hryvnia."@en
  - rdfs:label :: UAH
+ - rdfs:comment :: "Ukrainian hryvnia."@en
 
 **** UGX (cim:Currency.UGX)
  - Types :: cim:Currency
- - rdfs:label :: UGX
  - rdfs:comment :: "Ugandan shilling."@en
+ - rdfs:label :: UGX
  - cims:stereotype :: enum
 
 **** USD (cim:Currency.USD)
  - Types :: cim:Currency
- - rdfs:comment :: "United States dollar."@en
- - rdfs:label :: USD
  - cims:stereotype :: enum
+ - rdfs:label :: USD
+ - rdfs:comment :: "United States dollar."@en
 
 **** UYU (cim:Currency.UYU)
  - Types :: cim:Currency
+ - cims:stereotype :: enum
  - rdfs:label :: UYU
  - rdfs:comment :: "Uruguayan peso."@en
- - cims:stereotype :: enum
 
 **** UZS (cim:Currency.UZS)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:comment :: "Uzbekistan som."@en
+ - cims:stereotype :: enum
  - rdfs:label :: UZS
 
 **** VEF (cim:Currency.VEF)
  - Types :: cim:Currency
- - rdfs:label :: VEF
  - rdfs:comment :: "Venezuelan bolívar fuerte."@en
+ - rdfs:label :: VEF
  - cims:stereotype :: enum
 
 **** VND (cim:Currency.VND)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:comment :: "Vietnamese Dong."@en
+ - cims:stereotype :: enum
  - rdfs:label :: VND
 
 **** VUV (cim:Currency.VUV)
@@ -5183,87 +5199,87 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** WST (cim:Currency.WST)
  - Types :: cim:Currency
  - cims:stereotype :: enum
- - rdfs:comment :: "Samoan tala."@en
  - rdfs:label :: WST
+ - rdfs:comment :: "Samoan tala."@en
 
 **** XAF (cim:Currency.XAF)
  - Types :: cim:Currency
- - rdfs:comment :: "CFA franc BEAC."@en
  - cims:stereotype :: enum
  - rdfs:label :: XAF
+ - rdfs:comment :: "CFA franc BEAC."@en
 
 **** XCD (cim:Currency.XCD)
  - Types :: cim:Currency
  - rdfs:label :: XCD
- - rdfs:comment :: "East Caribbean dollar."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "East Caribbean dollar."@en
 
 **** XOF (cim:Currency.XOF)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:label :: XOF
  - rdfs:comment :: "CFA Franc BCEAO."@en
+ - cims:stereotype :: enum
 
 **** XPF (cim:Currency.XPF)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:label :: XPF
+ - cims:stereotype :: enum
  - rdfs:comment :: "CFP franc."@en
 
 **** YER (cim:Currency.YER)
  - Types :: cim:Currency
- - rdfs:label :: YER
  - cims:stereotype :: enum
+ - rdfs:label :: YER
  - rdfs:comment :: "Yemeni rial."@en
 
 **** ZAR (cim:Currency.ZAR)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:label :: ZAR
  - rdfs:comment :: "South African rand."@en
+ - cims:stereotype :: enum
 
 **** ZMK (cim:Currency.ZMK)
  - Types :: cim:Currency
- - cims:stereotype :: enum
  - rdfs:label :: ZMK
+ - cims:stereotype :: enum
  - rdfs:comment :: "Zambian kwacha."@en
 
 **** ZWL (cim:Currency.ZWL)
  - Types :: cim:Currency
- - cims:stereotype :: enum
- - rdfs:label :: ZWL
  - rdfs:comment :: "Zimbabwe dollar."@en
+ - rdfs:label :: ZWL
+ - cims:stereotype :: enum
 
 *** CurveStyle                                                    :nodeclare:
 **** constantYValue (cim:CurveStyle.constantYValue)
  - Types :: cim:CurveStyle
- - cims:stereotype :: enum
- - rdfs:comment :: "The Y-axis values are assumed constant until the next curve point and prior to the first curve point."@en
  - rdfs:label :: constantYValue
+ - rdfs:comment :: "The Y-axis values are assumed constant until the next curve point and prior to the first curve point."@en
+ - cims:stereotype :: enum
 
 **** straightLineYValues (cim:CurveStyle.straightLineYValues)
  - Types :: cim:CurveStyle
- - cims:stereotype :: enum
- - rdfs:comment :: "The Y-axis values are assumed to be a straight line between values.  Also known as linear interpolation."@en
  - rdfs:label :: straightLineYValues
+ - rdfs:comment :: "The Y-axis values are assumed to be a straight line between values.  Also known as linear interpolation."@en
+ - cims:stereotype :: enum
 
 *** DCConverterOperatingModeKind                                  :nodeclare:
 **** bipolar (cim:DCConverterOperatingModeKind.bipolar)
  - Types :: cim:DCConverterOperatingModeKind
  - rdfs:label :: bipolar
- - cims:stereotype :: enum
  - rdfs:comment :: "Bipolar operation."@en
+ - cims:stereotype :: enum
 
 **** monopolarGroundReturn (cim:DCConverterOperatingModeKind.monopolarGroundReturn)
  - Types :: cim:DCConverterOperatingModeKind
- - cims:stereotype :: enum
- - rdfs:label :: monopolarGroundReturn
  - rdfs:comment :: "Monopolar operation with ground return."@en
+ - rdfs:label :: monopolarGroundReturn
+ - cims:stereotype :: enum
 
 **** monopolarMetallicReturn (cim:DCConverterOperatingModeKind.monopolarMetallicReturn)
  - Types :: cim:DCConverterOperatingModeKind
- - cims:stereotype :: enum
  - rdfs:label :: monopolarMetallicReturn
+ - cims:stereotype :: enum
  - rdfs:comment :: "Monopolar operation with metallic return."@en
 
 *** DCPolarityKind                                                :nodeclare:
@@ -5281,57 +5297,57 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** positive (cim:DCPolarityKind.positive)
  - Types :: cim:DCPolarityKind
- - rdfs:label :: positive
- - rdfs:comment :: "Positive pole. The converter terminal is intended to operate at a positive voltage relative the midpoint or negative terminal."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Positive pole. The converter terminal is intended to operate at a positive voltage relative the midpoint or negative terminal."@en
+ - rdfs:label :: positive
 
 *** FuelType                                                      :nodeclare:
 **** brownCoalLignite (cim:FuelType.brownCoalLignite)
  - Types :: cim:FuelType
- - cims:stereotype :: enum
- - rdfs:label :: brownCoalLignite
  - rdfs:comment :: "Brown coal lignite."@en
+ - rdfs:label :: brownCoalLignite
+ - cims:stereotype :: enum
 
 **** coal (cim:FuelType.coal)
  - Types :: cim:FuelType
- - rdfs:label :: coal
  - rdfs:comment :: "Generic coal, not including lignite type."@en
  - cims:stereotype :: enum
+ - rdfs:label :: coal
 
 **** coalDerivedGas (cim:FuelType.coalDerivedGas)
  - Types :: cim:FuelType
- - rdfs:comment :: "Coal derived gas."@en
  - rdfs:label :: coalDerivedGas
+ - rdfs:comment :: "Coal derived gas."@en
  - cims:stereotype :: enum
 
 **** gas (cim:FuelType.gas)
  - Types :: cim:FuelType
- - rdfs:comment :: "Natural gas."@en
  - rdfs:label :: gas
+ - rdfs:comment :: "Natural gas."@en
  - cims:stereotype :: enum
 
 **** hardCoal (cim:FuelType.hardCoal)
  - Types :: cim:FuelType
- - rdfs:comment :: "Hard coal."@en
- - rdfs:label :: hardCoal
  - cims:stereotype :: enum
+ - rdfs:label :: hardCoal
+ - rdfs:comment :: "Hard coal."@en
 
 **** lignite (cim:FuelType.lignite)
  - Types :: cim:FuelType
  - rdfs:comment :: "The fuel is lignite coal.  Note that this is a special type of coal, so the other enum of coal is reserved for hard coal types or if the exact type of coal is not known."@en
- - rdfs:label :: lignite
  - cims:stereotype :: enum
+ - rdfs:label :: lignite
 
 **** oil (cim:FuelType.oil)
  - Types :: cim:FuelType
- - rdfs:comment :: "Oil."@en
  - cims:stereotype :: enum
  - rdfs:label :: oil
+ - rdfs:comment :: "Oil."@en
 
 **** oilShale (cim:FuelType.oilShale)
  - Types :: cim:FuelType
- - cims:stereotype :: enum
  - rdfs:label :: oilShale
+ - cims:stereotype :: enum
  - rdfs:comment :: "Oil Shale."@en
 
 **** other (cim:FuelType.other)
@@ -5342,54 +5358,54 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** peat (cim:FuelType.peat)
  - Types :: cim:FuelType
- - rdfs:comment :: "Peat."@en
- - rdfs:label :: peat
  - cims:stereotype :: enum
+ - rdfs:label :: peat
+ - rdfs:comment :: "Peat."@en
 
 *** GeneratorControlSource                                        :nodeclare:
 **** offAGC (cim:GeneratorControlSource.offAGC)
  - Types :: cim:GeneratorControlSource
+ - rdfs:comment :: "Off of automatic generation control (AGC)."@en
  - cims:stereotype :: enum
  - rdfs:label :: offAGC
- - rdfs:comment :: "Off of automatic generation control (AGC)."@en
 
 **** onAGC (cim:GeneratorControlSource.onAGC)
  - Types :: cim:GeneratorControlSource
+ - rdfs:label :: onAGC
  - cims:stereotype :: enum
  - rdfs:comment :: "On automatic generation control (AGC)."@en
- - rdfs:label :: onAGC
 
 **** plantControl (cim:GeneratorControlSource.plantControl)
  - Types :: cim:GeneratorControlSource
+ - cims:stereotype :: enum
  - rdfs:comment :: "Plant is controlling."@en
  - rdfs:label :: plantControl
- - cims:stereotype :: enum
 
 **** unavailable (cim:GeneratorControlSource.unavailable)
  - Types :: cim:GeneratorControlSource
- - rdfs:comment :: "Not available."@en
  - rdfs:label :: unavailable
  - cims:stereotype :: enum
+ - rdfs:comment :: "Not available."@en
 
 *** HydroEnergyConversionKind                                     :nodeclare:
 **** generator (cim:HydroEnergyConversionKind.generator)
  - Types :: cim:HydroEnergyConversionKind
- - rdfs:label :: generator
  - cims:stereotype :: enum
+ - rdfs:label :: generator
  - rdfs:comment :: "Able to generate power, but not able to pump water for energy storage."@en
 
 **** pumpAndGenerator (cim:HydroEnergyConversionKind.pumpAndGenerator)
  - Types :: cim:HydroEnergyConversionKind
+ - rdfs:label :: pumpAndGenerator
  - rdfs:comment :: "Able to both generate power and pump water for energy storage."@en
  - cims:stereotype :: enum
- - rdfs:label :: pumpAndGenerator
 
 *** HydroPlantStorageKind                                         :nodeclare:
 **** pumpedStorage (cim:HydroPlantStorageKind.pumpedStorage)
  - Types :: cim:HydroPlantStorageKind
+ - rdfs:label :: pumpedStorage
  - cims:stereotype :: enum
  - rdfs:comment :: "Pumped storage."@en
- - rdfs:label :: pumpedStorage
 
 **** runOfRiver (cim:HydroPlantStorageKind.runOfRiver)
  - Types :: cim:HydroPlantStorageKind
@@ -5406,139 +5422,139 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 *** HydroTurbineKind                                              :nodeclare:
 **** francis (cim:HydroTurbineKind.francis)
  - Types :: cim:HydroTurbineKind
- - rdfs:comment :: "Francis."@en
  - rdfs:label :: francis
  - cims:stereotype :: enum
+ - rdfs:comment :: "Francis."@en
 
 **** kaplan (cim:HydroTurbineKind.kaplan)
  - Types :: cim:HydroTurbineKind
  - rdfs:label :: kaplan
- - rdfs:comment :: "Kaplan."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Kaplan."@en
 
 **** pelton (cim:HydroTurbineKind.pelton)
  - Types :: cim:HydroTurbineKind
- - rdfs:label :: pelton
  - cims:stereotype :: enum
+ - rdfs:label :: pelton
  - rdfs:comment :: "Pelton."@en
 
 *** LimitKind                                                     :nodeclare:
 **** alarmVoltage (eu:LimitKind.alarmVoltage)
  - Types :: eu:LimitKind
- - rdfs:label :: alarmVoltage
- - cims:stereotype :: enum
  - rdfs:comment :: "Voltage alarm."@en
+ - cims:stereotype :: enum
  - cims:stereotype :: European
+ - rdfs:label :: alarmVoltage
 
 **** highVoltage (eu:LimitKind.highVoltage)
  - Types :: eu:LimitKind
- - cims:stereotype :: European
  - rdfs:comment :: "Referring to the rating of the equipments, a voltage too high can lead to accelerated ageing or the destruction of the equipment.
-      This limit type may or may not have duration."@en
- - cims:stereotype :: enum
+          This limit type may or may not have duration."@en
  - rdfs:label :: highVoltage
+ - cims:stereotype :: European
+ - cims:stereotype :: enum
 
 **** lowVoltage (eu:LimitKind.lowVoltage)
  - Types :: eu:LimitKind
  - rdfs:label :: lowVoltage
  - rdfs:comment :: "A too low voltage can disturb the normal operation of some protections and transformer equipped with on-load tap changers, electronic power devices or can affect the behaviour of the auxiliaries of generation units.
-      This limit type may or may not have duration."@en
- - cims:stereotype :: European
+          This limit type may or may not have duration."@en
  - cims:stereotype :: enum
+ - cims:stereotype :: European
 
 **** operationalVoltageLimit (eu:LimitKind.operationalVoltageLimit)
  - Types :: eu:LimitKind
- - rdfs:comment :: "Operational voltage limit."@en
  - cims:stereotype :: European
- - cims:stereotype :: enum
  - rdfs:label :: operationalVoltageLimit
+ - rdfs:comment :: "Operational voltage limit."@en
+ - cims:stereotype :: enum
 
 **** patl (eu:LimitKind.patl)
  - Types :: eu:LimitKind
  - rdfs:label :: patl
- - cims:stereotype :: enum
  - rdfs:comment :: "The Permanent Admissible Transmission Loading (PATL) is the loading in amperes, MVA or MW that can be accepted by a network branch for an unlimited duration without any risk for the material.
-      The OperationnalLimitType.isInfiniteDuration is set to true. There shall be only one OperationalLimitType of kind PATL per OperationalLimitSet if the PATL is ApparentPowerLimit, ActivePowerLimit, or CurrentLimit for a given Terminal or Equipment."@en
+          The OperationnalLimitType.isInfiniteDuration is set to true. There shall be only one OperationalLimitType of kind PATL per OperationalLimitSet if the PATL is ApparentPowerLimit, ActivePowerLimit, or CurrentLimit for a given Terminal or Equipment."@en
  - cims:stereotype :: European
+ - cims:stereotype :: enum
 
 **** patlt (eu:LimitKind.patlt)
  - Types :: eu:LimitKind
  - rdfs:label :: patlt
- - cims:stereotype :: enum
  - cims:stereotype :: European
+ - cims:stereotype :: enum
  - rdfs:comment :: "Permanent Admissible Transmission Loading Threshold  (PATLT) is a value in engineering units defined for PATL and calculated using a percentage less than 100 % of the PATL type intended to alert operators of an arising condition. The percentage should be given in the name of the OperationalLimitSet. The aceptableDuration is another way to express the severity of the limit."@en
 
 **** stability (eu:LimitKind.stability)
  - Types :: eu:LimitKind
+ - cims:stereotype :: enum
  - rdfs:comment :: "Stability."@en
  - cims:stereotype :: European
  - rdfs:label :: stability
- - cims:stereotype :: enum
 
 **** tatl (eu:LimitKind.tatl)
  - Types :: eu:LimitKind
- - cims:stereotype :: European
- - rdfs:comment :: "Temporarily Admissible Transmission Loading (TATL) which is the loading in amperes, MVA or MW that can be accepted by a branch for a certain limited duration.
-      The TATL can be defined in different ways:
-      <ul>
-      t<li>as a fixed percentage of the PATL for a given time (for example, 115% of the PATL that can be accepted during 15 minutes),</li>
-      </ul>
-      <ul>
-      t<li>pairs of TATL type and Duration calculated for each line taking into account its particular configuration and conditions of functioning (for example, it can define a TATL acceptable during 20 minutes and another one acceptable during 10 minutes).</li>
-      </ul>
-      Such a definition of TATL can depend on the initial operating conditions of the network element (sag situation of a line).
-      The duration attribute can be used to define several TATL limit types. Hence multiple TATL limit values may exist having different durations."@en
  - cims:stereotype :: enum
  - rdfs:label :: tatl
+ - rdfs:comment :: "Temporarily Admissible Transmission Loading (TATL) which is the loading in amperes, MVA or MW that can be accepted by a branch for a certain limited duration.
+          The TATL can be defined in different ways:
+          <ul>
+          t<li>as a fixed percentage of the PATL for a given time (for example, 115% of the PATL that can be accepted during 15 minutes),</li>
+          </ul>
+          <ul>
+          t<li>pairs of TATL type and Duration calculated for each line taking into account its particular configuration and conditions of functioning (for example, it can define a TATL acceptable during 20 minutes and another one acceptable during 10 minutes).</li>
+          </ul>
+          Such a definition of TATL can depend on the initial operating conditions of the network element (sag situation of a line).
+          The duration attribute can be used to define several TATL limit types. Hence multiple TATL limit values may exist having different durations."@en
+ - cims:stereotype :: European
 
 **** tc (eu:LimitKind.tc)
  - Types :: eu:LimitKind
- - rdfs:comment :: "Tripping Current (TC) is the ultimate intensity without any delay. It is defined as the threshold the line will trip without any possible remedial actions.
-      The tripping of the network element is ordered by protections against short circuits or by overload protections, but in any case, the activation delay of these protections is not compatible with the reaction delay of an operator (less than one minute).
-      The duration is always zero if the OperationalLimitType.acceptableDuration is exchanged. Only one limit value exists for the TC type."@en
- - rdfs:label :: tc
  - cims:stereotype :: European
+ - rdfs:comment :: "Tripping Current (TC) is the ultimate intensity without any delay. It is defined as the threshold the line will trip without any possible remedial actions.
+          The tripping of the network element is ordered by protections against short circuits or by overload protections, but in any case, the activation delay of these protections is not compatible with the reaction delay of an operator (less than one minute).
+          The duration is always zero if the OperationalLimitType.acceptableDuration is exchanged. Only one limit value exists for the TC type."@en
  - cims:stereotype :: enum
+ - rdfs:label :: tc
 
 **** tct (eu:LimitKind.tct)
  - Types :: eu:LimitKind
+ - cims:stereotype :: enum
  - rdfs:comment :: "Tripping Current Threshold  (TCT) is a value in engineering units defined for TC and calculated using a percentage less than 100 % of the TC type intended to alert operators of an arising condition. The percentage should be given in the name of the OperationalLimitSet. The aceptableDuration is another way to express the severity of the limit."@en
  - rdfs:label :: tct
  - cims:stereotype :: European
- - cims:stereotype :: enum
 
 **** warningVoltage (eu:LimitKind.warningVoltage)
  - Types :: eu:LimitKind
- - rdfs:label :: warningVoltage
  - cims:stereotype :: enum
+ - rdfs:label :: warningVoltage
  - rdfs:comment :: "Voltage warning."@en
  - cims:stereotype :: European
 
 *** OperationalLimitDirectionKind                                 :nodeclare:
 **** absoluteValue (cim:OperationalLimitDirectionKind.absoluteValue)
  - Types :: cim:OperationalLimitDirectionKind
- - rdfs:comment :: "An absoluteValue limit means that a monitored absolute value above the limit value is a violation."@en
- - cims:stereotype :: enum
  - rdfs:label :: absoluteValue
+ - cims:stereotype :: enum
+ - rdfs:comment :: "An absoluteValue limit means that a monitored absolute value above the limit value is a violation."@en
 
 **** high (cim:OperationalLimitDirectionKind.high)
  - Types :: cim:OperationalLimitDirectionKind
  - rdfs:comment :: "High means that a monitored value above the limit value is a violation.   If applied to a terminal flow, the positive direction is into the terminal."@en
- - rdfs:label :: high
  - cims:stereotype :: enum
+ - rdfs:label :: high
 
 **** low (cim:OperationalLimitDirectionKind.low)
  - Types :: cim:OperationalLimitDirectionKind
- - cims:stereotype :: enum
  - rdfs:comment :: "Low means a monitored value below the limit is a violation.  If applied to a terminal flow, the positive direction is into the terminal."@en
  - rdfs:label :: low
+ - cims:stereotype :: enum
 
 *** PhaseCode                                                     :nodeclare:
 **** A (cim:PhaseCode.A)
  - Types :: cim:PhaseCode
- - rdfs:comment :: "Phase A."@en
- - rdfs:label :: A
  - cims:stereotype :: enum
+ - rdfs:label :: A
+ - rdfs:comment :: "Phase A."@en
 
 **** AB (cim:PhaseCode.AB)
  - Types :: cim:PhaseCode
@@ -5554,87 +5570,87 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** ABCN (cim:PhaseCode.ABCN)
  - Types :: cim:PhaseCode
- - rdfs:label :: ABCN
  - rdfs:comment :: "Phases A, B, C, and N."@en
+ - rdfs:label :: ABCN
  - cims:stereotype :: enum
 
 **** ABN (cim:PhaseCode.ABN)
  - Types :: cim:PhaseCode
  - rdfs:comment :: "Phases A, B, and neutral."@en
- - cims:stereotype :: enum
  - rdfs:label :: ABN
+ - cims:stereotype :: enum
 
 **** AC (cim:PhaseCode.AC)
  - Types :: cim:PhaseCode
- - rdfs:label :: AC
  - rdfs:comment :: "Phases A and C."@en
+ - rdfs:label :: AC
  - cims:stereotype :: enum
 
 **** ACN (cim:PhaseCode.ACN)
  - Types :: cim:PhaseCode
- - rdfs:comment :: "Phases A, C and neutral."@en
  - rdfs:label :: ACN
+ - rdfs:comment :: "Phases A, C and neutral."@en
  - cims:stereotype :: enum
 
 **** AN (cim:PhaseCode.AN)
  - Types :: cim:PhaseCode
- - rdfs:comment :: "Phases A and neutral."@en
  - rdfs:label :: AN
  - cims:stereotype :: enum
+ - rdfs:comment :: "Phases A and neutral."@en
 
 **** B (cim:PhaseCode.B)
  - Types :: cim:PhaseCode
- - rdfs:label :: B
  - rdfs:comment :: "Phase B."@en
+ - rdfs:label :: B
  - cims:stereotype :: enum
 
 **** BC (cim:PhaseCode.BC)
  - Types :: cim:PhaseCode
- - rdfs:comment :: "Phases B and C."@en
  - rdfs:label :: BC
  - cims:stereotype :: enum
+ - rdfs:comment :: "Phases B and C."@en
 
 **** BCN (cim:PhaseCode.BCN)
  - Types :: cim:PhaseCode
- - rdfs:comment :: "Phases B, C, and neutral."@en
  - cims:stereotype :: enum
  - rdfs:label :: BCN
+ - rdfs:comment :: "Phases B, C, and neutral."@en
 
 **** BN (cim:PhaseCode.BN)
  - Types :: cim:PhaseCode
- - rdfs:comment :: "Phases B and neutral."@en
  - rdfs:label :: BN
+ - rdfs:comment :: "Phases B and neutral."@en
  - cims:stereotype :: enum
 
 **** C (cim:PhaseCode.C)
  - Types :: cim:PhaseCode
+ - cims:stereotype :: enum
  - rdfs:comment :: "Phase C."@en
  - rdfs:label :: C
- - cims:stereotype :: enum
 
 **** CN (cim:PhaseCode.CN)
  - Types :: cim:PhaseCode
  - rdfs:comment :: "Phases C and neutral."@en
- - rdfs:label :: CN
  - cims:stereotype :: enum
+ - rdfs:label :: CN
 
 **** N (cim:PhaseCode.N)
  - Types :: cim:PhaseCode
  - cims:stereotype :: enum
- - rdfs:label :: N
  - rdfs:comment :: "Neutral phase."@en
+ - rdfs:label :: N
 
 **** none (cim:PhaseCode.none)
  - Types :: cim:PhaseCode
- - rdfs:label :: none
  - cims:stereotype :: enum
+ - rdfs:label :: none
  - rdfs:comment :: "No phases specified."@en
 
 **** s1 (cim:PhaseCode.s1)
  - Types :: cim:PhaseCode
- - rdfs:label :: s1
- - cims:stereotype :: enum
  - rdfs:comment :: "Secondary phase 1."@en
+ - cims:stereotype :: enum
+ - rdfs:label :: s1
 
 **** s12 (cim:PhaseCode.s12)
  - Types :: cim:PhaseCode
@@ -5644,9 +5660,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** s12N (cim:PhaseCode.s12N)
  - Types :: cim:PhaseCode
+ - rdfs:comment :: "Secondary phases 1, 2, and neutral."@en
  - rdfs:label :: s12N
  - cims:stereotype :: enum
- - rdfs:comment :: "Secondary phases 1, 2, and neutral."@en
 
 **** s1N (cim:PhaseCode.s1N)
  - Types :: cim:PhaseCode
@@ -5656,388 +5672,388 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** s2 (cim:PhaseCode.s2)
  - Types :: cim:PhaseCode
+ - rdfs:comment :: "Secondary phase 2."@en
  - cims:stereotype :: enum
  - rdfs:label :: s2
- - rdfs:comment :: "Secondary phase 2."@en
 
 **** s2N (cim:PhaseCode.s2N)
  - Types :: cim:PhaseCode
+ - cims:stereotype :: enum
  - rdfs:label :: s2N
  - rdfs:comment :: "Secondary phase 2 and neutral."@en
- - cims:stereotype :: enum
 
 **** X (cim:PhaseCode.X)
  - Types :: cim:PhaseCode
+ - rdfs:label :: X
  - rdfs:comment :: "Unknown non-neutral phase."@en
  - cims:stereotype :: enum
- - rdfs:label :: X
 
 **** XN (cim:PhaseCode.XN)
  - Types :: cim:PhaseCode
- - cims:stereotype :: enum
  - rdfs:comment :: "Unknown non-neutral phase plus neutral."@en
+ - cims:stereotype :: enum
  - rdfs:label :: XN
 
 **** XY (cim:PhaseCode.XY)
  - Types :: cim:PhaseCode
- - rdfs:comment :: "Two unknown non-neutral phases."@en
  - rdfs:label :: XY
+ - rdfs:comment :: "Two unknown non-neutral phases."@en
  - cims:stereotype :: enum
 
 **** XYN (cim:PhaseCode.XYN)
  - Types :: cim:PhaseCode
  - rdfs:comment :: "Two unknown non-neutral phases plus neutral."@en
- - cims:stereotype :: enum
  - rdfs:label :: XYN
+ - cims:stereotype :: enum
 
 *** qudt:QuantityKind                                             :nodeclare:
 **** ActivePower (cim:ActivePower)
  - Types :: qudt:QuantityKind
- - rdfs:comment :: "Product of RMS value of the voltage and the RMS value of the in-phase component of the current."@en
  - skos:exactMatch :: quantitykind:ActivePower
+ - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - rdfs:label :: ActivePower
  - qudt:applicableUnit :: cim:UnitSymbol.W
- - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - rdfs:comment :: "Product of RMS value of the voltage and the RMS value of the in-phase component of the current."@en
 
 **** ActivePowerPerCurrentFlow (cim:ActivePowerPerCurrentFlow)
  - Types :: qudt:QuantityKind
- - rdfs:label :: ActivePowerPerCurrentFlow
  - skos:exactMatch :: quantitykind:ActivePowerPerCurrentFlow
- - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - qudt:applicableUnit :: cim:UnitSymbol.WPerA
  - rdfs:comment :: "Active power variation with current flow."@en
+ - rdfs:label :: ActivePowerPerCurrentFlow
+ - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
 
 **** ActivePowerPerFrequency (cim:ActivePowerPerFrequency)
  - Types :: qudt:QuantityKind
+ - qudt:applicableUnit :: cim:UnitSymbol.WPerHz
+ - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - rdfs:label :: ActivePowerPerFrequency
  - skos:exactMatch :: quantitykind:ActivePowerPerFrequency
  - rdfs:comment :: "Active power variation with frequency."@en
- - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
- - qudt:applicableUnit :: cim:UnitSymbol.WPerHz
- - rdfs:label :: ActivePowerPerFrequency
 
 **** AngleDegrees (cim:AngleDegrees)
  - Types :: qudt:QuantityKind
- - qudt:applicableUnit :: cim:UnitSymbol.deg
- - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
- - rdfs:label :: AngleDegrees
- - rdfs:comment :: "Measurement of angle in degrees."@en
  - skos:exactMatch :: quantitykind:Angle
+ - rdfs:comment :: "Measurement of angle in degrees."@en
+ - rdfs:label :: AngleDegrees
+ - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - qudt:applicableUnit :: cim:UnitSymbol.deg
 
 **** ApparentPower (cim:ApparentPower)
  - Types :: qudt:QuantityKind
- - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - skos:exactMatch :: quantitykind:ApparentPower
- - qudt:applicableUnit :: cim:UnitSymbol.VA
  - rdfs:label :: ApparentPower
  - rdfs:comment :: "Product of the RMS value of the voltage and the RMS value of the current."@en
+ - qudt:applicableUnit :: cim:UnitSymbol.VA
+ - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
 
 **** Capacitance (cim:Capacitance)
  - Types :: qudt:QuantityKind
  - rdfs:label :: Capacitance
  - rdfs:comment :: "Capacitive part of reactance (imaginary part of impedance), at rated frequency."@en
- - skos:exactMatch :: quantitykind:Capacitance
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - skos:exactMatch :: quantitykind:Capacitance
  - qudt:applicableUnit :: cim:UnitSymbol.F
 
 **** Conductance (cim:Conductance)
  - Types :: qudt:QuantityKind
+ - qudt:applicableUnit :: cim:UnitSymbol.S
+ - rdfs:comment :: "Factor by which voltage must be multiplied to give corresponding power lost from a circuit. Real part of admittance."@en
+ - skos:exactMatch :: quantitykind:Conductance
  - rdfs:label :: Conductance
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
- - rdfs:comment :: "Factor by which voltage must be multiplied to give corresponding power lost from a circuit. Real part of admittance."@en
- - qudt:applicableUnit :: cim:UnitSymbol.S
- - skos:exactMatch :: quantitykind:Conductance
 
 **** CurrentFlow (cim:CurrentFlow)
  - Types :: qudt:QuantityKind
- - rdfs:label :: CurrentFlow
- - skos:exactMatch :: quantitykind:ElectricCurrent
- - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - qudt:applicableUnit :: cim:UnitSymbol.A
  - rdfs:comment :: "Electrical current with sign convention: positive flow is out of the conducting equipment into the connectivity node. Can be both AC and DC."@en
+ - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - skos:exactMatch :: quantitykind:ElectricCurrent
+ - rdfs:label :: CurrentFlow
 
 **** Frequency (cim:Frequency)
  - Types :: qudt:QuantityKind
- - rdfs:comment :: "Cycles per second."@en
- - qudt:applicableUnit :: cim:UnitSymbol.Hz
- - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - rdfs:label :: Frequency
+ - rdfs:comment :: "Cycles per second."@en
+ - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - qudt:applicableUnit :: cim:UnitSymbol.Hz
  - skos:exactMatch :: quantitykind:Frequency
 
 **** Inductance (cim:Inductance)
  - Types :: qudt:QuantityKind
  - rdfs:comment :: "Inductive part of reactance (imaginary part of impedance), at rated frequency."@en
- - rdfs:label :: Inductance
- - qudt:applicableUnit :: cim:UnitSymbol.H
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - qudt:applicableUnit :: cim:UnitSymbol.H
+ - rdfs:label :: Inductance
 
 **** Length (cim:Length)
  - Types :: qudt:QuantityKind
+ - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - qudt:applicableUnit :: cim:UnitSymbol.m
  - skos:exactMatch :: quantitykind:Length
  - rdfs:label :: Length
- - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - rdfs:comment :: "Unit of length. It shall be a positive value or zero."@en
 
 **** Money (cim:Money)
  - Types :: qudt:QuantityKind
- - qudt:applicableUnit :: cim:Currency.PEN
- - qudt:applicableUnit :: cim:Currency.MKD
- - qudt:applicableUnit :: cim:Currency.RUB
- - qudt:applicableUnit :: cim:Currency.IQD
- - qudt:applicableUnit :: cim:Currency.VND
- - qudt:applicableUnit :: cim:Currency.PGK
- - qudt:applicableUnit :: cim:Currency.TRY
- - qudt:applicableUnit :: cim:Currency.MWK
- - qudt:applicableUnit :: cim:Currency.KRW
- - qudt:applicableUnit :: cim:Currency.COU
- - qudt:applicableUnit :: cim:Currency.GNF
- - qudt:applicableUnit :: cim:Currency.MUR
- - qudt:applicableUnit :: cim:Currency.BZD
- - qudt:applicableUnit :: cim:Currency.MOP
- - qudt:applicableUnit :: cim:Currency.CAD
- - qudt:applicableUnit :: cim:Currency.LBP
- - qudt:applicableUnit :: cim:Currency.CHF
- - rdfs:comment :: "Amount of money."@en
- - qudt:applicableUnit :: cim:Currency.BMD
- - qudt:applicableUnit :: cim:Currency.PAB
- - qudt:applicableUnit :: cim:Currency.PLN
- - qudt:applicableUnit :: cim:Currency.KYD
- - qudt:applicableUnit :: cim:Currency.LYD
- - qudt:applicableUnit :: cim:Currency.BOB
- - qudt:applicableUnit :: cim:Currency.BDT
- - qudt:applicableUnit :: cim:Currency.UYU
- - qudt:applicableUnit :: cim:Currency.BGN
- - qudt:applicableUnit :: cim:Currency.LAK
- - qudt:applicableUnit :: cim:Currency.NPR
- - qudt:applicableUnit :: cim:Currency.DZD
- - qudt:applicableUnit :: cim:Currency.KWD
- - qudt:applicableUnit :: cim:Currency.XAF
- - qudt:applicableUnit :: cim:Currency.BTN
- - qudt:applicableUnit :: cim:Currency.KHR
- - qudt:applicableUnit :: cim:Currency.HKD
- - qudt:applicableUnit :: cim:Currency.NZD
- - qudt:applicableUnit :: cim:Currency.XCD
- - qudt:applicableUnit :: cim:Currency.NAD
- - qudt:applicableUnit :: cim:Currency.ISK
- - qudt:applicableUnit :: cim:Currency.NGN
- - qudt:applicableUnit :: cim:Currency.XOF
- - qudt:applicableUnit :: cim:Currency.BRL
- - qudt:applicableUnit :: cim:Currency.ETB
- - qudt:applicableUnit :: cim:Currency.CDF
- - qudt:applicableUnit :: cim:Currency.UGX
- - qudt:applicableUnit :: cim:Currency.CUC
- - qudt:applicableUnit :: cim:Currency.WST
- - qudt:applicableUnit :: cim:Currency.DOP
- - qudt:applicableUnit :: cim:Currency.XPF
- - qudt:applicableUnit :: cim:Currency.RWF
- - qudt:applicableUnit :: cim:Currency.SEK
- - qudt:applicableUnit :: cim:Currency.USD
- - qudt:applicableUnit :: cim:Currency.AOA
- - qudt:applicableUnit :: cim:Currency.LSL
- - qudt:applicableUnit :: cim:Currency.KMF
- - qudt:applicableUnit :: cim:Currency.HNL
- - qudt:applicableUnit :: cim:Currency.TMT
- - qudt:applicableUnit :: cim:Currency.ARS
- - qudt:applicableUnit :: cim:Currency.BSD
- - qudt:applicableUnit :: cim:Currency.MGA
- - qudt:applicableUnit :: cim:Currency.CLP
- - qudt:applicableUnit :: cim:Currency.EEK
- - qudt:applicableUnit :: cim:Currency.AZN
- - qudt:applicableUnit :: cim:Currency.GHS
- - qudt:applicableUnit :: cim:Currency.TJS
- - qudt:applicableUnit :: cim:Currency.INR
- - qudt:applicableUnit :: cim:Currency.MNT
- - qudt:applicableUnit :: cim:Currency.PKR
- - qudt:applicableUnit :: cim:Currency.JOD
- - qudt:applicableUnit :: cim:Currency.MXN
- - qudt:applicableUnit :: cim:Currency.DKK
- - qudt:applicableUnit :: cim:Currency.SGD
- - qudt:applicableUnit :: cim:Currency.SBD
- - qudt:applicableUnit :: cim:Currency.ILS
- - qudt:applicableUnit :: cim:Currency.TZS
- - qudt:applicableUnit :: cim:Currency.RON
- - qudt:applicableUnit :: cim:Currency.HRK
- - qudt:applicableUnit :: cim:Currency.SCR
- - qudt:applicableUnit :: cim:Currency.SZL
- - qudt:applicableUnit :: cim:Currency.MVR
- - qudt:applicableUnit :: cim:Currency.BYR
- - qudt:applicableUnit :: cim:Currency.TND
- - qudt:applicableUnit :: cim:Currency.EGP
- - qudt:applicableUnit :: cim:Currency.AED
- - qudt:applicableUnit :: cim:Currency.BHD
- - qudt:applicableUnit :: cim:Currency.BIF
- - qudt:applicableUnit :: cim:Currency.TOP
- - qudt:applicableUnit :: cim:Currency.STD
- - qudt:applicableUnit :: cim:Currency.OMR
- - qudt:applicableUnit :: cim:Currency.GTQ
  - qudt:applicableUnit :: cim:Currency.THB
- - qudt:applicableUnit :: cim:Currency.KES
- - qudt:applicableUnit :: cim:Currency.CZK
- - qudt:applicableUnit :: cim:Currency.YER
- - qudt:applicableUnit :: cim:Currency.GBP
- - qudt:applicableUnit :: cim:Currency.QAR
- - qudt:applicableUnit :: cim:Currency.IRR
- - qudt:applicableUnit :: cim:Currency.LTL
- - qudt:applicableUnit :: cim:Currency.GYD
- - qudt:applicableUnit :: cim:Currency.VUV
- - qudt:applicableUnit :: cim:Currency.SHP
- - qudt:applicableUnit :: cim:Currency.TWD
- - qudt:applicableUnit :: cim:Currency.FJD
- - qudt:applicableUnit :: cim:Currency.ERN
- - qudt:applicableUnit :: cim:Currency.MRO
- - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
- - rdfs:label :: Money
- - qudt:applicableUnit :: cim:Currency.HUF
- - qudt:applicableUnit :: cim:Currency.ALL
- - skos:exactMatch :: quantitykind:Currency
- - qudt:applicableUnit :: cim:Currency.RSD
- - qudt:applicableUnit :: cim:Currency.AWG
- - qudt:applicableUnit :: cim:Currency.AFN
- - qudt:applicableUnit :: cim:Currency.VEF
- - qudt:applicableUnit :: cim:Currency.KGS
- - qudt:applicableUnit :: cim:Currency.CUP
- - qudt:applicableUnit :: cim:Currency.ANG
- - qudt:applicableUnit :: cim:Currency.ZMK
- - qudt:applicableUnit :: cim:Currency.MAD
- - qudt:applicableUnit :: cim:Currency.GEL
- - qudt:applicableUnit :: cim:Currency.JMD
- - qudt:applicableUnit :: cim:Currency.UZS
- - qudt:applicableUnit :: cim:Currency.CVE
- - qudt:applicableUnit :: cim:Currency.JPY
- - qudt:applicableUnit :: cim:Currency.BBD
- - qudt:applicableUnit :: cim:Currency.BOV
- - qudt:applicableUnit :: cim:Currency.BWP
- - qudt:applicableUnit :: cim:Currency.AUD
- - qudt:applicableUnit :: cim:Currency.MMK
- - qudt:applicableUnit :: cim:Currency.NOK
- - qudt:applicableUnit :: cim:Currency.CLF
- - qudt:applicableUnit :: cim:Currency.PYG
- - qudt:applicableUnit :: cim:Currency.IDR
- - qudt:applicableUnit :: cim:Currency.MDL
- - qudt:applicableUnit :: cim:Currency.MZN
- - qudt:applicableUnit :: cim:Currency.GMD
- - qudt:applicableUnit :: cim:Currency.LKR
- - qudt:applicableUnit :: cim:Currency.AMD
- - qudt:applicableUnit :: cim:Currency.SDG
- - qudt:applicableUnit :: cim:Currency.ZAR
- - qudt:applicableUnit :: cim:Currency.UAH
- - qudt:applicableUnit :: cim:Currency.NIO
+ - qudt:applicableUnit :: cim:Currency.VND
+ - qudt:applicableUnit :: cim:Currency.OMR
+ - qudt:applicableUnit :: cim:Currency.PGK
  - qudt:applicableUnit :: cim:Currency.SYP
- - qudt:applicableUnit :: cim:Currency.SLL
- - qudt:applicableUnit :: cim:Currency.FKP
- - qudt:applicableUnit :: cim:Currency.COP
- - qudt:applicableUnit :: cim:Currency.SAR
- - qudt:applicableUnit :: cim:Currency.LVL
+ - qudt:applicableUnit :: cim:Currency.NPR
+ - qudt:applicableUnit :: cim:Currency.PYG
+ - qudt:applicableUnit :: cim:Currency.ZMK
+ - qudt:applicableUnit :: cim:Currency.LSL
+ - qudt:applicableUnit :: cim:Currency.BMD
  - qudt:applicableUnit :: cim:Currency.HTG
- - qudt:applicableUnit :: cim:Currency.BAM
- - qudt:applicableUnit :: cim:Currency.GIP
- - qudt:applicableUnit :: cim:Currency.MYR
- - qudt:applicableUnit :: cim:Currency.PHP
- - qudt:applicableUnit :: cim:Currency.KZT
- - qudt:applicableUnit :: cim:Currency.EUR
- - qudt:applicableUnit :: cim:Currency.CRC
- - qudt:applicableUnit :: cim:Currency.SOS
+ - qudt:applicableUnit :: cim:Currency.MRO
+ - qudt:applicableUnit :: cim:Currency.TZS
+ - qudt:applicableUnit :: cim:Currency.RUB
+ - qudt:applicableUnit :: cim:Currency.LTL
+ - qudt:applicableUnit :: cim:Currency.DKK
+ - qudt:applicableUnit :: cim:Currency.MDL
+ - qudt:applicableUnit :: cim:Currency.BZD
+ - qudt:applicableUnit :: cim:Currency.AUD
+ - qudt:applicableUnit :: cim:Currency.DOP
+ - qudt:applicableUnit :: cim:Currency.SZL
+ - qudt:applicableUnit :: cim:Currency.CZK
+ - qudt:applicableUnit :: cim:Currency.UGX
+ - qudt:applicableUnit :: cim:Currency.AWG
+ - qudt:applicableUnit :: cim:Currency.TWD
+ - qudt:applicableUnit :: cim:Currency.MMK
+ - qudt:applicableUnit :: cim:Currency.UAH
+ - qudt:applicableUnit :: cim:Currency.KYD
+ - qudt:applicableUnit :: cim:Currency.XOF
+ - qudt:applicableUnit :: cim:Currency.STD
+ - qudt:applicableUnit :: cim:Currency.SBD
+ - qudt:applicableUnit :: cim:Currency.EEK
+ - qudt:applicableUnit :: cim:Currency.MVR
+ - qudt:applicableUnit :: cim:Currency.RSD
  - qudt:applicableUnit :: cim:Currency.KPW
+ - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - qudt:applicableUnit :: cim:Currency.JPY
+ - qudt:applicableUnit :: cim:Currency.KWD
+ - qudt:applicableUnit :: cim:Currency.LRD
+ - qudt:applicableUnit :: cim:Currency.SGD
+ - qudt:applicableUnit :: cim:Currency.LAK
+ - qudt:applicableUnit :: cim:Currency.BAM
+ - qudt:applicableUnit :: cim:Currency.KMF
+ - qudt:applicableUnit :: cim:Currency.VEF
+ - qudt:applicableUnit :: cim:Currency.HUF
+ - qudt:applicableUnit :: cim:Currency.CNY
+ - qudt:applicableUnit :: cim:Currency.BGN
+ - qudt:applicableUnit :: cim:Currency.MKD
+ - qudt:applicableUnit :: cim:Currency.DZD
+ - qudt:applicableUnit :: cim:Currency.GNF
+ - qudt:applicableUnit :: cim:Currency.KGS
+ - qudt:applicableUnit :: cim:Currency.GMD
+ - qudt:applicableUnit :: cim:Currency.PEN
+ - qudt:applicableUnit :: cim:Currency.EGP
+ - qudt:applicableUnit :: cim:Currency.JOD
+ - qudt:applicableUnit :: cim:Currency.SLL
+ - qudt:applicableUnit :: cim:Currency.ISK
+ - qudt:applicableUnit :: cim:Currency.LBP
+ - qudt:applicableUnit :: cim:Currency.NIO
+ - qudt:applicableUnit :: cim:Currency.PHP
+ - qudt:applicableUnit :: cim:Currency.USD
+ - qudt:applicableUnit :: cim:Currency.HNL
+ - qudt:applicableUnit :: cim:Currency.PLN
+ - qudt:applicableUnit :: cim:Currency.AED
+ - qudt:applicableUnit :: cim:Currency.BOB
+ - qudt:applicableUnit :: cim:Currency.GBP
+ - qudt:applicableUnit :: cim:Currency.HKD
+ - qudt:applicableUnit :: cim:Currency.ARS
+ - qudt:applicableUnit :: cim:Currency.WST
+ - qudt:applicableUnit :: cim:Currency.ALL
+ - qudt:applicableUnit :: cim:Currency.NAD
+ - qudt:applicableUnit :: cim:Currency.IRR
+ - qudt:applicableUnit :: cim:Currency.IDR
+ - qudt:applicableUnit :: cim:Currency.CVE
+ - qudt:applicableUnit :: cim:Currency.JMD
+ - qudt:applicableUnit :: cim:Currency.XCD
+ - qudt:applicableUnit :: cim:Currency.GYD
+ - qudt:applicableUnit :: cim:Currency.CDF
+ - qudt:applicableUnit :: cim:Currency.SHP
+ - qudt:applicableUnit :: cim:Currency.GEL
+ - qudt:applicableUnit :: cim:Currency.PAB
+ - rdfs:label :: Money
+ - qudt:applicableUnit :: cim:Currency.NZD
+ - qudt:applicableUnit :: cim:Currency.IQD
+ - qudt:applicableUnit :: cim:Currency.GIP
+ - qudt:applicableUnit :: cim:Currency.KZT
+ - qudt:applicableUnit :: cim:Currency.BRL
+ - qudt:applicableUnit :: cim:Currency.BOV
+ - skos:exactMatch :: quantitykind:Currency
+ - rdfs:comment :: "Amount of money."@en
+ - qudt:applicableUnit :: cim:Currency.COP
+ - qudt:applicableUnit :: cim:Currency.BWP
+ - qudt:applicableUnit :: cim:Currency.EUR
+ - qudt:applicableUnit :: cim:Currency.CUC
+ - qudt:applicableUnit :: cim:Currency.NOK
+ - qudt:applicableUnit :: cim:Currency.BYR
+ - qudt:applicableUnit :: cim:Currency.RWF
+ - qudt:applicableUnit :: cim:Currency.LYD
+ - qudt:applicableUnit :: cim:Currency.UYU
+ - qudt:applicableUnit :: cim:Currency.MWK
+ - qudt:applicableUnit :: cim:Currency.AMD
+ - qudt:applicableUnit :: cim:Currency.FKP
+ - qudt:applicableUnit :: cim:Currency.CUP
+ - qudt:applicableUnit :: cim:Currency.GHS
+ - qudt:applicableUnit :: cim:Currency.SAR
+ - qudt:applicableUnit :: cim:Currency.KES
+ - qudt:applicableUnit :: cim:Currency.KHR
+ - qudt:applicableUnit :: cim:Currency.BSD
+ - qudt:applicableUnit :: cim:Currency.ZWL
+ - qudt:applicableUnit :: cim:Currency.UZS
+ - qudt:applicableUnit :: cim:Currency.BTN
+ - qudt:applicableUnit :: cim:Currency.SEK
+ - qudt:applicableUnit :: cim:Currency.ETB
+ - qudt:applicableUnit :: cim:Currency.TOP
+ - qudt:applicableUnit :: cim:Currency.LKR
+ - qudt:applicableUnit :: cim:Currency.ZAR
+ - qudt:applicableUnit :: cim:Currency.FJD
+ - qudt:applicableUnit :: cim:Currency.BIF
+ - qudt:applicableUnit :: cim:Currency.XAF
+ - qudt:applicableUnit :: cim:Currency.PKR
+ - qudt:applicableUnit :: cim:Currency.CLP
+ - qudt:applicableUnit :: cim:Currency.QAR
+ - qudt:applicableUnit :: cim:Currency.KRW
+ - qudt:applicableUnit :: cim:Currency.BDT
+ - qudt:applicableUnit :: cim:Currency.SCR
+ - qudt:applicableUnit :: cim:Currency.TRY
+ - qudt:applicableUnit :: cim:Currency.MNT
+ - qudt:applicableUnit :: cim:Currency.NGN
+ - qudt:applicableUnit :: cim:Currency.HRK
+ - qudt:applicableUnit :: cim:Currency.MUR
+ - qudt:applicableUnit :: cim:Currency.GTQ
+ - qudt:applicableUnit :: cim:Currency.SDG
+ - qudt:applicableUnit :: cim:Currency.COU
+ - qudt:applicableUnit :: cim:Currency.MGA
  - qudt:applicableUnit :: cim:Currency.BND
  - qudt:applicableUnit :: cim:Currency.TTD
- - qudt:applicableUnit :: cim:Currency.DJF
+ - qudt:applicableUnit :: cim:Currency.INR
+ - qudt:applicableUnit :: cim:Currency.AZN
+ - qudt:applicableUnit :: cim:Currency.BBD
+ - qudt:applicableUnit :: cim:Currency.MZN
+ - qudt:applicableUnit :: cim:Currency.SOS
+ - qudt:applicableUnit :: cim:Currency.CAD
+ - qudt:applicableUnit :: cim:Currency.MYR
+ - qudt:applicableUnit :: cim:Currency.TJS
+ - qudt:applicableUnit :: cim:Currency.CRC
+ - qudt:applicableUnit :: cim:Currency.XPF
+ - qudt:applicableUnit :: cim:Currency.TND
+ - qudt:applicableUnit :: cim:Currency.BHD
+ - qudt:applicableUnit :: cim:Currency.CLF
+ - qudt:applicableUnit :: cim:Currency.MXN
+ - qudt:applicableUnit :: cim:Currency.CHF
  - qudt:applicableUnit :: cim:Currency.SRD
- - qudt:applicableUnit :: cim:Currency.CNY
- - qudt:applicableUnit :: cim:Currency.ZWL
- - qudt:applicableUnit :: cim:Currency.LRD
+ - qudt:applicableUnit :: cim:Currency.YER
+ - qudt:applicableUnit :: cim:Currency.MOP
+ - qudt:applicableUnit :: cim:Currency.ERN
+ - qudt:applicableUnit :: cim:Currency.ANG
+ - qudt:applicableUnit :: cim:Currency.AFN
+ - qudt:applicableUnit :: cim:Currency.DJF
+ - qudt:applicableUnit :: cim:Currency.TMT
+ - qudt:applicableUnit :: cim:Currency.LVL
+ - qudt:applicableUnit :: cim:Currency.MAD
+ - qudt:applicableUnit :: cim:Currency.ILS
+ - qudt:applicableUnit :: cim:Currency.RON
+ - qudt:applicableUnit :: cim:Currency.AOA
+ - qudt:applicableUnit :: cim:Currency.VUV
 
 **** PerCent (cim:PerCent)
  - Types :: qudt:QuantityKind
- - qudt:applicableUnit :: cim:UnitSymbol.none
  - rdfs:label :: PerCent
  - rdfs:comment :: "Percentage on a defined base.   For example, specify as 100 to indicate at the defined base."@en
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - qudt:applicableUnit :: cim:UnitSymbol.none
  - skos:exactMatch :: quantitykind:DimensionlessRatio
 
 **** Reactance (cim:Reactance)
  - Types :: qudt:QuantityKind
+ - rdfs:label :: Reactance
+ - rdfs:comment :: "Reactance (imaginary part of impedance), at rated frequency."@en
  - qudt:applicableUnit :: cim:UnitSymbol.ohm
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - skos:exactMatch :: quantitykind:Reactance
- - rdfs:label :: Reactance
- - rdfs:comment :: "Reactance (imaginary part of impedance), at rated frequency."@en
 
 **** ReactivePower (cim:ReactivePower)
  - Types :: qudt:QuantityKind
+ - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - skos:exactMatch :: quantitykind:ReactivePower
+ - rdfs:label :: ReactivePower
  - rdfs:comment :: "Product of RMS value of the voltage and the RMS value of the quadrature component of the current."@en
  - qudt:applicableUnit :: cim:UnitSymbol.VAr
- - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
- - rdfs:label :: ReactivePower
- - skos:exactMatch :: quantitykind:ReactivePower
 
 **** RealEnergy (cim:RealEnergy)
  - Types :: qudt:QuantityKind
- - skos:exactMatch :: quantitykind:Energy
  - qudt:applicableUnit :: cim:UnitSymbol.Wh
+ - skos:exactMatch :: quantitykind:Energy
  - rdfs:label :: RealEnergy
- - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - rdfs:comment :: "Real electrical energy."@en
+ - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
 
 **** Resistance (cim:Resistance)
  - Types :: qudt:QuantityKind
- - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
- - qudt:applicableUnit :: cim:UnitSymbol.ohm
  - skos:exactMatch :: quantitykind:Resistance
  - rdfs:comment :: "Resistance (real part of impedance)."@en
+ - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - qudt:applicableUnit :: cim:UnitSymbol.ohm
  - rdfs:label :: Resistance
 
 **** RotationSpeed (cim:RotationSpeed)
  - Types :: qudt:QuantityKind
- - qudt:applicableUnit :: cim:UnitSymbol.Hz
- - rdfs:label :: RotationSpeed
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - qudt:applicableUnit :: cim:UnitSymbol.Hz
  - rdfs:comment :: "Number of revolutions per second."@en
+ - rdfs:label :: RotationSpeed
  - skos:exactMatch :: quantitykind:AngularVelocity
 
 **** Seconds (cim:Seconds)
  - Types :: qudt:QuantityKind
- - skos:exactMatch :: quantitykind:Time
- - rdfs:comment :: "Time, in seconds."@en
- - rdfs:label :: Seconds
- - qudt:applicableUnit :: cim:UnitSymbol.s
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - skos:exactMatch :: quantitykind:Time
+ - qudt:applicableUnit :: cim:UnitSymbol.s
+ - rdfs:label :: Seconds
+ - rdfs:comment :: "Time, in seconds."@en
 
 **** Susceptance (cim:Susceptance)
  - Types :: qudt:QuantityKind
- - rdfs:comment :: "Imaginary part of admittance."@en
- - skos:exactMatch :: quantitykind:Susceptance
  - rdfs:label :: Susceptance
- - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
  - qudt:applicableUnit :: cim:UnitSymbol.S
+ - rdfs:comment :: "Imaginary part of admittance."@en
+ - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - skos:exactMatch :: quantitykind:Susceptance
 
 **** Voltage (cim:Voltage)
  - Types :: qudt:QuantityKind
  - rdfs:label :: Voltage
- - qudt:applicableUnit :: cim:UnitSymbol.V
  - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
- - skos:exactMatch :: quantitykind:Voltage
  - rdfs:comment :: "Electrical voltage, can be both AC and DC."@en
+ - skos:exactMatch :: quantitykind:Voltage
+ - qudt:applicableUnit :: cim:UnitSymbol.V
 
 **** VoltagePerReactivePower (cim:VoltagePerReactivePower)
  - Types :: qudt:QuantityKind
- - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
- - qudt:applicableUnit :: cim:UnitSymbol.VPerVAr
- - skos:exactMatch :: quantitykind:VoltagePerReactivePower
- - rdfs:label :: VoltagePerReactivePower
  - rdfs:comment :: "Voltage variation with reactive power."@en
+ - qudt:applicableUnit :: cim:UnitSymbol.VPerVAr
+ - cims:belongsToCategory :: eq:Package_CoreEquipmentProfile
+ - rdfs:label :: VoltagePerReactivePower
+ - skos:exactMatch :: quantitykind:VoltagePerReactivePower
 
 *** RegulatingControlModeKind                                     :nodeclare:
 **** activePower (cim:RegulatingControlModeKind.activePower)
  - Types :: cim:RegulatingControlModeKind
+ - cims:stereotype :: enum
  - rdfs:comment :: "Active power is specified."@en
  - rdfs:label :: activePower
- - cims:stereotype :: enum
 
 **** admittance (cim:RegulatingControlModeKind.admittance)
  - Types :: cim:RegulatingControlModeKind
+ - rdfs:comment :: "Admittance is specified."@en
  - cims:stereotype :: enum
  - rdfs:label :: admittance
- - rdfs:comment :: "Admittance is specified."@en
 
 **** currentFlow (cim:RegulatingControlModeKind.currentFlow)
  - Types :: cim:RegulatingControlModeKind
@@ -6054,52 +6070,52 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** reactivePower (cim:RegulatingControlModeKind.reactivePower)
  - Types :: cim:RegulatingControlModeKind
  - rdfs:comment :: "Reactive power is specified."@en
- - rdfs:label :: reactivePower
  - cims:stereotype :: enum
+ - rdfs:label :: reactivePower
 
 **** temperature (cim:RegulatingControlModeKind.temperature)
  - Types :: cim:RegulatingControlModeKind
+ - rdfs:comment :: "Control switches on/off based on the local temperature (i.e., a thermostat)."@en
  - rdfs:label :: temperature
  - cims:stereotype :: enum
- - rdfs:comment :: "Control switches on/off based on the local temperature (i.e., a thermostat)."@en
 
 **** timeScheduled (cim:RegulatingControlModeKind.timeScheduled)
  - Types :: cim:RegulatingControlModeKind
+ - rdfs:label :: timeScheduled
  - rdfs:comment :: "Control switches on/off by time of day. The times may change on the weekend, or in different seasons."@en
  - cims:stereotype :: enum
- - rdfs:label :: timeScheduled
 
 **** voltage (cim:RegulatingControlModeKind.voltage)
  - Types :: cim:RegulatingControlModeKind
- - rdfs:label :: voltage
  - cims:stereotype :: enum
+ - rdfs:label :: voltage
  - rdfs:comment :: "Voltage is specified."@en
 
 *** SVCControlMode                                                :nodeclare:
 **** reactivePower (cim:SVCControlMode.reactivePower)
  - Types :: cim:SVCControlMode
- - rdfs:label :: reactivePower
  - cims:stereotype :: enum
  - rdfs:comment :: "Reactive power control."@en
+ - rdfs:label :: reactivePower
 
 **** voltage (cim:SVCControlMode.voltage)
  - Types :: cim:SVCControlMode
+ - rdfs:comment :: "Voltage control."@en
  - rdfs:label :: voltage
  - cims:stereotype :: enum
- - rdfs:comment :: "Voltage control."@en
 
 *** SynchronousMachineKind                                        :nodeclare:
 **** condenser (cim:SynchronousMachineKind.condenser)
  - Types :: cim:SynchronousMachineKind
- - rdfs:comment :: "Indicates the synchronous machine can operate as a condenser."@en
  - rdfs:label :: condenser
  - cims:stereotype :: enum
+ - rdfs:comment :: "Indicates the synchronous machine can operate as a condenser."@en
 
 **** generator (cim:SynchronousMachineKind.generator)
  - Types :: cim:SynchronousMachineKind
- - rdfs:comment :: "Indicates the synchronous machine can operate as a generator."@en
  - rdfs:label :: generator
  - cims:stereotype :: enum
+ - rdfs:comment :: "Indicates the synchronous machine can operate as a generator."@en
 
 **** generatorOrCondenser (cim:SynchronousMachineKind.generatorOrCondenser)
  - Types :: cim:SynchronousMachineKind
@@ -6109,8 +6125,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** generatorOrCondenserOrMotor (cim:SynchronousMachineKind.generatorOrCondenserOrMotor)
  - Types :: cim:SynchronousMachineKind
- - cims:stereotype :: enum
  - rdfs:label :: generatorOrCondenserOrMotor
+ - cims:stereotype :: enum
  - rdfs:comment :: "Indicates the synchronous machine can operate as a generator or as a condenser or as a motor."@en
 
 **** generatorOrMotor (cim:SynchronousMachineKind.generatorOrMotor)
@@ -6127,9 +6143,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** motorOrCondenser (cim:SynchronousMachineKind.motorOrCondenser)
  - Types :: cim:SynchronousMachineKind
- - rdfs:label :: motorOrCondenser
  - rdfs:comment :: "Indicates the synchronous machine can operate as a motor or as a condenser."@en
  - cims:stereotype :: enum
+ - rdfs:label :: motorOrCondenser
 
 *** UnitMultiplier                                                :nodeclare:
 **** a (cim:UnitMultiplier.a)
@@ -6147,8 +6163,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** d (cim:UnitMultiplier.d)
  - Types :: cim:UnitMultiplier
  - rdfs:label :: d
- - cims:stereotype :: enum
  - rdfs:comment :: "Deci 10**-1."@en
+ - cims:stereotype :: enum
 
 **** da (cim:UnitMultiplier.da)
  - Types :: cim:UnitMultiplier
@@ -6158,68 +6174,68 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** E (cim:UnitMultiplier.E)
  - Types :: cim:UnitMultiplier
- - cims:stereotype :: enum
  - rdfs:label :: E
+ - cims:stereotype :: enum
  - rdfs:comment :: "Exa 10**18."@en
 
 **** f (cim:UnitMultiplier.f)
  - Types :: cim:UnitMultiplier
+ - cims:stereotype :: enum
  - rdfs:label :: f
  - rdfs:comment :: "Femto 10**-15."@en
- - cims:stereotype :: enum
 
 **** G (cim:UnitMultiplier.G)
  - Types :: cim:UnitMultiplier
  - cims:stereotype :: enum
- - rdfs:comment :: "Giga 10**9."@en
  - rdfs:label :: G
+ - rdfs:comment :: "Giga 10**9."@en
 
 **** h (cim:UnitMultiplier.h)
  - Types :: cim:UnitMultiplier
+ - cims:stereotype :: enum
  - rdfs:comment :: "Hecto 10**2."@en
  - rdfs:label :: h
- - cims:stereotype :: enum
 
 **** k (cim:UnitMultiplier.k)
  - Types :: cim:UnitMultiplier
- - rdfs:label :: k
  - skos:exactMatch :: prefix:Kilo
- - rdfs:comment :: "Kilo 10**3."@en
- - qudt:prefixMultiplier :: "1000.0"^^xsd:double
  - cims:stereotype :: enum
+ - rdfs:label :: k
+ - qudt:prefixMultiplier :: "1000.0"^^xsd:double
+ - rdfs:comment :: "Kilo 10**3."@en
 
 **** m (cim:UnitMultiplier.m)
  - Types :: cim:UnitMultiplier
- - cims:stereotype :: enum
- - rdfs:comment :: "Milli 10**-3."@en
  - rdfs:label :: m
+ - rdfs:comment :: "Milli 10**-3."@en
+ - cims:stereotype :: enum
 
 **** M (cim:UnitMultiplier.M)
  - Types :: cim:UnitMultiplier
- - rdfs:comment :: "Mega 10**6."@en
  - rdfs:label :: M
- - cims:stereotype :: enum
  - qudt:prefixMultiplier :: "1000000.0"^^xsd:double
+ - rdfs:comment :: "Mega 10**6."@en
  - skos:exactMatch :: prefix:Mega
+ - cims:stereotype :: enum
 
 **** micro (cim:UnitMultiplier.micro)
  - Types :: cim:UnitMultiplier
  - rdfs:label :: micro
- - cims:stereotype :: enum
  - rdfs:comment :: "Micro 10**-6."@en
+ - cims:stereotype :: enum
 
 **** n (cim:UnitMultiplier.n)
  - Types :: cim:UnitMultiplier
- - rdfs:comment :: "Nano 10**-9."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Nano 10**-9."@en
  - rdfs:label :: n
 
 **** none (cim:UnitMultiplier.none)
  - Types :: cim:UnitMultiplier
- - rdfs:comment :: "No multiplier or equivalently multiply by 1."@en
- - qudt:prefixMultiplier :: "1.0"^^xsd:double
  - rdfs:label :: none
  - cims:stereotype :: enum
+ - rdfs:comment :: "No multiplier or equivalently multiply by 1."@en
+ - qudt:prefixMultiplier :: "1.0"^^xsd:double
 
 **** p (cim:UnitMultiplier.p)
  - Types :: cim:UnitMultiplier
@@ -6241,106 +6257,106 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** Y (cim:UnitMultiplier.Y)
  - Types :: cim:UnitMultiplier
+ - rdfs:comment :: "Yotta 10**24."@en
  - cims:stereotype :: enum
  - rdfs:label :: Y
- - rdfs:comment :: "Yotta 10**24."@en
 
 **** y (cim:UnitMultiplier.y)
  - Types :: cim:UnitMultiplier
- - rdfs:comment :: "Yocto 10**-24."@en
  - rdfs:label :: y
+ - rdfs:comment :: "Yocto 10**-24."@en
  - cims:stereotype :: enum
 
 **** Z (cim:UnitMultiplier.Z)
  - Types :: cim:UnitMultiplier
- - rdfs:label :: Z
- - rdfs:comment :: "Zetta 10**21."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Zetta 10**21."@en
+ - rdfs:label :: Z
 
 **** z (cim:UnitMultiplier.z)
  - Types :: cim:UnitMultiplier
- - cims:stereotype :: enum
- - rdfs:label :: z
  - rdfs:comment :: "Zepto 10**-21."@en
+ - rdfs:label :: z
+ - cims:stereotype :: enum
 
 *** UnitSymbol                                                    :nodeclare:
 **** A (cim:UnitSymbol.A)
  - Types :: cim:UnitSymbol
- - rdfs:label :: A
  - cims:stereotype :: enum
  - rdfs:comment :: "Current in amperes."@en
  - skos:exactMatch :: unit:A
+ - rdfs:label :: A
 
 **** A2 (cim:UnitSymbol.A2)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:comment :: "Amperes squared (A²)."@en
  - rdfs:label :: A2
+ - cims:stereotype :: enum
 
 **** A2h (cim:UnitSymbol.A2h)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Ampere-squared hour, ampere-squared hour."@en
  - rdfs:label :: A2h
  - cims:stereotype :: enum
+ - rdfs:comment :: "Ampere-squared hour, ampere-squared hour."@en
 
 **** A2s (cim:UnitSymbol.A2s)
  - Types :: cim:UnitSymbol
+ - cims:stereotype :: enum
  - rdfs:comment :: "Ampere squared time in square amperes (A²s)."@en
  - rdfs:label :: A2s
- - cims:stereotype :: enum
 
 **** Ah (cim:UnitSymbol.Ah)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:comment :: "Ampere-hours, ampere-hours."@en
+ - cims:stereotype :: enum
  - rdfs:label :: Ah
 
 **** anglemin (cim:UnitSymbol.anglemin)
  - Types :: cim:UnitSymbol
  - rdfs:label :: anglemin
- - rdfs:comment :: "Plane angle, minutes."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Plane angle, minutes."@en
 
 **** anglesec (cim:UnitSymbol.anglesec)
  - Types :: cim:UnitSymbol
  - cims:stereotype :: enum
- - rdfs:label :: anglesec
  - rdfs:comment :: "Plane angle, seconds."@en
+ - rdfs:label :: anglesec
 
 **** APerA (cim:UnitSymbol.APerA)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
- - rdfs:label :: APerA
  - rdfs:comment :: "Current, ratio of amperages.   Note: Users may need to supply a prefix such as ‘m’ to show rates such as ‘mA/A’."@en
+ - rdfs:label :: APerA
+ - cims:stereotype :: enum
 
 **** APerm (cim:UnitSymbol.APerm)
  - Types :: cim:UnitSymbol
  - rdfs:label :: APerm
- - rdfs:comment :: "A/m, magnetic field strength, amperes per metre."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "A/m, magnetic field strength, amperes per metre."@en
 
 **** As (cim:UnitSymbol.As)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Ampere seconds (A·s)."@en
  - rdfs:label :: As
  - cims:stereotype :: enum
+ - rdfs:comment :: "Ampere seconds (A·s)."@en
 
 **** bar (cim:UnitSymbol.bar)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:label :: bar
  - rdfs:comment :: "Pressure in bars, (1 bar = 100 kPa)."@en
+ - cims:stereotype :: enum
 
 **** Bq (cim:UnitSymbol.Bq)
  - Types :: cim:UnitSymbol
+ - rdfs:comment :: "Radioactivity in becquerels (1/s)."@en
  - cims:stereotype :: enum
  - rdfs:label :: Bq
- - rdfs:comment :: "Radioactivity in becquerels (1/s)."@en
 
 **** Btu (cim:UnitSymbol.Btu)
  - Types :: cim:UnitSymbol
- - rdfs:label :: Btu
  - cims:stereotype :: enum
+ - rdfs:label :: Btu
  - rdfs:comment :: "Energy, British Thermal Units."@en
 
 **** C (cim:UnitSymbol.C)
@@ -6351,46 +6367,46 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** cd (cim:UnitSymbol.cd)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:label :: cd
+ - cims:stereotype :: enum
  - rdfs:comment :: "Luminous intensity in candelas."@en
 
 **** character (cim:UnitSymbol.character)
  - Types :: cim:UnitSymbol
  - rdfs:comment :: "Number of characters."@en
- - cims:stereotype :: enum
  - rdfs:label :: character
+ - cims:stereotype :: enum
 
 **** charPers (cim:UnitSymbol.charPers)
  - Types :: cim:UnitSymbol
- - rdfs:label :: charPers
  - rdfs:comment :: "Data rate (baud) in characters per second."@en
+ - rdfs:label :: charPers
  - cims:stereotype :: enum
 
 **** cosPhi (cim:UnitSymbol.cosPhi)
  - Types :: cim:UnitSymbol
- - rdfs:label :: cosPhi
- - cims:stereotype :: enum
  - rdfs:comment :: "Power factor, dimensionless.
-      Note 1: This definition of power factor only holds for balanced systems. See the alternative definition under code 153.
-      Note 2 : Beware of differing sign conventions in use between the IEC and EEI. It is assumed that the data consumer understands the type of meter in use and the sign convention in use by the utility."@en
+          Note 1: This definition of power factor only holds for balanced systems. See the alternative definition under code 153.
+          Note 2 : Beware of differing sign conventions in use between the IEC and EEI. It is assumed that the data consumer understands the type of meter in use and the sign convention in use by the utility."@en
+ - cims:stereotype :: enum
+ - rdfs:label :: cosPhi
 
 **** count (cim:UnitSymbol.count)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:label :: count
  - rdfs:comment :: "Amount of substance, Counter value."@en
+ - cims:stereotype :: enum
 
 **** CPerkg (cim:UnitSymbol.CPerkg)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Exposure (x rays), coulombs per kilogram."@en
  - rdfs:label :: CPerkg
+ - rdfs:comment :: "Exposure (x rays), coulombs per kilogram."@en
  - cims:stereotype :: enum
 
 **** CPerm2 (cim:UnitSymbol.CPerm2)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Surface charge density, coulombs per square metre."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Surface charge density, coulombs per square metre."@en
  - rdfs:label :: CPerm2
 
 **** CPerm3 (cim:UnitSymbol.CPerm3)
@@ -6401,36 +6417,36 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** d (cim:UnitSymbol.d)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Time in days, day = 24 h = 86400 s."@en
  - cims:stereotype :: enum
  - rdfs:label :: d
+ - rdfs:comment :: "Time in days, day = 24 h = 86400 s."@en
 
 **** dB (cim:UnitSymbol.dB)
  - Types :: cim:UnitSymbol
+ - rdfs:comment :: "Sound pressure level in decibels. Note:  multiplier “d” is included in this unit symbol for compatibility with IEC 61850-7-3."@en
  - cims:stereotype :: enum
  - rdfs:label :: dB
- - rdfs:comment :: "Sound pressure level in decibels. Note:  multiplier “d” is included in this unit symbol for compatibility with IEC 61850-7-3."@en
 
 **** dBm (cim:UnitSymbol.dBm)
  - Types :: cim:UnitSymbol
+ - rdfs:label :: dBm
  - rdfs:comment :: "Power level (logarithmic ratio of signal strength , Bel-mW), normalized to 1mW. Note:  multiplier “d” is included in this unit symbol for compatibility with IEC 61850-7-3."@en
  - cims:stereotype :: enum
- - rdfs:label :: dBm
 
 **** deg (cim:UnitSymbol.deg)
  - Types :: cim:UnitSymbol
- - skos:exactMatch :: unit:DEG
  - rdfs:label :: deg
- - cims:stereotype :: enum
  - rdfs:comment :: "Plane angle in degrees."@en
+ - cims:stereotype :: enum
+ - skos:exactMatch :: unit:DEG
 
 **** degC (cim:UnitSymbol.degC)
  - Types :: cim:UnitSymbol
- - rdfs:label :: degC
- - cims:stereotype :: enum
- - skos:exactMatch :: unit:DEG_C
  - rdfs:comment :: "Relative temperature in degrees Celsius.
-      In the SI unit system the symbol is °C. Electric charge is measured in coulomb that has the unit symbol C. To distinguish degree Celsius from coulomb the symbol used in the UML is degC. The reason for not using °C is that the special character ° is difficult to manage in software."@en
+          In the SI unit system the symbol is °C. Electric charge is measured in coulomb that has the unit symbol C. To distinguish degree Celsius from coulomb the symbol used in the UML is degC. The reason for not using °C is that the special character ° is difficult to manage in software."@en
+ - rdfs:label :: degC
+ - skos:exactMatch :: unit:DEG_C
+ - cims:stereotype :: enum
 
 **** F (cim:UnitSymbol.F)
  - Types :: cim:UnitSymbol
@@ -6441,15 +6457,15 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** FPerm (cim:UnitSymbol.FPerm)
  - Types :: cim:UnitSymbol
- - rdfs:label :: FPerm
  - cims:stereotype :: enum
+ - rdfs:label :: FPerm
  - rdfs:comment :: "Permittivity, farads per metre."@en
 
 **** ft3 (cim:UnitSymbol.ft3)
  - Types :: cim:UnitSymbol
- - rdfs:label :: ft3
- - cims:stereotype :: enum
  - rdfs:comment :: "Volume, cubic feet."@en
+ - cims:stereotype :: enum
+ - rdfs:label :: ft3
 
 **** G (cim:UnitSymbol.G)
  - Types :: cim:UnitSymbol
@@ -6459,89 +6475,89 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** gal (cim:UnitSymbol.gal)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Volume in gallons, US gallon (1 gal = 231 in3 = 128 fl ounce)."@en
- - rdfs:label :: gal
  - cims:stereotype :: enum
+ - rdfs:label :: gal
+ - rdfs:comment :: "Volume in gallons, US gallon (1 gal = 231 in3 = 128 fl ounce)."@en
 
 **** gPerg (cim:UnitSymbol.gPerg)
  - Types :: cim:UnitSymbol
+ - rdfs:label :: gPerg
  - cims:stereotype :: enum
  - rdfs:comment :: "Concentration, The ratio of the mass of a solute divided by the mass of  the solution. Note: Users may need use a prefix such a ‘µ’ to express a quantity such as ‘µg/g’."@en
- - rdfs:label :: gPerg
 
 **** Gy (cim:UnitSymbol.Gy)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Absorbed dose in grays (J/kg)."@en
  - rdfs:label :: Gy
+ - rdfs:comment :: "Absorbed dose in grays (J/kg)."@en
  - cims:stereotype :: enum
 
 **** GyPers (cim:UnitSymbol.GyPers)
  - Types :: cim:UnitSymbol
  - cims:stereotype :: enum
- - rdfs:comment :: "Absorbed dose rate, grays per second."@en
  - rdfs:label :: GyPers
+ - rdfs:comment :: "Absorbed dose rate, grays per second."@en
 
 **** H (cim:UnitSymbol.H)
  - Types :: cim:UnitSymbol
  - rdfs:label :: H
- - rdfs:comment :: "Electric inductance in henrys (Wb/A)."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Electric inductance in henrys (Wb/A)."@en
 
 **** h (cim:UnitSymbol.h)
  - Types :: cim:UnitSymbol
+ - rdfs:label :: h
  - cims:stereotype :: enum
  - rdfs:comment :: "Time in hours, hour = 60 min = 3600 s."@en
- - rdfs:label :: h
 
 **** ha (cim:UnitSymbol.ha)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Area, hectares."@en
  - cims:stereotype :: enum
  - rdfs:label :: ha
+ - rdfs:comment :: "Area, hectares."@en
 
 **** HPerm (cim:UnitSymbol.HPerm)
  - Types :: cim:UnitSymbol
  - rdfs:label :: HPerm
- - rdfs:comment :: "Permeability, henrys per metre."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Permeability, henrys per metre."@en
 
 **** Hz (cim:UnitSymbol.Hz)
  - Types :: cim:UnitSymbol
+ - rdfs:label :: Hz
  - skos:narrower :: unit:REV-PER-SEC
  - rdfs:comment :: "Frequency in hertz (1/s)."@en
- - cims:stereotype :: enum
- - rdfs:label :: Hz
  - skos:exactMatch :: unit:HZ
+ - cims:stereotype :: enum
 
 **** HzPerHz (cim:UnitSymbol.HzPerHz)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
- - rdfs:comment :: "Frequency, rate of frequency change.   Note: Users may need to supply a prefix such as ‘m’ to show rates such as ‘mHz/Hz’."@en
  - rdfs:label :: HzPerHz
+ - rdfs:comment :: "Frequency, rate of frequency change.   Note: Users may need to supply a prefix such as ‘m’ to show rates such as ‘mHz/Hz’."@en
+ - cims:stereotype :: enum
 
 **** HzPers (cim:UnitSymbol.HzPers)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:comment :: "Rate of change of frequency in hertz per second."@en
  - rdfs:label :: HzPers
+ - cims:stereotype :: enum
 
 **** J (cim:UnitSymbol.J)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Energy in joules (N·m = C·V = W·s)."@en
  - rdfs:label :: J
  - cims:stereotype :: enum
+ - rdfs:comment :: "Energy in joules (N·m = C·V = W·s)."@en
 
 **** JPerK (cim:UnitSymbol.JPerK)
  - Types :: cim:UnitSymbol
  - cims:stereotype :: enum
- - rdfs:comment :: "Heat capacity in joules/kelvin."@en
  - rdfs:label :: JPerK
+ - rdfs:comment :: "Heat capacity in joules/kelvin."@en
 
 **** JPerkg (cim:UnitSymbol.JPerkg)
  - Types :: cim:UnitSymbol
+ - rdfs:comment :: "Specific energy, Joules / kg."@en
  - cims:stereotype :: enum
  - rdfs:label :: JPerkg
- - rdfs:comment :: "Specific energy, Joules / kg."@en
 
 **** JPerkgK (cim:UnitSymbol.JPerkgK)
  - Types :: cim:UnitSymbol
@@ -6551,8 +6567,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** JPerm2 (cim:UnitSymbol.JPerm2)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Insulation energy density, joules per square metre or watt second per square metre."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Insulation energy density, joules per square metre or watt second per square metre."@en
  - rdfs:label :: JPerm2
 
 **** JPerm3 (cim:UnitSymbol.JPerm3)
@@ -6563,27 +6579,27 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** JPermol (cim:UnitSymbol.JPermol)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:label :: JPermol
+ - cims:stereotype :: enum
  - rdfs:comment :: "Molar energy, joules per mole."@en
 
 **** JPermolK (cim:UnitSymbol.JPermolK)
  - Types :: cim:UnitSymbol
- - rdfs:label :: JPermolK
- - cims:stereotype :: enum
  - rdfs:comment :: "Molar entropy, molar heat capacity, joules per mole kelvin."@en
+ - cims:stereotype :: enum
+ - rdfs:label :: JPermolK
 
 **** JPers (cim:UnitSymbol.JPers)
  - Types :: cim:UnitSymbol
  - rdfs:label :: JPers
- - cims:stereotype :: enum
  - rdfs:comment :: "Energy rate in joules per second (J/s)."@en
+ - cims:stereotype :: enum
 
 **** K (cim:UnitSymbol.K)
  - Types :: cim:UnitSymbol
- - rdfs:label :: K
  - rdfs:comment :: "Temperature in kelvins."@en
  - cims:stereotype :: enum
+ - rdfs:label :: K
 
 **** kat (cim:UnitSymbol.kat)
  - Types :: cim:UnitSymbol
@@ -6593,106 +6609,106 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** katPerm3 (cim:UnitSymbol.katPerm3)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Catalytic activity concentration, katals per cubic metre."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Catalytic activity concentration, katals per cubic metre."@en
  - rdfs:label :: katPerm3
 
 **** kg (cim:UnitSymbol.kg)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Mass in kilograms.  Note: multiplier “k” is included in this unit symbol for compatibility with IEC 61850-7-3."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Mass in kilograms.  Note: multiplier “k” is included in this unit symbol for compatibility with IEC 61850-7-3."@en
  - rdfs:label :: kg
 
 **** kgm (cim:UnitSymbol.kgm)
  - Types :: cim:UnitSymbol
  - rdfs:label :: kgm
- - cims:stereotype :: enum
  - rdfs:comment :: "Moment of mass in kilogram metres (kg·m) (first moment of mass). Note: multiplier “k” is included in this unit symbol for compatibility with IEC 61850-7-3."@en
+ - cims:stereotype :: enum
 
 **** kgm2 (cim:UnitSymbol.kgm2)
  - Types :: cim:UnitSymbol
  - rdfs:label :: kgm2
- - cims:stereotype :: enum
  - rdfs:comment :: "Moment of mass in kilogram square metres (kg·m²) (Second moment of mass, commonly called the moment of inertia). Note: multiplier “k” is included in this unit symbol for compatibility with IEC 61850-7-3."@en
+ - cims:stereotype :: enum
 
 **** kgPerJ (cim:UnitSymbol.kgPerJ)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Weight per energy in kilograms per joule (kg/J). Note: multiplier “k” is included in this unit symbol for compatibility with IEC 61850-7-3."@en
  - rdfs:label :: kgPerJ
  - cims:stereotype :: enum
+ - rdfs:comment :: "Weight per energy in kilograms per joule (kg/J). Note: multiplier “k” is included in this unit symbol for compatibility with IEC 61850-7-3."@en
 
 **** kgPerm3 (cim:UnitSymbol.kgPerm3)
  - Types :: cim:UnitSymbol
+ - cims:stereotype :: enum
  - rdfs:comment :: "Density in kilogram/cubic metres (kg/m³). Note: multiplier “k” is included in this unit symbol for compatibility with IEC 61850-7-3."@en
  - rdfs:label :: kgPerm3
- - cims:stereotype :: enum
 
 **** kn (cim:UnitSymbol.kn)
  - Types :: cim:UnitSymbol
  - rdfs:label :: kn
- - cims:stereotype :: enum
  - rdfs:comment :: "Speed, knots (1 kn = 1852/3600) m/s."@en
+ - cims:stereotype :: enum
 
 **** KPers (cim:UnitSymbol.KPers)
  - Types :: cim:UnitSymbol
  - rdfs:label :: KPers
- - cims:stereotype :: enum
  - rdfs:comment :: "Temperature change rate in kelvins per second."@en
+ - cims:stereotype :: enum
 
 **** l (cim:UnitSymbol.l)
  - Types :: cim:UnitSymbol
+ - cims:stereotype :: enum
  - rdfs:label :: l
  - rdfs:comment :: "Volume in litres, litre = dm3 = m3/1000."@en
- - cims:stereotype :: enum
 
 **** lm (cim:UnitSymbol.lm)
  - Types :: cim:UnitSymbol
+ - cims:stereotype :: enum
  - rdfs:label :: lm
  - rdfs:comment :: "Luminous flux in lumens (cd·sr)."@en
- - cims:stereotype :: enum
 
 **** lPerh (cim:UnitSymbol.lPerh)
  - Types :: cim:UnitSymbol
+ - cims:stereotype :: enum
  - rdfs:comment :: "Volumetric flow rate, litres per hour."@en
  - rdfs:label :: lPerh
- - cims:stereotype :: enum
 
 **** lPerl (cim:UnitSymbol.lPerl)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Concentration, The ratio of the volume of a solute divided by the volume of  the solution. Note: Users may need use a prefix such a ‘µ’ to express a quantity such as ‘µL/L’."@en
  - rdfs:label :: lPerl
+ - rdfs:comment :: "Concentration, The ratio of the volume of a solute divided by the volume of  the solution. Note: Users may need use a prefix such a ‘µ’ to express a quantity such as ‘µL/L’."@en
  - cims:stereotype :: enum
 
 **** lPers (cim:UnitSymbol.lPers)
  - Types :: cim:UnitSymbol
- - rdfs:label :: lPers
  - cims:stereotype :: enum
  - rdfs:comment :: "Volumetric flow rate in litres per second."@en
+ - rdfs:label :: lPers
 
 **** lx (cim:UnitSymbol.lx)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:comment :: "Illuminance in lux (lm/m²)."@en
+ - cims:stereotype :: enum
  - rdfs:label :: lx
 
 **** M (cim:UnitSymbol.M)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Length, nautical miles (1 M = 1852 m)."@en
  - cims:stereotype :: enum
  - rdfs:label :: M
+ - rdfs:comment :: "Length, nautical miles (1 M = 1852 m)."@en
 
 **** m (cim:UnitSymbol.m)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
- - skos:exactMatch :: unit:M
- - rdfs:label :: m
  - rdfs:comment :: "Length in metres."@en
+ - skos:exactMatch :: unit:M
+ - cims:stereotype :: enum
+ - rdfs:label :: m
 
 **** m2 (cim:UnitSymbol.m2)
  - Types :: cim:UnitSymbol
+ - skos:exactMatch :: unit:M2
  - rdfs:label :: m2
  - rdfs:comment :: "Area in square metres (m²)."@en
- - skos:exactMatch :: unit:M2
  - cims:stereotype :: enum
 
 **** m2Pers (cim:UnitSymbol.m2Pers)
@@ -6703,9 +6719,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** m3 (cim:UnitSymbol.m3)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
- - rdfs:comment :: "Volume in cubic metres (m³)."@en
  - rdfs:label :: m3
+ - rdfs:comment :: "Volume in cubic metres (m³)."@en
+ - cims:stereotype :: enum
 
 **** m3Compensated (cim:UnitSymbol.m3Compensated)
  - Types :: cim:UnitSymbol
@@ -6715,46 +6731,46 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** m3Perh (cim:UnitSymbol.m3Perh)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
- - rdfs:comment :: "Volumetric flow rate, cubic metres per hour."@en
  - rdfs:label :: m3Perh
+ - rdfs:comment :: "Volumetric flow rate, cubic metres per hour."@en
+ - cims:stereotype :: enum
 
 **** m3Perkg (cim:UnitSymbol.m3Perkg)
  - Types :: cim:UnitSymbol
+ - rdfs:comment :: "Specific volume, cubic metres per kilogram, v."@en
  - rdfs:label :: m3Perkg
  - cims:stereotype :: enum
- - rdfs:comment :: "Specific volume, cubic metres per kilogram, v."@en
 
 **** m3Pers (cim:UnitSymbol.m3Pers)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
- - skos:exactMatch :: unit:M3-PER-SEC
- - rdfs:comment :: "Volumetric flow rate in cubic metres per second (m³/s)."@en
  - rdfs:label :: m3Pers
+ - cims:stereotype :: enum
+ - rdfs:comment :: "Volumetric flow rate in cubic metres per second (m³/s)."@en
+ - skos:exactMatch :: unit:M3-PER-SEC
 
 **** m3Uncompensated (cim:UnitSymbol.m3Uncompensated)
  - Types :: cim:UnitSymbol
  - rdfs:label :: m3Uncompensated
- - cims:stereotype :: enum
  - rdfs:comment :: "Volume, cubic metres, with the value uncompensated for weather effects."@en
+ - cims:stereotype :: enum
 
 **** min (cim:UnitSymbol.min)
  - Types :: cim:UnitSymbol
+ - rdfs:comment :: "Time in minutes, minute  = 60 s."@en
  - cims:stereotype :: enum
  - rdfs:label :: min
- - rdfs:comment :: "Time in minutes, minute  = 60 s."@en
 
 **** mmHg (cim:UnitSymbol.mmHg)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Pressure, millimetres of mercury (1 mmHg is approximately 133.3 Pa)."@en
  - cims:stereotype :: enum
  - rdfs:label :: mmHg
+ - rdfs:comment :: "Pressure, millimetres of mercury (1 mmHg is approximately 133.3 Pa)."@en
 
 **** mol (cim:UnitSymbol.mol)
  - Types :: cim:UnitSymbol
- - rdfs:label :: mol
- - rdfs:comment :: "Amount of substance in moles."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Amount of substance in moles."@en
+ - rdfs:label :: mol
 
 **** molPerkg (cim:UnitSymbol.molPerkg)
  - Types :: cim:UnitSymbol
@@ -6765,62 +6781,62 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** molPerm3 (cim:UnitSymbol.molPerm3)
  - Types :: cim:UnitSymbol
  - rdfs:comment :: "Concentration, The amount of substance concentration, (c), the amount of solvent in moles divided by the volume of solution in m³."@en
- - cims:stereotype :: enum
  - rdfs:label :: molPerm3
+ - cims:stereotype :: enum
 
 **** molPermol (cim:UnitSymbol.molPermol)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
- - rdfs:comment :: "Concentration, Molar fraction, the ratio of the molar amount of a solute divided by the molar amount of the solution."@en
  - rdfs:label :: molPermol
+ - rdfs:comment :: "Concentration, Molar fraction, the ratio of the molar amount of a solute divided by the molar amount of the solution."@en
+ - cims:stereotype :: enum
 
 **** mPerm3 (cim:UnitSymbol.mPerm3)
  - Types :: cim:UnitSymbol
- - rdfs:label :: mPerm3
- - cims:stereotype :: enum
  - rdfs:comment :: "Fuel efficiency in metres per cubic metres (m/m³)."@en
+ - cims:stereotype :: enum
+ - rdfs:label :: mPerm3
 
 **** mPers (cim:UnitSymbol.mPers)
  - Types :: cim:UnitSymbol
- - rdfs:label :: mPers
  - cims:stereotype :: enum
  - rdfs:comment :: "Velocity in metres per second (m/s)."@en
+ - rdfs:label :: mPers
 
 **** mPers2 (cim:UnitSymbol.mPers2)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:comment :: "Acceleration in metres per second squared (m/s²)."@en
+ - cims:stereotype :: enum
  - rdfs:label :: mPers2
 
 **** Mx (cim:UnitSymbol.Mx)
  - Types :: cim:UnitSymbol
- - rdfs:label :: Mx
  - cims:stereotype :: enum
+ - rdfs:label :: Mx
  - rdfs:comment :: "Magnetic flux, maxwells (1 Mx = 10-8 Wb)."@en
 
 **** N (cim:UnitSymbol.N)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Force in newtons (kg·m/s²)."@en
  - rdfs:label :: N
+ - rdfs:comment :: "Force in newtons (kg·m/s²)."@en
  - cims:stereotype :: enum
 
 **** Nm (cim:UnitSymbol.Nm)
  - Types :: cim:UnitSymbol
- - rdfs:label :: Nm
- - rdfs:comment :: "Moment of force, newton metres."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Moment of force, newton metres."@en
+ - rdfs:label :: Nm
 
 **** none (cim:UnitSymbol.none)
  - Types :: cim:UnitSymbol
- - rdfs:label :: none
  - rdfs:comment :: "Dimension less quantity, e.g. count, per unit, etc."@en
  - cims:stereotype :: enum
+ - rdfs:label :: none
 
 **** NPerm (cim:UnitSymbol.NPerm)
  - Types :: cim:UnitSymbol
+ - rdfs:comment :: "Surface tension, newton per metre."@en
  - rdfs:label :: NPerm
  - cims:stereotype :: enum
- - rdfs:comment :: "Surface tension, newton per metre."@en
 
 **** Oe (cim:UnitSymbol.Oe)
  - Types :: cim:UnitSymbol
@@ -6830,22 +6846,22 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** ohm (cim:UnitSymbol.ohm)
  - Types :: cim:UnitSymbol
- - skos:exactMatch :: unit:OHM
  - rdfs:comment :: "Electric resistance in ohms (V/A)."@en
  - rdfs:label :: ohm
  - cims:stereotype :: enum
+ - skos:exactMatch :: unit:OHM
 
 **** ohmm (cim:UnitSymbol.ohmm)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Resistivity, ohm metres, (rho)."@en
- - cims:stereotype :: enum
  - rdfs:label :: ohmm
+ - cims:stereotype :: enum
+ - rdfs:comment :: "Resistivity, ohm metres, (rho)."@en
 
 **** ohmPerm (cim:UnitSymbol.ohmPerm)
  - Types :: cim:UnitSymbol
- - rdfs:label :: ohmPerm
  - rdfs:comment :: "Electric resistance per length in ohms per metre ((V/A)/m)."@en
  - cims:stereotype :: enum
+ - rdfs:label :: ohmPerm
 
 **** onePerHz (cim:UnitSymbol.onePerHz)
  - Types :: cim:UnitSymbol
@@ -6855,28 +6871,28 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** onePerm (cim:UnitSymbol.onePerm)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:label :: onePerm
+ - cims:stereotype :: enum
  - rdfs:comment :: "Wavenumber, reciprocal metres,  (1/m)."@en
 
 **** Pa (cim:UnitSymbol.Pa)
  - Types :: cim:UnitSymbol
- - skos:exactMatch :: unit:PA
  - cims:stereotype :: enum
- - rdfs:label :: Pa
  - rdfs:comment :: "Pressure in pascals (N/m²). Note: the absolute or relative measurement of pressure is implied with this entry. See below for more explicit forms."@en
+ - rdfs:label :: Pa
+ - skos:exactMatch :: unit:PA
 
 **** PaPers (cim:UnitSymbol.PaPers)
  - Types :: cim:UnitSymbol
  - rdfs:comment :: "Pressure change rate in pascals per second."@en
- - rdfs:label :: PaPers
  - cims:stereotype :: enum
+ - rdfs:label :: PaPers
 
 **** Pas (cim:UnitSymbol.Pas)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Dynamic viscosity, pascal seconds."@en
- - cims:stereotype :: enum
  - rdfs:label :: Pas
+ - cims:stereotype :: enum
+ - rdfs:comment :: "Dynamic viscosity, pascal seconds."@en
 
 **** ppm (cim:UnitSymbol.ppm)
  - Types :: cim:UnitSymbol
@@ -6886,83 +6902,83 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** Q (cim:UnitSymbol.Q)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:label :: Q
+ - cims:stereotype :: enum
  - rdfs:comment :: "Quantity power, Q."@en
 
 **** Qh (cim:UnitSymbol.Qh)
  - Types :: cim:UnitSymbol
  - rdfs:comment :: "Quantity energy, Qh."@en
- - rdfs:label :: Qh
  - cims:stereotype :: enum
+ - rdfs:label :: Qh
 
 **** rad (cim:UnitSymbol.rad)
  - Types :: cim:UnitSymbol
  - cims:stereotype :: enum
+ - rdfs:comment :: "Plane angle in radians (m/m)."@en
  - rdfs:label :: rad
  - skos:exactMatch :: unit:RAD
- - rdfs:comment :: "Plane angle in radians (m/m)."@en
 
 **** radPers (cim:UnitSymbol.radPers)
  - Types :: cim:UnitSymbol
- - rdfs:label :: radPers
- - rdfs:comment :: "Angular velocity in radians per second (rad/s)."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Angular velocity in radians per second (rad/s)."@en
+ - rdfs:label :: radPers
 
 **** radPers2 (cim:UnitSymbol.radPers2)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
- - rdfs:label :: radPers2
  - rdfs:comment :: "Angular acceleration, radians per second squared."@en
+ - rdfs:label :: radPers2
+ - cims:stereotype :: enum
 
 **** rev (cim:UnitSymbol.rev)
  - Types :: cim:UnitSymbol
+ - cims:stereotype :: enum
  - rdfs:label :: rev
  - rdfs:comment :: "Amount of rotation, revolutions."@en
- - cims:stereotype :: enum
 
 **** rotPers (cim:UnitSymbol.rotPers)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:comment :: "Rotations per second (1/s). See also Hz (1/s)."@en
+ - cims:stereotype :: enum
  - rdfs:label :: rotPers
 
 **** S (cim:UnitSymbol.S)
  - Types :: cim:UnitSymbol
- - rdfs:label :: S
- - cims:stereotype :: enum
- - rdfs:comment :: "Conductance in siemens."@en
  - skos:exactMatch :: unit:S
+ - rdfs:label :: S
+ - rdfs:comment :: "Conductance in siemens."@en
+ - cims:stereotype :: enum
 
 **** s (cim:UnitSymbol.s)
  - Types :: cim:UnitSymbol
- - skos:exactMatch :: unit:SEC
- - rdfs:label :: s
  - cims:stereotype :: enum
+ - skos:exactMatch :: unit:SEC
  - rdfs:comment :: "Time in seconds."@en
+ - rdfs:label :: s
 
 **** SPerm (cim:UnitSymbol.SPerm)
  - Types :: cim:UnitSymbol
  - rdfs:comment :: "Conductance per length (F/m)."@en
- - cims:stereotype :: enum
  - rdfs:label :: SPerm
+ - cims:stereotype :: enum
 
 **** sPers (cim:UnitSymbol.sPers)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
- - rdfs:label :: sPers
  - rdfs:comment :: "Time, Ratio of time.  Note: Users may need to supply a prefix such as ‘&#181;’ to show rates such as ‘&#181;s/s’."@en
+ - rdfs:label :: sPers
+ - cims:stereotype :: enum
 
 **** sr (cim:UnitSymbol.sr)
  - Types :: cim:UnitSymbol
+ - cims:stereotype :: enum
  - rdfs:label :: sr
  - rdfs:comment :: "Solid angle in steradians (m2/m2)."@en
- - cims:stereotype :: enum
 
 **** Sv (cim:UnitSymbol.Sv)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Dose equivalent in sieverts (J/kg)."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Dose equivalent in sieverts (J/kg)."@en
  - rdfs:label :: Sv
 
 **** T (cim:UnitSymbol.T)
@@ -6973,22 +6989,22 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** therm (cim:UnitSymbol.therm)
  - Types :: cim:UnitSymbol
+ - rdfs:comment :: "Energy, therms."@en
  - rdfs:label :: therm
  - cims:stereotype :: enum
- - rdfs:comment :: "Energy, therms."@en
 
 **** tonne (cim:UnitSymbol.tonne)
  - Types :: cim:UnitSymbol
- - rdfs:label :: tonne
  - rdfs:comment :: "Mass in tons, “tonne” or “metric  ton” (1000 kg = 1 Mg)."@en
+ - rdfs:label :: tonne
  - cims:stereotype :: enum
 
 **** V (cim:UnitSymbol.V)
  - Types :: cim:UnitSymbol
  - rdfs:label :: V
  - cims:stereotype :: enum
- - rdfs:comment :: "Electric potential in volts (W/A)."@en
  - skos:exactMatch :: unit:V
+ - rdfs:comment :: "Electric potential in volts (W/A)."@en
 
 **** V2 (cim:UnitSymbol.V2)
  - Types :: cim:UnitSymbol
@@ -6998,188 +7014,188 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** V2h (cim:UnitSymbol.V2h)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:label :: V2h
  - rdfs:comment :: "Volt-squared hour, volt-squared-hours."@en
+ - cims:stereotype :: enum
 
 **** VA (cim:UnitSymbol.VA)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
  - rdfs:label :: VA
- - skos:exactMatch :: unit:V-A
  - rdfs:comment :: "Apparent power in volt amperes. See also real power and reactive power."@en
+ - cims:stereotype :: enum
+ - skos:exactMatch :: unit:V-A
 
 **** VAh (cim:UnitSymbol.VAh)
  - Types :: cim:UnitSymbol
+ - rdfs:comment :: "Apparent energy in volt ampere hours."@en
  - rdfs:label :: VAh
  - cims:stereotype :: enum
- - rdfs:comment :: "Apparent energy in volt ampere hours."@en
 
 **** VAr (cim:UnitSymbol.VAr)
  - Types :: cim:UnitSymbol
- - rdfs:label :: VAr
- - cims:stereotype :: enum
- - rdfs:comment :: "Reactive power in volt amperes reactive. The “reactive” or “imaginary” component of electrical power (VIsin(phi)). (See also real power and apparent power).
-      Note: Different meter designs use different methods to arrive at their results. Some meters may compute reactive power as an arithmetic value, while others compute the value vectorially. The data consumer should determine the method in use and the suitability of the measurement for the intended purpose."@en
  - skos:exactMatch :: unit:V-A_Reactive
+ - rdfs:comment :: "Reactive power in volt amperes reactive. The “reactive” or “imaginary” component of electrical power (VIsin(phi)). (See also real power and apparent power).
+          Note: Different meter designs use different methods to arrive at their results. Some meters may compute reactive power as an arithmetic value, while others compute the value vectorially. The data consumer should determine the method in use and the suitability of the measurement for the intended purpose."@en
+ - cims:stereotype :: enum
+ - rdfs:label :: VAr
 
 **** VArh (cim:UnitSymbol.VArh)
  - Types :: cim:UnitSymbol
+ - rdfs:label :: VArh
  - cims:stereotype :: enum
  - rdfs:comment :: "Reactive energy in volt ampere reactive hours."@en
- - rdfs:label :: VArh
 
 **** Vh (cim:UnitSymbol.Vh)
  - Types :: cim:UnitSymbol
- - rdfs:label :: Vh
- - rdfs:comment :: "Volt-hour, Volt hours."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Volt-hour, Volt hours."@en
+ - rdfs:label :: Vh
 
 **** VPerHz (cim:UnitSymbol.VPerHz)
  - Types :: cim:UnitSymbol
  - rdfs:label :: VPerHz
- - cims:stereotype :: enum
  - rdfs:comment :: "Magnetic flux in volt per hertz."@en
+ - cims:stereotype :: enum
 
 **** VPerm (cim:UnitSymbol.VPerm)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Electric field strength, volts per metre."@en
  - rdfs:label :: VPerm
  - cims:stereotype :: enum
+ - rdfs:comment :: "Electric field strength, volts per metre."@en
 
 **** VPerV (cim:UnitSymbol.VPerV)
  - Types :: cim:UnitSymbol
  - cims:stereotype :: enum
- - rdfs:comment :: "Voltage, ratio of voltages.  Note: Users may need to supply a prefix such as ‘m’ to show rates such as ‘mV/V’."@en
  - rdfs:label :: VPerV
+ - rdfs:comment :: "Voltage, ratio of voltages.  Note: Users may need to supply a prefix such as ‘m’ to show rates such as ‘mV/V’."@en
 
 **** VPerVA (cim:UnitSymbol.VPerVA)
  - Types :: cim:UnitSymbol
+ - rdfs:label :: VPerVA
  - cims:stereotype :: enum
  - rdfs:comment :: "Power factor, PF, the ratio of the active power to the apparent power.  Note: The sign convention used for power factor will differ between IEC meters and EEI (ANSI) meters. It is assumed that the data consumers understand the type of meter being used and agree on the sign convention in use at any given utility."@en
- - rdfs:label :: VPerVA
 
 **** VPerVAr (cim:UnitSymbol.VPerVAr)
  - Types :: cim:UnitSymbol
  - skos:exactMatch :: unit:V-PER-V-A_Reactive
  - rdfs:comment :: "Power factor, PF, the ratio of the active power to the apparent power. Note: The sign convention used for power factor will differ between IEC meters and EEI (ANSI) meters. It is assumed that the data consumers understand the type of meter being used and agree on the sign convention in use at any given utility."@en
- - cims:stereotype :: enum
  - rdfs:label :: VPerVAr
+ - cims:stereotype :: enum
 
 **** Vs (cim:UnitSymbol.Vs)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
- - rdfs:label :: Vs
  - rdfs:comment :: "Volt seconds (Ws/A)."@en
+ - rdfs:label :: Vs
+ - cims:stereotype :: enum
 
 **** W (cim:UnitSymbol.W)
  - Types :: cim:UnitSymbol
- - rdfs:label :: W
- - cims:stereotype :: enum
  - skos:exactMatch :: unit:W
+ - cims:stereotype :: enum
+ - rdfs:label :: W
  - rdfs:comment :: "Real power in watts (J/s). Electrical power may have real and reactive components. The real portion of electrical power (I&#178;R or VIcos(phi)), is expressed in Watts. See also apparent power and reactive power."@en
 
 **** Wb (cim:UnitSymbol.Wb)
  - Types :: cim:UnitSymbol
  - rdfs:comment :: "Magnetic flux in webers (V·s)."@en
- - rdfs:label :: Wb
  - cims:stereotype :: enum
+ - rdfs:label :: Wb
 
 **** Wh (cim:UnitSymbol.Wh)
  - Types :: cim:UnitSymbol
- - rdfs:label :: Wh
- - skos:exactMatch :: unit:W-HR
  - cims:stereotype :: enum
  - rdfs:comment :: "Real energy in watt hours."@en
+ - rdfs:label :: Wh
+ - skos:exactMatch :: unit:W-HR
 
 **** WPerA (cim:UnitSymbol.WPerA)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
- - rdfs:label :: WPerA
  - rdfs:comment :: "Active power per current flow, watts per Ampere."@en
+ - cims:stereotype :: enum
  - skos:exactMatch :: unit:W-PER-A
+ - rdfs:label :: WPerA
 
 **** WPerHz (cim:UnitSymbol.WPerHz)
  - Types :: cim:UnitSymbol
  - skos:exactMatch :: unit:W-PER-HZ
- - rdfs:comment :: "Active power variation with frequency in watts per hertz."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Active power variation with frequency in watts per hertz."@en
  - rdfs:label :: WPerHz
 
 **** WPerm2 (cim:UnitSymbol.WPerm2)
  - Types :: cim:UnitSymbol
- - rdfs:label :: WPerm2
  - rdfs:comment :: "Heat flux density, irradiance, watts per square metre."@en
+ - rdfs:label :: WPerm2
  - cims:stereotype :: enum
 
 **** WPerm2sr (cim:UnitSymbol.WPerm2sr)
  - Types :: cim:UnitSymbol
- - rdfs:label :: WPerm2sr
- - rdfs:comment :: "Radiance, watts per square metre steradian."@en
  - cims:stereotype :: enum
+ - rdfs:comment :: "Radiance, watts per square metre steradian."@en
+ - rdfs:label :: WPerm2sr
 
 **** WPermK (cim:UnitSymbol.WPermK)
  - Types :: cim:UnitSymbol
- - cims:stereotype :: enum
- - rdfs:comment :: "Thermal conductivity in watt/metres kelvin."@en
  - rdfs:label :: WPermK
+ - rdfs:comment :: "Thermal conductivity in watt/metres kelvin."@en
+ - cims:stereotype :: enum
 
 **** WPers (cim:UnitSymbol.WPers)
  - Types :: cim:UnitSymbol
- - skos:exactMatch :: unit:W-PER-SEC
  - rdfs:comment :: "Ramp rate in watts per second."@en
- - rdfs:label :: WPers
  - cims:stereotype :: enum
+ - skos:exactMatch :: unit:W-PER-SEC
+ - rdfs:label :: WPers
 
 **** WPersr (cim:UnitSymbol.WPersr)
  - Types :: cim:UnitSymbol
- - rdfs:comment :: "Radiant intensity, watts per steradian."@en
- - rdfs:label :: WPersr
  - cims:stereotype :: enum
+ - rdfs:label :: WPersr
+ - rdfs:comment :: "Radiant intensity, watts per steradian."@en
 
 **** WPerW (cim:UnitSymbol.WPerW)
  - Types :: cim:UnitSymbol
+ - rdfs:comment :: "Signal Strength, ratio of power.   Note: Users may need to supply a prefix such as ‘m’ to show rates such as ‘mW/W’."@en
  - cims:stereotype :: enum
  - rdfs:label :: WPerW
- - rdfs:comment :: "Signal Strength, ratio of power.   Note: Users may need to supply a prefix such as ‘m’ to show rates such as ‘mW/W’."@en
 
 *** WindGenUnitKind                                               :nodeclare:
 **** offshore (cim:WindGenUnitKind.offshore)
  - Types :: cim:WindGenUnitKind
- - rdfs:label :: offshore
  - cims:stereotype :: enum
+ - rdfs:label :: offshore
  - rdfs:comment :: "The wind generating unit is located offshore."@en
 
 **** onshore (cim:WindGenUnitKind.onshore)
  - Types :: cim:WindGenUnitKind
- - cims:stereotype :: enum
  - rdfs:comment :: "The wind generating unit is located onshore."@en
  - rdfs:label :: onshore
+ - cims:stereotype :: enum
 
 *** WindingConnection                                             :nodeclare:
 **** A (cim:WindingConnection.A)
  - Types :: cim:WindingConnection
- - cims:stereotype :: enum
- - rdfs:comment :: "Autotransformer common winding."@en
  - rdfs:label :: A
+ - rdfs:comment :: "Autotransformer common winding."@en
+ - cims:stereotype :: enum
 
 **** D (cim:WindingConnection.D)
  - Types :: cim:WindingConnection
- - cims:stereotype :: enum
  - rdfs:comment :: "Delta."@en
+ - cims:stereotype :: enum
  - rdfs:label :: D
 
 **** I (cim:WindingConnection.I)
  - Types :: cim:WindingConnection
+ - rdfs:label :: I
  - cims:stereotype :: enum
  - rdfs:comment :: "Independent winding, for single-phase connections."@en
- - rdfs:label :: I
 
 **** Y (cim:WindingConnection.Y)
  - Types :: cim:WindingConnection
- - rdfs:label :: Y
- - cims:stereotype :: enum
  - rdfs:comment :: "Wye."@en
+ - cims:stereotype :: enum
+ - rdfs:label :: Y
 
 **** Yn (cim:WindingConnection.Yn)
  - Types :: cim:WindingConnection
@@ -7189,15 +7205,15 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** Z (cim:WindingConnection.Z)
  - Types :: cim:WindingConnection
+ - rdfs:label :: Z
  - cims:stereotype :: enum
  - rdfs:comment :: "ZigZag."@en
- - rdfs:label :: Z
 
 **** Zn (cim:WindingConnection.Zn)
  - Types :: cim:WindingConnection
- - rdfs:comment :: "ZigZag, with neutral brought out for grounding."@en
  - cims:stereotype :: enum
  - rdfs:label :: Zn
+ - rdfs:comment :: "ZigZag, with neutral brought out for grounding."@en
 
 
 
