@@ -2125,6 +2125,21 @@ completion cookies.
    "ELOT ontology metrics from ROBOT"
    'org-tempo-tags)
 #+end_src
+**** Table of resources to generate outline
+#+name: src-table-of-resources
+#+begin_src emacs-lisp
+  (tempo-define-template "elot-table-of-resources"
+   '(
+     (org-open-line 1)
+     "#+name: tbl:" (p "Name of resource table: " tblname) > n
+     "| id | super | rdfs:label |" > n
+     "|----+-------+------------|" > n
+     "|    |       |            |" > n
+     (progn (message "Insert outline from table with M-x elot-headings-from-table") ""))
+   "<tr"
+   "ELOT table of resources"
+   'org-tempo-tags)
+#+end_src
 **** Hydra interface S-F5
 First "forward declare" the functions referenced in the Hydra, to
 avoid byte compiler warnings.
