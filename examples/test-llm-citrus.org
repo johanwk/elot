@@ -155,28 +155,33 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 
 ***** test                                                        :nodeclare:
-| id           | super       | rdfs:comment           | rdfs:seeAlso | dcterms:modified^^xsd:date | skos:example@en |
-|--------------+-------------+------------------------+--------------+----------------------------+-----------------|
-| ex:Uncovery  |             | an example entry       |              |                 1955-01-01 | Hello           |
-| ex:Uncovery1 | ex:Uncovery | subproperty number one | ex:Apple     |                            | there           |
-| ex:Uncovery2 | ex:Uncovery | subproperty number two | ex:Orange    |                 1956-01-01 | again           |
+| id        | super    | rdfs:label | rdfs:label | rdfs:comment           | rdfs:seeAlso | dcterms:modified^^xsd:date | skos:example@en |
+|-----------+----------+------------+------------+------------------------+--------------+----------------------------+-----------------|
+| ex:Uncovery  |          | Uncovery   | 1          | an example entry       |              |                 1955-01-01 | Hello           |
+| ex:Uncovery1 | ex:Uncovery | Uncovery1  | b          | subproperty number one | ex:Apple        |                            | there           |
+| ex:Uncovery2 | ex:Uncovery | Uncovery2  | c          | subproperty number two | ex:Orange       |                 1956-01-01 | again           |
 
-****** ex:Uncovery
+****** Uncovery (ex:Uncovery)
+- rdfs:label :: Uncovery
+- rdfs:label :: 1
 - rdfs:comment :: an example entry
 - dcterms:modified :: "1955-01-01"^^xsd:date
 - skos:example :: "Hello"@en
-******* ex:Uncovery1
+******* Uncovery1 (ex:Uncovery1)
+- rdfs:label :: Uncovery1
+- rdfs:label :: b
 - rdfs:comment :: subproperty number one
 - rdfs:seeAlso :: ex:Apple
 - skos:example :: "there"@en
-******* ex:Uncovery2
+******* Uncovery2 (ex:Uncovery2)
+- rdfs:label :: Uncovery2
+- rdfs:label :: c
 - rdfs:comment :: subproperty number two
 - rdfs:seeAlso :: ex:Orange
 - dcterms:modified :: "1956-01-01"^^xsd:date
 - skos:example :: "again"@en
 
-
-*** Citrus fruit (ex:CitrusFruit)
+*** citrus fruit (ex:CitrusFruit)
  - rdfs:label :: "Citrus fruit"@en
  - skos:definition :: A fruit from a plant of the genus Citrus.
 **** Orange (ex:Orange)
