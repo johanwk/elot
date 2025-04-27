@@ -178,11 +178,11 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 :END:
 
 *** Disjointness clauses                                          :nodeclare:
- - DisjointClasses :: :BFO_0000004,:BFO_0000020,:BFO_0000031
- - DisjointClasses :: :BFO_0000142,:BFO_0000146,:BFO_0000147
- - DisjointClasses :: :BFO_0000008,:BFO_0000011,:BFO_0000015,:BFO_0000035
- - DisjointClasses :: :BFO_0000009,:BFO_0000018,:BFO_0000026,:BFO_0000028
- - DisjointClasses :: :BFO_0000006,:BFO_0000029,:BFO_0000140
+ - DisjointClasses :: obo:BFO_0000004,obo:BFO_0000020,obo:BFO_0000031
+ - DisjointClasses :: obo:BFO_0000142,obo:BFO_0000146,obo:BFO_0000147
+ - DisjointClasses :: obo:BFO_0000008,obo:BFO_0000011,obo:BFO_0000015,obo:BFO_0000035
+ - DisjointClasses :: obo:BFO_0000009,obo:BFO_0000018,obo:BFO_0000026,obo:BFO_0000028
+ - DisjointClasses :: obo:BFO_0000006,obo:BFO_0000029,obo:BFO_0000140
 *** "entity"@en (obo:BFO_0000001)
  - dc11:identifier :: 001-BFO
  - skos:definition :: "(Elucidation) An entity is anything that exists or has existed or will exist"@en
