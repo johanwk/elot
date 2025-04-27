@@ -601,6 +601,9 @@ the ID string.
           (; a bare URN, in angles
            (string-match "^\\(<urn:[^>]+>\\)$" str)
            (concat "  " (match-string 1 str)))
+          (; a URN without angles, explicitly treat as xsd:string
+           (string-match "^\\(urn:uuid[^ ]+\\)$" str)
+           (concat "  \"" (match-string 1 str) "\"^^xsd:string"))
           (; true -- make it an explicit boolean
            (string-match "^true$" str) " \"true\"^^xsd:boolean")
           (; false -- make it an explicit boolean
