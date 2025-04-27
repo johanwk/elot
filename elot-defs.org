@@ -2136,7 +2136,7 @@ completion cookies.
      "|----+-------+------------|" > n
      "|    |       |            |" > n
      (progn (message "Insert outline from table with M-x elot-headings-from-table") ""))
-   "<tr"
+   "<otr"
    "ELOT table of resources"
    'org-tempo-tags)
 #+end_src
@@ -2165,7 +2165,7 @@ avoid byte compiler warnings.
   --------------------------------------------------------------
    [_r_] resource id        <_obm_ metrics             <_odh_ header
   <_ocp_ primitive class    <_obs_ sparql select       <_ods_ ontology
-  <_ocd_ defined class      <_obc_ sparql construct
+  <_ocd_ defined class      <_obc_ sparql construct    <_otr_ resource table
    <_op_ property           <_obd_ rdfpuml diagram
   "
     ("r" (elot-label-lookup))
@@ -2179,7 +2179,8 @@ avoid byte compiler warnings.
     ("obc" (tempo-template-elot-block-sparql-construct))
     ("obd" (tempo-template-elot-block-rdfpuml-diagram))
     ("odh" (tempo-template-elot-doc-header))
-    ("ods" (tempo-template-elot-ont-skeleton)))
+    ("ods" (tempo-template-elot-ont-skeleton))
+    ("otr" (tempo-template-elot-table-of-resources)))
 #+end_src
 
 #+RESULTS:
