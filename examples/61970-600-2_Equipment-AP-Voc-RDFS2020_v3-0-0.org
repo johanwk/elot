@@ -119,7 +119,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - dct:conformsTo :: <urn:iso:std:iec:61970-600-2:ed-1>
  - dct:creator :: "ENTSO-E CIM EG"@en
  - dct:description :: "This vocabulary is describing the core equipment profile from IEC 61970-600-2."@en
- - dct:identifier :: "urn:uuid:9fd00587-84d4-4910-bbd4-e003ed7e0821"^^xsd:string
+ - dct:identifier :: urn:uuid:9fd00587-84d4-4910-bbd4-e003ed7e0821
  - dct:issued :: "2021-01-27T12:09:21Z"^^xsd:dateTime
  - dct:language :: en-GB
  - dct:modified :: "2020-10-12"^^xsd:date
