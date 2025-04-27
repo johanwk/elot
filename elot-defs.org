@@ -1702,7 +1702,17 @@ The ~super~ column is used to make subheadings. If empty, the entry is one level
       (mapconcat #'identity (nreverse lines) "\n")))
 
   (defun elot-headings-from-table ()
-    "Convert the Org table at point to subordinate Elot headings."
+    "Convert the Org table at point to an ELOT outline.
+  The table must contain column headers `id' and `super'.
+  Entities in `id' with optional `rdfs:label' produce
+  an outline indented under the current headline.
+
+  Additional columns are output as description lists entries.
+  Column headers for these should be annotation
+  properties (`skos:synonym', etc.) or OWL Manchester Syntax
+  keywords (`EquivalentTo', `Domain', etc).  Suffixes like `@en'
+  or `xsd:integer' on a column header will be applied to values.
+  "
     (interactive)
     (unless (org-at-table-p)
       (user-error "Point is not inside an Org table"))
@@ -2161,11 +2171,11 @@ is non-nil.
       ["Insert Defined Class template" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-class-iof-defined)) t]
       ["Insert Property template" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-property-iof)) t]
       "---"
-      ["Toggle Label-Display" elot-toggle-label-display t]
-      ["Jump to Resource Definition" xref-find-definitions t]
+      ["Jump to Resource Headline" xref-find-definitions t]
       ["Find References to Resource" xref-find-references t]
       ["Quick-Describe Resource" elot-describe-curie-at-point t]
-      ["Refresh List of Labels" elot-label-display-setup t]
+      ["Toggle Label-Display" elot-toggle-label-display t]
+      ["Refresh Label-Display Index" elot-label-display-setup t]
       "---"
       ["Insert Table of Resources" tempo-template-elot-table-of-resources t]
       ["Generate Outline from Table of Resources " elot-headings-from-table t]
