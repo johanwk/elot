@@ -2135,7 +2135,7 @@ completion cookies.
      "| id | super | rdfs:label |" > n
      "|----+-------+------------|" > n
      "|    |       |            |" > n
-     (progn (message "Insert outline from table with M-x elot-headings-from-table") ""))
+     (progn (message "Insert outline with M-x elot-headings-from-table") ""))
    "<otr"
    "ELOT table of resources"
    'org-tempo-tags)
