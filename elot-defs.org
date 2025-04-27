@@ -2140,7 +2140,36 @@ completion cookies.
    "ELOT table of resources"
    'org-tempo-tags)
 #+end_src
-**** Hydra interface S-F5
+*** Menu
+**** Regular menu with ~easy-menu~
+This menu will appear in any org-mode file, which is more than we
+want. Need to find out how to disable it in Org files that aren' in
+ELOT format. A useful test for ELOT use is to check whether ~elot-slurp~
+is non-nil.
+#+name: src-easy-menu
+#+begin_src emacs-lisp
+  (easy-menu-define elot-menu org-mode-map
+    "ELOT Ontology Authoring Menu"
+    '("ELOT"
+      ["Tangle Ontology (Export)" org-babel-tangle t]
+      ["Export HTML" (lambda () (interactive) (browse-url-of-file (expand-file-name (org-html-export-to-html)))) t]
+      ["Open OWL ontology" elot-open-owl t]
+      "---"
+      ["Insert Existing Resource ID" elot-label-lookup t]
+      ["Insert Primitive Class template" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-class-iof-primitive)) t]
+      ["Insert Defined Class template" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-class-iof-defined)) t]
+      ["Insert Property template" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-property-iof)) t]
+      "---"
+      ["Insert Table of Resources" tempo-template-elot-table-of-resources t]
+      ["Outline from Table of Resources" elot-headings-from-table t]
+      "---"
+      ["Insert SPARQL Select Block" tempo-template-elot-block-sparql-select t]
+      ["Insert SPARQL Construct Block" tempo-template-elot-block-sparql-construct t]
+      ["Insert RDFPUML Diagram Block" tempo-template-elot-block-rdfpuml-diagram t]
+      "---"
+      ))
+#+end_src
+**** Hydra interface to tempo templates (shortcut S-F5)
 First "forward declare" the functions referenced in the Hydra, to
 avoid byte compiler warnings.
 #+name: src-tempo-fwd-declare
