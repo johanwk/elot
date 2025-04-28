@@ -2187,6 +2187,8 @@ is non-nil.
       ["Insert SPARQL Construct Block" tempo-template-elot-block-sparql-construct t]
       ["Insert RDFPUML Diagram Block" tempo-template-elot-block-rdfpuml-diagram t]
       "---"
+      ["Insert New Ontology Document Header" tempo-template-elot-doc-header t]
+      ["Insert New Ontology Skeleton" tempo-template-elot-ont-skeleton t]
       ))
 #+end_src
 **** Hydra interface to tempo templates (shortcut S-F5)

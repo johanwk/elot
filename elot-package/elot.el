@@ -1900,6 +1900,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     ["Insert SPARQL Construct Block" tempo-template-elot-block-sparql-construct t]
     ["Insert RDFPUML Diagram Block" tempo-template-elot-block-rdfpuml-diagram t]
     "---"
+    ["Insert New Ontology Document Header" tempo-template-elot-doc-header t]
+    ["Insert New Ontology Skeleton" tempo-template-elot-ont-skeleton t]
     ))
 ;; src-easy-menu ends here
 
