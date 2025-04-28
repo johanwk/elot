@@ -3,7 +3,7 @@
 #+subtitle: An OWL ontology
 #+author: 
 #+date: release-2024-01-29
-#+call: theme-readtheorg()
+#+call: theme-elot()
 
 # This org-mode file was created using elot-exporter version 0.7-SNAPSHOT.
 # Source ontology: [Local File] C:/Data/BFO/version-2020/BFO-2020/src/owl/bfo-core-withprefix.ttl
