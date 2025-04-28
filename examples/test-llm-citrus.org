@@ -3,8 +3,11 @@
 #+subtitle: An OWL Ontology about Citrus Fruits
 #+author: AI Assistant
 #+date: WIP (version of 2025-03-30 15:46)
-#+call: theme-readtheorg()
+# #+call: theme-elot()
 
+#+OPTIONS: html-style:nil toc:tU
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="../elot-package/elot-style.css" />
+#+HTML_HEAD: <script src="../elot-package/elot-nav.js"></script>
 
 * citrus
 :PROPERTIES:
