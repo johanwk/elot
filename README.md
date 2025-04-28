@@ -26,23 +26,23 @@ ELOT takes inspiration from this paradigm and uses the excellent Emacs Orgmode p
 Ontological constructs are generated from narrative sections and Manchester Notation (OMN) fragments. Diagrams are generated from Turtle examples or SPARQL queries by using the rdfpuml tool.
 The tool then extracts ontological definitions (OMN or Turtle) and documentation (HTML or PDF).
 
--   [Prerequisites in brief](#org3ed036e)
--   [Installation](#org02de934)
-    -   [Get Emacs](#org5e5aa52)
-    -   [Install ELOT in Emacs](#org1d65339)
-    -   [Install ELOT auxiliaries](#org99385b2)
-    -   [NEW: Convert existing OWL files to ELOT format](#org7880bd3)
--   [Quick start using ELOT](#org89f009b)
-    -   [Adding an ontology](#orgf4a1839)
-    -   [Adding classes and relations](#org55b19da)
-    -   [Adding annotations](#orge2cf858)
-    -   [Querying the ontology](#orgb9b81d0)
-    -   [Making a diagram](#org5e5d8ba)
-    -   [Display labels instead of identifiers](#org465c732)
--   [Navigating Ontologies with Xref](#org600c47f)
+-   [Prerequisites in brief](#orgc8ebf03)
+-   [Installation](#orgc1cf31e)
+    -   [Get Emacs](#org13e621f)
+    -   [Install ELOT in Emacs](#org61320ff)
+    -   [Install ELOT auxiliaries](#orgd8c09d3)
+    -   [NEW: Convert existing OWL files to ELOT format](#org507eb62)
+-   [Quick start using ELOT](#orgcf5252c)
+    -   [Adding an ontology](#orgf87028f)
+    -   [Adding classes and relations](#org239f75f)
+    -   [Adding annotations](#org1919fd3)
+    -   [Querying the ontology](#orge54cf2c)
+    -   [Making a diagram](#org81d643e)
+    -   [Display labels instead of identifiers](#org43835ba)
+-   [Navigating Ontologies with Xref](#org6104cdc)
 
 
-<a id="org3ed036e"></a>
+<a id="orgc8ebf03"></a>
 
 ## Prerequisites in brief
 
@@ -58,12 +58,12 @@ If you are new to Emacs, the book [Mastering Emacs](https://www.masteringemacs.o
 recommended.
 
 
-<a id="org02de934"></a>
+<a id="orgc1cf31e"></a>
 
 ## Installation
 
 
-<a id="org5e5aa52"></a>
+<a id="org13e621f"></a>
 
 ### Get Emacs
 
@@ -81,7 +81,7 @@ for Linux).
 For MacOS users: See the [GNU Emacs downloads](https://www.gnu.org/software/emacs/download.html) page under "macOS".
 
 
-<a id="org1d65339"></a>
+<a id="org61320ff"></a>
 
 ### Install ELOT in Emacs
 
@@ -111,7 +111,7 @@ The following steps will get you started editing OWL ontologies.
         `~/elisp/elot/elot-package/` to your `load-path`.
 
 
-<a id="org99385b2"></a>
+<a id="orgd8c09d3"></a>
 
 ### Install ELOT auxiliaries
 
@@ -151,7 +151,7 @@ Get the tools:
         `elot-exporter.jar` in your `bin` folder.
 
 
-<a id="org7880bd3"></a>
+<a id="org507eb62"></a>
 
 ### NEW: Convert existing OWL files to ELOT format
 
@@ -162,12 +162,12 @@ easy to work on existing ontologies in your favourite editor.
 The `jar` file can be downloaded from [ELOT releases](https://github.com/johanwk/elot/releases).
 
 
-<a id="org89f009b"></a>
+<a id="orgcf5252c"></a>
 
 ## Quick start using ELOT
 
 
-<a id="orgf4a1839"></a>
+<a id="orgf87028f"></a>
 
 ### Adding an ontology
 
@@ -221,7 +221,7 @@ Now create an OWL file from your new document.
 ![img](./documentation/images/firefox-skeleton1.png)
 
 
-<a id="org55b19da"></a>
+<a id="org239f75f"></a>
 
 ### Adding classes and relations
 
@@ -239,7 +239,7 @@ Now create an OWL file from your new document.
 ![img](documentation/images/elot-animal1.png)
 
 
-<a id="orge2cf858"></a>
+<a id="org1919fd3"></a>
 
 ### Adding annotations
 
@@ -250,7 +250,7 @@ In this screenshot, two annotations are added to the "transitive" characteristic
 ![img](documentation/images/elot-annotate-axiom1.png)
 
 
-<a id="orgb9b81d0"></a>
+<a id="orge54cf2c"></a>
 
 ### Querying the ontology
 
@@ -263,7 +263,7 @@ In this screenshot, two annotations are added to the "transitive" characteristic
 ![img](documentation/images/elot-query1.png)
 
 
-<a id="org5e5d8ba"></a>
+<a id="org81d643e"></a>
 
 ### Making a diagram
 
@@ -287,7 +287,7 @@ In this screenshot, two annotations are added to the "transitive" characteristic
 ![img](documentation/images/firefox-diagram1.png)
 
 
-<a id="org465c732"></a>
+<a id="org43835ba"></a>
 
 ### Display labels instead of identifiers
 
@@ -299,7 +299,7 @@ offers quick search across the ontology resources.
 ![img](documentation/images/elot-label-display1.png)
 
 
-<a id="org600c47f"></a>
+<a id="org6104cdc"></a>
 
 ## Navigating Ontologies with Xref
 
