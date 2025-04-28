@@ -3,7 +3,7 @@
 #+subtitle: An OWL ontology
 #+author: Alan Rector et al.
 #+date: WIP (version of 2024-11-29 17:05)
-#+call: theme-readtheorg()
+#+call: theme-elot()
 
 * The pizza ontology as an ELOT example
 :PROPERTIES:
