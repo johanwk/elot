@@ -1568,7 +1568,7 @@ Return output file name."
                        "#+subtitle: An OWL ontology" > n
                        "#+author: " (p "Author name: " authname) > n
                        "#+date: WIP (version of " (format-time-string "%Y-%m-%d %H:%M") ")" > n
-                         "#+call: theme-readtheorg()" n n
+                       "#+call: theme-elot()" n n
                        (progn (load-library "elot-defaults") (message "Loaded ELOT") ""))
                        "<odh"
                        "ELOT document header"
