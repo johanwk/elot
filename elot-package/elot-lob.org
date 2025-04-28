@@ -16,6 +16,11 @@
 #+begin_src emacs-lisp :results drawer
 (concat "#+SETUPFILE: " (file-name-directory (locate-library "elot")) "theme-readtheorg.setup")
 #+end_src
+** ELOT HTML setup file
+#+name: theme-elot
+#+begin_src emacs-lisp :results drawer
+(concat "#+SETUPFILE: " (file-name-directory (locate-library "elot")) "theme-elot.setup")
+#+end_src
 * in document
 ** Dates for insertion into ontology on save
 #+name: current-date
