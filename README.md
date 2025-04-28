@@ -29,22 +29,21 @@ template expansion.
     Code on your own projects, please see the detailed 
     [README](vscode-support/README.md).
 
--   [Prerequisites in brief](#org54b3928)
--   [Installation](#org737b252)
-    -   [Get Emacs](#org0f99e9e)
-    -   [Install ELOT in Emacs](#org33840a0)
-    -   [Install ELOT auxiliaries](#org3e60204)
--   [Quick start using ELOT](#org51aef13)
-    -   [Adding an ontology](#org69cbae7)
-    -   [Adding classes and relations](#org2fde51e)
-    -   [Adding annotations](#org7930afa)
-    -   [Querying the ontology](#org5c8b791)
-    -   [Making a diagram](#org74dd084)
-    -   [Display labels instead of identifiers](#org304d379)
--   [Navigating Ontologies with Xref](#orgf8c6741)
+-   [Prerequisites in brief](#org203fdf9)
+-   [Installation](#org0af44f0)
+    -   [Get Emacs](#org93e2178)
+    -   [Install ELOT in Emacs](#orge9cdc08)
+    -   [Install ELOT auxiliaries](#orge0fc8b6)
+-   [Quick start using ELOT](#org4c8326a)
+    -   [Adding an ontology](#org01b490a)
+    -   [Adding classes and relations](#org78bb19b)
+    -   [Adding annotations](#orgbbfb77f)
+    -   [Querying the ontology](#org92e2231)
+    -   [Making a diagram](#org72b7b03)
+    -   [Display labels instead of identifiers](#org84597ce)
 
 
-<a id="org54b3928"></a>
+<a id="org203fdf9"></a>
 
 ## Prerequisites in brief
 
@@ -57,12 +56,12 @@ template expansion.
     -   Open OWL files: Download `elot-exporter` from [releases](https://github.com/johanwk/elot/releases)
 
 
-<a id="org737b252"></a>
+<a id="org0af44f0"></a>
 
 ## Installation
 
 
-<a id="org0f99e9e"></a>
+<a id="org93e2178"></a>
 
 ### Get Emacs
 
@@ -77,7 +76,7 @@ If you are new to Emacs, the book [Mastering Emacs](https://www.masteringemacs.o
 recommended.
 
 
-<a id="org33840a0"></a>
+<a id="orge9cdc08"></a>
 
 ### Install ELOT in Emacs
 
@@ -104,7 +103,7 @@ should *clone* the ELOT repository using Git.
         `~/elisp/elot/elot-package/` to your `load-path`.
 
 
-<a id="org3e60204"></a>
+<a id="orge0fc8b6"></a>
 
 ### Install ELOT auxiliaries
 
@@ -145,12 +144,12 @@ Get the tools:
         `elot-exporter.jar` in your `bin` folder.
 
 
-<a id="org51aef13"></a>
+<a id="org4c8326a"></a>
 
 ## Quick start using ELOT
 
 
-<a id="org69cbae7"></a>
+<a id="org01b490a"></a>
 
 ### Adding an ontology
 
@@ -196,7 +195,7 @@ Now create an OWL file from your new document.
 ![img](./documentation/images/firefox-skeleton1.png)
 
 
-<a id="org2fde51e"></a>
+<a id="org78bb19b"></a>
 
 ### Adding classes and relations
 
@@ -214,7 +213,7 @@ Now create an OWL file from your new document.
 ![img](documentation/images/elot-animal1.png)
 
 
-<a id="org7930afa"></a>
+<a id="orgbbfb77f"></a>
 
 ### Adding annotations
 
@@ -225,7 +224,7 @@ In this screenshot, two annotations are added to the "transitive" characteristic
 ![img](documentation/images/elot-annotate-axiom1.png)
 
 
-<a id="org5c8b791"></a>
+<a id="org92e2231"></a>
 
 ### Querying the ontology
 
@@ -238,7 +237,7 @@ In this screenshot, two annotations are added to the "transitive" characteristic
 ![img](documentation/images/elot-query1.png)
 
 
-<a id="org74dd084"></a>
+<a id="org72b7b03"></a>
 
 ### Making a diagram
 
@@ -261,7 +260,7 @@ In this screenshot, two annotations are added to the "transitive" characteristic
 ![img](documentation/images/firefox-diagram1.png)
 
 
-<a id="org304d379"></a>
+<a id="org84597ce"></a>
 
 ### Display labels instead of identifiers
 
@@ -272,9 +271,7 @@ and offers quick search across the ontology resources. Hit F5 to toggle.
 ![img](documentation/images/elot-label-display1.png)
 
 
-<a id="orgf8c6741"></a>
-
-## Navigating Ontologies with Xref
+# Navigating Ontologies with Xref
 
 ELOT supports cross-referencing and navigation using Emacs’s built-in
 `xref` system. This allows users to find where a resource is used
@@ -297,4 +294,11 @@ to explore large ontologies interactively.
 
 This functionality is activated automatically for Org files exported with
 ELOT startup code and does not require additional setup.
+
+
+# HTML style
+
+HTML output from ELOT produces stable anchors for ontology resources,
+and shows readable labels with internal, clickable links.
+![img](documentation/images/elot-html-format.png)
 
