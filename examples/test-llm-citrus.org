@@ -5,9 +5,10 @@
 #+date: WIP (version of 2025-03-30 15:46)
 # #+call: theme-elot()
 
-#+OPTIONS: html-style:nil toc:tU
-#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="../elot-package/elot-style.css" />
-#+HTML_HEAD: <script src="../elot-package/elot-nav.js"></script>
+#+OPTIONS: html-style:nil toc:t
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="https://johanwk.github.io/elot/elot-package/elot-style.css"/>
+#+HTML_HEAD: <script src="https://johanwk.github.io/elot/elot-package/elot-nav.js"></script>
+
 
 * citrus
 :PROPERTIES:
