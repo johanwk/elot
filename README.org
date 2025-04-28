@@ -201,7 +201,7 @@ ELOT can display readable labels instead of prefixed identifiers
 and offers quick search across the ontology resources. Hit F5 to toggle.
 
 [[file:documentation/images/elot-label-display1.png]]
-** Navigating Ontologies with Xref
+* Navigating Ontologies with Xref
 
 ELOT supports cross-referencing and navigation using Emacs’s built-in
 ~xref~ system. This allows users to find where a resource is used
@@ -223,3 +223,8 @@ to explore large ontologies interactively.
 
 This functionality is activated automatically for Org files exported with
 ELOT startup code and does not require additional setup.
+
+* HTML style
+HTML output from ELOT produces stable anchors for ontology resources,
+and shows readable labels with internal, clickable links.
+[[file:documentation/images/elot-html-format.png]]
