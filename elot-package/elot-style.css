@@ -101,7 +101,7 @@ span.nodeclare {
 
 
 /* Uniform small headings for deep ontology classes */
-h4, h5, h6, h7, h8, h9 {
+h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15 {
     font-weight: 500;
     font-size: 1.2em;
     margin-top: 1em;
@@ -188,4 +188,17 @@ th {
     position: sticky;
     top: 0;
     z-index: 2;
+}
+
+.copy-link-button {
+    margin-left: 0.5em;
+    font-size: 0.8em;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #007acc;
+}
+
+.copy-link-button:hover {
+    color: #005a9c;
 }
