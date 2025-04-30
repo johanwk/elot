@@ -1406,7 +1406,46 @@ completion in the text. So we get "lis:Dependent [4/4]" instead of just
                               (org-get-heading no-tags no-todo no-priority no-comment)))
 #+end_src
 **** Get text of description list entry
-This function is not in use.
+These functions are work in progress.
+
+Function ~elot-org-find-description-value~~ is helpful e.g. in ~org-ql~
+queries to retrieve a value for a term (found by regex) and filtering
+the value (e.g. on the language tag). E.g., evaluating the following
+under a headline (i.e., section)
+: (elot-org-find-description-value "rdfs:label" "@no")
+will retrieve the first value of a description list entry with
+~rdfs:label~ as the /term/ that has ~@no~ as a language tag; if no such
+language-tagged entry is present, it returns the first ~rdfs:label~
+entry found.
+#+name: src-org-find-description-value
+#+begin_src emacs-lisp
+  (defun elot-org-find-description-value (term-regex &optional value-regex)
+    "Find value for TERM-REGEX from `elot-org-descriptions-in-section`.
+  If multiple matches, prefer the first where the value matches VALUE-REGEX.
+  Return the matched value string, or nil if not found.
+
+  VALUE-REGEX is optional; defaults to match anything."
+    (setq value-regex (or value-regex ""))
+    (let* ((descriptions (elot-org-descriptions-in-section))
+           (matches (seq-filter (lambda (pair)
+                                  (string-match-p term-regex (car pair)))
+                                descriptions))
+           (result
+            (or (seq-some (lambda (pair)
+                            (let ((value (cadr pair)))
+                              (when (and value
+                                         (stringp value)
+                                         (string-match-p value-regex value))
+                                value)))
+                          matches)
+                (when matches
+                  (cadr (car matches))))))
+      (if (stringp result)
+          (replace-regexp-in-string ":newline:" "" result)
+        nil)))
+#+end_src
+
+The following function is not in use.
 #+name:src-get-description-entry :tangle no
 #+begin_src emacs-lisp
   (defun elot-org-get-description-entry (tag)

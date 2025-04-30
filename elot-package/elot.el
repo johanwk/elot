@@ -1256,6 +1256,33 @@ are passed on to `org-get-heading'."
                             (org-get-heading no-tags no-todo no-priority no-comment)))
 ;; src-get-heading-nocookie ends here
 
+;; [[file:../elot-defs.org::src-org-find-description-value][src-org-find-description-value]]
+(defun elot-org-find-description-value (term-regex &optional value-regex)
+  "Find value for TERM-REGEX from `elot-org-descriptions-in-section`.
+If multiple matches, prefer the first where the value matches VALUE-REGEX.
+Return the matched value string, or nil if not found.
+
+VALUE-REGEX is optional; defaults to match anything."
+  (setq value-regex (or value-regex ""))
+  (let* ((descriptions (elot-org-descriptions-in-section))
+         (matches (seq-filter (lambda (pair)
+                                (string-match-p term-regex (car pair)))
+                              descriptions))
+         (result
+          (or (seq-some (lambda (pair)
+                          (let ((value (cadr pair)))
+                            (when (and value
+                                       (stringp value)
+                                       (string-match-p value-regex value))
+                              value)))
+                        matches)
+              (when matches
+                (cadr (car matches))))))
+    (if (stringp result)
+        (replace-regexp-in-string ":newline:" "" result)
+      nil)))
+;; src-org-find-description-value ends here
+
 ;; [[file:../elot-defs.org::src-get-description-entry :tangle no][src-get-description-entry :tangle no]]
 (defun elot-org-get-description-entry (tag)
   "Search forward for TAG and return text of Org element found.
