@@ -528,52 +528,12 @@ Then the ~completing-read~ -- rewriting ~elot-label-lookup~ using hashtable.
       (let ((selected-label
              (completing-read
               "Label: " elot-attriblist-ht)))
-        (if selected-label
-            (insert (elot-attriblist-label-value selected-label "puri"))))))
-#+end_src
-**** Old, inefficient version
-#+begin_src emacs-lisp :tangle no
-  (defun elot-label-lookup-annotations (label)
-      (let* ((resource (car (seq-filter (lambda (r)
-                                          (equal (nth 1 r) label))
-                                        tmp-elot-slurp)))
-             (attrib-plist (nth 2 resource))
-             (rdf-type (plist-get attrib-plist "rdf:type" 'string=))
-             (prefix (car (split-string (car resource) ":")))
-             (definition (string-limit
-                          (or (plist-get attrib-plist "iof-av:naturalLanguageDefinition" 'string=)
-                              (plist-get attrib-plist "skos:definition" 'string=)
-                              (plist-get attrib-plist "rdfs:comment" 'string=))
-                          120))
-             )
-        (concat
-         ;; pad annotations to col 30
-         (make-string (max (- 30 (length label)) 0) 32)
-         "  "
-         prefix
-         (make-string (max (- 10 (length prefix)) 0) 32)
-         rdf-type
-         (make-string (max (- 24 (length rdf-type)) 0) 32)
-         definition)))
-#+end_src
-
-#+begin_src emacs-lisp :tangle no
-  (defun elot-label-lookup ()
-    (interactive)
-    (let ((completion-extra-properties
-           (append completion-extra-properties
-                   '(:annotation-function elot-label-lookup-annotations)))
-          (tmp-elot-slurp elot-slurp))
-      (let ((selected-label
-             (completing-read
-              "Label: "
-              (mapcar (lambda (resource) (nth 1 resource)) elot-slurp))))
         (when selected-label
-          (let ((id (caar (seq-filter (lambda (r) (equal (nth 1 r) selected-label)) elot-slurp))))
-            (insert " ")     ;; Insert a space to avoid getting stuck under the text property
-            (backward-char 1) (insert id) (forward-char 1))))))
+          (insert " ")     ;; Insert a space to avoid getting stuck under the text property
+          (backward-char 1)
+          (insert (elot-attriblist-label-value selected-label "puri"))
+          (forward-char 1)))))
 #+end_src
-
 ** End with "provides"
 #+name: src-provide-library
 #+begin_src emacs-lisp :comments none

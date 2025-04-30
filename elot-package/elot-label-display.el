@@ -391,8 +391,11 @@ Output to OUT-FILE as an elisp list."
     (let ((selected-label
            (completing-read
             "Label: " elot-attriblist-ht)))
-      (if selected-label
-          (insert (elot-attriblist-label-value selected-label "puri"))))))
+      (when selected-label
+        (insert " ")     ;; Insert a space to avoid getting stuck under the text property
+        (backward-char 1)
+        (insert (elot-attriblist-label-value selected-label "puri"))
+        (forward-char 1)))))
 
 (provide 'elot-label-display)
 ;;; elot-label-display.el ends here
