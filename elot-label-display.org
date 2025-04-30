@@ -568,8 +568,10 @@ Then the ~completing-read~ -- rewriting ~elot-label-lookup~ using hashtable.
              (completing-read
               "Label: "
               (mapcar (lambda (resource) (nth 1 resource)) elot-slurp))))
-        (if selected-label
-            (insert (caar (seq-filter (lambda (r) (equal (nth 1 r) selected-label)) elot-slurp)))))))
+        (when selected-label
+          (let ((id (caar (seq-filter (lambda (r) (equal (nth 1 r) selected-label)) elot-slurp))))
+            (insert " ")     ;; Insert a space to avoid getting stuck under the text property
+            (backward-char 1) (insert id) (forward-char 1))))))
 #+end_src
 
 ** End with "provides"
