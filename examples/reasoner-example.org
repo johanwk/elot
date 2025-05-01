@@ -1,0 +1,487 @@
+# -*- eval: (load-library "elot-defaults") -*-
+#+title: Ontology demonstrating ROBOT reasoning in ELOT 
+#+subtitle: An OWL ontology
+#+author: 
+#+date: WIP (version of 2025-05-01 11:05)
+#+call: theme-elot()
+
+
+#+property: header-args:sh :var robot=(eval elot-robot-command-str)
+#+property: header-args:sh+ :var asserted=(concat (elot-context-localname) ".ttl")
+#+property: header-args:sh+ :var inferred=(concat (elot-context-localname) "-inferred.ttl")
+#+property: header-args:sparql :noweb yes :eval never-export :exports results :format ttl :wrap "src ttl" :cache yes :post kill-prefixes(data=*this*)
+
+* Use ROBOT for reasoning tasks with ELOT
+
+** The ~reason~ command help
+#+begin_src sh :results drawer
+$robot help reason
+#+end_src
+
+#+RESULTS:
+:results:
+usage: robot reason --input <file> --reasoner <name> [options] --output
+             <file>
+ -a,--annotate-inferred-axioms <arg>               if true, annotate
+                                                   inferred axioms with
+                                                   'is_inferred true'
+ -A,--axiom-generators <arg>                       specify one or more
+                                                   space-separated
+                                                   inferred axiom
+                                                   generators
+    --add-prefix <arg>                             add prefix 'foo:
+                                                   http://bar' to the
+                                                   output
+    --add-prefixes <arg>                           add JSON-LD prefixes to
+                                                   the output
+    --catalog <arg>                                use catalog from
+                                                   provided file
+ -D,--dump-unsatisfiable <arg>                     if specified and
+                                                   ontology is incoherent,
+                                                   dump minimal
+                                                   explanatory module here
+ -d,--include-indirect <arg>                       if true, assert direct
+                                                   and indirect axioms
+ -e,--equivalent-classes-allowed <arg>             if 'none', any
+                                                   equivalent class will
+                                                   cause an error, if
+                                                   'all', all equivalent
+                                                   classes are allowed,
+                                                   and if 'asserted-only',
+                                                   inferred equivalent
+                                                   classes will cause an
+                                                   error.
+ -h,--help                                         print usage information
+ -i,--input <arg>                                  reason ontology from a
+                                                   file
+ -I,--input-iri <arg>                              reason ontology from an
+                                                   IRI
+ -m,--create-new-ontology-with-annotations <arg>   if true, output
+                                                   ontology will contain
+                                                   the inferences and
+                                                   their annotation
+                                                   properties
+ -n,--create-new-ontology <arg>                    if true, output
+                                                   ontology will only
+                                                   contain the inferences
+    --noprefixes                                   do not use default
+                                                   prefixes
+ -o,--output <arg>                                 save reasoned ontology
+                                                   to a file
+ -p,--preserve-annotated-axioms <arg>              preserve annotated
+                                                   axioms when removing
+                                                   redundant subclass
+                                                   axioms
+ -P,--prefixes <arg>                               use prefixes from
+                                                   JSON-LD file
+ -r,--reasoner <arg>                               reasoner to use: ELK,
+                                                   HermiT, JFact
+ -s,--remove-redundant-subclass-axioms <arg>       if true, remove
+                                                   redundant subclass
+                                                   axioms
+    --strict                                       use strict parsing when
+                                                   loading an ontology
+ -t,--exclude-tautologies <arg>                    specify approach for
+                                                   excluding tautologies:
+                                                   'structural' (fast),
+                                                   'all' (use HermiT,
+                                                   slower), 'false' (allow
+                                                   tautologies)
+ -T,--exclude-owl-thing <arg>                      if true, exclude
+                                                   inferences to owl:Thing
+ -V,--version                                      print version
+                                                   information
+ -v,--verbose                                      increased logging
+ -vv,--very-verbose                                high logging
+ -vvv,--very-very-verbose                          maximum logging,
+                                                   including stack traces
+ -x,--exclude-duplicate-axioms <arg>               if true, do not add an
+                                                   axiom if it exists in
+                                                   import chain
+ -X,--exclude-external-entities <arg>              if true, do not add an
+                                                   axiom if it is about
+                                                   classes in external
+                                                   ontologies
+:end:
+
+# reformatted 
+** usage: ~robot reason --input <file> --reasoner <name> [options] --output <file>~
+ - -a,--annotate-inferred-axioms <arg> :: if true, annotate inferred
+   axioms with 'is_inferred true'
+ - -A,--axiom-generators <arg> :: specify one or more space-separated
+   inferred axiom generators
+ - --add-prefix <arg> :: add prefix 'foo: http://bar' to the output
+ - --add-prefixes <arg> :: add JSON-LD prefixes to the output
+ - --catalog <arg> :: use catalog from provided file
+ - -D,--dump-unsatisfiable <arg> :: if specified and ontology is
+   incoherent, dump minimal explanatory module here
+ - -d,--include-indirect <arg> :: if true, assert direct and indirect
+   axioms
+ - -e,--equivalent-classes-allowed <arg> :: if 'none', any equivalent
+   class will cause an error, if 'all', all equivalent classes are
+   allowed, and if 'asserted-only', inferred equivalent classes will
+   cause an error.
+ - -h,--help :: print usage information
+ - -i,--input <arg> :: reason ontology from a file
+ - -I,--input-iri <arg> :: reason ontology from an IRI
+ - -m,--create-new-ontology-with-annotations <arg> :: if true, output
+   ontology will contain the inferences and their annotation
+   properties
+ - -n,--create-new-ontology <arg> :: if true, output ontology will
+   only contain the inferences
+ - --noprefixes :: do not use default prefixes
+ - -o,--output <arg> :: save reasoned ontology to a file
+ - -p,--preserve-annotated-axioms <arg> :: preserve annotated axioms
+   when removing redundant subclass axioms
+ - -P,--prefixes <arg> :: use prefixes from JSON-LD file
+ - -r,--reasoner <arg> :: reasoner to use: ELK, HermiT, JFact
+ - -s,--remove-redundant-subclass-axioms <arg> :: if true, remove
+   redundant subclass axioms
+ - --strict :: use strict parsing when loading an ontology
+ - -t,--exclude-tautologies <arg> :: specify approach for excluding
+   tautologies: 'structural' (fast), 'all' (use HermiT, slower),
+   'false' (allow tautologies)
+ - -T,--exclude-owl-thing <arg> :: if true, exclude inferences to
+   owl:Thing
+ - -V,--version :: print version information
+ - -v,--verbose :: increased logging
+ - -vv,--very-verbose :: high logging
+ - -vvv,--very-very-verbose :: maximum logging, including stack traces
+ - -x,--exclude-duplicate-axioms <arg> :: if true, do not add an axiom
+   if it exists in import chain
+ - -X,--exclude-external-entities <arg> :: if true, do not add an
+   axiom if it is about classes in external ontologies
+
+** Alternatives for ~--axiom-generators~
+From the ROBOT documentation, [[https://robot.obolibrary.org/reason#generated-axioms][Generated Axioms]]:
+
+ - Class axiom generators
+   - SubClass
+   - EquivalentClass
+   - DisjointClasses
+ - Data property axiom generators
+   - DataPropertyCharacteristic
+   - EquivalentDataProperties
+   - SubDataProperty
+ - Individual axiom generators
+   - ClassAssertion
+   - PropertyAssertion
+ - Object property axiom generators
+   - EquivalentObjectProperty
+   - InverseObjectProperties
+   - ObjectPropertyCharacteristic
+   - SubObjectProperty
+   - ObjectPropertyRange
+   - ObjectPropertyDomain
+
+* Ontology "reasoner-example"
+:PROPERTIES:
+:ID: reasoner-example
+:ELOT-context-type: ontology
+:ELOT-context-localname: reasoner-example
+:ELOT-default-prefix: ex
+:header-args:omn: :tangle ./reasoner-example.omn :noweb yes
+:header-args:emacs-lisp: :tangle no :exports results
+:header-args: :padline yes
+:END:
+:OMN:
+#+begin_src omn :exports none
+##
+## This is the reasoner-example ontology
+## This document is in OWL 2 Manchester Syntax, see https://www.w3.org/TR/owl2-manchester-syntax/
+##
+
+## Prefixes
+<<omn-prefixes()>>
+
+## Ontology declaration
+<<resource-declarations(hierarchy="reasoner-example-ontology-declaration", owl-type="Ontology", owl-relation="")>>
+
+## Datatype declarations
+<<resource-declarations(hierarchy="reasoner-example-datatypes", owl-type="Datatype")>>
+
+## Class declarations
+<<resource-declarations(hierarchy="reasoner-example-class-hierarchy", owl-type="Class")>>
+
+## Object property declarations
+<<resource-declarations(hierarchy="reasoner-example-object-property-hierarchy", owl-type="ObjectProperty")>>
+
+## Data property declarations
+<<resource-declarations(hierarchy="reasoner-example-data-property-hierarchy", owl-type="DataProperty")>>
+
+## Annotation property declarations
+<<resource-declarations(hierarchy="reasoner-example-annotation-property-hierarchy", owl-type="AnnotationProperty")>>
+
+## Individual declarations
+<<resource-declarations(hierarchy="reasoner-example-individuals", owl-type="Individual")>>
+
+## Resource taxonomies
+<<resource-taxonomy(hierarchy="reasoner-example-class-hierarchy", owl-type="Class", owl-relation="SubClassOf")>>
+<<resource-taxonomy(hierarchy="reasoner-example-object-property-hierarchy", owl-type="ObjectProperty", owl-relation="SubPropertyOf")>>
+<<resource-taxonomy(hierarchy="reasoner-example-data-property-hierarchy", owl-type="DataProperty", owl-relation="SubPropertyOf")>>
+<<resource-taxonomy(hierarchy="reasoner-example-annotation-property-hierarchy", owl-type="AnnotationProperty", owl-relation="SubPropertyOf")>>
+#+end_src
+:END:
+** Queries
+*** ROBOT command to produce a classified version of the ontology
+The below command is /named/ so it can be referenced and re-executed
+when queries below are run.
+
+The variables ~$asserted~ and ~$inferred~ refer to Turtle files, set in
+properties at the top of this file.
+#+name: make-inferred
+#+begin_src sh :results code
+  $robot reason \
+    --reasoner HermiT \
+    --input $asserted \
+    --axiom-generators "SubClass ClassAssertion PropertyAssertion" \
+    --output $inferred
+#+end_src
+
+#+RESULTS: make-inferred
+#+begin_src sh
+#+end_src
+
+*** SPARQL queries
+In this section, queries are written and importantly /named/. This makes
+it easy to run the same queries on asserted and inferred versions of
+the ontology.
+
+Query for the class taxonomy, excluding anonymous classes:
+#+name: rq-class-subclass
+#+begin_src sparql :exports code
+  construct { 
+    ?sub a owl:Class .
+    ?sub rdfs:subClassOf ?super .
+  } {
+    ?sub a owl:Class .
+    optional { ?sub rdfs:subClassOf ?super
+               filter( isIRI(?super) ) }
+  }
+#+end_src
+
+Query for class membership and individual relationships:
+#+name: rq-ind-rel
+#+begin_src sparql :exports code
+  construct { 
+    ?ind a ?class ; ?prop ?other .
+  } {
+    ?ind a owl:NamedIndividual
+    optional { ?class a owl:Class . ?ind a ?class }
+    optional { ?ind ?prop ?other 
+               filter( ?prop != rdf:type ) 
+               filter( ?prop != rdfs:label ) }
+  }
+#+end_src
+
+*** Query this ontology as asserted, no inference
+:PROPERTIES:
+:header-args:sparql+: :url (concat (elot-context-localname) ".ttl")
+:END:
+The ~url~ header argument is set in ~:PROPERTIES:~ to
+~<ontology-local-name>.ttl~, the asserted result of conversion to
+Turtle.
+**** Asserted class taxonomy
+In this query result, there is no asserted subclass axiom.
+#+begin_src sparql :cache no
+<<rq-class-subclass>>
+#+end_src
+
+#+RESULTS[6e4cf51f0e58557981bb4977a4e325381d997744]:
+#+begin_src ttl
+ex:C    a       owl:Class .
+
+ex:D    a       owl:Class .
+#+end_src
+
+**** Assertions on individuals
+In this query result, ex:b is not related to ex:a, even though ex:r is symmetric.
+#+begin_src sparql :cache no
+<<rq-ind-rel>>
+#+end_src
+
+#+RESULTS[122a43e3213caccdb1ef4aa3239ecdb9047b8710]:
+#+begin_src ttl
+ex:a    ex:r    ex:b .
+#+end_src
+
+*** Query this ontology after inference
+:PROPERTIES:
+:header-args:sparql+: :url (concat (elot-context-localname) "-inferred.ttl")
+:header-args:sparql+: :var refresh=make-inferred :cache no
+:END:
+The ~:PROPERTIES:~ block attached to this headline applies two settings
+that ensure we are querying the ontology after inference.
+ - The ~:url~ is bound as ~<ontology-local-name>-inferred.ttl~,
+ - A ~:var~ assignment forces ROBOT inference before running the query.
+
+**** Class taxonomy, after inference
+Class ex:D has an existential restriction of /ex:r some owl:Thing/.
+Because ex:r has class ex:C as domain, ex:D is inferred to be a subclass of ex:C.
+#+begin_src sparql :cache no 
+<<rq-class-subclass>>
+#+end_src
+
+#+RESULTS:
+#+begin_src ttl
+ex:C    a                owl:Class ;
+        rdfs:subClassOf  owl:Thing .
+
+ex:D    a                owl:Class ;
+        rdfs:subClassOf  ex:C .
+#+end_src
+
+**** Assertions on individuals, after inference
+ - Because ex:r has class ex:C as domain, ex:a is inferred to be a ex:C.
+ - Because ex:r is symmetric, /ex:b ex:r ex:a/ is inferred,
+ - and ex:b is inferred to be a ex:C as well.
+#+begin_src sparql :cache no 
+<<rq-ind-rel>>
+#+end_src
+
+#+RESULTS[1c8db132593cd14826bb1a65e57baf74d6dcf9cc]:
+#+begin_src ttl
+ex:a    a       ex:C ;
+        ex:r    ex:b .
+
+ex:b    a       ex:C ;
+        ex:r    ex:a .
+#+end_src
+
+
+** Prefixes
+The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
+
+#+name: prefix-table
+#+attr_latex: :align lp{.8\textwidth} :font  mall
+#+caption: OWL ontology prefixes
+| prefix    | uri                                                                            |
+|-----------+--------------------------------------------------------------------------------|
+| owl:      | http://www.w3.org/2002/07/owl#                                                 |
+| rdf:      | http://www.w3.org/1999/02/22-rdf-syntax-ns#                                    |
+| xml:      | http://www.w3.org/XML/1998/namespace                                           |
+| xsd:      | http://www.w3.org/2001/XMLSchema#                                              |
+| rdfs:     | http://www.w3.org/2000/01/rdf-schema#                                          |
+| skos:     | http://www.w3.org/2004/02/skos/core#                                           |
+| pav:      | http://purl.org/pav/                                                           |
+| foaf:     | http://xmlns.com/foaf/0.1/                                                     |
+| dc:       | http://purl.org/dc/elements/1.1/                                               |
+| dcterms:  | http://purl.org/dc/terms/                                                      |
+| prov:     | http://www.w3.org/ns/prov#                                                     |
+| iof-av:   | https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/ |
+| ex:       | http://example.org/                                                            |
+| ex:       | http://example.org/                                                            |
+*** Source blocks for prefixes                                     :noexport:
+:PROPERTIES:
+:header-args:omn: :tangle no
+:END:
+#+name: sparql-prefixes
+#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+  (elot-prefix-block-from-alist prefixes 'sparql)
+#+end_src
+#+name: omn-prefixes
+#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+  (elot-prefix-block-from-alist prefixes 'omn)
+#+end_src
+#+name: ttl-prefixes
+#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
+  (elot-prefix-block-from-alist prefixes 'ttl)
+#+end_src
+
+** reasoner-example ontology (ex:reasoner-example ex:reasoner-example/0.0)
+:PROPERTIES:
+:ID:       reasoner-example-ontology-declaration
+:custom_id: reasoner-example-ontology-declaration
+:resourcedefs: yes
+:END:
+ # - Import :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/
+ - owl:versionInfo :: 0.0 start of reasoner-example
+ - dcterms:title :: "reasoner-example ontology"@en
+ - pav:lastUpdateOn :: {{{modification-time("%Y-%m-%dT%H:%M:%SZ",t)}}}^^xsd:dateTime
+ - dcterms:license :: [[https://creativecommons.org/licenses/by-sa/4.0/]]
+ - dcterms:creator :: {{{author}}}
+ - dcterms:modified ::  {{{modification-time("%Y-%m-%d",t)}}}^^xsd:date
+ - dcterms:publisher :: https://example.org/thepublisher
+ - dc:rights :: Copyright info here
+ - dcterms:description :: The reasoner-example ontology is ...
+ - rdfs:comment :: The reasoner-example ontology is ...
+** Datatypes
+:PROPERTIES:
+:ID:       reasoner-example-datatypes
+:custom_id: reasoner-example-datatypes
+:resourcedefs: yes
+:END:
+** Classes
+:PROPERTIES:
+:ID:       reasoner-example-class-hierarchy
+:custom_id: reasoner-example-class-hierarchy
+:resourcedefs: yes
+:END:
+*** C (ex:C)
+ - rdfs:comment :: The top class
+*** D (ex:D)
+ - rdfs:comment :; A subclass of C, after inference
+ - SubClassOf :: ex:r some owl:Thing
+** Object properties
+:PROPERTIES:
+:ID:       reasoner-example-object-property-hierarchy
+:custom_id: reasoner-example-object-property-hierarchy
+:resourcedefs: yes
+:END:
+*** r (ex:r)
+ - rdfs:comment :: A relation that will be used to force D under C, and a to point back to itself
+ - Domain :: ex:C
+ - Characteristics :: Symmetric
+** Data properties
+:PROPERTIES:
+:ID:       reasoner-example-data-property-hierarchy
+:custom_id: reasoner-example-data-property-hierarchy
+:resourcedefs: yes
+:END:
+** Annotation properties
+:PROPERTIES:
+:ID:       reasoner-example-annotation-property-hierarchy
+:custom_id: reasoner-example-annotation-property-hierarchy
+:resourcedefs: yes
+:END:
+*** label (rdfs:label)
+*** owl:versionInfo
+*** dcterms:title
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dcterms:license
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dcterms:creator
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dcterms:modified
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dcterms:publisher
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dcterms:description
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dc:rights
+ - rdfs:isDefinedBy :: http://purl.org/dc/elements/1.1/
+*** pav:lastUpdateOn
+ - rdfs:isDefinedBy :: http://purl.org/pav/
+*** skos:example
+ - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
+*** skos:prefLabel
+ - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
+*** skos:altLabel
+ - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
+*** iof-av:isPrimitive
+ - rdfs:isDefinedBy :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary
+*** skos:definition
+ - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
+**** iof-av:naturalLanguageDefinition
+ - rdfs:isDefinedBy :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary
+**** iof-av:primitiveRationale
+ - rdfs:isDefinedBy :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary
+** Individuals
+:PROPERTIES:
+:ID:       reasoner-example-individuals
+:custom_id: reasoner-example-individuals
+:resourcedefs: yes
+:END:
+*** a (ex:a)
+ - Facts :: ex:r ex:b
+*** b (ex:b)
