@@ -1,7 +1,7 @@
 # -*- eval: (load-library "elot-defaults") -*-
 #+title: Ontology demonstrating ROBOT reasoning in ELOT 
 #+subtitle: An OWL ontology
-#+author: 
+#+author: johanw
 #+date: WIP (version of 2025-05-01 11:05)
 #+call: theme-elot()
 
@@ -347,7 +347,6 @@ ex:a    a       ex:C ;
 ex:b    a       ex:C ;
         ex:r    ex:a .
 #+end_src
-
 
 ** Prefixes
 The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
