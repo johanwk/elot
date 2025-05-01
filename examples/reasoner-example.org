@@ -451,7 +451,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 *** C (ex:C)
  - rdfs:comment :: The top class
 *** D (ex:D)
- - rdfs:comment :; A subclass of C, after inference
+ - rdfs:comment :: A subclass of C, after inference
  - SubClassOf :: ex:r some owl:Thing
 ** Object properties
 :PROPERTIES:
