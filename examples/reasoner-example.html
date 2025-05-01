@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2025-05-01 tor. 15:38 -->
+<!-- 2025-05-01 tor. 15:47 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Ontology demonstrating ROBOT reasoning in ELOT</title>
@@ -22,34 +22,34 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#org1dda1c0">1. Use ROBOT for reasoning tasks with ELOT</a>
+<li><a href="#org6025507">1. Use ROBOT for reasoning tasks with ELOT</a>
 <ul>
-<li><a href="#org9d408e9">1.1. The <code>reason</code> command help</a></li>
+<li><a href="#orge987a2f">1.1. The <code>reason</code> command help</a></li>
 <li><a href="#usage:">1.2. usage: <code>robot reason --input &lt;file&gt; --reasoner &lt;name&gt; [options] --output &lt;file&gt;</code></a></li>
-<li><a href="#org862c3da">1.3. Alternatives for <code>--axiom-generators</code></a></li>
+<li><a href="#org8e9c58c">1.3. Alternatives for <code>--axiom-generators</code></a></li>
 </ul>
 </li>
-<li><a href="#org29d57ee">2. Ontology &ldquo;reasoner-example&rdquo;</a>
+<li><a href="#org172cb45">2. Ontology &ldquo;reasoner-example&rdquo;</a>
 <ul>
-<li><a href="#org4ba1793">2.1. Queries</a>
+<li><a href="#org6a43974">2.1. Queries</a>
 <ul>
-<li><a href="#org953470f">2.1.1. ROBOT command to produce a classified version of the ontology</a></li>
-<li><a href="#org4a949a6">2.1.2. SPARQL queries</a></li>
-<li><a href="#orgc7d6048">2.1.3. Query this ontology as asserted, no inference</a>
+<li><a href="#org25d2009">2.1.1. ROBOT command to produce a classified version of the ontology</a></li>
+<li><a href="#orgd8b52ae">2.1.2. SPARQL queries</a></li>
+<li><a href="#org0bd76eb">2.1.3. Query this ontology as asserted, no inference</a>
 <ul>
-<li><a href="#orgcbc1228">2.1.3.1. Asserted class taxonomy</a></li>
-<li><a href="#orge9cf2a7">2.1.3.2. Assertions on individuals</a></li>
+<li><a href="#org035ce0e">2.1.3.1. Asserted class taxonomy</a></li>
+<li><a href="#org45d7baf">2.1.3.2. Assertions on individuals</a></li>
 </ul>
 </li>
-<li><a href="#org44c7ae6">2.1.4. Query this ontology after inference</a>
+<li><a href="#org12b0844">2.1.4. Query this ontology after inference</a>
 <ul>
-<li><a href="#orgd8e0300">2.1.4.1. Class taxonomy, after inference</a></li>
-<li><a href="#org331dcca">2.1.4.2. Assertions on individuals, after inference</a></li>
+<li><a href="#org98eb301">2.1.4.1. Class taxonomy, after inference</a></li>
+<li><a href="#org02eea76">2.1.4.2. Assertions on individuals, after inference</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#orgf26e5f9">2.2. Prefixes</a></li>
+<li><a href="#org51c6830">2.2. Prefixes</a></li>
 <li><a href="#reasoner-example-ontology-declaration">2.3. reasoner-example ontology (ex:reasoner-example ex:reasoner-example/0.0)</a></li>
 <li><a href="#reasoner-example-datatypes">2.4. Datatypes</a></li>
 <li><a href="#reasoner-example-class-hierarchy">2.5. Classes</a>
@@ -100,12 +100,12 @@
 </div>
 </div>
 
-<div id="outline-container-org1dda1c0" class="outline-2">
-<h2 id="org1dda1c0"><span class="section-number-2">1.</span> Use ROBOT for reasoning tasks with ELOT</h2>
+<div id="outline-container-org6025507" class="outline-2">
+<h2 id="org6025507"><span class="section-number-2">1.</span> Use ROBOT for reasoning tasks with ELOT</h2>
 <div class="outline-text-2" id="text-1">
 </div>
-<div id="outline-container-org9d408e9" class="outline-3">
-<h3 id="org9d408e9"><span class="section-number-3">1.1.</span> The <code>reason</code> command help</h3>
+<div id="outline-container-orge987a2f" class="outline-3">
+<h3 id="orge987a2f"><span class="section-number-3">1.1.</span> The <code>reason</code> command help</h3>
 <div class="outline-text-3" id="text-1-1">
 <div class="org-src-container">
 <pre class="src src-sh">$<span style="color: SystemWindowText; font-weight: bold;">robot</span> help reason
@@ -165,8 +165,8 @@ axiom if it is about classes in external ontologies</dd>
 </dl>
 </div>
 </div>
-<div id="outline-container-org862c3da" class="outline-3">
-<h3 id="org862c3da"><span class="section-number-3">1.3.</span> Alternatives for <code>--axiom-generators</code></h3>
+<div id="outline-container-org8e9c58c" class="outline-3">
+<h3 id="org8e9c58c"><span class="section-number-3">1.3.</span> Alternatives for <code>--axiom-generators</code></h3>
 <div class="outline-text-3" id="text-1-3">
 <p>
 From the ROBOT documentation, <a href="https://robot.obolibrary.org/reason#generated-axioms">Generated Axioms</a>:
@@ -203,16 +203,16 @@ From the ROBOT documentation, <a href="https://robot.obolibrary.org/reason#gener
 </div>
 </div>
 </div>
-<div id="outline-container-org29d57ee" class="outline-2">
-<h2 id="org29d57ee"><span class="section-number-2">2.</span> Ontology &ldquo;reasoner-example&rdquo;</h2>
+<div id="outline-container-org172cb45" class="outline-2">
+<h2 id="org172cb45"><span class="section-number-2">2.</span> Ontology &ldquo;reasoner-example&rdquo;</h2>
 <div class="outline-text-2" id="text-2">
 </div>
-<div id="outline-container-org4ba1793" class="outline-3">
-<h3 id="org4ba1793"><span class="section-number-3">2.1.</span> Queries</h3>
+<div id="outline-container-org6a43974" class="outline-3">
+<h3 id="org6a43974"><span class="section-number-3">2.1.</span> Queries</h3>
 <div class="outline-text-3" id="text-2-1">
 </div>
-<div id="outline-container-org953470f" class="outline-4">
-<h4 id="org953470f"><span class="section-number-4">2.1.1.</span> ROBOT command to produce a classified version of the ontology</h4>
+<div id="outline-container-org25d2009" class="outline-4">
+<h4 id="org25d2009"><span class="section-number-4">2.1.1.</span> ROBOT command to produce a classified version of the ontology</h4>
 <div class="outline-text-4" id="text-2-1-1">
 <p>
 The below command is <i>named</i> so it can be referenced and re-executed
@@ -224,7 +224,7 @@ The variables <code>$asserted</code> and <code>$inferred</code> refer to Turtle 
 properties at the top of this file.
 </p>
 <div class="org-src-container">
-<pre class="src src-sh" id="orgc14d860">$<span style="color: SystemWindowText; font-weight: bold;">robot</span> reason <span style="color: #8b2252;">\</span>
+<pre class="src src-sh" id="org487a8b0">$<span style="color: SystemWindowText; font-weight: bold;">robot</span> reason <span style="color: #8b2252;">\</span>
   --reasoner HermiT <span style="color: #8b2252;">\</span>
   --input $<span style="color: SystemWindowText; font-weight: bold;">asserted</span> <span style="color: #8b2252;">\</span>
   --axiom-generators <span style="color: #8b2252;">"SubClass ClassAssertion PropertyAssertion"</span> <span style="color: #8b2252;">\</span>
@@ -233,8 +233,8 @@ properties at the top of this file.
 </div>
 </div>
 </div>
-<div id="outline-container-org4a949a6" class="outline-4">
-<h4 id="org4a949a6"><span class="section-number-4">2.1.2.</span> SPARQL queries</h4>
+<div id="outline-container-orgd8b52ae" class="outline-4">
+<h4 id="orgd8b52ae"><span class="section-number-4">2.1.2.</span> SPARQL queries</h4>
 <div class="outline-text-4" id="text-2-1-2">
 <p>
 In this section, queries are written and importantly <i>named</i>. This makes
@@ -246,7 +246,7 @@ the ontology.
 Query for the class taxonomy, excluding anonymous classes:
 </p>
 <div class="org-src-container">
-<pre class="src src-sparql" id="org93f9bba"><span style="color: #a020f0;">construct</span> <span style="color: #707183;">{</span> 
+<pre class="src src-sparql" id="org877d911"><span style="color: #a020f0;">construct</span> <span style="color: #707183;">{</span> 
   <span style="color: SystemWindowText; font-weight: bold;">?sub</span> a owl:Class .
   <span style="color: SystemWindowText; font-weight: bold;">?sub</span> rdfs:subClassOf <span style="color: SystemWindowText; font-weight: bold;">?super</span> .
 <span style="color: #707183;">}</span> <span style="color: #707183;">{</span>
@@ -261,7 +261,7 @@ Query for the class taxonomy, excluding anonymous classes:
 Query for class membership and individual relationships:
 </p>
 <div class="org-src-container">
-<pre class="src src-sparql" id="org00e613f"><span style="color: #a020f0;">construct</span> <span style="color: #707183;">{</span> 
+<pre class="src src-sparql" id="orga9a7460"><span style="color: #a020f0;">construct</span> <span style="color: #707183;">{</span> 
   <span style="color: SystemWindowText; font-weight: bold;">?ind</span> a <span style="color: SystemWindowText; font-weight: bold;">?class</span> ; <span style="color: SystemWindowText; font-weight: bold;">?prop</span> <span style="color: SystemWindowText; font-weight: bold;">?other</span> .
 <span style="color: #707183;">}</span> <span style="color: #707183;">{</span>
   <span style="color: SystemWindowText; font-weight: bold;">?ind</span> a owl:NamedIndividual
@@ -274,8 +274,8 @@ Query for class membership and individual relationships:
 </div>
 </div>
 </div>
-<div id="outline-container-orgc7d6048" class="outline-4">
-<h4 id="orgc7d6048"><span class="section-number-4">2.1.3.</span> Query this ontology as asserted, no inference</h4>
+<div id="outline-container-org0bd76eb" class="outline-4">
+<h4 id="org0bd76eb"><span class="section-number-4">2.1.3.</span> Query this ontology as asserted, no inference</h4>
 <div class="outline-text-4" id="text-2-1-3">
 <p>
 The <code>url</code> header argument is set in <code>:PROPERTIES:</code> to
@@ -283,8 +283,8 @@ The <code>url</code> header argument is set in <code>:PROPERTIES:</code> to
 Turtle.
 </p>
 </div>
-<div id="outline-container-orgcbc1228" class="outline-5">
-<h5 id="orgcbc1228"><span class="section-number-5">2.1.3.1.</span> Asserted class taxonomy</h5>
+<div id="outline-container-org035ce0e" class="outline-5">
+<h5 id="org035ce0e"><span class="section-number-5">2.1.3.1.</span> Asserted class taxonomy</h5>
 <div class="outline-text-5" id="text-2-1-3-1">
 <p>
 In this query result, there is no asserted subclass axiom.
@@ -297,15 +297,15 @@ In this query result, there is no asserted subclass axiom.
 </div>
 
 
-<div id="org38be6f2" class="figure">
+<div id="org33dc36b" class="figure">
 <p><img src="./images/class-subclass-asserted.svg" alt="class-subclass-asserted.svg" class="org-svg" />
 </p>
 <p><span class="figure-number">Figure 1: </span>Asserted class taxonomy</p>
 </div>
 </div>
 </div>
-<div id="outline-container-orge9cf2a7" class="outline-5">
-<h5 id="orge9cf2a7"><span class="section-number-5">2.1.3.2.</span> Assertions on individuals</h5>
+<div id="outline-container-org45d7baf" class="outline-5">
+<h5 id="org45d7baf"><span class="section-number-5">2.1.3.2.</span> Assertions on individuals</h5>
 <div class="outline-text-5" id="text-2-1-3-2">
 <p>
 In this query result, <a href="#ex:b">b</a> is not related to <a href="#ex:a">a</a>, even though <a href="#ex:r">r</a> is symmetric.
@@ -316,7 +316,7 @@ In this query result, <a href="#ex:b">b</a> is not related to <a href="#ex:a">a<
 </div>
 
 
-<div id="orgd8f2e2b" class="figure">
+<div id="orga6d8b47" class="figure">
 <p><img src="./images/ind-rel-asserted.svg" alt="ind-rel-asserted.svg" class="org-svg" />
 </p>
 <p><span class="figure-number">Figure 2: </span>Asserted individual relationships</p>
@@ -324,8 +324,8 @@ In this query result, <a href="#ex:b">b</a> is not related to <a href="#ex:a">a<
 </div>
 </div>
 </div>
-<div id="outline-container-org44c7ae6" class="outline-4">
-<h4 id="org44c7ae6"><span class="section-number-4">2.1.4.</span> Query this ontology after inference</h4>
+<div id="outline-container-org12b0844" class="outline-4">
+<h4 id="org12b0844"><span class="section-number-4">2.1.4.</span> Query this ontology after inference</h4>
 <div class="outline-text-4" id="text-2-1-4">
 <p>
 The <code>:PROPERTIES:</code> block attached to this headline applies two settings
@@ -336,8 +336,8 @@ that ensure we are querying the ontology after inference.
 <li>A <code>:var</code> assignment forces ROBOT inference before running the query.</li>
 </ul>
 </div>
-<div id="outline-container-orgd8e0300" class="outline-5">
-<h5 id="orgd8e0300"><span class="section-number-5">2.1.4.1.</span> Class taxonomy, after inference</h5>
+<div id="outline-container-org98eb301" class="outline-5">
+<h5 id="org98eb301"><span class="section-number-5">2.1.4.1.</span> Class taxonomy, after inference</h5>
 <div class="outline-text-5" id="text-2-1-4-1">
 <p>
 Class <a href="#ex:D">D</a> has an existential restriction of <i><a href="#ex:r">r</a> some owl:Thing</i>.
@@ -353,15 +353,15 @@ Because <a href="#ex:r">r</a> has class <a href="#ex:C">C</a> as domain, <a href
 </div>
 
 
-<div id="orgab61d46" class="figure">
+<div id="org88a7e88" class="figure">
 <p><img src="./images/class-subclass-inferred.svg" alt="class-subclass-inferred.svg" class="org-svg" />
 </p>
 <p><span class="figure-number">Figure 3: </span>Inferred class taxonomy</p>
 </div>
 </div>
 </div>
-<div id="outline-container-org331dcca" class="outline-5">
-<h5 id="org331dcca"><span class="section-number-5">2.1.4.2.</span> Assertions on individuals, after inference</h5>
+<div id="outline-container-org02eea76" class="outline-5">
+<h5 id="org02eea76"><span class="section-number-5">2.1.4.2.</span> Assertions on individuals, after inference</h5>
 <div class="outline-text-5" id="text-2-1-4-2">
 <ul class="org-ul">
 <li>Because <a href="#ex:r">r</a> has class <a href="#ex:C">C</a> as domain, <a href="#ex:a">a</a> is inferred to be a <a href="#ex:C">C</a>.</li>
@@ -378,7 +378,7 @@ Because <a href="#ex:r">r</a> has class <a href="#ex:C">C</a> as domain, <a href
 </div>
 
 
-<div id="org6dbad89" class="figure">
+<div id="orgcce1607" class="figure">
 <p><img src="./images/ind-rel-inferred.svg" alt="ind-rel-inferred.svg" class="org-svg" />
 </p>
 </div>
@@ -386,14 +386,14 @@ Because <a href="#ex:r">r</a> has class <a href="#ex:C">C</a> as domain, <a href
 </div>
 </div>
 </div>
-<div id="outline-container-orgf26e5f9" class="outline-3">
-<h3 id="orgf26e5f9"><span class="section-number-3">2.2.</span> Prefixes</h3>
+<div id="outline-container-org51c6830" class="outline-3">
+<h3 id="org51c6830"><span class="section-number-3">2.2.</span> Prefixes</h3>
 <div class="outline-text-3" id="text-2-2">
 <p>
-The ontology document in OWL employs the namespace prefixes of table <a href="#org1407db6">1</a>.
+The ontology document in OWL employs the namespace prefixes of table <a href="#org762ba94">1</a>.
 </p>
 
-<table id="org1407db6" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<table id="org762ba94" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 <caption class="t-above"><span class="table-number">Table 1:</span> OWL ontology prefixes</caption>
 
 <colgroup>
@@ -487,7 +487,7 @@ The ontology document in OWL employs the namespace prefixes of table <a href="#o
 <dl class="org-dl">
 <dt><a href="#owl:versionInfo">owl:versionInfo</a></dt><dd>0.0 start of reasoner-example</dd>
 <dt><a href="#dcterms:title">dcterms:title</a></dt><dd>&ldquo;reasoner-example ontology&rdquo;@en</dd>
-<dt><a href="#pav:lastUpdateOn">pav:lastUpdateOn</a></dt><dd>&ldquo;2025-05-01T15:26:11Z&rdquo;^^xsd:dateTime</dd>
+<dt><a href="#pav:lastUpdateOn">pav:lastUpdateOn</a></dt><dd>&ldquo;2025-05-01T15:47:22Z&rdquo;^^xsd:dateTime</dd>
 <dt><a href="#dcterms:license">dcterms:license</a></dt><dd><a href="https://creativecommons.org/licenses/by-sa/4.0/">https://creativecommons.org/licenses/by-sa/4.0/</a></dd>
 <dt><a href="#dcterms:creator">dcterms:creator</a></dt><dd>johanw</dd>
 <dt><a href="#dcterms:modified">dcterms:modified</a></dt><dd>&ldquo;2025-05-01&rdquo;^^xsd:date</dd>
@@ -518,10 +518,10 @@ The ontology document in OWL employs the namespace prefixes of table <a href="#o
 <div id="outline-container-ex:D" class="outline-4">
 <h4 id="ex:D"><span class="section-number-4">2.5.2.</span> D (ex:D)</h4>
 <div class="outline-text-4" id="text-ex:D">
-<ul class="org-ul">
-<li>rdfs:comment :; A subclass of C, after inference</li>
-<li id="SubClassOf"><a href="#ex:r">r</a> some owl:Thing</li>
-</ul>
+<dl class="org-dl">
+<dt>rdfs:comment</dt><dd>A subclass of C, after inference</dd>
+<dt>SubClassOf</dt><dd><a href="#ex:r">r</a> some owl:Thing</dd>
+</dl>
 </div>
 </div>
 </div>
@@ -703,7 +703,7 @@ The ontology document in OWL employs the namespace prefixes of table <a href="#o
 <div id="postamble" class="status">
 <p class="date">Date: WIP (version of 2025-05-01 11:05)</p>
 <p class="author">Author: johanw</p>
-<p class="date">Created: 2025-05-01 tor. 15:38</p>
+<p class="date">Created: 2025-05-01 tor. 15:47</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
