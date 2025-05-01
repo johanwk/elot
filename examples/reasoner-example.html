@@ -1,0 +1,683 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2025-05-01 tor. 15:27 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ontology demonstrating ROBOT reasoning in ELOT</title>
+<meta name="author" content="johanw" />
+<meta name="generator" content="Org Mode" />
+<link rel="stylesheet" type="text/css" href="https://johanwk.github.io/elot/elot-package/elot-style.css"/>
+<script src="https://johanwk.github.io/elot/elot-package/elot-nav.js"></script>
+</head>
+<body>
+<div id="content" class="content">
+<h1 class="title">Ontology demonstrating ROBOT reasoning in ELOT
+<br />
+<span class="subtitle">An OWL ontology</span>
+</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#org7ab6f05">1. Use ROBOT for reasoning tasks with ELOT</a>
+<ul>
+<li><a href="#org14b7ef2">1.1. The <code>reason</code> command help</a></li>
+<li><a href="#usage:">1.2. usage: <code>robot reason --input &lt;file&gt; --reasoner &lt;name&gt; [options] --output &lt;file&gt;</code></a></li>
+<li><a href="#org7f2193b">1.3. Alternatives for <code>--axiom-generators</code></a></li>
+</ul>
+</li>
+<li><a href="#org6e00eca">2. Ontology &ldquo;reasoner-example&rdquo;</a>
+<ul>
+<li><a href="#org87cbda7">2.1. Queries</a>
+<ul>
+<li><a href="#org4e371eb">2.1.1. ROBOT command to produce a classified version of the ontology</a></li>
+<li><a href="#org3673321">2.1.2. SPARQL queries</a></li>
+<li><a href="#org6835d08">2.1.3. Query this ontology as asserted, no inference</a>
+<ul>
+<li><a href="#org94a8dbf">2.1.3.1. Asserted class taxonomy</a></li>
+<li><a href="#orgc196778">2.1.3.2. Assertions on individuals</a></li>
+</ul>
+</li>
+<li><a href="#orgdd3abb3">2.1.4. Query this ontology after inference</a>
+<ul>
+<li><a href="#orga582f92">2.1.4.1. Class taxonomy, after inference</a></li>
+<li><a href="#org34a8604">2.1.4.2. Assertions on individuals, after inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#org06fb10a">2.2. Prefixes</a></li>
+<li><a href="#reasoner-example-ontology-declaration">2.3. reasoner-example ontology (ex:reasoner-example ex:reasoner-example/0.0)</a></li>
+<li><a href="#reasoner-example-datatypes">2.4. Datatypes</a></li>
+<li><a href="#reasoner-example-class-hierarchy">2.5. Classes</a>
+<ul>
+<li><a href="#ex:C">2.5.1. C (ex:C)</a></li>
+<li><a href="#ex:D">2.5.2. D (ex:D)</a></li>
+</ul>
+</li>
+<li><a href="#reasoner-example-object-property-hierarchy">2.6. Object properties</a>
+<ul>
+<li><a href="#ex:r">2.6.1. r (ex:r)</a></li>
+</ul>
+</li>
+<li><a href="#reasoner-example-data-property-hierarchy">2.7. Data properties</a></li>
+<li><a href="#reasoner-example-annotation-property-hierarchy">2.8. Annotation properties</a>
+<ul>
+<li><a href="#rdfs:label">2.8.1. label (rdfs:label)</a></li>
+<li><a href="#owl:versionInfo">2.8.2. owl:versionInfo</a></li>
+<li><a href="#dcterms:title">2.8.3. dcterms:title</a></li>
+<li><a href="#dcterms:license">2.8.4. dcterms:license</a></li>
+<li><a href="#dcterms:creator">2.8.5. dcterms:creator</a></li>
+<li><a href="#dcterms:modified">2.8.6. dcterms:modified</a></li>
+<li><a href="#dcterms:publisher">2.8.7. dcterms:publisher</a></li>
+<li><a href="#dcterms:description">2.8.8. dcterms:description</a></li>
+<li><a href="#dc:rights">2.8.9. dc:rights</a></li>
+<li><a href="#pav:lastUpdateOn">2.8.10. pav:lastUpdateOn</a></li>
+<li><a href="#skos:example">2.8.11. skos:example</a></li>
+<li><a href="#skos:prefLabel">2.8.12. skos:prefLabel</a></li>
+<li><a href="#skos:altLabel">2.8.13. skos:altLabel</a></li>
+<li><a href="#iof-av:isPrimitive">2.8.14. iof-av:isPrimitive</a></li>
+<li><a href="#skos:definition">2.8.15. skos:definition</a>
+<ul>
+<li><a href="#iof-av:naturalLanguageDefinition">2.8.15.1. iof-av:naturalLanguageDefinition</a></li>
+<li><a href="#iof-av:primitiveRationale">2.8.15.2. iof-av:primitiveRationale</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#reasoner-example-individuals">2.9. Individuals</a>
+<ul>
+<li><a href="#ex:a">2.9.1. a (ex:a)</a></li>
+<li><a href="#ex:b">2.9.2. b (ex:b)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org7ab6f05" class="outline-2">
+<h2 id="org7ab6f05"><span class="section-number-2">1.</span> Use ROBOT for reasoning tasks with ELOT</h2>
+<div class="outline-text-2" id="text-1">
+</div>
+<div id="outline-container-org14b7ef2" class="outline-3">
+<h3 id="org14b7ef2"><span class="section-number-3">1.1.</span> The <code>reason</code> command help</h3>
+<div class="outline-text-3" id="text-1-1">
+<div class="org-src-container">
+<pre class="src src-sh">$<span style="color: SystemWindowText; font-weight: bold;">robot</span> help reason
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-usage:" class="outline-3">
+<h3 id="usage:"><span class="section-number-3">1.2.</span> usage: <code>robot reason --input &lt;file&gt; --reasoner &lt;name&gt; [options] --output &lt;file&gt;</code></h3>
+<div class="outline-text-3" id="text-usage:">
+<dl class="org-dl">
+<dt>-a,&#x2013;annotate-inferred-axioms &lt;arg&gt;</dt><dd>if true, annotate inferred
+axioms with &rsquo;is_inferred true&rsquo;</dd>
+<dt>-A,&#x2013;axiom-generators &lt;arg&gt;</dt><dd>specify one or more space-separated
+inferred axiom generators</dd>
+<dt>&#x2013;add-prefix &lt;arg&gt;</dt><dd>add prefix &rsquo;foo: <a href="http://bar">http://bar</a>&rsquo; to the output</dd>
+<dt>&#x2013;add-prefixes &lt;arg&gt;</dt><dd>add JSON-LD prefixes to the output</dd>
+<dt>&#x2013;catalog &lt;arg&gt;</dt><dd>use catalog from provided file</dd>
+<dt>-D,&#x2013;dump-unsatisfiable &lt;arg&gt;</dt><dd>if specified and ontology is
+incoherent, dump minimal explanatory module here</dd>
+<dt>-d,&#x2013;include-indirect &lt;arg&gt;</dt><dd>if true, assert direct and indirect
+axioms</dd>
+<dt>-e,&#x2013;equivalent-classes-allowed &lt;arg&gt;</dt><dd>if &rsquo;none&rsquo;, any equivalent
+class will cause an error, if &rsquo;all&rsquo;, all equivalent classes are
+allowed, and if &rsquo;asserted-only&rsquo;, inferred equivalent classes will
+cause an error.</dd>
+<dt>-h,&#x2013;help</dt><dd>print usage information</dd>
+<dt>-i,&#x2013;input &lt;arg&gt;</dt><dd>reason ontology from a file</dd>
+<dt>-I,&#x2013;input-iri &lt;arg&gt;</dt><dd>reason ontology from an IRI</dd>
+<dt>-m,&#x2013;create-new-ontology-with-annotations &lt;arg&gt;</dt><dd>if true, output
+ontology will contain the inferences and their annotation
+properties</dd>
+<dt>-n,&#x2013;create-new-ontology &lt;arg&gt;</dt><dd>if true, output ontology will
+only contain the inferences</dd>
+<dt>&#x2013;noprefixes</dt><dd>do not use default prefixes</dd>
+<dt>-o,&#x2013;output &lt;arg&gt;</dt><dd>save reasoned ontology to a file</dd>
+<dt>-p,&#x2013;preserve-annotated-axioms &lt;arg&gt;</dt><dd>preserve annotated axioms
+when removing redundant subclass axioms</dd>
+<dt>-P,&#x2013;prefixes &lt;arg&gt;</dt><dd>use prefixes from JSON-LD file</dd>
+<dt>-r,&#x2013;reasoner &lt;arg&gt;</dt><dd>reasoner to use: ELK, HermiT, JFact</dd>
+<dt>-s,&#x2013;remove-redundant-subclass-axioms &lt;arg&gt;</dt><dd>if true, remove
+redundant subclass axioms</dd>
+<dt>&#x2013;strict</dt><dd>use strict parsing when loading an ontology</dd>
+<dt>-t,&#x2013;exclude-tautologies &lt;arg&gt;</dt><dd>specify approach for excluding
+tautologies: &rsquo;structural&rsquo; (fast), &rsquo;all&rsquo; (use HermiT, slower),
+&rsquo;false&rsquo; (allow tautologies)</dd>
+<dt>-T,&#x2013;exclude-owl-thing &lt;arg&gt;</dt><dd>if true, exclude inferences to
+owl:Thing</dd>
+<dt>-V,&#x2013;version</dt><dd>print version information</dd>
+<dt>-v,&#x2013;verbose</dt><dd>increased logging</dd>
+<dt>-vv,&#x2013;very-verbose</dt><dd>high logging</dd>
+<dt>-vvv,&#x2013;very-very-verbose</dt><dd>maximum logging, including stack traces</dd>
+<dt>-x,&#x2013;exclude-duplicate-axioms &lt;arg&gt;</dt><dd>if true, do not add an axiom
+if it exists in import chain</dd>
+<dt>-X,&#x2013;exclude-external-entities &lt;arg&gt;</dt><dd>if true, do not add an
+axiom if it is about classes in external ontologies</dd>
+</dl>
+</div>
+</div>
+<div id="outline-container-org7f2193b" class="outline-3">
+<h3 id="org7f2193b"><span class="section-number-3">1.3.</span> Alternatives for <code>--axiom-generators</code></h3>
+<div class="outline-text-3" id="text-1-3">
+<p>
+From the ROBOT documentation, <a href="https://robot.obolibrary.org/reason#generated-axioms">Generated Axioms</a>:
+</p>
+
+<ul class="org-ul">
+<li>Class axiom generators
+<ul class="org-ul">
+<li>SubClass</li>
+<li>EquivalentClass</li>
+<li>DisjointClasses</li>
+</ul></li>
+<li>Data property axiom generators
+<ul class="org-ul">
+<li>DataPropertyCharacteristic</li>
+<li>EquivalentDataProperties</li>
+<li>SubDataProperty</li>
+</ul></li>
+<li>Individual axiom generators
+<ul class="org-ul">
+<li>ClassAssertion</li>
+<li>PropertyAssertion</li>
+</ul></li>
+<li>Object property axiom generators
+<ul class="org-ul">
+<li>EquivalentObjectProperty</li>
+<li>InverseObjectProperties</li>
+<li>ObjectPropertyCharacteristic</li>
+<li>SubObjectProperty</li>
+<li>ObjectPropertyRange</li>
+<li>ObjectPropertyDomain</li>
+</ul></li>
+</ul>
+</div>
+</div>
+</div>
+<div id="outline-container-org6e00eca" class="outline-2">
+<h2 id="org6e00eca"><span class="section-number-2">2.</span> Ontology &ldquo;reasoner-example&rdquo;</h2>
+<div class="outline-text-2" id="text-2">
+</div>
+<div id="outline-container-org87cbda7" class="outline-3">
+<h3 id="org87cbda7"><span class="section-number-3">2.1.</span> Queries</h3>
+<div class="outline-text-3" id="text-2-1">
+</div>
+<div id="outline-container-org4e371eb" class="outline-4">
+<h4 id="org4e371eb"><span class="section-number-4">2.1.1.</span> ROBOT command to produce a classified version of the ontology</h4>
+<div class="outline-text-4" id="text-2-1-1">
+<p>
+The below command is <i>named</i> so it can be referenced and re-executed
+when queries below are run.
+</p>
+
+<p>
+The variables <code>$asserted</code> and <code>$inferred</code> refer to Turtle files, set in
+properties at the top of this file.
+</p>
+<div class="org-src-container">
+<pre class="src src-sh" id="org81fca40">$<span style="color: SystemWindowText; font-weight: bold;">robot</span> reason <span style="color: #8b2252;">\</span>
+  --reasoner HermiT <span style="color: #8b2252;">\</span>
+  --input $<span style="color: SystemWindowText; font-weight: bold;">asserted</span> <span style="color: #8b2252;">\</span>
+  --axiom-generators <span style="color: #8b2252;">"SubClass ClassAssertion PropertyAssertion"</span> <span style="color: #8b2252;">\</span>
+  --output $<span style="color: SystemWindowText; font-weight: bold;">inferred</span>
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org3673321" class="outline-4">
+<h4 id="org3673321"><span class="section-number-4">2.1.2.</span> SPARQL queries</h4>
+<div class="outline-text-4" id="text-2-1-2">
+<p>
+In this section, queries are written and importantly <i>named</i>. This makes
+it easy to run the same queries on asserted and inferred versions of
+the ontology.
+</p>
+
+<p>
+Query for the class taxonomy, excluding anonymous classes:
+</p>
+<div class="org-src-container">
+<pre class="src src-sparql" id="orgabcb722"><span style="color: #a020f0;">construct</span> <span style="color: #707183;">{</span> 
+  <span style="color: SystemWindowText; font-weight: bold;">?sub</span> a owl:Class .
+  <span style="color: SystemWindowText; font-weight: bold;">?sub</span> rdfs:subClassOf <span style="color: SystemWindowText; font-weight: bold;">?super</span> .
+<span style="color: #707183;">}</span> <span style="color: #707183;">{</span>
+  <span style="color: SystemWindowText; font-weight: bold;">?sub</span> a owl:Class .
+  <span style="color: #a020f0;">optional</span> <span style="color: #7388d6;">{</span> <span style="color: SystemWindowText; font-weight: bold;">?sub</span> rdfs:subClassOf <span style="color: SystemWindowText; font-weight: bold;">?super</span>
+             <span style="color: #a020f0;">filter</span><span style="color: #909183;">(</span> isIRI<span style="color: #709870;">(</span><span style="color: SystemWindowText; font-weight: bold;">?super</span><span style="color: #709870;">)</span> <span style="color: #909183;">)</span> <span style="color: #7388d6;">}</span>
+<span style="color: #707183;">}</span>
+</pre>
+</div>
+
+<p>
+Query for class membership and individual relationships:
+</p>
+<div class="org-src-container">
+<pre class="src src-sparql" id="org25d2bb0"><span style="color: #a020f0;">construct</span> <span style="color: #707183;">{</span> 
+  <span style="color: SystemWindowText; font-weight: bold;">?ind</span> a <span style="color: SystemWindowText; font-weight: bold;">?class</span> ; <span style="color: SystemWindowText; font-weight: bold;">?prop</span> <span style="color: SystemWindowText; font-weight: bold;">?other</span> .
+<span style="color: #707183;">}</span> <span style="color: #707183;">{</span>
+  <span style="color: SystemWindowText; font-weight: bold;">?ind</span> a owl:NamedIndividual
+  <span style="color: #a020f0;">optional</span> <span style="color: #7388d6;">{</span> <span style="color: SystemWindowText; font-weight: bold;">?class</span> a owl:Class . <span style="color: SystemWindowText; font-weight: bold;">?ind</span> a <span style="color: SystemWindowText; font-weight: bold;">?class</span> <span style="color: #7388d6;">}</span>
+  <span style="color: #a020f0;">optional</span> <span style="color: #7388d6;">{</span> <span style="color: SystemWindowText; font-weight: bold;">?ind</span> <span style="color: SystemWindowText; font-weight: bold;">?prop</span> <span style="color: SystemWindowText; font-weight: bold;">?other</span> 
+             <span style="color: #a020f0;">filter</span><span style="color: #909183;">(</span> <span style="color: SystemWindowText; font-weight: bold;">?prop</span> != rdf:type <span style="color: #909183;">)</span> 
+             <span style="color: #a020f0;">filter</span><span style="color: #909183;">(</span> <span style="color: SystemWindowText; font-weight: bold;">?prop</span> != rdfs:label <span style="color: #909183;">)</span> <span style="color: #7388d6;">}</span>
+<span style="color: #707183;">}</span>
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org6835d08" class="outline-4">
+<h4 id="org6835d08"><span class="section-number-4">2.1.3.</span> Query this ontology as asserted, no inference</h4>
+<div class="outline-text-4" id="text-2-1-3">
+<p>
+The <code>url</code> header argument is set in <code>:PROPERTIES:</code> to
+<code>&lt;ontology-local-name&gt;.ttl</code>, the asserted result of conversion to
+Turtle.
+</p>
+</div>
+<div id="outline-container-org94a8dbf" class="outline-5">
+<h5 id="org94a8dbf"><span class="section-number-5">2.1.3.1.</span> Asserted class taxonomy</h5>
+<div class="outline-text-5" id="text-2-1-3-1">
+<p>
+In this query result, there is no asserted subclass axiom.
+</p>
+<div class="org-src-container">
+<pre class="src src-ttl"><span style="color: #a020f0;">ex:</span><span style="color: #a020f0;">C</span>    <span style="color: #a020f0;">a</span>       <span style="color: #a020f0;">owl:</span><span style="color: #a020f0;">Class</span> <span style="color: #a020f0;">.</span>
+
+<span style="color: #a020f0;">ex:</span><span style="color: #a020f0;">D</span>    <span style="color: #a020f0;">a</span>       <span style="color: #a020f0;">owl:</span><span style="color: #a020f0;">Class</span> <span style="color: #a020f0;">.</span>
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgc196778" class="outline-5">
+<h5 id="orgc196778"><span class="section-number-5">2.1.3.2.</span> Assertions on individuals</h5>
+<div class="outline-text-5" id="text-2-1-3-2">
+<p>
+In this query result, <a href="#ex:b">b</a> is not related to <a href="#ex:a">a</a>, even though <a href="#ex:r">r</a> is symmetric.
+</p>
+<div class="org-src-container">
+<pre class="src src-ttl"><span style="color: #a020f0;">ex:</span><span style="color: #a020f0;">a</span>    <span style="color: #a020f0;">ex:</span><span style="color: #a020f0;">r</span>    <span style="color: #a020f0;">ex:</span><span style="color: #a020f0;">b</span> <span style="color: #a020f0;">.</span>
+</pre>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-orgdd3abb3" class="outline-4">
+<h4 id="orgdd3abb3"><span class="section-number-4">2.1.4.</span> Query this ontology after inference</h4>
+<div class="outline-text-4" id="text-2-1-4">
+<p>
+The <code>:PROPERTIES:</code> block attached to this headline applies two settings
+that ensure we are querying the ontology after inference.
+</p>
+<ul class="org-ul">
+<li>The <code>:url</code> is bound as <code>&lt;ontology-local-name&gt;-inferred.ttl</code>,</li>
+<li>A <code>:var</code> assignment forces ROBOT inference before running the query.</li>
+</ul>
+</div>
+<div id="outline-container-orga582f92" class="outline-5">
+<h5 id="orga582f92"><span class="section-number-5">2.1.4.1.</span> Class taxonomy, after inference</h5>
+<div class="outline-text-5" id="text-2-1-4-1">
+<p>
+Class <a href="#ex:D">D</a> has an existential restriction of <i><a href="#ex:r">r</a> some owl:Thing</i>.
+Because <a href="#ex:r">r</a> has class <a href="#ex:C">C</a> as domain, <a href="#ex:D">D</a> is inferred to be a subclass of <a href="#ex:C">C</a>.
+</p>
+<div class="org-src-container">
+<pre class="src src-ttl"><span style="color: #a020f0;">ex:</span><span style="color: #a020f0;">C</span>    <span style="color: #a020f0;">a</span>                <span style="color: #a020f0;">owl:</span><span style="color: #a020f0;">Class</span> <span style="color: #a020f0;">;</span>
+        <span style="color: #a020f0;">rdfs:</span><span style="color: #a020f0;">subClassOf</span>  <span style="color: #a020f0;">owl:</span><span style="color: #a020f0;">Thing</span> <span style="color: #a020f0;">.</span>
+
+<span style="color: #a020f0;">ex:</span><span style="color: #a020f0;">D</span>    <span style="color: #a020f0;">a</span>                <span style="color: #a020f0;">owl:</span><span style="color: #a020f0;">Class</span> <span style="color: #a020f0;">;</span>
+        <span style="color: #a020f0;">rdfs:</span><span style="color: #a020f0;">subClassOf</span>  <span style="color: #a020f0;">ex:</span><span style="color: #a020f0;">C</span> <span style="color: #a020f0;">.</span>
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org34a8604" class="outline-5">
+<h5 id="org34a8604"><span class="section-number-5">2.1.4.2.</span> Assertions on individuals, after inference</h5>
+<div class="outline-text-5" id="text-2-1-4-2">
+<ul class="org-ul">
+<li>Because <a href="#ex:r">r</a> has class <a href="#ex:C">C</a> as domain, <a href="#ex:a">a</a> is inferred to be a <a href="#ex:C">C</a>.</li>
+<li>Because <a href="#ex:r">r</a> is symmetric, <i><a href="#ex:b">b</a> <a href="#ex:r">r</a> <a href="#ex:a">a</a></i> is inferred,</li>
+<li>and <a href="#ex:b">b</a> is inferred to be a <a href="#ex:C">C</a> as well.</li>
+</ul>
+<div class="org-src-container">
+<pre class="src src-ttl"><span style="color: #a020f0;">ex:</span><span style="color: #a020f0;">a</span>    <span style="color: #a020f0;">a</span>       <span style="color: #a020f0;">ex:</span><span style="color: #a020f0;">C</span> <span style="color: #a020f0;">;</span>
+        <span style="color: #a020f0;">ex:</span><span style="color: #a020f0;">r</span>    <span style="color: #a020f0;">ex:</span><span style="color: #a020f0;">b</span> <span style="color: #a020f0;">.</span>
+
+<span style="color: #a020f0;">ex:</span><span style="color: #a020f0;">b</span>    <span style="color: #a020f0;">a</span>       <span style="color: #a020f0;">ex:</span><span style="color: #a020f0;">C</span> <span style="color: #a020f0;">;</span>
+        <span style="color: #a020f0;">ex:</span><span style="color: #a020f0;">r</span>    <span style="color: #a020f0;">ex:</span><span style="color: #a020f0;">a</span> <span style="color: #a020f0;">.</span>
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-org06fb10a" class="outline-3">
+<h3 id="org06fb10a"><span class="section-number-3">2.2.</span> Prefixes</h3>
+<div class="outline-text-3" id="text-2-2">
+<p>
+The ontology document in OWL employs the namespace prefixes of table <a href="#org615b13a">1</a>.
+</p>
+
+<table id="org615b13a" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<caption class="t-above"><span class="table-number">Table 1:</span> OWL ontology prefixes</caption>
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">prefix</th>
+<th scope="col" class="org-left">uri</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">owl:</td>
+<td class="org-left"><a href="http://www.w3.org/2002/07/owl">http://www.w3.org/2002/07/owl</a>#</td>
+</tr>
+
+<tr>
+<td class="org-left">rdf:</td>
+<td class="org-left"><a href="http://www.w3.org/1999/02/22-rdf-syntax-ns">http://www.w3.org/1999/02/22-rdf-syntax-ns</a>#</td>
+</tr>
+
+<tr>
+<td class="org-left">xml:</td>
+<td class="org-left"><a href="http://www.w3.org/XML/1998/namespace">http://www.w3.org/XML/1998/namespace</a></td>
+</tr>
+
+<tr>
+<td class="org-left">xsd:</td>
+<td class="org-left"><a href="http://www.w3.org/2001/XMLSchema">http://www.w3.org/2001/XMLSchema</a>#</td>
+</tr>
+
+<tr>
+<td class="org-left">rdfs:</td>
+<td class="org-left"><a href="http://www.w3.org/2000/01/rdf-schema">http://www.w3.org/2000/01/rdf-schema</a>#</td>
+</tr>
+
+<tr>
+<td class="org-left">skos:</td>
+<td class="org-left"><a href="http://www.w3.org/2004/02/skos/core">http://www.w3.org/2004/02/skos/core</a>#</td>
+</tr>
+
+<tr>
+<td class="org-left">pav:</td>
+<td class="org-left"><a href="http://purl.org/pav/">http://purl.org/pav/</a></td>
+</tr>
+
+<tr>
+<td class="org-left">foaf:</td>
+<td class="org-left"><a href="http://xmlns.com/foaf/0.1/">http://xmlns.com/foaf/0.1/</a></td>
+</tr>
+
+<tr>
+<td class="org-left">dc:</td>
+<td class="org-left"><a href="http://purl.org/dc/elements/1.1/">http://purl.org/dc/elements/1.1/</a></td>
+</tr>
+
+<tr>
+<td class="org-left">dcterms:</td>
+<td class="org-left"><a href="http://purl.org/dc/terms/">http://purl.org/dc/terms/</a></td>
+</tr>
+
+<tr>
+<td class="org-left">prov:</td>
+<td class="org-left"><a href="http://www.w3.org/ns/prov">http://www.w3.org/ns/prov</a>#</td>
+</tr>
+
+<tr>
+<td class="org-left">iof-av:</td>
+<td class="org-left"><a href="https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/">https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/</a></td>
+</tr>
+
+<tr>
+<td class="org-left">ex:</td>
+<td class="org-left"><a href="http://example.org/">http://example.org/</a></td>
+</tr>
+
+<tr>
+<td class="org-left">ex:</td>
+<td class="org-left"><a href="http://example.org/">http://example.org/</a></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-reasoner-example-ontology-declaration" class="outline-3">
+<h3 id="reasoner-example-ontology-declaration"><span class="section-number-3">2.3.</span> reasoner-example ontology (ex:reasoner-example ex:reasoner-example/0.0)</h3>
+<div class="outline-text-3" id="text-reasoner-example-ontology-declaration">
+<dl class="org-dl">
+<dt><a href="#owl:versionInfo">owl:versionInfo</a></dt><dd>0.0 start of reasoner-example</dd>
+<dt><a href="#dcterms:title">dcterms:title</a></dt><dd>&ldquo;reasoner-example ontology&rdquo;@en</dd>
+<dt><a href="#pav:lastUpdateOn">pav:lastUpdateOn</a></dt><dd>&ldquo;2025-05-01T15:26:11Z&rdquo;^^xsd:dateTime</dd>
+<dt><a href="#dcterms:license">dcterms:license</a></dt><dd><a href="https://creativecommons.org/licenses/by-sa/4.0/">https://creativecommons.org/licenses/by-sa/4.0/</a></dd>
+<dt><a href="#dcterms:creator">dcterms:creator</a></dt><dd>johanw</dd>
+<dt><a href="#dcterms:modified">dcterms:modified</a></dt><dd>&ldquo;2025-05-01&rdquo;^^xsd:date</dd>
+<dt><a href="#dcterms:publisher">dcterms:publisher</a></dt><dd><a href="https://example.org/thepublisher">https://example.org/thepublisher</a></dd>
+<dt><a href="#dc:rights">dc:rights</a></dt><dd>Copyright info here</dd>
+<dt><a href="#dcterms:description">dcterms:description</a></dt><dd>The reasoner-example ontology is &#x2026;</dd>
+<dt>rdfs:comment</dt><dd>The reasoner-example ontology is &#x2026;</dd>
+</dl>
+</div>
+</div>
+<div id="outline-container-reasoner-example-datatypes" class="outline-3">
+<h3 id="reasoner-example-datatypes"><span class="section-number-3">2.4.</span> Datatypes</h3>
+<div class="outline-text-3" id="text-reasoner-example-datatypes">
+</div>
+</div>
+<div id="outline-container-reasoner-example-class-hierarchy" class="outline-3">
+<h3 id="reasoner-example-class-hierarchy"><span class="section-number-3">2.5.</span> Classes</h3>
+<div class="outline-text-3" id="text-reasoner-example-class-hierarchy">
+</div>
+<div id="outline-container-ex:C" class="outline-4">
+<h4 id="ex:C"><span class="section-number-4">2.5.1.</span> C (ex:C)</h4>
+<div class="outline-text-4" id="text-ex:C">
+<dl class="org-dl">
+<dt>rdfs:comment</dt><dd>The top class</dd>
+</dl>
+</div>
+</div>
+<div id="outline-container-ex:D" class="outline-4">
+<h4 id="ex:D"><span class="section-number-4">2.5.2.</span> D (ex:D)</h4>
+<div class="outline-text-4" id="text-ex:D">
+<ul class="org-ul">
+<li>rdfs:comment :; A subclass of C, after inference</li>
+<li id="SubClassOf"><a href="#ex:r">r</a> some owl:Thing</li>
+</ul>
+</div>
+</div>
+</div>
+<div id="outline-container-reasoner-example-object-property-hierarchy" class="outline-3">
+<h3 id="reasoner-example-object-property-hierarchy"><span class="section-number-3">2.6.</span> Object properties</h3>
+<div class="outline-text-3" id="text-reasoner-example-object-property-hierarchy">
+</div>
+<div id="outline-container-ex:r" class="outline-4">
+<h4 id="ex:r"><span class="section-number-4">2.6.1.</span> r (ex:r)</h4>
+<div class="outline-text-4" id="text-ex:r">
+<dl class="org-dl">
+<dt>rdfs:comment</dt><dd>A relation that will be used to force D under C, and a to point back to itself</dd>
+<dt>Domain</dt><dd><a href="#ex:C">C</a></dd>
+<dt>Characteristics</dt><dd>Symmetric</dd>
+</dl>
+</div>
+</div>
+</div>
+<div id="outline-container-reasoner-example-data-property-hierarchy" class="outline-3">
+<h3 id="reasoner-example-data-property-hierarchy"><span class="section-number-3">2.7.</span> Data properties</h3>
+<div class="outline-text-3" id="text-reasoner-example-data-property-hierarchy">
+</div>
+</div>
+<div id="outline-container-reasoner-example-annotation-property-hierarchy" class="outline-3">
+<h3 id="reasoner-example-annotation-property-hierarchy"><span class="section-number-3">2.8.</span> Annotation properties</h3>
+<div class="outline-text-3" id="text-reasoner-example-annotation-property-hierarchy">
+</div>
+<div id="outline-container-rdfs:label" class="outline-4">
+<h4 id="rdfs:label"><span class="section-number-4">2.8.1.</span> label (rdfs:label)</h4>
+<div class="outline-text-4" id="text-rdfs:label">
+</div>
+</div>
+<div id="outline-container-owl:versionInfo" class="outline-4">
+<h4 id="owl:versionInfo"><span class="section-number-4">2.8.2.</span> owl:versionInfo</h4>
+<div class="outline-text-4" id="text-owl:versionInfo">
+</div>
+</div>
+<div id="outline-container-dcterms:title" class="outline-4">
+<h4 id="dcterms:title"><span class="section-number-4">2.8.3.</span> dcterms:title</h4>
+<div class="outline-text-4" id="text-dcterms:title">
+<dl class="org-dl">
+<dt>rdfs:isDefinedBy</dt><dd><a href="http://purl.org/dc/terms/">http://purl.org/dc/terms/</a></dd>
+</dl>
+</div>
+</div>
+<div id="outline-container-dcterms:license" class="outline-4">
+<h4 id="dcterms:license"><span class="section-number-4">2.8.4.</span> dcterms:license</h4>
+<div class="outline-text-4" id="text-dcterms:license">
+<dl class="org-dl">
+<dt>rdfs:isDefinedBy</dt><dd><a href="http://purl.org/dc/terms/">http://purl.org/dc/terms/</a></dd>
+</dl>
+</div>
+</div>
+<div id="outline-container-dcterms:creator" class="outline-4">
+<h4 id="dcterms:creator"><span class="section-number-4">2.8.5.</span> dcterms:creator</h4>
+<div class="outline-text-4" id="text-dcterms:creator">
+<dl class="org-dl">
+<dt>rdfs:isDefinedBy</dt><dd><a href="http://purl.org/dc/terms/">http://purl.org/dc/terms/</a></dd>
+</dl>
+</div>
+</div>
+<div id="outline-container-dcterms:modified" class="outline-4">
+<h4 id="dcterms:modified"><span class="section-number-4">2.8.6.</span> dcterms:modified</h4>
+<div class="outline-text-4" id="text-dcterms:modified">
+<dl class="org-dl">
+<dt>rdfs:isDefinedBy</dt><dd><a href="http://purl.org/dc/terms/">http://purl.org/dc/terms/</a></dd>
+</dl>
+</div>
+</div>
+<div id="outline-container-dcterms:publisher" class="outline-4">
+<h4 id="dcterms:publisher"><span class="section-number-4">2.8.7.</span> dcterms:publisher</h4>
+<div class="outline-text-4" id="text-dcterms:publisher">
+<dl class="org-dl">
+<dt>rdfs:isDefinedBy</dt><dd><a href="http://purl.org/dc/terms/">http://purl.org/dc/terms/</a></dd>
+</dl>
+</div>
+</div>
+<div id="outline-container-dcterms:description" class="outline-4">
+<h4 id="dcterms:description"><span class="section-number-4">2.8.8.</span> dcterms:description</h4>
+<div class="outline-text-4" id="text-dcterms:description">
+<dl class="org-dl">
+<dt>rdfs:isDefinedBy</dt><dd><a href="http://purl.org/dc/terms/">http://purl.org/dc/terms/</a></dd>
+</dl>
+</div>
+</div>
+<div id="outline-container-dc:rights" class="outline-4">
+<h4 id="dc:rights"><span class="section-number-4">2.8.9.</span> dc:rights</h4>
+<div class="outline-text-4" id="text-dc:rights">
+<dl class="org-dl">
+<dt>rdfs:isDefinedBy</dt><dd><a href="http://purl.org/dc/elements/1.1/">http://purl.org/dc/elements/1.1/</a></dd>
+</dl>
+</div>
+</div>
+<div id="outline-container-pav:lastUpdateOn" class="outline-4">
+<h4 id="pav:lastUpdateOn"><span class="section-number-4">2.8.10.</span> pav:lastUpdateOn</h4>
+<div class="outline-text-4" id="text-pav:lastUpdateOn">
+<dl class="org-dl">
+<dt>rdfs:isDefinedBy</dt><dd><a href="http://purl.org/pav/">http://purl.org/pav/</a></dd>
+</dl>
+</div>
+</div>
+<div id="outline-container-skos:example" class="outline-4">
+<h4 id="skos:example"><span class="section-number-4">2.8.11.</span> skos:example</h4>
+<div class="outline-text-4" id="text-skos:example">
+<dl class="org-dl">
+<dt>rdfs:isDefinedBy</dt><dd><a href="http://www.w3.org/2004/02/skos/core">http://www.w3.org/2004/02/skos/core</a></dd>
+</dl>
+</div>
+</div>
+<div id="outline-container-skos:prefLabel" class="outline-4">
+<h4 id="skos:prefLabel"><span class="section-number-4">2.8.12.</span> skos:prefLabel</h4>
+<div class="outline-text-4" id="text-skos:prefLabel">
+<dl class="org-dl">
+<dt>rdfs:isDefinedBy</dt><dd><a href="http://www.w3.org/2004/02/skos/core">http://www.w3.org/2004/02/skos/core</a></dd>
+</dl>
+</div>
+</div>
+<div id="outline-container-skos:altLabel" class="outline-4">
+<h4 id="skos:altLabel"><span class="section-number-4">2.8.13.</span> skos:altLabel</h4>
+<div class="outline-text-4" id="text-skos:altLabel">
+<dl class="org-dl">
+<dt>rdfs:isDefinedBy</dt><dd><a href="http://www.w3.org/2004/02/skos/core">http://www.w3.org/2004/02/skos/core</a></dd>
+</dl>
+</div>
+</div>
+<div id="outline-container-iof-av:isPrimitive" class="outline-4">
+<h4 id="iof-av:isPrimitive"><span class="section-number-4">2.8.14.</span> iof-av:isPrimitive</h4>
+<div class="outline-text-4" id="text-iof-av:isPrimitive">
+<dl class="org-dl">
+<dt>rdfs:isDefinedBy</dt><dd><a href="https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary">https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary</a></dd>
+</dl>
+</div>
+</div>
+<div id="outline-container-skos:definition" class="outline-4">
+<h4 id="skos:definition"><span class="section-number-4">2.8.15.</span> skos:definition</h4>
+<div class="outline-text-4" id="text-skos:definition">
+<dl class="org-dl">
+<dt>rdfs:isDefinedBy</dt><dd><a href="http://www.w3.org/2004/02/skos/core">http://www.w3.org/2004/02/skos/core</a></dd>
+</dl>
+</div>
+<div id="outline-container-iof-av:naturalLanguageDefinition" class="outline-5">
+<h5 id="iof-av:naturalLanguageDefinition"><span class="section-number-5">2.8.15.1.</span> iof-av:naturalLanguageDefinition</h5>
+<div class="outline-text-5" id="text-iof-av:naturalLanguageDefinition">
+<dl class="org-dl">
+<dt>rdfs:isDefinedBy</dt><dd><a href="https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary">https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary</a></dd>
+</dl>
+</div>
+</div>
+<div id="outline-container-iof-av:primitiveRationale" class="outline-5">
+<h5 id="iof-av:primitiveRationale"><span class="section-number-5">2.8.15.2.</span> iof-av:primitiveRationale</h5>
+<div class="outline-text-5" id="text-iof-av:primitiveRationale">
+<dl class="org-dl">
+<dt>rdfs:isDefinedBy</dt><dd><a href="https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary">https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary</a></dd>
+</dl>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-reasoner-example-individuals" class="outline-3">
+<h3 id="reasoner-example-individuals"><span class="section-number-3">2.9.</span> Individuals</h3>
+<div class="outline-text-3" id="text-reasoner-example-individuals">
+</div>
+<div id="outline-container-ex:a" class="outline-4">
+<h4 id="ex:a"><span class="section-number-4">2.9.1.</span> a (ex:a)</h4>
+<div class="outline-text-4" id="text-ex:a">
+<dl class="org-dl">
+<dt>Facts</dt><dd><a href="#ex:r">r</a> <a href="#ex:b">b</a></dd>
+</dl>
+</div>
+</div>
+<div id="outline-container-ex:b" class="outline-4">
+<h4 id="ex:b"><span class="section-number-4">2.9.2.</span> b (ex:b)</h4>
+<div class="outline-text-4" id="text-ex:b">
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="date">Date: WIP (version of 2025-05-01 11:05)</p>
+<p class="author">Author: johanw</p>
+<p class="date">Created: 2025-05-01 tor. 15:27</p>
+<p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>
