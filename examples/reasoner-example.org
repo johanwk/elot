@@ -283,6 +283,7 @@ The ~url~ header argument is set in ~:PROPERTIES:~ to
 Turtle.
 **** Asserted class taxonomy
 In this query result, there is no asserted subclass axiom.
+#+name: class-subclass-asserted
 #+begin_src sparql :cache no
 <<rq-class-subclass>>
 #+end_src
@@ -294,8 +295,16 @@ ex:C    a       owl:Class .
 ex:D    a       owl:Class .
 #+end_src
 
+#+name: rdfpuml:class-subclass-asserted
+#+call: rdfpuml-block(ttlblock="class-subclass-asserted") :eval never-export
+#+caption: Asserted class taxonomy
+#+results: rdfpuml:class-subclass-asserted
+[[file:./images/class-subclass-asserted.svg]]
+
+
 **** Assertions on individuals
 In this query result, ex:b is not related to ex:a, even though ex:r is symmetric.
+#+name: ind-rel-asserted
 #+begin_src sparql :cache no
 <<rq-ind-rel>>
 #+end_src
@@ -304,6 +313,12 @@ In this query result, ex:b is not related to ex:a, even though ex:r is symmetric
 #+begin_src ttl
 ex:a    ex:r    ex:b .
 #+end_src
+
+#+name: rdfpuml:ind-rel-asserted
+#+call: rdfpuml-block(ttlblock="ind-rel-asserted") :eval never-export
+#+caption: Asserted individual relationships
+#+RESULTS: rdfpuml:ind-rel-asserted
+[[file:./images/ind-rel-asserted.svg]]
 
 *** Query this ontology after inference
 :PROPERTIES:
@@ -318,6 +333,7 @@ that ensure we are querying the ontology after inference.
 **** Class taxonomy, after inference
 Class ex:D has an existential restriction of /ex:r some owl:Thing/.
 Because ex:r has class ex:C as domain, ex:D is inferred to be a subclass of ex:C.
+#+name: class-subclass-inferred
 #+begin_src sparql :cache no 
 <<rq-class-subclass>>
 #+end_src
@@ -331,10 +347,17 @@ ex:D    a                owl:Class ;
         rdfs:subClassOf  ex:C .
 #+end_src
 
+#+name: rdfpuml:class-subclass-inferred
+#+call: rdfpuml-block(ttlblock="class-subclass-inferred") :eval never-export
+#+caption: Inferred class taxonomy
+#+results: rdfpuml:class-subclass-inferred
+[[file:./images/class-subclass-inferred.svg]]
+
 **** Assertions on individuals, after inference
  - Because ex:r has class ex:C as domain, ex:a is inferred to be a ex:C.
  - Because ex:r is symmetric, /ex:b ex:r ex:a/ is inferred,
  - and ex:b is inferred to be a ex:C as well.
+#+name: ind-rel-inferred
 #+begin_src sparql :cache no 
 <<rq-ind-rel>>
 #+end_src
@@ -347,6 +370,15 @@ ex:a    a       ex:C ;
 ex:b    a       ex:C ;
         ex:r    ex:a .
 #+end_src
+
+#+name: rdfpuml:ind-rel-inferred
+#+call: rdfpuml-block(ttlblock="ind-rel-inferred") :eval never-export
+
+#+RESULTS: rdfpuml:ind-rel-inferred
+[[file:./images/ind-rel-inferred.svg]]
+
+#+caption: Inferred individual relationships
+#+RESULTS: rdfpuml:ind-rel-asserted
 
 ** Prefixes
 The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
