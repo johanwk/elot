@@ -386,6 +386,9 @@ The "misc" keywords are not tied to a particular resource declaration.
       "SameIndividual"
       "DifferentIndividuals"
       "Rule"))
+  (defvar elot-omn-all-keywords
+    (append elot-omn-property-keywords elot-omn-misc-keywords)
+    "List of all Manchester syntax keywords, both property and misc keywords.")
 #+end_src
 
 We add a filter to make OMN in description lists =\ttfamily=. See the Org [[https://orgmode.org/manual/Advanced-Export-Configuration.html][manual]].
@@ -560,7 +563,9 @@ the ID string.
 *** puri expansion
 #+name: src-puri-expand
 #+BEGIN_SRC emacs-lisp :results silent
-  (defconst elot-puri-re "^\\([-_./[:alnum:]]*\\):\\([-_/.[:alnum:]]*\\)$")
+  (defconst elot-puri-re 
+    "^\\([[:word:]][[:word:]_.-/]*\\):\\([[:word:]][[:word:]_.-/]*\\)$")
+    ;; "^\\([-_./[:alnum:]]*\\):\\([-_/.[:alnum:]]*\\)$")
 
   (defun elot-unprefix-uri (puri abbrev-alist &optional noerror)
     "Replace prefix in PURI with full form from ABBREV-ALIST, if there's a match."

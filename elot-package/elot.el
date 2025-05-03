@@ -358,6 +358,9 @@ JSON-LD, OWL Functional Syntax, or Manchester Syntax."
     "SameIndividual"
     "DifferentIndividuals"
     "Rule"))
+(defvar elot-omn-all-keywords
+  (append elot-omn-property-keywords elot-omn-misc-keywords)
+  "List of all Manchester syntax keywords, both property and misc keywords.")
 ;; src-omn-keywords ends here
 
 ;; [[file:../elot-defs.org::src-omn-latex-tt][src-omn-latex-tt]]
@@ -512,7 +515,9 @@ unless it is an ontology section."
 ;; src-desc-lists ends here
 
 ;; [[file:../elot-defs.org::src-puri-expand][src-puri-expand]]
-(defconst elot-puri-re "^\\([-_./[:alnum:]]*\\):\\([-_/.[:alnum:]]*\\)$")
+(defconst elot-puri-re 
+  "^\\([[:word:]][[:word:]_.-/]*\\):\\([[:word:]][[:word:]_.-/]*\\)$")
+  ;; "^\\([-_./[:alnum:]]*\\):\\([-_/.[:alnum:]]*\\)$")
 
 (defun elot-unprefix-uri (puri abbrev-alist &optional noerror)
   "Replace prefix in PURI with full form from ABBREV-ALIST, if there's a match."
