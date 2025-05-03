@@ -384,7 +384,7 @@ Add warnings or errors to ISSUES at POINT."
                    (term (org-element-interpret-data tag))
                    (contents (org-element-interpret-data (org-element-contents item))))
               ;; Only apply check if term is a Manchester keyword
-              (when (member term elot-omn-property-keywords)
+              (when (member term elot-omn-all-keywords)
                 ;; Check CURIEs
                 (let ((curies (seq-filter (lambda (word)
                                             (string-match "\\`[-_./[:alnum:]]*:[-_/.[:alnum:]]*\\'" word))
