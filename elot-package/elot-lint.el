@@ -277,5 +277,50 @@ Add warnings or errors to ISSUES at POINT."
  :trust 'high)
 
 
+(defconst elot-known-annotation-properties
+  '("rdfs:label" "rdfs:comment" "rdfs:seeAlso" "rdfs:isDefinedBy")
+  "List of annotation properties allowed in description lists without declaration.")
+
+(defun elot-check-description-list-curies (tree)
+  "Check that CURIE terms in description lists exist as annotation properties in `elot-slurp` or are allowed exceptions."
+  (let (issues)
+    (org-element-map tree 'item
+      (lambda (item)
+        (let* ((parent (org-element-property :parent item))
+               (type (org-element-property :type parent)))
+          (when (eq type 'descriptive)
+            (let* ((tag (org-element-property :tag item))
+                   (term (org-element-interpret-data tag)))
+              (when (and (stringp term)
+                         (string-match "\\`[-_./[:alnum:]]*:[-_/.[:alnum:]]*\\'" term))
+                (unless (or
+                         ;; allowed exceptions
+                         (member term elot-known-annotation-properties)
+                         ;; declared in elot-slurp as AnnotationProperty
+                         (cl-find term elot-slurp
+                                  :key #'car
+                                  :test #'string=
+                                  :if (lambda (x)
+                                        (let ((plist (nth 2 x)))
+                                          (and (plist-get plist "rdf:type")
+                                               (string= (plist-get plist "rdf:type")
+                                                        "owl:AnnotationProperty"))))))
+                  (push (list (org-element-property :begin item)
+                              (propertize (format "WARNING: Unknown or invalid annotation property: %s" term)
+                                          'face 'warning))
+                        issues)))))))
+      tree)
+    issues))
+
+
+
+(org-lint-add-checker
+ 'elot/description-list-curies
+ "ELOT: check that CURIE terms in description lists are declared"
+ #'elot-check-description-list-curies
+ :categories '(default elot)
+ :trust 'high)
+
+
 (provide 'elot-lint)
 ;;; elot-lint.el ends here
