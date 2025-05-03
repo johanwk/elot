@@ -515,19 +515,18 @@ unless it is an ontology section."
 (defconst elot-puri-re "^\\([-_./[:alnum:]]*\\):\\([-_/.[:alnum:]]*\\)$")
 
 (defun elot-unprefix-uri (puri abbrev-alist &optional noerror)
- "Replace prefix in PURI with full form from ABBREV-ALIST, if there's a match."
- (if (eq abbrev-alist nil) puri
-  (if (string-match elot-puri-re puri)
-    (let* ((this-prefix (match-string-no-properties 1 puri))
-        (this-localname (match-string-no-properties 2 puri))
-        (this-ns (cdr (assoc this-prefix abbrev-alist))))
-     (if this-ns
-         (concat "<" this-ns this-localname ">")
-       (if noerror
-           nil
-         (error "Fail! Prefix \"%s\" is not defined" this-prefix))))
-       ;; puri))
-   puri)))
+  "Replace prefix in PURI with full form from ABBREV-ALIST, if there's a match."
+  (if (eq abbrev-alist nil) puri
+    (if (string-match elot-puri-re puri)
+        (let* ((this-prefix (match-string-no-properties 1 puri))
+               (this-localname (match-string-no-properties 2 puri))
+               (this-ns (cdr (assoc this-prefix abbrev-alist))))
+          (if this-ns
+              (concat "<" this-ns this-localname ">")
+            (if noerror
+                nil
+              (error "Fail! Prefix \"%s\" is not defined" this-prefix)))
+          puri))))
 
 (defun elot-annotation-string-or-uri (str)
   "Expand STR to be used as an annotation value in Manchester Syntax.
