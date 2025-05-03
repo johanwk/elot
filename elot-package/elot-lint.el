@@ -321,6 +321,23 @@ Add warnings or errors to ISSUES at POINT."
  :categories '(default elot)
  :trust 'high)
 
+
+(defun elot-string-balanced-parentheses-p (str)
+  "Return t if STR has balanced parentheses, nil otherwise."
+  (let ((count 0)
+        (balanced t)
+        (i 0))
+    (while (and balanced (< i (length str)))
+      (let ((ch (aref str i)))
+        (cond
+         ((= ch ?\() (setq count (1+ count)))
+         ((= ch ?\)) (setq count (1- count))
+          (when (< count 0)
+            (setq balanced nil)))))
+      (setq i (1+ i)))
+    (and balanced (= count 0))))
+
+
 (defun elot-check-axiom-value-curies (tree)
   "Check that CURIEs in the value of axioms (Manchester syntax) are declared and not annotation properties."
   (let (issues)
@@ -355,6 +372,45 @@ Add warnings or errors to ISSUES at POINT."
     issues))
 
 
+(defun elot-check-axiom-value-curies (tree)
+  "Check that CURIEs in the value of axioms (Manchester syntax) are declared and not annotation properties, and that parentheses are balanced."
+  (let (issues)
+    (org-element-map tree 'item
+      (lambda (item)
+        (let* ((parent (org-element-property :parent item))
+               (type (org-element-property :type parent)))
+          (when (eq type 'descriptive)
+            (let* ((tag (org-element-property :tag item))
+                   (term (org-element-interpret-data tag))
+                   (contents (org-element-interpret-data (org-element-contents item))))
+              ;; Only apply check if term is a Manchester keyword
+              (when (member term elot-omn-property-keywords)
+                ;; Check CURIEs
+                (let ((curies (seq-filter (lambda (word)
+                                            (string-match "\\`[-_./[:alnum:]]*:[-_/.[:alnum:]]*\\'" word))
+                                          (split-string contents "[ \n\t]+" t))))
+                  (dolist (curie curies)
+                    (let ((entry (cl-find curie elot-slurp :key #'car :test #'string=)))
+                      (cond
+                       ((null entry)
+                        (push (list (org-element-property :begin item)
+                                    (propertize (format "WARNING: Unknown CURIE in axiom: %s" curie)
+                                                'face 'warning))
+                              issues))
+                       ((string= (plist-get (nth 2 entry) "rdf:type" #'equal)
+                                 "owl:AnnotationProperty")
+                        (push (list (org-element-property :begin item)
+                                    (propertize (format "WARNING: Annotation property used in axiom: %s" curie)
+                                                'face 'warning))
+                              issues))))))
+                ;; Check balanced parentheses
+                (unless (elot-string-balanced-parentheses-p contents)
+                  (push (list (org-element-property :begin item)
+                              (propertize "WARNING: Unbalanced parentheses in axiom value"
+                                          'face 'warning))
+                        issues)))))))
+      tree)
+    issues))
 
 
 (org-lint-add-checker
