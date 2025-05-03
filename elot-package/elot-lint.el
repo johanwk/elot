@@ -153,32 +153,6 @@ Add warnings or errors to ISSUES at POINT."
 
 (org-lint-add-checker
  'elot/prefix-table
- "ELOT: ontology section must contain #+name: prefix-table with valid abbrevs"
- #'elot-check-prefix-table
- :categories '(default elot)
- :trust 'high)
-
-(defun elot-check-prefix-table (tree)
-  "ELOT rule: ensure `elot-update-link-abbrev` sets useful abbrevs."
-  (let (issues)
-    (org-element-map tree 'headline
-      (lambda (hl)
-        (when (and (= (org-element-property :level hl) 1)
-                   (string= (elot-context-type) "ontology"))
-          (save-excursion
-            (goto-char (org-element-property :begin hl))
-            (let ((result (elot-update-link-abbrev)))
-              (when (or (null org-link-abbrev-alist-local)
-                        (equal org-link-abbrev-alist-local '(("prefix" . "uri"))))
-                (push (list (point)
-                            (propertize "ERROR: prefix-table is missing or malformed"
-                                        'face 'error))
-                      issues))))))
-      tree)
-    issues))
-
-(org-lint-add-checker
- 'elot/prefix-table
  "ELOT: ontology section must contain #+name: prefix-table that updates abbrevs"
  #'elot-check-prefix-table
  :categories '(default elot)
