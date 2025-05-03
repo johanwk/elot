@@ -17,6 +17,9 @@
 (declare-function elot-context-localname "elot")
 (declare-function elot-default-prefix "elot")
 
+(defvar elot-slurp)
+(defvar elot-omn-all-keywords)
+
 (defun elot-check-nodeclare-id-prefix-label (tree)
   "ELOT rule: check ID, prefix, and label format under :resourcedefs:."
   (let (issues)
