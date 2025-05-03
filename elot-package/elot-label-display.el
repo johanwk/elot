@@ -70,6 +70,7 @@ read using `elot-slurp-global'"
     (if (re-search-forward ":ELOT-context-type: ontology" nil :noerror)
         (let ((context (elot-context-localname)))
           (append
+           (elot-org-link-search context "-datatypes")                     (elot-entities-with-plist (elot-org-subsection-descriptions) "rdfs:Datatype")
            (elot-org-link-search context "-class-hierarchy")               (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:Class")
            (elot-org-link-search context "-object-property-hierarchy")     (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:ObjectProperty")
            (elot-org-link-search context "-data-property-hierarchy")       (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:DatatypeProperty")
