@@ -525,8 +525,8 @@ unless it is an ontology section."
               (concat "<" this-ns this-localname ">")
             (if noerror
                 nil
-              (error "Fail! Prefix \"%s\" is not defined" this-prefix)))
-          puri))))
+              (error "Fail! Prefix \"%s\" is not defined" this-prefix))))
+          puri)))
 
 (defun elot-annotation-string-or-uri (str)
   "Expand STR to be used as an annotation value in Manchester Syntax.
