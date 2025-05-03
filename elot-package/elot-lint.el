@@ -321,6 +321,50 @@ Add warnings or errors to ISSUES at POINT."
  :categories '(default elot)
  :trust 'high)
 
+(defun elot-check-axiom-value-curies (tree)
+  "Check that CURIEs in the value of axioms (Manchester syntax) are declared and not annotation properties."
+  (let (issues)
+    (org-element-map tree 'item
+      (lambda (item)
+        (let* ((parent (org-element-property :parent item))
+               (type (org-element-property :type parent)))
+          (when (eq type 'descriptive)
+            (let* ((tag (org-element-property :tag item))
+                   (term (org-element-interpret-data tag))
+                   (contents (org-element-interpret-data (org-element-contents item))))
+              ;; Only apply check if term is a Manchester keyword
+              (when (member term elot-omn-property-keywords)
+                (let ((curies (seq-filter (lambda (word)
+                                            (string-match "\\`[-_./[:alnum:]]*:[-_/.[:alnum:]]*\\'" word))
+                                          (split-string contents "[ \n\t]+" t))))
+                  (dolist (curie curies)
+                    (let ((entry (cl-find curie elot-slurp :key #'car :test #'string=)))
+                      (cond
+                       ((null entry)
+                        (push (list (org-element-property :begin item)
+                                    (propertize (format "WARNING: Unknown CURIE in axiom: %s" curie)
+                                                'face 'warning))
+                              issues))
+                       ((string= (plist-get (nth 2 entry) "rdf:type" #'equal)
+                                 "owl:AnnotationProperty")
+                        (push (list (org-element-property :begin item)
+                                    (propertize (format "WARNING: Annotation property used in axiom: %s" curie)
+                                                'face 'warning))
+                              issues)))))))))))
+      tree)
+    issues))
+
+
+
+
+(org-lint-add-checker
+ 'elot/axiom-value-curies
+ "ELOT: Check CURIEs in axiom description values are defined and not annotation properties"
+ #'elot-check-axiom-value-curies
+ :categories '(default elot)
+ :trust 'high)
+
+
 
 (provide 'elot-lint)
 ;;; elot-lint.el ends here
