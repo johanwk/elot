@@ -1,11 +1,7 @@
 ;;; elot-lint.el  -*- lexical-binding: t; -*-
 (require 'org-element)
 (require 'org-lint)
-(require 'ox)                         ; for org-entry-get-with-inheritance
-
-;; ---------------------------------------------------------------------
-;;  Helpers
-;; ---------------------------------------------------------------------
+(require 'ox)
 
 (defun elot--resourcedefs-here-p ()
   "Return t if headline at point sets :resourcedefs: yes."
@@ -17,14 +13,12 @@
 
 (declare-function elot-entity-from-header "elot")
 (declare-function elot-unprefix-uri "elot")
+(declare-function elot-context-type "elot")
+(declare-function elot-context-localname "elot")
+(declare-function elot-default-prefix "elot")
 
-;; ---------------------------------------------------------------------
-;;  Combined checker with prefix validation
-;; ---------------------------------------------------------------------
-
-(defun elot-check-nodeclare-id-prefix (tree)
-  "ELOT rule: every headline under :resourcedefs: yes must either
-have a valid identifier or be tagged :nodeclare:, and must use a known prefix."
+(defun elot-check-nodeclare-id-prefix-label (tree)
+  "ELOT rule: check ID, prefix, and label format under :resourcedefs:."
   (let (issues)
     (org-element-map tree 'headline
       (lambda (hl)
@@ -35,30 +29,108 @@ have a valid identifier or be tagged :nodeclare:, and must use a known prefix."
                  (tags  (org-element-property :tags hl))
                  (nodeclare (member "nodeclare" tags)))
             (unless nodeclare
-              (let ((entity (condition-case nil
-                               (elot-entity-from-header title 'noerror)
-                             (error nil))))
+              (let* ((entity (condition-case nil
+                                 (elot-entity-from-header title 'noerror)
+                               (error nil)))
+                     (label (if (and title (string-match "\\`\\(.+?\\) (.*)" title))
+                                 (match-string 1 title)
+                               title)))
                 (cond
                  ((not entity)
                   (push (list (point)
                               (propertize "ERROR: No identifier found – add CURIE/URI or tag :nodeclare:"
                                           'face 'error))
                         issues))
-                 ((null (elot-unprefix-uri entity org-link-abbrev-alist-local 'noerror))
+                 ((not (stringp entity))
+                  (push (list (point)
+                              (propertize "ERROR: Malformed identifier value"
+                                          'face 'error))
+                        issues))
+                 ((null (elot-unprefix-uri (substring-no-properties entity) org-link-abbrev-alist-local 'noerror))
                   (push (list (point)
                               (propertize "ERROR: Unknown prefix in identifier"
                                           'face 'error))
+                        issues))
+                 ((not (or (not (string-match-p "\"" label))
+                           (string-match-p "^\"[^\"]+\"@[[:alpha:]-]+$" label)))
+                  (push (list (point)
+                              (propertize "WARNING: Label should have no quotes or be a \"text\"@lang string"
+                                          'face 'warning))
                         issues)))))))
         nil)
       tree)
     issues))
 
+(defun elot--check-omn-args (omn-args point issues)
+  "Check :header-args:omn string OMN-ARGS for valid :tangle file and :noweb yes.
+Add warnings or errors to ISSUES at POINT."
+  ;; Check for :tangle filename
+  (if (and (string-match ":tangle[ \t]+\\([^ \t:]+\\.omn\\)" omn-args)
+         (match-string 1 omn-args))
+    (let ((file (match-string 1 omn-args)))
+      (condition-case nil
+          (expand-file-name file)
+        (error
+         (push (list point
+                     (propertize (format "ERROR: Invalid tangle file path: %s" file)
+                                 'face 'error))
+               issues))))
+  (push (list point
+              (propertize "ERROR: :tangle missing or invalid in :header-args:omn"
+                          'face 'error))
+        issues))
+  ;; Check for :noweb yes followed by whitespace or end of string
+  (unless (string-match ":noweb[ \t]+yes\\(\\s-\\|\\'\\)" omn-args)
+    (push (list point
+                (propertize "ERROR: :noweb yes missing or malformed in :header-args:omn"
+                            'face 'error))
+          issues))
+  issues)
+
+
+(defun elot-check-ontology-header (tree)
+  "ELOT rule: check top-level ontology header properties."
+  (let (issues)
+    (org-element-map tree 'headline
+      (lambda (hl)
+        (goto-char (org-element-property :begin hl))
+        (when (and (= (org-element-property :level hl) 1)
+                   (string= (elot-context-type) "ontology"))
+          (let* ((id (org-entry-get nil "ID"))
+                 (localname (elot-context-localname))
+                 (prefix (elot-default-prefix))
+                 (omn-args (org-entry-get nil "header-args:omn")))
+            (when (or (null id) (string= id ""))
+              (push (list (point)
+                          (propertize "ERROR: Top-level heading missing :ID:" 'face 'error))
+                    issues))
+            (when (and id localname (not (string= id localname)))
+              (push (list (point)
+                          (propertize "WARNING: :ELOT-context-localname: should match :ID:" 'face 'warning))
+                    issues))
+            (when (null (assoc prefix org-link-abbrev-alist-local))
+              (push (list (point)
+                          (propertize "WARNING: :ELOT-default-prefix: is not defined in org-link-abbrev-alist-local"
+                                      'face 'warning))
+                    issues))
+            ;; Run helper check on :header-args:omn
+            (setq issues (elot--check-omn-args omn-args (point) issues)))))
+      tree)
+    issues))
+
 (org-lint-add-checker
- 'elot/nodeclare-id-prefix
- "ELOT: resource heading must declare ID with known prefix or carry :nodeclare:"
- #'elot-check-nodeclare-id-prefix
+ 'elot/nodeclare-id-prefix-label
+ "ELOT: heading must declare ID with known prefix and valid label, or carry :nodeclare:"
+ #'elot-check-nodeclare-id-prefix-label
  :categories '(default elot)
  :trust 'high)
 
-;; ---------------------------------------------------------------------
+(org-lint-add-checker
+ 'elot/ontology-header
+ "ELOT: top-level ontology heading must have required properties"
+ #'elot-check-ontology-header
+ :categories '(default elot)
+ :trust 'high)
+
 (provide 'elot-lint)
+;;; elot-lint.el ends here
