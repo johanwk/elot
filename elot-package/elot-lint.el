@@ -387,7 +387,8 @@ Add warnings or errors to ISSUES at POINT."
               (when (member term elot-omn-all-keywords)
                 ;; Check CURIEs
                 (let ((curies (seq-filter (lambda (word)
-                                            (string-match "\\`[-_./[:alnum:]]*:[-_/.[:alnum:]]*\\'" word))
+                                            (and (string-match "\\`[-_./[:alnum:]]*:[-_/.[:alnum:]]*\\'" word)
+                                                 (not (string-match "\\`https?://" word))))
                                           (split-string contents "[ \n\t]+" t))))
                   (dolist (curie curies)
                     (let ((entry (cl-find curie elot-slurp :key #'car :test #'string=)))
