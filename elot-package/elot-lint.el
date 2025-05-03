@@ -210,5 +210,72 @@ Add warnings or errors to ISSUES at POINT."
  :categories '(default elot)
  :trust 'high)
 
+
+(defun elot-check-required-sections (tree)
+  "ELOT rule: check all required section headers for ontology."
+  (let (localname issues)
+    ;; Find top-level ontology headline to get localname
+    (org-element-map tree 'headline
+      (lambda (hl)
+        (goto-char (org-element-property :begin hl))
+        (when (and (= (org-element-property :level hl) 1)
+                   (string= (org-entry-get nil "ELOT-context-type") "ontology"))
+          (setq localname (org-entry-get nil "ELOT-context-localname"))))
+      nil t) ;; stop after first match
+
+    (when localname
+      (let* ((suffixes '("-ontology-declaration"
+                         "-datatypes"
+                         "-class-hierarchy"
+                         "-object-property-hierarchy"
+                         "-data-property-hierarchy"
+                         "-annotation-property-hierarchy"
+                         "-individuals"))
+             (required-ids (mapcar (lambda (suffix) (concat localname suffix)) suffixes))
+             (headline-alist '()))
+        ;; Build alist with ID → (custom_id resourcedefs begin)
+        (org-element-map tree 'headline
+          (lambda (hl)
+            (goto-char (org-element-property :begin hl))
+            (let ((id (org-entry-get nil "ID"))
+                  (custom-id (org-entry-get nil "custom_id"))
+                  (resourcedefs (org-entry-get nil "resourcedefs"))
+                  (pos (point)))
+              (when id
+                (push (cons id (list custom-id resourcedefs pos))
+                      headline-alist)))))
+
+        ;; Check required sections
+        (dolist (req-id required-ids)
+          (let ((entry (assoc req-id headline-alist)))
+            (if (null entry)
+                (push (list (point-min)
+                            (propertize (format "ERROR: Missing section with ID %s" req-id)
+                                        'face 'error))
+                      issues)
+              (let* ((custom-id (nth 0 (cdr entry)))
+                     (resourcedefs (nth 1 (cdr entry)))
+                     (pos (nth 2 (cdr entry))))
+                (when (or (null custom-id) (not (string= custom-id req-id)))
+                  (push (list pos
+                              (propertize (format "ERROR: Section %s has missing or incorrect custom_id" req-id)
+                                          'face 'error))
+                        issues))
+                (when (not (string= resourcedefs "yes"))
+                  (push (list pos
+                              (propertize (format "ERROR: Section %s must have :resourcedefs: yes" req-id)
+                                          'face 'error))
+                        issues))))))))
+    issues))
+
+
+(org-lint-add-checker
+ 'elot/required-sections
+ "ELOT: ontology must have required resource sections with proper properties"
+ #'elot-check-required-sections
+ :categories '(default elot)
+ :trust 'high)
+
+
 (provide 'elot-lint)
 ;;; elot-lint.el ends here
