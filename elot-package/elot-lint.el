@@ -132,5 +132,83 @@ Add warnings or errors to ISSUES at POINT."
  :categories '(default elot)
  :trust 'high)
 
+(defun elot-check-prefix-table (tree)
+  "ELOT rule: ensure `elot-update-link-abbrev` sets useful abbrevs."
+  (let (issues)
+    (org-element-map tree 'headline
+      (lambda (hl)
+        (when (and (= (org-element-property :level hl) 1)
+                   (string= (elot-context-type) "ontology"))
+          (save-excursion
+            (goto-char (org-element-property :begin hl))
+            (let ((result (elot-update-link-abbrev)))
+              (when (or (null org-link-abbrev-alist-local)
+                        (equal org-link-abbrev-alist-local '(("prefix" . "uri"))))
+                (push (list (point)
+                            (propertize "ERROR: prefix-table is missing or malformed"
+                                        'face 'error))
+                      issues))))))
+      tree)
+    issues))
+
+(org-lint-add-checker
+ 'elot/prefix-table
+ "ELOT: ontology section must contain #+name: prefix-table with valid abbrevs"
+ #'elot-check-prefix-table
+ :categories '(default elot)
+ :trust 'high)
+
+(defun elot-check-prefix-table (tree)
+  "ELOT rule: ensure `elot-update-link-abbrev` sets useful abbrevs."
+  (let (issues)
+    (org-element-map tree 'headline
+      (lambda (hl)
+        (when (and (= (org-element-property :level hl) 1)
+                   (string= (elot-context-type) "ontology"))
+          (save-excursion
+            (goto-char (org-element-property :begin hl))
+            (let ((result (elot-update-link-abbrev)))
+              (when (or (null org-link-abbrev-alist-local)
+                        (equal org-link-abbrev-alist-local '(("prefix" . "uri"))))
+                (push (list (point)
+                            (propertize "ERROR: prefix-table is missing or malformed"
+                                        'face 'error))
+                      issues))))))
+      tree)
+    issues))
+
+(org-lint-add-checker
+ 'elot/prefix-table
+ "ELOT: ontology section must contain #+name: prefix-table that updates abbrevs"
+ #'elot-check-prefix-table
+ :categories '(default elot)
+ :trust 'high)
+
+(defun elot-check-ontology-presence (tree)
+  "ELOT rule: ensure there is at least one top-level ontology section."
+  (let ((found nil)
+        issues)
+    (org-element-map tree 'headline
+      (lambda (hl)
+        (when (= (org-element-property :level hl) 1)
+          (goto-char (org-element-property :begin hl))
+          (when (string= (org-entry-get nil "ELOT-context-type") "ontology")
+            (setq found t))))
+      tree)
+    (unless found
+      (push (list 1  ;; top of buffer
+                  (propertize "ERROR: No top-level heading with :ELOT-context-type: ontology"
+                              'face 'error))
+            issues))
+    issues))
+
+
+(org-lint-add-checker
+ 'elot/ontology-presence
+ "ELOT: file must contain at least one ontology top-level heading"
+ #'elot-check-ontology-presence
+ :categories '(default elot)
+ :trust 'high)
+
 (provide 'elot-lint)
 ;;; elot-lint.el ends here
