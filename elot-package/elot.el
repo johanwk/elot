@@ -512,7 +512,7 @@ unless it is an ontology section."
 ;; src-desc-lists ends here
 
 ;; [[file:../elot-defs.org::src-puri-expand][src-puri-expand]]
-(defconst elot-puri-re "^\\([-a-z_A-Z0-9]*\\):\\([a-z_A-Z0-9.:-]*\\)$")
+(defconst elot-puri-re "^\\([-_./[:alnum:]]*\\):\\([-_/.[:alnum:]]*\\)$")
 
 (defun elot-unprefix-uri (puri abbrev-alist &optional noerror)
  "Replace prefix in PURI with full form from ABBREV-ALIST, if there's a match."
