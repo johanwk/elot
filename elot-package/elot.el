@@ -514,7 +514,7 @@ unless it is an ontology section."
 ;; [[file:../elot-defs.org::src-puri-expand][src-puri-expand]]
 (defconst elot-puri-re "^\\([-a-z_A-Z0-9]*\\):\\([a-z_A-Z0-9.:-]*\\)$")
 
-(defun elot-unprefix-uri (puri abbrev-alist)
+(defun elot-unprefix-uri (puri abbrev-alist &optional noerror)
  "Replace prefix in PURI with full form from ABBREV-ALIST, if there's a match."
  (if (eq abbrev-alist nil) puri
   (if (string-match elot-puri-re puri)
@@ -523,7 +523,9 @@ unless it is an ontology section."
         (this-ns (cdr (assoc this-prefix abbrev-alist))))
      (if this-ns
          (concat "<" this-ns this-localname ">")
-       (error "Fail! Prefix \"%s\" is not defined" this-prefix)))
+       (if noerror
+           nil
+         (error "Fail! Prefix \"%s\" is not defined" this-prefix))))
        ;; puri))
    puri)))
 
