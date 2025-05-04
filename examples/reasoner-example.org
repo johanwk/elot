@@ -374,7 +374,6 @@ ex:b    a       ex:C ;
 #+name: rdfpuml:ind-rel-inferred
 #+call: rdfpuml-block(ttlblock="ind-rel-inferred") :eval never-export
 #+caption: Inferred individual relationships
-
 #+RESULTS: rdfpuml:ind-rel-inferred
 [[file:./images/ind-rel-inferred.svg]]
 
