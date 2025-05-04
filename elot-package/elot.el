@@ -332,6 +332,16 @@ JSON-LD, OWL Functional Syntax, or Manchester Syntax."
     (url-copy-file url dest-file t)))
 ;; Open existing OWL files or online ontologies:1 ends here
 
+;; [[file:../elot-defs.org::src-owl-builtins][src-owl-builtins]]
+(defvar elot-owl-builtin-resources
+  '("owl:Thing" "owl:Nothing" "xsd:string" "xsd:boolean" "xsd:decimal" "xsd:integer"
+    "xsd:float" "xsd:double" "xsd:dateTime" "xsd:time" "xsd:date" "xsd:gYear"
+    "xsd:gMonth" "xsd:gDay" "xsd:gYearMonth" "xsd:gMonthDay" "xsd:hexBinary"
+    "xsd:base64Binary" "xsd:anyURI" "xsd:normalizedString" "xsd:token" "xsd:language"
+    "xsd:Name" "xsd:NCName" "xsd:NMTOKEN" "rdf:PlainLiteral")
+  "List of built-in OWL and XSD resources that are always considered known.")
+;; src-owl-builtins ends here
+
 ;; [[file:../elot-defs.org::src-omn-keywords][src-omn-keywords]]
 (defvar elot-omn-property-keywords
   '(
