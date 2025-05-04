@@ -227,35 +227,16 @@ allow for the tangling to work.
 :resourcedefs: yes
 :END:
 *** Disjointness clauses                                          :nodeclare:
-We add these in an OMN block.
-#+begin_src omn
-DisjointClasses: 
-    pizza:American, pizza:AmericanHot, pizza:Cajun, pizza:Capricciosa, pizza:Caprina, pizza:Fiorentina, pizza:FourSeasons, pizza:FruttiDiMare, pizza:Giardiniera, pizza:LaReine, pizza:Margherita, pizza:Mushroom, pizza:Napoletana, pizza:Parmense, pizza:PolloAdAstra, pizza:PrinceCarlo, pizza:QuattroFormaggi, pizza:Rosa, pizza:Siciliana, pizza:SloppyGiuseppe, pizza:Soho, pizza:UnclosedPizza, pizza:Veneziana
+ - DisjointClasses :: pizza:American, pizza:AmericanHot, pizza:Cajun, pizza:Capricciosa, pizza:Caprina, pizza:Fiorentina, pizza:FourSeasons, pizza:FruttiDiMare, pizza:Giardiniera, pizza:LaReine, pizza:Margherita, pizza:Mushroom, pizza:Napoletana, pizza:Parmense, pizza:PolloAdAstra, pizza:PrinceCarlo, pizza:QuattroFormaggi, pizza:Rosa, pizza:Siciliana, pizza:SloppyGiuseppe, pizza:Soho, pizza:UnclosedPizza, pizza:Veneziana
+ - DisjointClasses :: pizza:AnchoviesTopping, pizza:MixedSeafoodTopping, pizza:PrawnsTopping
+ - DisjointClasses :: pizza:ArtichokeTopping, pizza:AsparagusTopping, pizza:CaperTopping, pizza:GarlicTopping, pizza:LeekTopping, pizza:MushroomTopping, pizza:OliveTopping, pizza:OnionTopping, pizza:PepperTopping, pizza:PetitPoisTopping, pizza:RocketTopping, pizza:SpinachTopping, pizza:TomatoTopping
+ - DisjointClasses :: pizza:CheeseTopping, pizza:FishTopping, pizza:FruitTopping, pizza:HerbSpiceTopping, pizza:MeatTopping, pizza:NutTopping, pizza:SauceTopping, pizza:VegetableTopping
+ - DisjointClasses :: pizza:ChickenTopping, pizza:HamTopping, pizza:HotSpicedBeefTopping, pizza:PeperoniSausageTopping
+ - DisjointClasses :: pizza:FourCheesesTopping, pizza:GoatsCheeseTopping, pizza:GorgonzolaTopping, pizza:MozzarellaTopping, pizza:ParmesanTopping
+ - DisjointClasses :: pizza:GreenPepperTopping, pizza:JalapenoPepperTopping, pizza:PeperonataTopping, pizza:SweetPepperTopping
+ - DisjointClasses :: pizza:Hot, pizza:Medium, pizza:Mild
+ - DisjointClasses :: pizza:IceCream, pizza:Pizza, pizza:PizzaBase, pizza:PizzaTopping
 
-DisjointClasses: 
-    pizza:AnchoviesTopping, pizza:MixedSeafoodTopping, pizza:PrawnsTopping
-
-DisjointClasses: 
-    pizza:ArtichokeTopping, pizza:AsparagusTopping, pizza:CaperTopping, pizza:GarlicTopping, pizza:LeekTopping, pizza:MushroomTopping, pizza:OliveTopping, pizza:OnionTopping, pizza:PepperTopping, pizza:PetitPoisTopping, pizza:RocketTopping, pizza:SpinachTopping, pizza:TomatoTopping
-
-DisjointClasses: 
-    pizza:CheeseTopping, pizza:FishTopping, pizza:FruitTopping, pizza:HerbSpiceTopping, pizza:MeatTopping, pizza:NutTopping, pizza:SauceTopping, pizza:VegetableTopping
-
-DisjointClasses: 
-    pizza:ChickenTopping, pizza:HamTopping, pizza:HotSpicedBeefTopping, pizza:PeperoniSausageTopping
-
-DisjointClasses: 
-    pizza:FourCheesesTopping, pizza:GoatsCheeseTopping, pizza:GorgonzolaTopping, pizza:MozzarellaTopping, pizza:ParmesanTopping
-
-DisjointClasses: 
-    pizza:GreenPepperTopping, pizza:JalapenoPepperTopping, pizza:PeperonataTopping, pizza:SweetPepperTopping
-
-DisjointClasses: 
-    pizza:Hot, pizza:Medium, pizza:Mild
-
-DisjointClasses: 
-    pizza:IceCream, pizza:Pizza, pizza:PizzaBase, pizza:PizzaTopping
-#+end_src
 *** pizza:DomainConcept
  - rdfs:label :: "DomainThing"@en
  - skos:prefLabel :: "Domain Thing"@en
@@ -1147,7 +1128,5 @@ DisjointClasses:
 *** pizza:Italy
  - Types :: pizza:Country
 *** Difference clauses                                            :nodeclare:
-We add these in an OMN block.
-#+begin_src omn
-DifferentIndividuals: pizza:England, pizza:France, pizza:Germany, pizza:Italy
-#+end_src
+ - DifferentIndividuals :: pizza:England, pizza:France, pizza:Germany, pizza:Italy
+
