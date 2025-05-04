@@ -203,7 +203,7 @@ Add warnings or errors to ISSUES at POINT."
 
     (when localname
       (let* ((suffixes '("-ontology-declaration"
-                         "-datatypes"
+                         ;; "-datatypes"
                          "-class-hierarchy"
                          "-object-property-hierarchy"
                          "-data-property-hierarchy"
@@ -211,7 +211,7 @@ Add warnings or errors to ISSUES at POINT."
                          "-individuals"))
              (required-ids (mapcar (lambda (suffix) (concat localname suffix)) suffixes))
              (headline-alist '()))
-        ;; Build alist with ID → (custom_id resourcedefs begin)
+        ;; Build alist with ID as (custom_id resourcedefs begin)
         (org-element-map tree 'headline
           (lambda (hl)
             (goto-char (org-element-property :begin hl))
