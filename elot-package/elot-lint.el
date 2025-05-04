@@ -347,6 +347,7 @@ Add warnings or errors to ISSUES at POINT."
                             entry)
                         ;; Built-in or known: only warn if it’s an annotation property
                         (when (and entry
+                                   (not in-annotation-section)
                                    (string= (plist-get (nth 2 entry) "rdf:type" #'equal)
                                             "owl:AnnotationProperty"))
                           (push (list (org-element-property :begin item)
