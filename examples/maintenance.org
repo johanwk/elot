@@ -151,10 +151,7 @@ PREFIX iof-ont: <https://spec.industrialontologies.org/ontology/>
  - dcterms:title :: Industrial Ontology Foundry (IOF) Maintenance Reference Ontology
  - iof-av:maturity :: iof-av:Provisional
 ** Disjointness clause                                            :nodeclare:
-#+begin_src omn
-DisjointClasses: 
-    iof-maint:DegradedState,iof-maint:FailedState,iof-maint:OperatingState
-#+end_src
+ - DisjointClasses :: iof-maint:DegradedState,iof-maint:FailedState,iof-maint:OperatingState
 ** Classes
 :PROPERTIES:
 :ID:       Maintenance-class-hierarchy
