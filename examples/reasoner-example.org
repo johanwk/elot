@@ -373,12 +373,12 @@ ex:b    a       ex:C ;
 
 #+name: rdfpuml:ind-rel-inferred
 #+call: rdfpuml-block(ttlblock="ind-rel-inferred") :eval never-export
+#+caption: Inferred individual relationships
 
 #+RESULTS: rdfpuml:ind-rel-inferred
 [[file:./images/ind-rel-inferred.svg]]
 
-#+caption: Inferred individual relationships
-#+RESULTS: rdfpuml:ind-rel-asserted
+
 
 ** Prefixes
 The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
