@@ -291,6 +291,23 @@ Add warnings or errors to ISSUES at POINT."
     issues))
 
 
+;; the following not in use (yet), for warning about unknown prefixes in contents of annotations 
+;; (defun elot-check-annotation-value-prefixes (contents)
+;;   "Check for unknown prefixes in annotation value CONTENTS.
+;; Return a list of warning strings, or nil if no issues."
+;;   (let (warnings)
+;;     (let ((words (split-string contents "[ \n\t,]+" t)))
+;;       (dolist (word words)
+;;         (when (string-match "\\`\\([-_./[:alnum:]]*\\):[-_./[:alnum:]]*\\'" word)
+;;           (let* ((prefix (match-string 1 word))
+;;                  (prefix-colon (concat prefix ":"))
+;;                  (known-prefix (or (member prefix-colon elot-owl-builtin-resources)
+;;                                    (cl-find prefix-colon elot-slurp :key #'car :test #'string=))))
+;;             (unless known-prefix
+;;               (push (format "WARNING: Unknown prefix in annotation value: %s" word)
+;;                     warnings))))))
+;;     warnings))
+
 
 (org-lint-add-checker
  'elot/description-list-curies
