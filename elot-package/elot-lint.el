@@ -316,7 +316,8 @@ Add warnings or errors to ISSUES at POINT."
     (and balanced (= count 0))))
 
 (defun elot-check-axiom-value-curies (tree)
-  "Check that CURIEs in the value of axioms (Manchester syntax) are declared and not annotation properties, and that parentheses are balanced."
+  "Check that CURIEs in the value of axioms (Manchester syntax) are declared
+and not annotation properties, and that parentheses are balanced."
   (let (issues)
     (org-element-map tree 'item
       (lambda (item)
@@ -332,7 +333,11 @@ Add warnings or errors to ISSUES at POINT."
           (when (eq type 'descriptive)
             (let* ((tag (org-element-property :tag item))
                    (term (org-element-interpret-data tag))
-                   (contents (org-element-interpret-data (org-element-contents item))))
+                   ;; exclude sublists from contents
+                   (contents (org-element-interpret-data
+                              (seq-remove (lambda (child)
+                                            (eq (org-element-type child) 'plain-list))
+                                          (org-element-contents item)))))
               ;; Only apply check if term is a Manchester keyword
               (when (member term elot-omn-all-keywords)
                 ;; Check CURIEs
@@ -367,6 +372,8 @@ Add warnings or errors to ISSUES at POINT."
                         issues)))))))
       tree)
     issues))
+
+
 
 (org-lint-add-checker
  'elot/axiom-value-curies
