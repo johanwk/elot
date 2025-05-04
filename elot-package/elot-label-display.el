@@ -57,7 +57,11 @@ Arguments are a list SUBSECTION-DESCRIPTIONS produced by
 The concatenation of STRINGS is searched.  If found, move point there
 and return position.  If not found, return nil and leave point unchanged."
   (let ((pos (save-excursion
-               (re-search-forward (concat ":custom_id:\\s-*" (apply #'concat strings)) nil :noerror))))
+               (goto-char (point-min))
+               (re-search-forward (concat ":custom_id:\\s-*"
+                                          (apply #'concat strings)
+                                          "\\s-*$")
+                                  nil :noerror))))
     (when pos
       (goto-char pos))
     pos))
