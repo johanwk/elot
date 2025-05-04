@@ -35,7 +35,7 @@
               (let* ((entity (condition-case nil
                                  (elot-entity-from-header title 'noerror)
                                (error nil)))
-                     (label (if (and title (string-match "\\`\\(.+?\\) (.*)" title))
+                     (label (if (and title (string-match "\\`\\(.*\\) (\\([^()]+\\))\\'" title))
                                  (match-string 1 title)
                                title)))
                 (cond
