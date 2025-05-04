@@ -227,8 +227,8 @@ Add warnings or errors to ISSUES at POINT."
           (let ((entry (assoc req-id headline-alist)))
             (if (null entry)
                 (push (list (point-min)
-                            (propertize (format "ERROR: Missing section with ID %s" req-id)
-                                        'face 'error))
+                            (propertize (format "WARNING: Missing section with ID %s" req-id)
+                                        'face 'warning))
                       issues)
               (let* ((custom-id (nth 0 (cdr entry)))
                      (resourcedefs (nth 1 (cdr entry)))
@@ -240,8 +240,8 @@ Add warnings or errors to ISSUES at POINT."
                         issues))
                 (when (not (string= resourcedefs "yes"))
                   (push (list pos
-                              (propertize (format "ERROR: Section %s must have :resourcedefs: yes" req-id)
-                                          'face 'error))
+                              (propertize (format "WARNING: Section %s should have :resourcedefs: yes" req-id)
+                                          'face 'warning))
                         issues))))))))
     issues))
 
