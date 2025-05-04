@@ -351,6 +351,20 @@ tangling to OMN.
            '(("Accept" . "text/turtle, application/rdf+xml, text/n3, application/ld+json, text/owl-functional, text/owl-manchester; q=0.9"))))
       (url-copy-file url dest-file t)))
 #+end_src
+*** OWL built-in resources
+There are some resources that we consider built into the OWL language.
+ - ~owl:Thing~ and ~owl:Nothing~ (maybe more, could be added later)
+ - datatypes, as listed in https://www.w3.org/TR/owl2-syntax/#Datatype_Maps
+#+name: src-owl-builtins
+#+begin_src emacs-lisp
+(defvar elot-owl-builtin-resources
+  '("owl:Thing" "owl:Nothing" "xsd:string" "xsd:boolean" "xsd:decimal" "xsd:integer"
+    "xsd:float" "xsd:double" "xsd:dateTime" "xsd:time" "xsd:date" "xsd:gYear"
+    "xsd:gMonth" "xsd:gDay" "xsd:gYearMonth" "xsd:gMonthDay" "xsd:hexBinary"
+    "xsd:base64Binary" "xsd:anyURI" "xsd:normalizedString" "xsd:token" "xsd:language"
+    "xsd:Name" "xsd:NCName" "xsd:NMTOKEN" "rdf:PlainLiteral")
+  "List of built-in OWL and XSD resources that are always considered known.")
+#+end_src
 *** OMN keywords
 In omn-mode, there's variables for entity and property
 keywords. However, there the keyword "Import" is placed in the
