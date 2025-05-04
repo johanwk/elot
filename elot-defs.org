@@ -463,11 +463,11 @@ etc.).
   if point is under a heading that declares an ontology."
     (org-entry-get-with-inheritance "ELOT-default-prefix"))
   (defun elot-governing-hierarchy ()
-    "Retrieve the ID value of the governing hierarchy, or nil."
-    (let ((this-ID
-           (org-entry-get-with-inheritance "ID")))
-      (and (string-match-p "-hierarchy$" this-ID)
-           this-ID)))
+    "Return the governing hierarchy ID if inside a hierarchy section, or nil."
+    (let ((this-ID (org-entry-get-with-inheritance "ID")))
+      (when (and this-ID
+                 (string-match-p "-hierarchy$" this-ID))
+        this-ID)))
 #+end_src
 **** Looking at
 Functions to know where we are in an ELOT tree.
