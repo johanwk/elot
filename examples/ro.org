@@ -10,6 +10,20 @@
 
 # Change the output file location by editing the :header-args:omn: :tangle property below.
 
+* Notes on conversion to ELOT 
+After elot-open-owl, we have some annotation entries like the following
+:  - oboInOwl:inSubset :: obo:uberon/core#common_anatomy
+:  - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+:  - oboInOwl:hasDbXref :: obo:chebi#has_functional_parent
+These don't get interpreted correctly on export to OWL from this ELOT file.
+
+Note that ~obo:chebi#~ isn't provided with a prefix in the original file. So a prefix was added in the prefix table below. (On checking, the links don't work, though.)
+
+To get correct output, this file was edited with replacements:
+: obo:uberon/core#  -->  core:
+: obo:ro/subsets#  --> subsets:
+: obo:chebi#  -->  chebi:
+
 * ro.owl
 :PROPERTIES:
 :ID:       ro.owl
@@ -66,28 +80,29 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 #+name: prefix-table
 #+attr_latex: :align lp{.8\textwidth} :font small
 #+caption: OWL ontology prefixes
-| prefix   | uri |
-|----------+-----|
-| : | http://purl.obolibrary.org/obo/ro.owl# |
-| cito: | http://purl.org/spar/cito/ |
-| core: | http://purl.obolibrary.org/obo/uberon/core# |
-| dc: | http://purl.org/dc/elements/1.1/ |
-| doap: | http://usefulinc.com/ns/doap# |
-| foaf: | http://xmlns.com/foaf/0.1/ |
-| obo: | http://purl.obolibrary.org/obo/ |
-| oboInOwl: | http://www.geneontology.org/formats/oboInOwl# |
-| owl: | http://www.w3.org/2002/07/owl# |
-| protege: | http://protege.stanford.edu/plugins/owl/protege# |
-| rdf: | http://www.w3.org/1999/02/22-rdf-syntax-ns# |
-| rdfs: | http://www.w3.org/2000/01/rdf-schema# |
-| skos: | http://www.w3.org/2004/02/skos/core# |
-| subsets: | http://purl.obolibrary.org/obo/ro/subsets# |
-| swrl: | http://www.w3.org/2003/11/swrl# |
-| swrla: | http://swrl.stanford.edu/ontologies/3.3/swrla.owl# |
-| swrlb: | http://www.w3.org/2003/11/swrlb# |
-| terms: | http://purl.org/dc/terms/ |
-| xml: | http://www.w3.org/XML/1998/namespace |
-| xsd: | http://www.w3.org/2001/XMLSchema# |
+| prefix    | uri                                                |
+|-----------+----------------------------------------------------|
+| :         | http://purl.obolibrary.org/obo/ro.owl#             |
+| cito:     | http://purl.org/spar/cito/                         |
+| core:     | http://purl.obolibrary.org/obo/uberon/core#        |
+| dc:       | http://purl.org/dc/elements/1.1/                   |
+| doap:     | http://usefulinc.com/ns/doap#                      |
+| foaf:     | http://xmlns.com/foaf/0.1/                         |
+| obo:      | http://purl.obolibrary.org/obo/                    |
+| oboInOwl: | http://www.geneontology.org/formats/oboInOwl#      |
+| owl:      | http://www.w3.org/2002/07/owl#                     |
+| protege:  | http://protege.stanford.edu/plugins/owl/protege#   |
+| rdf:      | http://www.w3.org/1999/02/22-rdf-syntax-ns#        |
+| rdfs:     | http://www.w3.org/2000/01/rdf-schema#              |
+| skos:     | http://www.w3.org/2004/02/skos/core#               |
+| subsets:  | http://purl.obolibrary.org/obo/ro/subsets#         |
+| swrl:     | http://www.w3.org/2003/11/swrl#                    |
+| swrla:    | http://swrl.stanford.edu/ontologies/3.3/swrla.owl# |
+| swrlb:    | http://www.w3.org/2003/11/swrlb#                   |
+| terms:    | http://purl.org/dc/terms/                          |
+| xml:      | http://www.w3.org/XML/1998/namespace               |
+| xsd:      | http://www.w3.org/2001/XMLSchema#                  |
+| chebi:    | http://purl.obolibrary.org/obo/chebi#              |
 
 *** Source blocks for prefixes                                     :noexport:
 :PROPERTIES:
@@ -188,10 +203,10 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - oboInOwl:hasDbXref :: WBbt:0000100
  - oboInOwl:hasDbXref :: XAO:0000000
  - oboInOwl:id :: UBERON:0001062
- - oboInOwl:inSubset :: obo:uberon/core#upper_level
- - oboInOwl:inSubset :: obo:uberon/core#common_anatomy
- - oboInOwl:inSubset :: obo:uberon/core#mouse_subset
- - oboInOwl:inSubset :: obo:uberon/core#human_subset
+ - oboInOwl:inSubset :: core:upper_level
+ - oboInOwl:inSubset :: core:common_anatomy
+ - oboInOwl:inSubset :: core:mouse_subset
+ - oboInOwl:inSubset :: core:human_subset
  - EquivalentTo :: obo:RO_0020105 some  Self 
 ***** "immaterial entity"@en (obo:BFO_0000141)
  - DisjointWith :: obo:BFO_0000040
@@ -213,10 +228,10 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - oboInOwl:hasExactSynonym :: immaterial physical anatomical entity
     - oboInOwl:hasDbXref :: FMA:67112
  - oboInOwl:id :: UBERON:0000466
- - oboInOwl:inSubset :: obo:uberon/core#common_anatomy
- - oboInOwl:inSubset :: obo:uberon/core#upper_level
- - oboInOwl:inSubset :: obo:uberon/core#mouse_subset
- - oboInOwl:inSubset :: obo:uberon/core#human_subset
+ - oboInOwl:inSubset :: core:common_anatomy
+ - oboInOwl:inSubset :: core:upper_level
+ - oboInOwl:inSubset :: core:mouse_subset
+ - oboInOwl:inSubset :: core:human_subset
  - SubClassOf :: obo:UBERON_0001062
  - DisjointWith :: obo:UBERON_0000465
 ****** "spatial region"@en (obo:BFO_0000006)
@@ -240,10 +255,10 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - oboInOwl:hasDbXref :: FMA:67165
  - oboInOwl:hasDbXref :: EHDAA2:0003006
  - oboInOwl:id :: UBERON:0000465
- - oboInOwl:inSubset :: obo:uberon/core#human_subset
- - oboInOwl:inSubset :: obo:uberon/core#common_anatomy
- - oboInOwl:inSubset :: obo:uberon/core#mouse_subset
- - oboInOwl:inSubset :: obo:uberon/core#upper_level
+ - oboInOwl:inSubset :: core:human_subset
+ - oboInOwl:inSubset :: core:common_anatomy
+ - oboInOwl:inSubset :: core:mouse_subset
+ - oboInOwl:inSubset :: core:upper_level
  - SubClassOf :: obo:UBERON_0001062
  - DisjointWith :: obo:UBERON_0000466
 ******* anatomical structure (obo:UBERON_0000061)
@@ -274,10 +289,10 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - oboInOwl:hasExactSynonym :: connected biological structure
     - oboInOwl:hasDbXref :: CARO:0000003
  - oboInOwl:id :: UBERON:0000061
- - oboInOwl:inSubset :: obo:uberon/core#upper_level
- - oboInOwl:inSubset :: obo:uberon/core#human_subset
- - oboInOwl:inSubset :: obo:uberon/core#mouse_subset
- - oboInOwl:inSubset :: obo:uberon/core#common_anatomy
+ - oboInOwl:inSubset :: core:upper_level
+ - oboInOwl:inSubset :: core:human_subset
+ - oboInOwl:inSubset :: core:mouse_subset
+ - oboInOwl:inSubset :: core:common_anatomy
 ******** cell (obo:CL_0000000)
  - obo:IAO_0000115 :: A material entity of anatomical origin (part of or deriving from an organism) that has as its parts a maximally connected cell compartment surrounded by a plasma membrane.
     - oboInOwl:hasDbXref :: CARO:mah
@@ -322,10 +337,10 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - oboInOwl:hasExactSynonym :: multicellular structure
     - oboInOwl:hasDbXref :: FBbt:00100313
  - oboInOwl:id :: UBERON:0010000
- - oboInOwl:inSubset :: obo:uberon/core#common_anatomy
- - oboInOwl:inSubset :: obo:uberon/core#human_subset
- - oboInOwl:inSubset :: obo:uberon/core#upper_level
- - oboInOwl:inSubset :: obo:uberon/core#mouse_subset
+ - oboInOwl:inSubset :: core:common_anatomy
+ - oboInOwl:inSubset :: core:human_subset
+ - oboInOwl:inSubset :: core:upper_level
+ - oboInOwl:inSubset :: core:mouse_subset
 ********* blood vessel (obo:UBERON_0001981)
  - obo:IAO_0000115 :: A vessel through which blood circulates in the body.
     - oboInOwl:hasDbXref :: BTO:0001102
@@ -363,13 +378,13 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - oboInOwl:hasExactSynonym :: region of vascular tree organ
     - oboInOwl:hasDbXref :: FMA:50722
  - oboInOwl:id :: UBERON:0001981
- - oboInOwl:inSubset :: obo:uberon/core#uberon_slim
- - oboInOwl:inSubset :: obo:uberon/core#human_subset
- - oboInOwl:inSubset :: obo:uberon/core#efo_slim
- - oboInOwl:inSubset :: obo:uberon/core#mouse_subset
- - oboInOwl:inSubset :: obo:uberon/core#pheno_slim
- - oboInOwl:inSubset :: obo:uberon/core#vertebrate_core
- - oboInOwl:inSubset :: obo:uberon/core#human_reference_atlas
+ - oboInOwl:inSubset :: core:uberon_slim
+ - oboInOwl:inSubset :: core:human_subset
+ - oboInOwl:inSubset :: core:efo_slim
+ - oboInOwl:inSubset :: core:mouse_subset
+ - oboInOwl:inSubset :: core:pheno_slim
+ - oboInOwl:inSubset :: core:vertebrate_core
+ - oboInOwl:inSubset :: core:human_reference_atlas
 ********** capillary (obo:UBERON_0001982)
  - obo:IAO_0000115 :: Any of the smallest blood vessels connecting arterioles with venules.
     - oboInOwl:hasDbXref :: ISBN:0073040584
@@ -397,13 +412,13 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - oboInOwl:hasExactSynonym :: capillary vessel
  - oboInOwl:hasExactSynonym :: blood capillary
  - oboInOwl:id :: UBERON:0001982
- - oboInOwl:inSubset :: obo:uberon/core#human_subset
- - oboInOwl:inSubset :: obo:uberon/core#human_reference_atlas
- - oboInOwl:inSubset :: obo:uberon/core#efo_slim
- - oboInOwl:inSubset :: obo:uberon/core#uberon_slim
- - oboInOwl:inSubset :: obo:uberon/core#vertebrate_core
- - oboInOwl:inSubset :: obo:uberon/core#pheno_slim
- - oboInOwl:inSubset :: obo:uberon/core#mouse_subset
+ - oboInOwl:inSubset :: core:human_subset
+ - oboInOwl:inSubset :: core:human_reference_atlas
+ - oboInOwl:inSubset :: core:efo_slim
+ - oboInOwl:inSubset :: core:uberon_slim
+ - oboInOwl:inSubset :: core:vertebrate_core
+ - oboInOwl:inSubset :: core:pheno_slim
+ - oboInOwl:inSubset :: core:mouse_subset
  - rdfs:seeAlso :: https://github.com/obophenotype/uberon/issues/2186
 ******** neuron projection bundle (obo:UBERON_0000122)
  - obo:IAO_0000115 :: A fasciculated bundle of neuron projections (GO:0043005), largely or completely lacking synapses.
@@ -417,8 +432,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - oboInOwl:hasExactSynonym :: nerve fiber bundle
     - oboInOwl:hasDbXref :: FBbt:00005099
  - oboInOwl:id :: UBERON:0000122
- - oboInOwl:inSubset :: obo:uberon/core#mouse_subset
- - oboInOwl:inSubset :: obo:uberon/core#human_subset
+ - oboInOwl:inSubset :: core:mouse_subset
+ - oboInOwl:inSubset :: core:human_subset
 ****** "organism"@en (obo:OBI_0100026)
  - obo:IAO_0000111 :: "organism"@en
  - obo:IAO_0000112 :: "fungus"@en
@@ -1013,7 +1028,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000589 :: determines (material entity to system)
  - oboInOwl:inSubset :: obo:RO_0002259
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002566
  - InverseOf :: obo:RO_0002507
 ****** regulates activity of (obo:RO_0011002)
@@ -1702,7 +1717,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: Chemical A has functional parent Chemical B if there is chemical transformation through which chemical B can be produced from chemical A.
           
           For example, the relationship between a salt and a freebased compound is a "has functional parent" relationship.
- - oboInOwl:hasDbXref :: obo:chebi#has_functional_parent
+ - oboInOwl:hasDbXref :: chebi:has_functional_parent
  - rdfs:seeAlso :: https://github.com/oborel/obo-relations/issues/697
  - terms:creator :: https://orcid.org/0000-0003-4423-4370
  - terms:date :: "2023-03-18T23:49:31Z"^^xsd:dateTime
@@ -1712,7 +1727,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - rdfs:seeAlso :: obo:CHEBI_39106
     - rdfs:seeAlso :: obo:CHEBI_52083
  - obo:IAO_0000115 :: Chemical A has parent hydride Chemical B if there exists a molecular graphical transformation where functional groups on A are replaced with hydrogens in order to yield B.
- - oboInOwl:hasDbXref :: obo:chebi#has_parent_hydride
+ - oboInOwl:hasDbXref :: chebi:has_parent_hydride
  - rdfs:seeAlso :: https://github.com/oborel/obo-relations/issues/697
  - terms:creator :: https://orcid.org/0000-0003-4423-4370
  - terms:date :: "2023-03-18T23:49:31Z"^^xsd:dateTime
@@ -1722,7 +1737,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: A is a deprotonated form of B if and only if A is chemical entity that is a Brønsted–Lowry Base (i.e., can receive a proton) and by adding some nonzero number of protons transforms it into B.
           
           This is a transitive relationship and follows this design pattern: https://oborel.github.io/obo-relations/direct-and-indirect-relations.
- - oboInOwl:hasDbXref :: obo:chebi#is_conjugate_base_of
+ - oboInOwl:hasDbXref :: chebi:is_conjugate_base_of
  - rdfs:seeAlso :: https://github.com/oborel/obo-relations/issues/643
  - terms:creator :: https://orcid.org/0000-0003-4423-4370
  - SubPropertyOf :: obo:RO_0018030
@@ -1743,7 +1758,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: Chemicals A and B are enantiomers if they share the same molecular graph except the change of the configuration of substituents around exactly one chiral center.
           
           A chemical with no chiral centers can not have an enantiomer. A chemical with multiple chiral centers can have multiple enantiomers, but its enantiomers are not themselves enantiomers (they are diastereomers).
- - oboInOwl:hasDbXref :: obo:chebi#is_enantiomer_of
+ - oboInOwl:hasDbXref :: chebi:is_enantiomer_of
  - oboInOwl:hasExactSynonym :: is optical isomer of
  - rdfs:seeAlso :: https://github.com/oborel/obo-relations/issues/697
  - terms:creator :: https://orcid.org/0000-0003-4423-4370
@@ -1773,7 +1788,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: A is a protonated form of B if and only if A is chemical entity that is a Brønsted–Lowry Acid (i.e., can give up a proton) and by removing some nonzero number of protons transforms it into B.
           
           This is a transitive relationship and follows this design pattern: https://oborel.github.io/obo-relations/direct-and-indirect-relations.
- - oboInOwl:hasDbXref :: obo:chebi#is_conjugate_acid_of
+ - oboInOwl:hasDbXref :: chebi:is_conjugate_acid_of
  - rdfs:seeAlso :: https://github.com/oborel/obo-relations/issues/643
  - terms:creator :: https://orcid.org/0000-0003-4423-4370
  - SubPropertyOf :: obo:RO_0018030
@@ -1792,7 +1807,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - rdfs:seeAlso :: obo:CHEBI_30795
     - rdfs:seeAlso :: obo:CHEBI_58957
  - obo:IAO_0000115 :: Group A is a substituent group from Chemical B if A represents the functional part of A and includes information about where it is connected. A is not itself a chemical with a fully formed chemical graph, but is rather a partial graph with one or more connection points that can be used to attach to another chemical graph, typically as a functionalization.
- - oboInOwl:hasDbXref :: obo:chebi#is_substituent_group_from
+ - oboInOwl:hasDbXref :: chebi:is_substituent_group_from
  - rdfs:seeAlso :: https://github.com/oborel/obo-relations/issues/697
  - terms:creator :: https://orcid.org/0000-0003-4423-4370
  - terms:date :: "2023-03-18T23:49:31Z"^^xsd:dateTime
@@ -1804,7 +1819,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: Two chemicals are tautomers if they can be readily interconverted.
           
           This commonly refers to prototropy in which a hydrogen's position is changed, such as between ketones and enols. This is also often observed in heterocyclic rings, e.g., ones containing nitrogens and/or have aryl functional groups containing heteroatoms.
- - oboInOwl:hasDbXref :: obo:chebi#is_tautomer_of
+ - oboInOwl:hasDbXref :: chebi:is_tautomer_of
  - oboInOwl:hasExactSynonym :: is desmotrope of
  - rdfs:seeAlso :: https://github.com/oborel/obo-relations/issues/697
  - terms:creator :: https://orcid.org/0000-0003-4423-4370
@@ -1940,7 +1955,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000116 :: "This is a very general relation. More specific relations are preferred when applicable, such as 'directly develops from'."@en
  - obo:IAO_0000118 :: "derives_from"@en
  - obo:IAO_0000232 :: This relation is taken from the RO2005 version of RO. It may be obsoleted and replaced by relations with different definitions. See also the 'develops from' family of relations.
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - InverseOf :: obo:RO_0001001
 *** "derives from part of"@en (obo:ENVO_01003004)
  - obo:IAO_0000115 :: "A relation between two distinct material entities, the new entity and the old entity, in which the new entity begins to exist through the separation or transformation of a part of the old entity, and the new entity inherits a significant portion of the matter belonging to that part of the old entity."@en
@@ -1951,7 +1966,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: "a relation between two distinct material entities, the old entity and the new entity, in which the new entity begins to exist when the old entity ceases to exist, and the new entity inherits the significant portion of the matter of the old entity"@en
  - obo:IAO_0000116 :: "This is a very general relation. More specific relations are preferred when applicable, such as 'directly develops into'. To avoid making statements about a future that may not come to pass, it is often better to use the backward-looking 'derives from' rather than the forward-looking 'derives into'."@en
  - obo:IAO_0000118 :: "derives_into"@en
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - InverseOf :: obo:RO_0001000
 *** "developmentally related to"@en (obo:RO_0002324)
  - obo:IAO_0000115 :: A relationship that holds between entities participating in some developmental process (GO:0032502)
@@ -2335,12 +2350,12 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000116 :: Awaiting class for domain/range constraint, see: https://github.com/OBOFoundry/Experimental-OBO-Core/issues/6
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000232 :: Do not use this relation directly. It is intended as a grouping for a diverse set of relations, all involving ecological interactions
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
 **** biotically interacts with (obo:RO_0002437)
  - obo:IAO_0000115 :: An interaction relationship in which at least one of the partners is an organism and the other is either an organism or an abiotic entity with which the organism interacts.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000118 :: interacts with on organism level
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:seeAlso :: http://eol.org/schema/terms/interactsWith
  - rdfs:seeAlso :: http://dx.doi.org/10.1016/j.ecoinf.2014.08.005
  - SubPropertyOf :: obo:RO_0002321
@@ -2352,33 +2367,33 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: Inverse of provides nutrients for
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000232 :: Intended to be used when the target of the relation is not itself consumed, and does not have integral parts consumed, but provided nutrients in some other fashion.
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002437
  - InverseOf :: obo:RO_0002469
 ***** eats (obo:RO_0002470)
  - obo:IAO_0000115 :: A biotic interaction where one organism consumes a material entity through a type of mouth or other oral opening.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000118 :: is subject of eating interaction with
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002437
 ***** is eaten by (obo:RO_0002471)
  - obo:IAO_0000115 :: Inverse of eats
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000118 :: is target of eating interaction with
  - obo:IAO_0000118 :: eaten by
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002437
 ***** participates in a abiotic-biotic interaction with (obo:RO_0002446)
  - obo:IAO_0000112 :: Porifiera attaches to substrate
  - obo:IAO_0000115 :: A biotic interaction relationship in which one partner is an organism and the other partner is inorganic. For example, the relationship between a sponge and the substrate to which is it anchored.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - oboInOwl:hasRelatedSynonym :: semibiotically interacts with
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:seeAlso :: http://dx.doi.org/10.1016/j.ecoinf.2014.08.005
  - SubPropertyOf :: obo:RO_0002437
 ***** participates in a biotic-biotic interaction with (obo:RO_0002574)
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:seeAlso :: http://dx.doi.org/10.1016/j.ecoinf.2014.08.005
  - SubPropertyOf :: obo:RO_0002437
  - Domain :: obo:OBI_0100026
@@ -2387,7 +2402,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: A relationship between organisms where one organism is influenced by the biochemicals produced by another.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000119 :: http://en.wikipedia.org/wiki/Allelopathy
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:comment :: Allelopathy is a phenomenon in which one organism releases chemicals to positively or negatively influence the growth, survival or reproduction of other organisms in its vicinity.
  - rdfs:seeAlso :: x is an allelopath of y if x produces one or more biochemicals that influence the growth, survival, and reproduction of y
  - rdfs:seeAlso :: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10172429/
@@ -2402,7 +2417,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - InverseOf :: obo:RO_0002555
 ****** has vector (obo:RO_0002460)
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002574
  - InverseOf :: obo:RO_0002459
 ****** is killed by (obo:RO_0002627)
@@ -2412,7 +2427,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000112 :: Anopheles is a vector for Plasmodium
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000119 :: a is a vector for b if a carries and transmits an infectious pathogen b into another living organism
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002574
  - InverseOf :: obo:RO_0002460
 ****** kills (obo:RO_0002626)
@@ -2425,7 +2440,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000119 :: "http://www.ncbi.nlm.nih.gov/pubmed/19278549"^^xsd:anyURI
  - obo:IAO_0000232 :: We follow GO and PAMGO in using 'symbiosis' as the broad term encompassing mutualism through parasitism
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002574
  - SubPropertyChain :: obo:RO_0002461 o obo:RO_0002465 o  inverse (obo:RO_0002461)
  - Characteristics :: Symmetric
@@ -2433,7 +2448,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: An interaction relationship between two organisms living together in more or less intimate association in a relationship in which one benefits and the other is unaffected (GO).
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000119 :: "http://www.ncbi.nlm.nih.gov/pubmed/19278549"^^xsd:anyURI
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002440
  - SubPropertyChain :: obo:RO_0002461 o obo:RO_0002466 o  inverse (obo:RO_0002461)
 ******* epiphyte of (obo:RO_0008501)
@@ -2449,7 +2464,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ******* has host (obo:RO_0002454)
  - obo:IAO_0000115 :: X 'has host' y if and only if: x is an organism, y is an organism, and x can live on the surface of or within the body of y
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:seeAlso :: http://eol.org/schema/terms/hasHost
  - SubPropertyOf :: obo:RO_0002440
 ******** has reservoir host (obo:RO_0002803)
@@ -2466,25 +2481,25 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000119 :: http://eol.org/schema/terms/hyperparasitoidOf
  - oboInOwl:hasNarrowSynonym :: hyperparasitoid of
  - oboInOwl:hasRelatedSynonym :: epiparasite of
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002454
  - InverseOf :: obo:RO_0002554
  - SubPropertyChain :: obo:RO_0002444 o obo:RO_0002444
 ******** pathogen of (obo:RO_0002556)
  - obo:IAO_0000115 :: Inverse of has pathogen
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002454
  - InverseOf :: obo:RO_0002557
 ******* host of (obo:RO_0002453)
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000232 :: The term host is usually used for the larger (macro) of the two members of a symbiosis (GO)
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002440
 ******** has pathogen (obo:RO_0002557)
  - obo:IAO_0000115 :: A host interaction where the smaller of the two members of a symbiosis causes a disease in the larger member
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002453
  - InverseOf :: obo:RO_0002556
 ******** hyperparasitized by (obo:RO_0002554)
@@ -2494,7 +2509,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - oboInOwl:hasRelatedSynonym :: has epiparasite
  - oboInOwl:hasRelatedSynonym :: has hyperparasite
  - oboInOwl:inSubset :: obo:RO_0002259
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002453
  - InverseOf :: obo:RO_0002553
  - SubPropertyChain :: obo:RO_0002445 o obo:RO_0002445
@@ -2512,7 +2527,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000119 :: "http://www.ncbi.nlm.nih.gov/pubmed/19278549"^^xsd:anyURI
  - obo:IAO_0000232 :: This relation groups a pair of inverse relations, parasite of and parasitized by
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002440
  - SubPropertyChain :: obo:RO_0002461 o obo:RO_0002468 o  inverse (obo:RO_0002461)
 ******** parasite of (obo:RO_0002444)
@@ -2521,7 +2536,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000118 :: parasitizes
  - oboInOwl:hasExactSynonym :: direct parasite of
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:seeAlso :: http://eol.org/schema/terms/parasitizes
  - SubPropertyOf :: obo:RO_0002443
  - SubPropertyOf :: obo:RO_0002454
@@ -2586,7 +2601,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000118 :: parasitised by
  - obo:IAO_0000118 :: has parasite
  - oboInOwl:hasExactSynonym :: directly parasitized by
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:seeAlso :: http://eol.org/schema/terms/hasParasite
  - SubPropertyOf :: obo:RO_0002443
  - SubPropertyOf :: obo:RO_0002453
@@ -2632,14 +2647,14 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: An interaction relationship between two organisms living together in more or less intimate association in a relationship in which both organisms benefit from each other (GO).
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000119 :: "http://www.ncbi.nlm.nih.gov/pubmed/19278549"^^xsd:anyURI
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002440
  - SubPropertyChain :: obo:RO_0002461 o obo:RO_0002467 o  inverse (obo:RO_0002461)
 ******** pollinated by (obo:RO_0002456)
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000118 :: is target of pollination interaction with
  - obo:IAO_0000118 :: has polinator
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:seeAlso :: http://eol.org/schema/terms/hasPollinator
  - SubPropertyOf :: obo:RO_0002442
  - InverseOf :: obo:RO_0002455
@@ -2648,7 +2663,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000116 :: This relation is intended to be used for biotic pollination - e.g. a bee pollinating a flowering plant. Some kinds of pollination may be semibiotic - e.g. wind can have the role of pollinator. We would use a separate relation for this.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000118 :: is subject of pollination interaction with
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:seeAlso :: http://eol.org/schema/terms/pollinates
  - SubPropertyOf :: obo:RO_0002442
  - InverseOf :: obo:RO_0002456
@@ -2656,7 +2671,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000112 :: lions trophically interact with the zebras that they eat
  - obo:IAO_0000115 :: An interaction relationship in which the partners are related via a feeding relationship.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:seeAlso :: http://dx.doi.org/10.1016/j.ecoinf.2014.08.005
  - SubPropertyOf :: obo:RO_0002574
 ******* preyed upon by (obo:RO_0002458)
@@ -2665,7 +2680,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000118 :: is target of predation interaction with
  - obo:IAO_0000118 :: has predator
  - oboInOwl:inSubset :: obo:RO_0002259
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:seeAlso :: http://eol.org/schema/terms/HasPredator
  - rdfs:seeAlso :: http://polytraits.lifewatchgreece.eu/terms/PRED
  - SubPropertyOf :: obo:RO_0002438
@@ -2679,7 +2694,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000117 :: https://orcid.org/0000-0003-3138-4118
  - obo:IAO_0000118 :: preys upon
  - obo:IAO_0000118 :: is subject of predation interaction with
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:seeAlso :: http://eol.org/schema/terms/preysUpon
  - rdfs:seeAlso :: http://www.inaturalist.org/observations/2942824
  - SubPropertyOf :: obo:RO_0002438
@@ -2687,14 +2702,14 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ******* "symbiotrophically interacts with"@en (obo:RO_0008510)
  - obo:IAO_0000112 :: frog symbiotrophically interacts with the pitcher plant it lives inside of
  - obo:IAO_0000115 :: A trophic interaction in which one organism acquires nutrients through a symbiotic relationship with another organism
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - terms:contributor :: https://orcid.org/0000-0002-2908-3327
  - terms:date :: "2023-07-17T14:39:56Z"^^xsd:dateTime
  - SubPropertyOf :: obo:RO_0002438
 ******** "trophic parasite of"@en (obo:RO_0008511)
  - obo:IAO_0000112 :: tapeworm is trophic parasite of the cow it lives inside of
  - obo:IAO_0000115 :: A symbiotrophic interaction in which one organism acquires nutrients through a parasitic relationship with another organism
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - terms:contributor :: https://orcid.org/0000-0002-2908-3327
  - terms:date :: "2023-07-17T14:41:07Z"^^xsd:dateTime
  - SubPropertyOf :: obo:RO_0008510
@@ -2722,14 +2737,14 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ***** provides nutrients for (obo:RO_0002469)
  - obo:IAO_0000115 :: A biotic interaction where a material entity provides nutrition for an organism.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002437
  - InverseOf :: obo:RO_0002457
 **** "confers advantage in"@en (obo:RO_0002322)
  - obo:IAO_0000116 :: An experimental relation currently used to connect a feature possessed by an organism (e.g. anatomical structure, biological process, phenotype or quality) to a habitat or environment in which that feature is well suited, adapted or provides a reproductive advantage for the organism. For example, fins to an aquatic environment. Usually this will mean that the structure is adapted for this environment, but we avoid saying this directly - primitive forms of the structure may not have evolved specifically for that environment (for example, early wings were not necessarily adapted for an aerial environment). Note also that this is a statement about the general class of structures - not every instance of a limb need confer an advantage for a terrestrial environment, e.g. if the limb is vestigial.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000118 :: adapted for
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002321
  - Range :: obo:ENVO_01000254
 **** creates habitat for (obo:RO_0008505)
@@ -2756,7 +2771,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: x 'has habitat' y if and only if: x is an organism, y is a habitat, and y can sustain and allow the growth of a population of xs.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-4366-3088
  - obo:IAO_0000118 :: adapted for living in
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:comment :: A population of xs will possess adaptations (either evolved naturally or via artifical selection) which permit it to exist and grow in y.
  - SubPropertyOf :: obo:RO_0002321
  - Domain :: obo:OBI_0100026
@@ -2764,7 +2779,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ***** "has roost"@en (obo:RO_0008509)
  - obo:IAO_0000112 :: Flying foxes (Pteropus giganteus) has_roost banyan tree (Ficus benghalensis)
  - obo:IAO_0000115 :: x 'has roost' y if and only if: x is an organism, y is a habitat, and y can support rest behaviors x.
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:comment :: A population of xs will possess adaptations (either evolved naturally or via artifical selection) which permit it to rest in y.
  - terms:contributor :: https://orcid.org/0000-0002-2908-3327
  - terms:date :: "2023-01-18T14:28:21Z"^^xsd:dateTime
@@ -2872,7 +2887,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000119 :: http://www.ncbi.nlm.nih.gov/pubmed/20973947
  - obo:IAO_0000119 :: http://www.ncbi.nlm.nih.gov/pubmed/17921072
  - oboInOwl:hasNarrowSynonym :: "life cycle stage of"@en
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:comment :: Connects a biological entity to its taxon of origin.
  - rdfs:seeAlso :: https://github.com/obophenotype/uberon/wiki/Taxon-constraints
  - SubPropertyOf :: obo:RO_0002320
@@ -3599,7 +3614,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000119 :: http://www.ncbi.nlm.nih.gov/pubmed/20123131
  - obo:IAO_0000119 :: http://www.ncbi.nlm.nih.gov/pubmed/21208450
  - obo:IAO_0000232 :: For compatibility with BFO, this relation has a shortcut definition in which the expression "capable of some P" expands to "bearer_of (some realized_by only P)".
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002216
  - Domain :: obo:BFO_0000004
  - Range :: obo:BFO_0000015
@@ -3885,13 +3900,13 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000119 :: http://www.ncbi.nlm.nih.gov/pubmed/20064205
  - obo:IAO_0000232 :: This relation is intended to be used in combination with PATO, to be able to refine PATO quality classes using modifiers such as 'abnormal' and 'normal'. It has yet to be formally aligned into an ontological framework; it's not clear what the ontological status of the "modifiers" are.
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - Domain :: obo:BFO_0000020
  - Range :: obo:BFO_0000020
 *** has part that occurs in (obo:RO_0002479)
  - obo:IAO_0000115 :: p has part that occurs in c if and only if there exists some p1, such that p has_part p1, and p1 occurs in c.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - Domain :: obo:BFO_0000003
  - Range :: obo:BFO_0000004
  - SubPropertyChain :: obo:BFO_0000051 o obo:BFO_0000066
@@ -3901,7 +3916,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: x 'has end location' y if and only if there exists some process z such that x 'ends with' z and z 'occurs in' y
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000118 :: ends with process that occurs in
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002479
  - Domain :: obo:BFO_0000015
  - Range :: obo:BFO_0000004
@@ -3911,7 +3926,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: x 'has starts location' y if and only if there exists some process z such that x 'starts with' z and z 'occurs in' y
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000118 :: starts with process that occurs in
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002479
  - Domain :: obo:BFO_0000015
  - Range :: obo:BFO_0000004
@@ -3971,7 +3986,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000118 :: consumes
  - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
  - oboInOwl:inSubset :: obo:valid_for_go_ontology
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - oboInOwl:inSubset :: obo:valid_for_gocam
  - rdfs:seeAlso :: "https://wiki.geneontology.org/Has_input"^^xsd:anyURI
  - SubPropertyOf :: obo:RO_0000057
@@ -4021,7 +4036,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: p has intermediate c if and only if p has parts p1, p2 and p1 has output c, and p2 has input c
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000118 :: has intermediate product
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0000057
 **** "has output"@en (obo:RO_0002234)
  - obo:IAO_0000114 :: obo:IAO_0000125
@@ -4031,7 +4046,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
  - oboInOwl:inSubset :: obo:valid_for_gocam
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:seeAlso :: "https://wiki.geneontology.org/Has_output"^^xsd:anyURI
  - SubPropertyOf :: obo:RO_0000057
  - InverseOf :: obo:RO_0002353
@@ -4134,7 +4149,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000115 :: A relationship that holds between a biological entity and a phenotype. Here a phenotype is construed broadly as any kind of quality of an organism part, a collection of these qualities, or a change in quality or qualities (e.g. abnormally increased temperature). The subject of this relationship can be an organism (where the organism has the phenotype, i.e. the qualities inhere in parts of this organism), a genomic entity such as a gene or genotype (if modifications of the gene or the genotype causes the phenotype), or a condition such as a disease (such that if the condition inheres in an organism, then the organism has the phenotype).
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0016001
  - Domain :: obo:BFO_0000031 or obo:OGMS_0000031 or obo:UBERON_0000465
  - Range :: obo:UPHENO_0001001
@@ -4365,7 +4380,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000232 :: Note that this relationship type, and sub-relationship types may be redundant with process terms from other ontologies. For example, the symbiotic relationship hierarchy parallels GO. The relations are provided as a convenient shortcut. Consider using the more expressive processual form to capture your data. In the future, these relations will be linked to their cognate processes through rules.
  - oboInOwl:hasExactSynonym :: in pairwise interaction with
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:seeAlso :: "http://purl.obolibrary.org/obo/ro/docs/interaction-relations/"^^xsd:anyURI
  - skos:closeMatch :: "http://purl.obolibrary.org/obo/MI_0914"^^xsd:anyURI
  - Domain :: obo:BFO_0000040
@@ -4574,7 +4589,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: A relation that holds between two linear structures that are approximately parallel to each other for their entire length and where either the two structures are adjacent to each other or one is part of the other.
  - obo:IAO_0000116 :: Note from NCEAS meeting: consider changing primary label
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-7073-9172
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:comment :: Example: if we define region of chromosome as any subdivision of a chromosome along its long axis, then we can define a region of chromosome that contains only gene x as 'chromosome region' that coincident_with some 'gene x', where the term gene X corresponds to a genomic sequence.
  - SubPropertyOf :: obo:RO_0002323
  - Domain :: obo:BFO_0000002
@@ -4604,7 +4619,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: a is attached to b if and only if a and b are discrete objects or object parts, and there are physical connections between a and b such that a force pulling a will move b, or a force pulling b will move a
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000589 :: attached to (anatomical structure to anatomical structure)
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002170
  - SubPropertyOf :: obo:RO_0002177
  - Characteristics :: Symmetric
@@ -4642,7 +4657,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000118 :: distributary channel of
  - obo:IAO_0000118 :: branch of
  - obo:IAO_0000119 :: http://en.wikipedia.org/wiki/Distributary
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:comment :: This is both a mereotopological relationship and a relationship defined in connection to processes. It concerns both the connecting structure, and how this structure is disposed to causally affect flow processes
  - SubPropertyOf :: obo:RO_0002170
  - SubPropertyOf :: obo:RO_0002375
@@ -4651,14 +4666,14 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: x anabranch_of y if x is a distributary of y (i.e. it channels a from a larger flow from y) and x ultimately channels the flow back into y.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000118 :: anastomoses with
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf ::  inverse (obo:RO_0002376)
  - SubPropertyOf :: obo:RO_0002377
 ****** "proper distributary of"@en (obo:RO_0002382)
  - obo:IAO_0000114 :: obo:IAO_0000428
  - obo:IAO_0000115 :: x proper_distributary_of y iff x distributary_of y and x does not flow back into y
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002377
 ***** "drains"@en (obo:RO_0002179)
  - obo:IAO_0000115 :: Relation between an collecting structure and another structure, where the collecting structure acts as a conduit channeling fluid, substance or energy away from the other structure.
@@ -4848,7 +4863,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000119 :: http://www.medindia.net/glossary/venous_tributary.htm
  - obo:IAO_0000119 :: http://en.wikipedia.org/wiki/Tributary
  - obo:IAO_0000232 :: "This relation can be used for geographic features (e.g. rivers) as well as anatomical structures (veins, arteries)"^^xsd:anyURI
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:seeAlso :: "http://en.wikipedia.org/wiki/Tributary"^^xsd:anyURI
  - rdfs:seeAlso :: http://dbpedia.org/ontology/drainsTo
  - SubPropertyOf :: obo:RO_0002170
@@ -4857,7 +4872,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000114 :: obo:IAO_0000428
  - obo:IAO_0000115 :: x proper_tributary_of y iff x tributary_of y and x does not originate from y
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002376
 **** "connects"@en (obo:RO_0002176)
  - obo:IAO_0000112 :: The M8 connects Glasgow and Edinburgh
@@ -4934,7 +4949,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:RO_0001900 :: obo:RO_0001901
  - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
  - oboInOwl:inSubset :: obo:valid_for_gocam
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002323
  - SubPropertyChain :: obo:BFO_0000050 o obo:BFO_0000050
  - SubPropertyChain :: obo:BFO_0000051 o obo:BFO_0000050
@@ -4947,7 +4962,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000119 :: UBERON:cjm
  - obo:IAO_0000232 :: This relation holds between a thing with a 'conduit' (e.g. a bone foramen) and a 'conduee' (for example, a nerve) such that at the time the relationship holds, the conduee has two ends sticking out either end of the conduit. It should therefore note be used for objects that move through the conduit but whose spatial extent does not span the passage. For example, it would not be used for a mountain that contains a long tunnel through which trains pass. Nor would we use it for a digestive tract and objects such as food that pass through.
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002131
  - Domain :: obo:BFO_0000040
  - Range :: obo:BFO_0000040
@@ -4958,7 +4973,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ***** determined by part of (obo:RO_0002509)
  - obo:IAO_0000115 :: s 'determined by part of' w if and only if there exists some f such that (1) s 'determined by' f and (2) f part_of w, or f=w.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002131
  - SubPropertyOf :: obo:RO_0002506
  - Domain :: obo:RO_0002577
@@ -5070,7 +5085,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000119 :: http://www.ncbi.nlm.nih.gov/pubmed/22293552
  - obo:RO_0001900 :: obo:RO_0001901
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:BFO_0000051
  - Domain :: obo:BFO_0000040
  - Range :: obo:BFO_0000040
@@ -5080,7 +5095,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000117 :: Chris Mungall
  - obo:IAO_0000118 :: finished by
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:BFO_0000051
  - SubPropertyOf :: obo:RO_0002222
  - InverseOf :: obo:RO_0002229
@@ -5098,7 +5113,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: inverse of branching part of
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - oboInOwl:inSubset :: obo:RO_0002259
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:BFO_0000051
  - SubPropertyOf :: obo:RO_0002375
  - InverseOf :: obo:RO_0002380
@@ -5109,7 +5124,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000116 :: The definition of 'has component' is still under discussion. The challenge is in providing a definition that does not imply transitivity.
  - obo:IAO_0000232 :: "For use in recording has_part with a cardinality constraint, because OWL does not permit cardinality constraints to be used in combination with transitive object properties. In situations where you would want to say something like 'has part exactly 5 digit, you would instead use has_component exactly 5 digit."@en
  - obo:RO_0001900 :: obo:RO_0001901
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:seeAlso :: http://ontologydesignpatterns.org/wiki/Submissions:Componency
  - SubPropertyOf :: obo:BFO_0000051
 ******* has component process (obo:RO_0002018)
@@ -5270,7 +5285,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000117 :: Chris Mungall
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000118 :: started by
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:BFO_0000051
  - SubPropertyOf :: obo:RO_0002222
  - InverseOf :: obo:RO_0002223
@@ -5475,7 +5490,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
           has_boundary: http://purl.obolibrary.org/obo/RO_0002002
           boundary_of: http://purl.obolibrary.org/obo/RO_0002000
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-7073-9172
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:comment :: A relationship that applies between a continuant and its outer, bounding layer.  Examples include the relationship between a multicellular organism and its integument, between an animal cell and its plasma membrane, and between a membrane bound organelle and its outer/bounding membrane.
  - SubPropertyOf :: obo:BFO_0000050
  - Domain :: obo:BFO_0000040
@@ -5485,7 +5500,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000112 :: In the tree T depicted in https://oborel.github.io/obo-relations/branching_part_of.png, B1 is a (direct) branching part of T. B1-1, B1-2, and B1-3 are also branching parts of T, but these are considered indirect branching parts as they do not directly connect to the main stem S
  - obo:IAO_0000115 :: x is a branching part of y if and only if x is part of y and x is connected directly or indirectly to the main stem of y
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:seeAlso :: https://github.com/obophenotype/uberon/issues/2212
  - rdfs:seeAlso :: FMA:85994
  - SubPropertyOf :: obo:BFO_0000050
@@ -5500,7 +5515,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000119 :: http://www.ncbi.nlm.nih.gov/pubmed/24330602
  - obo:IAO_0000589 :: determined by (system to material entity)
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - terms:creator :: https://orcid.org/0000-0002-6601-2165
  - terms:creator :: https://orcid.org/0000-0002-4366-3088
  - SubPropertyOf :: obo:BFO_0000050
@@ -5514,7 +5529,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: inverse of ends with
  - obo:IAO_0000117 :: Chris Mungall
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:BFO_0000050
  - SubPropertyOf :: obo:RO_0002222
  - InverseOf :: obo:RO_0002230
@@ -5553,13 +5568,13 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: x lumen_of y iff x is the space or substance that is part of y and does not cross any of the inner membranes or boundaries of y that is maximal with respect to the volume of the convex hull.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000119 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:BFO_0000050
  - Range :: obo:BFO_0000040
 ******* luminal space of (obo:RO_0002572)
  - obo:IAO_0000115 :: s is luminal space of x iff s is lumen_of x and s is an immaterial entity
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002571
  - Domain :: obo:BFO_0000141
 ****** "main stem of"@en (obo:RO_0002381)
@@ -5567,7 +5582,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000114 :: obo:IAO_0000428
  - obo:IAO_0000115 :: x main_stem_of y if y is a branching structure and x is a channel that traces a linear path through y, such that x has higher capacity than any other such path.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:seeAlso :: https://github.com/obophenotype/uberon/issues/2212
  - SubPropertyOf :: obo:BFO_0000050
  - SubPropertyOf :: obo:RO_0002375
@@ -5600,7 +5615,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000117 :: Chris Mungall
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000119 :: Allen
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:BFO_0000050
  - SubPropertyOf :: obo:RO_0002222
  - InverseOf :: obo:RO_0002224
@@ -5624,7 +5639,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
           			(not (part_of ?x ?y)) 
           			(not (part_of ?y ?x)))))
  - obo:RO_0001900 :: obo:RO_0001901
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002131
 ***** "spatially coextensive with"@en (obo:RO_0002379)
  - obo:IAO_0000112 :: A lump of clay and a statue
@@ -5642,7 +5657,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000232 :: Note that it would be possible to use the relation to label the relationship between a near infinite number of structures - between the rings of saturn and my left earlobe. The intent is that this is used for parsiomoniously for disambiguation purposes - for example, between siblings in a jointly exhaustive pairwise disjointness hierarchy
  - obo:IAO_0000424 :: BFO_0000051 exactly 0 (BFO_0000050 some ?Y)
  - obo:RO_0001900 :: obo:RO_0001901
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:seeAlso :: "https://github.com/obophenotype/uberon/wiki/Part-disjointness-Design-Pattern"^^xsd:anyURI
  - SubPropertyOf :: obo:RO_0002323
 ***** "adjacent to"@en (obo:RO_0002220)
@@ -5806,7 +5821,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** "input of"@en (obo:RO_0002352)
  - obo:IAO_0000115 :: inverse of has input
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - oboInOwl:inSubset :: obo:RO_0002259
  - SubPropertyOf :: obo:RO_0000056
  - SubPropertyOf :: obo:RO_0002328
@@ -5824,7 +5839,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** "output of"@en (obo:RO_0002353)
  - obo:IAO_0000115 :: inverse of has output
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - oboInOwl:inSubset :: obo:RO_0002259
  - SubPropertyOf :: obo:RO_0000056
  - SubPropertyOf :: obo:RO_0002328
@@ -5849,7 +5864,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000115 :: inverse of has phenotype
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - oboInOwl:inSubset :: obo:RO_0002259
  - InverseOf :: obo:RO_0002200
  - Characteristics :: Functional
@@ -5857,7 +5872,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000115 :: a produced_by b iff some process that occurs_in b has_output a.
  - obo:IAO_0000117 :: https://orcid.org/0000-0001-9114-8737
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - Domain :: obo:BFO_0000040
  - Range :: obo:BFO_0000040
  - InverseOf :: obo:RO_0003000
@@ -5865,7 +5880,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000115 :: a produces b if some process that occurs_in a has_output b, where a and b are material entities. Examples: hybridoma cell line produces monoclonal antibody reagent; chondroblast produces avascular GAG-rich matrix.
  - obo:IAO_0000117 :: https://orcid.org/0000-0001-9114-8737
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:comment :: Note that this definition doesn't quite distinguish the output of a transformation process from a production process, which is related to the identity/granularity issue.
  - Domain :: obo:BFO_0000040
  - Range :: obo:BFO_0000040
@@ -5903,7 +5918,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 *** regulates transport of (obo:RO_0002011)
  - obo:IAO_0000115 :: A relationship that holds between a  process that regulates a transport process and the entity transported by that process.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-7073-9172
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyChain :: obo:RO_0002211 o obo:RO_0002313
 *** related via evidence or inference to (obo:RO_0002616)
  - obo:IAO_0000232 :: Do not use this relation directly. It is a grouping relation.
@@ -5912,7 +5927,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000119 :: http://www.ncbi.nlm.nih.gov/pubmed/25052702
  - oboInOwl:inSubset :: obo:RO_0002259
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:comment :: x has evidence y iff , x is  an information content entity, material entity or process, and y supports either the existence of x, or the truth value of x.
  - SubPropertyOf :: obo:RO_0002616
  - InverseOf :: obo:RO_0002472
@@ -5920,7 +5935,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: A relationship between a piece of evidence a and some entity b, where b is  an information content entity, material entity or process, and
           the a supports either the existence of b, or the truth value of b.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002616
  - InverseOf :: obo:RO_0002558
 **** is evidence with support from (obo:RO_0002614)
@@ -6140,7 +6155,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000119 :: https://en.wikipedia.org/wiki/Allen%27s_interval_algebra
  - obo:IAO_0000232 :: Do not use this relation directly. It is ended as a grouping for relations between occurrents involving the relative timing of their starts and ends.
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:comment :: A relation that holds between two occurrents. This is a grouping relation that collects together all the Allen relations.
  - terms:source :: "https://docs.google.com/document/d/1kBv1ep_9g3sTR-SD3jqzFqhuwo9TPNF-l-9fUDbO6rM/edit?pli=1"^^xsd:anyURI
  - Domain :: obo:BFO_0000003
@@ -6148,12 +6163,12 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** "before or simultaneous with"@en (obo:RO_0002081)
  - obo:IAO_0000117 :: David Osumi-Sutherland
  - obo:IAO_0000118 :: "<="@en
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:comment :: Primitive instance level timing relation between events
  - SubPropertyOf :: obo:RO_0002222
 ***** "before"@en (obo:RO_0002083)
  - obo:IAO_0000117 :: David Osumi-Sutherland
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:comment :: "t1 before t2 iff:=  t1 before_or_simulataneous_with t2  and not (t1 simultaeous_with t2)"@en
  - SubPropertyOf :: obo:RO_0002081
  - Characteristics :: Transitive
@@ -6161,19 +6176,19 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: x simultaneous with y iff ω(x) = ω(y) and ω(α ) = ω(α), where α is a function that maps a process to a start point, and ω is a function that maps a process to an end point and '=' indicates the same instance in time.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-7073-9172
  - obo:IAO_0000117 :: David Osumi-Sutherland
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:comment :: "t1 simultaneous_with t2 iff:=  t1 before_or_simultaneous_with t2  and not (t1 before t2)"@en
  - SubPropertyOf :: obo:RO_0002081
  - Characteristics :: Transitive, Symmetric
 **** "during which ends"@en (obo:RO_0002084)
  - obo:IAO_0000117 :: David Osumi-Sutherland
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:comment :: Previously had ID  http://purl.obolibrary.org/obo/RO_0002122 in test files in sandpit - but this seems to have been dropped from ro-edit.owl at some point.  No re-use under this ID AFAIK, but leaving note here in case we run in to clashes down the line.  Official ID now chosen from DOS ID range.
  - SubPropertyOf :: obo:RO_0002222
  - InverseOf :: obo:RO_0002093
 **** "during which starts"@en (obo:RO_0002088)
  - obo:IAO_0000117 :: David Osumi-Sutherland
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:comment :: Previously had ID  http://purl.obolibrary.org/obo/RO_0002123 in test files in sandpit - but this seems to have been dropped from ro-edit.owl at some point.  No re-use under this ID AFAIK, but leaving note here in case we run in to clashes down the line.  Official ID now chosen from DOS ID range.
  - SubPropertyOf :: obo:RO_0002222
  - InverseOf :: obo:RO_0002091
@@ -6186,7 +6201,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - Characteristics :: Transitive
 **** "ends after"@en (obo:RO_0002086)
  - obo:IAO_0000117 :: David Osumi-Sutherland
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:comment :: "X ends_after Y iff: end(Y) before_or_simultaneous_with end(X)"@en
  - SubPropertyOf :: obo:RO_0002222
  - SubPropertyChain :: obo:RO_0002093 o obo:BFO_0000062
@@ -6197,7 +6212,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000116 :: "An example is: translation preceded_by transcription; aging preceded_by development (not however death preceded_by aging). Where derives_from links classes of continuants, preceded_by links classes of processes. Clearly, however, these two relations are not independent of each other. Thus if cells of type C1 derive_from cells of type C, then any cell division involving an instance of C1 in a given lineage is preceded_by cellular processes involving an instance of C.    The assertion P preceded_by P1 tells us something about Ps in general: that is, it tells us something about what happened earlier, given what we know about what happened later. Thus it does not provide information pointing in the opposite direction, concerning instances of P1 in general; that is, that each is such as to be succeeded by some instance of P. Note that an assertion to the effect that P preceded_by P1 is rather weak; it tells us little about the relations between the underlying instances in virtue of which the preceded_by relation obtains. Typically we will be interested in stronger relations, for example in the relation immediately_preceded_by, or in relations which combine preceded_by with a condition to the effect that the corresponding instances of P and P1 share participants, or that their participants are connected by relations of derivation, or (as a first step along the road to a treatment of causality) that the one process in some way affects (for example, initiates or regulates) the other."@en
  - obo:IAO_0000118 :: "preceded_by"@en
  - obo:IAO_0000118 :: "is preceded by"@en
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - terms:source :: http://www.obofoundry.org/ro/#OBO_REL:preceded_by
  - SubPropertyOf :: obo:RO_0002086
  - Domain :: obo:BFO_0000003
@@ -6231,14 +6246,14 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000117 :: David Osumi-Sutherland
  - obo:IAO_0000118 :: o
  - obo:IAO_0000118 :: overlaps
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:comment :: "X ends_during Y iff: ((start(Y) before_or_simultaneous_with end(X)) AND end(X) before_or_simultaneous_with end(Y). "@en
  - SubPropertyOf :: obo:RO_0002222
  - InverseOf :: obo:RO_0002084
 **** "precedes"@en (obo:BFO_0000063)
  - obo:IAO_0000111 :: "precedes"@en
  - obo:IAO_0000115 :: "x precedes y if and only if the time point at which x ends is before or equivalent to the time point at which y starts. Formally: x precedes y iff ω(x) <= α(y), where α is a function that maps a process to a start point, and ω is a function that maps a process to an end point."@en
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002222
  - Domain :: obo:BFO_0000003
  - Range :: obo:BFO_0000003
@@ -6417,7 +6432,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000118 :: ends_at_start_of
  - obo:IAO_0000118 :: meets
  - obo:RO_0002575 :: obo:BFO_0000063
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:comment :: "X immediately_precedes_Y iff: end(X) simultaneous_with start(Y)"@en
  - SubPropertyOf :: obo:BFO_0000063
  - InverseOf :: obo:RO_0002087
@@ -6441,14 +6456,14 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubPropertyChain :: obo:RO_0002402 o obo:RO_0002400
 **** "starts before"@en (obo:RO_0002089)
  - obo:IAO_0000117 :: David Osumi-Sutherland
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002222
  - SubPropertyChain :: obo:RO_0002091 o obo:BFO_0000060
  - Characteristics :: Transitive
 **** "starts during"@en (obo:RO_0002091)
  - obo:IAO_0000117 :: David Osumi-Sutherland
  - obo:IAO_0000118 :: io
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:comment :: "X starts_during Y iff: (start(Y) before_or_simultaneous_with start(X)) AND (start(X) before_or_simultaneous_with end(Y))"@en
  - SubPropertyOf :: obo:RO_0002222
  - Domain :: obo:BFO_0000003
@@ -6459,7 +6474,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000118 :: during
  - obo:IAO_0000118 :: d
  - oboInOwl:inSubset :: obo:valid_for_gocam
- - oboInOwl:inSubset :: obo:ro/subsets#ro-eco
+ - oboInOwl:inSubset :: subsets:ro-eco
  - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
  - rdfs:comment :: "X happens_during Y iff: (start(Y) before_or_simultaneous_with start(X)) AND (end(X) before_or_simultaneous_with end(Y))"@en
