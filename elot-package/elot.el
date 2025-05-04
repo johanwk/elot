@@ -540,7 +540,9 @@ unless it is an ontology section."
               (concat "<" this-ns this-localname ">")
             (if noerror
                 nil
-              (error "Fail! Prefix \"%s\" is not defined" this-prefix))))
+              ;;(error "Fail! Prefix \"%s\" is not defined" this-prefix)
+              ;; tentatively just let the raw value through
+              puri)))
           puri)))
 
 (defun elot-annotation-string-or-uri (str)
@@ -590,7 +592,7 @@ Expand uri, or return number, or wrap in quotes."
                                       ;; escape all quotes with \", note this gives invalid results if some are already escaped
                                       (concat "  \"" (replace-regexp-in-string "\"" "\\\\\"" str) "\"")))))
         (; else, a puri -- wrap in angles
-         t (concat "  " (elot-unprefix-uri str org-link-abbrev-alist-local)))))
+         t (concat "  " (elot-unprefix-uri str org-link-abbrev-alist-local :noerror)))))
 
 (defun elot-omn-restriction-string (str)
  "STR is wanted as an OMN value.  Strip any meta-annotations, or return unchanged."
