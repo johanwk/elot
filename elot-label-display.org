@@ -76,11 +76,17 @@ The following works well for getting all /in-buffer/ entities into a list.
 
   (defun elot-org-link-search (&rest strings)
     "Search for a `custom_id' heading in current buffer.
-  The concatenation of STRINGS is searched using `org-link-search'.
-  Return nil."
-    (prog1 nil
-      (ignore-errors (org-link-search (concat "#"
-                                              (apply #'concat strings))))))
+  The concatenation of STRINGS is searched.  If found, move point there
+  and return position.  If not found, return nil and leave point unchanged."
+    (let ((pos (save-excursion
+                 (goto-char (point-min))
+                 (re-search-forward (concat ":custom_id:\\s-*"
+                                            (apply #'concat strings)
+                                            "\\s-*$")
+                                    nil :noerror))))
+      (when pos
+        (goto-char pos))
+      pos))
 
   (defun elot-slurp-entities ()
     "Return a list of lists (URI, label, plist of attributes).
@@ -92,12 +98,12 @@ The following works well for getting all /in-buffer/ entities into a list.
       (if (re-search-forward ":ELOT-context-type: ontology" nil :noerror)
           (let ((context (elot-context-localname)))
             (append
-             (elot-org-link-search context "-datatypes")                     (elot-entities-with-plist (elot-org-subsection-descriptions) "rdfs:Datatype")
-             (elot-org-link-search context "-class-hierarchy")               (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:Class")
-             (elot-org-link-search context "-object-property-hierarchy")     (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:ObjectProperty")
-             (elot-org-link-search context "-data-property-hierarchy")       (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:DatatypeProperty")
-             (elot-org-link-search context "-annotation-property-hierarchy") (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:AnnotationProperty")
-             (elot-org-link-search context "-individuals")                   (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:NamedIndividual")))
+             (when (elot-org-link-search context "-datatypes")                     (elot-entities-with-plist (elot-org-subsection-descriptions) "rdfs:Datatype"))
+             (when (elot-org-link-search context "-class-hierarchy")               (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:Class"))
+             (when (elot-org-link-search context "-object-property-hierarchy")     (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:ObjectProperty"))
+             (when (elot-org-link-search context "-data-property-hierarchy")       (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:DatatypeProperty"))
+             (when (elot-org-link-search context "-annotation-property-hierarchy") (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:AnnotationProperty"))
+             (when (elot-org-link-search context "-individuals")                   (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:NamedIndividual"))))
         '())))
 
   (defun elot-codelist-from-slurp (slurp)
