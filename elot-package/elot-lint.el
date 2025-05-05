@@ -31,10 +31,7 @@
   "Refresh `elot-slurp', then do `org-lint'"
   (interactive)
   (elot-label-display-setup)
-  (org-lint)
-  (pop-to-buffer "*Org Lint*")
-  (revert-buffer))
-
+  (call-interactively #'org-lint))
 
 (defun elot-check-nodeclare-id-prefix-label (tree)
   "ELOT rule: check ID, prefix, and label format under :resourcedefs:."
