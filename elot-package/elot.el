@@ -1923,6 +1923,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 (easy-menu-define elot-menu org-mode-map
   "ELOT Ontology Authoring Menu"
   '("ELOT"
+    ["Check for common problens" elot-org-lint t]
     ["Export to OWL" org-babel-tangle t]
     ["Export to HTML" (lambda () (interactive) (browse-url-of-file (expand-file-name (org-html-export-to-html)))) t]
     ["Import OWL ontology" elot-open-owl t]

@@ -106,6 +106,7 @@
   (add-hook 'after-save-hook #'elot-update-link-abbrev)
   ;; the label display functions are in a separate file
   (require 'elot-label-display)
+  (require 'elot-lint)
   (declare-function elot-label-display-setup "elot-label-display.el")
   (elot-label-display-setup)
   (declare-function elot-hydra/body "elot.el")
