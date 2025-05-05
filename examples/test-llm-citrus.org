@@ -3,13 +3,10 @@
 #+subtitle: An OWL Ontology about Citrus Fruits
 #+author: AI Assistant
 #+date: WIP (version of 2025-03-30 15:46)
-# #+call: theme-elot()
+#+call: theme-elot()
 
-#+OPTIONS: html-style:nil toc:t
-#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="https://johanwk.github.io/elot/elot-package/elot-style.css"/>
-#+HTML_HEAD: <script src="https://johanwk.github.io/elot/elot-package/elot-nav.js"></script>
-
-
+# allow "broken links" or you have to include xsd:decumal under Datatypes
+#+OPTIONS: broken-links:t
 * citrus
 :PROPERTIES:
 :ID: citrus
