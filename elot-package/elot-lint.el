@@ -2,6 +2,8 @@
 (require 'org-element)
 (require 'org-lint)
 (require 'ox)
+(require 'elot)
+(require 'elot-label-display)
 
 (defun elot--resourcedefs-here-p ()
   "Return t if headline at point sets :resourcedefs: yes."
@@ -20,6 +22,19 @@
 (defvar elot-slurp)
 (defvar elot-omn-all-keywords)
 (defvar elot-owl-builtin-resources)
+
+;; A function that goes in the ELOT menu. First we refresh elot-slurp
+;; with elot-label-display-setup, to pick up recent changes that may
+;; cause problems.
+(declare-function elot-label-display-setup "elot-label-display")
+(defun elot-org-lint ()
+  "Refresh `elot-slurp', then do `org-lint'"
+  (interactive)
+  (elot-label-display-setup)
+  (org-lint)
+  (pop-to-buffer "*Org Lint*")
+  (revert-buffer))
+
 
 (defun elot-check-nodeclare-id-prefix-label (tree)
   "ELOT rule: check ID, prefix, and label format under :resourcedefs:."
