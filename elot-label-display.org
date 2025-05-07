@@ -71,7 +71,7 @@ The following works well for getting all /in-buffer/ entities into a list.
                           (match-string 1 header) puri)))
                 (list
                  puri label
-                 (append `("rdf:label" ,label "rdf:type" ,owl-type) annotations-plist))))
+                 (append `("rdfs:label" ,label "rdf:type" ,owl-type) annotations-plist))))
             subsection-descriptions))
 
   (defun elot-org-link-search (&rest strings)
@@ -125,7 +125,7 @@ The following works well for getting all /in-buffer/ entities into a list.
 #+end_src
 
 Results will look like this: three entries, id, label, and plist of
-annotations. /Update/: added also "rdf:label" to the plist.
+annotations. /Update/: added also "rdfs:label" to the plist.
 #+begin_example
 (("obo:BFO_0000001" "entity"
   ("rdf:type" "owl:Class" "dc11:identifier" "001-BFO" "skos:definition" "\"(Elucidation) An entity is anything that exists or has existed or will exist\"@en" "skos:example" "\"Julius Caesar; the Second World War; your body mass index; Verdi's Requiem\"@en"))

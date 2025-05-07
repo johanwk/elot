@@ -49,7 +49,7 @@ Arguments are a list SUBSECTION-DESCRIPTIONS produced by
                         (match-string 1 header) puri)))
               (list
                puri label
-               (append `("rdf:label" ,label "rdf:type" ,owl-type) annotations-plist))))
+               (append `("rdfs:label" ,label "rdf:type" ,owl-type) annotations-plist))))
           subsection-descriptions))
 
 (defun elot-org-link-search (&rest strings)
