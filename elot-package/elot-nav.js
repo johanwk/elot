@@ -7,6 +7,86 @@ document.addEventListener("DOMContentLoaded", function() {
         sidebar.innerHTML = toc.innerHTML;
         toc.parentNode.removeChild(toc);
         document.body.appendChild(sidebar);
+
+        // Clean up ToC: hide trailing Elot identifiers, remove section numbers below level 3,
+        // and pad entries without children for alignment
+        var tocLinks = sidebar.querySelectorAll("a");
+        tocLinks.forEach(function(link) {
+            // Remove trailing identifier in parentheses
+            link.textContent = link.textContent.replace(/\s*\([^)]+\)\s*$/, '');
+
+            var li = link.closest("li");
+
+            // Determine depth by counting ancestor <ul> elements
+            var depth = 0;
+            var parent = li;
+            while (parent !== sidebar && parent.parentNode) {
+                if (parent.parentNode.tagName === "UL") {
+                    depth++;
+                }
+                parent = parent.parentNode;
+            }
+
+            // For depth >= 3, replace the leading section number with thin spaces
+            if (depth >= 3) {
+                link.textContent = link.textContent.replace(/^\s*([\d.]+)\s+/, function(match, p1) {
+                    var spaceCount = Math.max(1, p1.length - 4);
+                    var thinSpaces = '\u2009'.repeat(spaceCount);
+                    return thinSpaces + ' ';
+                });
+            }
+
+            // If this <li> has NO sublist, add a spacer to align with toggle icons
+            if (!li.querySelector("ul")) {
+                var spacer = document.createElement("span");
+                spacer.className = "toc-spacer";
+                spacer.textContent = " "; // Unicode U+2003 EM SPACE (~width of ▶)
+                link.parentNode.insertBefore(spacer, link);
+            }
+        });
+
+        // Enhance sidebar: collapsible headings
+        var sidebarListItems = sidebar.querySelectorAll("li");
+        sidebarListItems.forEach(function(li) {
+            var sublist = li.querySelector("ul");
+            if (sublist) {
+                li.classList.add("has-children");
+
+                // Initial state: expand levels 1 and 2
+                var depth = 1;
+                var parent = li;
+                while (parent !== sidebar && parent.parentNode) {
+                    if (parent.parentNode.tagName === "UL") {
+                        depth++;
+                    }
+                    parent = parent.parentNode;
+                }
+
+                if (depth <= 2) {
+                    sublist.style.display = "block"; // expanded
+                } else {
+                    sublist.style.display = "none"; // collapsed
+                }
+
+                // Add a clickable icon to expand/collapse
+                var toggle = document.createElement("span");
+                toggle.className = "toc-toggle";
+                toggle.textContent = depth <= 2 ? "▼ " : "▶ ";
+                toggle.style.cursor = "pointer";
+                toggle.addEventListener("click", function(e) {
+                    e.preventDefault();
+                    if (sublist.style.display === "none") {
+                        sublist.style.display = "block";
+                        toggle.textContent = "▼ ";
+                    } else {
+                        sublist.style.display = "none";
+                        toggle.textContent = "▶ ";
+                    }
+                });
+
+                li.insertBefore(toggle, li.firstChild);
+            }
+        });
     }
 
     // Add copy-link buttons to all headings h1-h15
@@ -34,4 +114,5 @@ document.addEventListener("DOMContentLoaded", function() {
             heading.appendChild(button);
         }
     });
+
 });
