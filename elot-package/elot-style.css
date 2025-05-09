@@ -1,6 +1,6 @@
 /* Body */
 body {
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    # font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     line-height: 1.6;
     font-size: 16px;
     color: #333;
@@ -62,6 +62,27 @@ body {
     font-size: 90%;
 }
 
+#elot-sidebar .toc-toggle {
+    font-size: 0.8em;
+    margin-right: 0.3em;
+    user-select: none;
+}
+
+#elot-sidebar li.has-children {
+    list-style-type: none; /* remove bullet when toggle is present */
+}
+
+#elot-sidebar .section-number {
+    display: none;
+}
+
+#elot-sidebar .toc-spacer {
+    display: inline-block;
+    width: 1em;
+    text-align: center;
+    user-select: none;
+}
+
 /* Heading styles */
 h1 {
     font-weight: 700;
@@ -99,7 +120,6 @@ span.nodeclare {
     font-size: 90%;     /* Slightly smaller */
 }
 
-
 /* Uniform small headings for deep ontology classes */
 h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15 {
     font-weight: bold;
@@ -111,9 +131,31 @@ h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15 {
     padding-bottom: 0.2em;
 }
 
+/* Make only the number part of h4+ headings non-bold */
+h4 .section-number-4,
+h5 .section-number-5,
+h6 .section-number-6,
+h7 .section-number-7,
+h8 .section-number-8,
+h9 .section-number-9,
+h10 .section-number-10,
+h11 .section-number-11,
+h12 .section-number-12,
+h13 .section-number-13,
+h14 .section-number-14,
+h15 .section-number-15 {
+    font-weight: normal;
+    color: #999;        /* Light grey */
+}
+
+.collapse-toggle {
+    cursor: pointer;
+    margin-right: 0.3em;
+    user-select: none;
+}
+
 
 /* Description Lists */
-
 dl {
     margin: 1em 0;
     padding-left: 2em; /* indent list under heading */
@@ -139,7 +181,6 @@ dt + dd::after {
     content: "\A"; 
     white-space: pre;
 }
-
 
 /* OMN keyword highlight */
 dt.elot-omn-keyword {
