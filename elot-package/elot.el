@@ -763,6 +763,28 @@ This is a helper function for `elot-resource-declarations'."
       (elot-omn-restrict x)))
    l "\n"))
 
+(defun elot-format-misc-axiom-annotations (keyword input)
+  "Format a string with annotations inline using ELOT-style annotation block."
+  (let* ((main-part (car (split-string input " - "))) ; get the part before any annotations
+         (annotations (cdr (split-string input " - ")))
+         (pairs (mapcar (lambda (ann)
+                          (when (string-match "\\`\\(.+\\)::\\(.*\\)\\'" (string-trim ann))
+                            (cons (string-trim (match-string 1 ann))
+                                  (string-trim (match-string 2 ann)))))
+                        annotations))
+         (valid-pairs (delq nil pairs)))
+    (concat
+     (when valid-pairs
+       (if (string= keyword "Rule")
+           (message "# WARNING: Rule annotations are not supported in Manchester Syntax\n    ")
+         (concat " Annotations: "
+                 (mapconcat (lambda (pair)
+                              (format "%s \"%s\"" (car pair) (cdr pair)))
+                            valid-pairs
+                            ",\n       ")
+                 "\n  ")))
+         main-part)))
+
 (defun elot-misc-axioms ()
   "Output OMN axioms for `elot-omn-misc-keywords' in buffer.
 These are axioms not tied to a single resource.
@@ -773,7 +795,9 @@ If no axioms are found, return nil."
            (mapconcat
             (lambda (l)
               (concat (car l) ": "
-                      (replace-regexp-in-string ":newline:" " " (cadr l))))
+                      (elot-format-misc-axiom-annotations
+                       (car l)
+                       (replace-regexp-in-string ":newline:" "" (cadr l)))))
             (org-element-map (org-element-parse-buffer) 'item
               (lambda (item)
                 (let* ((pair (elot-org-elt-item-str item))
@@ -809,7 +833,7 @@ and accordingly for `object-property', `data-property', and
            (list
             (elot-resource-declarations entity-l owl-type)
             (if misc-axioms
-                (concat "\n#### Miscellaneous axioms under " owl-type " declarations\n"))
+                (concat "\n\n#### Miscellaneous axioms under " owl-type " declarations\n"))
             misc-axioms))
         "## (none)"))))
 ;; src-resource-declare ends here
