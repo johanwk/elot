@@ -3,12 +3,15 @@
 #+subtitle: An OWL ontology
 #+author: 
 #+date: WIP (version of 2025-05-15 00:50)
-#+call: theme-readtheorg()
+#+call: theme-elot()
 
 # This org-mode file was created using elot-exporter version 0.8-SNAPSHOT.
 # Source ontology: [Local File] c:/Users/jowik/AppData/Local/Temp/elot-ontology-0tsks8.owl
 
 # Change the output file location by editing the :header-args:omn: :tangle property below.
+
+#+OPTIONS: broken-links:mark
+#+OPTIONS: ^:{} H:14 num:14
 
 * Ontology
 :PROPERTIES:
