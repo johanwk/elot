@@ -2,11 +2,11 @@
 #+title: OBO Relations Ontology
 #+subtitle: An OWL ontology
 #+author: 
-#+date: WIP (version of 2025-05-04 20:30)
+#+date: WIP (version of 2025-05-15 00:34)
 #+call: theme-readtheorg()
 
-# This org-mode file was created using elot-exporter version 0.7-SNAPSHOT.
-# Source ontology: [Local File] c:/Users/jowik/AppData/Local/Temp/elot-ontology-Ufkexk.owl
+# This org-mode file was created using elot-exporter version 0.8-SNAPSHOT.
+# Source ontology: [Local File] c:/Users/jowik/AppData/Local/Temp/elot-ontology-Ol9VBA.owl
 
 # Change the output file location by editing the :header-args:omn: :tangle property below.
 
@@ -17,12 +17,14 @@ After elot-open-owl, we have some annotation entries like the following
 :  - oboInOwl:hasDbXref :: obo:chebi#has_functional_parent
 These don't get interpreted correctly on export to OWL from this ELOT file.
 
-Note that ~obo:chebi#~ isn't provided with a prefix in the original file. So a prefix was added in the prefix table below. (On checking, the links don't work, though.)
+~obo:chebi#~ isn't provided with a prefix in the original file. A prefix was added in the prefix table below.
 
 To get correct output, this file was edited with replacements:
 : obo:uberon/core#  -->  core:
 : obo:ro/subsets#  --> subsets:
 : obo:chebi#  -->  chebi:
+
+This ontology uses annotations on rules, which are unfortunately not interpreted by OWLAPI when read from Manchester Syntax, and will be lost on export!
 
 * ro.owl
 :PROPERTIES:
@@ -157,10 +159,52 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 :resourcedefs: yes
 :END:
 
-*** Disjointness clauses                                          :nodeclare:
-#+begin_src omn
-#+end_src
-
+*** Rules      :nodeclare:
+ - Rule :: obo:GO_0003674(?y), obo:RO_0002327(?x, ?y), obo:BFO_0000051(?y, ?z) -> obo:RO_0002327(?x, ?z)
+    - rdfs:comment :: GP(X)-enables->MF(Y)-has_part->MF(Z) => GP(X) enables MF(Z),
+          e.g.  if GP X enables ATPase coupled transporter activity' and 'ATPase coupled transporter activity' has_part 'ATPase activity' then GP(X) enables 'ATPase activity'
+    - rdfs:label :: enabling an MF enables its parts
+ - Rule :: obo:RO_0002212(?x, ?y), obo:RO_0002213(?y, ?z) -> obo:RO_0002212(?x, ?z)
+ - Rule :: obo:RO_0002212(?y, ?z), obo:RO_0002213(?x, ?y) -> obo:RO_0002212(?x, ?z)
+ - Rule :: obo:RO_0002211(?p, ?q), obo:RO_0012011(?p, ?q) -> obo:RO_0012012(?p, ?q)
+ - Rule :: obo:RO_0002025(?mf, ?eff), obo:RO_0002233(?eff, ?in) -> obo:RO_0002233(?mf, ?in)
+    - rdfs:label :: effector input is compound function input
+ - Rule :: obo:RO_0002411(?y, ?z), obo:RO_0002264(?x, ?y) -> obo:RO_0002263(?x, ?z)
+ - Rule :: obo:RO_0002025(?mf, ?eff), obo:RO_0002629(?mf, ?mf2) -> obo:RO_0002629(?eff, ?mf2)
+    - rdfs:comment :: if effector directly positively regulates X,  its parent MF directly positively regulates X
+ - Rule :: obo:RO_0000053(?e, ?d), obo:BFO_0000023(?d) -> obo:RO_0000087(?e, ?d)
+ - Rule :: obo:RO_0002025(?mf, ?eff), obo:RO_0002233(?mf, ?in) -> obo:RO_0002233(?eff, ?in)
+    - rdfs:label :: Input of effector is input of its parent MF
+ - Rule :: obo:RO_0002327(?<http://purl.obolibrary.org/obo/ro.owl#z>, ?<http://purl.obolibrary.org/obo/ro.owl#y>), obo:RO_0002578(?<http://purl.obolibrary.org/obo/ro.owl#x>, ?<http://purl.obolibrary.org/obo/ro.owl#y>), obo:GO_0003674(?<http://purl.obolibrary.org/obo/ro.owl#x>), obo:GO_0003674(?<http://purl.obolibrary.org/obo/ro.owl#y>) -> obo:RO_0002233(?<http://purl.obolibrary.org/obo/ro.owl#x>, ?<http://purl.obolibrary.org/obo/ro.owl#z>)
+    - swrla:isRuleEnabled :: true
+    - rdfs:comment :: MF(X)-directly_regulates->MF(Y)-enabled_by->GP(Z) => MF(Y)-has_input->GP(Y) e.g. if 'protein kinase activity'(X) directly_regulates 'protein binding activity (Y)and this is enabled by GP(Z) then X has_input Z
+    - rdfs:label :: infer input from direct reg
+ - Rule :: obo:RO_0002352(?B, ?C), obo:RO_0002333(?A, ?B), obo:RO_0002015(?D, ?C) -> obo:RO_0002629(?A, ?D)
+    - rdfs:label :: inferring direct positive reg edge from input to regulatory subfunction
+ - Rule :: obo:RO_0002131(?x, ?y), obo:RO_0002404(?x, ?y) -> owl:Nothing(?y), owl:Nothing(?x)
+    - rdfs:label :: 'causally downstream of' and 'overlaps' should be disjoint properties (a SWRL rule is required because these are non-simple properties).
+ - Rule :: obo:RO_0002212(?x, ?y), obo:RO_0019002(?y, ?z) -> obo:RO_0019001(?x, ?z)
+ - Rule :: obo:RO_0002180(?w, ?p), obo:BFO_0000015(?w), obo:BFO_0000015(?p) -> obo:RO_0002018(?w, ?p)
+ - Rule :: obo:GO_0008150(?z), obo:BFO_0000050(?y, ?z), obo:RO_0002327(?x, ?y) -> obo:RO_0002331(?x, ?z)
+    - swrla:isRuleEnabled :: true
+    - rdfs:comment :: GP(X)-enables->MF(Y)-part_of->BP(Z) => GP(X) involved_in BP(Z) e.g. if X enables 'protein kinase activity' and Y 'part of' 'signal tranduction' then X involved in 'signal transduction'
+    - rdfs:label :: involved in BP
+ - Rule :: obo:RO_0000053(?e, ?d), obo:BFO_0000019(?d) -> obo:RO_0000086(?e, ?d)
+ - Rule :: obo:RO_0002131(?x, ?y), obo:RO_0002411(?x, ?y) -> owl:Nothing(?y), owl:Nothing(?x)
+    - rdfs:label :: 'causally upstream of' and 'overlaps' should be disjoint properties (a SWRL rule is required because these are non-simple properties).
+ - Rule :: obo:RO_0002630(?mf, ?mf2), obo:RO_0002025(?mf, ?eff) -> obo:RO_0002630(?eff, ?mf2)
+    - rdfs:label :: if effector directly negatively regulates X,  its parent MF directly negatively regulates X
+ - Rule :: obo:RO_0002352(?B, ?C), obo:RO_0002333(?A, ?B), obo:RO_0002013(?D, ?C) -> obo:RO_0002578(?A, ?D)
+    - rdfs:comment :: If a molecular function (X) has a regulatory subfunction, then any gene product which is an input to that subfunction has an activity that directly_regulates X.  Note:  this is intended for cases where the regaultory subfunction is protein binding, so it could be tightened with an additional clause to specify this.
+    - rdfs:label :: inferring direct reg edge from input to regulatory subfunction
+ - Rule :: obo:RO_0002578(?mf, ?mf2), obo:RO_0002025(?mf, ?eff) -> obo:RO_0002578(?eff, ?mf2)
+    - rdfs:comment :: if effector directly regulates X,  its parent MF directly regulates X
+ - Rule :: obo:RO_0000053(?e, ?d), obo:BFO_0000034(?d) -> obo:RO_0000085(?e, ?d)
+ - Rule :: obo:RO_0002352(?B, ?C), obo:RO_0002333(?A, ?B), obo:RO_0002014(?D, ?C) -> obo:RO_0002630(?A, ?D)
+    - rdfs:label :: inferring direct neg reg edge from input to regulatory subfunction
+ - Rule :: obo:RO_0000053(?e, ?d), obo:BFO_0000016(?d) -> obo:RO_0000091(?e, ?d)
+ - Rule :: obo:RO_0002411(?p, ?q), obo:RO_0002411(?q, ?u) -> obo:RO_0012011(?p, ?u)
+ - Rule :: obo:RO_0002578(?a1, ?a2), obo:GO_0016301(?a1), obo:RO_0002333(?a1, ?g1), obo:RO_0002333(?a2, ?g2) -> obo:RO_0002447(?g1, ?g2)
 *** obo:COB_0000121
 *** "continuant"@en (obo:BFO_0000002)
  - obo:IAO_0000115 :: "An entity that exists in full at any time in which it exists at all, persists through time while maintaining its identity and has no temporal parts."@en
@@ -182,30 +226,30 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: Biological entity that is either an individual member of a biological species or constitutes the structural organization of an individual member of a biological species.
     - oboInOwl:hasDbXref :: FMA:62955
     - oboInOwl:hasDbXref :: http://orcid.org/0000-0001-9114-8737
- - obo:RO_0002175 :: obo:NCBITaxon_4751
  - obo:RO_0002175 :: obo:NCBITaxon_33090
- - oboInOwl:hasDbXref :: TAO:0100000
- - oboInOwl:hasDbXref :: AEO:0000000
+ - obo:RO_0002175 :: obo:NCBITaxon_4751
  - oboInOwl:hasDbXref :: NCIT:C12219
- - oboInOwl:hasDbXref :: BFO:0000004
+ - oboInOwl:hasDbXref :: XAO:0000000
+ - oboInOwl:hasDbXref :: TAO:0100000
+ - oboInOwl:hasDbXref :: CARO:0000000
+ - oboInOwl:hasDbXref :: WBbt:0000100
+ - oboInOwl:hasDbXref :: AEO:0000000
+ - oboInOwl:hasDbXref :: EHDAA2:0002229
+ - oboInOwl:hasDbXref :: FMA:62955
+ - oboInOwl:hasDbXref :: HAO:0000000
+ - oboInOwl:hasDbXref :: TGMA:0001822
  - oboInOwl:hasDbXref :: UMLS:C1515976
     - oboInOwl:source :: ncithesaurus:Anatomic_Structure_System_or_Substance
- - oboInOwl:hasDbXref :: MA:0000001
  - oboInOwl:hasDbXref :: AAO:0010841
  - oboInOwl:hasDbXref :: BILA:0000000
+ - oboInOwl:hasDbXref :: MA:0000001
  - oboInOwl:hasDbXref :: BIRNLEX:6
- - oboInOwl:hasDbXref :: CARO:0000000
- - oboInOwl:hasDbXref :: HAO:0000000
- - oboInOwl:hasDbXref :: FMA:62955
+ - oboInOwl:hasDbXref :: BFO:0000004
  - oboInOwl:hasDbXref :: ZFA:0100000
- - oboInOwl:hasDbXref :: EHDAA2:0002229
- - oboInOwl:hasDbXref :: TGMA:0001822
- - oboInOwl:hasDbXref :: WBbt:0000100
- - oboInOwl:hasDbXref :: XAO:0000000
  - oboInOwl:id :: UBERON:0001062
- - oboInOwl:inSubset :: core:upper_level
  - oboInOwl:inSubset :: core:common_anatomy
  - oboInOwl:inSubset :: core:mouse_subset
+ - oboInOwl:inSubset :: core:upper_level
  - oboInOwl:inSubset :: core:human_subset
  - EquivalentTo :: obo:RO_0020105 some  Self 
 ***** "immaterial entity"@en (obo:BFO_0000141)
@@ -215,23 +259,23 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - oboInOwl:hasDbXref :: http://orcid.org/0000-0001-9114-8737
  - obo:RO_0002175 :: obo:NCBITaxon_4751
  - obo:RO_0002175 :: obo:NCBITaxon_33090
- - oboInOwl:hasDbXref :: AEO:0000007
- - oboInOwl:hasDbXref :: HAO:0000007
- - oboInOwl:hasDbXref :: EHDAA2:0003007
- - oboInOwl:hasDbXref :: FMA:67112
- - oboInOwl:hasDbXref :: CARO:0000007
- - oboInOwl:hasDbXref :: AAO:0010265
- - oboInOwl:hasDbXref :: BILA:0000007
- - oboInOwl:hasDbXref :: TGMA:0001827
  - oboInOwl:hasDbXref :: VHOG:0001727
  - oboInOwl:hasDbXref :: TAO:0001835
+ - oboInOwl:hasDbXref :: FMA:67112
+ - oboInOwl:hasDbXref :: CARO:0000007
+ - oboInOwl:hasDbXref :: EHDAA2:0003007
+ - oboInOwl:hasDbXref :: AAO:0010265
+ - oboInOwl:hasDbXref :: BILA:0000007
+ - oboInOwl:hasDbXref :: HAO:0000007
+ - oboInOwl:hasDbXref :: AEO:0000007
+ - oboInOwl:hasDbXref :: TGMA:0001827
  - oboInOwl:hasExactSynonym :: immaterial physical anatomical entity
     - oboInOwl:hasDbXref :: FMA:67112
  - oboInOwl:id :: UBERON:0000466
  - oboInOwl:inSubset :: core:common_anatomy
- - oboInOwl:inSubset :: core:upper_level
  - oboInOwl:inSubset :: core:mouse_subset
  - oboInOwl:inSubset :: core:human_subset
+ - oboInOwl:inSubset :: core:upper_level
  - SubClassOf :: obo:UBERON_0001062
  - DisjointWith :: obo:UBERON_0000465
 ****** "spatial region"@en (obo:BFO_0000006)
@@ -244,68 +288,68 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - oboInOwl:hasDbXref :: http://orcid.org/0000-0001-9114-8737
  - obo:RO_0002175 :: obo:NCBITaxon_4751
  - obo:RO_0002175 :: obo:NCBITaxon_33090
+ - oboInOwl:hasDbXref :: HAO:0000006
  - oboInOwl:hasDbXref :: AEO:0000006
+ - oboInOwl:hasDbXref :: CARO:0000006
+ - oboInOwl:hasDbXref :: EHDAA2:0003006
+ - oboInOwl:hasDbXref :: TAO:0001836
+ - oboInOwl:hasDbXref :: BILA:0000006
+ - oboInOwl:hasDbXref :: FMA:67165
  - oboInOwl:hasDbXref :: TGMA:0001826
  - oboInOwl:hasDbXref :: VHOG:0001721
  - oboInOwl:hasDbXref :: AAO:0010264
- - oboInOwl:hasDbXref :: TAO:0001836
- - oboInOwl:hasDbXref :: CARO:0000006
- - oboInOwl:hasDbXref :: HAO:0000006
- - oboInOwl:hasDbXref :: BILA:0000006
- - oboInOwl:hasDbXref :: FMA:67165
- - oboInOwl:hasDbXref :: EHDAA2:0003006
  - oboInOwl:id :: UBERON:0000465
- - oboInOwl:inSubset :: core:human_subset
- - oboInOwl:inSubset :: core:common_anatomy
  - oboInOwl:inSubset :: core:mouse_subset
  - oboInOwl:inSubset :: core:upper_level
+ - oboInOwl:inSubset :: core:human_subset
+ - oboInOwl:inSubset :: core:common_anatomy
  - SubClassOf :: obo:UBERON_0001062
  - DisjointWith :: obo:UBERON_0000466
 ******* anatomical structure (obo:UBERON_0000061)
  - obo:IAO_0000115 :: Material anatomical entity that is a single connected structure with inherent 3D shape generated by coordinated expression of the organism's own genome.
     - oboInOwl:hasDbXref :: CARO:0000003
- - obo:RO_0002175 :: obo:NCBITaxon_33090
  - obo:RO_0002175 :: obo:NCBITaxon_4751
- - oboInOwl:hasDbXref :: SCTID:362889002
- - oboInOwl:hasDbXref :: MA:0003000
- - oboInOwl:hasDbXref :: AAO:0010825
- - oboInOwl:hasDbXref :: ZFA:0000037
- - oboInOwl:hasDbXref :: http://dbpedia.org/ontology/AnatomicalStructure
- - oboInOwl:hasDbXref :: FMA:305751
- - oboInOwl:hasDbXref :: TAO:0000037
- - oboInOwl:hasDbXref :: EHDAA2:0003003
- - oboInOwl:hasDbXref :: FMA:67135
- - oboInOwl:hasDbXref :: HAO:0000003
- - oboInOwl:hasDbXref :: XAO:0003000
- - oboInOwl:hasDbXref :: VHOG:0001759
- - oboInOwl:hasDbXref :: CARO:0000003
- - oboInOwl:hasDbXref :: MESH:D000825
- - oboInOwl:hasDbXref :: EMAPA:0
+ - obo:RO_0002175 :: obo:NCBITaxon_33090
  - oboInOwl:hasDbXref :: TGMA:0001823
  - oboInOwl:hasDbXref :: BILA:0000003
- - oboInOwl:hasDbXref :: GAID:781
+ - oboInOwl:hasDbXref :: AAO:0010825
+ - oboInOwl:hasDbXref :: CARO:0000003
+ - oboInOwl:hasDbXref :: SCTID:362889002
+ - oboInOwl:hasDbXref :: FMA:305751
+ - oboInOwl:hasDbXref :: MA:0003000
+ - oboInOwl:hasDbXref :: XAO:0003000
+ - oboInOwl:hasDbXref :: FMA:67135
+ - oboInOwl:hasDbXref :: TAO:0000037
+ - oboInOwl:hasDbXref :: HAO:0000003
+ - oboInOwl:hasDbXref :: VHOG:0001759
+ - oboInOwl:hasDbXref :: EHDAA2:0003003
  - oboInOwl:hasDbXref :: AEO:0000003
+ - oboInOwl:hasDbXref :: GAID:781
+ - oboInOwl:hasDbXref :: ZFA:0000037
+ - oboInOwl:hasDbXref :: EMAPA:0
+ - oboInOwl:hasDbXref :: http://dbpedia.org/ontology/AnatomicalStructure
+ - oboInOwl:hasDbXref :: MESH:D000825
  - oboInOwl:hasExactSynonym :: biological structure
  - oboInOwl:hasExactSynonym :: connected biological structure
     - oboInOwl:hasDbXref :: CARO:0000003
  - oboInOwl:id :: UBERON:0000061
  - oboInOwl:inSubset :: core:upper_level
+ - oboInOwl:inSubset :: core:common_anatomy
  - oboInOwl:inSubset :: core:human_subset
  - oboInOwl:inSubset :: core:mouse_subset
- - oboInOwl:inSubset :: core:common_anatomy
 ******** cell (obo:CL_0000000)
  - obo:IAO_0000115 :: A material entity of anatomical origin (part of or deriving from an organism) that has as its parts a maximally connected cell compartment surrounded by a plasma membrane.
     - oboInOwl:hasDbXref :: CARO:mah
  - obo:IAO_0000116 :: "CL and GO definitions of cell differ based on inclusive or exclusive of cell wall, etc."@en
  - obo:IAO_0000116 :: "We struggled with this definition. We are worried about circularity. We also considered requiring the capability of metabolism."@en
- - oboInOwl:hasDbXref :: XAO:0003012
- - oboInOwl:hasDbXref :: KUPO:0000002
  - oboInOwl:hasDbXref :: GO:0005623
  - oboInOwl:hasDbXref :: WBbt:0004017
  - oboInOwl:hasDbXref :: MESH:D002477
+ - oboInOwl:hasDbXref :: XAO:0003012
  - oboInOwl:hasDbXref :: CALOHA:TS-2035
  - oboInOwl:hasDbXref :: VHOG:0001533
  - oboInOwl:hasDbXref :: FMA:68646
+ - oboInOwl:hasDbXref :: KUPO:0000002
  - rdfs:comment :: The definition of cell is intended to represent all cells, and thus a cell is defined as a material entity and not an anatomical structure, which implies that it is part of an organism (or the entirety of one).
 ********* neuron (obo:CL_0000540)
  - obo:IAO_0000115 :: The basic cellular unit of nervous tissue. Each neuron consists of a body, an axon, and dendrites. Their purpose is to receive, conduct, and transmit impulses in the nervous system.
@@ -313,9 +357,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - oboInOwl:hasDbXref :: http://en.wikipedia.org/wiki/Neuron
  - obo:RO_0002175 :: obo:NCBITaxon_9606
  - oboInOwl:hasDbXref :: BTO:0000938
- - oboInOwl:hasDbXref :: FMA:54527
  - oboInOwl:hasDbXref :: WBbt:0003679
  - oboInOwl:hasDbXref :: VHOG:0001483
+ - oboInOwl:hasDbXref :: FMA:54527
  - oboInOwl:hasDbXref :: CALOHA:TS-0683
  - oboInOwl:hasExactSynonym :: nerve cell
  - rdfs:comment :: These cells are also reportedly CD4-negative and CD200-positive. They are also capable of producing CD40L and IFN-gamma.
@@ -324,10 +368,10 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: Any neuron having a sensory function; an afferent neuron conveying sensory impulses.
     - oboInOwl:hasDbXref :: ISBN:0721662544
  - obo:RO_0002175 :: obo:NCBITaxon_9606
+ - oboInOwl:hasDbXref :: MESH:D011984
  - oboInOwl:hasDbXref :: BTO:0001037
  - oboInOwl:hasDbXref :: WBbt:0005759
  - oboInOwl:hasDbXref :: FMA:84649
- - oboInOwl:hasDbXref :: MESH:D011984
 ******** multicellular anatomical structure (obo:UBERON_0010000)
  - obo:IAO_0000115 :: An anatomical structure that has more than one cell as a part.
     - oboInOwl:hasDbXref :: CARO:0010000
@@ -338,8 +382,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - oboInOwl:hasDbXref :: FBbt:00100313
  - oboInOwl:id :: UBERON:0010000
  - oboInOwl:inSubset :: core:common_anatomy
- - oboInOwl:inSubset :: core:human_subset
  - oboInOwl:inSubset :: core:upper_level
+ - oboInOwl:inSubset :: core:human_subset
  - oboInOwl:inSubset :: core:mouse_subset
 ********* blood vessel (obo:UBERON_0001981)
  - obo:IAO_0000115 :: A vessel through which blood circulates in the body.
@@ -348,75 +392,75 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000116 :: consider adopting the EMAPA superclass 'vascular element', which includes microvasculature (e.g. capillaries), vascular plexus
  - oboInOwl:hasBroadSynonym :: vascular element
     - oboInOwl:hasDbXref :: EMAPA:35993
- - oboInOwl:hasDbXref :: NCIT:C12679
- - oboInOwl:hasDbXref :: EMAPA:35993
- - oboInOwl:hasDbXref :: AEO:0000207
  - oboInOwl:hasDbXref :: EMAPA:32743
- - oboInOwl:hasDbXref :: SCTID:361097006
+ - oboInOwl:hasDbXref :: NCIT:C12679
  - oboInOwl:hasDbXref :: MAT:0000393
- - oboInOwl:hasDbXref :: ZFA:0005314
- - oboInOwl:hasDbXref :: EHDAA:240
- - oboInOwl:hasDbXref :: FMA:63183
- - oboInOwl:hasDbXref :: UMLS:C0005847
-    - oboInOwl:source :: ncithesaurus:Blood_Vessel
- - oboInOwl:hasDbXref :: EHDAA2:0003252
- - oboInOwl:hasDbXref :: EFO:0000817
- - oboInOwl:hasDbXref :: XAO:0001011
- - oboInOwl:hasDbXref :: NLXANAT:090901
- - oboInOwl:hasDbXref :: GAID:169
- - oboInOwl:hasDbXref :: AAO:0011004
- - oboInOwl:hasDbXref :: Wikipedia:Blood_vessel
- - oboInOwl:hasDbXref :: MA:0000060
- - oboInOwl:hasDbXref :: CALOHA:TS-0080
- - oboInOwl:hasDbXref :: FMA:50722
- - oboInOwl:hasDbXref :: MESH:D001808
- - oboInOwl:hasDbXref :: VHOG:0001250
  - oboInOwl:hasDbXref :: BTO:0001102
  - oboInOwl:hasDbXref :: TAO:0002137
+ - oboInOwl:hasDbXref :: UMLS:C0005847
+    - oboInOwl:source :: ncithesaurus:Blood_Vessel
+ - oboInOwl:hasDbXref :: EHDAA:240
+ - oboInOwl:hasDbXref :: SCTID:361097006
+ - oboInOwl:hasDbXref :: CALOHA:TS-0080
+ - oboInOwl:hasDbXref :: NLXANAT:090901
+ - oboInOwl:hasDbXref :: AAO:0011004
+ - oboInOwl:hasDbXref :: EFO:0000817
+ - oboInOwl:hasDbXref :: GAID:169
+ - oboInOwl:hasDbXref :: MESH:D001808
+ - oboInOwl:hasDbXref :: AEO:0000207
+ - oboInOwl:hasDbXref :: EHDAA2:0003252
+ - oboInOwl:hasDbXref :: MA:0000060
+ - oboInOwl:hasDbXref :: FMA:50722
+ - oboInOwl:hasDbXref :: Wikipedia:Blood_vessel
+ - oboInOwl:hasDbXref :: XAO:0001011
+ - oboInOwl:hasDbXref :: EMAPA:35993
+ - oboInOwl:hasDbXref :: FMA:63183
+ - oboInOwl:hasDbXref :: ZFA:0005314
+ - oboInOwl:hasDbXref :: VHOG:0001250
  - oboInOwl:hasExactSynonym :: vascular tree organ region
     - oboInOwl:hasDbXref :: FMA:50722
  - oboInOwl:hasExactSynonym :: region of vascular tree organ
     - oboInOwl:hasDbXref :: FMA:50722
  - oboInOwl:id :: UBERON:0001981
- - oboInOwl:inSubset :: core:uberon_slim
- - oboInOwl:inSubset :: core:human_subset
- - oboInOwl:inSubset :: core:efo_slim
  - oboInOwl:inSubset :: core:mouse_subset
  - oboInOwl:inSubset :: core:pheno_slim
- - oboInOwl:inSubset :: core:vertebrate_core
+ - oboInOwl:inSubset :: core:uberon_slim
+ - oboInOwl:inSubset :: core:efo_slim
  - oboInOwl:inSubset :: core:human_reference_atlas
+ - oboInOwl:inSubset :: core:human_subset
+ - oboInOwl:inSubset :: core:vertebrate_core
 ********** capillary (obo:UBERON_0001982)
  - obo:IAO_0000115 :: Any of the smallest blood vessels connecting arterioles with venules.
     - oboInOwl:hasDbXref :: ISBN:0073040584
     - oboInOwl:hasDbXref :: Wikipedia:Capillary
     - oboInOwl:hasDbXref :: https://github.com/obophenotype/uberon/issues/137
  - obo:IAO_0000116 :: not all sources agree capillary is a blood vessel - consider adopting EMAPA superclass of vascular element
+ - oboInOwl:hasDbXref :: EMAPA:35198
+ - oboInOwl:hasDbXref :: MESH:D002196
+ - oboInOwl:hasDbXref :: NLXANAT:090902
+ - oboInOwl:hasDbXref :: CALOHA:TS-2006
+ - oboInOwl:hasDbXref :: MA:0000065
+ - oboInOwl:hasDbXref :: Wikipedia:Capillary
  - oboInOwl:hasDbXref :: UMLS:C0935624
     - oboInOwl:source :: ncithesaurus:Capillary
- - oboInOwl:hasDbXref :: NLXANAT:090902
+ - oboInOwl:hasDbXref :: TAO:0005250
  - oboInOwl:hasDbXref :: BTO:0002045
- - oboInOwl:hasDbXref :: CALOHA:TS-2006
- - oboInOwl:hasDbXref :: AAO:0010252
- - oboInOwl:hasDbXref :: EV:0100035
+ - oboInOwl:hasDbXref :: NCIT:C12685
  - oboInOwl:hasDbXref :: VHOG:0001253
  - oboInOwl:hasDbXref :: XAO:0000116
- - oboInOwl:hasDbXref :: MA:0000065
- - oboInOwl:hasDbXref :: EMAPA:35198
- - oboInOwl:hasDbXref :: EFO:0001906
- - oboInOwl:hasDbXref :: MESH:D002196
- - oboInOwl:hasDbXref :: Wikipedia:Capillary
- - oboInOwl:hasDbXref :: NCIT:C12685
  - oboInOwl:hasDbXref :: ZFA:0005250
+ - oboInOwl:hasDbXref :: EFO:0001906
  - oboInOwl:hasDbXref :: FMA:63194
- - oboInOwl:hasDbXref :: TAO:0005250
- - oboInOwl:hasExactSynonym :: capillary vessel
+ - oboInOwl:hasDbXref :: AAO:0010252
+ - oboInOwl:hasDbXref :: EV:0100035
  - oboInOwl:hasExactSynonym :: blood capillary
+ - oboInOwl:hasExactSynonym :: capillary vessel
  - oboInOwl:id :: UBERON:0001982
+ - oboInOwl:inSubset :: core:uberon_slim
+ - oboInOwl:inSubset :: core:vertebrate_core
  - oboInOwl:inSubset :: core:human_subset
  - oboInOwl:inSubset :: core:human_reference_atlas
  - oboInOwl:inSubset :: core:efo_slim
- - oboInOwl:inSubset :: core:uberon_slim
- - oboInOwl:inSubset :: core:vertebrate_core
  - oboInOwl:inSubset :: core:pheno_slim
  - oboInOwl:inSubset :: core:mouse_subset
  - rdfs:seeAlso :: https://github.com/obophenotype/uberon/issues/2186
@@ -428,24 +472,24 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - oboInOwl:hasDbXref :: CARO:0001001
  - oboInOwl:hasDbXref :: NLX:147821
  - oboInOwl:hasExactSynonym :: funiculus
- - oboInOwl:hasExactSynonym :: neural fiber bundle
  - oboInOwl:hasExactSynonym :: nerve fiber bundle
     - oboInOwl:hasDbXref :: FBbt:00005099
+ - oboInOwl:hasExactSynonym :: neural fiber bundle
  - oboInOwl:id :: UBERON:0000122
  - oboInOwl:inSubset :: core:mouse_subset
  - oboInOwl:inSubset :: core:human_subset
 ****** "organism"@en (obo:OBI_0100026)
  - obo:IAO_0000111 :: "organism"@en
- - obo:IAO_0000112 :: "fungus"@en
- - obo:IAO_0000112 :: "virus"@en
  - obo:IAO_0000112 :: "animal"@en
  - obo:IAO_0000112 :: "plant"@en
+ - obo:IAO_0000112 :: "virus"@en
+ - obo:IAO_0000112 :: "fungus"@en
  - obo:IAO_0000114 :: obo:IAO_0000122
  - obo:IAO_0000115 :: "A material entity that is an individual living system, such as animal, plant, bacteria or virus, that is capable of replicating or reproducing, growth and maintenance in the right environment. An organism may be unicellular or made up, like humans, of many billions of cells divided into specialized tissues and organs."@en
- - obo:IAO_0000116 :: 10/21/09: This is a placeholder term, that should ideally be imported from the NCBI taxonomy, but the high level hierarchy there does not suit our needs (includes plasmids and 'other organisms')
  - obo:IAO_0000116 :: 13-02-2009:
           OBI doesn't take position as to  when an organism starts or ends being an organism - e.g. sperm, foetus.
           This issue is outside the scope of OBI.
+ - obo:IAO_0000116 :: 10/21/09: This is a placeholder term, that should ideally be imported from the NCBI taxonomy, but the high level hierarchy there does not suit our needs (includes plasmids and 'other organisms')
  - obo:IAO_0000117 :: GROUP: OBI Biomaterial Branch
  - obo:IAO_0000119 :: "WEB: http://en.wikipedia.org/wiki/Organism"@en
 ****** "processed material"@en (obo:OBI_0000047)
@@ -456,8 +500,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000117 :: "PERSON: Alan Ruttenberg"@en
 ******* device (obo:OBI_0000968)
  - obo:IAO_0000111 :: device
- - obo:IAO_0000112 :: A voltmeter is a measurement device which is intended to perform some measure function.
  - obo:IAO_0000112 :: An autoclave is a device that sterlizes instruments or contaminated waste by applying high temperature and pressure.
+ - obo:IAO_0000112 :: A voltmeter is a measurement device which is intended to perform some measure function.
  - obo:IAO_0000114 :: obo:IAO_0000122
  - obo:IAO_0000115 :: "A material entity that is designed to perform a function in a scientific investigation, but is not a reagent."@en
  - obo:IAO_0000116 :: 2012-12-17 JAO: In common lab usage, there is a distinction made between devices and reagents that is difficult to model. Therefore we have chosen to specifically exclude reagents from the definition of "device", and are enumerating the types of roles that a reagent can perform.
@@ -496,8 +540,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: An environmental system which can sustain and allow the growth of an ecological population.
  - oboInOwl:hasDbXref :: EcoLexicon:habitat
  - oboInOwl:hasDbXref :: SWEETRealm:Habitat
- - oboInOwl:hasDbXref :: https://en.wikipedia.org/wiki/Habitat
  - oboInOwl:hasDbXref :: LTER:238
+ - oboInOwl:hasDbXref :: https://en.wikipedia.org/wiki/Habitat
  - oboInOwl:hasDbXref :: https://github.com/EnvironmentOntology/envo-habitats
  - rdfs:comment :: A habitat's specificity to an ecological population differentiates it from other environment classes. See Buttigieg et al. (2016; https://doi.org/10.1186/s13326-016-0097-6) for an explanation of ENVO's treatement of habitats. 3,849 of such habitat classes are available here: https://github.com/EnvironmentOntology/envo-habitats
 **** "specifically dependent continuant"@en (obo:BFO_0000020)
@@ -534,10 +578,10 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ****** ratio (obo:PATO_0001470)
  - obo:IAO_0000115 :: A quality inhering in a bearer by virtue of the bearer's magnitude in proportion to the magnitude of another entity.
     - terms:contributor :: https://orcid.org/0000-0001-8314-2140
- - oboInOwl:hasExactSynonym :: proportion
  - oboInOwl:hasExactSynonym :: proportionality to
- - oboInOwl:hasExactSynonym :: quotient
  - oboInOwl:hasExactSynonym :: proportionality
+ - oboInOwl:hasExactSynonym :: quotient
+ - oboInOwl:hasExactSynonym :: proportion
  - oboInOwl:hasRelatedSynonym :: rate
  - oboInOwl:id :: PATO:0001470
  - rdfs:comment :: Examples: height to weight; brain size to body size; root to shoot ratio; urinary sodium to potassium ratio. waist-hip ratio.
@@ -560,8 +604,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: "The curation status of the term. The allowed values come from an enumerated list of predefined terms. See the specification of these instances for more detailed definitions of each enumerated value."@en
  - obo:IAO_0000116 :: "Better to represent curation as a process with parts and then relate labels to that process (in IAO meeting)"@en
  - obo:IAO_0000117 :: "PERSON:Bill Bug"@en
- - obo:IAO_0000119 :: "GROUP:OBI:<http://purl.obolibrary.org/obo/obi>"@en
  - obo:IAO_0000119 :: "OBI_0000266"@en
+ - obo:IAO_0000119 :: "GROUP:OBI:<http://purl.obolibrary.org/obo/obi>"@en
  - EquivalentTo :: {obo:IAO_0000002 , obo:IAO_0000120 , obo:IAO_0000121 , obo:IAO_0000122 , obo:IAO_0000123 , obo:IAO_0000124 , obo:IAO_0000125 , obo:IAO_0000423 , obo:IAO_0000428}
 *** foaf:image
 *** owl:Nothing
@@ -577,16 +621,6 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - oboInOwl:hasDbXref :: GOC:vw
     - oboInOwl:hasDbXref :: PMID:15030757
  - oboInOwl:id :: GO:0005634
-*** obsolete exposure event or process (obo:RO_0002310)
- - obo:IAO_0000112 :: "An exposure event in which a plant is provided with fertilizer. The exposure receptor is the root system of the plant, the stimulus is the fertilizing chemical, the route is via the soil, possibly mediated by symbotic microbes."^^xsd:anyURI
- - obo:IAO_0000112 :: An exposure event in which a human is exposed to particulate matter in the air. Here the exposure stimulus/stress is the particulate matter, the receptor is the airways and lungs of the human,
- - obo:IAO_0000115 :: OBSOLETE A process occurring within or in the vicinity of an organism that exerts some causal influence on the organism via the interaction between an exposure stimulus and an exposure receptor. The exposure stimulus may be a process, material entity or condition (for example, lack of nutrients). The exposure receptor can be an organism, organism population or a part of an organism.
- - obo:IAO_0000116 :: This class is intended as a grouping for various domain and species-specific exposure classes. The ExO class http://purl.obolibrary.org/obo/ExO_0000002 'exposure event' assumes that all exposures involve stressors, which limits the applicability of this class to 'positive' exposures, e.g. exposing a plant to beneficial growing conditions.
- - oboInOwl:created_by :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:creation_date :: "2017-06-05T17:55:39Z"^^xsd:dateTime
- - owl:deprecated :: true
- - rdfs:seeAlso :: "https://github.com/oborel/obo-relations/pull/173"^^xsd:anyURI
- - terms:creator :: https://orcid.org/0000-0002-6601-2165
 *** "occurrent"@en (obo:BFO_0000003)
  - obo:IAO_0000115 :: "An entity that has temporal parts and that happens, unfolds or develops through time."@en
  - SubClassOf :: obo:BFO_0000050 only obo:BFO_0000003
@@ -623,10 +657,10 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ****** kinase activity (obo:GO_0016301)
  - obo:IAO_0000115 :: Catalysis of the transfer of a phosphate group, usually from ATP, to a substrate molecule.
     - oboInOwl:hasDbXref :: ISBN:0198506732
- - oboInOwl:hasDbXref :: Reactome:R-HSA-6788855
-    - rdfs:label :: FN3KRP phosphorylates PsiAm, RibAm
  - oboInOwl:hasDbXref :: Reactome:R-HSA-6788867
     - rdfs:label :: FN3K phosphorylates ketosamines
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-6788855
+    - rdfs:label :: FN3KRP phosphorylates PsiAm, RibAm
  - oboInOwl:hasExactSynonym :: phosphokinase activity
  - oboInOwl:id :: GO:0016301
  - rdfs:comment :: Note that this term encompasses all activities that transfer a single phosphate group; although ATP is by far the most common phosphate donor, reactions using other phosphate donors are included in this term.
@@ -634,10 +668,10 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ****** myristoyltransferase activity (obo:GO_0019107)
  - obo:IAO_0000115 :: Catalysis of the transfer of a myristoyl (CH3-[CH2]12-CO-) group to an acceptor molecule.
     - oboInOwl:hasDbXref :: GOC:ai
- - oboInOwl:hasDbXref :: Reactome:R-HSA-162914
-    - rdfs:label :: Myristoylation of Nef
  - oboInOwl:hasDbXref :: Reactome:R-HSA-141367
     - rdfs:label :: Myristoylation of tBID by NMT1
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-162914
+    - rdfs:label :: Myristoylation of Nef
  - oboInOwl:id :: GO:0019107
  - SubClassOf :: obo:RO_0018001 some  Self 
 ****** ubiquitin-protein transferase activity (obo:GO_0004842)
@@ -645,278 +679,278 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - oboInOwl:hasDbXref :: GOC:BioGRID
     - oboInOwl:hasDbXref :: GOC:jh2
     - oboInOwl:hasDbXref :: PMID:9635407
- - oboInOwl:hasBroadSynonym :: E3
  - oboInOwl:hasBroadSynonym :: E2
- - oboInOwl:hasDbXref :: Reactome:R-HSA-1358789
-    - rdfs:label :: Self-ubiquitination of RNF41
- - oboInOwl:hasDbXref :: Reactome:R-HSA-2186747
-    - rdfs:label :: Ubiquitination of SKI/SKIL by RNF111/SMURF2
- - oboInOwl:hasDbXref :: Reactome:R-HSA-8948709
-    - rdfs:label :: DTX4 ubiquitinates p-S172-TBK1 within NLRP4:DTX4:STING:TBK1:IRF3
- - oboInOwl:hasDbXref :: Reactome:R-HSA-9645414
-    - rdfs:label :: Auto ubiquitination of TRAF6 bound to ALPK1:ADP-heptose:TIFA oligomer
- - oboInOwl:hasDbXref :: Reactome:R-HSA-1977296
-    - rdfs:label :: NEDD4 ubiquitinates ERBB4jmAcyt1s80 dimer
- - oboInOwl:hasDbXref :: Reactome:R-HSA-2213017
-    - rdfs:label :: Auto-ubiquitination of TRAF3
- - oboInOwl:hasDbXref :: Reactome:R-HSA-741386
-    - rdfs:label :: RIP2 induces K63-linked ubiquitination of NEMO
- - oboInOwl:hasDbXref :: Reactome:R-HSA-9817362
-    - rdfs:label :: SPATA2:CYLD-bound LUBAC ubiquitinates RIPK1 at K627 within the TNFR1 signaling complex
- - oboInOwl:hasDbXref :: Reactome:R-HSA-173545
-    - rdfs:label :: Ubiquitin-dependent degradation of the SMAD complex terminates TGF-beta signaling
- - oboInOwl:hasDbXref :: Reactome:R-HSA-936986
-    - rdfs:label :: Activated TRAF6 synthesizes unanchored polyubiquitin chains
- - oboInOwl:hasDbXref :: Reactome:R-HSA-1918092
-    - rdfs:label :: CHIP (STUB1) mediates ubiquitination of ERBB2
- - oboInOwl:hasDbXref :: Reactome:R-HSA-983156
-    - rdfs:label :: Polyubiquitination of substrate
- - oboInOwl:hasDbXref :: Reactome:R-HSA-174144
-    - rdfs:label :: Ubiquitination of Securin by phospho-APC/C:Cdc20 complex
- - oboInOwl:hasDbXref :: Reactome:R-HSA-174195
-    - rdfs:label :: Ubiquitination of cell cycle proteins targeted by the APC/C:Cdh1complex
- - oboInOwl:hasDbXref :: Reactome:R-HSA-3797226
-    - rdfs:label :: Defective NHLRC1 does not ubiquitinate EPM2A (laforin) and PPP1R3C (PTG) (type 2B disease)
- - oboInOwl:hasDbXref :: Reactome:R-HSA-201425
-    - rdfs:label :: Ubiquitin-dependent degradation of the Smad complex terminates BMP2 signalling
- - oboInOwl:hasDbXref :: Reactome:R-HSA-2169050
-    - rdfs:label :: SMURFs/NEDD4L ubiquitinate phosphorylated TGFBR1 and SMAD7
- - oboInOwl:hasDbXref :: Reactome:R-HSA-446877
-    - rdfs:label :: TRAF6 is K63 poly-ubiquitinated
- - oboInOwl:hasDbXref :: Reactome:R-HSA-9793679
-    - rdfs:label :: LUBAC ubiquitinates RIPK1 at K627
- - oboInOwl:hasDbXref :: Reactome:R-HSA-5667111
-    - rdfs:label :: PARK2 K63-Ubiquitinates SNCAIP
- - oboInOwl:hasDbXref :: Reactome:R-HSA-8956106
-    - rdfs:label :: VHL:EloB,C:NEDD8-CUL2:RBX1 complex ubiquitinylates HIF-alpha
- - oboInOwl:hasDbXref :: Reactome:R-HSA-9793444
-    - rdfs:label :: ITCH polyubiquitinates MLKL at K50
- - oboInOwl:hasDbXref :: Reactome:R-HSA-1912386
-    - rdfs:label :: Ubiquitination of NOTCH1 by ITCH in the absence of ligand
- - oboInOwl:hasDbXref :: Reactome:R-HSA-2172172
-    - rdfs:label :: Ubiquitination of DLL/JAG ligands upon binding to NOTCH2
- - oboInOwl:hasDbXref :: Reactome:R-HSA-975147
-    - rdfs:label :: Auto ubiquitination of oligo-TRAF6 bound to p-IRAK2 at endosome membrane
- - oboInOwl:hasDbXref :: Reactome:R-HSA-9758604
-    - rdfs:label :: Ubiquitination of IKBKG by TRAF6
- - oboInOwl:hasDbXref :: Reactome:R-HSA-1912357
-    - rdfs:label :: ITCH ubiquitinates DTX
- - oboInOwl:hasDbXref :: Reactome:R-HSA-5675470
-    - rdfs:label :: BIRC2/3 (cIAP1/2) is autoubiquitinated
- - oboInOwl:hasDbXref :: Reactome:R-HSA-9796346
-    - rdfs:label :: MIB2 ubiquitinates RIPK1 at K377, K604, K634
- - oboInOwl:hasDbXref :: Reactome:R-HSA-5362412
-    - rdfs:label :: SYVN1 ubiquitinates Hh C-terminal fragments
- - oboInOwl:hasDbXref :: Reactome:R-HSA-936412
-    - rdfs:label :: RNF125 mediated ubiquitination of DDX58, IFIH1 and MAVS
- - oboInOwl:hasDbXref :: Reactome:R-HSA-5655170
-    - rdfs:label :: RCHY1 monoubiquitinates POLH
- - oboInOwl:hasDbXref :: Reactome:R-HSA-211734
-    - rdfs:label :: Ubiquitination of PAK-2p34
- - oboInOwl:hasDbXref :: Reactome:R-HSA-264444
-    - rdfs:label :: Autoubiquitination of phospho-COP1(Ser-387 )
- - oboInOwl:hasDbXref :: Reactome:R-HSA-68712
-    - rdfs:label :: The geminin component of geminin:Cdt1 complexes is ubiquitinated, releasing Cdt1
- - oboInOwl:hasDbXref :: Reactome:R-HSA-1169406
-    - rdfs:label :: ISGylation of host proteins
- - oboInOwl:hasDbXref :: Reactome:R-HSA-1980118
-    - rdfs:label :: ARRB mediates NOTCH1 ubiquitination
- - oboInOwl:hasDbXref :: Reactome:R-HSA-5610746
-    - rdfs:label :: SCF(beta-TrCP) ubiquitinates p-GLI3
- - oboInOwl:hasDbXref :: Reactome:R-HSA-936942
-    - rdfs:label :: Auto ubiquitination of oligo-TRAF6 bound to p-IRAK2
+ - oboInOwl:hasBroadSynonym :: E3
  - oboInOwl:hasDbXref :: Reactome:R-HSA-918224
     - rdfs:label :: DDX58 is K63 polyubiquitinated
- - oboInOwl:hasDbXref :: Reactome:R-HSA-1169397
-    - rdfs:label :: Activation of ISG15 by UBA7 E1 ligase
- - oboInOwl:hasDbXref :: Reactome:R-HSA-5684250
-    - rdfs:label :: SCF betaTrCP ubiquitinates NFKB p105 within p-S927, S932-NFkB p105:TPL2:ABIN2
- - oboInOwl:hasDbXref :: Reactome:R-HSA-3780995
-    - rdfs:label :: NHLRC1 mediated ubiquitination of EPM2A (laforin) and PPP1RC3 (PTG) associated with glycogen-GYG2
- - oboInOwl:hasDbXref :: Reactome:R-HSA-1363331
-    - rdfs:label :: Ubiquitination of p130 (RBL2) by SCF (Skp2)
- - oboInOwl:hasDbXref :: Reactome:R-HSA-5668534
-    - rdfs:label :: cIAP1,2 ubiquitinates NIK in cIAP1,2:TRAF2::TRAF3:NIK
- - oboInOwl:hasDbXref :: Reactome:R-HSA-168915
-    - rdfs:label :: K63-linked ubiquitination of RIP1 bound to the activated TLR complex
- - oboInOwl:hasDbXref :: Reactome:R-HSA-180540
-    - rdfs:label :: Multi-ubiquitination of APOBEC3G
- - oboInOwl:hasDbXref :: Reactome:R-HSA-3134804
-    - rdfs:label :: STING ubiquitination by TRIM32 or TRIM56
- - oboInOwl:hasDbXref :: Reactome:R-HSA-174159
-    - rdfs:label :: Ubiquitination of Emi1 by SCF-beta-TrCP
- - oboInOwl:hasDbXref :: Reactome:R-HSA-4332236
-    - rdfs:label :: CBL neddylates TGFBR2
- - oboInOwl:hasDbXref :: Reactome:R-HSA-9796626
-    - rdfs:label :: MIB2 ubiquitinates CFLAR
- - oboInOwl:hasDbXref :: Reactome:R-HSA-1980074
-    - rdfs:label :: Ubiquitination of DLL/JAG ligands upon binding to NOTCH1
- - oboInOwl:hasDbXref :: Reactome:R-HSA-1918095
-    - rdfs:label :: CUL5 mediates ubiquitination of ERBB2
- - oboInOwl:hasDbXref :: Reactome:R-HSA-1253282
-    - rdfs:label :: ERBB4 ubiquitination by WWP1/ITCH
- - oboInOwl:hasDbXref :: Reactome:R-HSA-9014342
-    - rdfs:label :: K63-linked ubiquitination of RIP1 bound to the activated TLR complex
- - oboInOwl:hasDbXref :: Reactome:R-HSA-179417
-    - rdfs:label :: Multiubiquitination of Nek2A
- - oboInOwl:hasDbXref :: Reactome:R-HSA-5693108
-    - rdfs:label :: TNFAIP3 (A20) ubiquitinates RIPK1 with K48-linked Ub chains
- - oboInOwl:hasDbXref :: Reactome:R-HSA-5357757
-    - rdfs:label :: BIRC(cIAP1/2) ubiquitinates RIPK1
- - oboInOwl:hasDbXref :: Reactome:R-HSA-5607756
-    - rdfs:label :: TRAF6 oligomer autoubiquitinates
- - oboInOwl:hasDbXref :: Reactome:R-HSA-1169395
-    - rdfs:label :: ISGylation of viral protein NS1
- - oboInOwl:hasDbXref :: Reactome:R-HSA-9834070
-    - rdfs:label :: PRKN ubiquitinates MOM substrates
- - oboInOwl:hasDbXref :: Reactome:R-HSA-5610742
-    - rdfs:label :: SCF(beta-TrCP) ubiquitinates p-GLI1
- - oboInOwl:hasDbXref :: Reactome:R-HSA-1169405
-    - rdfs:label :: ISGylation of protein phosphatase 1 beta (PP2CB)
- - oboInOwl:hasDbXref :: Reactome:R-HSA-1234172
-    - rdfs:label :: Nuclear VBC complex ubiquitinylates HIF-alpha
- - oboInOwl:hasDbXref :: Reactome:R-HSA-3788724
-    - rdfs:label :: Cdh1:APC/C ubiquitinates EHMT1 and EHMT2
- - oboInOwl:hasDbXref :: Reactome:R-HSA-5668454
-    - rdfs:label :: K63polyUb-cIAP1,2 ubiquitinates TRAF3
- - oboInOwl:hasDbXref :: Reactome:R-HSA-9796387
-    - rdfs:label :: STUB1 ubiquitinates RIPK1 at K571, K604, K627
- - oboInOwl:hasDbXref :: KEGG_REACTION:R03876
- - oboInOwl:hasDbXref :: Reactome:R-HSA-3249386
-    - rdfs:label :: DTX4 ubiquitinates p-S172-TBK1 within NLRP4:DTX4:dsDNA:ZBP1:TBK1
- - oboInOwl:hasDbXref :: Reactome:R-HSA-983140
-    - rdfs:label :: Transfer of Ub from E2 to substrate and release of E2
- - oboInOwl:hasDbXref :: Reactome:R-HSA-9628444
-    - rdfs:label :: Activated TRAF6 synthesizes unanchored polyubiquitin chains upon TLR3 stimulation
- - oboInOwl:hasDbXref :: Reactome:R-HSA-183084
-    - rdfs:label :: CBL escapes CDC42-mediated inhibition by down-regulating the adaptor molecule Beta-Pix
- - oboInOwl:hasDbXref :: Reactome:R-HSA-209063
-    - rdfs:label :: Beta-TrCP ubiquitinates NFKB p50:p65:phospho IKBA complex
- - oboInOwl:hasDbXref :: Reactome:R-HSA-9750946
-    - rdfs:label :: TRAF2,6 ubiquitinates NLRC5
- - oboInOwl:hasDbXref :: Reactome:R-HSA-5483238
-    - rdfs:label :: Hh processing variants are ubiquitinated
- - oboInOwl:hasDbXref :: Reactome:R-HSA-9688831
-    - rdfs:label :: STUB1 ubiquitinates RIPK3 at K55, K363
- - oboInOwl:hasDbXref :: Reactome:R-HSA-5607725
-    - rdfs:label :: SCF-beta-TRCP ubiquitinates p-7S-p100:RELB in active NIK:p-176,S180-IKKA dimer:p-7S-p100:SCF-beta-TRCP
- - oboInOwl:hasDbXref :: Reactome:R-HSA-2187368
-    - rdfs:label :: STUB1 (CHIP) ubiquitinates SMAD3
- - oboInOwl:hasDbXref :: Reactome:R-HSA-183089
-    - rdfs:label :: CBL binds and ubiquitinates phosphorylated Sprouty
- - oboInOwl:hasDbXref :: Reactome:R-HSA-202453
-    - rdfs:label :: Auto-ubiquitination of TRAF6
- - oboInOwl:hasDbXref :: Reactome:R-HSA-174227
-    - rdfs:label :: Ubiquitination of Cyclin B by phospho-APC/C:Cdc20 complex
- - oboInOwl:hasDbXref :: Reactome:R-HSA-3781009
-    - rdfs:label :: NHLRC1 mediated ubiquitination of EPM2A and PPP1RC3 associated with glycogen-GYG1
- - oboInOwl:hasDbXref :: Reactome:R-HSA-69598
-    - rdfs:label :: Ubiquitination of phosphorylated Cdc25A
- - oboInOwl:hasDbXref :: Reactome:R-HSA-5660753
-    - rdfs:label :: SIAH1:UBE2L6:Ubiquitin ubiquitinates SNCA
- - oboInOwl:hasDbXref :: Reactome:R-HSA-5610745
-    - rdfs:label :: SCF(beta-TrCP) ubiquitinates p-GLI2
- - oboInOwl:hasDbXref :: Reactome:R-HSA-5607757
-    - rdfs:label :: K63polyUb-TRAF6 ubiquitinates TAK1
- - oboInOwl:hasDbXref :: Reactome:R-HSA-1358790
-    - rdfs:label :: RNF41 ubiquitinates ERBB3
- - oboInOwl:hasDbXref :: Reactome:R-HSA-1234163
-    - rdfs:label :: Cytosolic VBC complex ubiquitinylates hydroxyprolyl-HIF-alpha
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-2172172
+    - rdfs:label :: Ubiquitination of DLL/JAG ligands upon binding to NOTCH2
  - oboInOwl:hasDbXref :: Reactome:R-HSA-1169398
     - rdfs:label :: ISGylation of host protein filamin B
- - oboInOwl:hasDbXref :: Reactome:R-HSA-3134946
-    - rdfs:label :: DDX41 ubiquitination by TRIM21
- - oboInOwl:hasDbXref :: Reactome:R-HSA-2900765
-    - rdfs:label :: Ubiquitination of DLL/JAG ligands upon binding to NOTCH1 HD+PEST domain mutants
- - oboInOwl:hasDbXref :: Reactome:R-HSA-9013069
-    - rdfs:label :: Ubiquitination of DLL/JAG ligands upon binding to NOTCH3
- - oboInOwl:hasDbXref :: Reactome:R-HSA-75824
-    - rdfs:label :: Ubiquitination of Cyclin D1
- - oboInOwl:hasDbXref :: Reactome:R-HSA-1169402
-    - rdfs:label :: ISGylation of E2 conjugating enzymes
- - oboInOwl:hasDbXref :: Reactome:R-HSA-9861563
-    - rdfs:label :: CTLH E3 ligase ubiquitinates LDHA
- - oboInOwl:hasDbXref :: Reactome:R-HSA-173542
-    - rdfs:label :: SMURF2 ubiquitinates SMAD2
- - oboInOwl:hasDbXref :: Reactome:R-HSA-9833973
-    - rdfs:label :: ISGylation of PKR
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-9793679
+    - rdfs:label :: LUBAC ubiquitinates RIPK1 at K627
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-174195
+    - rdfs:label :: Ubiquitination of cell cycle proteins targeted by the APC/C:Cdh1complex
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-187575
+    - rdfs:label :: Ubiquitination of phospho-p27/p21
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-174159
+    - rdfs:label :: Ubiquitination of Emi1 by SCF-beta-TrCP
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-180597
+    - rdfs:label :: Ubiquitination of CD4 by Vpu:CD4:beta-TrCP:SKP1 complex
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-264444
+    - rdfs:label :: Autoubiquitination of phospho-COP1(Ser-387 )
  - oboInOwl:hasDbXref :: Reactome:R-HSA-5691108
     - rdfs:label :: SKP1:FBXL5:CUL1:NEDD8 ubiquitinylates IREB2
- - oboInOwl:hasDbXref :: Reactome:R-HSA-9833155
-    - rdfs:label :: Ubiquitination of STAT2
- - oboInOwl:hasDbXref :: Reactome:R-HSA-183051
-    - rdfs:label :: CBL ubiquitinates Sprouty
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-68712
+    - rdfs:label :: The geminin component of geminin:Cdt1 complexes is ubiquitinated, releasing Cdt1
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-5684250
+    - rdfs:label :: SCF betaTrCP ubiquitinates NFKB p105 within p-S927, S932-NFkB p105:TPL2:ABIN2
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-9796387
+    - rdfs:label :: STUB1 ubiquitinates RIPK1 at K571, K604, K627
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-3000335
+    - rdfs:label :: SCF-beta-TrCp1/2 ubiquitinates phosphorylated BORA
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-1169402
+    - rdfs:label :: ISGylation of E2 conjugating enzymes
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-211734
+    - rdfs:label :: Ubiquitination of PAK-2p34
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-3797226
+    - rdfs:label :: Defective NHLRC1 does not ubiquitinate EPM2A (laforin) and PPP1R3C (PTG) (type 2B disease)
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-936412
+    - rdfs:label :: RNF125 mediated ubiquitination of DDX58, IFIH1 and MAVS
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-2213017
+    - rdfs:label :: Auto-ubiquitination of TRAF3
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-9758604
+    - rdfs:label :: Ubiquitination of IKBKG by TRAF6
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-5660753
+    - rdfs:label :: SIAH1:UBE2L6:Ubiquitin ubiquitinates SNCA
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-3134946
+    - rdfs:label :: DDX41 ubiquitination by TRIM21
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-3781009
+    - rdfs:label :: NHLRC1 mediated ubiquitination of EPM2A and PPP1RC3 associated with glycogen-GYG1
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-9796626
+    - rdfs:label :: MIB2 ubiquitinates CFLAR
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-1358789
+    - rdfs:label :: Self-ubiquitination of RNF41
  - oboInOwl:hasDbXref :: Reactome:R-HSA-182986
     - rdfs:label :: CBL-mediated ubiquitination of CIN85
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-183089
+    - rdfs:label :: CBL binds and ubiquitinates phosphorylated Sprouty
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-9645394
+    - rdfs:label :: Activated TRAF6 synthesizes unanchored polyubiquitin chains upon ALPK1:ADP-heptose stimulation
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-2730904
+    - rdfs:label :: Auto-ubiquitination of TRAF6
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-9013069
+    - rdfs:label :: Ubiquitination of DLL/JAG ligands upon binding to NOTCH3
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-9861640
+    - rdfs:label :: CTLH E3 ligase ubiquitinates PKM-1
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-975147
+    - rdfs:label :: Auto ubiquitination of oligo-TRAF6 bound to p-IRAK2 at endosome membrane
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-1980074
+    - rdfs:label :: Ubiquitination of DLL/JAG ligands upon binding to NOTCH1
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-75824
+    - rdfs:label :: Ubiquitination of Cyclin D1
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-1363331
+    - rdfs:label :: Ubiquitination of p130 (RBL2) by SCF (Skp2)
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-9833155
+    - rdfs:label :: Ubiquitination of STAT2
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-3134804
+    - rdfs:label :: STING ubiquitination by TRIM32 or TRIM56
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-3788724
+    - rdfs:label :: Cdh1:APC/C ubiquitinates EHMT1 and EHMT2
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-9628444
+    - rdfs:label :: Activated TRAF6 synthesizes unanchored polyubiquitin chains upon TLR3 stimulation
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-5610742
+    - rdfs:label :: SCF(beta-TrCP) ubiquitinates p-GLI1
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-174104
+    - rdfs:label :: Ubiquitination of Cyclin A by APC/C:Cdc20 complex
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-9645414
+    - rdfs:label :: Auto ubiquitination of TRAF6 bound to ALPK1:ADP-heptose:TIFA oligomer
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-870449
+    - rdfs:label :: TRIM33 monoubiquitinates SMAD4
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-5610745
+    - rdfs:label :: SCF(beta-TrCP) ubiquitinates p-GLI2
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-5693108
+    - rdfs:label :: TNFAIP3 (A20) ubiquitinates RIPK1 with K48-linked Ub chains
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-1358790
+    - rdfs:label :: RNF41 ubiquitinates ERBB3
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-9861563
+    - rdfs:label :: CTLH E3 ligase ubiquitinates LDHA
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-69598
+    - rdfs:label :: Ubiquitination of phosphorylated Cdc25A
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-5668454
+    - rdfs:label :: K63polyUb-cIAP1,2 ubiquitinates TRAF3
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-983153
+    - rdfs:label :: E1 mediated ubiquitin activation
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-9815507
+    - rdfs:label :: MIB2 ubiquitinates CYLD at K338, K530
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-2769007
+    - rdfs:label :: Ubiquitination of DLL/JAG ligands upon binding to NOTCH1 PEST domain mutants
  - oboInOwl:hasDbXref :: Reactome:R-HSA-1852623
     - rdfs:label :: Ubiquitination of NICD1 by FBWX7
  - oboInOwl:hasDbXref :: Reactome:R-HSA-975118
     - rdfs:label :: TRAF6 ubiquitinqtes IRF7 within the activated TLR7/8 or 9 complex
- - oboInOwl:hasDbXref :: Reactome:R-HSA-9645394
-    - rdfs:label :: Activated TRAF6 synthesizes unanchored polyubiquitin chains upon ALPK1:ADP-heptose stimulation
- - oboInOwl:hasDbXref :: Reactome:R-HSA-5652009
-    - rdfs:label :: RAD18:UBE2B or RBX1:CUL4:DDB1:DTL monoubiquitinates PCNA
- - oboInOwl:hasDbXref :: Reactome:R-HSA-5667107
-    - rdfs:label :: SIAH1, SIAH2 ubiquitinate SNCAIP
- - oboInOwl:hasDbXref :: Reactome:R-HSA-205118
-    - rdfs:label :: TRAF6 polyubiquitinates NRIF
- - oboInOwl:hasDbXref :: Reactome:R-HSA-9701000
-    - rdfs:label :: BRCA1:BARD1 heterodimer autoubiquitinates
- - oboInOwl:hasDbXref :: Reactome:R-HSA-9013974
-    - rdfs:label :: Auto-ubiquitination of TRAF3 within activated TLR3 complex
- - oboInOwl:hasDbXref :: Reactome:R-HSA-2730904
-    - rdfs:label :: Auto-ubiquitination of TRAF6
- - oboInOwl:hasDbXref :: Reactome:R-HSA-983153
-    - rdfs:label :: E1 mediated ubiquitin activation
- - oboInOwl:hasDbXref :: Reactome:R-HSA-2186785
-    - rdfs:label :: RNF111 ubiquitinates SMAD7
- - oboInOwl:hasDbXref :: Reactome:R-HSA-174057
-    - rdfs:label :: Multiubiquitination of APC/C-associated Cdh1
- - oboInOwl:hasDbXref :: Reactome:R-HSA-400267
-    - rdfs:label :: BTRC:CUL1:SKP1 (SCF-beta-TrCP1) ubiquitinylates PER proteins
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-1169406
+    - rdfs:label :: ISGylation of host proteins
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-1980118
+    - rdfs:label :: ARRB mediates NOTCH1 ubiquitination
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-209063
+    - rdfs:label :: Beta-TrCP ubiquitinates NFKB p50:p65:phospho IKBA complex
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-5607757
+    - rdfs:label :: K63polyUb-TRAF6 ubiquitinates TAK1
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-9834070
+    - rdfs:label :: PRKN ubiquitinates MOM substrates
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-983140
+    - rdfs:label :: Transfer of Ub from E2 to substrate and release of E2
  - oboInOwl:hasDbXref :: Reactome:R-HSA-202534
     - rdfs:label :: Ubiquitination of NEMO by TRAF6
- - oboInOwl:hasDbXref :: Reactome:R-HSA-9861640
-    - rdfs:label :: CTLH E3 ligase ubiquitinates PKM-1
- - oboInOwl:hasDbXref :: Reactome:R-HSA-451418
-    - rdfs:label :: Pellino ubiquitinates IRAK1
- - oboInOwl:hasDbXref :: Reactome:R-HSA-450358
-    - rdfs:label :: Activated TRAF6 synthesizes unanchored polyubiquitin chains upon TLR stimulation
- - oboInOwl:hasDbXref :: Reactome:R-HSA-5607728
-    - rdfs:label :: beta-TRCP ubiquitinates IkB-alpha in p-S32,33-IkB-alpha:NF-kB complex
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-1977296
+    - rdfs:label :: NEDD4 ubiquitinates ERBB4jmAcyt1s80 dimer
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-205118
+    - rdfs:label :: TRAF6 polyubiquitinates NRIF
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-8956106
+    - rdfs:label :: VHL:EloB,C:NEDD8-CUL2:RBX1 complex ubiquitinylates HIF-alpha
  - oboInOwl:hasDbXref :: Reactome:R-HSA-1358792
     - rdfs:label :: RNF41 ubiquitinates activated ERBB3
- - oboInOwl:hasDbXref :: Reactome:R-HSA-2682349
-    - rdfs:label :: RAF1:SGK:TSC22D3:WPP ubiquitinates SCNN channels
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-2187368
+    - rdfs:label :: STUB1 (CHIP) ubiquitinates SMAD3
+ - oboInOwl:hasDbXref :: KEGG_REACTION:R03876
  - oboInOwl:hasDbXref :: Reactome:R-HSA-2737728
     - rdfs:label :: Ubiquitination of DLL/JAG ligands upon binding to NOTCH1 HD domain mutants
- - oboInOwl:hasDbXref :: Reactome:R-HSA-2179276
-    - rdfs:label :: SMURF2 monoubiquitinates SMAD3
- - oboInOwl:hasDbXref :: Reactome:R-HSA-174104
-    - rdfs:label :: Ubiquitination of Cyclin A by APC/C:Cdc20 complex
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-9796346
+    - rdfs:label :: MIB2 ubiquitinates RIPK1 at K377, K604, K634
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-173545
+    - rdfs:label :: Ubiquitin-dependent degradation of the SMAD complex terminates TGF-beta signaling
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-1918095
+    - rdfs:label :: CUL5 mediates ubiquitination of ERBB2
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-1253282
+    - rdfs:label :: ERBB4 ubiquitination by WWP1/ITCH
  - oboInOwl:hasDbXref :: Reactome:R-HSA-9793485
     - rdfs:label :: PRKN polyubiquitinates RIPK3
- - oboInOwl:hasDbXref :: Reactome:R-HSA-870449
-    - rdfs:label :: TRIM33 monoubiquitinates SMAD4
- - oboInOwl:hasDbXref :: Reactome:R-HSA-3000335
-    - rdfs:label :: SCF-beta-TrCp1/2 ubiquitinates phosphorylated BORA
- - oboInOwl:hasDbXref :: Reactome:R-HSA-182993
-    - rdfs:label :: Ubiquitination of stimulated EGFR (CBL)
- - oboInOwl:hasDbXref :: Reactome:R-HSA-180597
-    - rdfs:label :: Ubiquitination of CD4 by Vpu:CD4:beta-TrCP:SKP1 complex
- - oboInOwl:hasDbXref :: Reactome:R-HSA-187575
-    - rdfs:label :: Ubiquitination of phospho-p27/p21
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-174057
+    - rdfs:label :: Multiubiquitination of APC/C-associated Cdh1
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-9014342
+    - rdfs:label :: K63-linked ubiquitination of RIP1 bound to the activated TLR complex
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-5357757
+    - rdfs:label :: BIRC(cIAP1/2) ubiquitinates RIPK1
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-174227
+    - rdfs:label :: Ubiquitination of Cyclin B by phospho-APC/C:Cdc20 complex
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-168915
+    - rdfs:label :: K63-linked ubiquitination of RIP1 bound to the activated TLR complex
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-201425
+    - rdfs:label :: Ubiquitin-dependent degradation of the Smad complex terminates BMP2 signalling
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-1918092
+    - rdfs:label :: CHIP (STUB1) mediates ubiquitination of ERBB2
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-450358
+    - rdfs:label :: Activated TRAF6 synthesizes unanchored polyubiquitin chains upon TLR stimulation
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-741386
+    - rdfs:label :: RIP2 induces K63-linked ubiquitination of NEMO
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-183084
+    - rdfs:label :: CBL escapes CDC42-mediated inhibition by down-regulating the adaptor molecule Beta-Pix
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-5362412
+    - rdfs:label :: SYVN1 ubiquitinates Hh C-terminal fragments
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-9793444
+    - rdfs:label :: ITCH polyubiquitinates MLKL at K50
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-1169395
+    - rdfs:label :: ISGylation of viral protein NS1
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-2682349
+    - rdfs:label :: RAF1:SGK:TSC22D3:WPP ubiquitinates SCNN channels
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-2179276
+    - rdfs:label :: SMURF2 monoubiquitinates SMAD3
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-4332236
+    - rdfs:label :: CBL neddylates TGFBR2
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-5668534
+    - rdfs:label :: cIAP1,2 ubiquitinates NIK in cIAP1,2:TRAF2::TRAF3:NIK
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-202453
+    - rdfs:label :: Auto-ubiquitination of TRAF6
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-446877
+    - rdfs:label :: TRAF6 is K63 poly-ubiquitinated
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-5607725
+    - rdfs:label :: SCF-beta-TRCP ubiquitinates p-7S-p100:RELB in active NIK:p-176,S180-IKKA dimer:p-7S-p100:SCF-beta-TRCP
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-451418
+    - rdfs:label :: Pellino ubiquitinates IRAK1
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-174144
+    - rdfs:label :: Ubiquitination of Securin by phospho-APC/C:Cdc20 complex
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-5675470
+    - rdfs:label :: BIRC2/3 (cIAP1/2) is autoubiquitinated
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-5607728
+    - rdfs:label :: beta-TRCP ubiquitinates IkB-alpha in p-S32,33-IkB-alpha:NF-kB complex
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-183051
+    - rdfs:label :: CBL ubiquitinates Sprouty
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-983156
+    - rdfs:label :: Polyubiquitination of substrate
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-8948709
+    - rdfs:label :: DTX4 ubiquitinates p-S172-TBK1 within NLRP4:DTX4:STING:TBK1:IRF3
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-179417
+    - rdfs:label :: Multiubiquitination of Nek2A
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-5655170
+    - rdfs:label :: RCHY1 monoubiquitinates POLH
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-173542
+    - rdfs:label :: SMURF2 ubiquitinates SMAD2
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-5667111
+    - rdfs:label :: PARK2 K63-Ubiquitinates SNCAIP
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-9833973
+    - rdfs:label :: ISGylation of PKR
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-1912386
+    - rdfs:label :: Ubiquitination of NOTCH1 by ITCH in the absence of ligand
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-5483238
+    - rdfs:label :: Hh processing variants are ubiquitinated
  - oboInOwl:hasDbXref :: Reactome:R-HSA-1169394
     - rdfs:label :: ISGylation of IRF3
- - oboInOwl:hasDbXref :: Reactome:R-HSA-2769007
-    - rdfs:label :: Ubiquitination of DLL/JAG ligands upon binding to NOTCH1 PEST domain mutants
- - oboInOwl:hasDbXref :: Reactome:R-HSA-9815507
-    - rdfs:label :: MIB2 ubiquitinates CYLD at K338, K530
- - oboInOwl:hasNarrowSynonym :: ubiquitin conjugating enzyme activity
- - oboInOwl:hasNarrowSynonym :: ubiquitin ligase activity
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-182993
+    - rdfs:label :: Ubiquitination of stimulated EGFR (CBL)
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-1169405
+    - rdfs:label :: ISGylation of protein phosphatase 1 beta (PP2CB)
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-180540
+    - rdfs:label :: Multi-ubiquitination of APOBEC3G
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-2169050
+    - rdfs:label :: SMURFs/NEDD4L ubiquitinate phosphorylated TGFBR1 and SMAD7
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-9817362
+    - rdfs:label :: SPATA2:CYLD-bound LUBAC ubiquitinates RIPK1 at K627 within the TNFR1 signaling complex
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-5667107
+    - rdfs:label :: SIAH1, SIAH2 ubiquitinate SNCAIP
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-5652009
+    - rdfs:label :: RAD18:UBE2B or RBX1:CUL4:DDB1:DTL monoubiquitinates PCNA
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-1234163
+    - rdfs:label :: Cytosolic VBC complex ubiquitinylates hydroxyprolyl-HIF-alpha
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-3780995
+    - rdfs:label :: NHLRC1 mediated ubiquitination of EPM2A (laforin) and PPP1RC3 (PTG) associated with glycogen-GYG2
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-5607756
+    - rdfs:label :: TRAF6 oligomer autoubiquitinates
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-936942
+    - rdfs:label :: Auto ubiquitination of oligo-TRAF6 bound to p-IRAK2
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-2900765
+    - rdfs:label :: Ubiquitination of DLL/JAG ligands upon binding to NOTCH1 HD+PEST domain mutants
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-9701000
+    - rdfs:label :: BRCA1:BARD1 heterodimer autoubiquitinates
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-2186785
+    - rdfs:label :: RNF111 ubiquitinates SMAD7
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-1169397
+    - rdfs:label :: Activation of ISG15 by UBA7 E1 ligase
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-9688831
+    - rdfs:label :: STUB1 ubiquitinates RIPK3 at K55, K363
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-936986
+    - rdfs:label :: Activated TRAF6 synthesizes unanchored polyubiquitin chains
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-1234172
+    - rdfs:label :: Nuclear VBC complex ubiquitinylates HIF-alpha
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-9013974
+    - rdfs:label :: Auto-ubiquitination of TRAF3 within activated TLR3 complex
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-5610746
+    - rdfs:label :: SCF(beta-TrCP) ubiquitinates p-GLI3
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-9750946
+    - rdfs:label :: TRAF2,6 ubiquitinates NLRC5
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-400267
+    - rdfs:label :: BTRC:CUL1:SKP1 (SCF-beta-TrCP1) ubiquitinylates PER proteins
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-1912357
+    - rdfs:label :: ITCH ubiquitinates DTX
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-3249386
+    - rdfs:label :: DTX4 ubiquitinates p-S172-TBK1 within NLRP4:DTX4:dsDNA:ZBP1:TBK1
+ - oboInOwl:hasDbXref :: Reactome:R-HSA-2186747
+    - rdfs:label :: Ubiquitination of SKI/SKIL by RNF111/SMURF2
+ - oboInOwl:hasNarrowSynonym :: ubiquitin protein ligase activity
  - oboInOwl:hasNarrowSynonym :: ubiquitin-conjugating enzyme activity
  - oboInOwl:hasNarrowSynonym :: ubiquitin protein-ligase activity
- - oboInOwl:hasNarrowSynonym :: ubiquitin protein ligase activity
+ - oboInOwl:hasNarrowSynonym :: ubiquitin ligase activity
+ - oboInOwl:hasNarrowSynonym :: ubiquitin conjugating enzyme activity
  - oboInOwl:id :: GO:0004842
  - SubClassOf :: obo:RO_0002482 some  Self 
 ***** "planned process"@en (obo:OBI_0000011)
@@ -929,16 +963,16 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000116 :: 'Plan' includes a future direction sense. That can be problematic if plans are changed during their execution. There are however implicit contingencies for protocols that an agent has in his mind that can be considered part of the plan, even if the agent didn't have them in mind before. Therefore, a planned process can diverge from what the agent would have said the plan was before executing it, by adjusting to problems encountered during execution (e.g. choosing another reagent with equivalent properties, if the originally planned one has run out.)
  - obo:IAO_0000117 :: Bjoern Peters
  - obo:IAO_0000119 :: branch derived
- - obo:IAO_0000232 :: 6/11/9: Edited at workshop. Used to include: is initiated by an agent
  - obo:IAO_0000232 :: "This class merges the previously separated objective driven process and planned process, as they the separation proved hard to maintain. (1/22/09, branch call)"@en
+ - obo:IAO_0000232 :: 6/11/9: Edited at workshop. Used to include: is initiated by an agent
  - DisjointWith :: obo:GO_0008150
 ****** "assay"@en (obo:OBI_0000070)
  - obo:IAO_0000111 :: "assay"@en
  - obo:IAO_0000112 :: Assay the wavelength of light emitted by excited Neon atoms. Count of geese flying over a house.
  - obo:IAO_0000114 :: obo:IAO_0000122
  - obo:IAO_0000115 :: "A planned process that has the objective to produce information about a material entity (the evaluant) by examining it."@en
- - obo:IAO_0000116 :: Discussion on OBI call 2023-05-01 resulted in an agreement to revise the textual definition of 'assay'.  https://github.com/obi-ontology/obi/issues/1683.
  - obo:IAO_0000116 :: 12/3/12: BP: the reference to the 'physical examination' is included to point out that a prediction is not an assay, as that does not require physical examiniation.
+ - obo:IAO_0000116 :: Discussion on OBI call 2023-05-01 resulted in an agreement to revise the textual definition of 'assay'.  https://github.com/obi-ontology/obi/issues/1683.
  - obo:IAO_0000117 :: "PlanAndPlannedProcess Branch"@en
  - obo:IAO_0000118 :: "measuring"@en
  - obo:IAO_0000118 :: "scientific observation"@en
@@ -955,6 +989,18 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: Any entity that can be divided into parts such that each part is an atomical unit of a sequence
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000232 :: Sequence bearers can be molecular entities, such as a portion of a DNA molecule, or they can be abstract entities, such as an entity representing all human sonic hedgehog regions of the genome with a particular DNA sequence.
+
+*** Deprecated Classes                                          :nodeclare:
+**** obsolete exposure event or process (obo:RO_0002310)
+ - obo:IAO_0000112 :: "An exposure event in which a plant is provided with fertilizer. The exposure receptor is the root system of the plant, the stimulus is the fertilizing chemical, the route is via the soil, possibly mediated by symbotic microbes."^^xsd:anyURI
+ - obo:IAO_0000112 :: An exposure event in which a human is exposed to particulate matter in the air. Here the exposure stimulus/stress is the particulate matter, the receptor is the airways and lungs of the human,
+ - obo:IAO_0000115 :: OBSOLETE A process occurring within or in the vicinity of an organism that exerts some causal influence on the organism via the interaction between an exposure stimulus and an exposure receptor. The exposure stimulus may be a process, material entity or condition (for example, lack of nutrients). The exposure receptor can be an organism, organism population or a part of an organism.
+ - obo:IAO_0000116 :: This class is intended as a grouping for various domain and species-specific exposure classes. The ExO class http://purl.obolibrary.org/obo/ExO_0000002 'exposure event' assumes that all exposures involve stressors, which limits the applicability of this class to 'positive' exposures, e.g. exposing a plant to beneficial growing conditions.
+ - oboInOwl:created_by :: https://orcid.org/0000-0002-6601-2165
+ - oboInOwl:creation_date :: "2017-06-05T17:55:39Z"^^xsd:dateTime
+ - owl:deprecated :: true
+ - rdfs:seeAlso :: "https://github.com/oborel/obo-relations/pull/173"^^xsd:anyURI
+ - terms:creator :: https://orcid.org/0000-0002-6601-2165
 
 ** Object properties
 :PROPERTIES:
@@ -1013,8 +1059,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - InverseOf :: obo:RO_0002566
 ***** causally influences (obo:RO_0002566)
  - obo:IAO_0000115 :: The entity or characteristic A is causally upstream of the entity or characteristic B, A having an effect on B. An entity corresponds to any biological type of entity as long as a mass is measurable. A characteristic corresponds to a particular specificity of an entity (e.g., phenotype, shape, size).
- - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000117 :: https://orcid.org/0000-0003-4639-4431
+ - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000119 :: obo:ro/docs/causal-relations
  - obo:IAO_0000589 :: causally influences (entity-centric)
  - SubPropertyOf :: obo:RO_0002506
@@ -1518,8 +1564,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ***** has material basis in gain of function germline mutation in (obo:RO_0004001)
  - oboInOwl:created_by :: https://orcid.org/0000-0002-6601-2165
  - oboInOwl:creation_date :: "2017-11-05T02:45:20Z"^^xsd:dateTime
- - rdfs:seeAlso :: http://www.orpha.net/ORDO/Orphanet_410296
  - rdfs:seeAlso :: http://www.orpha.net/ORDO/Orphanet_410295
+ - rdfs:seeAlso :: http://www.orpha.net/ORDO/Orphanet_410296
  - SubPropertyOf :: obo:RO_0004000
  - InverseOf :: obo:RO_0004011
 ***** has material basis in germline mutation in (obo:RO_0004003)
@@ -1624,17 +1670,17 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - oboInOwl:created_by :: https://orcid.org/0000-0001-5208-3432
  - SubPropertyOf :: obo:RO_0004019
 **** "realized in response to"@en (obo:RO_0009501)
+ - obo:IAO_0000112 :: An inflammatory disease that is realized in response to an inflammatory process occurring in the gut (which is itself the realization of a process realized in response to harmful stimuli in the mucosal lining of th gut)
  - obo:IAO_0000112 :: A drought sensitivity trait that inheres in a whole plant is realized in a systemic response process in response to exposure to drought conditions.
  - obo:IAO_0000112 :: Environmental polymorphism in butterflies: These butterflies have a 'responsivity to day length trait' that is realized in response to the duration of the day, and is realized in developmental processes that lead to increased or decreased pigmentation in the adult morph.
- - obo:IAO_0000112 :: An inflammatory disease that is realized in response to an inflammatory process occurring in the gut (which is itself the realization of a process realized in response to harmful stimuli in the mucosal lining of th gut)
  - obo:IAO_0000115 :: r 'realized in response to' s iff, r is a realizable (e.g. a plant trait such as responsivity to drought), s is an environmental stimulus (a process), and s directly causes the realization of r.
  - oboInOwl:hasExactSynonym :: triggered by process
     - oboInOwl:hasDbXref :: https://orcid.org/0000-0002-6601-2165
  - rdfs:seeAlso :: "https://docs.google.com/document/d/1KWhZxVBhIPkV6_daHta0h6UyHbjY2eIrnON1WIRGgdY/edit"^^xsd:anyURI
  - terms:contributor :: https://orcid.org/0000-0002-7073-9172
- - terms:contributor :: https://orcid.org/0000-0002-8461-9745
- - terms:contributor :: https://orcid.org/0000-0001-6996-0040
  - terms:contributor :: https://orcid.org/0000-0002-6601-2165
+ - terms:contributor :: https://orcid.org/0000-0001-6996-0040
+ - terms:contributor :: https://orcid.org/0000-0002-8461-9745
  - SubPropertyOf :: obo:RO_0002410
  - Domain :: obo:BFO_0000017
  - Range :: obo:BFO_0000015
@@ -1688,9 +1734,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: A relationship between an exposure event or process and any agent, stimulus, activity, or event that causally effects an organism and interacts with an exposure receptor during an exposure event.
  - oboInOwl:created_by :: https://orcid.org/0000-0002-6601-2165
  - oboInOwl:creation_date :: "2017-06-05T17:35:04Z"^^xsd:dateTime
+ - terms:contributor :: https://orcid.org/0000-0002-8461-9745
  - terms:contributor :: https://orcid.org/0000-0002-6601-2165
  - terms:contributor :: https://orcid.org/0000-0001-6996-0040
- - terms:contributor :: https://orcid.org/0000-0002-8461-9745
  - SubPropertyOf :: obo:RO_0002244
 ****** has exposure stressor (obo:RO_0002241)
  - obo:IAO_0000115 :: A broad relationship between an exposure event or process and any agent, stimulus, activity, or event that causes stress or tension on an organism and interacts with an exposure receptor during an exposure event.
@@ -1777,8 +1823,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - terms:source :: https://doi.org/10.1002/ddr.21045
     - terms:source :: https://doi.org/10.1021/jm200452d
     - terms:source :: https://en.wikipedia.org/wiki/Matched_molecular_pair_analysis
- - oboInOwl:hasExactSynonym :: is matched molecular pair with
  - oboInOwl:hasExactSynonym :: is MMP with
+ - oboInOwl:hasExactSynonym :: is matched molecular pair with
  - terms:creator :: https://orcid.org/0000-0003-4423-4370
  - terms:date :: "2023-02-28T18:53:32Z"^^xsd:dateTime
  - SubPropertyOf :: obo:RO_0018030
@@ -1827,8 +1873,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubPropertyOf :: obo:RO_0018030
  - Characteristics :: Symmetric
 *** "collected during"@en (obo:RO_0017502)
- - obo:IAO_0000112 :: "An oyster was collected during low tide."@en
  - obo:IAO_0000112 :: "A thorax specimen was collected during the larval stage."@en
+ - obo:IAO_0000112 :: "An oyster was collected during low tide."@en
  - obo:IAO_0000115 :: "A relation between a material entity and an occurrent in which the material entity is collected during the existence of the occurrent."@en
  - terms:contributor :: https://orcid.org/0000-0002-8844-9165
  - terms:date :: "2023-09-13T04:12:32Z"^^xsd:dateTime
@@ -1844,8 +1890,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 *** "contains measured amount"@en (obo:RO_0017005)
  - obo:IAO_0000112 :: anticoagulant-containing test tube contains measured amount 5 ml of blood specimen.
  - obo:IAO_0000115 :: A relation between a container and measurement datum that specifies the actual amount of material in the container.
- - terms:contributor :: https://orcid.org/0000-0002-5714-991X
  - terms:contributor :: https://orcid.org/0000-0002-2999-0103
+ - terms:contributor :: https://orcid.org/0000-0002-5714-991X
  - Domain :: obo:OBI_0000967
  - Range :: obo:COB_0000121
 *** "contains process"@en (obo:BFO_0000067)
@@ -1931,8 +1977,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000112 :: "this investigator role is a role of this person"@en
  - obo:IAO_0000115 :: "a relation between a role and an independent continuant (the bearer), in which the role specifically depends on the bearer for its existence"@en
  - obo:IAO_0000116 :: "A role inheres in its bearer at all times for which the role exists, however the role need not be realized at all the times that the role exists."@en
- - obo:IAO_0000118 :: "is role of"@en
  - obo:IAO_0000118 :: "role_of"@en
+ - obo:IAO_0000118 :: "is role of"@en
  - rdfs:comment :: This relation is modeled after the BFO relation of the same name which was in BFO2, but is used in a more restricted sense - specifically, we model this relation as functional (inherited from characteristic-of). Note that this relation is now removed from BFO2020.
  - SubPropertyOf :: obo:RO_0000052
  - InverseOf :: obo:RO_0000087
@@ -1942,11 +1988,6 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000119 :: http://www.ncbi.nlm.nih.gov/pubmed/20064205
  - SubPropertyOf :: obo:RO_0002502
-*** "DEPRECATED bearer of"@en (obo:RO_0004097)
- - owl:deprecated :: true
-*** "DEPRECATED inheres in"@en (obo:RO_0004096)
- - owl:deprecated :: true
- - rdfs:comment :: DEPRECATED This relation is similar to but different in important respects to the characteristic-of relation. See comments on that relation for more information.
 *** "derives from"@en (obo:RO_0001000)
  - obo:IAO_0000112 :: "this cell derives from this parent cell (cell division)"@en
  - obo:IAO_0000112 :: "this nucleus derives from this parent nucleus (nuclear division)"@en
@@ -2002,13 +2043,13 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ***** "developmentally induced by"@en (obo:RO_0002256)
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000115 :: t1 induced_by t2 if there is a process of developmental induction (GO:0031128) with t1 and t2 as interacting participants. t2 causes t1 to change its fate from a precursor material anatomical entity type T to T', where T' develops_from T
- - obo:IAO_0000117 :: https://orcid.org/0000-0001-9114-8737
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-7073-9172
+ - obo:IAO_0000117 :: https://orcid.org/0000-0001-9114-8737
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000118 :: induced by
  - obo:IAO_0000119 ::  Developmental Biology, Gilbert, 8th edition, figure 6.5(F)
- - obo:IAO_0000119 :: GO:0001759
  - obo:IAO_0000119 :: http://www.ncbi.nlm.nih.gov/pubmed/20064205
+ - obo:IAO_0000119 :: GO:0001759
  - obo:IAO_0000232 :: We place this under 'developmentally preceded by'. This placement should be examined in the context of reciprocal inductions[cjm]
  - SubPropertyOf :: obo:RO_0002258
  - Domain :: obo:UBERON_0000465
@@ -2025,8 +2066,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000115 :: x develops_in y if x is located in y whilst x is developing
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - obo:IAO_0000119 :: EHDAA2
  - obo:IAO_0000119 :: Jonathan Bard, EHDAA2
+ - obo:IAO_0000119 :: EHDAA2
  - SubPropertyOf :: obo:RO_0002258
  - Domain :: obo:UBERON_0001062
  - SubPropertyChain :: obo:RO_0002207 o obo:RO_0001025
@@ -2043,9 +2084,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ****** "develops from"@en (obo:RO_0002202)
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000115 :: x develops from y if and only if either (a) x directly develops from y or (b) there exists some z such that x directly develops from z and z develops from y
- - obo:IAO_0000117 :: https://orcid.org/0000-0002-7073-9172
  - obo:IAO_0000117 :: https://orcid.org/0000-0001-9114-8737
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
+ - obo:IAO_0000117 :: https://orcid.org/0000-0002-7073-9172
  - obo:IAO_0000117 :: https://orcid.org/0000-0003-1980-3228
  - rdfs:comment :: This is the transitive form of the develops from relation
  - SubPropertyOf :: obo:RO_0002254
@@ -2174,8 +2215,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: The relationship that links a specified entity with the process that results in an unspecified entity acquiring the features and characteristics of the specified entity
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000119 :: GOC:mtg_berkeley_2013
- - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
+ - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - oboInOwl:inSubset :: obo:valid_for_gocam
  - SubPropertyOf :: obo:RO_0002295
  - SubPropertyOf :: obo:RO_0040036
@@ -2188,8 +2229,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000112 :: an annotation of gene X to cell commitment with results_in_commitment_to CL:0000540 (neuron) means that at the end of the process an unspecified cell has been specified and determined to develop into a neuron.
  - obo:IAO_0000115 :: p 'results in commitment to' c if and only if p is a developmental process and c is a cell and p results in the state of c changing such that is can only develop into a single cell type.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: obo:valid_for_gocam
  - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
+ - oboInOwl:inSubset :: obo:valid_for_gocam
  - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - SubPropertyOf :: obo:RO_0002295
  - Range :: obo:CL_0000000
@@ -2207,9 +2248,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: p 'results in development of' c if and only if p is a developmental process and p results in the state of c changing from its initial state as a primordium or anlage through its mature state and to its final state.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000119 :: "http://www.geneontology.org/GO.doc.development.shtml"^^xsd:anyURI
+ - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
  - oboInOwl:inSubset :: obo:valid_for_gocam
- - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - SubPropertyOf :: obo:RO_0002295
  - SubPropertyOf :: obo:RO_0040036
 ***** "results in developmental induction of"@en (obo:RO_0002357)
@@ -2245,29 +2286,29 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: The relationship that links an entity with a process that results in the progression of the entity over time that is independent of changes in it's shape and results in an end point state of that entity.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000119 :: GOC:mtg_berkeley_2013
- - oboInOwl:inSubset :: obo:valid_for_gocam
  - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
+ - oboInOwl:inSubset :: obo:valid_for_gocam
  - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - SubPropertyOf :: obo:RO_0002295
  - SubPropertyOf :: obo:RO_0040036
 ***** "results in morphogenesis of"@en (obo:RO_0002298)
- - obo:IAO_0000112 :: an annotation of gene X to cell morphogenesis with results_in_morphogenesis_of CL:0000540 (neuron) means that at the end of the process an input neuron has attained its shape.
  - obo:IAO_0000112 :: "tongue morphogenesis (GO:0043587) results in morphogenesis of tongue (UBERON:0001723)"@en
+ - obo:IAO_0000112 :: an annotation of gene X to cell morphogenesis with results_in_morphogenesis_of CL:0000540 (neuron) means that at the end of the process an input neuron has attained its shape.
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000115 :: The relationship that links an entity with the process that results in the formation and shaping of that entity over time from an immature to a mature state.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000119 :: GOC:mtg_berkeley_2013
- - oboInOwl:inSubset :: obo:valid_for_go_ontology
- - oboInOwl:inSubset :: obo:valid_for_gocam
  - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
+ - oboInOwl:inSubset :: obo:valid_for_gocam
+ - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - SubPropertyOf :: obo:RO_0002295
  - SubPropertyOf :: obo:RO_0040036
 ***** "results in specification of"@en (obo:RO_0002356)
  - obo:IAO_0000115 :: The relationship linking a cell and its participation in a process that results in the fate of the cell being specified. Once specification has taken place, a cell will be committed to differentiate down a specific pathway if left in its normal environment. 
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
+ - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - oboInOwl:inSubset :: obo:valid_for_gocam
  - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
- - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - SubPropertyOf :: obo:RO_0002295
  - Range :: obo:CL_0000000
 ***** "results in structural organization of"@en (obo:RO_0002355)
@@ -2405,8 +2446,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:comment :: Allelopathy is a phenomenon in which one organism releases chemicals to positively or negatively influence the growth, survival or reproduction of other organisms in its vicinity.
  - rdfs:seeAlso :: x is an allelopath of y if x produces one or more biochemicals that influence the growth, survival, and reproduction of y
- - rdfs:seeAlso :: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10172429/
  - rdfs:seeAlso :: http://eol.org/schema/terms/allelopathyYes
+ - rdfs:seeAlso :: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10172429/
  - SubPropertyOf :: obo:RO_0002574
  - InverseOf :: obo:RO_0020301
 ****** "has allelopath"@en (obo:RO_0020301)
@@ -2506,10 +2547,10 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: inverse of hyperparasite of
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - oboInOwl:hasRelatedSynonym :: hyperparasitoidized by
- - oboInOwl:hasRelatedSynonym :: has epiparasite
  - oboInOwl:hasRelatedSynonym :: has hyperparasite
- - oboInOwl:inSubset :: obo:RO_0002259
+ - oboInOwl:hasRelatedSynonym :: has epiparasite
  - oboInOwl:inSubset :: subsets:ro-eco
+ - oboInOwl:inSubset :: obo:RO_0002259
  - SubPropertyOf :: obo:RO_0002453
  - InverseOf :: obo:RO_0002553
  - SubPropertyChain :: obo:RO_0002445 o obo:RO_0002445
@@ -2518,8 +2559,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: A relation between a host organism and a hosted organism in which the hosted organism naturally occurs in an indefinitely maintained reservoir provided by the host.
  - obo:IAO_0000119 :: https://doi.org/10.3390/v13071356
  - rdfs:comment :: A reservoir is a population, species or community (assemblage of different species in a given geographic area) in which a microorganism naturally occurs and is indefinitely maintained. Some zoonotic pathogens, particularly bacterial pathogens, may also have environmental reservoirs. Microorganisms with multiple reservoir species may be indefinitely maintained across the community of species even if they are not always present in each individual reservoir species. In the reservoir species or community, the microorganism may cause either asymptomatic infection or disease and this may vary among individuals. A pathogen may also be more genetically diverse in its reservoir host than in other taxa, in part because the pathogen is endemic to reservoir hosts.
- - terms:contributor :: https://orcid.org/0000-0002-3120-4802
  - terms:contributor :: https://orcid.org/0000-0003-3138-4118
+ - terms:contributor :: https://orcid.org/0000-0002-3120-4802
  - SubPropertyOf :: obo:RO_0002453
  - InverseOf :: obo:RO_0002803
 ******* interacts with via parasite-host interaction (obo:RO_0002443)
@@ -2598,8 +2639,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ******** parasitized by (obo:RO_0002445)
  - obo:IAO_0000115 :: Inverse of parasite of
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - obo:IAO_0000118 :: parasitised by
  - obo:IAO_0000118 :: has parasite
+ - obo:IAO_0000118 :: parasitised by
  - oboInOwl:hasExactSynonym :: directly parasitized by
  - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:seeAlso :: http://eol.org/schema/terms/hasParasite
@@ -2681,16 +2722,16 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000118 :: has predator
  - oboInOwl:inSubset :: obo:RO_0002259
  - oboInOwl:inSubset :: subsets:ro-eco
- - rdfs:seeAlso :: http://eol.org/schema/terms/HasPredator
  - rdfs:seeAlso :: http://polytraits.lifewatchgreece.eu/terms/PRED
+ - rdfs:seeAlso :: http://eol.org/schema/terms/HasPredator
  - SubPropertyOf :: obo:RO_0002438
  - InverseOf :: obo:RO_0002439
 ******* preys on (obo:RO_0002439)
  - obo:IAO_0000112 :: Baleen whale preys on krill
  - obo:IAO_0000112 :: A wasp killing a Monarch larva in order to feed to offspring [http://www.inaturalist.org/observations/2942824]
  - obo:IAO_0000115 :: An interaction relationship involving a predation process, where the subject kills the target in order to eat it or to feed to siblings, offspring or group members
- - obo:IAO_0000117 :: https://orcid.org/0000-0001-7134-3324
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
+ - obo:IAO_0000117 :: https://orcid.org/0000-0001-7134-3324
  - obo:IAO_0000117 :: https://orcid.org/0000-0003-3138-4118
  - obo:IAO_0000118 :: preys upon
  - obo:IAO_0000118 :: is subject of predation interaction with
@@ -2909,8 +2950,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
           
            'in taxon' some Eukaryota DisjointWith 'in taxon' some Eubacteria
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - obo:IAO_0000119 :: http://www.ncbi.nlm.nih.gov/pubmed/20973947
  - obo:IAO_0000119 :: http://www.ncbi.nlm.nih.gov/pubmed/17921072
+ - obo:IAO_0000119 :: http://www.ncbi.nlm.nih.gov/pubmed/20973947
  - rdfs:seeAlso :: https://github.com/obophenotype/uberon/wiki/Taxon-constraints
  - SubPropertyOf :: obo:RO_0002162
 **** serially homologous to (obo:RO_0002159)
@@ -2969,8 +3010,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - oboInOwl:hasDbXref :: http://en.wikipedia.org/wiki/Pedomorphosis
     - oboInOwl:hasDbXref :: obo:HOM_0000029
     - oboInOwl:hasDbXref :: ISBN:978-0674639416
- - oboInOwl:hasExactSynonym :: pedomorphosis
  - oboInOwl:hasExactSynonym :: juvenification
+ - oboInOwl:hasExactSynonym :: pedomorphosis
  - rdfs:seeAlso :: obo:HOM_0000029
  - terms:creator :: http://bgee.unil.ch
  - terms:source :: http://www.ncbi.nlm.nih.gov/pubmed/20116127
@@ -3065,17 +3106,17 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - oboInOwl:hasDbXref :: obo:HOM_0000007
     - oboInOwl:hasDbXref :: ISBN:0123195837
  - oboInOwl:hasBroadSynonym :: homology
- - oboInOwl:hasDbXref :: SO:0000330
- - oboInOwl:hasDbXref :: SO:0000857
  - oboInOwl:hasDbXref :: TAO:homologous_to
- - oboInOwl:hasDbXref :: ECO:0000080
- - oboInOwl:hasDbXref :: SO:homologous_to
  - oboInOwl:hasDbXref :: SO:0000853
+ - oboInOwl:hasDbXref :: SO:homologous_to
  - oboInOwl:hasDbXref :: RO_proposed_relation:homologous_to
- - oboInOwl:hasExactSynonym :: cladistic homology
+ - oboInOwl:hasDbXref :: SO:0000857
+ - oboInOwl:hasDbXref :: ECO:0000080
+ - oboInOwl:hasDbXref :: SO:0000330
  - oboInOwl:hasExactSynonym :: phylogenetic homology
- - oboInOwl:hasExactSynonym :: taxic homology
  - oboInOwl:hasExactSynonym :: historical homologous to
+ - oboInOwl:hasExactSynonym :: taxic homology
+ - oboInOwl:hasExactSynonym :: cladistic homology
  - oboInOwl:hasRelatedSynonym :: true homology
  - rdfs:seeAlso :: obo:HOM_0000007
  - terms:creator :: http://bgee.unil.ch
@@ -3086,8 +3127,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: Historical homology that involves two members sharing no other homologs in the lineages considered.
     - oboInOwl:hasDbXref :: obo:HOM_0000019
     - oboInOwl:hasDbXref :: BGEE:curator
- - oboInOwl:hasExactSynonym :: 1 to 1 homologous to
  - oboInOwl:hasExactSynonym :: 1:1 homology
+ - oboInOwl:hasExactSynonym :: 1 to 1 homologous to
  - oboInOwl:hasExactSynonym :: one-to-one homology
  - rdfs:seeAlso :: obo:HOM_0000019
  - terms:creator :: http://bgee.unil.ch
@@ -3099,10 +3140,10 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - oboInOwl:hasDbXref :: http://dx.doi.org/10.1146/annurev.genet.39.073003.114725
     - oboInOwl:hasDbXref :: obo:HOM_0000060
     - oboInOwl:hasDbXref :: http://www.ensembl.org/info/docs/compara/homology_method.html
- - oboInOwl:hasExactSynonym :: 1:1 paralogy
- - oboInOwl:hasExactSynonym :: apparent 1:1 orthology
- - oboInOwl:hasExactSynonym :: pseudoorthology
  - oboInOwl:hasExactSynonym :: apparent orthologous to
+ - oboInOwl:hasExactSynonym :: 1:1 paralogy
+ - oboInOwl:hasExactSynonym :: pseudoorthology
+ - oboInOwl:hasExactSynonym :: apparent 1:1 orthology
  - rdfs:comment :: The genes are actually paralogs but appear to be orthologous due to differential, lineage-specific gene loss.
  - rdfs:seeAlso :: obo:HOM_0000060
  - terms:creator :: http://bgee.unil.ch
@@ -3191,9 +3232,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: Historical homology that involves two members of a larger set of homologs.
     - oboInOwl:hasDbXref :: http://dx.doi.org/10.1093/molbev/msp002
     - oboInOwl:hasDbXref :: obo:HOM_0000036
- - oboInOwl:hasExactSynonym :: many:many homology 
  - oboInOwl:hasExactSynonym :: many to many homologous to
  - oboInOwl:hasExactSynonym :: many-to-many homology
+ - oboInOwl:hasExactSynonym :: many:many homology 
  - rdfs:seeAlso :: obo:HOM_0000036
  - terms:creator :: http://bgee.unil.ch
  - terms:source :: http://www.ncbi.nlm.nih.gov/pubmed/20116127
@@ -3207,9 +3248,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - oboInOwl:hasDbXref :: obo:HOM_0000017
     - oboInOwl:hasDbXref :: http://www.ncbi.nlm.nih.gov/pubmed/5449325
  - oboInOwl:hasDbXref :: SO:orthologous_to
+ - oboInOwl:hasDbXref :: SO:0000858
  - oboInOwl:hasDbXref :: ECO:00000060
  - oboInOwl:hasDbXref :: SO:0000855
- - oboInOwl:hasDbXref :: SO:0000858
  - oboInOwl:hasExactSynonym :: orthologous to
  - rdfs:comment :: The term is sometimes also used for anatomical structures.
  - rdfs:seeAlso :: obo:HOM_0000017
@@ -3222,8 +3263,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - oboInOwl:hasDbXref :: http://dx.doi.org/10.1007/BF02814484
     - oboInOwl:hasDbXref :: obo:HOM_0000020
     - oboInOwl:hasDbXref :: http://www.ensembl.org/info/docs/compara/homology_method.html
- - oboInOwl:hasExactSynonym :: one-to-one orthology
  - oboInOwl:hasExactSynonym :: 1 to 1 orthologous to
+ - oboInOwl:hasExactSynonym :: one-to-one orthology
  - oboInOwl:hasExactSynonym :: 1:1 orthology
  - rdfs:seeAlso :: obo:HOM_0000020
  - terms:creator :: http://bgee.unil.ch
@@ -3236,9 +3277,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - oboInOwl:hasDbXref :: http://dx.doi.org/10.1038/415741a
     - oboInOwl:hasDbXref :: obo:HOM_0000034
     - oboInOwl:hasDbXref :: http://www.ensembl.org/info/docs/compara/homology_method.html
+ - oboInOwl:hasExactSynonym :: 1:many orthology
  - oboInOwl:hasExactSynonym :: 1 to many orthologous to
  - oboInOwl:hasExactSynonym :: one-to-many orthology
- - oboInOwl:hasExactSynonym :: 1:many orthology
  - oboInOwl:hasRelatedSynonym :: many to 1 orthology
  - oboInOwl:hasRelatedSynonym :: co-orthology
  - rdfs:seeAlso :: obo:HOM_0000034
@@ -3287,12 +3328,12 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - oboInOwl:hasDbXref :: http://dx.doi.org/10.1038/415741a
     - oboInOwl:hasDbXref :: obo:HOM_0000048
     - oboInOwl:hasDbXref :: http://www.ensembl.org/info/docs/compara/homology_method.html
+ - oboInOwl:hasExactSynonym :: many-to-many orthology
  - oboInOwl:hasExactSynonym :: many to many orthologous to
  - oboInOwl:hasExactSynonym :: many:many orthology
- - oboInOwl:hasExactSynonym :: many-to-many orthology
  - oboInOwl:hasExactSynonym :: trans-orthology
- - oboInOwl:hasRelatedSynonym :: co-orthology
  - oboInOwl:hasRelatedSynonym :: trans-homology
+ - oboInOwl:hasRelatedSynonym :: co-orthology
  - rdfs:seeAlso :: obo:HOM_0000048
  - terms:creator :: http://bgee.unil.ch
  - terms:source :: http://www.ncbi.nlm.nih.gov/pubmed/20116127
@@ -3305,9 +3346,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - oboInOwl:hasDbXref :: http://dx.doi.org/10.1146/annurev.genet.39.073003.114725
     - oboInOwl:hasDbXref :: obo:HOM_0000011
     - oboInOwl:hasDbXref :: http://www.ncbi.nlm.nih.gov/pubmed/5449325
- - oboInOwl:hasDbXref :: SO:0000859
- - oboInOwl:hasDbXref :: SO:paralogous_to
  - oboInOwl:hasDbXref :: SO:0000854
+ - oboInOwl:hasDbXref :: SO:paralogous_to
+ - oboInOwl:hasDbXref :: SO:0000859
  - oboInOwl:hasExactSynonym :: paralogous to
  - rdfs:seeAlso :: obo:HOM_0000011
  - terms:creator :: http://bgee.unil.ch
@@ -3329,9 +3370,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: Paralogy that results from a lineage-specific duplication subsequent to a given speciation event.
     - oboInOwl:hasDbXref :: http://dx.doi.org/10.1146/annurev.genet.39.073003.114725
     - oboInOwl:hasDbXref :: obo:HOM_0000023
- - oboInOwl:hasExactSynonym :: symparalogy
  - oboInOwl:hasExactSynonym :: in-paralogous to
  - oboInOwl:hasExactSynonym :: inparalogy
+ - oboInOwl:hasExactSynonym :: symparalogy
  - rdfs:seeAlso :: obo:HOM_0000023
  - terms:creator :: http://bgee.unil.ch
  - terms:source :: http://www.ncbi.nlm.nih.gov/pubmed/20116127
@@ -3389,8 +3430,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - oboInOwl:hasDbXref :: obo:HOM_0000055
     - oboInOwl:hasDbXref :: ISBN:978-0878932665
  - oboInOwl:hasExactSynonym :: tandem paralogous to
- - oboInOwl:hasRelatedSynonym :: iterative paralogy
  - oboInOwl:hasRelatedSynonym :: serial paralogy
+ - oboInOwl:hasRelatedSynonym :: iterative paralogy
  - rdfs:seeAlso :: obo:HOM_0000055
  - terms:creator :: http://bgee.unil.ch
  - terms:source :: http://www.ncbi.nlm.nih.gov/pubmed/20116127
@@ -3444,9 +3485,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: Xenology that is characterized by multiple horizontal transfer events, resulting in the presence of two or more copies of the foreign gene in the host genome.
     - oboInOwl:hasDbXref :: obo:HOM_0000068
     - oboInOwl:hasDbXref :: http://www.ncbi.nlm.nih.gov/pubmed/3065587
+ - oboInOwl:hasExactSynonym :: duplicate xenology
  - oboInOwl:hasExactSynonym :: multiple xenology
  - oboInOwl:hasExactSynonym :: paraxenologous to
- - oboInOwl:hasExactSynonym :: duplicate xenology
  - rdfs:seeAlso :: obo:HOM_0000068
  - terms:creator :: http://bgee.unil.ch
  - terms:source :: http://www.ncbi.nlm.nih.gov/pubmed/20116127
@@ -3519,13 +3560,13 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - oboInOwl:hasDbXref :: obo:HOM_0000014
     - oboInOwl:hasDbXref :: ISBN:0123195837
     - oboInOwl:hasDbXref :: ISBN:978-0471984931
- - oboInOwl:hasExactSynonym :: fractional homology
  - oboInOwl:hasExactSynonym :: segmental homology
  - oboInOwl:hasExactSynonym :: partial homologous to
- - oboInOwl:hasRelatedSynonym :: partial correspondence
- - oboInOwl:hasRelatedSynonym :: mixed homology
+ - oboInOwl:hasExactSynonym :: fractional homology
  - oboInOwl:hasRelatedSynonym :: percent homology
  - oboInOwl:hasRelatedSynonym :: modular homology
+ - oboInOwl:hasRelatedSynonym :: partial correspondence
+ - oboInOwl:hasRelatedSynonym :: mixed homology
  - rdfs:seeAlso :: obo:HOM_0000014
  - terms:creator :: http://bgee.unil.ch
  - terms:source :: http://www.ncbi.nlm.nih.gov/pubmed/20116127
@@ -3572,8 +3613,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - oboInOwl:hasDbXref :: obo:HOM_0000012
     - oboInOwl:hasDbXref :: DOI:10.1002/1097-010X(20001215)288:4<345::AID-JEZ7>3.0.CO;2-Y
  - oboInOwl:hasExactSynonym :: syntenic paralogous to
- - oboInOwl:hasRelatedSynonym :: paralogon
  - oboInOwl:hasRelatedSynonym :: duplicon
+ - oboInOwl:hasRelatedSynonym :: paralogon
  - rdfs:seeAlso :: obo:HOM_0000012
  - terms:creator :: http://bgee.unil.ch
  - terms:source :: http://www.ncbi.nlm.nih.gov/pubmed/20116127
@@ -3622,11 +3663,11 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000112 :: a particular instances of akt-2 enables some instance of protein kinase activity
  - obo:IAO_0000115 :: c enables p iff c is capable of p and c acts to execute p.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - obo:IAO_0000118 :: is catalyzing
  - obo:IAO_0000118 :: executes
+ - obo:IAO_0000118 :: is executing
  - obo:IAO_0000118 :: has
  - obo:IAO_0000118 :: catalyzes
- - obo:IAO_0000118 :: is executing
+ - obo:IAO_0000118 :: is catalyzing
  - obo:IAO_0000232 :: This relation differs from the parent relation 'capable of' in that the parent is weaker and only expresses a capability that may not be actually realized, whereas this relation is always realized.
  - oboInOwl:inSubset :: obo:valid_for_go_gp2term
  - rdfs:seeAlso :: "https://wiki.geneontology.org/Enables"^^xsd:anyURI
@@ -3685,11 +3726,11 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - Domain :: obo:BFO_0000015
  - Range :: obo:BFO_0000040
 *** generically depends on (obo:RO_0010001)
- - obo:IAO_0000112 :: The novel *War and Peace* generically depends on this copy of the novel.
- - obo:IAO_0000112 :: The pattern shared by chess boards generically depends on any chess board.
- - obo:IAO_0000112 :: Genetic information generically depend on molecules of DNA.
  - obo:IAO_0000112 :: The score of a symphony g-depends on a copy of the score.
+ - obo:IAO_0000112 :: The novel *War and Peace* generically depends on this copy of the novel.
  - obo:IAO_0000112 :: This pdf file generically depends on this server.
+ - obo:IAO_0000112 :: Genetic information generically depend on molecules of DNA.
+ - obo:IAO_0000112 :: The pattern shared by chess boards generically depends on any chess board.
  - obo:IAO_0000115 :: A generically dependent continuant *b* generically depends on an independent continuant *c* at time *t* means: there inheres in *c* a specifically deendent continuant which concretizes *b* at *t*.
  - obo:IAO_0000119 :: [072-ISO]
  - oboInOwl:hasExactSynonym :: g-depends on
@@ -3761,8 +3802,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - InverseOf :: obo:RO_0002205
  - SubPropertyChain :: obo:RO_0002512 o obo:RO_0002510
 **** "has gene product"@en (obo:RO_0002205)
- - obo:IAO_0000112 :: every HOTAIR lncRNA is the gene product of some HOXC gene
  - obo:IAO_0000112 :: every sonic hedgehog protein (PR:000014841) is the gene product of some sonic hedgehog gene
+ - obo:IAO_0000112 :: every HOTAIR lncRNA is the gene product of some HOXC gene
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000115 :: x has gene product y if and only if x is a gene (SO:0000704) that participates in some gene expression process (GO:0010467) where the output of that process is either y or something that is ribosomally translated from y
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
@@ -3856,13 +3897,13 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: c has-chemical-role r iff c has-role r and r is a chemical role (CHEBI:51086)
  - SubPropertyOf :: obo:RO_0000087
 *** has characterizing marker set (obo:RO_0015004)
- - obo:IAO_0000112 :: transcriptomically defined cell type X subClass_of: (has_characterizing_marker_set some S1); S1 has_part some gene 1, S1 has_part some gene 2, S1 has_part some gene 3.
  - obo:IAO_0000112 :: 'Lamp5-like Egln3_1 primary motor cortex GABAergic interneuron (Mus musculus)' subClass_of: has_characterizing_marker_set some 'NS forest marker set of Lamp5-like Egln3_1 MOp (Mouse).'; NS forest marker set of Lamp5-like Egln3_1 SubClass_of: ('has part' some 'Mouse Fbn2') and ('has part' some 'Mouse Chrna7') and ('has part' some 'Mouse Fam19a1').
+ - obo:IAO_0000112 :: transcriptomically defined cell type X subClass_of: (has_characterizing_marker_set some S1); S1 has_part some gene 1, S1 has_part some gene 2, S1 has_part some gene 3.
  - obo:IAO_0000115 :: A relation that applies between a cell type and a set of markers that can be used to uniquely identify that cell type.
  - obo:IAO_0000116 :: C has_characterizing_marker_set y iff: C is a cell type and y is a collection of genes or proteins whose expression is sufficient to distinguish cell type C from most or all other cell types.
  - obo:IAO_0000232 :: This relation is not meant for cases where set of genes/proteins are only useful as markers in some specific context - e.g. in some specific location. In these cases it is recommended to make a more specific cell class restricted to the relevant context.
- - oboInOwl:hasExactSynonym :: has marker gene combination
  - oboInOwl:hasExactSynonym :: has marker signature set
+ - oboInOwl:hasExactSynonym :: has marker gene combination
  - terms:contributor :: https://orcid.org/0000-0001-7258-9596
  - Domain :: obo:CL_0000000
 *** "has consumer"@en (obo:RO_0009004)
@@ -3888,8 +3929,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 *** "has maximum capacity"@en (obo:RO_0017006)
  - obo:IAO_0000112 :: anticoagulant-containing test tube has maximum capacity 10 ml.
  - obo:IAO_0000115 :: A relation that relates a container to a measurement datum that specifies the maximum capacity of the container. Capacity can refer to either weight or volume.
- - terms:contributor :: https://orcid.org/0000-0002-5714-991X
  - terms:contributor :: https://orcid.org/0000-0002-2999-0103
+ - terms:contributor :: https://orcid.org/0000-0002-5714-991X
  - Domain :: obo:OBI_0000967
  - Range :: obo:COB_0000121
 *** has model (obo:RO_0002615)
@@ -3944,8 +3985,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubPropertyOf :: obo:RO_0002344
 *** "has participant"@en (obo:RO_0000057)
  - obo:IAO_0000111 :: "has participant"@en
- - obo:IAO_0000112 :: "this process has participant this input material (or this output material)"@en
  - obo:IAO_0000112 :: "this investigation has participant this investigator"@en
+ - obo:IAO_0000112 :: "this process has participant this input material (or this output material)"@en
  - obo:IAO_0000112 :: "this blood coagulation has participant this blood clot"@en
  - obo:IAO_0000115 :: "a relation between a process and a continuant, in which the continuant is somehow involved in the process"@en
  - obo:IAO_0000116 :: "Has_participant is a primitive instance-level relation between a process, a continuant, and a time at which the continuant participates in some way in the process. The relation obtains, for example, when this particular process of oxygen exchange across this particular alveolar membrane has_participant this particular sample of hemoglobin at this particular time."@en
@@ -4043,9 +4084,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: p has output c iff c is a participant in p, c is present at the end of p, and c is not present in the same state at the beginning of p.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000118 :: produces
+ - oboInOwl:inSubset :: obo:valid_for_gocam
  - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
- - oboInOwl:inSubset :: obo:valid_for_gocam
  - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:seeAlso :: "https://wiki.geneontology.org/Has_output"^^xsd:anyURI
  - SubPropertyOf :: obo:RO_0000057
@@ -4064,21 +4105,21 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubPropertyOf :: obo:RO_0002234
  - SubPropertyOf :: obo:RO_0004007
 ***** "results in formation of anatomical entity"@en (obo:RO_0002297)
- - obo:IAO_0000112 :: "every \"endocardial cushion formation\" (GO:0003272) results_in_formation_of some \"endocardial cushion\" (UBERON:0002062)"@en
  - obo:IAO_0000112 :: an annotation of gene X to anatomical structure formation with results_in_formation_of UBERON:0000007 (pituitary gland) means that at the beginning of the process a pituitary gland does not exist and at the end of the process a pituitary gland exists.
+ - obo:IAO_0000112 :: "every \"endocardial cushion formation\" (GO:0003272) results_in_formation_of some \"endocardial cushion\" (UBERON:0002062)"@en
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000119 :: GOC:mtg_berkeley_2013
- - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
- - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - oboInOwl:inSubset :: obo:valid_for_gocam
+ - oboInOwl:inSubset :: obo:valid_for_go_ontology
+ - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
  - SubPropertyOf :: obo:RO_0002234
  - SubPropertyOf :: obo:RO_0002295
  - InverseOf :: obo:RO_0002354
 ****** results in assembly of (obo:RO_0002588)
  - oboInOwl:inSubset :: obo:valid_for_gocam
- - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
+ - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - SubPropertyOf :: obo:RO_0002297
  - SubPropertyOf :: obo:RO_0002592
 ****** results in synthesis of (obo:RO_0002587)
@@ -4120,9 +4161,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ***** results in movement of (obo:RO_0002565)
  - obo:IAO_0000115 :: Holds between p and c when p is locomotion process and the outcome of this process is the change of location of c
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: obo:valid_for_go_ontology
- - oboInOwl:inSubset :: obo:valid_for_gocam
  - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
+ - oboInOwl:inSubset :: obo:valid_for_gocam
+ - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - SubPropertyOf :: obo:RO_0040036
 ***** results in organization of (obo:RO_0002592)
  - obo:IAO_0000115 :: p results in organization of c iff p results in the assembly, arrangement of constituent parts, or disassembly of c
@@ -4130,9 +4171,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ****** "results in fusion of"@en (obo:RO_0012008)
  - oboInOwl:created_by :: https://orcid.org/0000-0003-1813-6857
  - oboInOwl:creation_date :: "2021-02-26T07:28:29Z"^^xsd:dateTime
- - oboInOwl:inSubset :: obo:valid_for_go_ontology
- - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
  - oboInOwl:inSubset :: obo:valid_for_gocam
+ - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
+ - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - SubPropertyOf :: obo:RO_0002592
 *** has phenotype or disease (obo:RO_0016001)
  - obo:IAO_0000232 :: Do not use this relation directly. It is intended as a grouping for a set of relations regarding presentation of phenotypes and disease.
@@ -4172,8 +4213,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000112 :: 'human p53 protein' SubClassOf some ('has prototype' some ('participates in' some 'DNA repair'))
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000115 :: x has prototype y if and only if x is an instance of C and y is a prototypical instance of C. For example, every instance of heart, both normal and abnormal is related by the has prototype relation to some instance of a "canonical" heart, which participates in blood circulation.
- - obo:IAO_0000116 :: Experimental. In future there may be a formalization in which this relation is treated as a shortcut to some modal logic axiom. We may decide to obsolete this and adopt a more specific evolutionary relationship (e.g. evolved from)
  - obo:IAO_0000116 :: This property can be used to make weaker forms of certain relations by chaining an additional property. For example, we may say: retina SubClassOf has_prototype some 'detection of light'. i.e. every retina is related to a prototypical retina instance which is detecting some light. Note that this is very similar to 'capable of', but this relation affords a wider flexibility. E.g. we can make a relation between continuants.
+ - obo:IAO_0000116 :: Experimental. In future there may be a formalization in which this relation is treated as a shortcut to some modal logic axiom. We may decide to obsolete this and adopt a more specific evolutionary relationship (e.g. evolved from)
  - obo:IAO_0000116 :: TODO: add homeomorphy axiom
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - Domain :: obo:BFO_0000004 or obo:BFO_0000015
@@ -4214,8 +4255,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000232 :: This property or its subproperties is not to be used directly. These properties exist as helper properties that are used to support OWL reasoning.
 **** interaction relation helper property (obo:RO_0002563)
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - rdfs:seeAlso :: http://ontologydesignpatterns.org/wiki/Submissions:N-Ary_Relation_Pattern_%28OWL_2%29
  - rdfs:seeAlso :: "http://purl.obolibrary.org/obo/ro/docs/interaction-relations/"^^xsd:anyURI
+ - rdfs:seeAlso :: http://ontologydesignpatterns.org/wiki/Submissions:N-Ary_Relation_Pattern_%28OWL_2%29
  - SubPropertyOf :: obo:RO_0002464
 ***** is symbiosis (obo:RO_0002465)
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
@@ -4259,8 +4300,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:RO_0040042 :: obo:BFO_0000003
  - oboInOwl:hasDbXref :: SO:similar_to
  - oboInOwl:hasDbXref :: ECO:0000041
- - oboInOwl:hasExactSynonym :: sameness
  - oboInOwl:hasExactSynonym :: similar to
+ - oboInOwl:hasExactSynonym :: sameness
  - oboInOwl:hasRelatedSynonym :: correspondence
     - oboInOwl:hasDbXref :: http://dx.doi.org/10.1007/BF02814479
  - oboInOwl:hasRelatedSynonym :: resemblance
@@ -4329,13 +4370,13 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - oboInOwl:hasDbXref :: http://dx.doi.org/10.1186/1742-9994-2-15
     - oboInOwl:hasDbXref :: obo:HOM_0000057
     - oboInOwl:hasDbXref :: ISBN:0199141118
- - oboInOwl:hasExactSynonym :: latent homologous to
  - oboInOwl:hasExactSynonym :: cryptic homology
- - oboInOwl:hasExactSynonym :: apomorphic tendency
  - oboInOwl:hasExactSynonym :: underlying synapomorphy
- - oboInOwl:hasRelatedSynonym :: homoiology
- - oboInOwl:hasRelatedSynonym :: homoplastic tendency
+ - oboInOwl:hasExactSynonym :: latent homologous to
+ - oboInOwl:hasExactSynonym :: apomorphic tendency
  - oboInOwl:hasRelatedSynonym :: re-awakening
+ - oboInOwl:hasRelatedSynonym :: homoplastic tendency
+ - oboInOwl:hasRelatedSynonym :: homoiology
  - rdfs:comment :: Used for structures in closely related taxa.
  - rdfs:seeAlso :: obo:HOM_0000057
  - terms:creator :: http://bgee.unil.ch
@@ -4375,8 +4416,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubPropertyChain :: obo:RO_0002134 o obo:BFO_0000050
 *** interacts with (obo:RO_0002434)
  - obo:IAO_0000115 :: A relationship that holds between two entities in which the processes executed by the two entities are causally connected.
- - obo:IAO_0000116 :: "Considering relabeling as 'pairwise interacts with'"^^xsd:anyURI
  - obo:IAO_0000116 :: This relation and all sub-relations can be applied to either (1) pairs of entities that are interacting at any moment of time (2) populations or species of entity whose members have the disposition to interact (3) classes whose members have the disposition to interact.
+ - obo:IAO_0000116 :: "Considering relabeling as 'pairwise interacts with'"^^xsd:anyURI
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000232 :: Note that this relationship type, and sub-relationship types may be redundant with process terms from other ontologies. For example, the symbiotic relationship hierarchy parallels GO. The relations are provided as a convenient shortcut. Consider using the more expressive processual form to capture your data. In the future, these relations will be linked to their cognate processes through rules.
  - oboInOwl:hasExactSynonym :: in pairwise interaction with
@@ -4406,8 +4447,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: The entity A, immediately upstream of the entity B, has an activity that regulates an activity performed by B. For example, A and B may be gene products and binding of B by A regulates the kinase activity of B.
           
           A and B can be physically interacting but not necessarily. Immediately upstream means there are no intermediate entity between A and B.
- - obo:IAO_0000117 :: https://orcid.org/0000-0003-4639-4431
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
+ - obo:IAO_0000117 :: https://orcid.org/0000-0003-4639-4431
  - oboInOwl:hasExactSynonym :: molecularly controls
  - SubPropertyOf :: obo:RO_0002436
  - SubPropertyOf :: obo:RO_0011002
@@ -4417,8 +4458,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ****** directly negatively regulates activity of (obo:RO_0002449)
  - obo:IAO_0000115 :: The entity A, immediately upstream of the entity B, has an activity that negatively regulates an activity performed by B.
           For example, A and B may be gene products and binding of B by A negatively regulates the kinase activity of B.
- - obo:IAO_0000117 :: https://orcid.org/0000-0003-4639-4431
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
+ - obo:IAO_0000117 :: https://orcid.org/0000-0003-4639-4431
  - obo:IAO_0000118 :: directly inhibits
  - oboInOwl:hasExactSynonym :: molecularly decreases activity of
  - SubPropertyOf :: obo:RO_0002448
@@ -4446,8 +4487,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ****** directly positively regulates activity of (obo:RO_0002450)
  - obo:IAO_0000115 :: The entity A, immediately upstream of the entity B, has an activity that positively regulates an activity performed by B.
           For example, A and B may be gene products and binding of B by A positively regulates the kinase activity of B.
- - obo:IAO_0000117 :: https://orcid.org/0000-0003-4639-4431
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
+ - obo:IAO_0000117 :: https://orcid.org/0000-0003-4639-4431
  - obo:IAO_0000118 :: directly activates
  - oboInOwl:hasExactSynonym :: molecularly increases activity of
  - SubPropertyOf :: obo:RO_0002448
@@ -4491,9 +4532,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - terms:date :: "2024-10-29T09:55:07Z"^^xsd:dateTime
  - Domain :: obo:UBERON_0001062
 *** "is carrier of"@en (obo:RO_0010002)
- - obo:IAO_0000112 :: Molecules of DNA are carriers of genetic information.
  - obo:IAO_0000112 :: This hard drive is carrier of these data items.
  - obo:IAO_0000112 :: This copy of *War and Peace* is carrier of the novel written by Tolstoy.
+ - obo:IAO_0000112 :: Molecules of DNA are carriers of genetic information.
  - obo:IAO_0000115 :: *b* is carrier of *c* at time *t* if and only if *c* *g-depends on* *b* at *t*
  - obo:IAO_0000119 :: [072-ISO]
  - Domain :: obo:BFO_0000004
@@ -4517,17 +4558,17 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: Inverse of the owns relation.
  - oboInOwl:creation_date :: "2023-03-29T17:06:06Z"^^xsd:dateTime
  - oboInOwl:inSubset :: obo:RO_0002259
+ - terms:contributor :: https://orcid.org/0000-0003-1834-3856
  - terms:contributor :: https://orcid.org/0000-0001-9625-1899
  - terms:contributor :: https://orcid.org/0000-0003-1909-9269
- - terms:contributor :: https://orcid.org/0000-0003-1834-3856
  - InverseOf :: obo:RO_0017008
 *** "located in"@en (obo:RO_0001025)
  - obo:IAO_0000111 :: "located in"@en
- - obo:IAO_0000112 :: "this rat is located in this cage"@en
  - obo:IAO_0000112 :: "my brain is located in my head"@en
+ - obo:IAO_0000112 :: "this rat is located in this cage"@en
  - obo:IAO_0000115 :: "a relation between two independent continuants, the target and the location, in which the target is entirely within the location"@en
- - obo:IAO_0000116 :: "Most location relations will only hold at certain times, but this is difficult to specify in OWL. See http://purl.obolibrary.org/obo/ro/docs/temporal-semantics/"@en
  - obo:IAO_0000116 :: "Location as a relation between instances: The primitive instance-level relation c located_in r at t reflects the fact that each continuant is at any given time associated with exactly one spatial region, namely its exact location. Following we can use this relation to define a further instance-level location relation - not between a continuant and the region which it exactly occupies, but rather between one continuant and another. c is located in c1, in this sense, whenever the spatial region occupied by c is part_of the spatial region occupied by c1.    Note that this relation comprehends both the relation of exact location between one continuant and another which obtains when r and r1 are identical (for example, when a portion of fluid exactly fills a cavity), as well as those sorts of inexact location relations which obtain, for example, between brain and head or between ovum and uterus"@en
+ - obo:IAO_0000116 :: "Most location relations will only hold at certain times, but this is difficult to specify in OWL. See http://purl.obolibrary.org/obo/ro/docs/temporal-semantics/"@en
  - obo:IAO_0000118 :: "located_in"@en
  - obo:RO_0001900 :: obo:RO_0001901
  - oboInOwl:inSubset :: obo:valid_for_go_gp2term
@@ -4550,8 +4591,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - Range :: obo:UBERON_0000061
 *** "location of"@en (obo:RO_0001015)
  - obo:IAO_0000111 :: "is location of"@en
- - obo:IAO_0000112 :: "this cage is the location of this rat"@en
  - obo:IAO_0000112 :: "my head is the location of my brain"@en
+ - obo:IAO_0000112 :: "this cage is the location of this rat"@en
  - obo:IAO_0000115 :: "a relation between two independent continuants, the location and the target, in which the target is entirely within the location"@en
  - obo:IAO_0000116 :: "Most location relations will only hold at certain times, but this is difficult to specify in OWL. See http://purl.obolibrary.org/obo/ro/docs/temporal-semantics/"@en
  - obo:IAO_0000118 :: "location_of"@en
@@ -4566,13 +4607,13 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** "2D boundary of"@en (obo:RO_0002000)
  - obo:IAO_0000112 :: "the surface of my skin is a 2D boundary of my body"@en
  - obo:IAO_0000115 :: "a relation between a 2D immaterial entity (the boundary) and a material entity, in which the boundary delimits the material entity"@en
- - obo:IAO_0000116 :: "Although the boundary is two-dimensional, it exists in three-dimensional space and thus has a 3D shape."@en
  - obo:IAO_0000116 :: "A 2D boundary may have holes and gaps, but it must be a single connected entity, not an aggregate of several disconnected parts."@en
- - obo:IAO_0000118 :: "is 2D boundary of"@en
- - obo:IAO_0000118 :: "surface of"@en
- - obo:IAO_0000118 :: "is boundary of"@en
+ - obo:IAO_0000116 :: "Although the boundary is two-dimensional, it exists in three-dimensional space and thus has a 3D shape."@en
  - obo:IAO_0000118 :: "2D_boundary_of"@en
+ - obo:IAO_0000118 :: "is boundary of"@en
+ - obo:IAO_0000118 :: "is 2D boundary of"@en
  - obo:IAO_0000118 :: "boundary of"@en
+ - obo:IAO_0000118 :: "surface of"@en
  - obo:RO_0001900 :: obo:RO_0001901
  - SubPropertyOf :: obo:RO_0002323
  - InverseOf :: obo:RO_0002002
@@ -4751,8 +4792,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cito:citesAsAuthority :: http://www.ncbi.nlm.nih.gov/pubmed/22402613
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000115 :: Relation between a muscle and a motor neuron that synapses to it via a type Is bouton.
- - obo:IAO_0000117 :: https://orcid.org/0000-0002-7073-9172
  - obo:IAO_0000117 :: https://orcid.org/0000-0001-5948-3092
+ - obo:IAO_0000117 :: https://orcid.org/0000-0002-7073-9172
  - obo:IAO_0000424 :: BFO_0000051 some (GO_0042734 that BFO_0000050 some (GO_0045202 that BFO_0000051 some (GO_0061177 that BFO_0000051 some GO_0045211 that BFO_0000050 some ?Y)))
  - obo:RO_0001900 :: obo:RO_0001901
  - rdfs:comment :: Expands to: has_part some ('presynaptic membrane' that part_of some ('synapse' that has_part some ('type Is terminal button' that has_part some 'postsynaptic membrane' that part_of some ?Y)))))
@@ -4800,8 +4841,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ******* "synapsed_via_type_II_bouton_to"@en (obo:RO_0002107)
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000115 :: A relation between a motor neuron and a muscle that it synapses to via a type II bouton.
- - obo:IAO_0000117 :: https://orcid.org/0000-0002-7073-9172
  - obo:IAO_0000117 :: https://orcid.org/0000-0001-5948-3092
+ - obo:IAO_0000117 :: https://orcid.org/0000-0002-7073-9172
  - obo:IAO_0000424 :: BFO_0000051 some (GO_0061175 that BFO_0000051 some (that BFO_0000051 some (GO_0045202 that BFO_0000051 some ( that BFO_0000050 some ?Y))))
  - obo:RO_0001900 :: obo:RO_0001901
  - rdfs:comment :: Expands to: has_part some ('type II terminal button' that has_part some ('pre-synaptic membrane' that part_of some ('synapse' that has_part some ('post-synaptic membrane' that part_of some ?Y))))
@@ -4811,8 +4852,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cito:citesAsAuthority :: http://www.ncbi.nlm.nih.gov/pubmed/22402613
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000115 :: A relation between a motor neuron and a muscle that it synapses to via a type Ib bouton.
- - obo:IAO_0000117 :: https://orcid.org/0000-0001-5948-3092
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-7073-9172
+ - obo:IAO_0000117 :: https://orcid.org/0000-0001-5948-3092
  - obo:IAO_0000424 :: BFO_0000051 some (GO_0061176 that BFO_0000051 some (that BFO_0000051 some (GO_0045202 that BFO_0000051 some ( that BFO_0000050 some ?Y))))
  - obo:RO_0001900 :: obo:RO_0001901
  - rdfs:comment :: Expands to: has_part some ('type Ib terminal button' that has_part some ('pre-synaptic membrane' that part_of some ('synapse' that has_part some ('post-synaptic membrane' that part_of some ?Y))))
@@ -4822,8 +4863,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cito:citesAsAuthority :: http://www.ncbi.nlm.nih.gov/pubmed/22402613
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000115 :: A relation between a motor neuron and a muscle that it synapses to via a type Is bouton.
- - obo:IAO_0000117 :: https://orcid.org/0000-0002-7073-9172
  - obo:IAO_0000117 :: https://orcid.org/0000-0001-5948-3092
+ - obo:IAO_0000117 :: https://orcid.org/0000-0002-7073-9172
  - obo:IAO_0000424 :: BFO_0000051 some (GO_0061177 that BFO_0000051 some (that BFO_0000051 some (GO_0045202 that BFO_0000051 some ( that BFO_0000050 some ?Y))))
  - obo:RO_0001900 :: obo:RO_0001901
  - rdfs:comment :: Expands to: has_part some ('type Is terminal button' that has_part some ('pre-synaptic membrane' that part_of some ('synapse' that has_part some ('post-synaptic membrane' that part_of some ?Y))))
@@ -4852,8 +4893,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - Domain :: obo:UBERON_0001981
  - Range :: obo:UBERON_0000061
 ***** "tributary of"@en (obo:RO_0002376)
- - obo:IAO_0000112 :: inferior epigastric vein tributary_of external iliac vein
  - obo:IAO_0000112 :: Deschutes River tributary_of Columbia River
+ - obo:IAO_0000112 :: inferior epigastric vein tributary_of external iliac vein
  - obo:IAO_0000114 :: obo:IAO_0000428
  - obo:IAO_0000115 :: x tributary_of y if and only if x a channel for the flow of a substance into y, where y is larger than x. If x and y are hydrographic features, then y is the main stem of a river, or a lake or bay, but not the sea or ocean. If x and y are anatomical, then y is a vein.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
@@ -4864,8 +4905,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000119 :: http://en.wikipedia.org/wiki/Tributary
  - obo:IAO_0000232 :: "This relation can be used for geographic features (e.g. rivers) as well as anatomical structures (veins, arteries)"^^xsd:anyURI
  - oboInOwl:inSubset :: subsets:ro-eco
- - rdfs:seeAlso :: "http://en.wikipedia.org/wiki/Tributary"^^xsd:anyURI
  - rdfs:seeAlso :: http://dbpedia.org/ontology/drainsTo
+ - rdfs:seeAlso :: "http://en.wikipedia.org/wiki/Tributary"^^xsd:anyURI
  - SubPropertyOf :: obo:RO_0002170
  - SubPropertyOf :: obo:RO_0002375
 ****** "proper tributary of"@en (obo:RO_0002383)
@@ -4899,11 +4940,11 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** "has 2D boundary"@en (obo:RO_0002002)
  - obo:IAO_0000112 :: "my body has 2D boundary the surface of my skin"@en
  - obo:IAO_0000115 :: "a relation between a material entity and a 2D immaterial entity (the boundary), in which the boundary delimits the material entity"@en
- - obo:IAO_0000116 :: "A 2D boundary may have holes and gaps, but it must be a single connected entity, not an aggregate of several disconnected parts."@en
  - obo:IAO_0000116 :: "Although the boundary is two-dimensional, it exists in three-dimensional space and thus has a 3D shape."@en
+ - obo:IAO_0000116 :: "A 2D boundary may have holes and gaps, but it must be a single connected entity, not an aggregate of several disconnected parts."@en
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-7073-9172
- - obo:IAO_0000118 :: "has boundary"@en
  - obo:IAO_0000118 :: "has_2D_boundary"@en
+ - obo:IAO_0000118 :: "has boundary"@en
  - obo:RO_0001900 :: obo:RO_0001901
  - SubPropertyOf :: obo:RO_0002323
  - Domain :: obo:BFO_0000040
@@ -4947,8 +4988,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: x overlaps y if and only if there exists some z such that x has part z and z part of y
  - obo:IAO_0000424 :: http://purl.obolibrary.org/obo/BFO_0000051 some (http://purl.obolibrary.org/obo/BFO_0000050 some ?Y)
  - obo:RO_0001900 :: obo:RO_0001901
- - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
  - oboInOwl:inSubset :: obo:valid_for_gocam
+ - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
  - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0002323
  - SubPropertyChain :: obo:BFO_0000050 o obo:BFO_0000050
@@ -5020,9 +5061,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: Relation between a sensory neuron and some structure in which it receives sensory input via a sensory dendrite.
  - oboInOwl:created_by :: https://orcid.org/0000-0002-1373-1705
  - oboInOwl:creation_date :: "2020-07-20T12:10:09Z"^^xsd:dateTime
- - oboInOwl:hasExactSynonym :: has sensory terminal in
  - oboInOwl:hasExactSynonym :: has sensory terminal location
  - oboInOwl:hasExactSynonym :: has sensory dendrite location
+ - oboInOwl:hasExactSynonym :: has sensory terminal in
  - SubPropertyOf :: obo:RO_0002360
  - Domain :: obo:CL_0000101
  - SubPropertyChain :: obo:RO_0013007 o obo:BFO_0000050
@@ -5063,8 +5104,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ***** "has part"@en (obo:BFO_0000051)
  - obo:IAO_0000111 :: "has part"@en
  - obo:IAO_0000112 :: "my stomach has part my stomach cavity (continuant parthood, material entity has part immaterial entity)"@en
- - obo:IAO_0000112 :: "this year has part this day (occurrent parthood)"@en
  - obo:IAO_0000112 :: "my body has part my brain (continuant parthood, two material entities)"@en
+ - obo:IAO_0000112 :: "this year has part this day (occurrent parthood)"@en
  - obo:IAO_0000115 :: "a core relation that holds between a whole and its part"@en
  - obo:IAO_0000116 :: "Parthood requires the part and the whole to have compatible classes: only an occurrent have an occurrent as part; only a process can have a process as part; only a continuant can have a continuant as part; only an independent continuant can have an independent continuant as part; only a specifically dependent continuant can have a specifically dependent continuant as part; only a generically dependent continuant can have a generically dependent continuant as part. (This list is not exhaustive.)
           
@@ -5074,8 +5115,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000118 :: "has_part"@en
  - obo:RO_0001900 :: obo:RO_0001901
  - oboInOwl:inSubset :: obo:valid_for_gocam
- - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
+ - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - SubPropertyOf :: obo:RO_0002131
  - InverseOf :: obo:BFO_0000050
  - Characteristics :: Transitive
@@ -5092,8 +5133,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ****** "ends with"@en (obo:RO_0002230)
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000115 :: x ends with y if and only if x has part y and the time point at which x ends is equivalent to the time point at which y ends. Formally: α(y) > α(x) ∧ ω(y) = ω(x), where α is a function that maps a process to a start point, and ω is a function that maps a process to an end point.
- - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000117 :: Chris Mungall
+ - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000118 :: finished by
  - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:BFO_0000051
@@ -5112,8 +5153,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ****** has branching part (obo:RO_0002569)
  - obo:IAO_0000115 :: inverse of branching part of
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: obo:RO_0002259
  - oboInOwl:inSubset :: subsets:ro-eco
+ - oboInOwl:inSubset :: obo:RO_0002259
  - SubPropertyOf :: obo:BFO_0000051
  - SubPropertyOf :: obo:RO_0002375
  - InverseOf :: obo:RO_0002380
@@ -5203,9 +5244,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000112 :: "Every B cell[CL_0000236] has plasma membrane part some immunoglobulin complex[GO_0019814]"@en
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000115 :: Holds between a cell c and a protein complex or protein p if and only if that cell has as part a plasma_membrane[GO:0005886], and that plasma membrane has p as part.
- - obo:IAO_0000117 :: https://orcid.org/0000-0001-9990-8331
- - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000117 :: https://orcid.org/0000-0003-1617-8244
+ - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
+ - obo:IAO_0000117 :: https://orcid.org/0000-0001-9990-8331
  - obo:IAO_0000119 :: http://www.ncbi.nlm.nih.gov/pubmed/19243617
  - obo:IAO_0000424 :: <http://purl.obolibrary.org/obo/BFO_0000051> some (<http://purl.obolibrary.org/obo/GO_0005886> and <http://purl.obolibrary.org/obo/BFO_0000051> some ?Y)
  - obo:RO_0001900 :: obo:RO_0001901
@@ -5216,8 +5257,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000112 :: 'Ly-76 high positive erythrocyte' equivalent to 'enucleate erythrocyte' and (has_high_plasma_membrane_amount some 'lymphocyte antigen 76 (mouse)')
  - obo:IAO_0000115 :: A relation between a cell and molecule or complex such that every instance of the cell has a high number of instances of that molecule expressed on the cell surface.
     - oboInOwl:hasDbXref :: PMID:19243617
- - terms:contributor :: https://orcid.org/0000-0003-1617-8244
  - terms:contributor :: https://orcid.org/0000-0003-1940-6740
+ - terms:contributor :: https://orcid.org/0000-0003-1617-8244
  - SubPropertyOf :: obo:RO_0002104
  - Domain :: obo:CL_0000000
 ******* has low plasma membrane amount (obo:RO_0015016)
@@ -5282,8 +5323,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000112 :: Every insulin receptor signaling pathway starts with the binding of a ligand to the insulin receptor
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000115 :: x starts with y if and only if x has part y and the time point at which x starts is equivalent to the time point at which y starts. Formally: α(y) = α(x) ∧ ω(y) < ω(x), where α is a function that maps a process to a start point, and ω is a function that maps a process to an end point.
- - obo:IAO_0000117 :: Chris Mungall
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
+ - obo:IAO_0000117 :: Chris Mungall
  - obo:IAO_0000118 :: started by
  - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:BFO_0000051
@@ -5318,8 +5359,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cito:citesAsAuthority :: http://www.ncbi.nlm.nih.gov/pubmed/22402613
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000115 :: "Relation between a neuron and some structure (e.g.- a brain region) in which it receives (chemical) synaptic input. "@en
- - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-7073-9172
+ - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000118 :: "synapsed in"@en
  - obo:IAO_0000424 :: http://purl.obolibrary.org/obo/BFO_0000051 some (
              http://purl.org/obo/owl/GO#GO_0045211 and http://purl.obolibrary.org/obo/BFO_0000050 some (
@@ -5373,8 +5414,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - cito:citesAsAuthority :: http://www.ncbi.nlm.nih.gov/pubmed/22402613
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000115 :: "Relation between a neuron and some structure its axon forms (chemical) synapses in."@en
- - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-7073-9172
+ - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000424 :: <http://purl.obolibrary.org/obo/BFO_0000051> some (
              <http://purl.obolibrary.org/obo/GO_0030424> and <http://purl.obolibrary.org/obo/BFO_0000051> some (
                 <http://purl.obolibrary.org/obo/GO_0042734> and <http://purl.obolibrary.org/obo/BFO_0000050> some (
@@ -5446,31 +5487,31 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ***** "part of"@en (obo:BFO_0000050)
  - obo:IAO_0000111 :: "is part of"@en
  - obo:IAO_0000112 :: "my stomach cavity is part of my stomach (continuant parthood, immaterial entity is part of material entity)"@en
- - obo:IAO_0000112 :: "my brain is part of my body (continuant parthood, two material entities)"@en
  - obo:IAO_0000112 :: "this day is part of this year (occurrent parthood)"@en
+ - obo:IAO_0000112 :: "my brain is part of my body (continuant parthood, two material entities)"@en
  - obo:IAO_0000115 :: "a core relation that holds between a part and its whole"@en
  - obo:IAO_0000116 :: "Everything is part of itself. Any part of any part of a thing is itself part of that thing. Two distinct things cannot be part of each other."@en
- - obo:IAO_0000116 :: "Occurrents are not subject to change and so parthood between occurrents holds for all the times that the part exists. Many continuants are subject to change, so parthood between continuants will only hold at certain times, but this is difficult to specify in OWL. See http://purl.obolibrary.org/obo/ro/docs/temporal-semantics/"@en
  - obo:IAO_0000116 :: "Parthood requires the part and the whole to have compatible classes: only an occurrent can be part of an occurrent; only a process can be part of a process; only a continuant can be part of a continuant; only an independent continuant can be part of an independent continuant; only an immaterial entity can be part of an immaterial entity; only a specifically dependent continuant can be part of a specifically dependent continuant; only a generically dependent continuant can be part of a generically dependent continuant. (This list is not exhaustive.)
           
           A continuant cannot be part of an occurrent: use 'participates in'. An occurrent cannot be part of a continuant: use 'has participant'. A material entity cannot be part of an immaterial entity: use 'has location'. A specifically dependent continuant cannot be part of an independent continuant: use 'inheres in'. An independent continuant cannot be part of a specifically dependent continuant: use 'bearer of'."@en
+ - obo:IAO_0000116 :: "Occurrents are not subject to change and so parthood between occurrents holds for all the times that the part exists. Many continuants are subject to change, so parthood between continuants will only hold at certain times, but this is difficult to specify in OWL. See http://purl.obolibrary.org/obo/ro/docs/temporal-semantics/"@en
  - obo:IAO_0000118 :: "part_of"@en
  - obo:RO_0001900 :: obo:RO_0001901
- - obo:RO_0040042 :: obo:BFO_0000017
- - obo:RO_0040042 :: obo:BFO_0000003
- - obo:RO_0040042 :: obo:BFO_0000031
  - obo:RO_0040042 :: obo:BFO_0000004
- - obo:RO_0040042 :: obo:BFO_0000019
- - obo:RO_0040042 :: obo:BFO_0000020
  - obo:RO_0040042 :: obo:BFO_0000002
- - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
+ - obo:RO_0040042 :: obo:BFO_0000019
+ - obo:RO_0040042 :: obo:BFO_0000003
+ - obo:RO_0040042 :: obo:BFO_0000020
+ - obo:RO_0040042 :: obo:BFO_0000031
+ - obo:RO_0040042 :: obo:BFO_0000017
+ - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - oboInOwl:inSubset :: obo:valid_for_gocam
  - oboInOwl:inSubset :: obo:valid_for_go_gp2term
- - oboInOwl:inSubset :: obo:valid_for_go_ontology
- - rdfs:seeAlso :: http://ontologydesignpatterns.org/wiki/Community:Parts_and_Collections
+ - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
  - rdfs:seeAlso :: http://ontologydesignpatterns.org/wiki/Submissions:PartOf
- - rdfs:seeAlso :: "https://wiki.geneontology.org/Part_of"^^xsd:anyURI
+ - rdfs:seeAlso :: http://ontologydesignpatterns.org/wiki/Community:Parts_and_Collections
  - rdfs:seeAlso :: http://www.obofoundry.org/ro/#OBO_REL:part_of
+ - rdfs:seeAlso :: "https://wiki.geneontology.org/Part_of"^^xsd:anyURI
  - SubPropertyOf :: obo:RO_0002131
  - InverseOf :: obo:BFO_0000051
  - Characteristics :: Transitive
@@ -5501,8 +5542,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: x is a branching part of y if and only if x is part of y and x is connected directly or indirectly to the main stem of y
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - oboInOwl:inSubset :: subsets:ro-eco
- - rdfs:seeAlso :: https://github.com/obophenotype/uberon/issues/2212
  - rdfs:seeAlso :: FMA:85994
+ - rdfs:seeAlso :: https://github.com/obophenotype/uberon/issues/2212
  - SubPropertyOf :: obo:BFO_0000050
  - SubPropertyOf :: obo:RO_0002375
  - Range :: obo:RO_0000053 some obo:PATO_0000402
@@ -5516,8 +5557,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000119 :: http://www.ncbi.nlm.nih.gov/pubmed/24330602
  - obo:IAO_0000589 :: determined by (system to material entity)
  - oboInOwl:inSubset :: subsets:ro-eco
- - terms:creator :: https://orcid.org/0000-0002-6601-2165
  - terms:creator :: https://orcid.org/0000-0002-4366-3088
+ - terms:creator :: https://orcid.org/0000-0002-6601-2165
  - SubPropertyOf :: obo:BFO_0000050
  - SubPropertyOf :: obo:RO_0002509
  - SubPropertyOf :: obo:RO_0002559
@@ -5661,11 +5702,11 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - rdfs:seeAlso :: "https://github.com/obophenotype/uberon/wiki/Part-disjointness-Design-Pattern"^^xsd:anyURI
  - SubPropertyOf :: obo:RO_0002323
 ***** "adjacent to"@en (obo:RO_0002220)
- - obo:IAO_0000112 :: The skin of the forelimb is adjacent to the skin of the torso if these are considered anatomical subdivisions with a defined border. Otherwise a relation such as continuous_with would be used.
  - obo:IAO_0000112 :: The plasma membrane of a cell is adjacent to the cytoplasm, and also to the cell lumen which the cytoplasm occupies.
+ - obo:IAO_0000112 :: The epidermis layer of a vertebrate is adjacent to the dermis.
  - obo:IAO_0000112 :: A caterpillar walking on the surface of a leaf is adjacent_to the leaf, if one of the caterpillar appendages is touching the leaf. In contrast, a butterfly flying close to a flower is not considered adjacent, unless there are any touching parts.
     - rdfs:seeAlso :: https://github.com/jhpoelen/eol-globi-data/issues/225#issuecomment-218584934
- - obo:IAO_0000112 :: The epidermis layer of a vertebrate is adjacent to the dermis.
+ - obo:IAO_0000112 :: The skin of the forelimb is adjacent to the skin of the torso if these are considered anatomical subdivisions with a defined border. Otherwise a relation such as continuous_with would be used.
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000115 :: x adjacent to y if and only if x and y share a boundary.
  - obo:IAO_0000116 :: This relation acts as a join point with BSPO
@@ -5696,99 +5737,14 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: inverse of myristoylates
  - terms:contributor :: https://orcid.org/0000-0003-4423-4370
  - InverseOf :: obo:RO_0018002
-*** obsolete actively participates in (obo:RO_0002217)
- - obo:IAO_0000115 :: OBSOLETE x actively participates in y if and only if x participates in y and x realizes some active role
- - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - obo:IAO_0000118 :: agent in
- - obo:IAO_0100001 :: obo:RO_0002608
- - owl:deprecated :: true
- - rdfs:comment :: Obsoleted as the inverse property was obsoleted.
-*** obsolete contained in (obo:RO_0001018)
- - obo:IAO_0000111 :: "contained in"@en
- - obo:IAO_0000116 :: Containment is location not involving parthood, and arises only where some immaterial continuant is involved.
- - obo:IAO_0000116 :: "Containment obtains in each case between material and immaterial continuants, for instance: lung contained_in thoracic cavity; bladder contained_in pelvic cavity. Hence containment is not a transitive relation.    If c part_of c1 at t then we have also, by our definition and by the axioms of mereology applied to spatial regions, c located_in c1 at t. Thus, many examples of instance-level location relations for continuants are in fact cases of instance-level parthood. For material continuants location and parthood coincide. Containment is location not involving parthood, and arises only where some immaterial continuant is involved. To understand this relation, we first define overlap for continuants as follows:    c1 overlap c2 at t =def for some c, c part_of c1 at t and c part_of c2 at t. The containment relation on the instance level can then be defined (see definition):"@en
- - obo:IAO_0000118 :: "contained_in"@en
- - owl:deprecated :: true
- - rdfs:seeAlso :: https://github.com/oborel/obo-relations/issues/693
-*** obsolete contains (obo:RO_0001019)
- - obo:IAO_0000111 :: "contains"@en
- - owl:deprecated :: true
- - rdfs:seeAlso :: https://github.com/oborel/obo-relations/issues/693
-*** "obsolete directly activates"@en (obo:RO_0002406)
- - obo:IAO_0100001 :: obo:RO_0002629
- - owl:deprecated :: true
- - rdfs:comment :: This term was obsoleted because it has the same meaning as 'directly positively regulates'.
-*** "obsolete directly inhibits"@en (obo:RO_0002408)
- - obo:IAO_0100001 :: obo:RO_0002630
- - owl:deprecated :: true
- - rdfs:comment :: This term was obsoleted because it has the same meaning as 'directly negatively regulates'.
-*** "obsolete downstream in neural circuit with"@en (obo:RO_0000302)
- - cito:citesAsAuthority :: http://www.ncbi.nlm.nih.gov/pubmed/22402613
- - obo:IAO_0000114 :: obo:IAO_0000125
- - obo:IAO_0000115 :: "OBSOLETE A relation that holds between a neuron that is synapsed_by another neuron or a neuron that is connected indirectly to another by a chain of neurons, each synapsed_by the next, in which the direction is from the last to the first."@en
- - obo:IAO_0000117 :: https://orcid.org/0000-0002-7073-9172
- - obo:RO_0001900 :: obo:RO_0001901
- - owl:deprecated :: true
- - rdfs:comment :: Obsoleted as no longer a useful relationship (all neurons in an organism are in a neural circuit with each other).
-*** obsolete has active participant (obo:RO_0002218)
- - obo:IAO_0000115 :: OBSOLETE x has participant y if and only if x realizes some active role that inheres in y
- - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - obo:IAO_0000118 :: has agent
- - obo:IAO_0100001 :: obo:RO_0002500
- - owl:deprecated :: true
-*** obsolete has direct output (obo:RO_0002402)
- - obo:IAO_0000112 :: translation SubClassOf has_direct_output some protein
- - obo:IAO_0000114 :: obo:IAO_0000428
- - obo:IAO_0000115 :: p has direct input c iff c is a participanti n p, c is present at the end of p, and c is not present at the beginning of c. 
- - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - obo:IAO_0000118 :: directly produces
- - owl:deprecated :: true
-*** obsolete has indirect input (obo:RO_0002401)
- - obo:IAO_0000114 :: obo:IAO_0000428
- - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - owl:deprecated :: true
- - rdfs:comment :: Likely to be obsoleted. See:
-          https://docs.google.com/document/d/1QMhs9J-P_q3o_rDh-IX4ZEnz0PnXrzLRVkI3vvz8NEQ/edit
-*** obsolete has indirect output (obo:RO_0002403)
- - obo:IAO_0000114 :: obo:IAO_0000428
- - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - owl:deprecated :: true
- - rdfs:comment :: Likely to be obsoleted. See:
-          https://docs.google.com/document/d/1QMhs9J-P_q3o_rDh-IX4ZEnz0PnXrzLRVkI3vvz8NEQ/edit
- - SubPropertyChain :: obo:RO_0002411 o obo:RO_0002402
-*** "obsolete in neural circuit with"@en (obo:RO_0000300)
- - cito:citesAsAuthority :: http://www.ncbi.nlm.nih.gov/pubmed/22402613
- - obo:IAO_0000114 :: obo:IAO_0000125
- - obo:IAO_0000115 :: "OBSOLETE A relation that holds between two neurons connected directly via a synapse, or indirectly via a series of synaptically connected neurons."@en
- - obo:IAO_0000117 :: https://orcid.org/0000-0002-7073-9172
- - obo:RO_0001900 :: obo:RO_0001901
- - owl:deprecated :: true
- - rdfs:comment :: Obsoleted as no longer a useful relationship (all neurons in an organism are in a neural circuit with each other).
-*** "obsolete preceded by"@en (obo:BFO_0000060)
- - owl:deprecated :: true
- - rdfs:comment :: "accidentally included in BFO 1.2 proposal
-                  - should have been BFO_0000062"@en
- - Characteristics :: Transitive
-*** obsolete related via dependence to (obo:RO_0002609)
- - obo:IAO_0000115 :: A relationship that holds between two entities, where the relationship holds based on the presence or absence of statistical dependence relationship. The entities may be statistical variables, or they may be other kinds of entities such as diseases, chemical entities or processes.
- - obo:IAO_0000232 :: Do not use this relation directly. It is intended as a grouping for a diverse set of relations, all involving cause and effect.
- - owl:deprecated :: true
-*** "obsolete upstream in neural circuit with"@en (obo:RO_0000301)
- - cito:citesAsAuthority :: http://www.ncbi.nlm.nih.gov/pubmed/22402613
- - obo:IAO_0000114 :: obo:IAO_0000125
- - obo:IAO_0000115 :: "OBSOLETE A relation that holds between a neuron that is synapsed_to another neuron or a neuron that is connected indirectly to another by a chain of neurons, each synapsed_to the next, in which the direction is from the last to the first."@en
- - obo:IAO_0000117 :: https://orcid.org/0000-0002-7073-9172
- - obo:RO_0001900 :: obo:RO_0001901
- - owl:deprecated :: true
- - rdfs:comment :: Obsoleted as no longer a useful relationship (all neurons in an organism are in a neural circuit with each other).
 *** "occurs in"@en (obo:BFO_0000066)
  - obo:IAO_0000111 :: "occurs in"@en
  - obo:IAO_0000115 :: "b occurs_in c =def b is a process and c is a material entity or immaterial entity& there exists a spatiotemporal region r and b occupies_spatiotemporal_region r.& forall(t) if b exists_at t then c exists_at t & there exist spatial regions s and s’ where & b spatially_projects_onto s at t& c is occupies_spatial_region s’ at t& s is a proper_continuant_part_of s’ at t"@en
- - obo:IAO_0000118 :: "occurs_in"@en
- - obo:IAO_0000118 :: "unfolds in"@en
  - obo:IAO_0000118 :: "unfolds_in"@en
- - oboInOwl:inSubset :: obo:valid_for_gocam
+ - obo:IAO_0000118 :: "unfolds in"@en
+ - obo:IAO_0000118 :: "occurs_in"@en
  - oboInOwl:inSubset :: obo:valid_for_go_ontology
+ - oboInOwl:inSubset :: obo:valid_for_gocam
  - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
  - rdfs:comment :: Paraphrase of definition: a relation between a process and an independent continuant, in which the process takes place entirely within the independent continuant
  - rdfs:isDefinedBy :: obo:bfo.owl
@@ -5799,13 +5755,13 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubPropertyChain :: obo:BFO_0000050 o obo:BFO_0000066
  - SubPropertyChain :: obo:BFO_0000066 o obo:BFO_0000050
 *** "owns"@en (obo:RO_0017008)
- - obo:IAO_0000112 :: biobank organization owns a specimen
  - obo:IAO_0000112 :: hospital owns a laboratory facility
+ - obo:IAO_0000112 :: biobank organization owns a specimen
  - obo:IAO_0000115 :: A primitive relation that holds between entities x and y in which y is at x's full disposal.
  - oboInOwl:creation_date :: "2023-03-29T16:57:03Z"^^xsd:dateTime
- - terms:contributor :: https://orcid.org/0000-0003-1909-9269
  - terms:contributor :: https://orcid.org/0000-0001-9625-1899
  - terms:contributor :: https://orcid.org/0000-0003-1834-3856
+ - terms:contributor :: https://orcid.org/0000-0003-1909-9269
  - terms:description :: This primitive relation is the foundation of the owner's right to have the owned entity at his/her full disposal.
  - InverseOf :: obo:RO_0017009
 *** "participates in"@en (obo:RO_0000056)
@@ -5821,8 +5777,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** "input of"@en (obo:RO_0002352)
  - obo:IAO_0000115 :: inverse of has input
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: subsets:ro-eco
  - oboInOwl:inSubset :: obo:RO_0002259
+ - oboInOwl:inSubset :: subsets:ro-eco
  - SubPropertyOf :: obo:RO_0000056
  - SubPropertyOf :: obo:RO_0002328
  - InverseOf :: obo:RO_0002233
@@ -5864,8 +5820,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000115 :: inverse of has phenotype
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - oboInOwl:inSubset :: subsets:ro-eco
  - oboInOwl:inSubset :: obo:RO_0002259
+ - oboInOwl:inSubset :: subsets:ro-eco
  - InverseOf :: obo:RO_0002200
  - Characteristics :: Functional
 *** "produced by"@en (obo:RO_0003001)
@@ -5888,11 +5844,11 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubPropertyChain ::  inverse (obo:BFO_0000066) o obo:RO_0002234
 *** "realized in"@en (obo:BFO_0000054)
  - obo:IAO_0000111 :: "realized in"@en
+ - obo:IAO_0000112 :: "this disease is realized in this disease course"@en
  - obo:IAO_0000112 :: "this fragility is realized in this shattering"@en
  - obo:IAO_0000112 :: "this investigator role is realized in this investigation"@en
- - obo:IAO_0000112 :: "this disease is realized in this disease course"@en
- - obo:IAO_0000118 :: "is realized by"@en
  - obo:IAO_0000118 :: "realized_in"@en
+ - obo:IAO_0000118 :: "is realized by"@en
  - obo:IAO_0000600 :: "[copied from inverse property 'realizes'] to say that b realizes c at t is to assert that there is some material entity d & b is a process which has participant d at t & c is a disposition or role of which d is bearer_of at t& the type instantiated by b is correlated with the type instantiated by c. (axiom label in BFO2 Reference: [059-003])"@en
  - rdfs:comment :: Paraphrase of elucidation: a relation between a realizable entity and a process, where there is some material entity that is bearer of the realizable entity and participates in the process, and the realizable entity comes to be realized in the course of the process
  - rdfs:isDefinedBy :: obo:bfo.owl
@@ -5902,8 +5858,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 *** "realizes"@en (obo:BFO_0000055)
  - obo:IAO_0000111 :: "realizes"@en
  - obo:IAO_0000112 :: "this disease course realizes this disease"@en
- - obo:IAO_0000112 :: "this shattering realizes this fragility"@en
  - obo:IAO_0000112 :: "this investigation realizes this investigator role"@en
+ - obo:IAO_0000112 :: "this shattering realizes this fragility"@en
  - obo:IAO_0000115 :: "Paraphrase of elucidation: a relation between a process and a realizable entity, where there is some material entity that is bearer of the realizable entity and participates in the process, and the realizable entity comes to be realized in the course of the process"@en
  - obo:IAO_0000600 :: "to say that b realizes c at t is to assert that there is some material entity d & b is a process which has participant d at t & c is a disposition or role of which d is bearer_of at t& the type instantiated by b is correlated with the type instantiated by c. (axiom label in BFO2 Reference: [059-003])"@en
  - rdfs:comment :: Paraphrase of elucidation: a relation between a process and a realizable entity, where there is some material entity that is bearer of the realizable entity and participates in the process, and the realizable entity comes to be realized in the course of the process
@@ -5969,16 +5925,16 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: This relationship holds between p and l when p is a transport or localization process in which the outcome is to move some cargo c from some initial location l to some destination.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - oboInOwl:inSubset :: obo:valid_for_gocam
- - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
  - oboInOwl:inSubset :: obo:valid_for_go_ontology
+ - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
  - SubPropertyOf :: obo:RO_0002344
  - SubPropertyChain :: obo:RO_0002338 o obo:BFO_0000050
 **** "transports or maintains localization of"@en (obo:RO_0002313)
  - obo:IAO_0000115 :: Holds between p and c when p is a localization process (localization covers maintenance of localization as well as its establishment)  and the outcome of this process is to regulate the localization of c.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000118 :: regulates localization of
- - oboInOwl:inSubset :: obo:valid_for_gocam
  - oboInOwl:inSubset :: obo:valid_for_go_ontology
+ - oboInOwl:inSubset :: obo:valid_for_gocam
  - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
  - SubPropertyOf :: obo:RO_0002337
  - SubPropertyOf :: obo:RO_0040036
@@ -6110,9 +6066,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - Characteristics :: Transitive
 ***** sequentially adjacent to (obo:RO_0002515)
  - cito:citesAsAuthority :: http://biorxiv.org/content/early/2014/06/27/006650.abstract
+ - obo:IAO_0000112 :: Two exons on a processed transcript that were previously connected by an intron are adjacent
  - obo:IAO_0000112 :: Two consecutive DNA residues are sequentially adjacent
  - obo:IAO_0000112 :: Every UTR is adjacent to a CDS of the same transcript
- - obo:IAO_0000112 :: Two exons on a processed transcript that were previously connected by an intron are adjacent
  - obo:IAO_0000115 :: x is sequentially adjacent to y iff x and y do not overlap and if there are no base units intervening between x and y
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000119 :: "http://www.ncbi.nlm.nih.gov/pubmed/20226267"^^xsd:anyURI
@@ -6273,8 +6229,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ****** causally upstream of, negative effect (obo:RO_0002305)
  - obo:IAO_0000115 :: p is causally upstream of, negative effect q iff p is casually upstream of q, and the execution of p decreases the execution of q.
  - obo:RO_0004050 :: obo:RO_0002411
- - oboInOwl:inSubset :: obo:valid_for_gocam
  - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
+ - oboInOwl:inSubset :: obo:valid_for_gocam
  - rdfs:seeAlso :: https://wiki.geneontology.org/Causally_upstream_of,_negative_effect
  - terms:creator :: https://orcid.org/0000-0002-6601-2165
  - SubPropertyOf :: obo:RO_0002411
@@ -6283,8 +6239,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: p removes input for q iff p is causally upstream of q, there exists some c such that p has_input c and q has_input c, p reduces the levels of c, and c is rate limiting for execution of q.
  - oboInOwl:created_by :: https://orcid.org/0000-0003-1813-6857
  - oboInOwl:creation_date :: "2022-09-26T06:06:20Z"^^xsd:dateTime
- - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
  - oboInOwl:inSubset :: obo:valid_for_gocam
+ - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
  - rdfs:seeAlso :: "https://wiki.geneontology.org/Removes_input_for"^^xsd:anyURI
  - SubPropertyOf :: obo:RO_0002305
 ****** causally upstream of, positive effect (obo:RO_0002304)
@@ -6313,16 +6269,16 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ****** "regulates"@en (obo:RO_0002211)
  - obo:IAO_0000115 :: p regulates q iff p is causally upstream of q, the execution of p is not constant and varies according to specific conditions, and p influences the rate or magnitude of execution of q due to an effect either on some enabler of q or some enabler of a part of q.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-3837-8864
- - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000117 :: https://orcid.org/0000-0001-7476-6306
- - obo:IAO_0000119 :: GO
+ - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
  - obo:IAO_0000119 :: obo:ro/docs/causal-relations
+ - obo:IAO_0000119 :: GO
  - obo:IAO_0000232 :: Regulation precludes parthood; the regulatory process may not be within the regulated process.
  - obo:IAO_0000589 :: regulates (processual)
  - obo:IAO_0000600 :: false
- - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
- - oboInOwl:inSubset :: obo:valid_for_gocam
  - oboInOwl:inSubset :: obo:valid_for_go_ontology
+ - oboInOwl:inSubset :: obo:valid_for_gocam
+ - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
  - SubPropertyOf :: obo:RO_0002411
  - Domain :: obo:BFO_0000015
  - Range :: obo:BFO_0000015
@@ -6337,8 +6293,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000119 :: obo:ro/docs/causal-relations
  - obo:IAO_0000589 :: directly regulates (processual)
  - obo:RO_0002575 :: obo:RO_0002211
- - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
+ - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - oboInOwl:inSubset :: obo:valid_for_gocam
  - SubPropertyOf :: obo:RO_0002211
  - SubPropertyOf :: obo:RO_0002412
@@ -6355,9 +6311,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000119 :: obo:ro/docs/causal-relations
  - obo:IAO_0000589 :: negatively regulates (process to process)
  - obo:RO_0004050 :: obo:RO_0002211
+ - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
  - oboInOwl:inSubset :: obo:valid_for_gocam
  - oboInOwl:inSubset :: obo:valid_for_go_ontology
- - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
  - SubPropertyOf :: obo:RO_0002211
  - SubPropertyOf :: obo:RO_0002305
  - InverseOf :: obo:RO_0002335
@@ -6367,9 +6323,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000119 :: obo:ro/docs/causal-relations
  - obo:IAO_0000589 :: directly negatively regulates (process to process)
  - obo:RO_0004050 :: obo:RO_0002578
+ - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
  - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - oboInOwl:inSubset :: obo:valid_for_gocam
- - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
  - rdfs:seeAlso :: "https://wiki.geneontology.org/Directly_negatively_regulates"^^xsd:anyURI
  - SubPropertyOf :: obo:RO_0002212
  - SubPropertyOf :: obo:RO_0002578
@@ -6392,9 +6348,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000119 :: obo:ro/docs/causal-relations
  - obo:IAO_0000589 :: positively regulates (process to process)
  - obo:RO_0004049 :: obo:RO_0002211
+ - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - oboInOwl:inSubset :: obo:valid_for_gocam
  - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
- - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - SubPropertyOf :: obo:RO_0002211
  - SubPropertyOf :: obo:RO_0002304
  - InverseOf :: obo:RO_0002336
@@ -6429,8 +6385,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ***** "immediately precedes"@en (obo:RO_0002090)
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-7073-9172
  - obo:IAO_0000117 :: David Osumi-Sutherland
- - obo:IAO_0000118 :: ends_at_start_of
  - obo:IAO_0000118 :: meets
+ - obo:IAO_0000118 :: ends_at_start_of
  - obo:RO_0002575 :: obo:BFO_0000063
  - oboInOwl:inSubset :: subsets:ro-eco
  - rdfs:comment :: "X immediately_precedes_Y iff: end(X) simultaneous_with start(Y)"@en
@@ -6473,10 +6429,10 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000117 :: David Osumi-Sutherland
  - obo:IAO_0000118 :: during
  - obo:IAO_0000118 :: d
- - oboInOwl:inSubset :: obo:valid_for_gocam
  - oboInOwl:inSubset :: subsets:ro-eco
- - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - oboInOwl:inSubset :: obo:valid_for_go_annotation_extension
+ - oboInOwl:inSubset :: obo:valid_for_gocam
+ - oboInOwl:inSubset :: obo:valid_for_go_ontology
  - rdfs:comment :: "X happens_during Y iff: (start(Y) before_or_simultaneous_with start(X)) AND (end(X) before_or_simultaneous_with end(Y))"@en
  - rdfs:seeAlso :: "https://wiki.geneontology.org/Happens_during"^^xsd:anyURI
  - SubPropertyOf :: obo:RO_0002091
@@ -6497,6 +6453,98 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubPropertyOf :: owl:topObjectProperty
  - InverseOf :: obo:RO_0015002
  - SubPropertyChain :: obo:RO_0015001 o obo:RO_0015003
+
+*** Deprecated Object Properties                                          :nodeclare:
+**** "DEPRECATED bearer of"@en (obo:RO_0004097)
+ - owl:deprecated :: true
+**** "DEPRECATED inheres in"@en (obo:RO_0004096)
+ - owl:deprecated :: true
+ - rdfs:comment :: DEPRECATED This relation is similar to but different in important respects to the characteristic-of relation. See comments on that relation for more information.
+**** obsolete actively participates in (obo:RO_0002217)
+ - obo:IAO_0000115 :: OBSOLETE x actively participates in y if and only if x participates in y and x realizes some active role
+ - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
+ - obo:IAO_0000118 :: agent in
+ - obo:IAO_0100001 :: obo:RO_0002608
+ - owl:deprecated :: true
+ - rdfs:comment :: Obsoleted as the inverse property was obsoleted.
+**** obsolete contained in (obo:RO_0001018)
+ - obo:IAO_0000111 :: "contained in"@en
+ - obo:IAO_0000116 :: "Containment obtains in each case between material and immaterial continuants, for instance: lung contained_in thoracic cavity; bladder contained_in pelvic cavity. Hence containment is not a transitive relation.    If c part_of c1 at t then we have also, by our definition and by the axioms of mereology applied to spatial regions, c located_in c1 at t. Thus, many examples of instance-level location relations for continuants are in fact cases of instance-level parthood. For material continuants location and parthood coincide. Containment is location not involving parthood, and arises only where some immaterial continuant is involved. To understand this relation, we first define overlap for continuants as follows:    c1 overlap c2 at t =def for some c, c part_of c1 at t and c part_of c2 at t. The containment relation on the instance level can then be defined (see definition):"@en
+ - obo:IAO_0000116 :: Containment is location not involving parthood, and arises only where some immaterial continuant is involved.
+ - obo:IAO_0000118 :: "contained_in"@en
+ - owl:deprecated :: true
+ - rdfs:seeAlso :: https://github.com/oborel/obo-relations/issues/693
+**** obsolete contains (obo:RO_0001019)
+ - obo:IAO_0000111 :: "contains"@en
+ - owl:deprecated :: true
+ - rdfs:seeAlso :: https://github.com/oborel/obo-relations/issues/693
+**** "obsolete directly activates"@en (obo:RO_0002406)
+ - obo:IAO_0100001 :: obo:RO_0002629
+ - owl:deprecated :: true
+ - rdfs:comment :: This term was obsoleted because it has the same meaning as 'directly positively regulates'.
+**** "obsolete directly inhibits"@en (obo:RO_0002408)
+ - obo:IAO_0100001 :: obo:RO_0002630
+ - owl:deprecated :: true
+ - rdfs:comment :: This term was obsoleted because it has the same meaning as 'directly negatively regulates'.
+**** "obsolete downstream in neural circuit with"@en (obo:RO_0000302)
+ - cito:citesAsAuthority :: http://www.ncbi.nlm.nih.gov/pubmed/22402613
+ - obo:IAO_0000114 :: obo:IAO_0000125
+ - obo:IAO_0000115 :: "OBSOLETE A relation that holds between a neuron that is synapsed_by another neuron or a neuron that is connected indirectly to another by a chain of neurons, each synapsed_by the next, in which the direction is from the last to the first."@en
+ - obo:IAO_0000117 :: https://orcid.org/0000-0002-7073-9172
+ - obo:RO_0001900 :: obo:RO_0001901
+ - owl:deprecated :: true
+ - rdfs:comment :: Obsoleted as no longer a useful relationship (all neurons in an organism are in a neural circuit with each other).
+**** obsolete has active participant (obo:RO_0002218)
+ - obo:IAO_0000115 :: OBSOLETE x has participant y if and only if x realizes some active role that inheres in y
+ - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
+ - obo:IAO_0000118 :: has agent
+ - obo:IAO_0100001 :: obo:RO_0002500
+ - owl:deprecated :: true
+**** obsolete has direct output (obo:RO_0002402)
+ - obo:IAO_0000112 :: translation SubClassOf has_direct_output some protein
+ - obo:IAO_0000114 :: obo:IAO_0000428
+ - obo:IAO_0000115 :: p has direct input c iff c is a participanti n p, c is present at the end of p, and c is not present at the beginning of c. 
+ - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
+ - obo:IAO_0000118 :: directly produces
+ - owl:deprecated :: true
+**** obsolete has indirect input (obo:RO_0002401)
+ - obo:IAO_0000114 :: obo:IAO_0000428
+ - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
+ - owl:deprecated :: true
+ - rdfs:comment :: Likely to be obsoleted. See:
+          https://docs.google.com/document/d/1QMhs9J-P_q3o_rDh-IX4ZEnz0PnXrzLRVkI3vvz8NEQ/edit
+**** obsolete has indirect output (obo:RO_0002403)
+ - obo:IAO_0000114 :: obo:IAO_0000428
+ - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
+ - owl:deprecated :: true
+ - rdfs:comment :: Likely to be obsoleted. See:
+          https://docs.google.com/document/d/1QMhs9J-P_q3o_rDh-IX4ZEnz0PnXrzLRVkI3vvz8NEQ/edit
+ - SubPropertyChain :: obo:RO_0002411 o obo:RO_0002402
+**** "obsolete in neural circuit with"@en (obo:RO_0000300)
+ - cito:citesAsAuthority :: http://www.ncbi.nlm.nih.gov/pubmed/22402613
+ - obo:IAO_0000114 :: obo:IAO_0000125
+ - obo:IAO_0000115 :: "OBSOLETE A relation that holds between two neurons connected directly via a synapse, or indirectly via a series of synaptically connected neurons."@en
+ - obo:IAO_0000117 :: https://orcid.org/0000-0002-7073-9172
+ - obo:RO_0001900 :: obo:RO_0001901
+ - owl:deprecated :: true
+ - rdfs:comment :: Obsoleted as no longer a useful relationship (all neurons in an organism are in a neural circuit with each other).
+**** "obsolete preceded by"@en (obo:BFO_0000060)
+ - owl:deprecated :: true
+ - rdfs:comment :: "accidentally included in BFO 1.2 proposal
+                  - should have been BFO_0000062"@en
+ - Characteristics :: Transitive
+**** obsolete related via dependence to (obo:RO_0002609)
+ - obo:IAO_0000115 :: A relationship that holds between two entities, where the relationship holds based on the presence or absence of statistical dependence relationship. The entities may be statistical variables, or they may be other kinds of entities such as diseases, chemical entities or processes.
+ - obo:IAO_0000232 :: Do not use this relation directly. It is intended as a grouping for a diverse set of relations, all involving cause and effect.
+ - owl:deprecated :: true
+**** "obsolete upstream in neural circuit with"@en (obo:RO_0000301)
+ - cito:citesAsAuthority :: http://www.ncbi.nlm.nih.gov/pubmed/22402613
+ - obo:IAO_0000114 :: obo:IAO_0000125
+ - obo:IAO_0000115 :: "OBSOLETE A relation that holds between a neuron that is synapsed_to another neuron or a neuron that is connected indirectly to another by a chain of neurons, each synapsed_to the next, in which the direction is from the last to the first."@en
+ - obo:IAO_0000117 :: https://orcid.org/0000-0002-7073-9172
+ - obo:RO_0001900 :: obo:RO_0001901
+ - owl:deprecated :: true
+ - rdfs:comment :: Obsoleted as no longer a useful relationship (all neurons in an organism are in a neural circuit with each other).
 
 ** Data properties
 :PROPERTIES:
@@ -6525,8 +6573,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000111 :: "alternative label"@en
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000115 :: "A label for a class or property that can be used to refer to the class or property instead of the preferred rdfs:label. Alternative labels should be used to indicate community- or context-specific labels, abbreviations, shorthand forms and the like."@en
- - obo:IAO_0000117 :: OBO Operations committee
  - obo:IAO_0000117 :: "PERSON:Daniel Schober"@en
+ - obo:IAO_0000117 :: OBO Operations committee
  - obo:IAO_0000119 :: "GROUP:OBI:<http://purl.obolibrary.org/obo/obi>"@en
  - rdfs:comment :: Consider re-defing to: An alternative name for a class or property which can mean the same thing as the preferred name (semantically equivalent, narrow, broad or related).
 **** "has broad synonym"@en (oboInOwl:hasBroadSynonym)
@@ -6579,8 +6627,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 *** oboInOwl:default-namespace
 *** protege:defaultLanguage
 *** defined by construct (obo:OMO_0002000)
- - dc:contributor :: https://orcid.org/0000-0002-8688-6599
  - dc:contributor :: https://orcid.org/0000-0002-7356-1779
+ - dc:contributor :: https://orcid.org/0000-0002-8688-6599
  - obo:IAO_0000112 :: 'part disjoint with' 'defined by construct' """
               PREFIX owl: <http://www.w3.org/2002/07/owl#>
               PREFIX : <http://example.org/
@@ -6689,9 +6737,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - terms:created :: "2024-03-18"^^xsd:date
 *** "has curation status"@en (obo:IAO_0000114)
  - obo:IAO_0000111 :: "has curation status"@en
+ - obo:IAO_0000117 :: "PERSON:Alan Ruttenberg"@en
  - obo:IAO_0000117 :: "PERSON:Bill Bug"@en
  - obo:IAO_0000117 :: "PERSON:Melanie Courtot"@en
- - obo:IAO_0000117 :: "PERSON:Alan Ruttenberg"@en
 *** "has ontology root term"@en (obo:IAO_0000700)
  - obo:IAO_0000111 :: "has ontology root term"@en
  - obo:IAO_0000115 :: "Ontology annotation property. Relates an ontology to a term that is a designated root term of the ontology. Display tools like OLS can use terms annotated with this property as the starting point for rendering the ontology class hierarchy. There can be more than one root."@en
@@ -6703,8 +6751,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000111 :: "imported from"@en
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000115 :: "For external terms/classes, the ontology from which the term was imported"@en
- - obo:IAO_0000117 :: "PERSON:Alan Ruttenberg"@en
  - obo:IAO_0000117 :: "PERSON:Melanie Courtot"@en
+ - obo:IAO_0000117 :: "PERSON:Alan Ruttenberg"@en
  - obo:IAO_0000119 :: "GROUP:OBI:<http://purl.obolibrary.org/obo/obi>"@en
 *** in_subset (oboInOwl:inSubset)
 *** inherited annotation property (obo:RO_0002483)
@@ -6736,8 +6784,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000115 :: x is indistinguishable from y if there exists some distance metric M, and there exists no z such as M(x,z) <= M(x,y) or M(y,z) <= M(y,x).
  - SubPropertyOf :: obo:RO_0002603
 ****** is opposite of (obo:RO_0002604)
- - obo:IAO_0000112 :: 'anterior end of organism' is-opposite-of 'posterior end of organism'
  - obo:IAO_0000112 :: 'increase in temperature' is-opposite-of 'decrease in temperature'
+ - obo:IAO_0000112 :: 'anterior end of organism' is-opposite-of 'posterior end of organism'
  - obo:IAO_0000115 :: x is the opposite of y if there exists some distance metric M, and there exists no z such as M(x,z) <= M(x,y) or M(y,z) <= M(y,x).
  - SubPropertyOf :: obo:RO_0002602
 ***** is representative IRI for equivalence set (obo:RO_0002617)
@@ -6803,8 +6851,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000112 :: tooth SubClassOf 'never in taxon' value 'Aves'
  - obo:IAO_0000115 :: x never in taxon T if and only if T is a class, and x does not instantiate the class expression "in taxon some T". Note that this is a shortcut relation, and should be used as a hasValue restriction in OWL.
  - obo:IAO_0000117 :: https://orcid.org/0000-0002-6601-2165
- - obo:IAO_0000119 :: http://www.ncbi.nlm.nih.gov/pubmed/20973947
  - obo:IAO_0000119 :: http://www.ncbi.nlm.nih.gov/pubmed/17921072
+ - obo:IAO_0000119 :: http://www.ncbi.nlm.nih.gov/pubmed/20973947
  - obo:IAO_0000425 :: Class: ?X DisjointWith: RO_0002162 some ?Y 
  - obo:OMO_0002000 :: PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
           PREFIX owl: <http://www.w3.org/2002/07/owl#>
@@ -6863,8 +6911,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - rdfs:seeAlso :: https://github.com/obophenotype/uberon/wiki/Taxon-constraints
  - SubPropertyOf :: obo:RO_0002172
 ******* always present in taxon (obo:RO_0002504)
- - obo:IAO_0000112 :: forelimb always_present_in_taxon Euarchontoglires
  - obo:IAO_0000112 :: brain always_present_in_taxon 'Vertebrata'
+ - obo:IAO_0000112 :: forelimb always_present_in_taxon Euarchontoglires
  - obo:IAO_0000115 :: S always_present_in_taxon T if every fully formed member of taxon T has part some S, or is an instance of S
  - obo:IAO_0000116 :: This is a very strong relation. Often we will not have enough evidence to know for sure that there are no species within a lineage that lack the structure - loss is common in evolution. However, there are some statements we can make with confidence - no vertebrate lineage could persist without a brain or a heart. All primates are limbed. 
  - obo:IAO_0000118 :: never lost in
@@ -7033,9 +7081,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000115 :: "An alternative name for a class or property which is unique across the OBO Foundry."@en
  - obo:IAO_0000116 :: "The intended usage of that property is as follow: OBO foundry unique labels are automatically generated based on regular expressions provided by each ontology, so that SO could specify unique label = 'sequence ' + [label], etc. , MA could specify 'mouse + [label]' etc. Upon importing terms, ontology developers can choose to use the 'OBO foundry unique label' for an imported term or not. The same applies to tools ."@en
- - obo:IAO_0000117 :: "PERSON:Bjoern Peters"@en
- - obo:IAO_0000117 :: "PERSON:Chris Mungall"@en
  - obo:IAO_0000117 :: "PERSON:Alan Ruttenberg"@en
+ - obo:IAO_0000117 :: "PERSON:Chris Mungall"@en
+ - obo:IAO_0000117 :: "PERSON:Bjoern Peters"@en
  - obo:IAO_0000117 :: "PERSON:Melanie Courtot"@en
  - obo:IAO_0000119 :: "GROUP:OBO Foundry <http://obofoundry.org/>"@en
 *** dc:publisher
@@ -7130,32 +7178,32 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** "pending final vetting"@en (obo:IAO_0000125)
  - Types :: obo:IAO_0000078
  - DifferentFrom :: obo:IAO_0000120, obo:IAO_0000121, obo:IAO_0000122, obo:IAO_0000123, obo:IAO_0000124, obo:IAO_0000423, obo:IAO_0000428
- - obo:IAO_0000115 :: "All definitions, placement in the asserted IS_A hierarchy and required minimal metadata are complete. The class is awaiting a final review by someone other than the term editor."@en
- - obo:IAO_0000111 :: "pending final vetting"@en
- - rdfs:label :: "pending final vetting"@en
  - obo:IAO_0000114 :: obo:IAO_0000125
+ - obo:IAO_0000115 :: "All definitions, placement in the asserted IS_A hierarchy and required minimal metadata are complete. The class is awaiting a final review by someone other than the term editor."@en
+ - rdfs:label :: "pending final vetting"@en
+ - obo:IAO_0000111 :: "pending final vetting"@en
 
 **** "requires discussion"@en (obo:IAO_0000428)
  - Types :: obo:IAO_0000078
  - DifferentFrom :: obo:IAO_0000120, obo:IAO_0000121, obo:IAO_0000122, obo:IAO_0000123, obo:IAO_0000124, obo:IAO_0000125, obo:IAO_0000423
+ - rdfs:label :: "requires discussion"@en
  - obo:IAO_0000114 :: obo:IAO_0000125
  - obo:IAO_0000119 :: "group:OBI"@en
- - obo:IAO_0000115 :: "A term that is metadata complete, has been reviewed, and problems have been identified that require discussion before release. Such a term requires editor note(s) to identify the outstanding issues."@en
- - rdfs:label :: "requires discussion"@en
- - obo:IAO_0000111 :: "requires discussion"@en
  - obo:IAO_0000117 :: "Alan Ruttenberg"@en
+ - obo:IAO_0000115 :: "A term that is metadata complete, has been reviewed, and problems have been identified that require discussion before release. Such a term requires editor note(s) to identify the outstanding issues."@en
+ - obo:IAO_0000111 :: "requires discussion"@en
 
 *** Unknown                                                       :nodeclare:
 **** Aleix Puig-Barbé (<https://orcid.org/0000-0001-6677-8489>)
- - terms:description :: Researcher ORCID=0000-0001-6677-8489
-    - terms:source :: http://www.wikidata.org/entity/Q123250332
  - rdfs:label :: Aleix Puig-Barbé
+    - terms:source :: http://www.wikidata.org/entity/Q123250332
+ - terms:description :: Researcher ORCID=0000-0001-6677-8489
     - terms:source :: http://www.wikidata.org/entity/Q123250332
 
 **** Anna Maria Masci (<https://orcid.org/0000-0003-1940-6740>)
- - terms:description :: researcher
-    - terms:source :: http://www.wikidata.org/entity/Q37377046
  - rdfs:label :: Anna Maria Masci
+    - terms:source :: http://www.wikidata.org/entity/Q37377046
+ - terms:description :: researcher
     - terms:source :: http://www.wikidata.org/entity/Q37377046
 
 **** Anne Thessen (<https://orcid.org/0000-0002-2908-3327>)
@@ -7177,7 +7225,6 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - terms:source :: http://www.wikidata.org/entity/Q116041404
 
 **** "axiom holds for all times"@en (obo:RO_0001901)
- - rdfs:label :: "axiom holds for all times"@en
  - obo:IAO_0000115 :: ## Elucidation
           
           This is used when the statement/axiom is assumed to hold true &apos;eternally&apos;
@@ -7205,6 +7252,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
           ## Notes
           
           This interpretation is *not* the same as an at-all-times relation
+ - rdfs:label :: "axiom holds for all times"@en
 
 **** Charles Tapley Hoyt (<https://orcid.org/0000-0003-4423-4370>)
  - rdfs:label :: Charles Tapley Hoyt
@@ -7213,9 +7261,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - terms:source :: http://www.wikidata.org/entity/Q47475003
 
 **** Christian J Stoeckert (<https://orcid.org/0000-0002-5714-991X>)
- - terms:description :: researcher
-    - terms:source :: http://www.wikidata.org/entity/Q67220657
  - rdfs:label :: Christian J Stoeckert
+    - terms:source :: http://www.wikidata.org/entity/Q67220657
+ - terms:description :: researcher
     - terms:source :: http://www.wikidata.org/entity/Q67220657
 
 **** Christopher J. Mungall (<https://orcid.org/0000-0002-6601-2165>)
@@ -7225,9 +7273,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - terms:source :: http://www.wikidata.org/entity/Q20746118
 
 **** Clare Pilgrim (<https://orcid.org/0000-0002-1373-1705>)
- - terms:description :: researcher (ORCID 0000-0002-1373-1705)
-    - terms:source :: http://www.wikidata.org/entity/Q91739788
  - rdfs:label :: Clare Pilgrim
+    - terms:source :: http://www.wikidata.org/entity/Q91739788
+ - terms:description :: researcher (ORCID 0000-0002-1373-1705)
     - terms:source :: http://www.wikidata.org/entity/Q91739788
 
 **** Damion M Dooley (<https://orcid.org/0000-0002-8844-9165>)
@@ -7237,9 +7285,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - terms:source :: http://www.wikidata.org/entity/Q91868864
 
 **** David Osumi-Sutherland (<https://orcid.org/0000-0002-7073-9172>)
- - terms:description :: researcher
-    - terms:source :: http://www.wikidata.org/entity/Q54303418
  - rdfs:label :: David Osumi-Sutherland
+    - terms:source :: http://www.wikidata.org/entity/Q54303418
+ - terms:description :: researcher
     - terms:source :: http://www.wikidata.org/entity/Q54303418
 
 **** "example to be eventually removed"@en (obo:IAO_0000002)
@@ -7247,21 +7295,21 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - rdfs:label :: "example to be eventually removed"@en
 
 **** James P. Balhoff (<https://orcid.org/0000-0002-8688-6599>)
- - terms:description :: researcher
-    - terms:source :: http://www.wikidata.org/entity/Q37649212
  - rdfs:label :: James P. Balhoff
+    - terms:source :: http://www.wikidata.org/entity/Q37649212
+ - terms:description :: researcher
     - terms:source :: http://www.wikidata.org/entity/Q37649212
 
 **** Jie Zheng (<https://orcid.org/0000-0002-2999-0103>)
- - terms:description :: researcher (ORCID 0000-0002-2999-0103)
-    - terms:source :: http://www.wikidata.org/entity/Q90780528
  - rdfs:label :: Jie Zheng
+    - terms:source :: http://www.wikidata.org/entity/Q90780528
+ - terms:description :: researcher (ORCID 0000-0002-2999-0103)
     - terms:source :: http://www.wikidata.org/entity/Q90780528
 
 **** Jorrit Poelen (<https://orcid.org/0000-0003-3138-4118>)
- - rdfs:label :: Jorrit Poelen
-    - terms:source :: http://www.wikidata.org/entity/Q58206618
  - terms:description :: software/data engineer
+    - terms:source :: http://www.wikidata.org/entity/Q58206618
+ - rdfs:label :: Jorrit Poelen
     - terms:source :: http://www.wikidata.org/entity/Q58206618
 
 **** Lauren E. Chan (<https://orcid.org/0000-0002-7463-6306>)
@@ -7277,9 +7325,9 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - terms:source :: http://www.wikidata.org/entity/Q89259560
 
 **** Lynn Schriml (<https://orcid.org/0000-0001-8910-9851>)
- - terms:description :: researcher, metadata, diseases, University of Maryland
-    - terms:source :: http://www.wikidata.org/entity/Q28913673
  - rdfs:label :: Lynn Schriml
+    - terms:source :: http://www.wikidata.org/entity/Q28913673
+ - terms:description :: researcher, metadata, diseases, University of Maryland
     - terms:source :: http://www.wikidata.org/entity/Q28913673
 
 **** Marie-Angélique Laporte (<https://orcid.org/0000-0002-8461-9745>)
@@ -7296,26 +7344,26 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** "metadata complete"@en (obo:IAO_0000120)
  - DifferentFrom :: obo:IAO_0000121, obo:IAO_0000122, obo:IAO_0000123, obo:IAO_0000124, obo:IAO_0000125, obo:IAO_0000423, obo:IAO_0000428
- - rdfs:label :: "metadata complete"@en
  - obo:IAO_0000111 :: "metadata complete"@en
  - obo:IAO_0000115 :: "Class has all its metadata, but is either not guaranteed to be in its final location in the asserted IS_A hierarchy or refers to another class that is not complete."@en
+ - rdfs:label :: "metadata complete"@en
 
 **** "metadata incomplete"@en (obo:IAO_0000123)
  - DifferentFrom :: obo:IAO_0000120, obo:IAO_0000121, obo:IAO_0000122, obo:IAO_0000124, obo:IAO_0000125, obo:IAO_0000423, obo:IAO_0000428
+ - obo:IAO_0000111 :: "metadata incomplete"@en
  - obo:IAO_0000115 :: "Class is being worked on; however, the metadata (including definition) are not complete or sufficiently clear to the branch editors."@en
  - rdfs:label :: "metadata incomplete"@en
- - obo:IAO_0000111 :: "metadata incomplete"@en
 
 **** "organizational term"@en (obo:IAO_0000121)
  - DifferentFrom :: obo:IAO_0000120, obo:IAO_0000122, obo:IAO_0000123, obo:IAO_0000124, obo:IAO_0000125, obo:IAO_0000423, obo:IAO_0000428
  - rdfs:label :: "organizational term"@en
- - obo:IAO_0000111 :: "organizational term"@en
  - obo:IAO_0000115 :: "Term created to ease viewing/sort terms for development purpose, and will not be included in a release"@en
+ - obo:IAO_0000111 :: "organizational term"@en
 
 **** Pascale Gaudet (<https://orcid.org/0000-0003-1813-6857>)
- - terms:description :: Canadian biocurator
-    - terms:source :: http://www.wikidata.org/entity/Q30032484
  - rdfs:label :: Pascale Gaudet
+    - terms:source :: http://www.wikidata.org/entity/Q30032484
+ - terms:description :: Canadian biocurator
     - terms:source :: http://www.wikidata.org/entity/Q30032484
 
 **** Pier Luigi Buttigieg (<https://orcid.org/0000-0002-4366-3088>)
@@ -7325,20 +7373,19 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
     - terms:source :: http://www.wikidata.org/entity/Q41566750
 
 **** Raymund Stefancsik (<https://orcid.org/0000-0001-8314-2140>)
- - rdfs:label :: Raymund Stefancsik
-    - terms:source :: http://www.wikidata.org/entity/Q52097457
  - terms:description :: researcher
+    - terms:source :: http://www.wikidata.org/entity/Q52097457
+ - rdfs:label :: Raymund Stefancsik
     - terms:source :: http://www.wikidata.org/entity/Q52097457
 
 **** "ready for release"@en (obo:IAO_0000122)
  - DifferentFrom :: obo:IAO_0000120, obo:IAO_0000121, obo:IAO_0000123, obo:IAO_0000124, obo:IAO_0000125, obo:IAO_0000423, obo:IAO_0000428
- - rdfs:label :: "ready for release"@en
- - obo:IAO_0000115 :: "Class has undergone final review, is ready for use, and will be included in the next release. Any class lacking \"ready_for_release\" should be considered likely to change place in hierarchy, have its definition refined, or be obsoleted in the next release.  Those classes deemed \"ready_for_release\" will also derived from a chain of ancestor classes that are also \"ready_for_release.\""@en
  - obo:IAO_0000111 :: "ready for release"@en
+ - rdfs:label :: "ready for release"@en
  - obo:IAO_0000114 :: obo:IAO_0000125
+ - obo:IAO_0000115 :: "Class has undergone final review, is ready for use, and will be included in the next release. Any class lacking \"ready_for_release\" should be considered likely to change place in hierarchy, have its definition refined, or be obsoleted in the next release.  Those classes deemed \"ready_for_release\" will also derived from a chain of ancestor classes that are also \"ready_for_release.\""@en
 
 **** "relation has no temporal argument"@en (obo:RO_0001902)
- - rdfs:label :: "relation has no temporal argument"@en
  - obo:IAO_0000115 :: ## Elucidation
           
           This is used when the first-order logic form of the relation is
@@ -7356,37 +7403,38 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
                   exists y :
                     instance_of(y,LPM,t2)
                     develops_from(x,y)
+ - rdfs:label :: "relation has no temporal argument"@en
 
 **** S. Clint Dowland (<https://orcid.org/0000-0003-1909-9269>)
- - rdfs:label :: S. Clint Dowland
-    - terms:source :: http://www.wikidata.org/entity/Q123250399
  - terms:description :: Researcher ORCID=0000-0003-1909-9269
+    - terms:source :: http://www.wikidata.org/entity/Q123250399
+ - rdfs:label :: S. Clint Dowland
     - terms:source :: http://www.wikidata.org/entity/Q123250399
 
 **** Shawn Zheng Kai Tan (<https://orcid.org/0000-0001-7258-9596>)
- - rdfs:label :: Shawn Zheng Kai Tan
-    - terms:source :: http://www.wikidata.org/entity/Q57023310
  - terms:description :: researcher
+    - terms:source :: http://www.wikidata.org/entity/Q57023310
+ - rdfs:label :: Shawn Zheng Kai Tan
     - terms:source :: http://www.wikidata.org/entity/Q57023310
 
 **** "to be replaced with external ontology term"@en (obo:IAO_0000423)
  - DifferentFrom :: obo:IAO_0000120, obo:IAO_0000121, obo:IAO_0000122, obo:IAO_0000123, obo:IAO_0000124, obo:IAO_0000125, obo:IAO_0000428
  - rdfs:label :: "to be replaced with external ontology term"@en
- - obo:IAO_0000117 :: "Alan Ruttenberg"@en
- - obo:IAO_0000111 :: "to be replaced with external ontology term"@en
  - obo:IAO_0000119 :: "group:OBI"@en
  - obo:IAO_0000115 :: "Terms with this status should eventually replaced with a term from another ontology."@en
+ - obo:IAO_0000111 :: "to be replaced with external ontology term"@en
+ - obo:IAO_0000117 :: "Alan Ruttenberg"@en
 
 **** "uncurated"@en (obo:IAO_0000124)
  - DifferentFrom :: obo:IAO_0000120, obo:IAO_0000121, obo:IAO_0000122, obo:IAO_0000123, obo:IAO_0000125, obo:IAO_0000423, obo:IAO_0000428
  - obo:IAO_0000111 :: "uncurated"@en
- - obo:IAO_0000115 :: "Nothing done yet beyond assigning a unique class ID and proposing a preferred term."@en
  - rdfs:label :: "uncurated"@en
+ - obo:IAO_0000115 :: "Nothing done yet beyond assigning a unique class ID and proposing a preferred term."@en
 
 **** William D Duncan (<https://orcid.org/0000-0001-9625-1899>)
- - terms:description :: researcher
-    - terms:source :: http://www.wikidata.org/entity/Q89881908
  - rdfs:label :: William D Duncan
+    - terms:source :: http://www.wikidata.org/entity/Q89881908
+ - terms:description :: researcher
     - terms:source :: http://www.wikidata.org/entity/Q89881908
 
 
