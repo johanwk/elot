@@ -155,11 +155,10 @@ h15 .section-number-15 {
     user-select: none;
 }
 
-
-/* Description Lists: term and value inline, with line break between pairs */
+/* Base Description List Styling */
 dl {
-    margin: 1em 0;
-    padding-left: 2em; /* indent list under heading */
+    margin: 0.3em 0;              /* Reduce vertical spacing */
+    padding-left: 1.5em;          /* Less indent for main list */
 }
 
 dt {
@@ -173,14 +172,40 @@ dd {
     display: inline;
 }
 
+/* Add colon after term */
 dt::after {
     content: ": ";
 }
 
+/* Line break after each term-value pair */
 dt + dd::after {
     content: "\A";
     white-space: pre;
 }
+
+/* Nested dl (inside dd) should be compact and indented slightly */
+dd dl {
+    margin-top: 0.2em;
+    margin-bottom: 0.2em;
+    padding-left: 1em;           /* Slight indent for nesting */
+}
+
+/* Prevent spacing explosion in nested dt/dd */
+dd dl dt,
+dd dl dd {
+    display: inline;
+    margin: 0;
+}
+
+dd dl dt::after {
+    content: ": ";
+}
+
+dd dl dt + dd::after {
+    content: "\A";
+    white-space: pre;
+}
+
 
 /* OMN keyword highlight */
 dt.elot-omn-keyword {
