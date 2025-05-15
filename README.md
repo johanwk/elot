@@ -29,21 +29,21 @@ template expansion.
     Code on your own projects, please see the detailed 
     [README](vscode-support/README.md).
 
--   [Prerequisites in brief](#orgc2e9425)
--   [Installation](#orgbf1b680)
-    -   [Get Emacs](#orgd03974e)
-    -   [Install ELOT in Emacs](#org008bdd6)
-    -   [Install ELOT auxiliaries](#org5e562e2)
--   [Quick start using ELOT](#org6874eac)
-    -   [Adding an ontology](#orgd980061)
-    -   [Adding classes and relations](#org845027a)
-    -   [Adding annotations](#orga9df9d5)
-    -   [Querying the ontology](#org9addf42)
-    -   [Making a diagram](#org8bbd3c0)
-    -   [Display labels instead of identifiers](#org93766a7)
+-   [Prerequisites in brief](#orgb51091d)
+-   [Installation](#org1a80524)
+    -   [Get Emacs](#org200ee31)
+    -   [Install ELOT in Emacs](#org88ba8c8)
+    -   [Install ELOT auxiliaries](#org870ee74)
+-   [Quick start using ELOT](#org4ab9be5)
+    -   [Adding an ontology](#org68ca3bf)
+    -   [Adding classes and relations](#org4817609)
+    -   [Adding annotations](#orgd845148)
+    -   [Querying the ontology](#org31a9a04)
+    -   [Making a diagram](#org55a206f)
+    -   [Display labels instead of identifiers](#org3b472c1)
 
 
-<a id="orgc2e9425"></a>
+<a id="orgb51091d"></a>
 
 ## Prerequisites in brief
 
@@ -56,12 +56,12 @@ template expansion.
     -   Open OWL files: Download `elot-exporter` from [releases](https://github.com/johanwk/elot/releases)
 
 
-<a id="orgbf1b680"></a>
+<a id="org1a80524"></a>
 
 ## Installation
 
 
-<a id="orgd03974e"></a>
+<a id="org200ee31"></a>
 
 ### Get Emacs
 
@@ -76,7 +76,7 @@ If you are new to Emacs, the book [Mastering Emacs](https://www.masteringemacs.o
 recommended.
 
 
-<a id="org008bdd6"></a>
+<a id="org88ba8c8"></a>
 
 ### Install ELOT in Emacs
 
@@ -103,7 +103,7 @@ should *clone* the ELOT repository using Git.
         `~/elisp/elot/elot-package/` to your `load-path`.
 
 
-<a id="org5e562e2"></a>
+<a id="org870ee74"></a>
 
 ### Install ELOT auxiliaries
 
@@ -144,12 +144,12 @@ Get the tools:
         `elot-exporter.jar` in your `bin` folder.
 
 
-<a id="org6874eac"></a>
+<a id="org4ab9be5"></a>
 
 ## Quick start using ELOT
 
 
-<a id="orgd980061"></a>
+<a id="org68ca3bf"></a>
 
 ### Adding an ontology
 
@@ -195,7 +195,7 @@ Now create an OWL file from your new document.
 ![img](./documentation/images/firefox-skeleton1.png)
 
 
-<a id="org845027a"></a>
+<a id="org4817609"></a>
 
 ### Adding classes and relations
 
@@ -213,7 +213,7 @@ Now create an OWL file from your new document.
 ![img](documentation/images/elot-animal1.png)
 
 
-<a id="orga9df9d5"></a>
+<a id="orgd845148"></a>
 
 ### Adding annotations
 
@@ -224,7 +224,7 @@ In this screenshot, two annotations are added to the "transitive" characteristic
 ![img](documentation/images/elot-annotate-axiom1.png)
 
 
-<a id="org9addf42"></a>
+<a id="org31a9a04"></a>
 
 ### Querying the ontology
 
@@ -237,7 +237,7 @@ In this screenshot, two annotations are added to the "transitive" characteristic
 ![img](documentation/images/elot-query1.png)
 
 
-<a id="org8bbd3c0"></a>
+<a id="org55a206f"></a>
 
 ### Making a diagram
 
@@ -260,7 +260,7 @@ In this screenshot, two annotations are added to the "transitive" characteristic
 ![img](documentation/images/firefox-diagram1.png)
 
 
-<a id="org93766a7"></a>
+<a id="org3b472c1"></a>
 
 ### Display labels instead of identifiers
 
