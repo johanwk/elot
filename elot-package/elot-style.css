@@ -215,6 +215,13 @@ dd dl dt + dd::after {
     white-space: pre;
 }
 
+dd > dl:last-child {
+  margin-bottom: 0;
+}
+
+dd:last-child {
+  margin-bottom: 0;
+}
 
 
 /* OMN keyword highlight */
