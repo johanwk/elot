@@ -155,46 +155,40 @@ h15 .section-number-15 {
     user-select: none;
 }
 
-/* Base Description List Styling */
+
+/* Remove all vertical spacing from description lists */
 dl {
-    margin: 0.3em 0;              /* Reduce vertical spacing */
-    padding-left: 1.5em;          /* Less indent for main list */
-}
-
-dt {
-    font-weight: bold;
-    margin-right: 0.5em;
-    display: inline;
-}
-
-dd {
     margin: 0;
+    padding: 0;
+}
+
+dt, dd {
+    margin: 0;
+    padding: 0;
     display: inline;
 }
 
-/* Add colon after term */
+/* Line break after each term-value pair */
 dt::after {
     content: ": ";
 }
 
-/* Line break after each term-value pair */
 dt + dd::after {
     content: "\A";
     white-space: pre;
 }
 
-/* Nested dl (inside dd) should be compact and indented slightly */
+/* Nested description list (e.g., inside a dd) */
 dd dl {
-    margin-top: 0.2em;
-    margin-bottom: 0.2em;
-    padding-left: 1em;           /* Slight indent for nesting */
+    margin: 0;
+    padding-left: 1em;  /* Optional minimal indent for clarity */
 }
 
-/* Prevent spacing explosion in nested dt/dd */
 dd dl dt,
 dd dl dd {
-    display: inline;
     margin: 0;
+    padding: 0;
+    display: inline;
 }
 
 dd dl dt::after {
@@ -204,6 +198,11 @@ dd dl dt::after {
 dd dl dt + dd::after {
     content: "\A";
     white-space: pre;
+}
+
+/* Ensure line height is tight */
+dl, dt, dd {
+    line-height: 1.2;
 }
 
 
