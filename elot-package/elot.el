@@ -243,7 +243,7 @@ Checks for `elot-robot-jar-path`."
         (when (re-search-backward "^[^ \t]" nil t)
           (let ((line-text (buffer-substring-no-properties
                             (line-beginning-position) (line-end-position))))
-            (when (string-match "^\\([A-Za-z]+\\):[ \t]+\\(.+\\)" line-text)
+            (when (string-match "^\\([-A-Za-z]+\\):[ \t]+\\(.+\\)" line-text)
               (setq identifier (match-string 2 line-text)))))))
     (when (and identifier elot-last-org-source (file-exists-p elot-last-org-source))
       (let ((buf (find-file-other-window elot-last-org-source)))
@@ -387,7 +387,7 @@ The context INFO is ignored."
              elot-omn-property-keywords)
         ;; make the description term texttt
         (setq text (replace-regexp-in-string
-                    "\\\\item\\[{\\([a-zA-Z]+\\)}\\]"
+                    "\\\\item\\[{\\([-a-zA-Z]+\\)}\\]"
                     "\\\\item[\\\\normalfont\\\\ttfamily\\\\small \\1]"
                     text))
         ;; make the list entry content omn inline code unless it's a url
@@ -526,7 +526,7 @@ unless it is an ontology section."
 
 ;; [[file:../elot-defs.org::src-puri-expand][src-puri-expand]]
 (defconst elot-puri-re 
-  "^\\([[:word:]][[:word:]_.-/]*\\):\\([[:word:]][[:word:]_.-/]*\\)$")
+  "^\\([-[:word:]_./]*\\):\\([-[:word:]_./]*\\)$")
   ;; "^\\([-_./[:alnum:]]*\\):\\([-_/.[:alnum:]]*\\)$")
 
 (defun elot-unprefix-uri (puri abbrev-alist &optional noerror)
@@ -637,7 +637,7 @@ The returned value is either
 
 If the heading contains *no* recognisable identifier and NOERROR is
 non-nil, return NIL.  Otherwise raise an error."
-  (let* ((curie-regex "[-_./[:alnum:]]*:[-_/.[:alnum:]]*")
+  (let* ((curie-regex "[-_./[:alnum:]]*:[-_/.[:alnum:]]*") ;; review and update
          (full-uri-regex "http[s]?://[-[:alnum:]._~:/?#\\@!$&'()*+,;=%]*"))
     (cond
      ;; single URI, beginning of line
