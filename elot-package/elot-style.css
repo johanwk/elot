@@ -156,33 +156,30 @@ h15 .section-number-15 {
 }
 
 
-/* Description Lists */
+/* Description Lists: term and value inline, with line break between pairs */
 dl {
     margin: 1em 0;
-    padding-left: 2em;
-}
-
-dt, dd {
-    display: block;
-    margin: 0;
+    padding-left: 2em; /* indent list under heading */
 }
 
 dt {
     font-weight: bold;
-    margin-top: 0.2em;
+    margin-right: 0.5em;
+    display: inline;
 }
 
 dd {
-    padding-left: 1em;
-    margin-bottom: 0.2em;
+    margin: 0;
+    display: inline;
 }
 
 dt::after {
-    content: none;
+    content: ": ";
 }
 
 dt + dd::after {
-    content: none;
+    content: "\A";
+    white-space: pre;
 }
 
 /* OMN keyword highlight */
