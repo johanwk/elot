@@ -155,16 +155,20 @@ h15 .section-number-15 {
     user-select: none;
 }
 
-
-/* Remove all vertical spacing from description lists */
+/* Base: restore spacing between top-level entries */
 dl {
-    margin: 0;
-    padding: 0;
+    margin: 0.8em 0;
+    padding-left: 2em;
 }
 
-dt, dd {
+dt {
+    font-weight: bold;
     margin: 0;
-    padding: 0;
+    display: inline;
+}
+
+dd {
+    margin: 0;
     display: inline;
 }
 
@@ -176,19 +180,20 @@ dt::after {
 dt + dd::after {
     content: "\A";
     white-space: pre;
+    line-height: 1.2;
 }
 
-/* Nested description list (e.g., inside a dd) */
+/* Sublist inside dd: no extra margin or bottom spacing */
 dd dl {
-    margin: 0;
-    padding-left: 1em;  /* Optional minimal indent for clarity */
+    margin: 0.2em 0 0.2em 1.5em;  /* small vertical space, slight indent */
+    padding: 0;
 }
 
 dd dl dt,
 dd dl dd {
+    display: inline;
     margin: 0;
     padding: 0;
-    display: inline;
 }
 
 dd dl dt::after {
@@ -200,10 +205,20 @@ dd dl dt + dd::after {
     white-space: pre;
 }
 
-/* Ensure line height is tight */
-dl, dt, dd {
-    line-height: 1.2;
+/* Critical: prevent large gap between nested dl and next dt */
+dd:last-child {
+    margin-bottom: 0;
 }
+
+dl dl + dt {
+    margin-top: 0.2em;  /* gentle space if nested dl is followed by next term */
+}
+
+/* Optional: keep line-height slightly tighter */
+dl, dt, dd {
+    line-height: 1.3;
+}
+
 
 
 /* OMN keyword highlight */
