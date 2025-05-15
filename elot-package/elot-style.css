@@ -49,11 +49,12 @@ body {
 
 #elot-sidebar a {
     text-decoration: none;
-    color: #007acc;
+    color: #4a7ba7;
 }
 
 #elot-sidebar a:hover {
     text-decoration: underline;
+    color: #003366;
 }
 
 #elot-sidebar span.nodeclare {
@@ -158,28 +159,30 @@ h15 .section-number-15 {
 /* Description Lists */
 dl {
     margin: 1em 0;
-    padding-left: 2em; /* indent list under heading */
+    padding-left: 2em;
+}
+
+dt, dd {
+    display: block;
+    margin: 0;
 }
 
 dt {
     font-weight: bold;
-    margin-right: 0.5em;
-    display: inline;
+    margin-top: 0.2em;
 }
 
 dd {
-    margin: 0;
-    display: inline;
+    padding-left: 1em;
+    margin-bottom: 0.2em;
 }
 
 dt::after {
-    content: ": ";
+    content: none;
 }
 
-/* Line break after each term+definition pair */
 dt + dd::after {
-    content: "\A"; 
-    white-space: pre;
+    content: none;
 }
 
 /* OMN keyword highlight */
@@ -231,23 +234,27 @@ th {
     z-index: 2;
 }
 
+/* Copy link button */
 .copy-link-button {
     margin-left: 0.5em;
     font-size: 0.8em;
     background: none;
     border: none;
     cursor: pointer;
-    color: #007acc;
+    color: #4a7ba7;
 }
 
 .copy-link-button:hover {
-    color: #005a9c;
+    color: #003366;
 }
 
+/* Global link color override */
 a {
     text-decoration: none;
+    color: #4a7ba7;
 }
 
 a:hover {
     text-decoration: underline;
+    color: #003366;
 }
