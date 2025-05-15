@@ -1008,203 +1008,222 @@ and accordingly for `object-property', `data-property', and
 
 ;; [[file:../elot-defs.org::src-elot-xref][src-elot-xref]]
 (defun elot-xref-backend ()
-	"Return the ELOT xref backend identifier."
-	'elot)
+  "Return the ELOT xref backend identifier."
+  'elot)
 
 (cl-defmethod xref-backend-identifier-at-point ((_backend (eql elot)))
-	"Return a CURIE at point, like :BFO_0000015, or nil if not found."
-	(let ((curie-regex "\\(?:\\sw\\|\\s_\\|:\\)+"))
-		(save-excursion
-			(skip-chars-backward "-_A-Za-z0-9:")
-			(when (looking-at curie-regex)
-				(match-string-no-properties 0)))))
+  "Return a CURIE at point, like :BFO_0000015, or nil if not found."
+  (let ((curie-regex "\\(?:\\sw\\|\\s_\\|:\\)+"))
+    (save-excursion
+      (skip-chars-backward "-_A-Za-z0-9:")
+      (when (looking-at curie-regex)
+	(match-string-no-properties 0)))))
 
 (cl-defun elot--xref-find-matches (identifier &key find-definition)
-	"Return xref matches for IDENTIFIER in all ELOT buffers.
+  "Return xref matches for IDENTIFIER in all ELOT buffers.
 If FIND-DEFINITION is non-nil, restrict matches to headlines;
 otherwise return every reference."
-	(let ((matches nil))
-		(dolist (buf (buffer-list))
-			(with-current-buffer buf
-				(when (and (derived-mode-p 'org-mode)
-									 (boundp 'elot-slurp))        ; use whatever predicate marks an ELOT buffer
-					(save-excursion
-						(goto-char (point-min))
-						(let ((pattern (if find-definition
-															 (concat "^\\*+ .*\\b" (regexp-quote identifier) "\\b")
-														 (concat "\\b" (regexp-quote identifier) "\\b")))
-									(case-fold-search nil))
-							(while (re-search-forward pattern nil t)
-								(let ((loc (xref-make-buffer-location
-														buf (line-beginning-position))))
-									(push
-									 (xref-make
-										(cond
-										 (find-definition
-											(org-get-heading t t t t))  ; headline text only
-										 ;; reference context ---------
-										 ((not (org-at-heading-p))
-											(let* ((heading (save-excursion
-																				(or (outline-previous-heading)
-																						(goto-char (point-min)))
-																				(org-get-heading t t t t)))
-														 (item (org-element-lineage
-																		(org-element-context) '(item) t))
-														 (entry-text (if item
-																						 (buffer-substring-no-properties
-																							(org-element-property :begin item)
-																							(org-element-property :end   item))
-																					 (thing-at-point 'line t)))
-														 (one-line (replace-regexp-in-string
-																				"\n\\s-*" " " entry-text)))
-												(format "%s\n %s\n" heading (string-trim one-line))))
-										 (t
-											(thing-at-point 'line t))) ; fallback
-										loc)
-									 matches))))))))
-		(nreverse matches)))
+  (let ((matches nil))
+    (dolist (buf (buffer-list))
+      (with-current-buffer buf
+	(when (and (derived-mode-p 'org-mode)
+		   (boundp 'elot-slurp))        ; use whatever predicate marks an ELOT buffer
+	  (save-excursion
+	    (goto-char (point-min))
+	    (let ((pattern (if find-definition
+			       (concat "^\\*+ .*\\b" (regexp-quote identifier) "\\b")
+			     (concat "\\b" (regexp-quote identifier) "\\b")))
+		  (case-fold-search nil))
+	      (while (re-search-forward pattern nil t)
+		(let ((loc (xref-make-buffer-location
+			    buf (line-beginning-position))))
+		  (push
+		   (xref-make
+		    (cond
+		     (find-definition
+		      (org-get-heading t t t t))  ; headline text only
+		     ;; reference context ---------
+		     ((not (org-at-heading-p))
+		      (let* ((heading (save-excursion
+					(or (outline-previous-heading)
+					    (goto-char (point-min)))
+					(org-get-heading t t t t)))
+			     (item (org-element-lineage
+				    (org-element-context) '(item) t))
+			     (entry-text (if item
+					     (buffer-substring-no-properties
+					      (org-element-property :begin item)
+					      (org-element-property :end   item))
+					   (thing-at-point 'line t)))
+			     (one-line (replace-regexp-in-string
+					"\n\\s-*" " " entry-text)))
+			(format "%s\n %s\n" heading (string-trim one-line))))
+		     (t
+		      (thing-at-point 'line t))) ; fallback
+		    loc)
+		   matches))))))))
+    (nreverse matches)))
 
 (cl-defmethod xref-backend-references  ((_backend (eql elot)) identifier)
-	"Return every reference to IDENTIFIER in ELOT buffers."
-	(elot--xref-find-matches identifier))
+  "Return every reference to IDENTIFIER in ELOT buffers."
+  (elot--xref-find-matches identifier))
 
 (cl-defmethod xref-backend-identifier-completion-table ((_backend (eql elot)))
-	"Disable identifier completion for ELOT xref backends.
+  "Disable identifier completion for ELOT xref backends.
 
 	This prevents Emacs from prompting with completions in xref commands
 	like `xref-find-references'."
-	nil)
+  nil)
 
 (defun elot--capture-slurp (&rest _args)
-	"Copy the current buffer's `elot-slurp' into `elot-slurp-global'.
+  "Copy the current buffer's `elot-slurp' into `elot-slurp-global'.
 
 	This is used before xref is invoked so that label overlays can be shown
 	in the `*xref*' buffer based on the current ELOT context."
-	(when (boundp 'elot-slurp)
-		(setq elot-slurp-global elot-slurp)))
+  (when (boundp 'elot-slurp)
+    (setq elot-slurp-global elot-slurp)))
 
 (advice-add 'xref-find-references :before #'elot--capture-slurp)
 
 (defun elot--xref-label-overlay-setup ()
-	"Setup label overlays in the xref buffer using `elot-slurp-global'."
-	(when (and (equal (buffer-name) "*xref*")
-						 (fboundp 'elot-label-display-setup))
-		(elot-label-display-setup)))
+  "Setup label overlays in the xref buffer using `elot-slurp-global'."
+  (when (and (equal (buffer-name) "*xref*")
+	     (fboundp 'elot-label-display-setup))
+    (elot-label-display-setup)))
 
 (add-hook 'xref-after-update-hook #'elot--xref-label-overlay-setup)
 
 (cl-defmethod xref-backend-definitions ((_backend (eql elot)) identifier)
-	"Return Org headlines that *define* IDENTIFIER."
-	(elot--xref-find-matches identifier :find-definition t))
+  "Return Org headlines that *define* IDENTIFIER."
+  (elot--xref-find-matches identifier :find-definition t))
 
 (add-hook 'xref-backend-functions #'elot-xref-backend)
 
 (defun elot--xref-buffer-enable-backend ()
-	"Enable the ELOT xref backend in the `*xref*` buffer.
+  "Enable the ELOT xref backend in the `*xref*` buffer.
 
 This ensures `xref-find-definitions` works on CURIEs inside the xref buffer."
-	(when (equal (buffer-name) "*xref*")
-		(with-current-buffer (current-buffer)
-			(make-local-variable 'xref-backend-functions)
-			(add-hook 'xref-backend-functions #'elot-xref-backend nil t))))
+  (when (equal (buffer-name) "*xref*")
+    (with-current-buffer (current-buffer)
+      (make-local-variable 'xref-backend-functions)
+      (add-hook 'xref-backend-functions #'elot-xref-backend nil t))))
 
 (add-hook 'xref-after-update-hook #'elot--xref-buffer-enable-backend)
 
 
 (cl-defun elot-describe-curie-at-point (&optional curie)
-	"Pop up a *Help* buffer describing CURIE at point (or prompt).
+  "Pop up a *Help* buffer describing CURIE at point (or prompt).
 Shows the defining headline and a few reference examples, each as
 a clickable button.  Label overlays are rendered inside the help
 buffer exactly like they are in the *xref* buffer."
-	(interactive
-	 (list
-		(or (cl-letf* ((backend 'elot)
-									 (id-fn (symbol-function
-													 'xref-backend-identifier-at-point)))
-					(funcall id-fn backend))
-				(read-string "ELOT CURIE: "))))
-	(unless (and curie (stringp curie) (not (string-empty-p curie)))
-		(user-error "No CURIE given"))
-	;; ------------------------------------------------------------------
-	;; 1. Capture current elot-slurp so we can reuse it in Help buffer
-	;; ------------------------------------------------------------------
-	(let ((elot-slurp-global (when (boundp 'elot-slurp) elot-slurp)))
-		;; ----------------------------------------------------------------
-		;; 2. Gather xref data
-		;; ----------------------------------------------------------------
-		(let* ((defns   (elot--xref-find-matches curie :find-definition t))
-					 (refs    (elot--xref-find-matches curie))
-					 (buffer  (get-buffer-create "*ELOT Describe*"))
-					 (max-ref 10))
-			;; ----------------------------------------------------------------
-			;; 3. Build the Help buffer
-			;; ----------------------------------------------------------------
-			(with-help-window buffer
-				(with-current-buffer buffer
-					(help-mode)
-					(setq truncate-lines t)
-					;; make elot-slurp visible in this buffer for overlay code
-					(setq-local elot-slurp elot-slurp-global)
-					;; ------------------------------------
-					;; 3a. Header & definition
-					;; ------------------------------------
-					(princ (format "%s\n\n" curie))
-					(if defns
-							(progn
-								(princ (propertize "Defined in:\n" 'face 'bold))
-								(elot--describe--insert-xref-button (car defns) 2))
-						(princ (propertize "No definition found.\n" 'face 'warning)))
-					(princ "\n")
-					;; ------------------------------------
-					;; 3b. References (first N)
-					;; ------------------------------------
-					(princ (propertize "Selected references:\n" 'face 'bold))
-					(if refs
-							(let ((count 0))
-								(dolist (xref refs)
-									(when (< count max-ref)
-										(elot--describe--insert-xref-button xref 4)
-										(setq count (1+ count))))
-								(when (> (length refs) max-ref)
-									(princ (format "  …and %d more\n"
-																 (- (length refs) max-ref)))))
-						(princ "  (none)\n"))
-					(princ
-					 "\n----\n`q' to quit, `RET' to visit location.\n")
-					;; ------------------------------------
-					;; 3c. Paint label overlays right now
-					;; ------------------------------------
-					(when (fboundp 'elot-label-display-setup)
-						(elot-label-display-setup)))))))
+  (interactive
+   (list
+    (or (cl-letf* ((backend 'elot)
+		   (id-fn (symbol-function
+			   'xref-backend-identifier-at-point)))
+	  (funcall id-fn backend))
+	(read-string "ELOT CURIE: "))))
+  (unless (and curie (stringp curie) (not (string-empty-p curie)))
+    (user-error "No CURIE given"))
+  ;; ------------------------------------------------------------------
+  ;; 1. Capture current elot-slurp so we can reuse it in Help buffer
+  ;; ------------------------------------------------------------------
+  (let ((elot-slurp-global (when (boundp 'elot-slurp) elot-slurp)))
+    ;; ----------------------------------------------------------------
+    ;; 2. Gather xref data
+    ;; ----------------------------------------------------------------
+    (let* ((defns   (elot--xref-find-matches curie :find-definition t))
+	   (refs    (elot--xref-find-matches curie))
+	   (buffer  (get-buffer-create "*ELOT Describe*"))
+	   (max-ref 10))
+      ;; ----------------------------------------------------------------
+      ;; 3. Build the Help buffer
+      ;; ----------------------------------------------------------------
+      (with-help-window buffer
+	(with-current-buffer buffer
+	  (help-mode)
+	  (setq truncate-lines t)
+	  ;; make elot-slurp visible in this buffer for overlay code
+	  (setq-local elot-slurp elot-slurp-global)
+	  ;; ------------------------------------
+	  ;; 3a. Header & definition
+	  ;; ------------------------------------
+	  (princ (format "%s\n\n" curie))
+	  (if defns
+	      (progn
+		(princ (propertize "Defined in:\n" 'face 'bold))
+		(elot--describe--insert-xref-button (car defns) 2))
+	    (princ (propertize "No definition found.\n" 'face 'warning)))
+	  (princ "\n")
+	  ;; ------------------------------------
+	  ;; 3b. References (first N)
+	  ;; ------------------------------------
+	  (princ (propertize "Selected references:\n" 'face 'bold))
+	  (if refs
+	      (let ((count 0))
+		(dolist (xref refs)
+		  (when (< count max-ref)
+		    (elot--describe--insert-xref-button xref 4)
+		    (setq count (1+ count))))
+		(when (> (length refs) max-ref)
+		  (princ (format "  …and %d more\n"
+				 (- (length refs) max-ref)))))
+	    (princ "  (none)\n"))
+	  (princ
+	   "\n----\n`q' to quit, `RET' to visit location.\n")
+	  ;; ------------------------------------
+	  ;; 3c. Paint label overlays right now
+	  ;; ------------------------------------
+	  (when (fboundp 'elot-label-display-setup)
+	    (elot-label-display-setup)))))))
 
 (defun elot--describe--insert-xref-button (xref indent)
-	"Insert XREF as an indented bullet with filename and a clickable link."
-	(let* ((summary (xref-item-summary xref))
-				 (loc     (xref-item-location  xref))
-				 (marker  (xref-location-marker loc))
-				 (buf     (marker-buffer marker))
-				 (file    (or (buffer-file-name buf) (buffer-name buf)))
-				 (short   (file-name-nondirectory file))
-				 (line    (with-current-buffer buf
-										(line-number-at-pos marker))))
-		;; bullet + file prefix
-		(insert (make-string indent ?\s) "• "
-						(propertize (concat short ": ") 'face 'font-lock-keyword-face))
-		;; clickable summary
-		(insert-text-button
-		 summary
-		 'follow-link t
-		 'elot-target-buffer buf
-		 'elot-target-pos    (marker-position marker)
-		 'action (lambda (btn)
-							 (let ((target-buf (button-get btn 'elot-target-buffer))
-										 (pos        (button-get btn 'elot-target-pos)))
-								 (pop-to-buffer target-buf)
-								 (goto-char pos)
-								 (xref-pulse-momentarily)))
-		 'help-echo (format "%s:%d" short line))
-		(insert "\n")))
+  "Insert XREF as an indented bullet with filename and a clickable link."
+  (let* ((summary (xref-item-summary xref))
+	 (loc     (xref-item-location  xref))
+	 (marker  (xref-location-marker loc))
+	 (buf     (marker-buffer marker))
+	 (file    (or (buffer-file-name buf) (buffer-name buf)))
+	 (short   (file-name-nondirectory file))
+	 (line    (with-current-buffer buf
+		    (line-number-at-pos marker))))
+    ;; bullet + file prefix
+    (insert (make-string indent ?\s) "• "
+	    (propertize (concat short ": ") 'face 'font-lock-keyword-face))
+    ;; clickable summary
+    (insert-text-button
+     summary
+     'follow-link t
+     'elot-target-buffer buf
+     'elot-target-pos    (marker-position marker)
+     'action (lambda (btn)
+	       (let ((target-buf (button-get btn 'elot-target-buffer))
+		     (pos        (button-get btn 'elot-target-pos)))
+		 (pop-to-buffer target-buf)
+		 (goto-char pos)
+		 (xref-pulse-momentarily)))
+     'help-echo (format "%s:%d" short line))
+    (insert "\n")))
 ;; src-elot-xref ends here
+
+;; [[file:../elot-defs.org::src-resolve-prefixes-on-export][src-resolve-prefixes-on-export]]
+(defun elot--resolve-prefixes-in-description-list ()
+  "Resolve RDF-style prefixes in description list values.
+For lines matching ` - <term> :: <prefix>:` at the end,
+replace <prefix> with the result of `elot-unprefix-uri`."
+  (save-excursion
+    (goto-char (point-min))
+    (let ((pattern "^\\s-*[-+]\\s-+\\(?:.*?\\)::\\s-*\\([[:word:]_./-]*:\\)\\s-*$"))
+      (while (re-search-forward pattern nil t)
+        (let* ((start (match-beginning 1))
+               (end   (match-end 1))
+               (prefix (buffer-substring-no-properties start end))
+               (resolved (elot-unprefix-uri prefix org-link-abbrev-alist-local :noerror)))
+          (when (stringp resolved)
+            (delete-region start end)
+            (goto-char start)
+            (insert resolved)))))))
+;; src-resolve-prefixes-on-export ends here
 
 ;; [[file:../elot-defs.org::src-stable-links-export][src-stable-links-export]]
 (defun elot--prepare-export-buffer (backend)
@@ -1264,7 +1283,11 @@ buffer exactly like they are in the *xref* buffer."
                              (concat "[[" target "][" resource "]]"))))
             (delete-region start end)
             (goto-char start)
-            (insert link)))))))
+            (insert link))))))
+    ;; ------------------------------------------------------------
+    ;; 3  Resolve prefixes in description list values
+    ;; ------------------------------------------------------------
+    (elot--resolve-prefixes-in-description-list))
 
 (add-hook 'org-export-before-processing-hook #'elot--prepare-export-buffer)
 ;; src-stable-links-export ends here
