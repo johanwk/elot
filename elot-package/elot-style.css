@@ -243,3 +243,11 @@ th {
 .copy-link-button:hover {
     color: #005a9c;
 }
+
+a {
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
