@@ -155,9 +155,9 @@ h15 .section-number-15 {
     user-select: none;
 }
 
-/* Base: restore spacing between top-level entries */
+/* Base: spacing for top-level entries */
 dl {
-    margin: 0.8em 0;
+    margin: 0.6em 0;
     padding-left: 2em;
 }
 
@@ -172,7 +172,7 @@ dd {
     display: inline;
 }
 
-/* Line break after each term-value pair */
+/* Term + value formatting */
 dt::after {
     content: ": ";
 }
@@ -180,15 +180,25 @@ dt::after {
 dt + dd::after {
     content: "\A";
     white-space: pre;
-    line-height: 1.2;
 }
 
-/* Sublist inside dd: no extra margin or bottom spacing */
+/* Nested description list inside a dd */
 dd dl {
-    margin: 0.2em 0 0.2em 1.5em;  /* small vertical space, slight indent */
+    margin: 0.3em 0 0.3em 1.5em;  /* soft vertical spacing + slight indent */
     padding: 0;
 }
 
+/* Remove any unexpected spacing between nested dl and the next top-level dt */
+dd dl + * {
+    margin-top: 0;
+    padding-top: 0;
+}
+
+dl dl + dt {
+    margin-top: 0.3em; /* reintroduce small space after nested list */
+}
+
+/* Nested terms inline as well */
 dd dl dt,
 dd dl dd {
     display: inline;
@@ -203,20 +213,6 @@ dd dl dt::after {
 dd dl dt + dd::after {
     content: "\A";
     white-space: pre;
-}
-
-/* Critical: prevent large gap between nested dl and next dt */
-dd:last-child {
-    margin-bottom: 0;
-}
-
-dl dl + dt {
-    margin-top: 0.2em;  /* gentle space if nested dl is followed by next term */
-}
-
-/* Optional: keep line-height slightly tighter */
-dl, dt, dd {
-    line-height: 1.3;
 }
 
 
