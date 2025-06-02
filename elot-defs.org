@@ -1351,8 +1351,42 @@ This allows us to have e.g. an empty prefix ~:~ in ~rdfs:isDefinedBy~ expanded t
               (insert resolved)))))))
 #+end_src
 
+The following will replace uses of defined resources with links that have labels in output.
+#+name: src-linkify-codelist-items-in-buffer
+#+begin_src emacs-lisp
+(defun elot--linkify-codelist-items-in-buffer ()
+  "Search for `elot-codelist-fontify-regexp` in the current buffer
+and replace matches with Org-mode links, unless the match is
+within a code block, example block, fixed-width area, or IN a headline's text.
+The link description is obtained using `(elot-codelist-id-label MATCH)`."
+  (save-excursion
+    (goto-char (point-min))
+    (while-let ((matched-text
+                 (and (re-search-forward elot-codelist-fontify-regexp nil t)
+                      (match-string-no-properties 0))))
+      (let ((start (match-beginning 0))
+            (end (match-end 0)))
+        ;; Corrected check:
+        (if (let* ((element-at-start ;; Get element at the beginning of the match
+                    (save-excursion
+                      (goto-char start)
+                      (org-element-context))))
+              (or
+               (eq (org-element-type element-at-start) 'headline)
+               (org-element-lineage element-at-start
+                                    '(src-block example-block fixed-width)
+                                    t))) ; 't' checks element-at-start itself too
+            nil ; In forbidden context, do nothing and skip to next match
+          (let* ((label (elot-codelist-id-label matched-text))
+                 (link-string (format "[[#%s][%s]]" matched-text (or label "MISSING"))))
+            (delete-region start end)
+            (goto-char start)
+            (insert link-string)))))))
+#+end_src
+
 #+name: src-stable-links-export
 #+begin_src emacs-lisp
+
   (defun elot--prepare-export-buffer (backend)
     "Prepare the export clone for Elot:
 
@@ -1362,14 +1396,14 @@ This allows us to have e.g. an empty prefix ~:~ in ~rdfs:isDefinedBy~ expanded t
     (when (org-export-derived-backend-p backend 'latex)
       (cl-return-from elot--prepare-export-buffer))
     ;; ------------------------------------------------------------
-    ;; 0  Reveal and synchronously fontify the whole clone
+    ;; 1  Turn uses of defined resources into links
     ;; ------------------------------------------------------------
     (org-fold-show-all)
     (elot-label-display-setup)
-    (font-lock-fontify-buffer)
-
+    ;;(font-lock-fontify-buffer)
+    (elot--linkify-codelist-items-in-buffer)
     ;; ------------------------------------------------------------
-    ;; 1  Ensure CUSTOM_ID drawers
+    ;; 2  Ensure CUSTOM_ID drawers
     ;; ------------------------------------------------------------
     (let (pending)                                   ; (marker . id) pairs
       (org-with-wide-buffer
@@ -1384,39 +1418,11 @@ This allows us to have e.g. an empty prefix ~:~ in ~rdfs:isDefinedBy~ expanded t
        ;; Insert from bottom to top so earlier insertions don’t shift markers
        (dolist (cell (nreverse pending))
          (org-with-point-at (car cell)
-           (org-entry-put (car cell) "CUSTOM_ID" (cdr cell)))))
-
-      ;; ------------------------------------------------------------
-      ;; 2  Link-ify CURIEs, skipping literal blocks
-      ;; ------------------------------------------------------------
-      (goto-char (point-min))
-      (while-let ((match (text-property-search-forward 'elot-label-display)))
-        (let* ((label (prop-match-value match))
-               (start (prop-match-beginning match))
-               (end   (prop-match-end match))
-               (container
-                (org-element-lineage
-                 (org-element-context)
-                 '(src-block example-block fixed-width) t)))
-          ;; If we’re inside a literal block, jump to its end and continue
-          (if container
-              (goto-char (org-element-property :end container))
-            ;; Otherwise build the internal link
-            (let* ((resource (buffer-substring-no-properties start end)) ; ex:Apple
-                   (target   (concat "#" resource))
-                   (link     (if (and (stringp label)
-                                      (not (string= label resource)))
-                                 (concat "[[" target "][" label "]]")
-                               (concat "[[" target "][" resource "]]"))))
-              (delete-region start end)
-              (goto-char start)
-              (insert link))))))
-      ;; ------------------------------------------------------------
-      ;; 3  Resolve prefixes in description list values
-      ;; ------------------------------------------------------------
-      (elot--resolve-prefixes-in-description-list))
-
-  (add-hook 'org-export-before-processing-hook #'elot--prepare-export-buffer)
+           (org-entry-put (car cell) "CUSTOM_ID" (cdr cell))))))
+    ;; ------------------------------------------------------------
+    ;; 3  Resolve prefixes in description list values
+    ;; ------------------------------------------------------------
+    (elot--resolve-prefixes-in-description-list))
 #+end_src
 *** Headings in LaTeX export
 We format headings with indentation to match the subtype level in the
