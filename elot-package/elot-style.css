@@ -162,7 +162,9 @@ dl {
 }
 
 dt {
-    font-weight: bold;
+    # font-weight: bold;
+    font-weight: normal;
+    # font-style: italic; 
     margin: 0;
     display: inline;
 }
@@ -216,7 +218,9 @@ dd dl dt + dd::after {
 }
 
 dd > dl:last-child {
-  margin-bottom: 0;
+    margin-top: 0em;
+    padding: 0;
+    margin-bottom: 0;
 }
 
 dd:last-child {
