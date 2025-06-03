@@ -1293,6 +1293,8 @@ The link description is obtained using `(elot-codelist-id-label MATCH)`."
   ;; 3  Resolve prefixes in description list values
   ;; ------------------------------------------------------------
   (elot--resolve-prefixes-in-description-list))
+
+(add-hook 'org-export-before-processing-functions #'elot--prepare-export-buffer)
 ;; src-stable-links-export ends here
 
 ;; [[file:../elot-defs.org::src-latex-section-export][src-latex-section-export]]

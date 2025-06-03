@@ -1386,7 +1386,6 @@ The link description is obtained using `(elot-codelist-id-label MATCH)`."
 
 #+name: src-stable-links-export
 #+begin_src emacs-lisp
-
   (defun elot--prepare-export-buffer (backend)
     "Prepare the export clone for Elot:
 
@@ -1423,6 +1422,8 @@ The link description is obtained using `(elot-codelist-id-label MATCH)`."
     ;; 3  Resolve prefixes in description list values
     ;; ------------------------------------------------------------
     (elot--resolve-prefixes-in-description-list))
+
+  (add-hook 'org-export-before-processing-functions #'elot--prepare-export-buffer)
 #+end_src
 *** Headings in LaTeX export
 We format headings with indentation to match the subtype level in the
