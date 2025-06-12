@@ -1250,10 +1250,12 @@ The link description is obtained using `(elot-codelist-id-label MATCH)`."
                                     t))) ; 't' checks element-at-start itself too
             nil ; In forbidden context, do nothing and skip to next match
           (let* ((label (elot-codelist-id-label matched-text))
-                 (link-string (format "[[#%s][%s]]" matched-text (or label "MISSING"))))
-            (delete-region start end)
-            (goto-char start)
-            (insert link-string)))))))
+                 (link-string (if label (format "[[#%s][%s]]" matched-text label))))
+            (if label 
+                (progn
+                  (delete-region start end)
+                  (goto-char start)
+                  (insert link-string)))))))))
 ;; src-linkify-codelist-items-in-buffer ends here
 
 ;; [[file:../elot-defs.org::src-stable-links-export][src-stable-links-export]]

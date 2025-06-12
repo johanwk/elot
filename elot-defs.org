@@ -1354,34 +1354,36 @@ This allows us to have e.g. an empty prefix ~:~ in ~rdfs:isDefinedBy~ expanded t
 The following will replace uses of defined resources with links that have labels in output.
 #+name: src-linkify-codelist-items-in-buffer
 #+begin_src emacs-lisp
-(defun elot--linkify-codelist-items-in-buffer ()
-  "Search for `elot-codelist-fontify-regexp` in the current buffer
-and replace matches with Org-mode links, unless the match is
-within a code block, example block, fixed-width area, or IN a headline's text.
-The link description is obtained using `(elot-codelist-id-label MATCH)`."
-  (save-excursion
-    (goto-char (point-min))
-    (while-let ((matched-text
-                 (and (re-search-forward elot-codelist-fontify-regexp nil t)
-                      (match-string-no-properties 0))))
-      (let ((start (match-beginning 0))
-            (end (match-end 0)))
-        ;; Corrected check:
-        (if (let* ((element-at-start ;; Get element at the beginning of the match
-                    (save-excursion
-                      (goto-char start)
-                      (org-element-context))))
-              (or
-               (eq (org-element-type element-at-start) 'headline)
-               (org-element-lineage element-at-start
-                                    '(src-block example-block fixed-width)
-                                    t))) ; 't' checks element-at-start itself too
-            nil ; In forbidden context, do nothing and skip to next match
-          (let* ((label (elot-codelist-id-label matched-text))
-                 (link-string (format "[[#%s][%s]]" matched-text (or label "MISSING"))))
-            (delete-region start end)
-            (goto-char start)
-            (insert link-string)))))))
+  (defun elot--linkify-codelist-items-in-buffer ()
+    "Search for `elot-codelist-fontify-regexp` in the current buffer
+  and replace matches with Org-mode links, unless the match is
+  within a code block, example block, fixed-width area, or IN a headline's text.
+  The link description is obtained using `(elot-codelist-id-label MATCH)`."
+    (save-excursion
+      (goto-char (point-min))
+      (while-let ((matched-text
+                   (and (re-search-forward elot-codelist-fontify-regexp nil t)
+                        (match-string-no-properties 0))))
+        (let ((start (match-beginning 0))
+              (end (match-end 0)))
+          ;; Corrected check:
+          (if (let* ((element-at-start ;; Get element at the beginning of the match
+                      (save-excursion
+                        (goto-char start)
+                        (org-element-context))))
+                (or
+                 (eq (org-element-type element-at-start) 'headline)
+                 (org-element-lineage element-at-start
+                                      '(src-block example-block fixed-width)
+                                      t))) ; 't' checks element-at-start itself too
+              nil ; In forbidden context, do nothing and skip to next match
+            (let* ((label (elot-codelist-id-label matched-text))
+                   (link-string (if label (format "[[#%s][%s]]" matched-text label))))
+              (if label 
+                  (progn
+                    (delete-region start end)
+                    (goto-char start)
+                    (insert link-string)))))))))
 #+end_src
 
 #+name: src-stable-links-export
