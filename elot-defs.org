@@ -601,7 +601,7 @@ the ID string.
     "Expand STR to be used as an annotation value in Manchester Syntax.
   Expand uri, or return number, or wrap in quotes."
     ;; maybe this entry contains string representation of meta-annotations, remove them
-    (setq str (replace-regexp-in-string " - [^ ]+ ::.*$" "" str))
+    (setq str (replace-regexp-in-string "\\(:newline:\\)? - [^ ]+ ::.*$" "" str))
     ;; maybe there's macros in the string, expand them
     (if (string-match "{{{.+}}}" str)
         (let ((omt org-macro-templates))
