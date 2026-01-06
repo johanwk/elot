@@ -742,9 +742,11 @@ This is a helper function for `elot-resource-declarations'."
                     (match-string 1 suri) ""))
          (localname (match-string 2 suri))
          (label (if (string-match "\\(.+\\) (.*)" str)
-                    (match-string 1 str) localname))
+                    (match-string 1 str) nil))
          (resource-annotations
-          (cons (list "rdfs:label" label) (cadr l))))
+          (if label 
+              (cons (list "rdfs:label" label) (cadr l)) 
+            (cadr l))))
     (elot-annotation-entries resource-annotations)))
 
 (defun elot-omn-restrict (l)
