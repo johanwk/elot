@@ -700,7 +700,7 @@ output."
          (cl-remove-if (lambda (x) (string-equal (car x)
                                                  (elot-unprefix-uri (car x) org-link-abbrev-alist-local)))
                        l)))
-    (if (atom l) "\n"
+    (if (atom l-uri-entries) ""
       (concat "\n" indent "Annotations: "
               (mapconcat (lambda (y)
                            (concat
