@@ -1,12 +1,12 @@
 # -*- eval: (load-library "elot-defaults") -*-
-#+ELOT_EXPORTER_CHECKSUM: 74bd2a8c969041879c8c2ff7cc92c6fcdaa2dea6b804697b8cade67cc797da57
+#+ELOT_EXPORTER_CHECKSUM: da906316258374302c17476f024badb0da87f89d6e3062b1930591ab0267465a
 # This org-mode file was created using elot-exporter version 0.9.
 # Source ontology: [URL] http://purl.obolibrary.org/obo/po.owl
 
 #+title: Plant Ontology
 #+subtitle: An OWL ontology
 #+author: 
-#+date: WIP (version of 2026-03-03 22:28)
+#+date: WIP (version of 2026-03-03 22:45)
 #+call: theme-elot()
 
 
@@ -110,8 +110,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 :resourcedefs: yes
 :END:
 
- - Import :: <http://purl.obolibrary.org/obo/po/imports/ncbitaxon_import.owl>
- - Import :: <http://purl.obolibrary.org/obo/po/imports/ro_import.owl>
+ - Import :: http://purl.obolibrary.org/obo/po/imports/ncbitaxon_import.owl
+ - Import :: http://purl.obolibrary.org/obo/po/imports/ro_import.owl
  - terms:description :: An ontology that describes plant anatomy, morphology, and growth and development in plants.
  - terms:license :: http://creativecommons.org/licenses/by/4.0/
  - terms:title :: Plant Ontology
