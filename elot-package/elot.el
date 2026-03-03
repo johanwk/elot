@@ -526,8 +526,7 @@ unless it is an ontology section."
 
 ;; [[file:../elot-defs.org::src-puri-expand][src-puri-expand]]
 (defconst elot-puri-re 
-  "^\\([-[:word:]_./]*\\):\\([-[:word:]_./]*\\)$")
-  ;; "^\\([-_./[:alnum:]]*\\):\\([-_/.[:alnum:]]*\\)$")
+  "^\\([a-zA-Z][-a-zA-Z0-9_.]*\\|\\):\\([-[:word:]_./]*\\)$")
 
 (defun elot-unprefix-uri (puri abbrev-alist &optional noerror)
   "Replace prefix in PURI with full form from ABBREV-ALIST, if there's a match."
