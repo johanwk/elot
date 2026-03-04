@@ -636,7 +636,8 @@ The returned value is either
 
 If the heading contains *no* recognisable identifier and NOERROR is
 non-nil, return NIL.  Otherwise raise an error."
-  (let* ((curie-regex "[-_./[:alnum:]]*:[-_/.[:alnum:]]*") ;; review and update
+  (let* ( ;;(curie-regex "[-_./[:alnum:]]*:[-_/.[:alnum:]]*") ;; review and update
+         (curie-regex "\\([a-zA-Z][-a-zA-Z0-9_.]*\\|\\):\\([-[:word:]_./]*\\)")
          (full-uri-regex "http[s]?://[-[:alnum:]._~:/?#\\@!$&'()*+,;=%]*"))
     (cond
      ;; single URI, beginning of line
@@ -645,28 +646,28 @@ non-nil, return NIL.  Otherwise raise an error."
      ;; single URI in parentheses
      ((string-match (format "(<?\\(%s\\)>?)" full-uri-regex) str)
       (format "<%s>" (match-string 1 str)))
-     ;; CURIE, then URI in parentheses (ontology and ontology version)
-     ((string-match (format "(\\(%s\\) <?\\(%s\\)>?)" curie-regex full-uri-regex) str)
-      (format "%s <%s>" (match-string 1 str) (match-string 2 str)))
-     ;; two URIs in parentheses (ontology and ontology version)
-     ((string-match (format "(<?\\(%s\\)>? <?\\(%s\\)>?)" full-uri-regex full-uri-regex) str)
-      (let ((uri1 (match-string 1 str))
-            (uri2 (match-string 2 str)))
-        (format "<%s> <%s>" uri1 uri2)))
      ;; CURIE, beginning of line
      ((string-match (format "^\\(%s\\)" curie-regex) str)
       (match-string 1 str))
      ;; CURIE in parentheses
      ((string-match (format "(\\(%s\\))" curie-regex) str)
       (match-string 1 str))
+     ;; two URIs in parentheses (ontology and ontology version)
+     ((string-match (format "(<?\\(%s\\)>? <?\\(%s\\)>?)" full-uri-regex full-uri-regex) str)
+      (let ((uri1 (match-string 1 str))
+            (uri2 (match-string 2 str)))
+        (format "<%s> <%s>" uri1 uri2)))
+     ;; CURIE, then URI in parentheses (ontology and ontology version)
+     ((string-match (format "(\\(%s\\) <?\\(%s\\)>?)" curie-regex full-uri-regex) str)
+      (format "%s <%s>" (match-string 1 str) (match-string 2 str)))
+     ;; two CURIEs in parentheses (ontology and ontology version)
+     ((string-match (format "(\\(%s\\) \\(%s\\))" curie-regex curie-regex) str)
+      (format "%s %s" (match-string 1 str) (match-string 2 str)))
      ;; URN identifier: return as-is if the string is a URN, e.g. <urn:isbn:0943396611>
      ((string-match "^<urn:[^>]+>$" str) str)
      ;; URN in parentheses
      ((string-match "(\\(<urn:[^>]+>\\))" str)
       (match-string 1 str))
-     ;; two CURIEs in parentheses (ontology and ontology version)
-     ((string-match (format "(\\(%s\\) \\(%s\\))" curie-regex curie-regex) str)
-      (format "%s %s" (match-string 1 str) (match-string 2 str)))
      (t
       (if noerror
           nil
