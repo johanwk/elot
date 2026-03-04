@@ -381,6 +381,7 @@ The "misc" keywords are not tied to a particular resource declaration.
       "SubClassOf"
       "Characteristics"
       "DisjointWith"
+      "DisjointUnionOf"
       "Domain"
       "Range"
       "InverseOf"
