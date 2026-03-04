@@ -141,7 +141,7 @@ echo "ROBOT JAR download completed."
 # --- Download elot-exporter.jar ---
 echo "Downloading elot-exporter.jar..."
 # Specify the exact URL provided
-EXPORTER_URL="https://github.com/johanwk/elot/releases/download/v1.0.5/elot-exporter-0.6-SNAPSHOT.jar"
+EXPORTER_URL="https://github.com/johanwk/elot/releases/download/v1.0.9/elot-exporter-0.9.jar"
 EXPORTER_JAR_PATH="${BIN_DIR}/elot-exporter.jar" # Use a clean name
 
 echo "Downloading from $EXPORTER_URL to '$EXPORTER_JAR_PATH'..."

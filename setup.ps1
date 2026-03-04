@@ -144,7 +144,7 @@ try {
 
 # --- Download elot-exporter.jar ---
 Write-Host "Downloading elot-exporter.jar..." -ForegroundColor Cyan
-$ExporterUrl = "https://github.com/johanwk/elot/releases/download/v1.0.5/elot-exporter-0.6-SNAPSHOT.jar"
+$ExporterUrl = "https://github.com/johanwk/elot/releases/download/v1.0.9/elot-exporter-0.9.jar"
 $ExporterJarPath = Join-Path $BinDir "elot-exporter.jar" # Use a clean name
 
 Write-Host "Downloading from $ExporterUrl to '$ExporterJarPath'..."
