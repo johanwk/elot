@@ -1,0 +1,180 @@
+#+TITLE: ELOT Tangle-to-OMN Refactoring Plan
+#+AUTHOR: ELOT Contributors
+#+DATE: 2026
+#+STARTUP: overview
+
+* Overview
+
+This document is the working project plan for refactoring the
+tangle-to-OWL Manchester Notation (OMN) pipeline in ELOT.
+
+The central ELOT capability is converting Org-mode outlines and
+description lists into OWL Manchester Syntax.  The relevant code
+currently lives scattered across =elot-defs.org= (~118 KB).  The goal
+of this multi-phase effort is to:
+
+- Extract the tangle-to-OMN functions into a dedicated =elot-tangle.org=
+- Add ERT regression tests so refactoring does not break behaviour
+- Improve docstrings and narrative documentation
+- Refactor Org-reading functions to use the =org-element= API
+- Harden OMN generation and taxonomy functions
+
+*Note:* =elot-package/elot.el= is entirely tangled from =elot-defs.org=
+and must never be edited directly.  All source changes go through =.org=
+files.
+
+*Note:* This =REFACTORING.org= file lives only on the refactoring branch
+and should be removed before squash-merging to =main=.
+
+* Data Flow
+
+The pipeline converts Org structure into OMN output in two parallel
+streams that are then combined.
+
+#+BEGIN_EXAMPLE
+Org outline headings  →  elot-org-list-siblings          →  hierarchy tree (nested lists)
+Org description lists →  elot-org-descriptions-in-section →  annotation/restriction pairs
+                                  ↓                                       ↓
+                  elot-resource-taxonomy-from-header    elot-resource-declarations-from-header
+                                  ↓                                       ↓
+                  elot-resource-taxonomy-from-l         elot-resource-declarations
+                                  ↓                                       ↓
+                          OMN SubClassOf/SubPropertyOf        OMN Class: + annotations
+#+END_EXAMPLE
+
+* Function Reference
+
+| Function                              | Purpose                                    | Source block          |
+|---------------------------------------+--------------------------------------------+-----------------------|
+| elot-org-list-siblings                | Reads Org outline into nested list         | src-heading-to-list   |
+| elot-org-descriptions-in-section      | Reads description lists into pairs         | src-desc-lists        |
+| elot-org-subsection-descriptions      | Maps headings → description lists          | src-desc-lists        |
+| elot-entity-from-header               | Extracts OWL entity IRI from heading       | src-heading-to-list   |
+| elot-omn-declare                      | Generates Class: declaration               | src-resource-declare  |
+| elot-annotation-entries               | Formats annotation pairs as OMN            | src-resource-declare  |
+| elot-restriction-entries              | Formats restriction axioms as OMN          | src-resource-declare  |
+| elot-resource-declarations            | Combines declare + annotate + restrict     | src-resource-declare  |
+| elot-resource-declarations-from-header | Top-level: Org ID → OMN declarations      | src-resource-declare  |
+| elot-resource-taxonomy-from-l         | Recursive: list → SubClassOf axioms        | src-write-taxonomy    |
+| elot-resource-taxonomy-from-header    | Top-level: Org ID → OMN taxonomy           | src-write-taxonomy    |
+| elot-misc-axioms                      | DisjointClasses, EquivalentClasses etc.    | src-resource-declare  |
+
+* Source Blocks to Extract (Phase 1)
+
+The following named source blocks from =elot-defs.org= should be moved
+into the new file =elot-tangle.org=:
+
+- =src-heading-to-list= — outline traversal, entity extraction
+  (includes =elot-org-list-siblings=, =elot-entity-from-header=)
+- =src-desc-lists= — description list parsing
+  (includes =elot-org-descriptions-in-section=, =elot-org-subsection-descriptions=)
+- =src-resource-declare= — OMN declarations, annotations, restrictions
+  (includes =elot-omn-declare=, =elot-annotation-entries=,
+  =elot-restriction-entries=, =elot-resource-declarations=,
+  =elot-resource-declarations-from-header=, =elot-misc-axioms=)
+- =src-write-class= — oneof/disjoint helpers
+  (includes =elot-class-oneof-from-header=, =elot-class-disjoint-from-header=)
+- =src-write-taxonomy= — taxonomy generation
+  (includes =elot-resource-taxonomy-from-l=, =elot-resource-taxonomy-from-header=)
+- OMN keyword variables:
+  =elot-omn-property-keywords=, =elot-omn-misc-keywords=, =elot-omn-all-keywords=
+- =src-prefix-links= — prefix/link-abbrev handling
+  (borderline; used by tangle pipeline but also by display functions)
+
+* Phased Plan
+
+** DONE Phase 0: Setup
+:PROPERTIES:
+:CREATED:  2026
+:END:
+
+- Create branch =refactor/tangle-to-omn=
+- Open tracking issue #87
+- Create this =REFACTORING.org= project plan
+- Create initial ERT regression tests in =test/test-elot-tangle.el=
+- Open draft PR referencing the issue
+
+** TODO Phase 1: Extract tangle-to-OMN code
+:PROPERTIES:
+:END:
+
+Move all tangle-to-OMN source blocks from =elot-defs.org= into a new
+file =elot-tangle.org=:
+
+- Create =elot-tangle.org= with appropriate header and tangle settings
+- Move =src-heading-to-list=, =src-desc-lists=, =src-resource-declare=,
+  =src-write-class=, =src-write-taxonomy=, keyword variables, and
+  =src-prefix-links= from =elot-defs.org=
+- Keep =:noweb= references working
+- Verify tangling produces byte-identical output for the relevant
+  functions (diff test against =elot-package/elot.el=)
+
+** TODO Phase 2: Add ERT regression tests
+:PROPERTIES:
+:END:
+
+Expand =test/test-elot-tangle.el= with full coverage of the extracted
+functions:
+
+- Test each function documented in the Function Reference table
+- Add tests for edge cases (empty input, malformed headings, missing
+  prefixes, deeply nested hierarchies)
+- Confirm all tests pass both before and after Phase 1 extraction
+
+** TODO Phase 3: Improve docstrings and narrative
+:PROPERTIES:
+:END:
+
+Work entirely inside =elot-tangle.org=:
+
+- Expand docstrings for all extracted functions
+- Add narrative prose sections explaining design choices
+- Improve inline comments in source blocks
+
+** TODO Phase 4: Refactor Org-reading functions to org-element API
+:PROPERTIES:
+:END:
+
+Replace ad-hoc outline traversal in =elot-org-list-siblings= and
+=elot-org-descriptions-in-section= with the structured =org-element= API:
+
+- Analyse current traversal logic
+- Write replacement using =org-element-parse-buffer= or
+  =org-element-map=
+- Ensure regression tests continue to pass
+
+** TODO Phase 5: Harden OMN generation and taxonomy functions
+:PROPERTIES:
+:END:
+
+Improve robustness of =elot-resource-taxonomy-from-l=,
+=elot-resource-declarations=, and related functions:
+
+- Add input validation / error reporting
+- Handle edge cases discovered during Phase 2 testing
+- Consider performance improvements for large ontologies
+
+* Design Decisions
+
+This section captures design notes and rationale as they arise during
+the work.
+
+** Borderline code: =src-prefix-links=
+
+The =src-prefix-links= block is used both by the tangle pipeline (to
+resolve prefixed URIs into expanded forms for OMN output) and by the
+interactive display functions (e.g., link-abbrev setup in Org buffers).
+
+Decision pending: either move it and add a cross-reference, or duplicate
+a minimal version for =elot-tangle.org= while keeping the original in
+=elot-defs.org=.
+
+** =org-link-abbrev-alist-local= dependency
+
+Several tangle functions (notably =elot-annotation-entries= and
+=elot-unprefix-uri=) rely on the buffer-local variable
+=org-link-abbrev-alist-local= to filter and expand prefixed URIs.  This
+tight coupling to buffer state complicates unit testing.
+
+Phase 4 should consider making the prefix alist an explicit function
+parameter rather than an implicit buffer-local variable.
