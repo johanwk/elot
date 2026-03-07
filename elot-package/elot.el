@@ -637,8 +637,7 @@ The returned value is either
 
 If the heading contains *no* recognisable identifier and NOERROR is
 non-nil, return NIL.  Otherwise raise an error."
-  (let* ( ;;(curie-regex "[-_./[:alnum:]]*:[-_/.[:alnum:]]*") ;; review and update
-         (curie-regex "\\([a-zA-Z][-a-zA-Z0-9_.]*\\|\\):\\([-[:word:]_./]*\\)")
+  (let* ((curie-regex "\\(?:[a-zA-Z][-a-zA-Z0-9_.]*\\|\\):\\(?:[-[:alnum:]_./]*\\)")
          (full-uri-regex "http[s]?://[-[:alnum:]._~:/?#\\@!$&'()*+,;=%]*"))
     (cond
      ;; single URI, beginning of line
