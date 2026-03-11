@@ -1,4 +1,4 @@
-;;; elot-label-display.el --- Emacs Literate Ontology Tool (ELOT): Label display   -*- lexical-binding: t; no-native-compile: t; -*-
+;;; elot-label-display.el --- Emacs Literate Ontology Tool (ELOT): Label display   -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2024, 2025 Johan W. Klüwer
 
@@ -34,6 +34,8 @@
 ;;; Code:
 
 (require 'elot)
+
+(defvar org-link-abbrev-alist-local)
 
 (defun elot-entities-with-plist (subsection-descriptions &optional owl-type)
   "Return a list of URI, label, and plist of attributes for a resource.

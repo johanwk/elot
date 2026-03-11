@@ -1,10 +1,10 @@
-;;; elot.el --- Emacs Literate Ontology Tool (ELOT)   -*- lexical-binding: t; no-native-compile: t; -*-
+;;; elot.el --- Emacs Literate Ontology Tool (ELOT)   -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2024, 2025 Johan W. Klüwer
+;; Copyright (C) 2024, 2025, 2026 Johan W. Klüwer
 
 ;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
 ;; URL: https://github.com/johanwk/elot
-;; Version: 1.0.9
+;; Version: 1.0.11
 ;; Package-Requires: ((emacs "29.1") (htmlize "1.58") (ht "2.3") (omn-mode "1.3") (hydra "0.15.0") (sparql-mode "4.0.2"))
 ;; Keywords: languages outlines tools org ontology
 
@@ -60,6 +60,10 @@
 (require 'button) ; for text‑buttons
 (require 'help-mode) ; nice keymap & look
 ;; src-require ends here
+
+;; [[file:../elot-defs.org::src-defvar][src-defvar]]
+(defvar org-link-abbrev-alist-local)
+;; src-defvar ends here
 
 ;; [[file:../elot-defs.org::src-settings-externals][src-settings-externals]]
 (defgroup elot
@@ -637,7 +641,7 @@ The returned value is either
 
 If the heading contains *no* recognisable identifier and NOERROR is
 non-nil, return NIL.  Otherwise raise an error."
-  (let* ((curie-regex "\\(?:[a-zA-Z][-a-zA-Z0-9_.]*\\|\\):\\(?:[-[:alnum:]_./]*\\)")
+  (let* ((curie-regex "\\(?:[a-zA-Z][-a-zA-Z0-9_.]*\\|\\):\\(?:[-[:word:]_./]*\\)")
          (full-uri-regex "http[s]?://[-[:alnum:]._~:/?#\\@!$&'()*+,;=%]*"))
     (cond
      ;; single URI, beginning of line

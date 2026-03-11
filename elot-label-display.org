@@ -12,7 +12,7 @@ allows for local variables to be accessed -- relevant for
 in SPARQL select results.
 #+name: src-package-header
 #+begin_src emacs-lisp :comments nil
-  ;;; elot-label-display.el --- Emacs Literate Ontology Tool (ELOT): Label display   -*- lexical-binding: t; no-native-compile: t; -*-
+  ;;; elot-label-display.el --- Emacs Literate Ontology Tool (ELOT): Label display   -*- lexical-binding: t; -*-
 
   ;; Copyright (C) 2024, 2025 Johan W. Klüwer
 
@@ -53,6 +53,13 @@ in SPARQL select results.
 #+begin_src emacs-lisp
 (require 'elot)
 #+end_src
+*** Declare ~org-link-abbrev-alist-local~ to allow native compile
+This is a safeguard, unclear whether it matters.
+#+name: src-defvar
+#+begin_src emacs-lisp
+(defvar org-link-abbrev-alist-local)
+#+end_src
+
 ** Retrieve all entities defined in the buffer into list
 The following works well for getting all /in-buffer/ entities into a list.
 #+name: src-slurp
