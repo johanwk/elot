@@ -187,7 +187,7 @@ tangling to OMN.
        :noquery t
        :sentinel
        ;; Sentinel logic - suitable for interactive use
-       (lambda (proc event)
+       (lambda (proc _event)
          (when (not (process-live-p proc))
            (if (= (process-exit-status proc) 0)
                (message "ROBOT: Conversion successful: %s" output-file)
@@ -522,18 +522,27 @@ the ID string.
   (defun elot-org-elt-item-str (x)
     "For X in an `org-element-map', return pair of strings (tag, paragraph content)."
     (list (elot-org-elt-item-tag-str x) (elot-org-elt-item-pars-str x)))
+
   (defun elot-org-descriptions-in-section-helper ()
     "Return all description list items as pairs in a list.
   This function is called from `elot-org-descriptions-in-section' after
-  narrowing to a description list under a heading."
-    (org-element-map (org-element-parse-buffer) 'item
-      (lambda (y) (if (org-element-property :tag y)
-                      (append (elot-org-elt-item-str y)
-                              (if (elot-org-elt-exists (cdr y) 'item)
-                                  (org-element-map (cdr y) 'item
-                                    (lambda (z) (if (org-element-property :tag z)
-                                                    (elot-org-elt-item-str z))) nil nil 'item)))))
-      nil nil 'item))
+  narrowing to a description list under a heading.
+  Parses the buffer once and walks the result."
+    ;; Buffer is already narrowed to the section by the caller.
+    ;; Parse once and walk — do not call org-element-parse-buffer
+    ;; once per heading.
+    (let ((parsed (org-element-parse-buffer)))
+      (org-element-map parsed 'item
+        (lambda (y)
+          (if (org-element-property :tag y)
+              (append (elot-org-elt-item-str y)
+                      (if (elot-org-elt-exists (cdr y) 'item)
+                          (org-element-map (cdr y) 'item
+                            (lambda (z)
+                              (if (org-element-property :tag z)
+                                  (elot-org-elt-item-str z)))
+                            nil nil 'item)))))
+        nil nil 'item)))
 
   (defun elot-org-descriptions-in-section ()
     "Return any description list items in current section as a list of strings."
@@ -554,32 +563,66 @@ the ID string.
               (elot-org-descriptions-in-section-helper)))))))
 
   (defun elot-org-subsection-descriptions ()
-    "Return a plist mapping subsection headlines to description lists.
-  This function collects headlines in the current subtree and associates
-  each with a plist of description-list items and values.  Sections with
-  the tag `nodeclare' or with headings starting with `COMMENT' are excluded.
-  The function does not include the section that has the target property ID,
-  unless it is an ontology section."
-    (save-restriction
-      (save-excursion
-        (unless (org-at-heading-p) (org-previous-visible-heading 1)) ; ensure we are at a heading
-        (org-narrow-to-subtree)
-        (if ;; don't include the section that has the target property id itself, except if ontology section
-            (or (outline-next-heading)
-              (elot-at-ontology-heading))
-            (let (ret)
-              (while (let ((heading (substring-no-properties (org-get-heading nil t)))
-                           (descriptions (elot-org-descriptions-in-section)))
-                       (unless (or (string-match-p "^COMMENT" heading)
-                                   (member "nodeclare" (org-get-tags (point) t)))
-                         (setq ret
-                               (cons
-                                (if descriptions
-                                    (list heading descriptions)
-                                  (list heading))
-                                ret)))
-                       (outline-next-heading)))
-              (nreverse ret))))))
+      "Return a plist mapping subsection headlines to description lists.
+    This function collects headlines in the current subtree and associates
+    each with a plist of description-list items and values.  Sections with
+    the tag `nodeclare' or with headings starting with `COMMENT' are excluded.
+    The function does not include the section that has the target property ID,
+    unless it is an ontology section.
+
+    Parses the entire subtree once into an org-element tree, then
+    dispatches per-heading lookups into that cached tree, avoiding
+    repeated calls to `org-element-parse-buffer'."
+      (save-restriction
+        (save-excursion
+          (unless (org-at-heading-p) (org-previous-visible-heading 1))
+          (org-narrow-to-subtree)
+          ;; ── single parse for the whole subtree ──────────────────────────
+          (let ((parsed (org-element-parse-buffer)))
+            (if (or (outline-next-heading)
+                    (elot-at-ontology-heading))
+                (let (ret)
+                  (while
+                      (let* ((heading (substring-no-properties
+                                       (org-get-heading nil t)))
+                             (section-begin
+                              (org-element-property
+                               :contents-begin (org-element-at-point)))
+                             (section-end
+                              (save-excursion (outline-next-heading) (point)))
+                             ;; Walk the already-parsed tree, restricted to
+                             ;; [section-begin, section-end), instead of
+                             ;; re-parsing the narrowed buffer.
+                             (descriptions
+                              (when (and section-begin
+                                         (< section-begin section-end))
+                                (org-element-map parsed 'item
+                                  (lambda (y)
+                                    (let ((begin (org-element-property :begin y)))
+                                      (when (and begin
+                                                 (>= begin section-begin)
+                                                 (<  begin section-end)
+                                                 (org-element-property :tag y))
+                                        (append
+                                         (elot-org-elt-item-str y)
+                                         (when (elot-org-elt-exists (cdr y) 'item)
+                                           (org-element-map (cdr y) 'item
+                                             (lambda (z)
+                                               (when (org-element-property :tag z)
+                                                 (elot-org-elt-item-str z)))
+                                             nil nil 'item))))))
+                                  nil nil 'item))))
+                        (unless (or (string-match-p "^COMMENT" heading)
+                                    (member "nodeclare"
+                                            (org-get-tags (point) t)))
+                          (setq ret
+                                (cons (if descriptions
+                                          (list heading descriptions)
+                                        (list heading))
+                                      ret)))
+                        (outline-next-heading)))
+                  (nreverse ret)))))))
+
 #+END_SRC
 
 *** puri expansion
@@ -615,43 +658,42 @@ the ID string.
           (with-temp-buffer (org-mode)
                             (insert str) (org-macro-replace-all omt)
                             (setq str (buffer-string)))))
-    (cond (; a number -- return the string
-           (string-match "^[[:digit:]]+[.]?[[:digit:]]*$" str)
-           (concat "  " str))
-          (; a bare URI, which org-mode wraps in double brackets -- wrap in angles
-           (string-match "^[[][[]\\(http[^ ]*\\)[]][]]$" str)
-           (concat "  <" (match-string 1 str) ">"))
-          (; a bare URI, but no double brackets -- wrap in angles
-           (string-match "^\\(http[^ ]*\\)$" str)
-           (concat "  <" (match-string 1 str) ">"))
-          (; a bare URI, in angles
-           (string-match "^\\(<http[^ ]*>\\)$" str)
-           (concat "  " (match-string 1 str)))
-          (; a bare URN, in angles
-           (string-match "^\\(<urn:[^>]+>\\)$" str)
-           (concat "  " (match-string 1 str)))
-          (; a URN without angles, explicitly treat as xsd:string
-           (string-match "^\\(urn:uuid[^ ]+\\)$" str)
-           (concat "  \"" (match-string 1 str) "\"^^xsd:string"))
-          (; true -- make it an explicit boolean
-           (string-match "^true$" str) " \"true\"^^xsd:boolean")
-          (; false -- make it an explicit boolean
-           (string-match "^false$" str) " \"false\"^^xsd:boolean")
-          (; string with datatype -- return unchanged
-           (string-match "^\".*\"\\^\\^[-_[:alnum:]]*:[-_[:alnum:]]+$" str)
-           (concat "  " str))
-          (; not a puri -- normal string, wrap in quotes
-           (equal str (elot-unprefix-uri str org-link-abbrev-alist-local))
-           ;; if a language tag @en is present, return unchanged
-           (replace-regexp-in-string ":newline:" ""
-                                     (replace-regexp-in-string
-                                      ":newline: " "\n"
-                                      (if (string-match "\"\\(.*\n\\)*.*\"@[a-z]+" str)
-                                          (concat " " str)
-                                        ;; escape all quotes with \", note this gives invalid results if some are already escaped
-                                        (concat "  \"" (replace-regexp-in-string "\"" "\\\\\"" str) "\"")))))
-          (; else, a puri -- wrap in angles
-           t (concat "  " (elot-unprefix-uri str org-link-abbrev-alist-local :noerror)))))
+    (cond
+     ;; a number -- return the string
+     ((string-match "^[[:digit:]]+[.]?[[:digit:]]*$" str)
+      (concat "  " str))
+     ;; a bare URI, which org-mode wraps in double brackets -- wrap in angles
+     ((string-match "^[[][[]\\(http[^ ]*\\)[]][]]$" str)
+      (concat "  <" (match-string 1 str) ">"))
+     ;; a bare URI, but no double brackets -- wrap in angles
+     ((string-match "^\\(http[^ ]*\\)$" str)
+      (concat "  <" (match-string 1 str) ">"))
+     ;; a bare URI, in angles
+     ((string-match "^\\(<http[^ ]*>\\)$" str)
+      (concat "  " (match-string 1 str)))
+     ;; a bare URN, in angles
+     ((string-match "^\\(<urn:[^>]+>\\)$" str)
+      (concat "  " (match-string 1 str)))
+     ;; a URN without angles, explicitly treat as xsd:string
+     ((string-match "^\\(urn:uuid[^ ]+\\)$" str)
+      (concat "  \"" (match-string 1 str) "\"^^xsd:string"))
+     ;; true -- make it an explicit boolean
+     ((string-match "^true$" str) " \"true\"^^xsd:boolean")
+     ;; false -- make it an explicit boolean
+     ((string-match "^false$" str) " \"false\"^^xsd:boolean")
+     ;; string with datatype -- return unchanged
+     ((string-match "^\".*\"\\^\\^[-_[:alnum:]]*:[-_[:alnum:]]+$" str)
+      (concat "  " str))
+     ;; not a puri -- normal string, wrap in quotes
+     ((equal str (elot-unprefix-uri str org-link-abbrev-alist-local))
+      (replace-regexp-in-string ":newline:" ""
+                                (replace-regexp-in-string
+                                 ":newline: " "\n"
+                                 (if (string-match "\"\\(.*\n\\)*.*\"@[a-z]+" str)
+                                     (concat " " str)
+                                   (concat "  \"" (replace-regexp-in-string "\"" "\\\\\"" str) "\"")))))
+     ;; else, a puri -- wrap in angles
+     (t (concat "  " (elot-unprefix-uri str org-link-abbrev-alist-local :noerror)))))
 
   (defun elot-omn-restriction-string (str)
    "STR is wanted as an OMN value.  Strip any meta-annotations, or return unchanged."

@@ -261,24 +261,21 @@ identifiers using ~regexp-opt~.
     "Update `elot-fontify-keyword' from collected identifier-label pairs."
     (setq elot-fontify-keyword
           `((,elot-codelist-fontify-regexp
-             (0 ;; all of the match
-              ;; if on a headline, don't fontify
-              (unless (memq (get-char-property (match-beginning 0) 'face) org-level-faces)
-                ;; add tooltip
-                (put-text-property (match-beginning 0) (match-end 0)
-                                   'help-echo (concat (match-string 0) "  "
-                                                      (elot-codelist-id-label (match-string 0)) "  ("
-                                                      (elot-attriblist-label-value
-                                                       (elot-codelist-id-label (match-string 0)) "rdf:type")
-                                                      ")"))
-                (if (eq elot-label-display 'on)
-                    (progn
-                      ;; label in text property, using 'elot-label-display as alias for 'display
-                      (put-text-property (match-beginning 0) (match-end 0)
-                                         'elot-label-display (elot-codelist-id-label (match-string 0)))
-                      ;; use customizable face
-                      (put-text-property (match-beginning 0) (match-end 0)
-                                         'face elot-label-display-face)))))))))
+             (0
+              (unless (memq (get-char-property (match-beginning 0) 'face)
+                            org-level-faces)
+                ;; bind once per match — match-string and both ht lookups
+                (let* ((id    (match-string 0))
+                       (label (elot-codelist-id-label id))
+                       (rtype (elot-attriblist-label-value label "rdf:type")))
+                  (put-text-property (match-beginning 0) (match-end 0)
+                                     'help-echo
+                                     (concat id "  " label "  (" rtype ")"))
+                  (when (eq elot-label-display 'on)
+                    (put-text-property (match-beginning 0) (match-end 0)
+                                       'elot-label-display label)
+                    (put-text-property (match-beginning 0) (match-end 0)
+                                       'face elot-label-display-face)))))))))
 #+end_src
 ** Apply fontification
 #+name: src-fontify-add
