@@ -1,0 +1,20 @@
+## PLACEHOLDER — regenerate this file before running golden-file tests.
+##
+## This file should contain the OWL Manchester Syntax output produced by
+## tangling test/benchmark-ontologies/pizza.org with the current ELOT pipeline.
+##
+## To regenerate, open pizza.org in Emacs with ELOT loaded and run:
+##   M-x org-babel-tangle
+## Then copy the resulting pizza.omn here, or run:
+##   emacs --batch --load elot-init.el \
+##         --visit test/benchmark-ontologies/pizza.org \
+##         --eval "(org-babel-tangle)"
+## and copy examples/pizza.omn to test/golden/pizza.omn.
+##
+## Alternatively, after elot-export-omn-for-ontology is working:
+##   emacs --batch --load elot-init.el \
+##         --visit test/benchmark-ontologies/pizza.org \
+##         --eval "(progn (goto-char (point-min)) \
+##                        (re-search-forward \":ELOT-context-type: ontology\") \
+##                        (org-back-to-heading) \
+##                        (write-region (elot-export-omn-for-ontology) nil \"test/golden/pizza.omn\"))"

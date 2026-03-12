@@ -1,0 +1,20 @@
+## PLACEHOLDER — regenerate this file before running golden-file tests.
+##
+## This file should contain the OWL Manchester Syntax output produced by
+## tangling test/benchmark-ontologies/DOLCE-Lite.org with the current ELOT pipeline.
+##
+## To regenerate, open DOLCE-Lite.org in Emacs with ELOT loaded and run:
+##   M-x org-babel-tangle
+## Then copy the resulting DOLCE-Lite.owl.omn here, or run:
+##   emacs --batch --load elot-init.el \
+##         --visit test/benchmark-ontologies/DOLCE-Lite.org \
+##         --eval "(org-babel-tangle)"
+## and copy examples/DOLCE-Lite.owl.omn to test/golden/DOLCE-Lite.owl.omn.
+##
+## Alternatively, after elot-export-omn-for-ontology is working:
+##   emacs --batch --load elot-init.el \
+##         --visit test/benchmark-ontologies/DOLCE-Lite.org \
+##         --eval "(progn (goto-char (point-min)) \
+##                        (re-search-forward \":ELOT-context-type: ontology\") \
+##                        (org-back-to-heading) \
+##                        (write-region (elot-export-omn-for-ontology) nil \"test/golden/DOLCE-Lite.owl.omn\"))"
