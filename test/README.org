@@ -1,0 +1,175 @@
+#+title: ELOT Export Test Infrastructure
+#+author: Johan W. Klüwer
+#+date: 2025
+
+* Overview
+
+This directory contains test infrastructure for the ELOT Org→OMN export
+pipeline.  The infrastructure has two components:
+
+1. **Benchmark ontologies** — three carefully chosen =.org= files that
+   together exercise the full range of OMN constructs that ELOT is
+   expected to produce correctly.
+2. **ERT test suite** (=elot-test-export.el=) — Emacs Lisp tests that
+   compare the output of =elot-export-omn-for-ontology= against
+   pre-generated golden =.omn= files, plus a growing set of corner-case
+   unit tests.
+
+* Benchmark ontology selection
+
+** pizza.org  (=benchmark-ontologies/pizza.org=)
+
+The "hello world" of OWL.  Chosen because it exercises:
+
+- Rich class expressions (=EquivalentTo=, =SubClassOf= with =some= /
+  =only= / =min= / =value= restrictions)
+- =DisjointClasses= / =DisjointWith= / =DifferentIndividuals=
+- Individuals with =Types=
+- Multilingual annotations (=rdfs:label=, =skos:prefLabel=,
+  =skos:altLabel=)
+- Language-tagged strings (="…"@en=, ="…"@pt=)
+- Typed literals (="…"^^xsd:dateTime=)
+- Multiline annotation values (=dcterms:description=, =dcterms:provenance=)
+- =rdfs:seeAlso= with full URI
+- Property =Characteristics= (=Functional=, =InverseFunctional=, =Transitive=)
+- =InverseOf=, =Domain= / =Range=
+- User-defined annotation properties with =rdfs:isDefinedBy=
+- =SubPropertyOf= for annotation properties
+- =:nodeclare:= tag pattern
+- Ontology-level annotations
+- A non-trivial ontology IRI requiring a workaround prefix (=coo:=)
+
+** DOLCE-Lite.org  (=benchmark-ontologies/DOLCE-Lite.org=)
+
+Deep property hierarchy (6+ levels).  Chosen because it exercises:
+
+- Heavy use of =SubPropertyOf= with multiple parents
+- Properties with =Characteristics: Transitive=
+- =InverseOf= on self-inverse properties (=dol:identity-c=, =dol:overlaps=)
+- =EquivalentTo= with =and= / =or= / =not= / =some= / =only= class expressions
+- Typed literal (="397"^^xsd:integer=)
+- =Datatypes= section (=xsd:integer=, =xsd:string=)
+- Empty =Data properties= / =Individuals= sections (edge case)
+- Two prefixes mapped to the same URI (=:= and =dol:= → same base IRI)
+
+** reasoner-example.org  (=benchmark-ontologies/reasoner-example.org=)
+
+A small hand-authored ELOT file (not converted from an external ontology).
+Chosen because it exercises:
+
+- =:oneof:= and =:disjoint:= Org tags (triggering
+  =elot-class-oneof-from-header= and =elot-class-disjoint-from-header=)
+- =Import= declarations
+- User-written =omn= source blocks (ad-hoc OMN snippets)
+- =Rule:= axiom annotations
+- Small size: fast smoke test
+
+* Golden files
+
+Golden files in =golden/= hold the *expected* OMN output for each
+benchmark.  They are compared character-for-character against the output
+of =elot-export-omn-for-ontology= in the regression tests.
+
+** Initial state
+
+All three golden files are shipped as *placeholders*.  The first line of
+each reads =## PLACEHOLDER=; the ERT test for that file is automatically
+skipped when this marker is detected.
+
+** Regenerating golden files
+
+Golden files must be regenerated locally with a working Emacs + ELOT
+installation.  There are two approaches:
+
+*** Via org-babel-tangle  (current :OMN: drawer mechanism)
+
+Open each benchmark =.org= file in Emacs with ELOT loaded, then run:
+
+#+begin_src
+M-x org-babel-tangle
+#+end_src
+
+This writes the =.omn= file next to the =.org= file.  Copy it to the
+corresponding golden path:
+
+#+begin_src sh
+cp test/benchmark-ontologies/pizza.omn test/golden/pizza.omn
+cp test/benchmark-ontologies/DOLCE-Lite.owl.omn test/golden/DOLCE-Lite.owl.omn
+cp test/benchmark-ontologies/reasoner-example.omn test/golden/reasoner-example.omn
+#+end_src
+
+*** Via batch Emacs (requires elot-init.el)
+
+#+begin_src sh
+cd <repo-root>
+for ORG in pizza DOLCE-Lite reasoner-example; do
+  emacs --batch \
+        --load elot-init.el \
+        --visit "test/benchmark-ontologies/${ORG}.org" \
+        --eval "(org-babel-tangle)"
+done
+cp test/benchmark-ontologies/pizza.omn          test/golden/pizza.omn
+cp test/benchmark-ontologies/DOLCE-Lite.owl.omn test/golden/DOLCE-Lite.owl.omn
+cp test/benchmark-ontologies/reasoner-example.omn test/golden/reasoner-example.omn
+#+end_src
+
+*** Via the new export function
+
+Once =elot-export-omn-for-ontology= is verified to match the tangle
+output, golden files can also be regenerated with:
+
+#+begin_src sh
+cd <repo-root>
+emacs --batch \
+      --load elot-package/elot.el \
+      --load elot-package/elot-export.el \
+      --visit test/benchmark-ontologies/pizza.org \
+      --eval "(progn
+               (goto-char (point-min))
+               (re-search-forward \":ELOT-context-type: ontology\")
+               (org-back-to-heading)
+               (write-region (elot-export-omn-for-ontology) nil
+                             \"test/golden/pizza.omn\"))"
+#+end_src
+
+Repeat for the other two benchmark files.
+
+* Running the ERT tests
+
+#+begin_src sh
+cd <repo-root>
+emacs --batch \
+      -l elot-package/elot.el \
+      -l elot-package/elot-export.el \
+      -l test/elot-test-export.el \
+      -f ert-run-tests-batch-and-exit
+#+end_src
+
+Expected results before golden files are populated:
+
+| Test                                    | Expected result            |
+|-----------------------------------------+----------------------------|
+| elot-test-export-function-exists        | PASSED                     |
+| elot-test-tangle-function-exists        | PASSED                     |
+| elot-test-export-pizza                  | SKIPPED (placeholder)      |
+| elot-test-export-dolce-lite             | SKIPPED (placeholder)      |
+| elot-test-export-reasoner-example       | SKIPPED (placeholder)      |
+| elot-test-cc-* (corner cases)           | FAILED (expected-result)   |
+
+After golden files are populated and the export function produces
+correct output, the golden-file tests will change from SKIPPED to PASSED.
+
+* Future plans
+
+The corner-case test suite (=elot-test-cc-*= tests) is intentionally
+minimal at this stage.  New test cases should be added whenever a bug
+is found: the practice of turning each bug report into a regression test
+ensures the export pipeline only improves over time.
+
+Planned additions include:
+- Round-trip tests: tangle → parse with a third-party OWL parser →
+  check axiom counts
+- Multi-ontology tests (once multi-ontology export is implemented)
+- Import declaration round-trip tests
+- Property chain tests (=SubPropertyOf: p1 o p2=)
+- =HasKey= axiom tests
