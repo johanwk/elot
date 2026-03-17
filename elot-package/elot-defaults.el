@@ -108,7 +108,7 @@
   (require 'elot-label-display)
   (require 'elot-lint)
   (declare-function elot-label-display-setup "elot-label-display.el")
-  (elot-label-display-setup)
+  (run-with-idle-timer 1.0 nil #'elot-label-display-setup)
   (declare-function elot-hydra/body "elot.el")
   (declare-function elot-toggle-label-display "elot-label-display.el")
   (elot-setup-org-keybindings))
