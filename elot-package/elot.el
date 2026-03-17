@@ -526,8 +526,8 @@ Parses the buffer once and walks the result."
         (org-narrow-to-subtree)
         ;; ── single parse for the whole subtree ──────────────────────────
         (let ((parsed (org-element-parse-buffer)))
-          (if (or (outline-next-heading)
-                  (elot-at-ontology-heading))
+          (if (or (elot-at-ontology-heading)
+                  (outline-next-heading))
               (let (ret)
                 (while
                     (let* ((heading (substring-no-properties

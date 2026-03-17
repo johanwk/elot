@@ -579,8 +579,8 @@ the ID string.
           (org-narrow-to-subtree)
           ;; ── single parse for the whole subtree ──────────────────────────
           (let ((parsed (org-element-parse-buffer)))
-            (if (or (outline-next-heading)
-                    (elot-at-ontology-heading))
+            (if (or (elot-at-ontology-heading)
+                    (outline-next-heading))
                 (let (ret)
                   (while
                       (let* ((heading (substring-no-properties
@@ -2584,7 +2584,7 @@ metrics.
     (require 'elot-label-display)
     (require 'elot-lint)
     (declare-function elot-label-display-setup "elot-label-display.el")
-    (elot-label-display-setup)
+    (run-with-idle-timer 1.0 nil #'elot-label-display-setup)
     (declare-function elot-hydra/body "elot.el")
     (declare-function elot-toggle-label-display "elot-label-display.el")
     (elot-setup-org-keybindings))
