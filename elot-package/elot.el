@@ -873,17 +873,20 @@ resource type, is `<ontology>-class-hierarchy' for the Class outline,
 and accordingly for `object-property', `data-property', and
 `annotation-property'; for individuals, `<ontology>-individuals'."
   (save-excursion
-    (elot-org-link-search header-id)
-    (let ((entity-l (elot-org-subsection-descriptions))
-          (misc-axioms (elot-misc-axioms)))
-      (if (or entity-l misc-axioms (string= owl-type "Ontology"))
-          (string-join
-           (list
-            (elot-resource-declarations entity-l owl-type)
-            (if misc-axioms
-                (concat "\n\n#### Miscellaneous axioms under " owl-type " declarations\n"))
-            misc-axioms))
-        "## (none)"))))
+    (if (elot-org-link-search header-id)
+        (let ((entity-l (elot-org-subsection-descriptions))
+              (misc-axioms (elot-misc-axioms)))
+          (if (or entity-l misc-axioms (string= owl-type "Ontology"))
+              (string-join
+               (list
+                (elot-resource-declarations entity-l owl-type)
+                (if misc-axioms
+                    (concat "\n\n#### Miscellaneous axioms under " owl-type " declarations\n"))
+                misc-axioms))
+            "## (none)"))
+      (progn
+        (message "ELOT: Warning - %s heading '%s' not found, skipping declarations" owl-type header-id)
+        (format "## (no %s - hierarchy heading '%s' not found)" owl-type header-id)))))
 ;; src-resource-declare ends here
 
 ;; [[file:../elot-defs.org::src-prefix-links][src-prefix-links]]
@@ -1047,11 +1050,14 @@ resource type, is `<ontology>-class-hierarchy' for the Class outline,
 and accordingly for `object-property', `data-property', and
 `annotation-property'."
   (save-excursion
-    (elot-org-link-search header-id)
-    (if (org-goto-first-child)
-        (let ((hierarchy-l (elot-org-list-siblings)))
-          (elot-resource-taxonomy-from-l hierarchy-l owl-type owl-relation))
-      (concat "## no " owl-type "taxonomy"))))
+    (if (elot-org-link-search header-id)
+        (if (org-goto-first-child)
+            (let ((hierarchy-l (elot-org-list-siblings)))
+              (elot-resource-taxonomy-from-l hierarchy-l owl-type owl-relation))
+          (concat "## no " owl-type " taxonomy"))
+      (progn
+        (message "ELOT: Warning - %s hierarchy heading '%s' not found, skipping taxonomy" owl-type header-id)
+        (format "## (no %s taxonomy - hierarchy heading '%s' not found)" owl-type header-id)))))
 ;; src-write-taxonomy ends here
 
 ;; [[file:../elot-defs.org::src-elot-xref][src-elot-xref]]
