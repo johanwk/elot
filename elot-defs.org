@@ -533,16 +533,16 @@ the ID string.
                     (if (elot-meta-annotation-tag-p tag)
                         (progn
                           (when sub-result
-                            (push (string-join (nreverse sub-result) "\n") result))
+                            (push (string-join (nreverse sub-result) "") result))
                           (throw 'stop t))
-                      (push (string-trim (substring-no-properties (org-element-interpret-data subitem))) sub-result))))
+                      (push (substring-no-properties (org-element-interpret-data subitem)) sub-result))))
                 (when sub-result
-                  (push (string-join (nreverse sub-result) "\n") result))))
+                  (push (concat (string-join (nreverse sub-result) "")
+                                (make-string (or (org-element-property :post-blank child) 0) ?\n))
+                        result))))
              (t
               (push (substring-no-properties (org-element-interpret-data child)) result))))))
-      (string-join
-       (split-string (string-join (nreverse result) "\n") "[ \t]*\n[ \t]*" t)
-       "\n")))
+      (string-trim-right (string-join (nreverse result) ""))))
   (defun elot-org-elt-item-str (x)
     "For X in an `org-element-map', return pair of strings (tag, paragraph content)."
     (list (elot-org-elt-item-tag-str x) (elot-org-elt-item-pars-str x)))

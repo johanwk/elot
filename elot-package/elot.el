@@ -455,17 +455,41 @@ The function is used to check whether the list contains ELT."
   "For an item X in an `org-element-map', return the item tag."
   (if (org-element-property :tag x)
       (substring-no-properties (org-element-interpret-data (org-element-property :tag x)))))
+(defun elot-meta-annotation-tag-p (tag)
+  "Return non-nil if TAG is a recognizable URI."
+  (and tag
+       (stringp tag)
+       (let ((u (elot-unprefix-uri tag org-link-abbrev-alist-local t)))
+         (and (stringp u)
+              (string-match-p "^<" u)))))
 (defun elot-org-elt-item-pars-str (x)
-  "For an item X in an `org-element-map', return the paragraphs as one string."
-  (string-join
-   (split-string
-    (string-trim (apply #'concat
-                     (org-element-map x '(paragraph plain-list)
-                       (lambda (y) (substring-no-properties
-                                    (org-element-interpret-data y)))
-                       nil nil 'plain-list)))
-    "[ \t]*\n[ \t]*" nil)
-   ":newline: "))
+  "For an item X in an `org-element-map', return the paragraphs as one string.
+Stops at the first nested description list item that has a recognizable URI tag,
+so meta-annotations are excluded from the literal text."
+  (let ((result nil))
+    (catch 'stop
+      (dolist (child (org-element-contents x))
+        (let ((type (car child)))
+          (cond
+           ((eq type 'paragraph)
+            (push (substring-no-properties (org-element-interpret-data child)) result))
+           ((eq type 'plain-list)
+            (let ((sub-result nil))
+              (dolist (subitem (org-element-contents child))
+                (let ((tag (elot-org-elt-item-tag-str subitem)))
+                  (if (elot-meta-annotation-tag-p tag)
+                      (progn
+                        (when sub-result
+                          (push (string-join (nreverse sub-result) "") result))
+                        (throw 'stop t))
+                    (push (substring-no-properties (org-element-interpret-data subitem)) sub-result))))
+              (when sub-result
+                (push (concat (string-join (nreverse sub-result) "")
+                              (make-string (or (org-element-property :post-blank child) 0) ?\n))
+                      result))))
+           (t
+            (push (substring-no-properties (org-element-interpret-data child)) result))))))
+    (string-trim-right (string-join (nreverse result) ""))))
 (defun elot-org-elt-item-str (x)
   "For X in an `org-element-map', return pair of strings (tag, paragraph content)."
   (list (elot-org-elt-item-tag-str x) (elot-org-elt-item-pars-str x)))
@@ -475,9 +499,6 @@ The function is used to check whether the list contains ELT."
 This function is called from `elot-org-descriptions-in-section' after
 narrowing to a description list under a heading.
 Parses the buffer once and walks the result."
-  ;; Buffer is already narrowed to the section by the caller.
-  ;; Parse once and walk — do not call org-element-parse-buffer
-  ;; once per heading.
   (let ((parsed (org-element-parse-buffer)))
     (org-element-map parsed 'item
       (lambda (y)
@@ -486,7 +507,7 @@ Parses the buffer once and walks the result."
                     (if (elot-org-elt-exists (cdr y) 'item)
                         (org-element-map (cdr y) 'item
                           (lambda (z)
-                            (if (org-element-property :tag z)
+                            (if (elot-meta-annotation-tag-p (elot-org-elt-item-tag-str z))
                                 (elot-org-elt-item-str z)))
                           nil nil 'item)))))
       nil nil 'item)))
@@ -510,65 +531,65 @@ Parses the buffer once and walks the result."
             (elot-org-descriptions-in-section-helper)))))))
 
 (defun elot-org-subsection-descriptions ()
-    "Return a plist mapping subsection headlines to description lists.
-  This function collects headlines in the current subtree and associates
-  each with a plist of description-list items and values.  Sections with
-  the tag `nodeclare' or with headings starting with `COMMENT' are excluded.
-  The function does not include the section that has the target property ID,
-  unless it is an ontology section.
+  "Return a plist mapping subsection headlines to description lists.
+This function collects headlines in the current subtree and associates
+each with a plist of description-list items and values.  Sections with
+the tag `nodeclare' or with headings starting with `COMMENT' are excluded.
+The function does not include the section that has the target property ID,
+unless it is an ontology section.
 
-  Parses the entire subtree once into an org-element tree, then
-  dispatches per-heading lookups into that cached tree, avoiding
-  repeated calls to `org-element-parse-buffer'."
-    (save-restriction
-      (save-excursion
-        (unless (org-at-heading-p) (org-previous-visible-heading 1))
-        (org-narrow-to-subtree)
-        ;; ── single parse for the whole subtree ──────────────────────────
-        (let ((parsed (org-element-parse-buffer)))
-          (if (or (elot-at-ontology-heading)
-                  (outline-next-heading))
-              (let (ret)
-                (while
-                    (let* ((heading (substring-no-properties
-                                     (org-get-heading nil t)))
-                           (section-begin
-                            (org-element-property
-                             :contents-begin (org-element-at-point)))
-                           (section-end
-                            (save-excursion (outline-next-heading) (point)))
-                           ;; Walk the already-parsed tree, restricted to
-                           ;; [section-begin, section-end), instead of
-                           ;; re-parsing the narrowed buffer.
-                           (descriptions
-                            (when (and section-begin
-                                       (< section-begin section-end))
-                              (org-element-map parsed 'item
-                                (lambda (y)
-                                  (let ((begin (org-element-property :begin y)))
-                                    (when (and begin
-                                               (>= begin section-begin)
-                                               (<  begin section-end)
-                                               (org-element-property :tag y))
-                                      (append
-                                       (elot-org-elt-item-str y)
-                                       (when (elot-org-elt-exists (cdr y) 'item)
-                                         (org-element-map (cdr y) 'item
-                                           (lambda (z)
-                                             (when (org-element-property :tag z)
-                                               (elot-org-elt-item-str z)))
-                                           nil nil 'item))))))
-                                nil nil 'item))))
-                      (unless (or (string-match-p "^COMMENT" heading)
-                                  (member "nodeclare"
-                                          (org-get-tags (point) t)))
-                        (setq ret
-                              (cons (if descriptions
-                                        (list heading descriptions)
-                                      (list heading))
-                                    ret)))
-                      (outline-next-heading)))
-                (nreverse ret)))))))
+Parses the entire subtree once into an org-element tree, then
+dispatches per-heading lookups into that cached tree, avoiding
+repeated calls to `org-element-parse-buffer'."
+  (save-restriction
+    (save-excursion
+      (unless (org-at-heading-p) (org-previous-visible-heading 1))
+      (org-narrow-to-subtree)
+      ;; ── single parse for the whole subtree ──────────────────────────
+      (let ((parsed (org-element-parse-buffer)))
+        (if (or (elot-at-ontology-heading)
+                (outline-next-heading))
+            (let (ret)
+              (while
+                  (let* ((heading (substring-no-properties
+                                   (org-get-heading nil t)))
+                         (section-begin
+                          (org-element-property
+                           :contents-begin (org-element-at-point)))
+                         (section-end
+                          (save-excursion (outline-next-heading) (point)))
+                         ;; Walk the already-parsed tree, restricted to
+                         ;; [section-begin, section-end), instead of
+                         ;; re-parsing the narrowed buffer.
+                         (descriptions
+                          (when (and section-begin
+                                     (< section-begin section-end))
+                            (org-element-map parsed 'item
+                              (lambda (y)
+                                (let ((begin (org-element-property :begin y)))
+                                  (when (and begin
+                                             (>= begin section-begin)
+                                             (<  begin section-end)
+                                             (org-element-property :tag y))
+                                    (append
+                                     (elot-org-elt-item-str y)
+                                     (when (elot-org-elt-exists (cdr y) 'item)
+                                       (org-element-map (cdr y) 'item
+                                         (lambda (z)
+                                           (when (elot-meta-annotation-tag-p (elot-org-elt-item-tag-str z))
+                                             (elot-org-elt-item-str z)))
+                                         nil nil 'item))))))
+                              nil nil 'item))))
+                    (unless (or (string-match-p "^COMMENT" heading)
+                                (member "nodeclare"
+                                        (org-get-tags (point) t)))
+                      (setq ret
+                            (cons (if descriptions
+                                      (list heading descriptions)
+                                    (list heading))
+                                  ret)))
+                    (outline-next-heading)))
+              (nreverse ret)))))))
 ;; src-desc-lists ends here
 
 ;; [[file:../elot-defs.org::src-puri-expand][src-puri-expand]]
@@ -594,8 +615,6 @@ Parses the buffer once and walks the result."
 (defun elot-annotation-string-or-uri (str)
   "Expand STR to be used as an annotation value in Manchester Syntax.
 Expand uri, or return number, or wrap in quotes."
-  ;; maybe this entry contains string representation of meta-annotations, remove them
-  (setq str (replace-regexp-in-string "\\(:newline:\\)? - [^ ]+ ::.*$" "" str))
   ;; maybe there's macros in the string, expand them
   (if (string-match "{{{.+}}}" str)
       (let ((omt org-macro-templates))
@@ -630,19 +649,15 @@ Expand uri, or return number, or wrap in quotes."
     (concat "  " str))
    ;; not a puri -- normal string, wrap in quotes
    ((equal str (elot-unprefix-uri str org-link-abbrev-alist-local))
-    (replace-regexp-in-string ":newline:" ""
-                              (replace-regexp-in-string
-                               ":newline: " "\n"
-                               (if (string-match "\"\\(.*\n\\)*.*\"@[a-z]+" str)
-                                   (concat " " str)
-                                 (concat "  \"" (replace-regexp-in-string "\"" "\\\\\"" str) "\"")))))
+    (if (string-match "\"\\(.*\n\\)*.*\"@[a-z]+" str)
+        (concat " " str)
+      (concat "  \"" (replace-regexp-in-string "\"" "\\\\\"" str) "\"")))
    ;; else, a puri -- wrap in angles
    (t (concat "  " (elot-unprefix-uri str org-link-abbrev-alist-local :noerror)))))
 
 (defun elot-omn-restriction-string (str)
  "STR is wanted as an OMN value.  Strip any meta-annotations, or return unchanged."
- (setq str (replace-regexp-in-string " - [^ ]+ ::.*$" "" str))
- (replace-regexp-in-string ":newline:" "\n" str))
+ str)
 ;; src-puri-expand ends here
 
 ;; [[file:../elot-defs.org::src-heading-to-list][src-heading-to-list]]
@@ -845,7 +860,7 @@ If no axioms are found, return nil."
               (concat (car l) ": "
                       (elot-format-misc-axiom-annotations
                        (car l)
-                       (replace-regexp-in-string ":newline:" "" (cadr l)))))
+                       (cadr l))))
             (org-element-map (org-element-parse-buffer) 'item
               (lambda (item)
                 (let* ((pair (elot-org-elt-item-str item))
@@ -1405,7 +1420,7 @@ VALUE-REGEX is optional; defaults to match anything."
               (when matches
                 (cadr (car matches))))))
     (if (stringp result)
-        (replace-regexp-in-string ":newline:" "" result)
+        result
       nil)))
 ;; src-org-find-description-value ends here
 
