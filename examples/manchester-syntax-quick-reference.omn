@@ -1,0 +1,124 @@
+# This is a hand-written attempt to reproduce the Quick Reference example of 
+# https://www.w3.org/TR/owl2-manchester-syntax/#Quick_Reference
+
+
+Prefix: : <http://ex.com/owl/families#>
+Prefix: g: <http://ex.com/owl2/families#>
+
+Ontology: <http://example.com/owl/families> <http://example.com/owl/families-v1>
+  # Import: <http://ex.com/owl2/families.owl>
+ Annotations: creator John, 
+              Annotations: rdfs:comment "Creation Year"
+                creationYear 2008, 
+              mainClass Person
+
+ObjectProperty: hasWife
+  Annotations: rdfs:comment "hasWife annotations"
+  Characteristics: Functional, InverseFunctional, Reflexive, Irreflexive, Asymmetric, Transitive
+  Domain: Annotations: rdfs:comment "General domain",
+                       creator John
+            Person, 
+          Annotations: rdfs:comment "More specific domain"
+            Man
+  Range: Person, Woman
+  SubPropertyOf: hasSpouse, loves
+  EquivalentTo: isMarriedTo 
+  DisjointWith: hates , hates
+  InverseOf: hasSpouse, inverse hasSpouse
+  SubPropertyChain: Annotations: rdfs:comment "SubPropertyChain annotations" hasChild o hasParent
+
+ObjectProperty: isMarriedTo
+ObjectProperty: hasSpouse
+ObjectProperty: despises
+ObjectProperty: hates
+ObjectProperty: indifferent
+ObjectProperty: loathes
+ObjectProperty: loves
+ObjectProperty: hasChild
+ObjectProperty: hasParent
+ObjectProperty: hasGender
+
+DataProperty: hasAge
+  Annotations: rdfs:comment "hasAge annotations"
+  Characteristics: Functional
+  Domain: Person , Man
+  Range: xsd:integer
+  SubPropertyOf: hasVerifiedAge , hasVerifiedAge
+  EquivalentTo: hasAgeInYears
+  DisjointWith: hasSSN 
+
+DataProperty: hasFirstName
+DataProperty: hasVerifiedAge
+DataProperty: hasAgeInYears
+DataProperty: hasSSN
+DataProperty: favoriteNumber
+DataProperty: favoriteInteger
+DataProperty: favouriteReal
+DataProperty: g:favouriteNumber
+DataProperty: g:favouriteInteger
+DataProperty: g:favouriteReal
+       
+AnnotationProperty: creator
+  Annotations: rdfs:comment "creator annotations"
+  Domain: <http://ex.com/owl/families#Person> , <http://ex.com/owl/families#Woman>
+  Range: <http://www.w3.org/2001/XMLSchema#integer>
+  SubPropertyOf: initialCreator 
+
+AnnotationProperty: creationYear
+AnnotationProperty: initialCreator
+AnnotationProperty: mainClass
+      
+Datatype: NegInt
+  Annotations: rdfs:comment "NegInt annotations"
+  EquivalentTo: xsd:integer[< 0]  
+
+Class: Person
+  Annotations: rdfs:comment "Person annotations"
+  SubClassOf: (hasFirstName exactly 1) and hasFirstName only xsd:string[minLength 1]
+  SubClassOf: (hasAge exactly 1) and hasAge only not NegInt
+  SubClassOf: hasGender exactly 1 and hasGender only {female , male}
+  SubClassOf: hasSSN max 1, hasSSN min 1
+  SubClassOf: not (hates Self)
+  EquivalentTo: g:People
+  #Protege apparently won't parse this: DisjointUnionOf: Child, Adult
+  DisjointWith: g:Rock , g:Mineral 
+  HasKey: Annotations: rdfs:comment "hasKey annotations" hasSSN
+
+Class: g:People
+Class: Child
+Class: Adult
+Class: Man
+Class: Woman
+Class: g:Rock
+Class: g:Mineral
+Class: g:Paper
+Class: g:Scissor
+
+Individual: John
+  Annotations: rdfs:comment "John annotations"
+  Types: Person , hasFirstName value "John" or hasFirstName value "Jack"^^xsd:string
+  Facts: hasWife Mary, not hasChild Susan, hasAge 33, hasChild _:child1
+  SameAs: Jack 
+  DifferentFrom: Susan 
+
+Individual: Jack
+Individual: Jill
+Individual: Jim
+Individual: Joe
+Individual: Mary
+Individual: Susan
+Individual: female
+Individual: male
+
+Individual: _:child1
+  Annotations: rdfs:comment "_:child1 annotations"
+  Types: Person , Child
+  Facts: hasChild Susan , hasChild John
+
+DisjointClasses: Annotations: rdfs:comment "DisjointClasses: annotations" g:Rock, g:Scissor, g:Paper
+EquivalentProperties: Annotations: rdfs:comment "EquivalentProperties: annotations" hates, loathes, despises
+DisjointProperties: Annotations: rdfs:comment "DisjointProperties: annotations" hates, loves, indifferent
+EquivalentProperties: Annotations: rdfs:comment "EquivalentProperties: annotations" favoriteNumber, g:favouriteNumber, g:favouriteInteger
+DisjointProperties: Annotations: rdfs:comment "DisjointProperties: annotations" favoriteInteger, favouriteReal
+SameIndividual: Annotations: rdfs:comment "SameIndividual: annotations" John, Jack, Joe, Jim
+DifferentIndividuals: Annotations: rdfs:comment "DifferentIndividuals: annotations" John, Susan, Mary, Jill

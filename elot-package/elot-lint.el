@@ -215,7 +215,7 @@ Add warnings or errors to ISSUES at POINT."
 
     (when localname
       (let* ((suffixes '("-ontology-declaration"
-                         ;; "-datatypes"
+                         "-datatypes"
                          "-class-hierarchy"
                          "-object-property-hierarchy"
                          "-data-property-hierarchy"
