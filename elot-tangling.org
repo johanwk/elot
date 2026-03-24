@@ -135,6 +135,21 @@ To have more readable output (but this is slow with large ontologies), eval it w
 (elot-parse-headline-hierarchy (org-element-parse-buffer))
 #+end_src
 
+To define the local variable ~elot-headline-hierarchy~ and an update function:
+#+begin_src elisp
+(defvar-local elot-headline-hierarchy nil
+  "Stores the parsed headline hierarchy for the current Elot buffer.")
+
+(defun elot-update-headline-hierarchy ()
+  "Update `elot-headline-hierarchy' from the current org buffer.
+This uses `elot-parse-headline-hierarchy' on the parsed buffer elements."
+  (interactive)
+  (setq elot-headline-hierarchy
+        (elot-parse-headline-hierarchy (org-element-parse-buffer))))
+#+end_src
+
+
+
 ** New implementation of ~elot-slurp~ for label display and lookup
 *** Function declarations
 #+begin_src elisp
