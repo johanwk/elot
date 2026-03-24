@@ -1,0 +1,271 @@
+#+TITLE: Elot Tangling Redesign
+#+AUTHOR: Elot Developer
+#+DESCRIPTION: Literate programming file for refactoring Elot's OMN export/tangling
+
+* Introduction
+
+This file aims to centralise and redesign the tangling of Org-mode files to OWL Manchester Syntax (OMN) for the Elot package.
+
+The core goal is to replace the current text-based, boilerplate-heavy approach (which relies on an embedded `:OMN:` drawer and `<<noweb>>` references per ontology) with a robust, pure `org-element` AST traversal.
+
+* Assessment of the Challenge
+
+** 1. Moving from Buffer Motion to AST Traversal
+Currently, functions like `elot-org-list-siblings` rely on buffer navigation (`org-forward-heading-same-level`, `org-get-heading`). Mixed approaches, like `elot-org-subsection-descriptions`, parse the buffer but still use `outline-next-heading` to determine bounds. 
+The challenge is to rewrite these to strictly operate on the abstract syntax tree (AST) returned by `org-element-parse-buffer` or `org-element-parse-secondary-string`.
+
+** 2. Supporting Multiple Ontologies
+By leveraging `org-element-map`, we can search the entire document for headlines that possess the property `:ELOT-context-type: ontology`. Each such headline becomes an independent root context for tangling, allowing one file to contain multiple ontologies cleanly.
+
+** 3. Programmatic OMN Generation
+Instead of relying on Org-Babel evaluation to dynamically assemble OMN via strings (e.g., `<<resource-declarations(...)>>`), the new pipeline should construct the OMN structure directly from the AST nodes within each ontology context.
+
+** 4. Backward Compatibility & Transition
+During the transition, we need to ensure the new `org-element`-based functions correctly extract names, description lists, and taxonomies exactly as the old text-based functions did, avoiding regressions in the exported OMN content.
+
+* Implementation Plan
+
+** Core Org-Element Utilities
+Functions to extract properties, tags, and description lists purely from AST nodes.
+
+*** ~elot-ast-list-siblings~: get hierarchy
+This function was made at start of refactoring, it's likely not needed anymore
+#+begin_src emacs-lisp
+  (defun elot-ast-list-siblings (elements)
+    "Extract heading hierarchy from a list of org-element ELEMENTS.
+  Replaces `elot-org-list-siblings` with pure AST traversal."
+    (let (ret)
+      (dolist (el elements)
+        ;; Only process headlines
+        (when (eq (org-element-type el) 'headline)
+          ;; Skip COMMENT headings
+          (unless (org-element-property :commentedp el)
+            (let* ((tags (org-element-property :tags el))
+                   (raw-value (org-element-property :raw-value el))
+                   ;; Recursively process the children of this headline
+                   (children (elot-ast-list-siblings (org-element-contents el))))
+              
+              (if (member "nodeclare" tags)
+                  ;; Splicing: If tagged "nodeclare", append its children but skip the parent.
+                  ;; We reverse the children before appending so that the final `nreverse` 
+                  ;; preserves their forward order.
+                  (setq ret (append (reverse children) ret))
+                
+                ;; Normal: Construct the nested list -> ("Heading" ("Child 1") ...)
+                (push (cons raw-value children) ret))))))
+      (nreverse ret)))
+#+end_src
+
+** Contextual Extractors
+Functions that take an ontology AST node and extract specific components (prefixes, classes, properties, individuals, taxonomies).
+
+*** Function declarations
+#+begin_src emacs-lisp
+(defun elot-parse-headline-hierarchy (tree)
+  "Iteratively parse headlines from org-element TREE into a nested AST.
+Creates a dummy root at level 0 to handle multiple top-level ontologies."
+  (let* ((dummy-root (list :level 0 :title "ROOT" :descriptions nil :children nil))
+         (stack (list dummy-root)))
+    
+    (org-element-map tree 'headline
+      (lambda (hl)
+        (let* ((level (org-element-property :level hl))
+               (title-raw (org-element-property :title hl))
+               (title (substring-no-properties 
+                       (if (stringp title-raw)
+                           title-raw
+                         (org-element-interpret-data title-raw))))
+               ;; Extract descriptions specific to this headline
+               (desc (elot--extract-headline-descriptions hl))
+               (node (list :level level
+                           :title title
+                           :descriptions desc
+                           :children nil)))
+          
+          ;; Pop the stack until the top node's level is strictly less than current level
+          (while (>= (plist-get (car stack) :level) level)
+            (pop stack))
+          
+          ;; Attach current node as child of the top node
+          (let ((parent (car stack)))
+            (plist-put parent :children (cons node (plist-get parent :children))))
+          
+          ;; Push current node onto stack
+          (push node stack)))
+      ;; NO-RECURSION is nil, so it maps depth-first over all headlines
+      nil nil nil)
+
+    ;; After parsing, reverse the children lists to restore document order
+    (let ((root (car (last stack))))
+      (elot--reverse-children root)
+      root)))
+
+(defun elot--reverse-children (node)
+  "Recursively reverse the children of NODE in-place."
+  (let ((children (plist-get node :children)))
+    (when children
+      (plist-put node :children (nreverse children))
+      (dolist (child (plist-get node :children))
+        (elot--reverse-children child)))))
+
+(defun elot--extract-headline-descriptions (hl)
+  "Extract description list items immediately under headline HL.
+Does not recurse into child headlines, matching the output format of
+`elot-org-subsection-descriptions` for meta-annotations with sublists."
+  (org-element-map (org-element-contents hl) 'item
+    (lambda (y)
+      (when (org-element-property :tag y)
+        (append
+         (elot-org-elt-item-str y)
+         (when (elot-org-elt-exists (org-element-contents y) 'item)
+           (org-element-map (org-element-contents y) 'item
+             (lambda (z)
+               (when (elot-meta-annotation-tag-p (elot-org-elt-item-tag-str z))
+                 (elot-org-elt-item-str z)))
+             nil nil 'item)))))
+    ;; Pass '(headline item) to prevent double-processing nested items
+    nil nil '(headline item)))
+#+end_src
+
+*** How to run it
+In an Elot buffer, the following will build a tree with a node ~ROOT~ at level 0, then each found ontology in list members.
+
+To have more readable output (but this is slow with large ontologies), eval it with ~M-x pp-eval-expression~ to see the resulting list in a dedicated buffer.
+#+begin_src emacs-lisp
+(elot-parse-headline-hierarchy (org-element-parse-buffer))
+#+end_src
+
+** New implementation of ~elot-slurp~ for label display and lookup
+*** Function declarations
+#+begin_src elisp
+(defun elot-ast-process-headline (headline owl-type &optional parent-puri)
+  "Process a HEADLINE org-element of OWL-TYPE, returning a list of slurped entities.
+Recursively processes child headlines, injecting taxonomy properties.
+PARENT-PURI is the URI of the parent heading."
+  (let* ((raw-value (org-element-property :raw-value headline))
+         (tags (org-element-property :tags headline))
+         (commentedp (org-element-property :commentedp headline))
+         ;; 1. Pass 't' for noerror so it doesn't choke on non-entity headers
+         (puri (elot-entity-from-header raw-value t))
+         (label (if (string-match "\\(.+\\) (.*)" raw-value)
+                    (match-string 1 raw-value)
+                  (or puri raw-value)))
+         (nodeclare (member "nodeclare" tags))
+         ;; Extract description list properties directly from this headline 
+         ;; (excluding sub-headlines)
+         (descriptions
+          (let (ret)
+            (org-element-map (org-element-contents headline) 'item
+              (lambda (y)
+                (when (org-element-property :tag y)
+                  (setq ret (append ret
+                                    (elot-org-elt-item-str y)
+                                    (when (elot-org-elt-exists (cdr y) 'item)
+                                      (org-element-map (cdr y) 'item
+                                        (lambda (z)
+                                          (when (elot-meta-annotation-tag-p (elot-org-elt-item-tag-str z))
+                                            (elot-org-elt-item-str z)))
+                                        nil nil 'item))))))
+              nil nil '(headline item))
+            ret))
+         (taxonomy-key (cond ((equal owl-type "owl:Class") "rdfs:subClassOf")
+                             ((string-match-p "Property" owl-type) "rdfs:subPropertyOf")
+                             (t nil)))
+         (annotations-plist (flatten-tree descriptions))
+         ;; Construct OMN frame attribute plist
+         (plist (append `("rdfs:label" ,label "rdf:type" ,owl-type)
+                        (when (and parent-puri taxonomy-key)
+                          (list taxonomy-key parent-puri))
+                        annotations-plist))
+         (entity (list puri label plist))
+         ;; Direct child headlines
+         (children (org-element-map (org-element-contents headline) 'headline
+                      #'identity nil nil 'headline))
+         (result nil))
+    
+    ;; 2. Exclude adding to results if it's commented, nodeclare, or missing a valid URI
+    (unless (or commentedp nodeclare (null puri))
+      (push entity result))
+    
+    ;; Recursively append children (depth-first).
+    ;; Splice children upwards if this heading is "nodeclare"
+    (dolist (child children)
+      (setq result (append result (elot-ast-process-headline 
+                                   child owl-type 
+                                   (if nodeclare parent-puri puri)))))
+    result))
+
+(defun elot-ast-slurp-section (ast context suffix owl-type)
+  "Find the section matching CONTEXT+SUFFIX in AST and slurp its entities of OWL-TYPE."
+  (let* ((target-id (concat context suffix))
+         (target-headline
+          (org-element-map ast 'headline
+            (lambda (hl)
+              (when (equal (org-element-property :CUSTOM_ID hl) target-id)
+                hl))
+            nil t))) ; t for first-match
+    (when target-headline
+      ;; Traverse only the children of the matching structural section
+      (let ((children (org-element-map (org-element-contents target-headline) 'headline
+                        #'identity nil nil 'headline))
+            (result nil))
+        (dolist (child children)
+          (setq result (append result (elot-ast-process-headline child owl-type nil))))
+        result))))
+
+(defun elot-ast-slurp-entities ()
+  "Return a list of lists (URI, label, plist of attributes).
+Uses AST traversal to read class, property, and individual sections
+from an ELOT buffer, fully resolving taxonomy.
+
+Replaces `elot-slurp-entities' to support both label display and OMN Tangling."
+  (save-excursion
+    (goto-char (point-min))
+    (if (re-search-forward ":ELOT-context-type: ontology" nil :noerror)
+        (let* ((context (elot-context-localname))
+               ;; Perform a single buffer parse for performance
+               (ast (org-element-parse-buffer)))
+          (append
+           (elot-ast-slurp-section ast context "-datatypes" "rdfs:Datatype")
+           (elot-ast-slurp-section ast context "-class-hierarchy" "owl:Class")
+           (elot-ast-slurp-section ast context "-object-property-hierarchy" "owl:ObjectProperty")
+           (elot-ast-slurp-section ast context "-data-property-hierarchy" "owl:DatatypeProperty")
+           (elot-ast-slurp-section ast context "-annotation-property-hierarchy" "owl:AnnotationProperty")
+           (elot-ast-slurp-section ast context "-individuals" "owl:NamedIndividual")))
+      '())))
+#+end_src
+*** How to run it
+The following simply replaces the ole ~elot-slurp-entities~ with ~elot-ast-slurp-entities~, and it works.
+#+begin_src emacs-lisp
+  (defun elot-slurp-to-vars ()
+    "Read resources declared in ELOT buffer into local variables.
+  The variables are ELOT-SLURP (plist) and ELOT-CODELIST-HT,
+  ELOT-ATTRIBLIST-HT (hashtable).  Outside ELOT buffers, use ELOT-SLURP-GLOBAL."
+    (let ((slurp (elot-ast-slurp-entities)))
+      (setq elot-slurp (or slurp elot-slurp-global))
+      (setq elot-codelist-ht
+            (ht<-plist (elot-codelist-from-slurp
+                        ;; only fontify what's locally declared
+                        elot-slurp)))
+      (setq elot-attriblist-ht
+            (ht<-alist (elot-attriblist-from-slurp
+                        ;; lookup includes the global list
+                        (append slurp elot-slurp-global))))))
+#+end_src
+
+
+** OMN Generators
+Functions that take the extracted data structures and format them as valid OWL Manchester Syntax.
+
+#+begin_src emacs-lisp
+;; Placeholder for OMN formatting
+;; e.g. (defun elot-omn-format-ontology (ontology-data) ...)
+#+end_src
+
+** The Tangling Entrypoint
+A top-level interactive function that parses the current buffer, finds all ontology contexts, and writes out the corresponding `.omn` files.
+
+#+begin_src emacs-lisp
+;; Placeholder for the main tangling command
+;; e.g. (defun elot-tangle-buffer-to-omn () (interactive) ...)
+#+end_src
