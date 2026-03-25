@@ -224,110 +224,63 @@ This uses `elot-parse-headline-hierarchy' on the parsed buffer elements."
 ** New implementation of ~elot-slurp~ for label display and lookup
 *** Function declarations
 #+begin_src elisp
-(defun elot-ast-process-headline (headline owl-type &optional parent-puri)
-  "Process a HEADLINE org-element of OWL-TYPE, returning a list of slurped entities.
-Recursively processes child headlines, injecting taxonomy properties.
-PARENT-PURI is the URI of the parent heading."
-  (let* ((raw-value (org-element-property :raw-value headline))
-         (tags (org-element-property :tags headline))
-         (commentedp (org-element-property :commentedp headline))
-         ;; 1. Pass 't' for noerror so it doesn't choke on non-entity headers
-         (puri (elot-entity-from-header raw-value t))
-         (label (if (string-match "\\(.+\\) (.*)" raw-value)
-                    (match-string 1 raw-value)
-                  (or puri raw-value)))
-         (nodeclare (member "nodeclare" tags))
-         ;; Extract description list properties directly from this headline 
-         ;; (excluding sub-headlines)
-         (descriptions
-          (let (ret)
-            (org-element-map (org-element-contents headline) 'item
-              (lambda (y)
-                (when (org-element-property :tag y)
-                  (setq ret (append ret
-                                    (elot-org-elt-item-str y)
-                                    (when (elot-org-elt-exists (cdr y) 'item)
-                                      (org-element-map (cdr y) 'item
-                                        (lambda (z)
-                                          (when (elot-meta-annotation-tag-p (elot-org-elt-item-tag-str z))
-                                            (elot-org-elt-item-str z)))
-                                        nil nil 'item))))))
-              nil nil '(headline item))
-            ret))
-         (taxonomy-key (cond ((equal owl-type "owl:Class") "rdfs:subClassOf")
-                             ((string-match-p "Property" owl-type) "rdfs:subPropertyOf")
-                             (t nil)))
-         (annotations-plist (flatten-tree descriptions))
-         ;; Construct OMN frame attribute plist
-         (plist (append `("rdfs:label" ,label "rdf:type" ,owl-type)
-                        (when (and parent-puri taxonomy-key)
-                          (list taxonomy-key parent-puri))
-                        annotations-plist))
-         (entity (list puri label plist))
-         ;; Direct child headlines
-         (children (org-element-map (org-element-contents headline) 'headline
-                      #'identity nil nil 'headline))
-         (result nil))
-    
-    ;; 2. Exclude adding to results if it's commented, nodeclare, or missing a valid URI
-    (unless (or commentedp nodeclare (null puri))
-      (push entity result))
-    
-    ;; Recursively append children (depth-first).
-    ;; Splice children upwards if this heading is "nodeclare"
-    (dolist (child children)
-      (setq result (append result (elot-ast-process-headline 
-                                   child owl-type 
-                                   (if nodeclare parent-puri puri)))))
-    result))
-
-(defun elot-ast-slurp-section (ast context suffix owl-type)
-  "Find the section matching CONTEXT+SUFFIX in AST and slurp its entities of OWL-TYPE."
-  (let* ((target-id (concat context suffix))
-         (target-headline
-          (org-element-map ast 'headline
-            (lambda (hl)
-              (when (equal (org-element-property :CUSTOM_ID hl) target-id)
-                hl))
-            nil t))) ; t for first-match
-    (when target-headline
-      ;; Traverse only the children of the matching structural section
-      (let ((children (org-element-map (org-element-contents target-headline) 'headline
-                        #'identity nil nil 'headline))
-            (result nil))
-        (dolist (child children)
-          (setq result (append result (elot-ast-process-headline child owl-type nil))))
-        result))))
-
-(defun elot-ast-slurp-entities ()
-  "Return a list of lists (URI, label, plist of attributes).
-Uses AST traversal to read class, property, and individual sections
-from an ELOT buffer, fully resolving taxonomy.
-
-Replaces `elot-slurp-entities' to support both label display and OMN Tangling."
-  (save-excursion
-    (goto-char (point-min))
-    (if (re-search-forward ":ELOT-context-type: ontology" nil :noerror)
-        (let* ((context (elot-context-localname))
-               ;; Perform a single buffer parse for performance
-               (ast (org-element-parse-buffer)))
-          (append
-           (elot-ast-slurp-section ast context "-datatypes" "rdfs:Datatype")
-           (elot-ast-slurp-section ast context "-class-hierarchy" "owl:Class")
-           (elot-ast-slurp-section ast context "-object-property-hierarchy" "owl:ObjectProperty")
-           (elot-ast-slurp-section ast context "-data-property-hierarchy" "owl:DatatypeProperty")
-           (elot-ast-slurp-section ast context "-annotation-property-hierarchy" "owl:AnnotationProperty")
-           (elot-ast-slurp-section ast context "-individuals" "owl:NamedIndividual")))
-      '())))
+(defun elot-build-slurp (&optional hierarchy)
+  "Build `elot-slurp` entries iteratively from HIERARCHY.
+Defaults to `elot-headline-hierarchy`.
+Returns a list of lists: (URI label (plist of attributes))."
+  (let ((stack (list (or hierarchy (bound-and-true-p elot-headline-hierarchy))))
+        (result nil))
+    (while stack
+      (let* ((node     (pop stack))
+             (uri      (plist-get node :uri))
+             (label    (plist-get node :label))
+             (desc     (plist-get node :descriptions))
+             (children (plist-get node :children)))
+        
+        ;; 1. Process the current node
+        (when (and uri (stringp uri))
+          (let* ((flat-desc (flatten-tree desc))
+                 (display-label (or label uri))
+                 (rdf-type nil)
+                 (other-props nil)
+                 (tail flat-desc))
+            
+            ;; Parse descriptions
+            (while tail
+              (let ((k (car tail))
+                    (v (cadr tail)))
+                (cond
+                 ((equal k "rdf:type")   (setq rdf-type v))
+                 ((equal k "rdfs:label") nil) ; Omit
+                 (t
+                  (push k other-props)
+                  (push v other-props)))
+                (setq tail (cddr tail))))
+            
+            ;; Build attrs
+            (let ((attrs (list "rdfs:label" display-label)))
+              (when rdf-type
+                (setq attrs (nconc attrs (list "rdf:type" rdf-type))))
+              (setq attrs (nconc attrs (nreverse other-props)))
+              
+              ;; O(1) accumulation
+              (push (list uri display-label attrs) result))))
+        
+        ;; 2. Push children to stack (keeps depth-first pre-order)
+        (when children
+          (setq stack (append children stack)))))
+          
+    ;; Reverse once at the end for O(N) performance
+    (nreverse result)))
 #+end_src
 *** How to run it
-The following simply replaces the ole ~elot-slurp-entities~ with ~elot-ast-slurp-entities~, and it works.
+The following simply replaces ~elot-slurp-entities~ with ~elot-build-slurp~, and it works.
 #+begin_src emacs-lisp
   (defun elot-slurp-to-vars ()
     "Read resources declared in ELOT buffer into local variables.
   The variables are ELOT-SLURP (plist) and ELOT-CODELIST-HT,
   ELOT-ATTRIBLIST-HT (hashtable).  Outside ELOT buffers, use ELOT-SLURP-GLOBAL."
-    (let ((slurp (elot-ast-slurp-entities)))
+    (let ((slurp (elot-build-slurp)))
       (setq elot-slurp (or slurp elot-slurp-global))
       (setq elot-codelist-ht
             (ht<-plist (elot-codelist-from-slurp
