@@ -28,6 +28,8 @@ During the transition, we need to ensure the new `org-element`-based functions c
 ** Core Org-Element Utilities
 Functions to extract properties, tags, and description lists purely from AST nodes.
 
+We have to add in here functions like ~elot-entity-from-header~ -- various functions that are needed to interpret the outline for use as ontology.
+
 *** ~elot-ast-list-siblings~: get hierarchy
 This function was made at start of refactoring, it's likely not needed anymore
 #+begin_src emacs-lisp
@@ -61,70 +63,120 @@ Functions that take an ontology AST node and extract specific components (prefix
 
 *** Function declarations
 #+begin_src emacs-lisp
-(defun elot-parse-headline-hierarchy (tree)
-  "Iteratively parse headlines from org-element TREE into a nested AST.
-Creates a dummy root at level 0 to handle multiple top-level ontologies."
-  (let* ((dummy-root (list :level 0 :title "ROOT" :descriptions nil :children nil))
-         (stack (list dummy-root)))
-    
-    (org-element-map tree 'headline
-      (lambda (hl)
-        (let* ((level (org-element-property :level hl))
-               (title-raw (org-element-property :title hl))
-               (title (substring-no-properties 
-                       (if (stringp title-raw)
-                           title-raw
-                         (org-element-interpret-data title-raw))))
-               ;; Extract descriptions specific to this headline
-               (desc (elot--extract-headline-descriptions hl))
-               (node (list :level level
-                           :title title
-                           :descriptions desc
-                           :children nil)))
-          
-          ;; Pop the stack until the top node's level is strictly less than current level
-          (while (>= (plist-get (car stack) :level) level)
-            (pop stack))
-          
-          ;; Attach current node as child of the top node
-          (let ((parent (car stack)))
-            (plist-put parent :children (cons node (plist-get parent :children))))
-          
-          ;; Push current node onto stack
-          (push node stack)))
-      ;; NO-RECURSION is nil, so it maps depth-first over all headlines
-      nil nil nil)
+  (defun elot-parse-headline-hierarchy (tree)
+    "Iteratively parse headlines from org-element TREE into a nested AST.
+  Creates a dummy root at level 0 to handle multiple top-level ontologies."
+    (let* ((dummy-root (list :level 0 :title "ROOT" :descriptions nil :children nil))
+           (stack (list dummy-root)))
+      
+      (org-element-map tree 'headline
+        (lambda (hl)
+          (let* ((level (org-element-property :level hl))
+                 (title-raw (org-element-property :title hl))
+                 (title (substring-no-properties 
+                         (if (stringp title-raw)
+                             title-raw
+                           (org-element-interpret-data title-raw))))
+                 ;; Extract the required properties:
+                 (custom-id    (org-element-property :CUSTOM_ID hl))
+                 (context-type (org-element-property :ELOT-CONTEXT-TYPE hl))
+                 (context-localname (org-element-property :ELOT-CONTEXT-LOCALNAME hl))
+                 (default-prefix (org-element-property :ELOT-DEFAULT-PREFIX hl))
+                 (resourcedefs (org-element-property :RESOURCEDEFS hl))
+                 (prefixdefs (org-element-property :PREFIXDEFS hl))
+                 ;; Extract URI and Label mirroring `elot-entities-with-plist'
+                 (uri (elot-entity-from-header title t)) ; t = noerror for wrapper headings
+                 (label (if (string-match "\\(.+\\) (.*)" title)
+                            (match-string 1 title) 
+                          uri)) ; fallback to uri if no label matches
+                 ;; Extract descriptions specific to this headline
+                 (desc (elot--extract-headline-descriptions hl))
+                 ;; Conditionally append relevant properties
+                 (node (append
+                        (list :level level
+                              :title title)
+                        (when (equal resourcedefs "yes")
+                          (list :custom-id custom-id
+                                :resourcedefs resourcedefs))
+                        (when (equal context-type "ontology")
+                          (list :elot-context-type context-type
+                                :elot-context-localname context-localname
+                                :elot-default-prefix default-prefix))
+                        (unless (or (equal resourcedefs "yes") (equal context-type "ontology"))
+                          (list :uri uri
+                                :label label))
+                        (when (equal prefixdefs "yes")
+                          (append (list :prefixdefs prefixdefs)
+                                  (let ((prefixes-alist (elot-get-prefixes-alist hl custom-id)))
+                                    (when prefixes-alist
+                                      (list :prefixes prefixes-alist)))))
+                        (list :descriptions desc
+                              :children nil))))
+            
+            ;; Pop the stack until the top node's level is strictly less than current level
+            (while (>= (plist-get (car stack) :level) level)
+              (pop stack))
+            
+            ;; Attach current node as child of the top node
+            (let ((parent (car stack)))
+              (plist-put parent :children (cons node (plist-get parent :children))))
+            
+            ;; Push current node onto stack
+            (push node stack)))
+        ;; NO-RECURSION is nil, so it maps depth-first over all headlines
+        nil nil nil)
 
-    ;; After parsing, reverse the children lists to restore document order
-    (let ((root (car (last stack))))
-      (elot--reverse-children root)
-      root)))
+      ;; After parsing, reverse the children lists to restore document order
+      (let ((root (car (last stack))))
+        (elot--reverse-children root)
+        root)))
 
-(defun elot--reverse-children (node)
-  "Recursively reverse the children of NODE in-place."
-  (let ((children (plist-get node :children)))
-    (when children
-      (plist-put node :children (nreverse children))
-      (dolist (child (plist-get node :children))
-        (elot--reverse-children child)))))
+  (defun elot--reverse-children (node)
+    "Recursively reverse the children of NODE in-place."
+    (let ((children (plist-get node :children)))
+      (when children
+        (plist-put node :children (nreverse children))
+        (dolist (child (plist-get node :children))
+          (elot--reverse-children child)))))
 
-(defun elot--extract-headline-descriptions (hl)
-  "Extract description list items immediately under headline HL.
-Does not recurse into child headlines, matching the output format of
-`elot-org-subsection-descriptions` for meta-annotations with sublists."
-  (org-element-map (org-element-contents hl) 'item
-    (lambda (y)
-      (when (org-element-property :tag y)
-        (append
-         (elot-org-elt-item-str y)
-         (when (elot-org-elt-exists (org-element-contents y) 'item)
-           (org-element-map (org-element-contents y) 'item
-             (lambda (z)
-               (when (elot-meta-annotation-tag-p (elot-org-elt-item-tag-str z))
-                 (elot-org-elt-item-str z)))
-             nil nil 'item)))))
-    ;; Pass '(headline item) to prevent double-processing nested items
-    nil nil '(headline item)))
+  (defun elot--extract-headline-descriptions (hl)
+    "Extract description list items immediately under headline HL.
+  Does not recurse into child headlines, matching the output format of
+  `elot-org-subsection-descriptions` for meta-annotations with sublists."
+    (org-element-map (org-element-contents hl) 'item
+      (lambda (y)
+        (when (org-element-property :tag y)
+          (append
+           (elot-org-elt-item-str y)
+           (when (elot-org-elt-exists (org-element-contents y) 'item)
+             (org-element-map (org-element-contents y) 'item
+               (lambda (z)
+                 (when (elot-meta-annotation-tag-p (elot-org-elt-item-tag-str z))
+                   (elot-org-elt-item-str z)))
+               nil nil 'item)))))
+      ;; Pass '(headline item) to prevent double-processing nested items
+      nil nil '(headline item)))
+
+
+  (defun elot-get-prefixes-alist (headline-ast table-name)
+    "Find TABLE-NAME under HEADLINE-AST and return its rows as an alist.
+  If TABLE-NAME is nil, return the first table found."
+    (catch 'found
+      (org-element-map headline-ast 'table
+        (lambda (table)
+          ;; Match the table name or fallback if custom-id/table-name wasn't provided
+          (when (or (null table-name)
+                    (string= (org-element-property :name table) table-name))
+            (save-excursion
+              ;; :post-affiliated places point directly on the | row, bypassing #+name: etc.
+              (goto-char (org-element-property :post-affiliated table))
+              (throw 'found
+                     ;; Convert table to lisp, filtering out 'hline
+                     (delq nil
+                           (mapcar (lambda (row)
+                                     (when (listp row)
+                                       (cons (substring-no-properties (car row)) (substring-no-properties (cadr row)))))
+                                   (org-table-to-lisp))))))))))
 #+end_src
 
 *** How to run it
