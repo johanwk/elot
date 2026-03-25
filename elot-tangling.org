@@ -88,6 +88,9 @@ Functions that take an ontology AST node and extract specific components (prefix
                    (default-prefix (org-element-property :ELOT-DEFAULT-PREFIX hl))
                    (resourcedefs (org-element-property :RESOURCEDEFS hl))
                    (prefixdefs (org-element-property :PREFIXDEFS hl))
+                   (header-args-omn (org-element-property :HEADER-ARGS:OMN hl))
+                   (tangle-target-omn (when (and header-args-omn (string-match ":tangle[ \t]+\\([^ \t\n]+\\)" header-args-omn))
+                                        (match-string 1 header-args-omn)))
                    ;; 1. Extract the position (for markers)
                    (begin-pos (org-element-property :begin hl))
                    ;; Extract URI and Label mirroring `elot-entities-with-plist'
@@ -118,6 +121,8 @@ Functions that take an ontology AST node and extract specific components (prefix
                           (list :level level
                                 :title title
                                 :marker (copy-marker begin-pos))
+                          (when tangle-target-omn
+                            (list :tangle-target-omn tangle-target-omn))
                           (when (equal resourcedefs "yes")
                             (list :custom-id custom-id
                                   :resourcedefs resourcedefs))
@@ -223,6 +228,8 @@ This uses `elot-parse-headline-hierarchy' on the parsed buffer elements."
 
 ** New implementation of ~elot-slurp~ for label display and lookup
 *** Function declarations
+
+The =elot-build-slurp= function flattens the parsed =elot-headline-hierarchy= into a linear list of =(URI display-label attributes)= entries used for label lookup and fontification. For scalability and robustness, it relies on an iterative, stack-based approach (depth-first, pre-order traversal) rather than recursion. This prevents Elisp's =max-lisp-eval-depth= limitations from breaking on deeply nested org files. To ensure $O(N)$ performance, nodes are continuously accumulated via =push= and then efficiently reversed once (=nreverse=) at the end of the traversal.
 #+begin_src elisp
 (defun elot-build-slurp (&optional hierarchy)
   "Build `elot-slurp` entries iteratively from HIERARCHY.
@@ -292,19 +299,214 @@ The following simply replaces ~elot-slurp-entities~ with ~elot-build-slurp~, and
                         (append slurp elot-slurp-global))))))
 #+end_src
 
+To update the hashtables for fontification:
+#+begin_src emacs-lisp
+  (defun elot-codelist-from-slurp (slurp)
+    "Return a plist of the first two entries of each member of SLURP.
+  SLURP is a list of lists made with `elot-slurp-entities'.
+  The result is a plist of pairs of identifiers and labels to display."
+    (mapcan (lambda (row) (list (car row) (cadr row))) slurp))
+
+  (defun elot-attriblist-from-slurp (slurp)
+    "Return an alist mapping labels to plists of predicate--value pairs.
+  SLURP is a list of lists made with `elot-slurp-entities'.
+  The identifier (puri) of the resource is added to the plist with key \"puri\"."
+    (let (result)
+      (dolist (row slurp (nreverse result))
+        ;; (nth 1 row) is the label. 
+        ;; The rest becomes the cdr of the alist entry (the property list).
+        (push (cons (nth 1 row)
+                    (cons "puri" (cons (nth 0 row) (nth 2 row))))
+              result))))
+#+end_src
+
+
 
 ** OMN Generators
 Functions that take the extracted data structures and format them as valid OWL Manchester Syntax.
 
+*** Prefix block
 #+begin_src emacs-lisp
-;; Placeholder for OMN formatting
-;; e.g. (defun elot-omn-format-ontology (ontology-data) ...)
+(require 'cl-lib)
+
+(defun elot-omn-prefix-block (ontology-node)
+  "Generate an OMN prefix block string from an ONTOLOGY-NODE.
+Searches for a descendant node with `:prefixdefs \"yes\"' and formats
+its `:prefixes' alist for OWL Manchester Syntax."
+  (let ((prefix-node nil))
+    ;; Recursively search for the node containing the prefix definitions
+    (cl-labels ((search-node (node)
+                  (if (equal (plist-get node :prefixdefs) "yes")
+                      (setq prefix-node node)
+                    (mapc #'search-node (plist-get node :children)))))
+      (search-node ontology-node))
+    
+    (when prefix-node
+      (let* ((prefixes (plist-get prefix-node :prefixes))
+             ;; Ignore the table header ("prefix" . "uri") if present
+             (clean-prefixes (if (equal (car prefixes) '("prefix" . "uri"))
+                                 (cdr prefixes)
+                               prefixes)))
+        (concat "## Prefixes\n"
+                (mapconcat (lambda (row)
+                             (let ((prefix (car row))
+                                   (uri (cdr row)))
+                               ;; Ensure prefix always ends with a colon
+                               (format "Prefix: %-5s <%s>"
+                                       (if (string-suffix-p ":" prefix) prefix (concat prefix ":"))
+                                       uri)))
+                           clean-prefixes
+                           "\n"))))))
 #+end_src
+
+**** How to test it
+With ~M-:~ we get at the ~:children~ of ~elot-headline-hierarchy~; which is a list of ontology-defining declarations.
+#+begin_src emacs-lisp
+(elot-omn-prefix-block (car (plist-get elot-headline-hierarchy :children)))
+#+end_src
+
+*** Resource declarations
+#+begin_src emacs-lisp
+(defun elot-omn-format-annotations (l indent-level)
+  "Format list of annotations L with INDENT-LEVEL spaces.
+Recursively handles meta-annotations without writing `Annotations:`."
+  (let ((ind (make-string indent-level ?\s)))
+    (mapconcat (lambda (y)
+                 (let ((key (car y))
+                       (val (cadr y))
+                       (meta (cddr y)))
+                   (concat
+                    (if meta
+                        (concat ind "Annotations: \n"
+                                (elot-omn-format-annotations meta (+ indent-level 4))
+                                "\n")
+                      "")
+                    ind key " " (string-trim-left (elot-annotation-string-or-uri val)))))
+               l
+               ",\n")))
+
+(defun elot-omn-format-restrictions (l indent-level)
+  "Format list of restrictions L with INDENT-LEVEL spaces.
+Includes the property keyword (e.g., `SubClassOf:`)."
+  (let ((ind (make-string indent-level ?\s)))
+    (mapconcat (lambda (y)
+                 (let ((key (car y))
+                       (val (cadr y))
+                       (meta (cddr y)))
+                   (if meta
+                       (concat ind key ": \n"
+                               (make-string (+ indent-level 4) ?\s) "Annotations: \n"
+                               (elot-omn-format-annotations meta (+ indent-level 8))
+                               "\n"
+                               (make-string (+ indent-level 4) ?\s) (string-trim-left (elot-annotation-string-or-uri val)))
+                     (concat ind key ": " (string-trim-left (elot-annotation-string-or-uri val))))))
+               l
+               "\n")))
+
+(defun elot-omn-resource-declarations (nodes &optional parent-uri)
+  "Recursively traverse AST NODES to generate OMN syntax frames.
+Nodes are property lists from `elot-headline-hierarchy`.
+Uses PARENT-URI to automatically emit taxonomy axioms."
+  (let ((frames nil))
+    (dolist (node nodes)
+      (let* ((uri (plist-get node :uri))
+             (label (plist-get node :label))
+             (desc (plist-get node :descriptions))
+             (children (plist-get node :children))
+             (type (cadr (assoc "rdf:type" desc)))
+             (annotations nil)
+             (restrictions nil))
+        
+        (when (and uri (stringp uri))
+          ;; 1. Add rdfs:label
+          (push (list "rdfs:label" (or label uri)) annotations)
+          
+          ;; 2. Partition descriptions into restrictions and annotations
+          (dolist (y desc)
+            (let ((k (car y)))
+              (cond
+               ((member k elot-omn-property-keywords)
+                (push y restrictions))
+               ((equal k "rdf:type") nil)
+               ((equal k "rdfs:label") nil)
+               ((equal k "Import")
+                (push y restrictions))
+               (t
+                (push y annotations)))))
+          
+          ;; 3. Add inferred taxonomy
+          (when parent-uri
+            (cond
+             ((equal type "owl:Class")
+              (push (list "SubClassOf" parent-uri) restrictions))
+             ((string-match-p "Property$" type)
+              (push (list "SubPropertyOf" parent-uri) restrictions))))
+          
+          ;; 4. Build the strictly-formatted OMN frame string
+          (let* ((omn-type (cond
+                            ((equal type "owl:Class") "Class")
+                            ((equal type "owl:ObjectProperty") "ObjectProperty")
+                            ((equal type "owl:DatatypeProperty") "DataProperty")
+                            ((equal type "owl:AnnotationProperty") "AnnotationProperty")
+                            ((equal type "owl:NamedIndividual") "Individual")
+                            ((equal type "rdfs:Datatype") "Datatype")
+                            (t (replace-regexp-in-string "^.*:" "" type))))
+                 (frame (list (format "%s: %s" omn-type uri))))
+            
+            (when annotations
+              (push (concat "    Annotations: \n" 
+                            (elot-omn-format-annotations (nreverse annotations) 8)) 
+                    frame))
+            
+            (when restrictions
+              (push (elot-omn-format-restrictions (nreverse restrictions) 4) frame))
+            
+            ;; Join frame internals with a single newline (no blank lines inside)
+            (push (mapconcat 'identity (nreverse frame) "\n") frames)))
+        
+        ;; 5. Recurse into children
+        (when children
+          (let ((child-frames (elot-omn-resource-declarations children (if (and uri (stringp uri)) uri parent-uri))))
+            (when (not (string-empty-p child-frames))
+              (push child-frames frames))))))
+    
+    ;; Join adjacent frames with a single blank line
+    (mapconcat 'identity (nreverse frames) "\n\n")))
+#+end_src
+
+**** how to test it
+*Option 1: Test on all children of the first ontology*
+#+begin_src emacs-lisp
+(elot-omn-resource-declarations 
+ (plist-get (car (plist-get elot-headline-hierarchy :children)) :children))
+#+end_src
+
+*Option 2: Wrap your specific node in a list*
+If you intentionally targeted a specific node, wrap it using =list=:
+#+begin_src emacs-lisp
+(elot-omn-resource-declarations 
+ (list (cadr (plist-get elot-headline-hierarchy :children))))
+#+end_src
+/(Note: =(plist-get elot-headline-hierarchy :children)= returns the list of Level 1 ontologies. If your file only has one ontology, =cadr= will return =nil=.)
+
 
 ** The Tangling Entrypoint
 A top-level interactive function that parses the current buffer, finds all ontology contexts, and writes out the corresponding `.omn` files.
 
 #+begin_src emacs-lisp
-;; Placeholder for the main tangling command
-;; e.g. (defun elot-tangle-buffer-to-omn () (interactive) ...)
+(defun elot-tangle-buffer-to-omn ()
+  "Update headline hierarchy, generate OMN format ontology, and export to tangle target."
+  (interactive)
+  (elot-update-headline-hierarchy)
+  (let ((ontology-nodes (plist-get elot-headline-hierarchy :children)))
+    (dolist (ontology-node ontology-nodes)
+      (let ((tangle-target (plist-get ontology-node :tangle-target-omn)))
+        (if (not tangle-target)
+            (message "No tangle target found for ontology node: %s" (plist-get ontology-node :title))
+          (let* ((prefix-block (elot-omn-prefix-block ontology-node))
+                 (resources (elot-omn-resource-declarations (plist-get ontology-node :children)))
+                 (omn-content (concat prefix-block "\n\n" resources)))
+            (with-temp-file tangle-target
+              (insert omn-content))
+            (message "Tangled OMN to %s" tangle-target)))))))
 #+end_src
