@@ -71,58 +71,77 @@ Functions that take an ontology AST node and extract specific components (prefix
       
       (org-element-map tree 'headline
         (lambda (hl)
-          (let* ((level (org-element-property :level hl))
-                 (title-raw (org-element-property :title hl))
-                 (title (substring-no-properties 
-                         (if (stringp title-raw)
-                             title-raw
-                           (org-element-interpret-data title-raw))))
-                 ;; Extract the required properties:
-                 (custom-id    (org-element-property :CUSTOM_ID hl))
-                 (context-type (org-element-property :ELOT-CONTEXT-TYPE hl))
-                 (context-localname (org-element-property :ELOT-CONTEXT-LOCALNAME hl))
-                 (default-prefix (org-element-property :ELOT-DEFAULT-PREFIX hl))
-                 (resourcedefs (org-element-property :RESOURCEDEFS hl))
-                 (prefixdefs (org-element-property :PREFIXDEFS hl))
-                 ;; Extract URI and Label mirroring `elot-entities-with-plist'
-                 (uri (elot-entity-from-header title t)) ; t = noerror for wrapper headings
-                 (label (if (string-match "\\(.+\\) (.*)" title)
-                            (match-string 1 title) 
-                          uri)) ; fallback to uri if no label matches
-                 ;; Extract descriptions specific to this headline
-                 (desc (elot--extract-headline-descriptions hl))
-                 ;; Conditionally append relevant properties
-                 (node (append
-                        (list :level level
-                              :title title)
-                        (when (equal resourcedefs "yes")
-                          (list :custom-id custom-id
-                                :resourcedefs resourcedefs))
-                        (when (equal context-type "ontology")
-                          (list :elot-context-type context-type
-                                :elot-context-localname context-localname
-                                :elot-default-prefix default-prefix))
-                        (unless (or (equal resourcedefs "yes") (equal context-type "ontology"))
-                          (list :uri uri
-                                :label label))
-                        (when (equal prefixdefs "yes")
-                          (append (list :prefixdefs prefixdefs)
-                                  (let ((prefixes-alist (elot-get-prefixes-alist hl custom-id)))
-                                    (when prefixes-alist
-                                      (list :prefixes prefixes-alist)))))
-                        (list :descriptions desc
-                              :children nil))))
-            
+          (let ((level (org-element-property :level hl)))
             ;; Pop the stack until the top node's level is strictly less than current level
             (while (>= (plist-get (car stack) :level) level)
               (pop stack))
             
-            ;; Attach current node as child of the top node
-            (let ((parent (car stack)))
-              (plist-put parent :children (cons node (plist-get parent :children))))
-            
-            ;; Push current node onto stack
-            (push node stack)))
+            (let* ((title-raw (org-element-property :title hl))
+                   (title (substring-no-properties 
+                           (if (stringp title-raw)
+                               title-raw
+                             (org-element-interpret-data title-raw))))
+                   ;; Extract the required properties:
+                   (custom-id    (org-element-property :CUSTOM_ID hl))
+                   (context-type (org-element-property :ELOT-CONTEXT-TYPE hl))
+                   (context-localname (org-element-property :ELOT-CONTEXT-LOCALNAME hl))
+                   (default-prefix (org-element-property :ELOT-DEFAULT-PREFIX hl))
+                   (resourcedefs (org-element-property :RESOURCEDEFS hl))
+                   (prefixdefs (org-element-property :PREFIXDEFS hl))
+                   ;; 1. Extract the position (for markers)
+                   (begin-pos (org-element-property :begin hl))
+                   ;; Extract URI and Label mirroring `elot-entities-with-plist'
+                   (uri (elot-entity-from-header title t)) ; t = noerror for wrapper headings
+                   (label (if (string-match "\\(.+\\) (.*)" title)
+                              (match-string 1 title) 
+                            uri)) ; fallback to uri if no label matches
+                   ;; Find ancestor with resourcedefs "yes" to determine rdf:type
+                   (ancestor-resourcedefs (cl-find-if (lambda (n) (equal (plist-get n :resourcedefs) "yes")) stack))
+                   (ancestor-custom-id (and ancestor-resourcedefs (plist-get ancestor-resourcedefs :custom-id)))
+                   (rdf-type (when ancestor-custom-id
+                               (cond
+                                ((string-suffix-p "-datatypes" ancestor-custom-id) "rdfs:Datatype")
+                                ((string-suffix-p "-class-hierarchy" ancestor-custom-id) "owl:Class")
+                                ((string-suffix-p "-object-property-hierarchy" ancestor-custom-id) "owl:ObjectProperty")
+                                ((string-suffix-p "-data-property-hierarchy" ancestor-custom-id) "owl:DatatypeProperty")
+                                ((string-suffix-p "-annotation-property-hierarchy" ancestor-custom-id) "owl:AnnotationProperty")
+                                ((string-suffix-p "-individuals" ancestor-custom-id) "owl:NamedIndividual"))))
+                   ;; Extract descriptions specific to this headline
+                   (extracted-desc (elot--extract-headline-descriptions hl))
+                   (desc (if uri
+                             (if rdf-type
+                                 (cons (list "rdf:type" rdf-type) extracted-desc)
+                               extracted-desc)
+                           nil))
+                   ;; Conditionally append relevant properties
+                   (node (append
+                          (list :level level
+                                :title title
+                                :marker (copy-marker begin-pos))
+                          (when (equal resourcedefs "yes")
+                            (list :custom-id custom-id
+                                  :resourcedefs resourcedefs))
+                          (when (equal context-type "ontology")
+                            (list :elot-context-type context-type
+                                  :elot-context-localname context-localname
+                                  :elot-default-prefix default-prefix))
+                          (unless (or (equal resourcedefs "yes") (equal context-type "ontology"))
+                            (list :uri uri
+                                  :label label))
+                          (when (equal prefixdefs "yes")
+                            (append (list :prefixdefs prefixdefs)
+                                    (let ((prefixes-alist (elot-get-prefixes-alist hl custom-id)))
+                                      (when prefixes-alist
+                                        (list :prefixes prefixes-alist)))))
+                          (list :descriptions desc
+                                :children nil))))
+              
+              ;; Attach current node as child of the top node
+              (let ((parent (car stack)))
+                (plist-put parent :children (cons node (plist-get parent :children))))
+              
+              ;; Push current node onto stack
+              (push node stack))))
         ;; NO-RECURSION is nil, so it maps depth-first over all headlines
         nil nil nil)
 
