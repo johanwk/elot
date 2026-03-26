@@ -444,7 +444,7 @@ Uses PARENT-URI to automatically emit taxonomy axioms."
         
         (when (and uri (stringp uri))
           ;; 1. Add rdfs:label
-          (push (list "rdfs:label" (or label uri)) annotations)
+          ;(push (list "rdfs:label" (or label uri)) annotations)
           
           ;; 2. Partition descriptions into restrictions and annotations
           (dolist (y desc)
