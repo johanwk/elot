@@ -127,11 +127,9 @@ Functions that take an ontology AST node and extract specific components (prefix
                                (when (string-suffix-p "-ontology-declaration" custom-id) "owl:Ontology")))
                    ;; Extract descriptions specific to this headline
                    (extracted-desc (elot--extract-headline-descriptions hl))
-                   (desc (if uri
-                             (if rdf-type
-                                 (cons (list "rdf:type" rdf-type) extracted-desc)
-                               extracted-desc)
-                           nil))
+                   (desc (if (and uri rdf-type)
+                               (cons (list "rdf:type" rdf-type) extracted-desc)
+                             extracted-desc))
                    ;; Conditionally append relevant properties
                    (node (append
                           (list :level level
@@ -229,7 +227,7 @@ To have more readable output (but this is slow with large ontologies), eval it w
 #+end_src
 
 To define the local variable ~elot-headline-hierarchy~ and an update function:
-#+begin_src elisp
+#+begin_src emacs-lisp
 (defvar-local elot-headline-hierarchy nil
   "Stores the parsed headline hierarchy for the current Elot buffer.")
 
@@ -262,7 +260,7 @@ This uses `elot-parse-headline-hierarchy' on the parsed buffer elements."
 *** Function declarations
 
 The =elot-build-slurp= function flattens the parsed =elot-headline-hierarchy= into a linear list of =(URI display-label attributes)= entries used for label lookup and fontification. For scalability and robustness, it relies on an iterative, stack-based approach (depth-first, pre-order traversal) rather than recursion. This prevents Elisp's =max-lisp-eval-depth= limitations from breaking on deeply nested org files. To ensure $O(N)$ performance, nodes are continuously accumulated via =push= and then efficiently reversed once (=nreverse=) at the end of the traversal.
-#+begin_src elisp
+#+begin_src emacs-lisp
 (defun elot-build-slurp (&optional hierarchy)
   "Build `elot-slurp` entries iteratively from HIERARCHY.
 Defaults to `elot-headline-hierarchy`.
