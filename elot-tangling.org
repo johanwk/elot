@@ -127,9 +127,14 @@ Functions that take an ontology AST node and extract specific components (prefix
                                (when (string-suffix-p "-ontology-declaration" custom-id) "owl:Ontology")))
                    ;; Extract descriptions specific to this headline
                    (extracted-desc (elot--extract-headline-descriptions hl))
-                   (desc (if (and uri rdf-type)
-                               (cons (list "rdf:type" rdf-type) extracted-desc)
-                             extracted-desc))
+                   (desc (let ((d extracted-desc))
+                           ;; Automatically add rdfs:label if it differs from the URI
+                           (when (and uri label (not (equal label uri))
+                                      (not (assoc "rdfs:label" d)))
+                             (push (list "rdfs:label" label) d))
+                           (if (and uri rdf-type)
+                               (cons (list "rdf:type" rdf-type) d)
+                             d)))
                    ;; Conditionally append relevant properties
                    (node (append
                           (list :level level
@@ -395,112 +400,138 @@ With ~M-:~ we get at the ~:children~ of ~elot-headline-hierarchy~; which is a li
 
 *** Resource declarations
 #+begin_src emacs-lisp
-(defun elot-omn-format-annotations (l indent-level)
-  "Format list of annotations L with INDENT-LEVEL spaces.
-Recursively handles meta-annotations without writing `Annotations:`."
-  (let ((ind (make-string indent-level ?\s)))
-    (mapconcat (lambda (y)
-                 (let ((key (car y))
-                       (val (cadr y))
-                       (meta (cddr y)))
-                   (concat
-                    (if meta
-                        (concat ind "Annotations: \n"
-                                (elot-omn-format-annotations meta (+ indent-level 4))
-                                "\n")
-                      "")
-                    ind key " " (string-trim-left (elot-annotation-string-or-uri val)))))
-               l
-               ",\n")))
+  (defun elot-omn-format-annotations (l indent-level)
+    "Format list of annotations L with INDENT-LEVEL spaces.
+  Recursively handles meta-annotations without writing `Annotations:`."
+    (let ((ind (make-string indent-level ?\s)))
+      (mapconcat (lambda (y)
+                   (let ((key (car y))
+                         (val (cadr y))
+                         (meta (cddr y)))
+                     (concat
+                      (if meta
+                          (concat ind "Annotations: \n"
+                                  (elot-omn-format-annotations meta (+ indent-level 4))
+                                  "\n")
+                        "")
+                      ind key " " (string-trim-left (elot-annotation-string-or-uri val)))))
+                 l
+                 ",\n")))
 
-(defun elot-omn-format-restrictions (l indent-level)
-  "Format list of restrictions L with INDENT-LEVEL spaces.
-Includes the property keyword (e.g., `SubClassOf:`)."
-  (let ((ind (make-string indent-level ?\s)))
-    (mapconcat (lambda (y)
-                 (let* ((key (car y))
-                        (val (cadr y))
-                        (meta (cddr y))
-                        (formatted-val (if (member key elot-omn-all-keywords)
-                                           val
-                                         (string-trim-left (elot-annotation-string-or-uri val)))))
-                   (if meta
-                       (concat ind key ": \n"
-                               (make-string (+ indent-level 4) ?\s) "Annotations: \n"
-                               (elot-omn-format-annotations meta (+ indent-level 8))
-                               "\n"
-                               (make-string (+ indent-level 4) ?\s) formatted-val)
-                     (concat ind key ": " formatted-val))))
-               l
-               "\n")))
+  (defun elot-omn-format-restrictions (l indent-level)
+    "Format list of restrictions L with INDENT-LEVEL spaces.
+  Includes the property keyword (e.g., `SubClassOf:`)."
+    (let ((ind (make-string indent-level ?\s)))
+      (mapconcat (lambda (y)
+                   (let* ((key (car y))
+                          (val (cadr y))
+                          (meta (cddr y))
+                          (formatted-val (if (member key elot-omn-all-keywords)
+                                             val
+                                           (string-trim-left (elot-annotation-string-or-uri val)))))
+                     (if meta
+                         (concat ind key ": \n"
+                                 (make-string (+ indent-level 4) ?\s) "Annotations: \n"
+                                 (elot-omn-format-annotations meta (+ indent-level 8))
+                                 "\n"
+                                 (make-string (+ indent-level 4) ?\s) formatted-val)
+                       (concat ind key ": " formatted-val))))
+                 l
+                 "\n")))
 
-(defun elot-omn-resource-declarations (nodes &optional parent-uri)
-  "Recursively traverse AST NODES to generate OMN syntax frames.
-Nodes are property lists from `elot-headline-hierarchy`.
-Uses PARENT-URI to automatically emit taxonomy axioms."
-  (let ((frames nil))
-    (dolist (node nodes)
-      (let* ((uri (plist-get node :uri))
-             (label (plist-get node :label))
-             (desc (plist-get node :descriptions))
-             (children (plist-get node :children))
-             (type (cadr (assoc "rdf:type" desc)))
-             (annotations nil)
-             (restrictions nil))
-        
-        (when (and uri (stringp uri))
-          ;; 1. Add rdfs:label
-          ;(push (list "rdfs:label" (or label uri)) annotations)
-          
-          ;; 2. Partition descriptions into restrictions and annotations
-          (dolist (y desc)
-            (let ((k (car y)))
-              (cond
-               ((member k elot-omn-property-keywords)
-                (push y restrictions))
-               ((equal k "rdf:type") nil)
-               (t
-                (push y annotations)))))
-          
-          ;; 3. Add inferred taxonomy
-          (when parent-uri
+  (defun elot-omn-resource-frame (node parent-uri)
+    "Generate a resource frame string for NODE.
+  Uses PARENT-URI to automatically emit taxonomy axioms.
+  Returns nil if NODE does not define a resource or is tagged :nodeclare:."
+    (let* ((uri (plist-get node :uri))
+           (desc (plist-get node :descriptions))
+           (type (cadr (assoc "rdf:type" desc)))
+           (tags (plist-get node :tags))
+           (annotations nil)
+           (restrictions nil))
+      (when (and uri (stringp uri) (not (member "nodeclare" tags)))
+        ;; 1. Partition descriptions into restrictions and annotations
+        (dolist (y desc)
+          (let ((k (car y)))
             (cond
-             ((equal type "owl:Class")
-              (push (list "SubClassOf" parent-uri) restrictions))
-             ((string-match-p "Property$" type)
-              (push (list "SubPropertyOf" parent-uri) restrictions))))
-          
-          ;; 4. Build the strictly-formatted OMN frame string
-          (let* ((omn-type (cond
-                            ((equal type "owl:Class") "Class")
-                            ((equal type "owl:ObjectProperty") "ObjectProperty")
-                            ((equal type "owl:DatatypeProperty") "DataProperty")
-                            ((equal type "owl:AnnotationProperty") "AnnotationProperty")
-                            ((equal type "owl:NamedIndividual") "Individual")
-                            ((equal type "owl:Ontology") "Ontology")
-                            ((equal type "rdfs:Datatype") "Datatype")
-                            (t (replace-regexp-in-string "^.*:" "" type))))
-                 (frame (list (format "%s: %s" omn-type uri))))
-            
-            (when annotations
-              (push (concat "    Annotations: \n" 
-                            (elot-omn-format-annotations (nreverse annotations) 8)) 
-                    frame))
-            
-            (when restrictions
-              (push (elot-omn-format-restrictions (nreverse restrictions) 4) frame))
-            
-            ;; Join frame internals with a single newline (no blank lines inside)
-            (push (mapconcat 'identity (nreverse frame) "\n") frames)))
+             ((member k elot-omn-property-keywords)
+              (push y restrictions))
+             ((member k elot-omn-misc-keywords) nil) ;; Ignored here, handled by misc-frames
+             ((equal k "rdf:type") nil)
+             (t
+              (push y annotations)))))
         
-        ;; 5. Recurse into children
-        (when children
-          (let ((child-frames (elot-omn-resource-declarations children (if (and uri (stringp uri)) uri parent-uri))))
-            (when (not (string-empty-p child-frames))
-              (push child-frames frames))))))
-    
-    ;; Join adjacent frames with a single blank line
-    (mapconcat 'identity (nreverse frames) "\n\n")))
+        ;; 2. Add inferred taxonomy
+        (when parent-uri
+          (cond
+           ((equal type "owl:Class")
+            (push (list "SubClassOf" parent-uri) restrictions))
+           ((and type (string-match-p "Property$" type))
+            (push (list "SubPropertyOf" parent-uri) restrictions))))
+        
+        ;; 3. Build the strictly-formatted OMN frame string
+        (let* ((omn-type (cond
+                          ((equal type "owl:Class") "Class")
+                          ((equal type "owl:ObjectProperty") "ObjectProperty")
+                          ((equal type "owl:DatatypeProperty") "DataProperty")
+                          ((equal type "owl:AnnotationProperty") "AnnotationProperty")
+                          ((equal type "owl:NamedIndividual") "Individual")
+                          ((equal type "owl:Ontology") "Ontology")
+                          ((equal type "rdfs:Datatype") "Datatype")
+                          (type (replace-regexp-in-string "^.*:" "" type))
+                          (t "Class")))
+               (frame (list (format "%s: %s" omn-type uri))))
+          
+          (when annotations
+            (push (concat "    Annotations: \n" 
+                          (elot-omn-format-annotations (nreverse annotations) 8)) 
+                  frame))
+          
+          (when restrictions
+            (push (elot-omn-format-restrictions (nreverse restrictions) 4) frame))
+          
+          ;; Join frame internals with a single newline (no blank lines inside)
+          (mapconcat 'identity (nreverse frame) "\n")))))
+
+  (defun elot-omn-misc-frames (node)
+    "Generate a list of formatted misc frame strings from NODE's descriptions.
+  These represent top-level standalone axioms like DisjointClasses."
+    (let ((desc (plist-get node :descriptions))
+          (misc-frames nil))
+      (dolist (y desc)
+        (when (member (car y) elot-omn-misc-keywords)
+          ;; elot-omn-format-restrictions with indent=0 works perfectly for top-level misc frames
+          (push (elot-omn-format-restrictions (list y) 0) misc-frames)))
+      (nreverse misc-frames)))
+
+  (defun elot-omn-resource-declarations (nodes &optional parent-uri)
+    "Recursively traverse AST NODES to generate OMN syntax frames.
+  Nodes are property lists from `elot-headline-hierarchy`.
+  Uses PARENT-URI to automatically emit taxonomy axioms."
+    (let ((frames nil))
+      (dolist (node nodes)
+        (let ((uri (plist-get node :uri))
+              (children (plist-get node :children)))
+          
+          ;; 1. Try to generate a resource frame
+          (let ((res-frame (elot-omn-resource-frame node parent-uri)))
+            (when res-frame
+              (push res-frame frames)))
+              
+          ;; 2. Try to generate misc frames (independent of resource frame)
+          (let ((m-frames (elot-omn-misc-frames node)))
+            (dolist (m m-frames)
+              (push m frames)))
+          
+          ;; 3. Recurse into children
+          (when children
+            (let ((child-frames (elot-omn-resource-declarations children (if (and uri (stringp uri)) uri parent-uri))))
+              (when (not (string-empty-p child-frames))
+                (push child-frames frames))))))
+      
+      ;; Join adjacent frames with a single blank line
+      (mapconcat 'identity (nreverse frames) "\n\n")))
+
 #+end_src
 
 **** how to test it
