@@ -32,9 +32,15 @@ Functions to extract properties, tags, and description lists purely from AST nod
 
 We have to add in here functions like ~elot-entity-from-header~ -- various functions that are needed to interpret the outline for use as ontology.
 
+*** library dependencies
+#+begin_src emacs-lisp
+;;; elot-tangle.el  -*- lexical-binding: t; -*-
+(require 'cl-lib)
+#+end_src
+
 *** ~elot-ast-list-siblings~: get hierarchy
 This function was made at start of refactoring, it's likely not needed anymore
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (defun elot-ast-list-siblings (elements)
     "Extract heading hierarchy from a list of org-element ELEMENTS.
   Replaces `elot-org-list-siblings` with pure AST traversal."
@@ -210,7 +216,7 @@ Functions that take an ontology AST node and extract specific components (prefix
 In an Elot buffer, the following will build a tree with a node ~ROOT~ at level 0, then each found ontology in list members.
 
 To have more readable output (but this is slow with large ontologies), eval it with ~M-x pp-eval-expression~ to see the resulting list in a dedicated buffer.
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 (elot-parse-headline-hierarchy (org-element-parse-buffer))
 #+end_src
 
@@ -345,8 +351,6 @@ Functions that take the extracted data structures and format them as valid OWL M
 
 *** Prefix block
 #+begin_src emacs-lisp
-(require 'cl-lib)
-
 (defun elot-omn-prefix-block (ontology-node)
   "Generate an OMN prefix block string from an ONTOLOGY-NODE.
 Searches for a descendant node with `:prefixdefs \"yes\"' and formats
@@ -379,7 +383,7 @@ its `:prefixes' alist for OWL Manchester Syntax."
 
 **** How to test it
 With ~M-:~ we get at the ~:children~ of ~elot-headline-hierarchy~; which is a list of ontology-defining declarations.
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 (elot-omn-prefix-block (car (plist-get elot-headline-hierarchy :children)))
 #+end_src
 
@@ -449,7 +453,7 @@ Uses PARENT-URI to automatically emit taxonomy axioms."
                ((member k elot-omn-property-keywords)
                 (push y restrictions))
                ((equal k "rdf:type") nil)
-               ((equal k "rdfs:label") nil)
+               ;((equal k "rdfs:label") nil)
                ((equal k "Import")
                 (push y restrictions))
                (t
@@ -498,14 +502,14 @@ Uses PARENT-URI to automatically emit taxonomy axioms."
 
 **** how to test it
 *Option 1: Test on all children of the first ontology*
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 (elot-omn-resource-declarations 
  (plist-get (car (plist-get elot-headline-hierarchy :children)) :children))
 #+end_src
 
 *Option 2: Wrap your specific node in a list*
 If you intentionally targeted a specific node, wrap it using =list=:
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 (elot-omn-resource-declarations 
  (list (cadr (plist-get elot-headline-hierarchy :children))))
 #+end_src
