@@ -461,9 +461,6 @@ Uses PARENT-URI to automatically emit taxonomy axioms."
                ((member k elot-omn-property-keywords)
                 (push y restrictions))
                ((equal k "rdf:type") nil)
-               ;((equal k "rdfs:label") nil)
-               ((equal k "Import")
-                (push y restrictions))
                (t
                 (push y annotations)))))
           
