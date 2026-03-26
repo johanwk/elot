@@ -2,6 +2,8 @@
 #+AUTHOR: Elot Developer
 #+DESCRIPTION: Literate programming file for refactoring Elot's OMN export/tangling
 
+#+PROPERTY: header-args:emacs-lisp  :tangle ./elot-package/elot-tangle.el
+
 * Introduction
 
 This file aims to centralise and redesign the tangling of Org-mode files to OWL Manchester Syntax (OMN) for the Elot package.
