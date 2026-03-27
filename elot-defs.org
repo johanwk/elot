@@ -2134,8 +2134,7 @@ Insert a skeleton with =<ods=.
   ,** " (s ontlocalname) " ontology (" (s ontprefix) ":" (s ontlocalname) " " (s ontprefix) ":" (s ontlocalname) "/0.0)
   :PROPERTIES:
   :ID:       " (s ontlocalname) "-ontology-declaration
-  :custom_id: " (s ontlocalname) "-ontology-declaration
-  :resourcedefs: yes
+    :resourcedefs: yes
   :END:
    # - Import :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/
    - owl:versionInfo :: 0.0 start of " (s ontlocalname) "
@@ -2151,34 +2150,29 @@ Insert a skeleton with =<ods=.
   ,** Datatypes
   :PROPERTIES:
   :ID:       " (s ontlocalname) "-datatypes
-  :custom_id: " (s ontlocalname) "-datatypes
-  :resourcedefs: yes
+    :resourcedefs: yes
   :END:
   ,** Classes
   :PROPERTIES:
   :ID:       " (s ontlocalname) "-class-hierarchy
-  :custom_id: " (s ontlocalname) "-class-hierarchy
-  :resourcedefs: yes
+    :resourcedefs: yes
   :END:
   ,*** My class (" (s resprefix) ":MyClass)
    - rdfs:comment :: Leave a comment here
   ,** Object properties
   :PROPERTIES:
   :ID:       " (s ontlocalname) "-object-property-hierarchy
-  :custom_id: " (s ontlocalname) "-object-property-hierarchy
-  :resourcedefs: yes
+    :resourcedefs: yes
   :END:
   ,** Data properties
   :PROPERTIES:
   :ID:       " (s ontlocalname) "-data-property-hierarchy
-  :custom_id: " (s ontlocalname) "-data-property-hierarchy
-  :resourcedefs: yes
+    :resourcedefs: yes
   :END:
   ,** Annotation properties
   :PROPERTIES:
   :ID:       " (s ontlocalname) "-annotation-property-hierarchy
-  :custom_id: " (s ontlocalname) "-annotation-property-hierarchy
-  :resourcedefs: yes
+    :resourcedefs: yes
   :END:
   ,*** owl:versionInfo
   ,*** dcterms:title
@@ -2214,8 +2208,7 @@ Insert a skeleton with =<ods=.
   ,** Individuals
   :PROPERTIES:
   :ID:       " (s ontlocalname) "-individuals
-  :custom_id: " (s ontlocalname) "-individuals
-  :resourcedefs: yes
+    :resourcedefs: yes
   :END:
   "
   (progn (elot-update-link-abbrev)

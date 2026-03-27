@@ -339,7 +339,7 @@ Functions that take an ontology AST node and extract specific components (prefix
                                title-raw
                              (org-element-interpret-data title-raw))))
                    ;; Extract the required properties:
-                   (custom-id    (org-element-property :CUSTOM_ID hl))
+                   (id           (org-element-property :ID hl))
                    (context-type (org-element-property :ELOT-CONTEXT-TYPE hl))
                    (context-localname (org-element-property :ELOT-CONTEXT-LOCALNAME hl))
                    (default-prefix (org-element-property :ELOT-DEFAULT-PREFIX hl))
@@ -364,16 +364,16 @@ Functions that take an ontology AST node and extract specific components (prefix
                             uri)) ; fallback to uri if no label matches
                    ;; Find ancestor with resourcedefs "yes" to determine rdf:type
                    (ancestor-resourcedefs (cl-find-if (lambda (n) (equal (plist-get n :resourcedefs) "yes")) stack))
-                   (ancestor-custom-id (and ancestor-resourcedefs (plist-get ancestor-resourcedefs :custom-id)))
-                   (rdf-type (if ancestor-custom-id
+                   (ancestor-id (and ancestor-resourcedefs (plist-get ancestor-resourcedefs :id)))
+                   (rdf-type (if ancestor-id
                                  (cond
-                                  ((string-suffix-p "-datatypes" ancestor-custom-id) "rdfs:Datatype")
-                                  ((string-suffix-p "-class-hierarchy" ancestor-custom-id) "owl:Class")
-                                  ((string-suffix-p "-object-property-hierarchy" ancestor-custom-id) "owl:ObjectProperty")
-                                  ((string-suffix-p "-data-property-hierarchy" ancestor-custom-id) "owl:DatatypeProperty")
-                                  ((string-suffix-p "-annotation-property-hierarchy" ancestor-custom-id) "owl:AnnotationProperty")
-                                  ((string-suffix-p "-individuals" ancestor-custom-id) "owl:NamedIndividual"))
-                               (when (string-suffix-p "-ontology-declaration" custom-id) "owl:Ontology")))
+                                  ((string-suffix-p "-datatypes" ancestor-id) "rdfs:Datatype")
+                                  ((string-suffix-p "-class-hierarchy" ancestor-id) "owl:Class")
+                                  ((string-suffix-p "-object-property-hierarchy" ancestor-id) "owl:ObjectProperty")
+                                  ((string-suffix-p "-data-property-hierarchy" ancestor-id) "owl:DatatypeProperty")
+                                  ((string-suffix-p "-annotation-property-hierarchy" ancestor-id) "owl:AnnotationProperty")
+                                  ((string-suffix-p "-individuals" ancestor-id) "owl:NamedIndividual"))
+                               (when (string-suffix-p "-ontology-declaration" id) "owl:Ontology")))
                    ;; Extract descriptions specific to this headline
                    (extracted-desc (elot--extract-headline-descriptions hl))
                    (desc (let ((d extracted-desc))
@@ -393,7 +393,7 @@ Functions that take an ontology AST node and extract specific components (prefix
                           (when tangle-target-omn
                             (list :tangle-target-omn tangle-target-omn))
                           (when (equal resourcedefs "yes")
-                            (list :custom-id custom-id
+                            (list :id id
                                   :resourcedefs resourcedefs))
                           (when (equal context-type "ontology")
                             (list :elot-context-type context-type
@@ -404,7 +404,7 @@ Functions that take an ontology AST node and extract specific components (prefix
                                   :label label))
                           (when (equal prefixdefs "yes")
                             (append (list :prefixdefs prefixdefs)
-                                    (let ((prefixes-alist (elot-get-prefixes-alist hl custom-id)))
+                                    (let ((prefixes-alist (elot-get-prefixes-alist hl id)))
                                       (when prefixes-alist
                                         (list :prefixes prefixes-alist)))))
                           (list :descriptions desc
@@ -457,7 +457,7 @@ Functions that take an ontology AST node and extract specific components (prefix
     (catch 'found
       (org-element-map headline-ast 'table
         (lambda (table)
-          ;; Match the table name or fallback if custom-id/table-name wasn't provided
+          ;; Match the table name or fallback if table-name wasn't provided
           (when (or (null table-name)
                     (string= (org-element-property :name table) table-name))
             (save-excursion

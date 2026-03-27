@@ -55,12 +55,12 @@ Arguments are a list SUBSECTION-DESCRIPTIONS produced by
           subsection-descriptions))
 
 (defun elot-org-link-search (&rest strings)
-  "Search for a `custom_id' heading in current buffer.
+  "Search for an :ID: heading in current buffer.
 The concatenation of STRINGS is searched.  If found, move point there
 and return position.  If not found, return nil and leave point unchanged."
   (let ((pos (save-excursion
                (goto-char (point-min))
-               (re-search-forward (concat ":custom_id:\\s-*"
+               (re-search-forward (concat ":ID:\\s-*"
                                           (apply #'concat strings)
                                           "\\s-*$")
                                   nil :noerror))))

@@ -64,12 +64,12 @@ This is a safeguard, unclear whether it matters.
 ~elot-org-link-search~ is in use in elot-defs.org, but only during export to OMN. It's otherwise obsolete.
 #+begin_src emacs-lisp
   (defun elot-org-link-search (&rest strings)
-    "Search for a `custom_id' heading in current buffer.
+    "Search for an :ID: heading in current buffer.
   The concatenation of STRINGS is searched.  If found, move point there
   and return position.  If not found, return nil and leave point unchanged."
     (let ((pos (save-excursion
                  (goto-char (point-min))
-                 (re-search-forward (concat ":custom_id:\\s-*"
+                 (re-search-forward (concat ":ID:\\s-*"
                                             (apply #'concat strings)
                                             "\\s-*$")
                                     nil :noerror))))

@@ -1836,7 +1836,6 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ** " (s ontlocalname) " ontology (" (s ontprefix) ":" (s ontlocalname) " " (s ontprefix) ":" (s ontlocalname) "/0.0)
 :PROPERTIES:
 :ID:       " (s ontlocalname) "-ontology-declaration
-:custom_id: " (s ontlocalname) "-ontology-declaration
 :resourcedefs: yes
 :END:
  # - Import :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/
@@ -1853,13 +1852,11 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ** Datatypes
 :PROPERTIES:
 :ID:       " (s ontlocalname) "-datatypes
-:custom_id: " (s ontlocalname) "-datatypes
 :resourcedefs: yes
 :END:
 ** Classes
 :PROPERTIES:
 :ID:       " (s ontlocalname) "-class-hierarchy
-:custom_id: " (s ontlocalname) "-class-hierarchy
 :resourcedefs: yes
 :END:
 *** My class (" (s resprefix) ":MyClass)
@@ -1867,19 +1864,16 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ** Object properties
 :PROPERTIES:
 :ID:       " (s ontlocalname) "-object-property-hierarchy
-:custom_id: " (s ontlocalname) "-object-property-hierarchy
 :resourcedefs: yes
 :END:
 ** Data properties
 :PROPERTIES:
 :ID:       " (s ontlocalname) "-data-property-hierarchy
-:custom_id: " (s ontlocalname) "-data-property-hierarchy
 :resourcedefs: yes
 :END:
 ** Annotation properties
 :PROPERTIES:
 :ID:       " (s ontlocalname) "-annotation-property-hierarchy
-:custom_id: " (s ontlocalname) "-annotation-property-hierarchy
 :resourcedefs: yes
 :END:
 *** owl:versionInfo
@@ -1916,7 +1910,6 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ** Individuals
 :PROPERTIES:
 :ID:       " (s ontlocalname) "-individuals
-:custom_id: " (s ontlocalname) "-individuals
 :resourcedefs: yes
 :END:
 "
