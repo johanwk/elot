@@ -60,8 +60,28 @@ This is a safeguard, unclear whether it matters.
 (defvar org-link-abbrev-alist-local)
 #+end_src
 
+** Function to be replaced
+~elot-org-link-search~ is in use in elot-defs.org, but only during export to OMN. It's otherwise obsolete.
+#+begin_src emacs-lisp
+  (defun elot-org-link-search (&rest strings)
+    "Search for a `custom_id' heading in current buffer.
+  The concatenation of STRINGS is searched.  If found, move point there
+  and return position.  If not found, return nil and leave point unchanged."
+    (let ((pos (save-excursion
+                 (goto-char (point-min))
+                 (re-search-forward (concat ":custom_id:\\s-*"
+                                            (apply #'concat strings)
+                                            "\\s-*$")
+                                    nil :noerror))))
+      (when pos
+        (goto-char pos))
+      pos))
+#+end_src
+
 ** Retrieve all entities defined in the buffer into list
 The following works well for getting all /in-buffer/ entities into a list.
+
+*** TODO replace with new function ~elot-build-slurp~ and friends, see [[file:elot-tangling.org::*New implementation of ~elot-slurp~ for label display and lookup][New implementation of ~elot-slurp~ for label display and lookup]]
 #+name: src-slurp
 #+begin_src emacs-lisp :results code
   (defun elot-entities-with-plist (subsection-descriptions &optional owl-type)
@@ -80,20 +100,6 @@ The following works well for getting all /in-buffer/ entities into a list.
                  puri label
                  (append `("rdfs:label" ,label "rdf:type" ,owl-type) annotations-plist))))
             subsection-descriptions))
-
-  (defun elot-org-link-search (&rest strings)
-    "Search for a `custom_id' heading in current buffer.
-  The concatenation of STRINGS is searched.  If found, move point there
-  and return position.  If not found, return nil and leave point unchanged."
-    (let ((pos (save-excursion
-                 (goto-char (point-min))
-                 (re-search-forward (concat ":custom_id:\\s-*"
-                                            (apply #'concat strings)
-                                            "\\s-*$")
-                                    nil :noerror))))
-      (when pos
-        (goto-char pos))
-      pos))
 
   (defun elot-slurp-entities ()
     "Return a list of lists (URI, label, plist of attributes).
