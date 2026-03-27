@@ -34,7 +34,37 @@ We have to add in here functions like ~elot-entity-from-header~ -- various funct
 
 *** library dependencies
 #+begin_src emacs-lisp
-;;; elot-tangle.el  -*- lexical-binding: t; -*-
+;;; elot-tangle.el --- ELOT tangling and OMN generation  -*- lexical-binding: t; -*-
+
+;; Copyright (C) 2024, 2025 Johan W. Klüwer
+
+;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
+;; URL: https://github.com/johanwk/elot
+;; Keywords: languages tools org ontology
+
+;; This file is not part of GNU Emacs.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; Parse an ELOT Org buffer's headline hierarchy into an AST and
+;; generate OWL Manchester Syntax (OMN) files from it.  This module
+;; is required by `elot-mode'.
+
+;;; Code:
+
 (require 'cl-lib)
 #+end_src
 
@@ -806,23 +836,76 @@ If you intentionally targeted a specific node, wrap it using =list=:
 ** The Tangling Entrypoint
 A top-level interactive function that parses the current buffer, finds all ontology contexts, and writes out the corresponding `.omn` files.
 
+*** Helper functions
 #+begin_src emacs-lisp
-  (defun elot-tangle-buffer-to-omn ()
-    "Update headline hierarchy, generate OMN format ontology, and export to tangle target."
-    (interactive)
-    (elot-update-headline-hierarchy)
-    (let ((ontology-nodes (plist-get elot-headline-hierarchy :children)))
-      (dolist (ontology-node ontology-nodes)
-        (let ((tangle-target (plist-get ontology-node :tangle-target-omn)))
-          (if (not tangle-target)
-              (message "No tangle target found for ontology node: %s" (plist-get ontology-node :title))
-            ;; FIX: Include the ontology node itself and handle nil prefix blocks
-            (let* ((prefix-block (elot-omn-prefix-block ontology-node))
-                   (resources (elot-omn-resource-declarations (list ontology-node)))
-                   (omn-content (concat (or prefix-block "")
-                                        (if (and prefix-block (not (string-empty-p resources))) "\n\n" "")
-                                        resources)))
-              (with-temp-file tangle-target
-                (insert omn-content))
-              (message "Tangled OMN to %s" tangle-target)))))))
+(defun elot-get-ontology-node-omn (node)
+  "Return the OMN content for the given ONTOLOGY-NODE."
+  (let* ((prefix-block (elot-omn-prefix-block node))
+         (resources (elot-omn-resource-declarations (list node))))
+    (concat (or prefix-block "")
+            (if (and prefix-block (not (string-empty-p resources))) "\n\n" "")
+            resources)))
+
+(defun elot-tangle-buffer-to-omn ()
+  "Update hierarchy and export OMN for all ontologies to their tangle targets."
+  (interactive)
+  (elot-update-headline-hierarchy)
+  (let ((ontology-nodes (plist-get elot-headline-hierarchy :children)))
+    (dolist (node ontology-nodes)
+      (when-let ((target (plist-get node :tangle-target-omn)))
+        (let ((target-full (expand-file-name target)))
+          (with-temp-file target-full
+            (insert (elot-get-ontology-node-omn node)))
+          ;; If the .omn file is already open in a buffer, silently revert it
+          ;; so Emacs won't prompt "file changed on disk; really edit the buffer?"
+          (let ((buf (find-buffer-visiting target-full)))
+            (when buf
+              (with-current-buffer buf
+                (revert-buffer t t t))))
+          (message "Tangled OMN outline to %s" target))))))
 #+end_src
+*** Post-Tangle Prepending
+#+begin_src elisp
+(defun elot-tangle-include-outline ()
+  "Prepend outline-generated OMN to the current tangled file if it's an .omn file."
+  (let* ((target-file (buffer-file-name))
+         (is-omn (and target-file (string-match-p "\\.omn$" target-file))))
+    (when (and is-omn elot-last-org-source)
+      (let ((outline-omn
+             (with-current-buffer (find-file-noselect elot-last-org-source)
+               (elot-update-headline-hierarchy)
+               (let ((nodes (plist-get elot-headline-hierarchy :children))
+                     (content ""))
+                 (dolist (node nodes)
+                   (let ((node-target (plist-get node :tangle-target-omn)))
+                     ;; Match target filename (handling potential relative paths)
+                     (when (and node-target
+                                (string= (file-name-nondirectory target-file)
+                                         (file-name-nondirectory node-target)))
+                       (setq content (concat content (elot-get-ontology-node-omn node))))))
+                 content))))
+        (unless (string-empty-p outline-omn)
+          (goto-char (point-min))
+          (insert outline-omn "\n\n")
+          ;; Babel will save the buffer automatically after this hook
+          )))))
+#+end_src
+
+*** Hook Registration
+To ensure that the outline-generated OMN (the "bulk") is included at the top and any manual =omn= blocks are appended at the bottom:
+
+1. ~org-babel-pre-tangle-hook~: Keep running =elot-tangle-buffer-to-omn=. This ensures the =.omn= file is created even if the buffer contains *no* source blocks.
+2. ~org-babel-post-tangle-hook~: Add a new function that *prepends* the outline content to the tangled file. This hook runs inside the temporary buffer Babel uses to write the file, so prepending here is safe and efficient.
+
+#+begin_src elisp
+(add-hook 'org-babel-pre-tangle-hook #'elot--remember-org-source nil t)
+(add-hook 'org-babel-pre-tangle-hook #'elot-tangle-buffer-to-omn nil t)
+(add-hook 'org-babel-post-tangle-hook #'elot-tangle-include-outline nil t)
+#+end_src
+
+* Provide
+#+begin_src emacs-lisp
+(provide 'elot-tangle)
+;;; elot-tangle.el ends here
+#+end_src
+
