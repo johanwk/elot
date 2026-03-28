@@ -505,6 +505,70 @@ Scans the hierarchy for nodes with `:prefixdefs \"yes\"' and adds their
     (setq-local org-link-abbrev-alist-local (nreverse new-abbrevs))))
 #+end_src
 
+*** "Sanity check" where headings lack property drawers
+If the "Prefixes" heading lacks ~:prefixdefs: yes~, then add it before updating. The current Elot doesn't have a default drawer on the Prefixes heading.
+#+begin_src emacs-lisp
+(defun elot-sanity-check-prefixes ()
+  "Ensure level 1 'Prefixes' headings have the required property drawer.
+Silently adds :prefixdefs: yes if missing."
+  (save-excursion
+    (goto-char (point-min))
+    (while (re-search-forward "^\\*\\* Prefixes" nil t)
+      (let ((hl (org-element-at-point)))
+        (when (and (eq (org-element-type hl) 'headline)
+                   ;; assume we are at outline level 2
+                   (= (org-element-property :level hl) 2)
+                   (not (org-element-property :PREFIXDEFS hl)))
+          (org-set-property "prefixdefs" "yes"))))))
+#+end_src
+
+A user can easily forget to add property drawers to resource-declaration headings as well.
+#+begin_src elisp
+(defvar elot-resource-section-alist
+  '(("Datatypes"             . "-datatypes")
+    ("Classes"               . "-class-hierarchy")
+    ("Object properties"     . "-object-property-hierarchy")
+    ("Data properties"       . "-data-property-hierarchy")
+    ("Annotation properties" . "-annotation-property-hierarchy")
+    ("Individuals"           . "-individuals"))
+  "Alist mapping well-known heading names to their ID suffixes.")
+
+(defun elot-sanity-check-resource-sections ()
+  "Ensure well-known resource section headings have required property drawers.
+For each heading named \"Classes\", \"Object properties\", etc., silently
+adds :ID: and :resourcedefs: yes if missing.  The ID is constructed from
+the nearest ontology context's localname (or top-level ID) plus the
+conventional suffix.  Only the first match per name is patched."
+  (save-excursion
+    (let ((seen (make-hash-table :test 'equal)))
+      (dolist (entry elot-resource-section-alist)
+        (let ((name (car entry))
+              (suffix (cdr entry)))
+          (goto-char (point-min))
+          ;; Match level-2 headings with this name (case-insensitive)
+          (while (re-search-forward
+                  (format "^\\*\\*[ \t]+%s[ \t]*$" (regexp-quote name))
+                  nil t)
+            (unless (gethash name seen)
+              (let ((hl (org-element-at-point)))
+                (when (and (eq (org-element-type hl) 'headline)
+                           (= (org-element-property :level hl) 2))
+                  ;; Find the ontology context prefix for the ID
+                  (let* ((parent-id
+                          (or (org-entry-get-with-inheritance "ELOT-context-localname")
+                              (org-entry-get-with-inheritance "ID")))
+                         (expected-id (concat parent-id suffix)))
+                    ;; Add :resourcedefs: yes if missing
+                    (unless (string-equal
+                             (org-element-property :RESOURCEDEFS hl) "yes")
+                      (org-set-property "resourcedefs" "yes"))
+                    ;; Add :ID: if missing
+                    (unless (org-element-property :ID hl)
+                      (org-set-property "ID" expected-id))
+                    (puthash name t seen)))))))))))
+#+end_src
+
+
 *** How to run it
 In an Elot buffer, the following will build a tree with a node ~ROOT~ at level 0, then each found ontology in list members.
 
@@ -518,24 +582,12 @@ To define the local variable ~elot-headline-hierarchy~ and an update function:
 (defvar-local elot-headline-hierarchy nil
   "Stores the parsed headline hierarchy for the current Elot buffer.")
 
-(defun elot-sanity-check-prefixes ()
-  "Ensure level 1 'Prefixes' headings have the required property drawer.
-Silently adds :prefixdefs: yes if missing."
-  (save-excursion
-    (goto-char (point-min))
-    (while (re-search-forward "^\\*\\* Prefixes" nil t)
-      (let ((hl (org-element-at-point)))
-        (when (and (eq (org-element-type hl) 'headline)
-                   ;; assume we are at outline level 2
-                   (= (org-element-property :level hl) 2)
-                   (not (org-element-property :PREFIXDEFS hl)))
-          (org-set-property "prefixdefs" "yes"))))))
-
 (defun elot-update-headline-hierarchy ()
   "Update `elot-headline-hierarchy' from the current org buffer.
 This uses `elot-parse-headline-hierarchy' on the parsed buffer elements."
   (interactive)
   (elot-sanity-check-prefixes)
+  (elot-sanity-check-resource-sections)
   (let ((ast (org-element-parse-buffer)))
     (setq elot-headline-hierarchy
           (elot-parse-headline-hierarchy ast)))
