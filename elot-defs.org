@@ -89,11 +89,6 @@ Se below under [[*Default settings][Default settings]] for a hook to convert to 
 tangling to OMN.
 #+name: src-settings-externals
 #+begin_src emacs-lisp
-  (defgroup elot
-    nil
-    "Customization group for Emacs Literate Ontology Tool (ELOT)."
-    :prefix "elot-"
-    :group 'elot)
   (defcustom elot-robot-jar-path (expand-file-name "~/bin/robot.jar")
     "Path to the robot.jar file."
     :group 'elot

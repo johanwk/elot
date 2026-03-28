@@ -119,6 +119,21 @@ Load the ELOT modules.  For now, we pull in the legacy =elot= library
   (require 'ob-lob)
 #+end_src
 
+** Customization group
+
+The =elot= customization group collects all user-facing options.  It
+must be defined early, before any =defcustom= that references =:group
+'elot=.
+
+#+name: src-mode-defgroup
+#+begin_src emacs-lisp
+  (defgroup elot
+    nil
+    "Customization group for Emacs Literate Ontology Tool (ELOT)."
+    :prefix "elot-"
+    :group 'org)
+#+end_src
+
 ** Buffer-local settings
 :PROPERTIES:
 :CUSTOM_ID: buffer-local-settings

@@ -523,7 +523,7 @@ Silently adds :prefixdefs: yes if missing."
 #+end_src
 
 A user can easily forget to add property drawers to resource-declaration headings as well.
-#+begin_src elisp
+#+begin_src emacs-lisp
 (defvar elot-resource-section-alist
   '(("Datatypes"             . "-datatypes")
     ("Classes"               . "-class-hierarchy")

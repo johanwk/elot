@@ -66,11 +66,6 @@
 ;; src-defvar ends here
 
 ;; [[file:../elot-defs.org::src-settings-externals][src-settings-externals]]
-(defgroup elot
-  nil
-  "Customization group for Emacs Literate Ontology Tool (ELOT)."
-  :prefix "elot-"
-  :group 'elot)
 (defcustom elot-robot-jar-path (expand-file-name "~/bin/robot.jar")
   "Path to the robot.jar file."
   :group 'elot
