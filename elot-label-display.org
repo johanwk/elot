@@ -79,63 +79,13 @@ This is a safeguard, unclear whether it matters.
 #+end_src
 
 ** Retrieve all entities defined in the buffer into list
-The following works well for getting all /in-buffer/ entities into a list.
+The data-building functions (~elot-build-slurp~, ~elot-slurp-to-vars~,
+~elot-codelist-from-slurp~, ~elot-attriblist-from-slurp~) now live in
+=elot-tangle.el= and are available via =(require 'elot-tangle)=.
 
-*** TODO replace with new function ~elot-build-slurp~ and friends, see [[file:elot-tangling.org::*New implementation of ~elot-slurp~ for label display and lookup][New implementation of ~elot-slurp~ for label display and lookup]]
-#+name: src-slurp
-#+begin_src emacs-lisp :results code
-  (defun elot-entities-with-plist (subsection-descriptions &optional owl-type)
-    "Return a list of URI, label, and plist of attributes for a resource.
-  Arguments are a list SUBSECTION-DESCRIPTIONS produced by
-  `elot-org-subsection-descriptions' and a string for OWL-TYPE."
-    (mapcar (lambda (x)
-              (let* ((owl-type (or owl-type "rdfs:Resource"))
-                     (header (car x))
-                     (annotations-plist (flatten-tree (cdr x)))
-                     (puri (elot-entity-from-header header))
-                     (label
-                      (if (string-match "\\(.+\\) (.*)" header)
-                          (match-string 1 header) puri)))
-                (list
-                 puri label
-                 (append `("rdfs:label" ,label "rdf:type" ,owl-type) annotations-plist))))
-            subsection-descriptions))
-
-  (defun elot-slurp-entities ()
-    "Return a list of lists (URI, label, plist of attributes).
-  Uses `elot-org-subsection-descriptions' to read class, property, and
-  individual sections from an ELOT buffer.  If not in an ELOT buffer,
-  read using `elot-slurp-global'"
-    (save-excursion
-      (goto-char (point-min))
-      (if (re-search-forward ":ELOT-context-type: ontology" nil :noerror)
-          (let ((context (elot-context-localname)))
-            (append
-             (when (elot-org-link-search context "-datatypes")                     (elot-entities-with-plist (elot-org-subsection-descriptions) "rdfs:Datatype"))
-             (when (elot-org-link-search context "-class-hierarchy")               (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:Class"))
-             (when (elot-org-link-search context "-object-property-hierarchy")     (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:ObjectProperty"))
-             (when (elot-org-link-search context "-data-property-hierarchy")       (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:DatatypeProperty"))
-             (when (elot-org-link-search context "-annotation-property-hierarchy") (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:AnnotationProperty"))
-             (when (elot-org-link-search context "-individuals")                   (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:NamedIndividual"))))
-        '())))
-
-  (defun elot-codelist-from-slurp (slurp)
-    "Return a plist of the first two entries of each member of SLURP.
-  SLURP is a list of lists made with `elot-slurp-entities'.
-  The result is a plist of pairs of identifiers and labels to display."
-    (flatten-tree
-     (mapcar (lambda (row) (take 2 row)) slurp)))
-
-  (defun elot-attriblist-from-slurp (slurp)
-    "Return a plist of the second and third entries of each member of SLURP.
-  SLURP is a list of lists made with `elot-slurp-entities'.  The result is
-  a plist of pairs of labels and plists of predicate--value pairs.
-  The identifier puri of the resource is added to the plist with key `\"puri\"'."
-     (mapcar (lambda (row) (cons (cadr row)
-                                 (append `("puri" ,(car row))
-                                         (caddr row))))
-             slurp))
-#+end_src
+The old functions (~elot-entities-with-plist~, ~elot-slurp-entities~)
+and the old versions of ~elot-codelist-from-slurp~ /
+~elot-attriblist-from-slurp~ have been removed.
 
 Results will look like this: three entries, id, label, and plist of
 annotations. /Update/: added also "rdfs:label" to the plist.
@@ -166,23 +116,10 @@ annotations. /Update/: added also "rdfs:label" to the plist.
 
 ** Make a hash table ~elot-id-label-ht~
 Note that we use ~ht<-plist~ for the id--label list, and ~ht<-alist~ for id--plist.
-#+name: src-slurp-to-vars
-#+begin_src emacs-lisp
-  (defun elot-slurp-to-vars ()
-    "Read resources declared in ELOT buffer into local variables.
-  The variables are ELOT-SLURP (plist) and ELOT-CODELIST-HT,
-  ELOT-ATTRIBLIST-HT (hashtable).  Outside ELOT buffers, use ELOT-SLURP-GLOBAL."
-    (let ((slurp (elot-slurp-entities)))
-      (setq elot-slurp (or slurp elot-slurp-global))
-      (setq elot-codelist-ht
-            (ht<-plist (elot-codelist-from-slurp
-                        ;; only fontify what's locally declared
-                        elot-slurp)))
-      (setq elot-attriblist-ht
-            (ht<-alist (elot-attriblist-from-slurp
-                        ;; lookup includes the global list
-                        (append slurp elot-slurp-global))))))
-#+end_src
+
+~elot-slurp-to-vars~ is now defined in =elot-tangle.el= (via
+=elot-tangling.org=).  It calls ~elot-build-slurp~ instead of the old
+~elot-slurp-entities~.
 
 ** Access the values
 #+name: src-slurp-get
@@ -490,11 +427,9 @@ and more.
         (elot-add-label-fontification))))
 #+end_src
 ** Update labels in save hook
-When the file is saved, we update the lookup tables.
-#+name: src-slurp-on-save
-#+begin_src emacs-lisp
-  (add-hook 'after-save-hook #'elot-slurp-to-vars nil :local)
-#+end_src
+The =after-save-hook= registration for ~elot-slurp-to-vars~ is now
+handled by =elot-mode.org= (in the minor-mode definition).  Removed
+from here to avoid double-firing.
 ** Interactive query and insert
 *** Search for an identifier by name
 NB. This won't work if there are duplicates, i.e., the same label has

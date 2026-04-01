@@ -60,6 +60,7 @@ in SPARQL select results.
 *** Require packages
 #+name: src-require
 #+begin_src emacs-lisp
+	(require 'elot-tangle) ; AST parsing, OMN generation, ROBOT post-processing
 	(require 'ob-lob) ; Library of Babel
 	(require 'ox) ; export functions
 	(require 'ol) ; link functions
@@ -171,44 +172,9 @@ There are some resources that we consider built into the OWL language.
   "List of built-in OWL and XSD resources that are always considered known.")
 #+end_src
 *** OMN keywords
-In omn-mode, there's variables for entity and property
-keywords. However, there the keyword "Import" is placed in the
-"entity" list, while we need this for ontology declaration in a
-"property" list.
-
-The "misc" keywords are not tied to a particular resource declaration.
-#+name: src-omn-keywords
-#+begin_src emacs-lisp
-  (defvar elot-omn-property-keywords
-    '(
-      "EquivalentTo"
-      "SubClassOf"
-      "Characteristics"
-      "DisjointWith"
-      "DisjointUnionOf"
-      "Domain"
-      "Range"
-      "InverseOf"
-      "SubPropertyOf"
-      "SubPropertyChain"
-      "SameAs"
-      "DifferentFrom"
-      "Types"
-      "Facts"
-      "HasKey"
-      "Import"))
-  (defvar elot-omn-misc-keywords
-    '("DisjointClasses"
-      "EquivalentClasses"
-      "DisjointProperties"
-      "EquivalentProperties"
-      "SameIndividual"
-      "DifferentIndividuals"
-      "Rule"))
-  (defvar elot-omn-all-keywords
-    (append elot-omn-property-keywords elot-omn-misc-keywords)
-    "List of all Manchester syntax keywords, both property and misc keywords.")
-#+end_src
+Moved to =elot-tangling.org= → =elot-tangle.el=.
+The variables =elot-omn-property-keywords=, =elot-omn-misc-keywords=,
+and =elot-omn-all-keywords= are now provided by =(require 'elot-tangle)=.
 
 We add a filter to make OMN in description lists =\ttfamily=. See the Org [[https://orgmode.org/manual/Advanced-Export-Configuration.html][manual]].
 #+name: src-omn-latex-tt
@@ -294,56 +260,15 @@ the ID string.
     (string-match-p "property-hierarchy" (elot-governing-hierarchy)))
 #+end_src
 *** Get description lists into lisp lists
+The core description-list functions (=elot-org-elt-exists=, =elot-org-elt-item-tag-str=,
+=elot-meta-annotation-tag-p=, =elot-org-elt-item-pars-str=, =elot-org-elt-item-str=)
+have moved to =elot-tangling.org= → =elot-tangle.el= and are provided by
+=(require 'elot-tangle)=.
+
+The remaining functions below are part of the old OMN pipeline and are
+still used by =elot-lob.org= noweb blocks.
 #+name: src-desc-lists
 #+BEGIN_SRC emacs-lisp :results silent
-  (defun elot-org-elt-exists (x elt)
-    "Return a list of elements of type ELT extracted from X.
-  Uses `org-element-map` to collect matching elements.
-  The function is used to check whether the list contains ELT."
-    (org-element-map x elt #'identity))
-  (defun elot-org-elt-item-tag-str (x)
-    "For an item X in an `org-element-map', return the item tag."
-    (if (org-element-property :tag x)
-        (substring-no-properties (org-element-interpret-data (org-element-property :tag x)))))
-  (defun elot-meta-annotation-tag-p (tag)
-    "Return non-nil if TAG is a recognizable URI."
-    (and tag
-         (stringp tag)
-         (let ((u (elot-unprefix-uri tag org-link-abbrev-alist-local t)))
-           (and (stringp u)
-                (string-match-p "^<" u)))))
-  (defun elot-org-elt-item-pars-str (x)
-    "For an item X in an `org-element-map', return the paragraphs as one string.
-  Stops at the first nested description list item that has a recognizable URI tag,
-  so meta-annotations are excluded from the literal text."
-    (let ((result nil))
-      (catch 'stop
-        (dolist (child (org-element-contents x))
-          (let ((type (car child)))
-            (cond
-             ((eq type 'paragraph)
-              (push (substring-no-properties (org-element-interpret-data child)) result))
-             ((eq type 'plain-list)
-              (let ((sub-result nil))
-                (dolist (subitem (org-element-contents child))
-                  (let ((tag (elot-org-elt-item-tag-str subitem)))
-                    (if (elot-meta-annotation-tag-p tag)
-                        (progn
-                          (when sub-result
-                            (push (string-join (nreverse sub-result) "") result))
-                          (throw 'stop t))
-                      (push (substring-no-properties (org-element-interpret-data subitem)) sub-result))))
-                (when sub-result
-                  (push (concat (string-join (nreverse sub-result) "")
-                                (make-string (or (org-element-property :post-blank child) 0) ?\n))
-                        result))))
-             (t
-              (push (substring-no-properties (org-element-interpret-data child)) result))))))
-      (string-trim-right (string-join (nreverse result) ""))))
-  (defun elot-org-elt-item-str (x)
-    "For X in an `org-element-map', return pair of strings (tag, paragraph content)."
-    (list (elot-org-elt-item-tag-str x) (elot-org-elt-item-pars-str x)))
-
   (defun elot-org-descriptions-in-section-helper ()
     "Return all description list items as pairs in a list.
   This function is called from `elot-org-descriptions-in-section' after
@@ -443,70 +368,14 @@ the ID string.
 #+END_SRC
 
 *** puri expansion
+The core CURIE/URI functions (=elot-puri-re=, =elot-unprefix-uri=,
+=elot-annotation-string-or-uri=) have moved to =elot-tangling.org= →
+=elot-tangle.el= and are provided by =(require 'elot-tangle)=.
+
+The helper =elot-omn-restriction-string= below is still used by the
+old pipeline in this file.
 #+name: src-puri-expand
 #+BEGIN_SRC emacs-lisp :results silent
-  (defconst elot-puri-re 
-    "^\\([a-zA-Z][-a-zA-Z0-9_.]*\\|\\):\\([-[:word:]_./]*\\)$")
-
-  (defun elot-unprefix-uri (puri abbrev-alist &optional noerror)
-    "Replace prefix in PURI with full form from ABBREV-ALIST, if there's a match."
-    (if (eq abbrev-alist nil) puri
-      (if (string-match elot-puri-re puri)
-          (let* ((this-prefix (match-string-no-properties 1 puri))
-                 (this-localname (match-string-no-properties 2 puri))
-                 (this-ns (cdr (assoc this-prefix abbrev-alist))))
-            (if this-ns
-                (concat "<" this-ns this-localname ">")
-              (if noerror
-                  nil
-                ;;(error "Fail! Prefix \"%s\" is not defined" this-prefix)
-                ;; tentatively just let the raw value through
-                puri)))
-            puri)))
-
-  (defun elot-annotation-string-or-uri (str)
-    "Expand STR to be used as an annotation value in Manchester Syntax.
-  Expand uri, or return number, or wrap in quotes."
-    ;; maybe there's macros in the string, expand them
-    (if (string-match "{{{.+}}}" str)
-        (let ((omt org-macro-templates))
-          (with-temp-buffer (org-mode)
-                            (insert str) (org-macro-replace-all omt)
-                            (setq str (buffer-string)))))
-    (cond
-     ;; a number -- return the string
-     ((string-match "^[[:digit:]]+[.]?[[:digit:]]*$" str)
-      (concat "  " str))
-     ;; a bare URI, which org-mode wraps in double brackets -- wrap in angles
-     ((string-match "^[[][[]\\(http[^ ]*\\)[]][]]$" str)
-      (concat "  <" (match-string 1 str) ">"))
-     ;; a bare URI, but no double brackets -- wrap in angles
-     ((string-match "^\\(http[^ ]*\\)$" str)
-      (concat "  <" (match-string 1 str) ">"))
-     ;; a bare URI, in angles
-     ((string-match "^\\(<http[^ ]*>\\)$" str)
-      (concat "  " (match-string 1 str)))
-     ;; a bare URN, in angles
-     ((string-match "^\\(<urn:[^>]+>\\)$" str)
-      (concat "  " (match-string 1 str)))
-     ;; a URN without angles, explicitly treat as xsd:string
-     ((string-match "^\\(urn:uuid[^ ]+\\)$" str)
-      (concat "  \"" (match-string 1 str) "\"^^xsd:string"))
-     ;; true -- make it an explicit boolean
-     ((string-match "^true$" str) " \"true\"^^xsd:boolean")
-     ;; false -- make it an explicit boolean
-     ((string-match "^false$" str) " \"false\"^^xsd:boolean")
-     ;; string with datatype -- return unchanged
-     ((string-match "^\".*\"\\^\\^[-_[:alnum:]]*:[-_[:alnum:]]+$" str)
-      (concat "  " str))
-     ;; not a puri -- normal string, wrap in quotes
-     ((equal str (elot-unprefix-uri str org-link-abbrev-alist-local))
-      (if (string-match "\"\\(.*\n\\)*.*\"@[a-z]+" str)
-          (concat " " str)
-        (concat "  \"" (replace-regexp-in-string "\"" "\\\\\"" str) "\"")))
-     ;; else, a puri -- wrap in angles
-     (t (concat "  " (elot-unprefix-uri str org-link-abbrev-alist-local :noerror)))))
-
   (defun elot-omn-restriction-string (str)
    "STR is wanted as an OMN value.  Strip any meta-annotations, or return unchanged."
    str)
@@ -545,55 +414,12 @@ annotations in a future improved version, from sub-items.
                                  ret))))
                (org-goto-sibling)))
       (nreverse ret)))
+#+end_src
 
-  (defun elot-entity-from-header (str &optional noerror)
-    "Given a heading text STR, return the identifier it declares.
-
-  The returned value is either
-    - a CURIE (e.g. \"ex:Apple\"), or
-    - a full URI wrapped in \"<>\" (e.g. \"<http://example.org/Apple>\"), or
-    - a composite string like \"ex:Ont <http://…/0.9>\" for ontology/version
-      pairs.
-
-  If the heading contains *no* recognisable identifier and NOERROR is
-  non-nil, return NIL.  Otherwise raise an error."
-    (let* ((curie-regex "\\(?:[a-zA-Z][-a-zA-Z0-9_.]*\\|\\):\\(?:[-[:word:]_./]*\\)")
-           (full-uri-regex "http[s]?://[-[:alnum:]._~:/?#\\@!$&'()*+,;=%]*"))
-      (cond
-       ;; single URI, beginning of line
-       ((string-match (format "^<?\\(%s\\)>?" full-uri-regex) str)
-        (format "<%s>" (match-string 1 str)))
-       ;; single URI in parentheses
-       ((string-match (format "(<?\\(%s\\)>?)" full-uri-regex) str)
-        (format "<%s>" (match-string 1 str)))
-       ;; CURIE, beginning of line
-       ((string-match (format "^\\(%s\\)" curie-regex) str)
-        (match-string 1 str))
-       ;; CURIE in parentheses
-       ((string-match (format "(\\(%s\\))" curie-regex) str)
-        (match-string 1 str))
-       ;; two URIs in parentheses (ontology and ontology version)
-       ((string-match (format "(<?\\(%s\\)>? <?\\(%s\\)>?)" full-uri-regex full-uri-regex) str)
-        (let ((uri1 (match-string 1 str))
-              (uri2 (match-string 2 str)))
-          (format "<%s> <%s>" uri1 uri2)))
-       ;; CURIE, then URI in parentheses (ontology and ontology version)
-       ((string-match (format "(\\(%s\\) <?\\(%s\\)>?)" curie-regex full-uri-regex) str)
-        (format "%s <%s>" (match-string 1 str) (match-string 2 str)))
-       ;; two CURIEs in parentheses (ontology and ontology version)
-       ((string-match (format "(\\(%s\\) \\(%s\\))" curie-regex curie-regex) str)
-        (format "%s %s" (match-string 1 str) (match-string 2 str)))
-       ;; URN identifier: return as-is if the string is a URN, e.g. <urn:isbn:0943396611>
-       ((string-match "^<urn:[^>]+>$" str) str)
-       ;; URN in parentheses
-       ((string-match "(\\(<urn:[^>]+>\\))" str)
-        (match-string 1 str))
-       (t
-        (if noerror
-            nil
-          (error "Fail! Heading \"%s\" in %s is not well-formed"
-                 str
-                 (org-entry-get-with-inheritance "ID")))))))
+The function =elot-entity-from-header= has moved to =elot-tangling.org= →
+=elot-tangle.el= and is provided by =(require 'elot-tangle)=.
+#+begin_src emacs-lisp :tangle no
+;; elot-entity-from-header is now in elot-tangle.el
 #+end_src
 
 *** Write entity declarations
@@ -766,17 +592,10 @@ annotations in a future improved version, from sub-items.
           (format "## (no %s - hierarchy heading '%s' not found)" owl-type header-id)))))
 #+END_SRC
 *** Update link alist from prefix-table
-#+name: src-prefix-links
-#+begin_src emacs-lisp
-  (defun elot-update-link-abbrev ()
-    "Refresh `org-link-abbrev-alist-local' from current buffer prefixes table."
-    (if (save-excursion (goto-char (point-min))
-                        (re-search-forward "^#[+]name: prefix-table$" nil t))
-        (setq-local org-link-abbrev-alist-local
-                    (mapcar (lambda (x)
-                              (cons (replace-regexp-in-string ":" "" (car x)) (cadr x)))
-            (cl-remove 'hline (org-babel-ref-resolve "prefix-table"))))))
-#+end_src
+The function =elot-update-link-abbrev= has moved to =elot-tangling.org= →
+=elot-tangle.el= and is provided by =(require 'elot-tangle)=.
+The new version scans =elot-headline-hierarchy= instead of resolving a
+named Org table.
 *** Make prefix blocks for omn, sparql, ttl
 #+name: src-prefix-blocks
 #+begin_src emacs-lisp
