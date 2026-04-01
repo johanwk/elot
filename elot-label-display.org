@@ -99,17 +99,13 @@ annotations. /Update/: added also "rdfs:label" to the plist.
 
 #+end_example
 ** Use local variables ~elot-slurp~
+The data variables (~elot-slurp~, ~elot-slurp-global~, ~elot-codelist-ht~,
+~elot-attriblist-ht~) are now declared in =elot-tangle.el= (via
+=elot-tangling.org=), since that is where they are populated.
+
+The display toggle variable remains here, as it is display-specific.
 #+name: src-slurp-local-vars
 #+begin_src emacs-lisp
-  (defvar-local elot-slurp nil
-    "List of resources declared in an ELOT buffer.
-  Each member is a list of curie, label, and plist of attributes.")
-  (defvar elot-slurp-global nil
-    "List of resources retrieved from SPARQL endpoints.")
-  (defvar-local elot-codelist-ht nil
-    "Hashtable holding pairs of curie and label for ELOT label-display.")
-  (defvar-local elot-attriblist-ht nil
-    "Hashtable holding pairs of curie and attribute plist for ELOT label-display.")
   (defvar-local elot-label-display 'no
     "Value says `no' or `yes' to showing labels for RDF resources.")
 #+end_src

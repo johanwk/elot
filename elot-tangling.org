@@ -880,6 +880,23 @@ Returns a list of lists: (URI label (plist of attributes))."
     ;; Reverse once at the end for O(N) performance
     (nreverse result)))
 #+end_src
+*** Variables for slurp data
+These buffer-local variables hold the parsed entity data (populated by
+=elot-slurp-to-vars= below).  They are used by =elot-label-display.el=
+for fontification and lookup.
+
+#+begin_src emacs-lisp
+  (defvar-local elot-slurp nil
+    "List of resources declared in an ELOT buffer.
+  Each member is a list of curie, label, and plist of attributes.")
+  (defvar elot-slurp-global nil
+    "List of resources retrieved from SPARQL endpoints.")
+  (defvar-local elot-codelist-ht nil
+    "Hashtable holding pairs of curie and label for ELOT label-display.")
+  (defvar-local elot-attriblist-ht nil
+    "Hashtable holding pairs of curie and attribute plist for ELOT label-display.")
+#+end_src
+
 *** How to run it
 The following simply replaces ~elot-slurp-entities~ with ~elot-build-slurp~, and it works.
 #+begin_src emacs-lisp
