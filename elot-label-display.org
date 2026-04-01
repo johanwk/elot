@@ -51,7 +51,7 @@ in SPARQL select results.
 ** Require ~elot~ library
 #+name: src-require
 #+begin_src emacs-lisp
-(require 'elot)
+(require 'elot-tangle)
 #+end_src
 *** Declare ~org-link-abbrev-alist-local~ to allow native compile
 This is a safeguard, unclear whether it matters.
