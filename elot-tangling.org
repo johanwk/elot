@@ -1234,46 +1234,74 @@ A top-level interactive function that parses the current buffer, finds all ontol
                 (revert-buffer t t t))))
           (message "Tangled OMN outline to %s" target))))))
 #+end_src
-*** Post-Tangle Prepending
-The post-tangle hook =org-babel-post-tangle-hook= runs inside the /tangled output buffer/, not the Org source buffer. When the file has =omn= source blocks, babel tangles /only those blocks/ to the =.omn= file. That means the hook runs in a buffer containing just the block contents -- the AST-generated outline is not present, and the hook has no access to =elot-headline-hierarchy=.
+*** Post-Tangle: Merge Outline with User OMN Blocks
+The goal is to combine two sources of OMN content into each =.omn= tangle target:
 
-Using =advice-add :after= on =org-babel-tangle= instead runs our code /in the Org source buffer/ after tangling completes, so we have reliable access to the hierarchy. We then open each =.omn= target file, prepend the outline, and save.
+1. *Outline OMN* -- generated programmatically from the AST by =elot-get-ontology-node-omn=
+2. *User OMN blocks* -- arbitrary =#+begin_src omn= blocks that =org-babel-tangle= writes
+
+We use =:around= advice on =org-babel-tangle=.  Before babel runs, we
+delete stale =.omn= files so we can detect whether babel actually wrote
+anything.  After babel runs, we write the outline and append whatever
+babel produced.
 
 #+begin_src emacs-lisp
-(defun elot-tangle-include-outline (&rest _args)
-  "Prepend outline-generated OMN to each tangled .omn file.
-This runs as advice after `org-babel-tangle', in the Org source buffer.
-It reads each .omn tangle target, prepends the AST-generated outline,
-and saves the file."
-  (when (bound-and-true-p elot-headline-hierarchy)
-    (let ((nodes (plist-get elot-headline-hierarchy :children)))
-      (dolist (node nodes)
-        (let ((node-target (plist-get node :tangle-target-omn)))
-          (when node-target
-            (let ((target-full (expand-file-name node-target)))
-              (when (file-exists-p target-full)
-                (let ((outline-omn (elot-get-ontology-node-omn node)))
-                  (unless (string-empty-p outline-omn)
-                    (with-current-buffer (find-file-noselect target-full)
-                      (goto-char (point-min))
-                      (insert outline-omn "\n\n")
-                      (save-buffer)
-                      ;; If the buffer wasn't already open, kill it
-                      )
-                    (message "Prepended outline OMN to %s" node-target)))))))))))
+(defun elot-tangle-around-advice (orig-fn &rest args)
+  "Around advice for `org-babel-tangle' that merges ELOT outline with user OMN.
+ORIG-FN is `org-babel-tangle'; ARGS are its arguments.
+Only activates in buffers where `elot-headline-hierarchy' is set."
+  (if (not (bound-and-true-p elot-headline-hierarchy))
+      ;; Not an ELOT buffer -- just call the original
+      (apply orig-fn args)
+    ;; ELOT buffer: collect targets, delete old files, tangle, then merge
+    (let ((omn-targets nil))
+      ;; 1. Collect .omn tangle targets and delete stale files
+      (dolist (node (plist-get elot-headline-hierarchy :children))
+        (when-let ((target (plist-get node :tangle-target-omn)))
+          (let ((target-full (expand-file-name target)))
+            (push (cons target-full node) omn-targets)
+            (when (file-exists-p target-full)
+              (delete-file target-full)))))
+
+      ;; 2. Let org-babel-tangle run -- writes user omn blocks (if any)
+      (apply orig-fn args)
+
+      ;; 3. For each target, write outline + append user content
+      (dolist (entry omn-targets)
+        (let* ((target-full (car entry))
+               (node        (cdr entry))
+               (outline-omn (elot-get-ontology-node-omn node))
+               (user-omn    (when (file-exists-p target-full)
+                              (with-temp-buffer
+                                (insert-file-contents target-full)
+                                (buffer-string)))))
+          (with-temp-file target-full
+            (insert outline-omn)
+            (when (and user-omn (not (string-empty-p user-omn)))
+              (insert "\n\n" user-omn)))
+          ;; Silently revert any visiting buffer
+          (let ((buf (find-buffer-visiting target-full)))
+            (when buf
+              (with-current-buffer buf
+                (revert-buffer t t t))))
+          (message "Tangled OMN to %s%s" target-full
+                   (if user-omn " (with user blocks)" "")))))))
 #+end_src
 
 *** Hook and Advice Registration
-To ensure that the outline-generated OMN (the "bulk") is included at the top and any manual =omn= blocks are appended at the bottom:
-
-1. ~org-babel-pre-tangle-hook~: Keep running =elot-tangle-buffer-to-omn=. This ensures the =.omn= file is created even if the buffer contains *no* source blocks.
-2. =advice-add :after= on =org-babel-tangle=: Prepend the outline content to each tangled =.omn= file. Unlike a post-tangle hook (which runs in the output buffer), advice runs in the /source/ buffer where =elot-headline-hierarchy= is available.
+Advice is added/removed by =elot-mode= via the hook management functions.
+No top-level side effects here.
 
 #+begin_src emacs-lisp
-(add-hook 'org-babel-pre-tangle-hook #'elot--remember-org-source nil t)
-(add-hook 'org-babel-pre-tangle-hook #'elot-tangle-buffer-to-omn nil t)
-(advice-add 'org-babel-tangle :after #'elot-tangle-include-outline)
+(defun elot-tangle--install-advice ()
+  "Install the around-advice on `org-babel-tangle' for ELOT merging."
+  (advice-add 'org-babel-tangle :around #'elot-tangle-around-advice))
+
+(defun elot-tangle--remove-advice ()
+  "Remove the around-advice on `org-babel-tangle'."
+  (advice-remove 'org-babel-tangle #'elot-tangle-around-advice))
 #+end_src
+
 
 * Provide
 #+begin_src emacs-lisp

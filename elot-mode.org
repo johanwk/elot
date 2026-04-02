@@ -351,7 +351,106 @@ Insert a skeleton with =<ods=.
   ;; end of template 'elot-ont-skeleton'
   ;;
 #+end_src
+**** OWL templates
+***** OWL primitive/non-primitive class, with IOF default annotations
+Insert a class heading with SKOS annotation properties and completion cookies.
+#+name: src-tempo-resource
+#+begin_src emacs-lisp :results none
+  (tempo-define-template "elot-class-skos"
+   '(
+     (org-open-line 1)
+     (make-string (max 3 (org-current-level)) ?*) " "
+     (p "Class label: ") " ("
+     (elot-default-prefix) ":" (p "localname: ") ")" > n
+     " - [ ] skos:definition :: " > n
+     " - [ ] skos:example :: " > )
+   "<ocp"
+   "ELOT class heading with SKOS annotations"
+   'org-tempo-tags)
 
+  (tempo-define-template "elot-property-skos"
+   '((org-open-line 1)
+     (make-string (max 3 (org-current-level)) ?*) " "
+     (p "Property label: ") " ("
+     (elot-default-prefix) ":" (p "localname: ") ")" > n
+     " - [ ] skos:definition :: " > n
+     " - [ ] skos:example :: " > )
+   "<op"
+   "ELOT property heading with SKOS annotations"
+   'org-tempo-tags)
+#+end_src
+**** Code blocks
+#+name: src-tempo-codeblock
+#+begin_src emacs-lisp
+  (tempo-define-template "elot-block-robot-metrics"
+   '(
+     (org-open-line 1) p
+     "#+call: robot-metrics(omnfile=\"" (elot-context-localname) ".omn\") :eval never-export" >
+     (progn (message "Execute blocks with C-c C-c") ""))
+   "<obm"
+   "ELOT ontology metrics from ROBOT"
+   'org-tempo-tags)
+
+  (tempo-define-template "elot-block-sparql-select"
+   '(
+     (org-open-line 1)
+  "#+name: " (p "Select query name: ") > n
+  "#+begin_src sparql :url \"" (elot-context-localname) ".omn\" :eval never-export :exports results
+    select
+    {
+
+    }
+  ,#+end_src" n
+     (progn (message "Execute blocks with C-c C-c") ""))
+   "<obs"
+   "ELOT SPARQL SELECT from OMN "
+   'org-tempo-tags)
+
+  (tempo-define-template "elot-block-sparql-construct"
+   '(
+     (org-open-line 1)
+  "#+name: " (p "Construct query name: ") > n
+  "#+begin_src sparql :url \"" (elot-context-localname) ".omn\" :eval never-export :exports results"
+  " :format ttl :wrap \"src ttl\" :cache yes :post kill-prefixes(data=*this*) :eval never-export
+    construct {
+
+    } {
+
+    }
+  ,#+end_src" n
+     (progn (message "Execute blocks with C-c C-c") ""))
+   "<obc"
+   "ELOT SPARQL CONSTRUCT from OMN "
+   'org-tempo-tags)
+
+  (tempo-define-template "elot-block-rdfpuml-diagram"
+   '(
+     (org-open-line 1)
+     "#+name: rdfpuml:" (p "Name of Turtle source block for diagram: " ttl-source) > n
+     "#+call: rdfpuml-block(ttlblock=\"" (s ttl-source) "\") :eval never-export" > n
+     "#+caption: " (p "Caption: ") > n
+     "#+results: rdfpuml:" (s ttl-source) > n
+     (progn (message "Execute blocks with C-c C-c") ""))
+   "<obm"
+   "ELOT ontology metrics from ROBOT"
+   'org-tempo-tags)
+#+end_src
+**** Table of resources to generate outline
+#+name: src-table-of-resources
+#+begin_src emacs-lisp
+  (tempo-define-template "elot-table-of-resources"
+   '(
+     (org-open-line 1)
+     "#+name: tbl:" (p "Name of resource table: " tblname) > n
+     "| id  | super | rdfs:label |" > n
+     "|-----+-------+------------|" > n
+     "| " (elot-default-prefix) ": | " (elot-default-prefix) ":   |            |" > n
+     (progn (previous-line) (forward-word)
+            (message "Insert outline with M-x elot-headings-from-table") ""))
+   "<otr"
+   "ELOT table of resources"
+   'org-tempo-tags)
+#+end_src
 ** Table to Outline Utility
 :PROPERTIES:
 :CUSTOM_ID: table-to-outline-utility
@@ -535,7 +634,11 @@ replaces the ad-hoc =local-set-key= calls in =elot-setup-org-keybindings=.
       (define-key map (kbd "S-<f5>") #'elot-hydra/body)
       map)
     "Keymap active when `elot-mode' is enabled.")
+#+end_src
 
+** Menu with ~easy-menu~
+#+name: src-elot-easymenu
+#+begin_src emacs-lisp
   (easy-menu-define elot-menu elot-mode-map
     "ELOT Ontology Authoring Menu"
     '("ELOT"
@@ -546,12 +649,10 @@ replaces the ad-hoc =local-set-key= calls in =elot-setup-org-keybindings=.
       ["Import OWL ontology" elot-open-owl :active (fboundp 'elot-open-owl)]
       "---"
       ["Insert Existing Resource ID" elot-label-lookup :active (fboundp 'elot-label-lookup)]
-      ["Insert Primitive Class template" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-class-iof-primitive))
-       :active (fboundp 'tempo-template-elot-class-iof-primitive)]
-      ["Insert Defined Class template" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-class-iof-defined))
-       :active (fboundp 'tempo-template-elot-class-iof-defined)]
-      ["Insert Property template" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-property-iof))
-       :active (fboundp 'tempo-template-elot-property-iof)]
+      ["Insert Class heading" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-class-skos))
+       :active (fboundp 'tempo-template-elot-class-skos)]
+      ["Insert Property heading" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-property-skos))
+       :active (fboundp 'tempo-template-elot-property-skos)]
       "---"
       ["Jump to Resource Headline (M-.)" xref-find-definitions t]
       ["Find References to Resource (M-?)" xref-find-references t]
@@ -559,7 +660,7 @@ replaces the ad-hoc =local-set-key= calls in =elot-setup-org-keybindings=.
       ["Toggle Label-Display (F5)" elot-toggle-label-display :active (fboundp 'elot-toggle-label-display)]
       ["Refresh Label-Display Index" elot-label-display-setup :active (fboundp 'elot-label-display-setup)]
       "---"
-      ["Insert Table of Resources" tempo-template-elot-table-of-resources :active (fboundp 'tempo-template-elot-table-of-resources)]
+      ["Insert Table declaring Resources" tempo-template-elot-table-of-resources :active (fboundp 'tempo-template-elot-table-of-resources)]
       ["Generate Outline from Table" elot-headings-from-table :active (fboundp 'elot-headings-from-table)]
       "---"
       ["Insert SPARQL Select Block" tempo-template-elot-block-sparql-select :active (fboundp 'tempo-template-elot-block-sparql-select)]
@@ -595,7 +696,8 @@ hooks and never removed them.
     (add-hook 'after-save-hook #'elot-update-link-abbrev nil t)
     (add-hook 'after-save-hook #'elot-slurp-to-vars nil t)
     ;; xref: register the ELOT backend for M-. / M-?
-    (add-hook 'xref-backend-functions #'elot-xref-backend nil t))
+    (add-hook 'xref-backend-functions #'elot-xref-backend nil t)
+    (elot-tangle--install-advice))
 
   (defun elot-mode--remove-hooks ()
     "Remove buffer-local hooks added by `elot-mode--add-hooks'."
@@ -605,7 +707,8 @@ hooks and never removed them.
     (remove-hook 'org-babel-after-execute-hook #'org-redisplay-inline-images t)
     (remove-hook 'after-save-hook #'elot-update-link-abbrev t)
     (remove-hook 'after-save-hook #'elot-slurp-to-vars t)
-    (remove-hook 'xref-backend-functions #'elot-xref-backend t))
+    (remove-hook 'xref-backend-functions #'elot-xref-backend t)
+    (elot-tangle--remove-advice))
 #+end_src
 
 ** Enable and disable
