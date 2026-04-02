@@ -1,8 +1,7 @@
 ;;; elot-lint.el  -*- lexical-binding: t; -*-
 (require 'org-element)
 (require 'org-lint)
-(require 'ox)
-(require 'elot)
+(require 'elot-tangle)
 (require 'elot-label-display)
 
 (defun elot--resourcedefs-here-p ()
@@ -13,15 +12,13 @@
   "Return t when point is inside any :resourcedefs: yes section."
   (string-equal (org-entry-get-with-inheritance "resourcedefs") "yes"))
 
-(declare-function elot-entity-from-header "elot")
-(declare-function elot-unprefix-uri "elot")
-(declare-function elot-context-type "elot")
-(declare-function elot-context-localname "elot")
-(declare-function elot-default-prefix "elot")
-
-(defvar elot-slurp)
-(defvar elot-omn-all-keywords)
-(defvar elot-owl-builtin-resources)
+(declare-function elot-entity-from-header "elot-tangle")
+(declare-function elot-unprefix-uri "elot-tangle")
+(declare-function elot-context-type "elot-tangle")
+(declare-function elot-context-localname "elot-tangle")
+(declare-function elot-default-prefix "elot-tangle")
+(declare-function elot-governing-hierarchy "elot-tangle")
+(declare-function elot-update-link-abbrev "elot-tangle")
 
 ;; A function that goes in the ELOT menu. First we refresh elot-slurp
 ;; with elot-label-display-setup, to pick up recent changes that may
