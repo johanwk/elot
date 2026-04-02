@@ -33,6 +33,7 @@
 
 ;;; Code:
 
+;; No external dependencies -- ht/dash removed; using built-in gethash.
 (require 'elot-tangle)
 
 (defvar org-link-abbrev-alist-local)
@@ -51,8 +52,8 @@ and return position.  If not found, return nil and leave point unchanged."
       (goto-char pos))
     pos))
 
-(defvar-local elot-label-display 'no
-  "Value says `no' or `yes' to showing labels for RDF resources.")
+(defvar-local elot-label-display 'off
+  "Value says `off' or `on' to showing labels for RDF resources.")
 
 (defun elot--strip-lang-tag (s)
   "Strip quotes and language/datatype tags from string S like \"abc\"@en."
@@ -61,10 +62,10 @@ and return position.  If not found, return nil and leave point unchanged."
     s))
 (defun elot-codelist-id-label (idstring)
   "Given curie IDSTRING, return label if found."
-  (elot--strip-lang-tag (ht-get elot-codelist-ht idstring)))
+  (elot--strip-lang-tag (gethash idstring elot-codelist-ht)))
 (defun elot-attriblist-label-value (idstring prop)
   "Given label IDSTRING and PROP, return puri if found."
-  (plist-get (ht-get elot-attriblist-ht idstring) prop 'equal))
+  (plist-get (gethash idstring elot-attriblist-ht) prop 'equal))
 
 (defvar elot-codelist-fontify-regexp
   "\\<\\([-a-z_A-Z0-9]*\\):\\([a-z_A-Z0-9.-]*\\)\\>"
@@ -288,7 +289,7 @@ Output to OUT-FILE as an elisp list."
 
 (defun elot-label-lookup-annotations (label)
   "Helper function for `elot-label-lookup' provides preview string for LABEL."
-  (let* ((attrib-plist (ht-get elot-label-lookup-tmp-attriblist-ht label))
+  (let* ((attrib-plist (gethash label elot-label-lookup-tmp-attriblist-ht))
          (rdf-type (plist-get attrib-plist "rdf:type" 'string=))
          (prefix (car (split-string (plist-get attrib-plist "puri" 'string=) ":")))
          (definition (string-replace "\n" " " (string-limit

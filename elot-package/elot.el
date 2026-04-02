@@ -43,6 +43,7 @@
 ;;; Code:
 
 ;; [[file:../elot-defs.org::src-require][src-require]]
+(require 'elot-tangle) ; AST parsing, OMN generation, ROBOT post-processing
 (require 'ob-lob) ; Library of Babel
 (require 'ox) ; export functions
 (require 'ol) ; link functions
@@ -66,205 +67,6 @@
 ;; src-defvar ends here
 
 ;; [[file:../elot-defs.org::src-settings-externals][src-settings-externals]]
-(defcustom elot-robot-jar-path (expand-file-name "~/bin/robot.jar")
-  "Path to the robot.jar file."
-  :group 'elot
-  :version "29.2"
-  :type 'string)
-(defvar elot-robot-command-str
-  (concat "java -jar " elot-robot-jar-path))
-(defcustom elot-exporter-jar-path (expand-file-name "~/bin/elot-exporter.jar")
-  "Path to the elot-exporter.jar file."
-  :group 'elot
-  :version "29.2"
-  :type 'string)
-(defvar elot-exporter-command-str
-  (concat "java -jar " elot-exporter-jar-path))
-(defvar elot-last-org-source nil
-  "Path to the last Org-mode file that generated an OMN file.")
-(defun elot--remember-org-source ()
-  "Remember the current Org file for use after tangling."
-  (setq elot-last-org-source (buffer-file-name)))
-(defun elot-robot-command (cmd)
-  "Execute ROBOT command CMD using `shell-command'.
-  Check whether `elot-robot-jar-path` is set and points to an existing file.
-  It not set, return an error."
-  (if (or (string= elot-robot-jar-path "") (not (file-exists-p elot-robot-jar-path)))
-      (error "ROBOT not found.  Set elot-robot-jar-path with M-x customize-variable"))
-  (shell-command (concat elot-robot-command-str " " cmd)))
-
-;; Helper function for synchronous batch execution
-(defun elot-robot-omn-to-ttl--batch (omnfile output-file command-args)
-  "Perform synchronous ROBOT conversion for batch mode.
-Handles process execution via `call-process`, output parsing on error,
-and calls `kill-emacs` on failure.
-OMNFILE, OUTPUT-FILE are file paths. COMMAND-ARGS is the full
-list of arguments for the process, starting with \"java\"."
-  (let* ((output-buffer (generate-new-buffer "*ROBOT Output (Batch)*"))
-         (process-connection-type nil) ; Important for batch stability
-         (exit-code nil))
-    (message "[elot-robot-omn-to-ttl Batch] Executing synchronously: %s" (mapconcat #'shell-quote-argument command-args " "))
-    (unwind-protect ; Ensure buffer cleanup
-        (progn
-          ;; Execute: program is first element, rest are args
-          (setq exit-code (apply #'call-process (car command-args) nil output-buffer t (cdr command-args)))
-          (message "[elot-robot-omn-to-ttl Batch] ROBOT process finished with exit code: %d" exit-code)
-
-          (if (= exit-code 0)
-              ;; Success Case (Batch)
-              (message "ROBOT: Conversion of %s successful: %s" omnfile output-file)
-
-            ;; Failure Case (Batch)
-            (progn
-              (message "ROBOT: Conversion failed (exit code %d)." exit-code)
-              ;; Try to extract specific error, suppress full output
-              (with-current-buffer output-buffer
-                (goto-char (point-min))
-                (if (and (re-search-forward ; Look for specific parser error
-                          "^Parser: org\\.semanticweb\\.owlapi\\.manchestersyntax\\.parser\\.ManchesterOWLSyntaxOntologyParser" nil t)
-                         (re-search-forward "Encountered"))
-                    ;; Found specific error - extract and print ONLY that
-                    (let* ((start (line-beginning-position))
-                           (end (or (and (re-search-forward
-                                          "org\\.semanticweb\\.owlapi\\.manchestersyntax\\.parser\\.ManchesterOWLSyntaxOntologyParser" nil t)
-                                         (line-beginning-position))
-                                    (point-max)))
-                           (error-text (buffer-substring-no-properties start end)))
-                      (message "ROBOT parse error detected:\n%s" error-text))
-                  ;; Didn't find specific error - print generic failure message
-                  (message "ROBOT failed. Full output suppressed. No specific parse error found.")))
-              ;; Exit Emacs directly with non-zero status using kill-emacs
-              (kill-emacs 1))) ; <--- Signal failure without Elisp error
-          )
-      ;; Cleanup (called by unwind-protect)
-      (when (buffer-live-p output-buffer)
-        (kill-buffer output-buffer)))))
-
-;; Helper function for asynchronous interactive execution
-(defun elot-robot-omn-to-ttl--interactive (omnfile output-file command-args)
-  "Perform asynchronous ROBOT conversion for interactive mode.
-Handles process execution via `make-process` and sets up a sentinel
-for feedback and error handling (including potential jumping).
-OMNFILE, OUTPUT-FILE are file paths. COMMAND-ARGS is the full
-list of arguments for the process, starting with \"java\"."
-  (let* ((buffer-name "*ROBOT Errors (Interactive)*")
-         (buffer (get-buffer-create buffer-name)))
-    (message "[elot-robot-omn-to-ttl Interactive] Starting asynchronous process.")
-    (with-current-buffer buffer (erase-buffer))
-    (make-process
-     :name "robot-convert-interactive"
-     :buffer buffer
-     :command command-args ; Pass the full list including "java"
-     :stderr buffer
-     :noquery t
-     :sentinel
-     ;; Sentinel logic - suitable for interactive use
-     (lambda (proc _event)
-       (when (not (process-live-p proc))
-         (if (= (process-exit-status proc) 0)
-             (message "ROBOT: Conversion successful: %s" output-file)
-           ;; --- Failure Case (Interactive) ---
-           (with-current-buffer buffer
-             (goto-char (point-min))
-             (if (and (re-search-forward
-                       "^Parser: org\\.semanticweb\\.owlapi\\.manchestersyntax\\.parser\\.ManchesterOWLSyntaxOntologyParser" nil t)
-                      (re-search-forward "Encountered"))
-                 ;; Found specific error - show it and try to jump
-                 (let* ((start (line-beginning-position))
-                        (end (or (and (re-search-forward
-                                       "org\\.semanticweb\\.owlapi\\.manchestersyntax\\.parser\\.ManchesterOWLSyntaxOntologyParser" nil t)
-                                      (line-beginning-position))
-                                 (point-max)))
-                        (error-text (buffer-substring-no-properties start end))
-                        ;; Attempt parsing location, ignore errors if it fails
-                        (loc (ignore-errors (elot--parse-robot-error-location error-text))))
-                   (message "ROBOT parse error:\n%s" error-text)
-                   (when loc ; Only jump if location parsing worked
-                     (elot--jump-to-omn-error omnfile (car loc) (cadr loc))
-                     (elot--jump-to-org-heading-for-identifier omnfile (car loc))))
-               ;; Didn't find specific error - show generic message & buffer name
-               (message "ROBOT failed, but no parse error could be extracted. See buffer %s." buffer-name))
-             ;; Optional: Display the error buffer for the user interactively
-             ;; (display-buffer buffer)
-             )))))))
-
-;; Main dispatcher function
-(defun elot-robot-omn-to-ttl (omnfile)
-  "Convert OMNFILE (Manchester Syntax) to Turtle using ROBOT.
-Dispatches to synchronous batch or asynchronous interactive helpers.
-Checks for `elot-robot-jar-path`."
-
-  ;; --- Common Setup ---
-  (message "[elot-robot-omn-to-ttl] Starting conversion for: %s (Mode: %s)"
-           omnfile (if noninteractive "Batch" "Interactive"))
-  (unless (and (boundp 'elot-robot-jar-path) elot-robot-jar-path (file-exists-p elot-robot-jar-path))
-    (error "elot-robot-jar-path is not set or invalid: %s" elot-robot-jar-path))
-
-  (let* ((output-file (concat (file-name-sans-extension omnfile) ".ttl"))
-         ;; Base command arguments list (suitable for both helpers)
-         (command-args (list "java" "-jar" elot-robot-jar-path
-                             "convert" "-vvv" ; Keep verbose ROBOT output for parsing
-                             "--input" omnfile
-                             "--output" output-file)))
-
-    (message "[elot-robot-omn-to-ttl] Target ttlfile: %s" output-file)
-
-    ;; --- Dispatch based on mode ---
-    (if noninteractive
-        (elot-robot-omn-to-ttl--batch omnfile output-file command-args)
-      (elot-robot-omn-to-ttl--interactive omnfile output-file command-args))))
-
-(defun elot--parse-robot-error-location (text)
-  "Extract (line column) from ROBOT error TEXT.  Return list of integers or nil."
-  (when (string-match "Line \\([0-9]+\\) column \\([0-9]+\\)" text)
-    (list (string-to-number (match-string 1 text))
-          (string-to-number (match-string 2 text)))))
-
-(defun elot--jump-to-omn-error (omnfile line col)
-  "Open OMNFILE and move point to LINE and COL."
-  (let ((buf (find-file-other-window omnfile)))
-    (with-current-buffer buf
-      (goto-char (point-min))
-      (forward-line (1- line))
-      (forward-char (1- col))
-      ;;(pulse-momentary-highlight-one-line (point))
-      )))
-
-(defun elot--jump-to-org-heading-for-identifier (omnfile line)
-  "From OMNFILE and error LINE, search upward for a declaration.
-  Jump to the Org-mode heading defining the identifier found."
-  (let ((identifier nil))
-    (save-excursion
-      (with-current-buffer (find-file-noselect omnfile)
-        (goto-char (point-min))
-        (forward-line (1- line))
-        (end-of-line)
-        (when (re-search-backward "^[^ \t]" nil t)
-          (let ((line-text (buffer-substring-no-properties
-                            (line-beginning-position) (line-end-position))))
-            (when (string-match "^\\([-A-Za-z]+\\):[ \t]+\\(.+\\)" line-text)
-              (setq identifier (match-string 2 line-text)))))))
-    (when (and identifier elot-last-org-source (file-exists-p elot-last-org-source))
-      (let ((buf (find-file-other-window elot-last-org-source)))
-        (with-current-buffer buf
-          (goto-char (point-min))
-          (if (re-search-forward
-               (format "^\\(?:\\*+ .*\\b%s\\b\\|.*::.*%s\\)"
-                       (regexp-quote identifier)
-                       (regexp-quote identifier))
-               nil t)
-              (progn
-                (beginning-of-line)
-                ;;(pulse-momentary-highlight-one-line (point))
-                ;;(message "Parse error traced to heading: %s" (match-string 0))
-                )
-            (message "Could not find Org heading for: %s" identifier)))))))
-(defun elot-tangled-omn-to-ttl ()
-  "After tangling to OMN, call ROBOT to convert to Turtle."
-  (let* ((omnfile (buffer-file-name))  ;; will run in the tangled buffer
-         (omn-p (string-match-p ".omn$" omnfile)))
-    (if omn-p
-        (elot-robot-omn-to-ttl omnfile))))
 (defcustom elot-default-image-path "./images/"
   "ELOT default output directory for generated images."
   :group 'elot
@@ -331,48 +133,6 @@ JSON-LD, OWL Functional Syntax, or Manchester Syntax."
     (url-copy-file url dest-file t)))
 ;; Open existing OWL files or online ontologies:1 ends here
 
-;; [[file:../elot-defs.org::src-owl-builtins][src-owl-builtins]]
-(defvar elot-owl-builtin-resources
-  '("owl:Thing" "owl:Nothing" "xsd:string" "xsd:boolean" "xsd:decimal" "xsd:integer"
-    "xsd:float" "xsd:double" "xsd:dateTime" "xsd:time" "xsd:date" "xsd:gYear"
-    "xsd:gMonth" "xsd:gDay" "xsd:gYearMonth" "xsd:gMonthDay" "xsd:hexBinary"
-    "xsd:base64Binary" "xsd:anyURI" "xsd:normalizedString" "xsd:token" "xsd:language"
-    "xsd:Name" "xsd:NCName" "xsd:NMTOKEN" "rdf:PlainLiteral")
-  "List of built-in OWL and XSD resources that are always considered known.")
-;; src-owl-builtins ends here
-
-;; [[file:../elot-defs.org::src-omn-keywords][src-omn-keywords]]
-(defvar elot-omn-property-keywords
-  '(
-    "EquivalentTo"
-    "SubClassOf"
-    "Characteristics"
-    "DisjointWith"
-    "DisjointUnionOf"
-    "Domain"
-    "Range"
-    "InverseOf"
-    "SubPropertyOf"
-    "SubPropertyChain"
-    "SameAs"
-    "DifferentFrom"
-    "Types"
-    "Facts"
-    "HasKey"
-    "Import"))
-(defvar elot-omn-misc-keywords
-  '("DisjointClasses"
-    "EquivalentClasses"
-    "DisjointProperties"
-    "EquivalentProperties"
-    "SameIndividual"
-    "DifferentIndividuals"
-    "Rule"))
-(defvar elot-omn-all-keywords
-  (append elot-omn-property-keywords elot-omn-misc-keywords)
-  "List of all Manchester syntax keywords, both property and misc keywords.")
-;; src-omn-keywords ends here
-
 ;; [[file:../elot-defs.org::src-omn-latex-tt][src-omn-latex-tt]]
 (defun elot-latex-filter-omn-item (text backend info)
   "Format OWL Manchester Syntax content TEXT in description lists.
@@ -403,92 +163,7 @@ The context INFO is ignored."
              'elot-latex-filter-omn-item)
 ;; src-omn-latex-tt ends here
 
-;; [[file:../elot-defs.org::src-context-info][src-context-info]]
-(defun elot-context-type ()
-  "Retrieve value of property ELOT-context-type for a governing heading.
-This will return \"ontology\" if point is under a heading that
-declares an ontology."
-  (org-entry-get-with-inheritance "ELOT-context-type"))
-(defun elot-context-localname ()
-  "Retrieve value of property ELOT-context-localname for a governing heading.
-This will return the localname of the ontology
-if point is under a heading that declares an ontology."
-  (org-entry-get-with-inheritance "ELOT-context-localname"))
-(defun elot-default-prefix ()
-  "Retrieve value of property ELOT-default-prefix for a governing heading.
-This will return the default prefix for ontology resources
-if point is under a heading that declares an ontology."
-  (org-entry-get-with-inheritance "ELOT-default-prefix"))
-(defun elot-governing-hierarchy ()
-  "Return the governing hierarchy ID if inside a hierarchy section, or nil."
-  (let ((this-ID (org-entry-get-with-inheritance "ID")))
-    (when (and this-ID
-               (string-match-p "-hierarchy$" this-ID))
-      this-ID)))
-;; src-context-info ends here
-
-;; [[file:../elot-defs.org::src-looking-at][src-looking-at]]
-(defun elot-at-ontology-heading ()
-  "Return TRUE if point is in a heading that declares ontology."
-  (let ((id (or (org-entry-get (point) "ID") "")))
-   (string-match "ontology-declaration" id)))
-(defun elot-in-class-tree ()
-  "Return TRUE if point is a class hierarchy heading."
-  (string-match-p "class-hierarchy" (elot-governing-hierarchy)))
-(defun elot-in-property-tree ()
-  "Return TRUE if point is a property hierarchy heading."
-  (string-match-p "property-hierarchy" (elot-governing-hierarchy)))
-;; src-looking-at ends here
-
 ;; [[file:../elot-defs.org::src-desc-lists][src-desc-lists]]
-(defun elot-org-elt-exists (x elt)
-  "Return a list of elements of type ELT extracted from X.
-Uses `org-element-map` to collect matching elements.
-The function is used to check whether the list contains ELT."
-  (org-element-map x elt #'identity))
-(defun elot-org-elt-item-tag-str (x)
-  "For an item X in an `org-element-map', return the item tag."
-  (if (org-element-property :tag x)
-      (substring-no-properties (org-element-interpret-data (org-element-property :tag x)))))
-(defun elot-meta-annotation-tag-p (tag)
-  "Return non-nil if TAG is a recognizable URI."
-  (and tag
-       (stringp tag)
-       (let ((u (elot-unprefix-uri tag org-link-abbrev-alist-local t)))
-         (and (stringp u)
-              (string-match-p "^<" u)))))
-(defun elot-org-elt-item-pars-str (x)
-  "For an item X in an `org-element-map', return the paragraphs as one string.
-Stops at the first nested description list item that has a recognizable URI tag,
-so meta-annotations are excluded from the literal text."
-  (let ((result nil))
-    (catch 'stop
-      (dolist (child (org-element-contents x))
-        (let ((type (car child)))
-          (cond
-           ((eq type 'paragraph)
-            (push (substring-no-properties (org-element-interpret-data child)) result))
-           ((eq type 'plain-list)
-            (let ((sub-result nil))
-              (dolist (subitem (org-element-contents child))
-                (let ((tag (elot-org-elt-item-tag-str subitem)))
-                  (if (elot-meta-annotation-tag-p tag)
-                      (progn
-                        (when sub-result
-                          (push (string-join (nreverse sub-result) "") result))
-                        (throw 'stop t))
-                    (push (substring-no-properties (org-element-interpret-data subitem)) sub-result))))
-              (when sub-result
-                (push (concat (string-join (nreverse sub-result) "")
-                              (make-string (or (org-element-property :post-blank child) 0) ?\n))
-                      result))))
-           (t
-            (push (substring-no-properties (org-element-interpret-data child)) result))))))
-    (string-trim-right (string-join (nreverse result) ""))))
-(defun elot-org-elt-item-str (x)
-  "For X in an `org-element-map', return pair of strings (tag, paragraph content)."
-  (list (elot-org-elt-item-tag-str x) (elot-org-elt-item-pars-str x)))
-
 (defun elot-org-descriptions-in-section-helper ()
   "Return all description list items as pairs in a list.
 This function is called from `elot-org-descriptions-in-section' after
@@ -588,68 +263,6 @@ repeated calls to `org-element-parse-buffer'."
 ;; src-desc-lists ends here
 
 ;; [[file:../elot-defs.org::src-puri-expand][src-puri-expand]]
-(defconst elot-puri-re 
-  "^\\([a-zA-Z][-a-zA-Z0-9_.]*\\|\\):\\([-[:word:]_./]*\\)$")
-
-(defun elot-unprefix-uri (puri abbrev-alist &optional noerror)
-  "Replace prefix in PURI with full form from ABBREV-ALIST, if there's a match."
-  (if (eq abbrev-alist nil) puri
-    (if (string-match elot-puri-re puri)
-        (let* ((this-prefix (match-string-no-properties 1 puri))
-               (this-localname (match-string-no-properties 2 puri))
-               (this-ns (cdr (assoc this-prefix abbrev-alist))))
-          (if this-ns
-              (concat "<" this-ns this-localname ">")
-            (if noerror
-                nil
-              ;;(error "Fail! Prefix \"%s\" is not defined" this-prefix)
-              ;; tentatively just let the raw value through
-              puri)))
-          puri)))
-
-(defun elot-annotation-string-or-uri (str)
-  "Expand STR to be used as an annotation value in Manchester Syntax.
-Expand uri, or return number, or wrap in quotes."
-  ;; maybe there's macros in the string, expand them
-  (if (string-match "{{{.+}}}" str)
-      (let ((omt org-macro-templates))
-        (with-temp-buffer (org-mode)
-                          (insert str) (org-macro-replace-all omt)
-                          (setq str (buffer-string)))))
-  (cond
-   ;; a number -- return the string
-   ((string-match "^[[:digit:]]+[.]?[[:digit:]]*$" str)
-    (concat "  " str))
-   ;; a bare URI, which org-mode wraps in double brackets -- wrap in angles
-   ((string-match "^[[][[]\\(http[^ ]*\\)[]][]]$" str)
-    (concat "  <" (match-string 1 str) ">"))
-   ;; a bare URI, but no double brackets -- wrap in angles
-   ((string-match "^\\(http[^ ]*\\)$" str)
-    (concat "  <" (match-string 1 str) ">"))
-   ;; a bare URI, in angles
-   ((string-match "^\\(<http[^ ]*>\\)$" str)
-    (concat "  " (match-string 1 str)))
-   ;; a bare URN, in angles
-   ((string-match "^\\(<urn:[^>]+>\\)$" str)
-    (concat "  " (match-string 1 str)))
-   ;; a URN without angles, explicitly treat as xsd:string
-   ((string-match "^\\(urn:uuid[^ ]+\\)$" str)
-    (concat "  \"" (match-string 1 str) "\"^^xsd:string"))
-   ;; true -- make it an explicit boolean
-   ((string-match "^true$" str) " \"true\"^^xsd:boolean")
-   ;; false -- make it an explicit boolean
-   ((string-match "^false$" str) " \"false\"^^xsd:boolean")
-   ;; string with datatype -- return unchanged
-   ((string-match "^\".*\"\\^\\^[-_[:alnum:]]*:[-_[:alnum:]]+$" str)
-    (concat "  " str))
-   ;; not a puri -- normal string, wrap in quotes
-   ((equal str (elot-unprefix-uri str org-link-abbrev-alist-local))
-    (if (string-match "\"\\(.*\n\\)*.*\"@[a-z]+" str)
-        (concat " " str)
-      (concat "  \"" (replace-regexp-in-string "\"" "\\\\\"" str) "\"")))
-   ;; else, a puri -- wrap in angles
-   (t (concat "  " (elot-unprefix-uri str org-link-abbrev-alist-local :noerror)))))
-
 (defun elot-omn-restriction-string (str)
  "STR is wanted as an OMN value.  Strip any meta-annotations, or return unchanged."
  str)
@@ -680,55 +293,6 @@ Note, you can always (goto-char (point-min)) to collect all siblings."
                                ret))))
              (org-goto-sibling)))
     (nreverse ret)))
-
-(defun elot-entity-from-header (str &optional noerror)
-  "Given a heading text STR, return the identifier it declares.
-
-The returned value is either
-  - a CURIE (e.g. \"ex:Apple\"), or
-  - a full URI wrapped in \"<>\" (e.g. \"<http://example.org/Apple>\"), or
-  - a composite string like \"ex:Ont <http://…/0.9>\" for ontology/version
-    pairs.
-
-If the heading contains *no* recognisable identifier and NOERROR is
-non-nil, return NIL.  Otherwise raise an error."
-  (let* ((curie-regex "\\(?:[a-zA-Z][-a-zA-Z0-9_.]*\\|\\):\\(?:[-[:word:]_./]*\\)")
-         (full-uri-regex "http[s]?://[-[:alnum:]._~:/?#\\@!$&'()*+,;=%]*"))
-    (cond
-     ;; single URI, beginning of line
-     ((string-match (format "^<?\\(%s\\)>?" full-uri-regex) str)
-      (format "<%s>" (match-string 1 str)))
-     ;; single URI in parentheses
-     ((string-match (format "(<?\\(%s\\)>?)" full-uri-regex) str)
-      (format "<%s>" (match-string 1 str)))
-     ;; CURIE, beginning of line
-     ((string-match (format "^\\(%s\\)" curie-regex) str)
-      (match-string 1 str))
-     ;; CURIE in parentheses
-     ((string-match (format "(\\(%s\\))" curie-regex) str)
-      (match-string 1 str))
-     ;; two URIs in parentheses (ontology and ontology version)
-     ((string-match (format "(<?\\(%s\\)>? <?\\(%s\\)>?)" full-uri-regex full-uri-regex) str)
-      (let ((uri1 (match-string 1 str))
-            (uri2 (match-string 2 str)))
-        (format "<%s> <%s>" uri1 uri2)))
-     ;; CURIE, then URI in parentheses (ontology and ontology version)
-     ((string-match (format "(\\(%s\\) <?\\(%s\\)>?)" curie-regex full-uri-regex) str)
-      (format "%s <%s>" (match-string 1 str) (match-string 2 str)))
-     ;; two CURIEs in parentheses (ontology and ontology version)
-     ((string-match (format "(\\(%s\\) \\(%s\\))" curie-regex curie-regex) str)
-      (format "%s %s" (match-string 1 str) (match-string 2 str)))
-     ;; URN identifier: return as-is if the string is a URN, e.g. <urn:isbn:0943396611>
-     ((string-match "^<urn:[^>]+>$" str) str)
-     ;; URN in parentheses
-     ((string-match "(\\(<urn:[^>]+>\\))" str)
-      (match-string 1 str))
-     (t
-      (if noerror
-          nil
-        (error "Fail! Heading \"%s\" in %s is not well-formed"
-               str
-               (org-entry-get-with-inheritance "ID")))))))
 ;; src-heading-to-list ends here
 
 ;; [[file:../elot-defs.org::src-resource-declare][src-resource-declare]]
@@ -898,17 +462,6 @@ and accordingly for `object-property', `data-property', and
         (message "ELOT: Warning - %s heading '%s' not found, skipping declarations" owl-type header-id)
         (format "## (no %s - hierarchy heading '%s' not found)" owl-type header-id)))))
 ;; src-resource-declare ends here
-
-;; [[file:../elot-defs.org::src-prefix-links][src-prefix-links]]
-(defun elot-update-link-abbrev ()
-  "Refresh `org-link-abbrev-alist-local' from current buffer prefixes table."
-  (if (save-excursion (goto-char (point-min))
-                      (re-search-forward "^#[+]name: prefix-table$" nil t))
-      (setq-local org-link-abbrev-alist-local
-                  (mapcar (lambda (x)
-                            (cons (replace-regexp-in-string ":" "" (car x)) (cadr x)))
-          (cl-remove 'hline (org-babel-ref-resolve "prefix-table"))))))
-;; src-prefix-links ends here
 
 ;; [[file:../elot-defs.org::src-prefix-blocks][src-prefix-blocks]]
 (defun elot-prefix-block-from-alist (prefixes format)
@@ -1831,7 +1384,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ** " (s ontlocalname) " ontology (" (s ontprefix) ":" (s ontlocalname) " " (s ontprefix) ":" (s ontlocalname) "/0.0)
 :PROPERTIES:
 :ID:       " (s ontlocalname) "-ontology-declaration
-:resourcedefs: yes
+  :resourcedefs: yes
 :END:
  # - Import :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/
  - owl:versionInfo :: 0.0 start of " (s ontlocalname) "
@@ -1847,29 +1400,29 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ** Datatypes
 :PROPERTIES:
 :ID:       " (s ontlocalname) "-datatypes
-:resourcedefs: yes
+  :resourcedefs: yes
 :END:
 ** Classes
 :PROPERTIES:
 :ID:       " (s ontlocalname) "-class-hierarchy
-:resourcedefs: yes
+  :resourcedefs: yes
 :END:
 *** My class (" (s resprefix) ":MyClass)
  - rdfs:comment :: Leave a comment here
 ** Object properties
 :PROPERTIES:
 :ID:       " (s ontlocalname) "-object-property-hierarchy
-:resourcedefs: yes
+  :resourcedefs: yes
 :END:
 ** Data properties
 :PROPERTIES:
 :ID:       " (s ontlocalname) "-data-property-hierarchy
-:resourcedefs: yes
+  :resourcedefs: yes
 :END:
 ** Annotation properties
 :PROPERTIES:
 :ID:       " (s ontlocalname) "-annotation-property-hierarchy
-:resourcedefs: yes
+  :resourcedefs: yes
 :END:
 *** owl:versionInfo
 *** dcterms:title
@@ -1905,7 +1458,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 ** Individuals
 :PROPERTIES:
 :ID:       " (s ontlocalname) "-individuals
-:resourcedefs: yes
+  :resourcedefs: yes
 :END:
 "
 (progn (elot-update-link-abbrev)

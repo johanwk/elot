@@ -61,8 +61,49 @@
   (append elot-omn-property-keywords elot-omn-misc-keywords)
   "List of all Manchester syntax keywords, both property and misc keywords.")
 
+(defvar elot-owl-builtin-resources
+  '("owl:Thing" "owl:Nothing" "xsd:string" "xsd:boolean" "xsd:decimal" "xsd:integer"
+    "xsd:float" "xsd:double" "xsd:dateTime" "xsd:time" "xsd:date" "xsd:gYear"
+    "xsd:gMonth" "xsd:gDay" "xsd:gYearMonth" "xsd:gMonthDay" "xsd:hexBinary"
+    "xsd:base64Binary" "xsd:anyURI" "xsd:normalizedString" "xsd:token" "xsd:language"
+    "xsd:Name" "xsd:NCName" "xsd:NMTOKEN" "rdf:PlainLiteral")
+  "List of built-in OWL and XSD resources that are always considered known.")
+
 (defconst elot-puri-re 
   "^\\([a-zA-Z][-a-zA-Z0-9_.]*\\|\\):\\([-[:word:]_./]*\\)$")
+
+(defun elot-context-type ()
+  "Retrieve value of property ELOT-context-type for a governing heading.
+This will return \"ontology\" if point is under a heading that
+declares an ontology."
+  (org-entry-get-with-inheritance "ELOT-context-type"))
+(defun elot-context-localname ()
+  "Retrieve value of property ELOT-context-localname for a governing heading.
+This will return the localname of the ontology
+if point is under a heading that declares an ontology."
+  (org-entry-get-with-inheritance "ELOT-context-localname"))
+(defun elot-default-prefix ()
+  "Retrieve value of property ELOT-default-prefix for a governing heading.
+This will return the default prefix for ontology resources
+if point is under a heading that declares an ontology."
+  (org-entry-get-with-inheritance "ELOT-default-prefix"))
+(defun elot-governing-hierarchy ()
+  "Return the governing hierarchy ID if inside a hierarchy section, or nil."
+  (let ((this-ID (org-entry-get-with-inheritance "ID")))
+    (when (and this-ID
+               (string-match-p "-hierarchy$" this-ID))
+      this-ID)))
+
+(defun elot-at-ontology-heading ()
+  "Return TRUE if point is in a heading that declares ontology."
+  (let ((id (or (org-entry-get (point) "ID") "")))
+   (string-match "ontology-declaration" id)))
+(defun elot-in-class-tree ()
+  "Return TRUE if point is a class hierarchy heading."
+  (string-match-p "class-hierarchy" (elot-governing-hierarchy)))
+(defun elot-in-property-tree ()
+  "Return TRUE if point is a property hierarchy heading."
+  (string-match-p "property-hierarchy" (elot-governing-hierarchy)))
 
 (defun elot-unprefix-uri (puri abbrev-alist &optional noerror)
   "Replace prefix in PURI with full form from ABBREV-ALIST, if there's a match."
@@ -728,6 +769,32 @@ Returns a list of lists: (URI label (plist of attributes))."
     ;; Reverse once at the end for O(N) performance
     (nreverse result)))
 
+(defvar-local elot-slurp nil
+  "List of resources declared in an ELOT buffer.
+Each member is a list of curie, label, and plist of attributes.")
+(defvar elot-slurp-global nil
+  "List of resources retrieved from SPARQL endpoints.")
+(defvar-local elot-codelist-ht nil
+  "Hashtable holding pairs of curie and label for ELOT label-display.")
+(defvar-local elot-attriblist-ht nil
+  "Hashtable holding pairs of curie and attribute plist for ELOT label-display.")
+
+(defun elot--ht-from-plist (plist)
+  "Build a hash-table from flat PLIST (key1 val1 key2 val2 ...).
+Keys are compared with `equal'.  Pure built-in, no external deps."
+  (let ((ht (make-hash-table :test 'equal)))
+    (while plist
+      (puthash (pop plist) (pop plist) ht))
+    ht))
+
+(defun elot--ht-from-alist (alist)
+  "Build a hash-table from ALIST ((key . val) ...).
+Keys are compared with `equal'.  Pure built-in, no external deps."
+  (let ((ht (make-hash-table :test 'equal)))
+    (dolist (pair alist)
+      (puthash (car pair) (cdr pair) ht))
+    ht))
+
 (defun elot-slurp-to-vars ()
   "Read resources declared in ELOT buffer into local variables.
 The variables are ELOT-SLURP (plist) and ELOT-CODELIST-HT,
@@ -735,13 +802,13 @@ ELOT-ATTRIBLIST-HT (hashtable).  Outside ELOT buffers, use ELOT-SLURP-GLOBAL."
   (let ((slurp (elot-build-slurp)))
     (setq elot-slurp (or slurp elot-slurp-global))
     (setq elot-codelist-ht
-          (ht<-plist (elot-codelist-from-slurp
-                      ;; only fontify what's locally declared
-                      elot-slurp)))
+          (elot--ht-from-plist (elot-codelist-from-slurp
+                                ;; only fontify what's locally declared
+                                elot-slurp)))
     (setq elot-attriblist-ht
-          (ht<-alist (elot-attriblist-from-slurp
-                      ;; lookup includes the global list
-                      (append slurp elot-slurp-global))))))
+          (elot--ht-from-alist (elot-attriblist-from-slurp
+                                ;; lookup includes the global list
+                                (append slurp elot-slurp-global))))))
 
 (defun elot-codelist-from-slurp (slurp)
   "Return a plist of the first two entries of each member of SLURP.
