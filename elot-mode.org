@@ -114,6 +114,8 @@ pulled in when the user explicitly calls =elot-org-lint=.
   (require 'elot-tangle)
   (require 'elot-label-display)
   (require 'xref)
+  (require 'easymenu)
+  (require 'tempo)
   (require 'org-tempo)
   (require 'ob-lob)
 
@@ -200,6 +202,323 @@ in on enable and restore the original on disable.
   Treats `:' and `_' as word-constituent characters.")
 #+end_src
 
+** Tempo Templates
+:PROPERTIES:
+:CUSTOM_ID: tempo-templates
+:END:
+
+ELOT uses `tempo-template` to provide skeleton structures for ontologies and resources.
+*** ELOT document header
+Insert a document header with =<oh=.
+#+name: src-tempo-docheader
+#+begin_src emacs-lisp :results none
+  (tempo-define-template "elot-doc-header"
+                         '("#+title: " (p "Document title: " doctitle) > n
+                         "#+subtitle: An OWL ontology" > n
+                         "#+author: " (p "Author name: " authname) > n
+                         "#+date: Created " (format-time-string "%Y-%m-%d %H:%M") > n
+                         "#+call: theme-elot()" n n
+                         (progn (load-library "elot-defaults") (message "Loaded ELOT") ""))
+                         "<odh"
+                         "ELOT document header"
+                         'org-tempo-tags)
+#+end_src
+**** ELOT ontology skeleton
+Insert a skeleton with =<ods=.
+#+name: src-tempo-ontology
+#+begin_src emacs-lisp :results none
+  (tempo-define-template "elot-ont-skeleton"
+   '(n > "* " (p "Ontology identifier localname: " ontlocalname) > n
+       ":PROPERTIES:" > n
+       ":ID: " (s ontlocalname) > n
+       ":ELOT-context-type: ontology" > n
+       ":ELOT-context-localname: " (s ontlocalname) > n
+       ":ELOT-default-prefix: " (p "Namespace prefix for resources in this ontology (without the \":\") " resprefix) > n
+       ":header-args:omn: :tangle ./" (s ontlocalname) ".omn :noweb yes" > n
+       ":header-args:emacs-lisp: :tangle no :exports results" > n
+       ":header-args: :padline yes" > n
+       ":END:" > n
+  "** Prefixes
+  :PROPERTIES:
+  :prefixdefs: yes
+  :END:
+  
+  ,#+caption: OWL ontology prefixes
+  | prefix    | uri                                                                            |
+  |-----------+--------------------------------------------------------------------------------|
+  | owl:      | http://www.w3.org/2002/07/owl#                                                 |
+  | rdf:      | http://www.w3.org/1999/02/22-rdf-syntax-ns#                                    |
+  | xml:      | http://www.w3.org/XML/1998/namespace                                           |
+  | xsd:      | http://www.w3.org/2001/XMLSchema#                                              |
+  | rdfs:     | http://www.w3.org/2000/01/rdf-schema#                                          |
+  | skos:     | http://www.w3.org/2004/02/skos/core#                                           |
+  | dc:       | http://purl.org/dc/elements/1.1/                                               |
+  | dcterms:  | http://purl.org/dc/terms/                                                      |" > n
+  "| " (s resprefix)
+  ":       | " (p "Resource namespace in full (\"http ...\") " resns) "                                                            |" > n
+  "| " (p "Namespace prefix for the ontology itself (without the \":\") " ontprefix)
+  ":       | " (p "Ontology namespace in full (\"http ...\") " ontns) "                                                            |" >  n
+  "
+  ,** " (s ontlocalname) " ontology (" (s ontprefix) ":" (s ontlocalname) " " (s ontprefix) ":" (s ontlocalname) "/0.0)
+  :PROPERTIES:
+  :ID:       " (s ontlocalname) "-ontology-declaration
+  :custom_id: " (s ontlocalname) "-ontology-declaration
+  :resourcedefs: yes
+  :END:
+   - owl:versionInfo :: 0.0 start of " (s ontlocalname) "
+   - dcterms:title :: \"" (s ontlocalname) " ontology\"@en
+   - pav:lastUpdateOn :: {{{modification-time(\"%Y-%m-%dT%H:%M:%SZ\",t)}}}^^xsd:dateTime
+   - dcterms:license :: [[https://creativecommons.org/licenses/by-sa/4.0/]]
+   - dcterms:creator :: {{{author}}}
+   - dcterms:modified ::  {{{modification-time(\"%Y-%m-%d\",t)}}}^^xsd:date
+   - dcterms:publisher :: https://example.org/thepublisher
+   - dc:rights :: Copyright info here
+   - dcterms:description :: The " (s ontlocalname) " ontology is ...
+   - rdfs:comment :: The " (s ontlocalname) " ontology is ...
+  ,** Datatypes
+  :PROPERTIES:
+  :ID:       " (s ontlocalname) "-datatypes
+  :custom_id: " (s ontlocalname) "-datatypes
+  :resourcedefs: yes
+  :END:
+  ,** Classes
+  :PROPERTIES:
+  :ID:       " (s ontlocalname) "-class-hierarchy
+  :custom_id: " (s ontlocalname) "-class-hierarchy
+  :resourcedefs: yes
+  :END:
+  ,*** My class (" (s resprefix) ":MyClass)
+   - rdfs:comment :: Leave a comment here
+  ,** Object properties
+  :PROPERTIES:
+  :ID:       " (s ontlocalname) "-object-property-hierarchy
+  :custom_id: " (s ontlocalname) "-object-property-hierarchy
+  :resourcedefs: yes
+  :END:
+  ,** Data properties
+  :PROPERTIES:
+  :ID:       " (s ontlocalname) "-data-property-hierarchy
+  :custom_id: " (s ontlocalname) "-data-property-hierarchy
+  :resourcedefs: yes
+  :END:
+  ,** Annotation properties
+  :PROPERTIES:
+  :ID:       " (s ontlocalname) "-annotation-property-hierarchy
+  :custom_id: " (s ontlocalname) "-annotation-property-hierarchy
+  :resourcedefs: yes
+  :END:
+  ,*** owl:versionInfo
+  ,*** dcterms:title
+   - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+  ,*** dcterms:license
+   - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+  ,*** dcterms:creator
+   - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+  ,*** dcterms:modified
+   - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+  ,*** dcterms:publisher
+   - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+  ,*** dcterms:description
+   - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+  ,*** dc:rights
+   - rdfs:isDefinedBy :: http://purl.org/dc/elements/1.1/
+  ,*** pav:lastUpdateOn
+   - rdfs:isDefinedBy :: http://purl.org/pav/
+  ,*** skos:example
+   - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
+  ,*** skos:prefLabel
+   - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
+  ,*** skos:altLabel
+   - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
+  ,*** skos:definition
+   - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
+  ,** Individuals
+  :PROPERTIES:
+  :ID:       " (s ontlocalname) "-individuals
+  :custom_id: " (s ontlocalname) "-individuals
+  :resourcedefs: yes
+  :END:
+  "
+  (progn (elot-update-link-abbrev)
+         (save-buffer) (org-macro-initialize-templates)
+         (org-cycle-set-startup-visibility)
+         (goto-char (point-min))
+         (search-forward "dcterms:description :: ") (outline-show-entry) ""))
+   "<ods"
+   "ELOT ontology sections skeleton"
+   'org-tempo-tags)
+  ;;
+  ;; end of template 'elot-ont-skeleton'
+  ;;
+#+end_src
+
+** Table to Outline Utility
+:PROPERTIES:
+:CUSTOM_ID: table-to-outline-utility
+:END:
+ELOT includes utility functions to generate an outline from an Org table.
+
+#+name: src-mode-table-to-outline
+#+begin_src emacs-lisp
+  (defun elot--coerce-literal (header value)
+    "Return VALUE coerced per HEADER decoration.
+  If HEADER has no decoration the original VALUE is returned
+  unchanged (so numbers stay numbers, symbols stay symbols, etc.)."
+    (cond
+     ;; language tag
+     ((string-match "@\\([[:alnum:]-]+\\)\\'" header)
+      (let ((lang (match-string 0 header)))             ; includes leading @
+        (if (or (null value) (and (stringp value) (string= value "")))
+            value                                       ; keep empty cell empty
+          (format "\"%s\"%s" (format "%s" value) lang))))
+
+     ;; datatype
+     ((string-match "\\^\\^\\(.+\\)\\'" header)
+      (let ((dtype (match-string 0 header)))            ; includes leading ^^
+        (if (or (null value) (and (stringp value) (string= value "")))
+            value
+          (format "\"%s\"%s" (format "%s" value) dtype))))
+
+     (t value)))                                        ; no decoration → untouched
+
+  (defun elot--strip-decoration (header)
+    "Return HEADER without trailing @lang or ^^dtype part."
+    (cond ((string-match "@[[:alnum:]-]+\\'" header)
+           (substring header 0 (match-beginning 0)))
+          ((string-match "\\^\\^.+\\'" header)
+           (substring header 0 (match-beginning 0)))
+          (t header)))
+
+  (defun elot--table->forest (mini-table)
+    "Convert MINI-TABLE (Org-babel list) to a forest of plists.
+  - Header suffixes “@lang” / “^^datatype” decorate the cell value
+    but are **removed** from the stored key.
+  - Warns if a row’s SUPER value never appears as an ID.
+  - Skips `hline` markers that `org-table-to-lisp` inserts."
+    (let* ((headers (car mini-table))
+           (rows    (cdr mini-table))
+           (id-col  (cl-position "id"    headers :test #'string=))
+           (sup-col (cl-position "super" headers :test #'string=))
+           (id->obj (make-hash-table :test 'equal))
+           triples)
+
+      ;; ── pass 1: build node plists and register them ───────────────
+      (dolist (row rows)
+        (when (listp row)                         ; skip `hline`
+          (let* ((id  (nth id-col  row))
+                 (sup (nth sup-col row))
+                 (pl  (append
+                       ;; copy columns: stripped key / decorated value
+                       (apply #'append
+                              (cl-mapcar (lambda (hdr val)
+                                           (list (elot--strip-decoration hdr)
+                                                 (elot--coerce-literal hdr val)))
+                                         headers row))
+                       (list :subs nil)))
+                 )
+            (push (list id sup pl) triples)
+            (puthash id pl id->obj))))
+
+      (setq triples (nreverse triples))
+
+      ;; ── pass 2: link children to parents, warn on missing parents ─
+      (dolist (tr triples)
+        (cl-destructuring-bind (id sup child) tr
+          (unless (string= sup "")
+            (let ((parent (gethash sup id->obj)))
+              (if parent
+                  (setf (plist-get parent :subs)
+                        (append (plist-get parent :subs) (list child)))
+                (message "elot--table->forest: WARNING – parent id \"%s\" referenced by \"%s\" not found"
+                         sup id)
+                (setf (nth 1 tr) ""))))))         ; promote to root
+
+      ;; ── pass 3: collect root nodes in original order ──────────────
+      (let (forest)
+        (dolist (tr triples)
+          (cl-destructuring-bind (_id sup pl) tr
+            (when (string= sup "") (push pl forest))))
+        (nreverse forest))))
+
+  (defun elot--prop (plist key)
+    "Return KEY’s value in PLIST, comparing keys with `string=`."
+    (cl-loop for (k v) on plist by #'cddr
+             when (and (stringp k) (string= k key))
+             return v))
+
+  (defun elot-forest->org (forest &optional level)
+    "Render FOREST (from `elot--table->forest`) as Org headlines.
+  LEVEL is the asterisk depth for root nodes (default 4)."
+    (setq level (or level 4))
+    (let ((lines '()))
+      (cl-labels
+          ((emit (node depth)
+             (let* ((stars   (make-string (+ level depth) ?*))
+                    (id      (elot--prop node "id"))
+                    (label   (elot--prop node "rdfs:label"))
+                    (name    (if (and label (not (string= label "")))
+                                 (format "%s (%s)" label id)
+                               id)))
+               ;; headline
+               (push (concat stars " " name) lines)
+               ;; description list (skip empty values and certain keys)
+               (cl-loop for (k v) on node by #'cddr
+                        when (and (stringp k)
+                                  (not (member k '("id" "super")))
+                                  v
+                                  (not (string= v "")))
+                        do (push (format "- %s :: %s" k v) lines))
+               ;; children
+               (dolist (child (plist-get node :subs))
+                 (emit child (1+ depth))))))
+        (dolist (root forest) (emit root 0)))
+      (mapconcat #'identity (nreverse lines) "\n")))
+
+  (defun elot-headings-from-table ()
+    "Convert the Org table at point to an ELOT outline.
+  The table must contain column headers `id' and `super'.
+  Entities in `id' with optional `rdfs:label' produce
+  an outline indented under the current headline.
+
+  Additional columns are output as description lists entries.
+  Column headers for these should be annotation
+  properties (`skos:synonym', etc.) or OWL Manchester Syntax
+  keywords (`EquivalentTo', `Domain', etc).  Suffixes like `@en'
+  or `xsd:integer' on a column header will be applied to values."
+    (interactive)
+    (unless (org-at-table-p)
+      (user-error "Point is not inside an Org table"))
+
+    ;; 1. read the table as lisp
+    (let* ((mini-table (org-table-to-lisp))
+           (headers     (car mini-table)))
+      ;; 2. must contain \"id\"
+      (unless (member "id" headers)
+        (user-error "Table lacks required \"id\" column – cannot create headings"))
+
+      ;; 3. outline depth = one deeper than containing headline
+      (let ((target-level (save-excursion
+                            (org-back-to-heading t)
+                            (1+ (org-outline-level)))))
+
+        ;; 4. position after table & any TBLFM lines
+        (let ((insert-pos
+               (save-excursion
+                 (goto-char (org-table-end))          ; end of last | row
+                 ;; skip following #+tblfm lines
+                 (while (and (not (eobp))
+                             (progn (beginning-of-line)
+                                    (looking-at "^[ \t]*#\\+tblfm:")))
+                   (forward-line 1))
+                 (point))))
+
+          ;; 5. build forest → org text and insert
+          (let* ((forest   (elot--table->forest mini-table))
+                 (org-text (elot-forest->org forest target-level)))
+            (goto-char insert-pos)
+            (insert "\n" org-text "\n"))))))
+#+end_src
+
 ** Keymap
 :PROPERTIES:
 :CUSTOM_ID: keymap
@@ -216,6 +535,40 @@ replaces the ad-hoc =local-set-key= calls in =elot-setup-org-keybindings=.
       (define-key map (kbd "S-<f5>") #'elot-hydra/body)
       map)
     "Keymap active when `elot-mode' is enabled.")
+
+  (easy-menu-define elot-menu elot-mode-map
+    "ELOT Ontology Authoring Menu"
+    '("ELOT"
+      ["Check for common problems" elot-org-lint :active (fboundp 'elot-org-lint)]
+      ["Export to OWL (Tangle)" org-babel-tangle t]
+      ["Export to HTML" (lambda () (interactive) (browse-url-of-file (expand-file-name (org-html-export-to-html))))
+       :active (fboundp 'org-html-export-to-html)]
+      ["Import OWL ontology" elot-open-owl :active (fboundp 'elot-open-owl)]
+      "---"
+      ["Insert Existing Resource ID" elot-label-lookup :active (fboundp 'elot-label-lookup)]
+      ["Insert Primitive Class template" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-class-iof-primitive))
+       :active (fboundp 'tempo-template-elot-class-iof-primitive)]
+      ["Insert Defined Class template" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-class-iof-defined))
+       :active (fboundp 'tempo-template-elot-class-iof-defined)]
+      ["Insert Property template" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-property-iof))
+       :active (fboundp 'tempo-template-elot-property-iof)]
+      "---"
+      ["Jump to Resource Headline (M-.)" xref-find-definitions t]
+      ["Find References to Resource (M-?)" xref-find-references t]
+      ["Quick-Describe Resource" elot-describe-curie-at-point t]
+      ["Toggle Label-Display (F5)" elot-toggle-label-display :active (fboundp 'elot-toggle-label-display)]
+      ["Refresh Label-Display Index" elot-label-display-setup :active (fboundp 'elot-label-display-setup)]
+      "---"
+      ["Insert Table of Resources" tempo-template-elot-table-of-resources :active (fboundp 'tempo-template-elot-table-of-resources)]
+      ["Generate Outline from Table" elot-headings-from-table :active (fboundp 'elot-headings-from-table)]
+      "---"
+      ["Insert SPARQL Select Block" tempo-template-elot-block-sparql-select :active (fboundp 'tempo-template-elot-block-sparql-select)]
+      ["Insert SPARQL Construct Block" tempo-template-elot-block-sparql-construct :active (fboundp 'tempo-template-elot-block-sparql-construct)]
+      ["Insert RDFPUML Diagram Block" tempo-template-elot-block-rdfpuml-diagram :active (fboundp 'tempo-template-elot-block-rdfpuml-diagram)]
+      "---"
+      ["Insert New Document Header" tempo-template-elot-doc-header :active (fboundp 'tempo-template-elot-doc-header)]
+      ["Insert New Ontology Skeleton" tempo-template-elot-ont-skeleton :active (fboundp 'tempo-template-elot-ont-skeleton)]
+      ))
 #+end_src
 
 ** Hook management
@@ -231,9 +584,9 @@ hooks and never removed them.
 #+begin_src emacs-lisp
   (defun elot-mode--add-hooks ()
     "Add buffer-local hooks for an ELOT buffer."
-    ;; Pre-tangle: remember source file and generate OMN from outline
+    ;; Pre-tangle: remember source file and update hierarchy
     (add-hook 'org-babel-pre-tangle-hook #'elot--remember-org-source nil t)
-    (add-hook 'org-babel-pre-tangle-hook #'elot-tangle-buffer-to-omn nil t)
+    (add-hook 'org-babel-pre-tangle-hook #'elot-update-headline-hierarchy nil t)
     ;; Post-tangle: convert OMN to Turtle via ROBOT
     (add-hook 'org-babel-post-tangle-hook #'elot-tangled-omn-to-ttl nil t)
     ;; After babel execution: refresh inline images
@@ -247,7 +600,7 @@ hooks and never removed them.
   (defun elot-mode--remove-hooks ()
     "Remove buffer-local hooks added by `elot-mode--add-hooks'."
     (remove-hook 'org-babel-pre-tangle-hook #'elot--remember-org-source t)
-    (remove-hook 'org-babel-pre-tangle-hook #'elot-tangle-buffer-to-omn t)
+    (remove-hook 'org-babel-pre-tangle-hook #'elot-update-headline-hierarchy t)
     (remove-hook 'org-babel-post-tangle-hook #'elot-tangled-omn-to-ttl t)
     (remove-hook 'org-babel-after-execute-hook #'org-redisplay-inline-images t)
     (remove-hook 'after-save-hook #'elot-update-link-abbrev t)
