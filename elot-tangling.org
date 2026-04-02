@@ -955,6 +955,22 @@ for fontification and lookup.
 *** How to run it
 The following simply replaces ~elot-slurp-entities~ with ~elot-build-slurp~, and it works.
 #+begin_src emacs-lisp
+  (defun elot--ht-from-plist (plist)
+    "Build a hash-table from flat PLIST (key1 val1 key2 val2 ...).
+  Keys are compared with `equal'.  Pure built-in, no external deps."
+    (let ((ht (make-hash-table :test 'equal)))
+      (while plist
+        (puthash (pop plist) (pop plist) ht))
+      ht))
+
+  (defun elot--ht-from-alist (alist)
+    "Build a hash-table from ALIST ((key . val) ...).
+  Keys are compared with `equal'.  Pure built-in, no external deps."
+    (let ((ht (make-hash-table :test 'equal)))
+      (dolist (pair alist)
+        (puthash (car pair) (cdr pair) ht))
+      ht))
+
   (defun elot-slurp-to-vars ()
     "Read resources declared in ELOT buffer into local variables.
   The variables are ELOT-SLURP (plist) and ELOT-CODELIST-HT,
@@ -962,13 +978,13 @@ The following simply replaces ~elot-slurp-entities~ with ~elot-build-slurp~, and
     (let ((slurp (elot-build-slurp)))
       (setq elot-slurp (or slurp elot-slurp-global))
       (setq elot-codelist-ht
-            (ht<-plist (elot-codelist-from-slurp
-                        ;; only fontify what's locally declared
-                        elot-slurp)))
+            (elot--ht-from-plist (elot-codelist-from-slurp
+                                  ;; only fontify what's locally declared
+                                  elot-slurp)))
       (setq elot-attriblist-ht
-            (ht<-alist (elot-attriblist-from-slurp
-                        ;; lookup includes the global list
-                        (append slurp elot-slurp-global))))))
+            (elot--ht-from-alist (elot-attriblist-from-slurp
+                                  ;; lookup includes the global list
+                                  (append slurp elot-slurp-global))))))
 #+end_src
 
 To update the hashtables for fontification:

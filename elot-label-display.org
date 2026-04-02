@@ -51,6 +51,7 @@ in SPARQL select results.
 ** Require ~elot~ library
 #+name: src-require
 #+begin_src emacs-lisp
+;; No external dependencies -- ht/dash removed; using built-in gethash.
 (require 'elot-tangle)
 #+end_src
 *** Declare ~org-link-abbrev-alist-local~ to allow native compile
@@ -106,12 +107,13 @@ The data variables (~elot-slurp~, ~elot-slurp-global~, ~elot-codelist-ht~,
 The display toggle variable remains here, as it is display-specific.
 #+name: src-slurp-local-vars
 #+begin_src emacs-lisp
-  (defvar-local elot-label-display 'no
-    "Value says `no' or `yes' to showing labels for RDF resources.")
+  (defvar-local elot-label-display 'off
+    "Value says `off' or `on' to showing labels for RDF resources.")
 #+end_src
 
 ** Make a hash table ~elot-id-label-ht~
-Note that we use ~ht<-plist~ for the id--label list, and ~ht<-alist~ for id--plist.
+Note that we use ~elot--ht-from-plist~ for the id--label list, and ~elot--ht-from-alist~ for id--plist.
+These helper functions use built-in ~puthash~ / ~gethash~ -- no external dependencies.
 
 ~elot-slurp-to-vars~ is now defined in =elot-tangle.el= (via
 =elot-tangling.org=).  It calls ~elot-build-slurp~ instead of the old
@@ -127,10 +129,10 @@ Note that we use ~ht<-plist~ for the id--label list, and ~ht<-alist~ for id--pli
       s))
   (defun elot-codelist-id-label (idstring)
     "Given curie IDSTRING, return label if found."
-    (elot--strip-lang-tag (ht-get elot-codelist-ht idstring)))
+    (elot--strip-lang-tag (gethash idstring elot-codelist-ht)))
   (defun elot-attriblist-label-value (idstring prop)
     "Given label IDSTRING and PROP, return puri if found."
-    (plist-get (ht-get elot-attriblist-ht idstring) prop 'equal))
+    (plist-get (gethash idstring elot-attriblist-ht) prop 'equal))
 #+end_src
 ** TODO Regexp that matches the found identifiers
 Sometimes the regex becomes too complex. Then we can fall back to just
@@ -441,7 +443,7 @@ we ~let~ a temporary version before calling it.
 
   (defun elot-label-lookup-annotations (label)
     "Helper function for `elot-label-lookup' provides preview string for LABEL."
-    (let* ((attrib-plist (ht-get elot-label-lookup-tmp-attriblist-ht label))
+    (let* ((attrib-plist (gethash label elot-label-lookup-tmp-attriblist-ht))
            (rdf-type (plist-get attrib-plist "rdf:type" 'string=))
            (prefix (car (split-string (plist-get attrib-plist "puri" 'string=) ":")))
            (definition (string-replace "\n" " " (string-limit

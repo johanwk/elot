@@ -66,7 +66,7 @@ Users can activate =elot-mode= in several ways:
   ;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
   ;; URL: https://github.com/johanwk/elot
   ;; Version: 2.0.0
-  ;; Package-Requires: ((emacs "29.1") (ht "2.3"))
+  ;; Package-Requires: ((emacs "29.1"))
   ;; Keywords: languages outlines tools org ontology
 
   ;; This file is not part of GNU Emacs.
@@ -133,6 +133,16 @@ must be defined early, before any =defcustom= that references =:group
     "Customization group for Emacs Literate Ontology Tool (ELOT)."
     :prefix "elot-"
     :group 'org)
+
+  (defcustom elot-label-display-size-threshold (* 500 1024)
+    "Buffer size (bytes) above which `elot-mode' asks before enabling label-display.
+When a file is larger than this threshold, the user is prompted
+with a yes/no question.  Files at or below the threshold get
+label-display automatically.  Set to 0 to always ask, or nil to
+never ask."
+    :type '(choice (const :tag "Never ask -- always enable" nil)
+                   (integer :tag "Byte threshold"))
+    :group 'elot)
 #+end_src
 
 ** Buffer-local settings
@@ -218,9 +228,6 @@ hooks and never removed them.
 
 #+name: src-mode-hooks
 #+begin_src emacs-lisp
-  (defvar-local elot-mode--idle-timer nil
-    "Handle for the idle timer that sets up label-display.")
-
   (defun elot-mode--add-hooks ()
     "Add buffer-local hooks for an ELOT buffer."
     ;; Pre-tangle: remember source file and generate OMN from outline
@@ -252,6 +259,11 @@ hooks and never removed them.
 The enable function does what the =progn= block in =elot-defaults.el= used
 to do, but in a structured and reversible way.
 
+Label-display is set up synchronously via =elot-mode--maybe-setup-labels=.
+For files larger than =elot-label-display-size-threshold= (default 500 KB),
+the user is prompted first.  The user can always run
+=M-x elot-label-display-setup= later.
+
 #+name: src-mode-enable-disable
 #+begin_src emacs-lisp
   (defun elot-mode--enable ()
@@ -269,35 +281,42 @@ to do, but in a structured and reversible way.
       (when (file-exists-p lob-file)
         (org-babel-lob-ingest lob-file)))
 
-    ;; 4. Refresh link abbreviations from prefix table
-    (elot-update-link-abbrev)
+    ;; 4. Parse the headline hierarchy (populates elot-headline-hierarchy,
+    ;;    which is needed by link-abbrev refresh and label-display)
+    (elot-update-headline-hierarchy)
 
     ;; 5. Hooks
     (elot-mode--add-hooks)
 
-    ;; 6. Label-display: start after a short idle delay
-    (setq elot-mode--idle-timer
-          (run-with-idle-timer 1.0 nil #'elot-label-display-setup))
+    ;; 6. Label-display: set up immediately (with size-gated prompt)
+    (elot-mode--maybe-setup-labels)
 
     ;; 7. Set initial fold visibility
     (org-cycle-set-startup-visibility))
+
+  (defun elot-mode--maybe-setup-labels ()
+    "Set up label-display, prompting the user for large files.
+If `elot-label-display-size-threshold' is nil, always set up.
+If the buffer is larger than the threshold, ask the user first."
+    (let ((threshold elot-label-display-size-threshold))
+      (when (or (null threshold)
+                (<= (buffer-size) threshold)
+                (y-or-n-p
+                 (format "Buffer is %s KB -- enable ELOT label-display? "
+                         (/ (buffer-size) 1024))))
+        (elot-label-display-setup))))
 
   (defun elot-mode--disable ()
     "Tear down ELOT in the current Org buffer."
     ;; 1. Remove hooks
     (elot-mode--remove-hooks)
 
-    ;; 2. Cancel idle timer
-    (when (timerp elot-mode--idle-timer)
-      (cancel-timer elot-mode--idle-timer)
-      (setq elot-mode--idle-timer nil))
-
-    ;; 3. Remove label-display overlays
+    ;; 2. Remove label-display overlays
     (when (fboundp 'elot-remove-prop-display)
       (with-silent-modifications
         (elot-remove-prop-display)))
 
-    ;; 4. Restore syntax table
+    ;; 3. Restore syntax table
     (set-syntax-table org-mode-syntax-table))
 #+end_src
 
