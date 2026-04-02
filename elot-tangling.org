@@ -1296,7 +1296,8 @@ Only activates in buffers where `elot-headline-hierarchy' is set."
                 (with-current-buffer buf
                   (revert-buffer t t t))))
             (message "Tangled OMN to %s%s" target-full
-                     (if user-omn " (with user blocks)" ""))))))))
+                     (if user-omn " (with user blocks)" ""))
+            (elot-robot-omn-to-ttl target-full)))))))
 #+end_src
 
 *** Hook and Advice Registration
