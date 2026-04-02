@@ -1,0 +1,201 @@
+#+TITLE: ELOT CLI and VS Code Extension — Implementation Plan
+#+AUTHOR: ELOT Contributors
+#+DATE: 2026
+#+STARTUP: overview
+
+* Overview
+
+The old "run ELOT in batch" approach relied on launching a headless
+Emacs process through shell scripts (~elot-run.sh~, ~elot-run.ps1~)
+and a runner script (~cli_runner.el~), plus a dependency-installation
+script (~setup.sh~ / ~setup.ps1~).  This was fragile: it required
+Emacs to be installed and properly configured on the user's machine,
+and it imposed heavy startup overhead.
+
+A Node.js CLI (~elot-cli~) and companion VS Code extension now replace
+this entirely.  The CLI calls the same Elisp pipeline (tangled from
+~elot-tangling.org~ into ~elot-package/elot-tangle.el~) via a
+JavaScript/TypeScript bridge, and the VS Code extension loads the same
+code as a native extension.
+
+Example CLI invocation:
+#+begin_example
+node ../elot-cli/dist/cli.js ../ny-part-12/IDO/ontology/LIS-14-for-FDIS.org - > myfile.omn
+#+end_example
+
+* What Must Be Removed
+
+** Files to delete from this repository
+
+The following files are made obsolete by the new CLI and should be
+removed in a dedicated clean-up commit:
+
+| File              | Reason for removal                                   |
+|-------------------+------------------------------------------------------|
+| ~cli_runner.el~   | Batch Emacs runner — replaced by the Node.js CLI     |
+| ~elot-run.sh~     | Shell wrapper for batch Emacs — no longer needed     |
+| ~elot-run.ps1~    | PowerShell wrapper for batch Emacs — no longer needed|
+| ~setup.sh~        | Installs Elisp deps and downloads ROBOT for batch use|
+| ~setup.ps1~       | Windows equivalent of ~setup.sh~                     |
+
+** Documentation to update
+
+- ~README.md~ / ~README.org~: remove all instructions for running
+  ~setup.sh~ / ~setup.ps1~ and ~elot-run.sh~ / ~elot-run.ps1~.
+- ~REFACTORING.org~: note the removal in the Design Decisions section.
+- Any example or template files that reference the batch workflow.
+
+* The New CLI (~elot-cli~)
+
+** Repository and build
+
+The CLI lives in a sibling repository, ~elot-cli~.  After building
+(~npm run build~ or equivalent) the entry point is
+~dist/cli.js~.
+
+** Usage
+
+#+begin_src shell
+node dist/cli.js <input.org> [<output.omn>]
+#+end_src
+
+- ~<input.org>~ :: path to an ELOT Org file (may contain one or more
+  ontology declarations).
+- ~<output.omn>~ :: destination path for the OMN output.  Pass ~-~ to
+  write to stdout.
+
+** What the CLI does
+
+1. Reads the Org file into a buffer (via the bundled Elisp engine or a
+   Node-native Org parser).
+2. Calls the same pipeline as the interactive Emacs mode:
+   ~elot-update-headline-hierarchy~ → ~elot-tangle-buffer-to-omn~.
+3. Writes each ontology's OMN content to its declared tangle target or
+   to the path supplied on the command line.
+4. Optionally invokes ROBOT to produce a ~.ttl~ file (if ROBOT is
+   available on the ~PATH~ or configured via environment variable).
+
+** Environment variables
+
+| Variable              | Purpose                                            | Default           |
+|-----------------------+----------------------------------------------------+-------------------|
+| ~ELOT_ROBOT_JAR~      | Absolute path to ~robot.jar~                       | (auto-detect PATH)|
+| ~ELOT_LOG_LEVEL~      | Verbosity: ~silent~, ~error~, ~info~, ~debug~      | ~info~            |
+
+* The VS Code Extension
+
+** Installation
+
+The extension is distributed as a ~.vsix~ file (and eventually on the
+VS Code Marketplace).  Install with:
+
+#+begin_src shell
+code --install-extension elot-<version>.vsix
+#+end_src
+
+** Features
+
+- *Syntax highlighting* for ~.omn~ (Manchester Syntax) files via the
+  bundled ~omn-mode~ grammar.
+- *Live tangle*: saving an ELOT ~.org~ file triggers ~elot-tangle~
+  automatically and writes the ~.omn~ tangle target(s).
+- *Error navigation*: ROBOT parse errors are shown as VS Code
+  diagnostics with clickable links back to the originating Org heading.
+- *Label display*: entity CURIEs in the editor are annotated with their
+  ~rdfs:label~ values (mirrors the Emacs ~elot-label-display~ feature).
+- *SPARQL integration*: run SPARQL queries against a configured
+  endpoint from within VS Code.
+
+** Extension entry point
+
+The extension entry point (~src/extension.ts~) activates on files
+matching ~*.org~ that contain ~ELOT-context-type~ property drawers, and
+on ~*.omn~ files.
+
+* Phased Plan
+
+** TODO Phase A: Clean up batch-Emacs artefacts
+   :PROPERTIES:
+   :END:
+
+   - Delete ~cli_runner.el~, ~elot-run.sh~, ~elot-run.ps1~,
+     ~setup.sh~, ~setup.ps1~ from the repository root.
+   - Update ~.gitignore~ to drop ~lib/~ and ~bin/~ entries that were
+     only needed for the batch workflow.
+   - Update ~README.org~ / ~README.md~: replace the "Getting started
+     (batch)" section with a "Getting started (CLI / VS Code)" section.
+   - Add a short "Migration" note for existing users who were using the
+     shell scripts.
+
+** TODO Phase B: Document the CLI
+   :PROPERTIES:
+   :END:
+
+   - Write a dedicated ~CLI-USAGE.org~ (or Markdown equivalent) with
+     full CLI reference, examples, and troubleshooting.
+   - Document environment variables and their defaults.
+   - Add CI job to the ~elot-cli~ repo that runs a smoke test:
+     tangle one of the example Org files and verify the ~.omn~ output
+     is non-empty and valid OMN.
+
+** TODO Phase C: Document the VS Code extension
+   :PROPERTIES:
+   :END:
+
+   - Write a ~VSCODE-EXTENSION.org~ describing installation, activation,
+     settings (~elot.robotJarPath~, ~elot.logLevel~, etc.), and feature
+     descriptions.
+   - Add screen-shots / GIF demo to the README.
+   - Publish to the VS Code Marketplace (set up publisher account,
+     ~vsce package~, ~vsce publish~).
+
+** TODO Phase D: Update examples and tests
+   :PROPERTIES:
+   :END:
+
+   - Review all files under ~examples/~ and update any instructions
+     that mention ~./elot-run.sh~ or ~./setup.sh~.
+   - Add a test fixture in ~test/~ that verifies end-to-end CLI output
+     matches a known-good ~.omn~ snapshot.
+   - Confirm existing ERT tests in ~test/test-elot-tangle.el~ still
+     pass (they are independent of the batch layer).
+
+* Design Decisions
+
+** Why Node.js rather than a new Emacs batch script?
+
+- *No Emacs dependency for end-users*: VS Code users should not need to
+  install Emacs.
+- *Faster startup*: Node.js loads in milliseconds; Emacs batch startup
+  takes several seconds.
+- *Easier packaging*: ~npm pack~ / ~vsce package~ produce self-contained
+  artefacts; the old approach required a ~setup.sh~ + ~lib/~ + ~bin/~
+  directory tree.
+- *Better VS Code integration*: a native extension can use the VS Code
+  Language Server Protocol, diagnostics API, and extension activation
+  events directly.
+
+** ROBOT dependency
+
+ROBOT is still required for OMN → Turtle conversion.  The CLI should
+detect ~robot.jar~ via:
+1. ~ELOT_ROBOT_JAR~ environment variable (explicit override).
+2. ~robot~ on the system ~PATH~ (ROBOT wrapper script).
+3. A ~robot.jar~ adjacent to the CLI entry point.
+
+If none is found, the CLI should emit OMN only and warn that Turtle
+output is unavailable.
+
+** Relationship to ~elot-tangle.el~
+
+The Elisp pipeline in ~elot-package/elot-tangle.el~ (tangled from
+~elot-tangling.org~) remains the single source of truth for the
+conversion logic.  The CLI either:
+
+a. Embeds a lightweight Elisp runtime (e.g. via ~emacs --batch~ under
+   the hood, but invoked transparently by the CLI); or
+b. Ports the pipeline functions to TypeScript, keeping the Elisp as the
+   canonical reference implementation.
+
+The choice between (a) and (b) is still open.  Option (a) is faster to
+implement; option (b) removes the Emacs runtime dependency entirely.
