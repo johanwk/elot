@@ -68,25 +68,25 @@ pipeline runs in roughly nine steps:
 
 * Function Reference
 
-| Function                           | Purpose                                                         | Source block                                      |
-|------------------------------------+-----------------------------------------------------------------+---------------------------------------------------|
-| =elot-update-headline-hierarchy=   | Entry point: run sanity checks, parse buffer, set hierarchy var | Contextual Extractors / "How to run it"           |
-| =elot-parse-headline-hierarchy=    | Convert org-element AST into nested plist tree                  | Contextual Extractors / "Function declarations"   |
-| =elot-entity-from-header=          | Extract URI or CURIE from an Org headline title string          | Helpers / "resource from Org heading"             |
-| =elot-sanity-check-prefixes=       | Ensure Prefixes headings have =:prefixdefs: yes=                | "Sanity check" section                            |
-| =elot-sanity-check-resource-sections= | Ensure resource headings have =:ID:= and =:resourcedefs: yes= | "Sanity check" section                            |
-| =elot-update-link-abbrev=          | Refresh =org-link-abbrev-alist-local= from hierarchy prefixes   | "Helper: update org-link-abbrev-alist-local"      |
-| =elot-omn-prefix-block=            | Generate OMN =Prefix:= block from an ontology node             | OMN Generators / "Prefix block"                   |
-| =elot-omn-resource-declarations=   | Recursively emit OMN frames for all resource nodes              | OMN Generators / "Resource declarations"          |
-| =elot-omn-resource-frame=          | Emit one OMN resource frame with annotations and restrictions   | OMN Generators / "Resource declarations"          |
-| =elot-omn-format-annotations=      | Format annotation key-value list as OMN text                    | OMN Generators / "Resource declarations"          |
-| =elot-omn-format-restrictions=     | Format restriction list (=SubClassOf:= etc.) as OMN text        | OMN Generators / "Resource declarations"          |
-| =elot-get-ontology-node-omn=       | Combine prefix block + resource declarations into OMN string    | Tangling Entrypoint / "Helper functions"          |
-| =elot-tangle-buffer-to-omn=        | Interactive top-level: parse buffer and write =.omn= files      | Tangling Entrypoint                               |
-| =elot-tangle-around-advice=        | Around-advice merging outline OMN with user =omn= source blocks | "Post-Tangle: Merge Outline with User OMN Blocks" |
-| =elot-robot-omn-to-ttl=            | Convert =.omn= to =.ttl= using ROBOT (batch or async)           | Support / "OMN → Turtle conversion"               |
-| =elot-build-slurp=                 | Flatten hierarchy into =(URI label attrs)= list for display     | New slurp implementation / "Function declarations"|
-| =elot-slurp-to-vars=               | Populate =elot-slurp=, =elot-codelist-ht=, =elot-attriblist-ht= | New slurp / "How to run it"                       |
+| Function                            | Purpose                                                         | Source block                                       |
+|-------------------------------------+-----------------------------------------------------------------+----------------------------------------------------|
+| =elot-update-headline-hierarchy=      | Entry point: run sanity checks, parse buffer, set hierarchy var | Contextual Extractors / "How to run it"            |
+| =elot-parse-headline-hierarchy=       | Convert org-element AST into nested plist tree                  | Contextual Extractors / "Function declarations"    |
+| =elot-entity-from-header=             | Extract URI or CURIE from an Org headline title string          | Helpers / "resource from Org heading"              |
+| =elot-sanity-check-prefixes=          | Ensure Prefixes headings have =:prefixdefs: yes=                  | "Sanity check" section                             |
+| =elot-sanity-check-resource-sections= | Ensure resource headings have =:ID:= and =:resourcedefs: yes=       | "Sanity check" section                             |
+| =elot-update-link-abbrev=             | Refresh =org-link-abbrev-alist-local= from hierarchy prefixes     | "Helper: update org-link-abbrev-alist-local"       |
+| =elot-omn-prefix-block=               | Generate OMN =Prefix:= block from an ontology node                | OMN Generators / "Prefix block"                    |
+| =elot-omn-resource-declarations=      | Recursively emit OMN frames for all resource nodes              | OMN Generators / "Resource declarations"           |
+| =elot-omn-resource-frame=             | Emit one OMN resource frame with annotations and restrictions   | OMN Generators / "Resource declarations"           |
+| =elot-omn-format-annotations=         | Format annotation key-value list as OMN text                    | OMN Generators / "Resource declarations"           |
+| =elot-omn-format-restrictions=        | Format restriction list (=SubClassOf:= etc.) as OMN text          | OMN Generators / "Resource declarations"           |
+| =elot-get-ontology-node-omn=          | Combine prefix block + resource declarations into OMN string    | Tangling Entrypoint / "Helper functions"           |
+| =elot-tangle-buffer-to-omn=           | Interactive top-level: parse buffer and write =.omn= files        | Tangling Entrypoint                                |
+| =elot-tangle-around-advice=           | Around-advice merging outline OMN with user =omn= source blocks   | "Post-Tangle: Merge Outline with User OMN Blocks"  |
+| =elot-robot-omn-to-ttl=               | Convert =.omn= to =.ttl= using ROBOT (batch or async)               | Support / "OMN → Turtle conversion"               |
+| =elot-build-slurp=                    | Flatten hierarchy into =(URI label attrs)= list for display       | New slurp implementation / "Function declarations" |
+| =elot-slurp-to-vars=                  | Populate =elot-slurp=, =elot-codelist-ht=, =elot-attriblist-ht=       | New slurp / "How to run it"                        |
 
 
 * Phased Plan
