@@ -33,26 +33,9 @@
 
 ;;; Code:
 
-(require 'elot)
+(require 'elot-tangle)
 
 (defvar org-link-abbrev-alist-local)
-
-(defun elot-entities-with-plist (subsection-descriptions &optional owl-type)
-  "Return a list of URI, label, and plist of attributes for a resource.
-Arguments are a list SUBSECTION-DESCRIPTIONS produced by
-`elot-org-subsection-descriptions' and a string for OWL-TYPE."
-  (mapcar (lambda (x)
-            (let* ((owl-type (or owl-type "rdfs:Resource"))
-                   (header (car x))
-                   (annotations-plist (flatten-tree (cdr x)))
-                   (puri (elot-entity-from-header header))
-                   (label
-                    (if (string-match "\\(.+\\) (.*)" header)
-                        (match-string 1 header) puri)))
-              (list
-               puri label
-               (append `("rdfs:label" ,label "rdf:type" ,owl-type) annotations-plist))))
-          subsection-descriptions))
 
 (defun elot-org-link-search (&rest strings)
   "Search for an :ID: heading in current buffer.
@@ -68,67 +51,8 @@ and return position.  If not found, return nil and leave point unchanged."
       (goto-char pos))
     pos))
 
-(defun elot-slurp-entities ()
-  "Return a list of lists (URI, label, plist of attributes).
-Uses `elot-org-subsection-descriptions' to read class, property, and
-individual sections from an ELOT buffer.  If not in an ELOT buffer,
-read using `elot-slurp-global'"
-  (save-excursion
-    (goto-char (point-min))
-    (if (re-search-forward ":ELOT-context-type: ontology" nil :noerror)
-        (let ((context (elot-context-localname)))
-          (append
-           (when (elot-org-link-search context "-datatypes")                     (elot-entities-with-plist (elot-org-subsection-descriptions) "rdfs:Datatype"))
-           (when (elot-org-link-search context "-class-hierarchy")               (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:Class"))
-           (when (elot-org-link-search context "-object-property-hierarchy")     (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:ObjectProperty"))
-           (when (elot-org-link-search context "-data-property-hierarchy")       (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:DatatypeProperty"))
-           (when (elot-org-link-search context "-annotation-property-hierarchy") (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:AnnotationProperty"))
-           (when (elot-org-link-search context "-individuals")                   (elot-entities-with-plist (elot-org-subsection-descriptions) "owl:NamedIndividual"))))
-      '())))
-
-(defun elot-codelist-from-slurp (slurp)
-  "Return a plist of the first two entries of each member of SLURP.
-SLURP is a list of lists made with `elot-slurp-entities'.
-The result is a plist of pairs of identifiers and labels to display."
-  (flatten-tree
-   (mapcar (lambda (row) (take 2 row)) slurp)))
-
-(defun elot-attriblist-from-slurp (slurp)
-  "Return a plist of the second and third entries of each member of SLURP.
-SLURP is a list of lists made with `elot-slurp-entities'.  The result is
-a plist of pairs of labels and plists of predicate--value pairs.
-The identifier puri of the resource is added to the plist with key `\"puri\"'."
-   (mapcar (lambda (row) (cons (cadr row)
-                               (append `("puri" ,(car row))
-                                       (caddr row))))
-           slurp))
-
-(defvar-local elot-slurp nil
-  "List of resources declared in an ELOT buffer.
-Each member is a list of curie, label, and plist of attributes.")
-(defvar elot-slurp-global nil
-  "List of resources retrieved from SPARQL endpoints.")
-(defvar-local elot-codelist-ht nil
-  "Hashtable holding pairs of curie and label for ELOT label-display.")
-(defvar-local elot-attriblist-ht nil
-  "Hashtable holding pairs of curie and attribute plist for ELOT label-display.")
 (defvar-local elot-label-display 'no
   "Value says `no' or `yes' to showing labels for RDF resources.")
-
-(defun elot-slurp-to-vars ()
-  "Read resources declared in ELOT buffer into local variables.
-The variables are ELOT-SLURP (plist) and ELOT-CODELIST-HT,
-ELOT-ATTRIBLIST-HT (hashtable).  Outside ELOT buffers, use ELOT-SLURP-GLOBAL."
-  (let ((slurp (elot-slurp-entities)))
-    (setq elot-slurp (or slurp elot-slurp-global))
-    (setq elot-codelist-ht
-          (ht<-plist (elot-codelist-from-slurp
-                      ;; only fontify what's locally declared
-                      elot-slurp)))
-    (setq elot-attriblist-ht
-          (ht<-alist (elot-attriblist-from-slurp
-                      ;; lookup includes the global list
-                      (append slurp elot-slurp-global))))))
 
 (defun elot--strip-lang-tag (s)
   "Strip quotes and language/datatype tags from string S like \"abc\"@en."
@@ -358,8 +282,6 @@ Output to OUT-FILE as an elisp list."
                  (message "ELOT label-display turned on")))
       ;; not active yet, add fontification
       (elot-add-label-fontification))))
-
-(add-hook 'after-save-hook #'elot-slurp-to-vars nil :local)
 
 (defvar elot-label-lookup-tmp-attriblist-ht nil
   "Temporary storage for attribute list during label lookup.")
