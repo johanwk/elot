@@ -1,4 +1,4 @@
-# -*- eval: (load-library "elot-defaults") -*-
+# # -*- noeval: (load-library "elot-defaults") -*-
 #+title: BFO 2020
 #+subtitle: An OWL ontology
 #+author: 
@@ -42,7 +42,7 @@ some important changes have been made after conversion.
 :header-args: :padline yes
 :END:
 :OMN:
-#+begin_src omn :exports none
+#+begin_src omn :exports none :tangle no
 ##
 ## This is the bfo.owl ontology
 ## This document is in OWL 2 Manchester Syntax, see https://www.w3.org/TR/owl2-manchester-syntax/
@@ -82,6 +82,9 @@ some important changes have been made after conversion.
 :END:
 
 ** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
 The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
 
 #+name: prefix-table
@@ -89,7 +92,6 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 #+caption: OWL ontology prefixes
 | prefix | uri                                         |
 |--------+---------------------------------------------|
-| :      | http://purl.obolibrary.org/obo/bfo.owl#     |
 | dc11:  | http://purl.org/dc/elements/1.1/            |
 | dc:    | http://purl.org/dc/terms/                   |
 | obo:   | http://purl.obolibrary.org/obo/             |
@@ -763,6 +765,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 :custom_id: bfo.owl-individuals
 :resourcedefs: yes
 :END:
-
+*** Alfred (:a)
+ - Types :: obo:BFO_0000001
+ - rdfs:comment :: name starts with A
 
 

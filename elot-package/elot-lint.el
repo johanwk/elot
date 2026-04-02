@@ -1,8 +1,7 @@
 ;;; elot-lint.el  -*- lexical-binding: t; -*-
 (require 'org-element)
 (require 'org-lint)
-(require 'ox)
-(require 'elot)
+(require 'elot-tangle)
 (require 'elot-label-display)
 
 (defun elot--resourcedefs-here-p ()
@@ -13,15 +12,13 @@
   "Return t when point is inside any :resourcedefs: yes section."
   (string-equal (org-entry-get-with-inheritance "resourcedefs") "yes"))
 
-(declare-function elot-entity-from-header "elot")
-(declare-function elot-unprefix-uri "elot")
-(declare-function elot-context-type "elot")
-(declare-function elot-context-localname "elot")
-(declare-function elot-default-prefix "elot")
-
-(defvar elot-slurp)
-(defvar elot-omn-all-keywords)
-(defvar elot-owl-builtin-resources)
+(declare-function elot-entity-from-header "elot-tangle")
+(declare-function elot-unprefix-uri "elot-tangle")
+(declare-function elot-context-type "elot-tangle")
+(declare-function elot-context-localname "elot-tangle")
+(declare-function elot-default-prefix "elot-tangle")
+(declare-function elot-governing-hierarchy "elot-tangle")
+(declare-function elot-update-link-abbrev "elot-tangle")
 
 ;; A function that goes in the ELOT menu. First we refresh elot-slurp
 ;; with elot-label-display-setup, to pick up recent changes that may
@@ -223,16 +220,15 @@ Add warnings or errors to ISSUES at POINT."
                          "-individuals"))
              (required-ids (mapcar (lambda (suffix) (concat localname suffix)) suffixes))
              (headline-alist '()))
-        ;; Build alist with ID as (custom_id resourcedefs begin)
+        ;; Build alist with ID as (resourcedefs begin)
         (org-element-map tree 'headline
           (lambda (hl)
             (goto-char (org-element-property :begin hl))
             (let ((id (org-entry-get nil "ID"))
-                  (custom-id (org-entry-get nil "custom_id"))
                   (resourcedefs (org-entry-get nil "resourcedefs"))
                   (pos (point)))
               (when id
-                (push (cons id (list custom-id resourcedefs pos))
+                (push (cons id (list resourcedefs pos))
                       headline-alist)))))
 
         ;; Check required sections
@@ -243,14 +239,8 @@ Add warnings or errors to ISSUES at POINT."
                             (propertize (format "WARNING: Missing section with ID %s" req-id)
                                         'face 'warning))
                       issues)
-              (let* ((custom-id (nth 0 (cdr entry)))
-                     (resourcedefs (nth 1 (cdr entry)))
-                     (pos (nth 2 (cdr entry))))
-                (when (or (null custom-id) (not (string= custom-id req-id)))
-                  (push (list pos
-                              (propertize (format "ERROR: Section %s has missing or incorrect custom_id" req-id)
-                                          'face 'error))
-                        issues))
+              (let* ((resourcedefs (nth 0 (cdr entry)))
+                     (pos (nth 1 (cdr entry))))
                 (when (not (string= resourcedefs "yes"))
                   (push (list pos
                               (propertize (format "WARNING: Section %s should have :resourcedefs: yes" req-id)

@@ -102,7 +102,6 @@
       "** ${1:My New Ontology} ontology (${3:ex}:${2:my-new-ontology} ${3:ex}:${2:my-new-ontology}/0.0)",
       ":PROPERTIES:",
       ":ID:       ${2:my-new-ontology}-ontology-declaration", // $2: Localname
-      ":custom_id: ${2:my-new-ontology}-ontology-declaration", // $2: Localname
       ":resourcedefs: yes",
       ":END:",
       " # - Import :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/",
@@ -119,13 +118,11 @@
       "** Datatypes",
       ":PROPERTIES:",
       ":ID:       ${2:my-new-ontology}-datatypes", // $2: Localname
-      ":custom_id: ${2:my-new-ontology}-datatypes", // $2: Localname
       ":resourcedefs: yes",
       ":END:",
       "** Classes",
       ":PROPERTIES:",
       ":ID:       ${2:my-new-ontology}-class-hierarchy", // $2: Localname
-      ":custom_id: ${2:my-new-ontology}-class-hierarchy", // $2: Localname
       ":resourcedefs: yes",
       ":END:",
       "*** My class (${3:ex}:MyClass)", // $3: Prefix
@@ -133,19 +130,16 @@
       "** Object properties",
       ":PROPERTIES:",
       ":ID:       ${2:my-new-ontology}-object-property-hierarchy", // $2: Localname
-      ":custom_id: ${2:my-new-ontology}-object-property-hierarchy", // $2: Localname
       ":resourcedefs: yes",
       ":END:",
       "** Data properties",
       ":PROPERTIES:",
       ":ID:       ${2:my-new-ontology}-data-property-hierarchy", // $2: Localname
-      ":custom_id: ${2:my-new-ontology}-data-property-hierarchy", // $2: Localname
       ":resourcedefs: yes",
       ":END:",
       "** Annotation properties",
       ":PROPERTIES:",
       ":ID:       ${2:my-new-ontology}-annotation-property-hierarchy", // $2: Localname
-      ":custom_id: ${2:my-new-ontology}-annotation-property-hierarchy", // $2: Localname
       ":resourcedefs: yes",
       ":END:",
       // Standard Annotation Properties (Prefix doesn't apply here)
@@ -183,7 +177,6 @@
       "** Individuals",
       ":PROPERTIES:",
       ":ID:       ${2:my-new-ontology}-individuals", // $2: Localname
-      ":custom_id: ${2:my-new-ontology}-individuals", // $2: Localname
       ":resourcedefs: yes",
       ":END:"
     ],
