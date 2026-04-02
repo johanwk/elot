@@ -65,18 +65,24 @@ in SPARQL select results.
 	(require 'ox) ; export functions
 	(require 'ol) ; link functions
 	(require 'org-tempo) ; document templates
-	(require 'htmlize) ; fontify blocks
-	(require 'omn-mode) ; OWL Manchester Syntax (OMN) support
-	(require 'sparql-mode) ; SPARQL
-	(require 'ob-sparql) ; SPARQL in org-babel
-	(require 'ob-plantuml) ; PlantUML in org-babel
-	(require 'hydra) ; hydra menu
-	(require 'ht) ; hashtable, for label display
-	(require 'url) ; for opening online ontologies
-	(require 'url-http) ; for opening online ontologies
 	(require 'xref) ; jump around
 	(require 'button) ; for text‑buttons
 	(require 'help-mode) ; nice keymap & look
+	(require 'url) ; for opening online ontologies
+	(require 'url-http) ; for opening online ontologies
+
+	;; Try to load optional external dependencies
+	(defvar elot-missing-dependencies nil
+	  "List of missing external dependencies for legacy ELOT features.")
+	(setq elot-missing-dependencies nil)
+
+	(dolist (pkg '(htmlize omn-mode sparql-mode ob-sparql ob-plantuml hydra))
+	  (unless (require pkg nil t)
+	    (push pkg elot-missing-dependencies)))
+
+	(when elot-missing-dependencies
+	  (message "ELOT: Optional dependencies missing: %s. Some features will be disabled."
+		   (mapconcat #'symbol-name elot-missing-dependencies ", ")))
 #+end_src
 
 *** Declare ~org-link-abbrev-alist-local~ to allow native compile
@@ -1686,42 +1692,7 @@ completion cookies.
 #+end_src
 *** Menu
 **** Regular menu with ~easy-menu~
-This menu will appear in any org-mode file, which is more than we
-want. Need to find out how to disable it in Org files that aren' in
-ELOT format. A useful test for ELOT use is to check whether ~elot-slurp~
-is non-nil.
-#+name: src-easy-menu
-#+begin_src emacs-lisp
-  (easy-menu-define elot-menu org-mode-map
-    "ELOT Ontology Authoring Menu"
-    '("ELOT"
-      ["Check for common problens" elot-org-lint t]
-      ["Export to OWL" org-babel-tangle t]
-      ["Export to HTML" (lambda () (interactive) (browse-url-of-file (expand-file-name (org-html-export-to-html)))) t]
-      ["Import OWL ontology" elot-open-owl t]
-      "---"
-      ["Insert Existing Resource ID" elot-label-lookup t]
-      ["Insert Primitive Class template" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-class-iof-primitive)) t]
-      ["Insert Defined Class template" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-class-iof-defined)) t]
-      ["Insert Property template" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-property-iof)) t]
-      "---"
-      ["Jump to Resource Headline" xref-find-definitions t]
-      ["Find References to Resource" xref-find-references t]
-      ["Quick-Describe Resource" elot-describe-curie-at-point t]
-      ["Toggle Label-Display" elot-toggle-label-display t]
-      ["Refresh Label-Display Index" elot-label-display-setup t]
-      "---"
-      ["Insert Table of Resources" tempo-template-elot-table-of-resources t]
-      ["Generate Outline from Table of Resources " elot-headings-from-table t]
-      "---"
-      ["Insert SPARQL Select Block" tempo-template-elot-block-sparql-select t]
-      ["Insert SPARQL Construct Block" tempo-template-elot-block-sparql-construct t]
-      ["Insert RDFPUML Diagram Block" tempo-template-elot-block-rdfpuml-diagram t]
-      "---"
-      ["Insert New Ontology Document Header" tempo-template-elot-doc-header t]
-      ["Insert New Ontology Skeleton" tempo-template-elot-ont-skeleton t]
-      ))
-#+end_src
+Moved to elot-mode.org.
 **** Hydra interface to tempo templates (shortcut S-F5)
 First "forward declare" the functions referenced in the Hydra, to
 avoid byte compiler warnings.
@@ -1785,7 +1756,7 @@ Keybinding, customizable.
     (local-set-key elot-key-open-hydra #'elot-hydra/body)
     (local-set-key elot-key-toggle-labels #'elot-toggle-label-display))
 #+end_src
-
+*** 
 *** ROBOT
 **** Read tsv into org table
 This function is currently not in use.
