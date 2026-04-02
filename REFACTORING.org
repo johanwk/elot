@@ -13,16 +13,80 @@ This document is the working project plan for improving ELOT.
 
 * Data Flow
 
-The pipeline converts Org structure into OMN output. 
+The pipeline converts Org structure into OMN output.
 
-@LLM: Describe the flow of reading outline and producing OMN.
+The entry point is =elot-tangle-buffer-to-omn= (called directly or
+via =org-babel-tangle= through =elot-tangle-around-advice=).  The
+pipeline runs in roughly nine steps:
+
+1. *Sanity checks* — =elot-sanity-check-prefixes= and
+   =elot-sanity-check-resource-sections= silently add any missing
+   property-drawer entries (=:prefixdefs: yes=, =:resourcedefs: yes=,
+   =:ID:=) so the later traversal can rely on them being present.
+
+2. *Parse buffer* — =org-element-parse-buffer= reads the Org buffer
+   into a pure AST (no buffer motion).
+
+3. *Build hierarchy* — =elot-parse-headline-hierarchy= walks the AST
+   with a stack-based traversal and builds =elot-headline-hierarchy=:
+   a nested plist tree whose nodes carry =:title=, =:level=, =:uri=
+   (obtained by =elot-entity-from-header=), =:label=, =:descriptions=
+   (description-list key/value pairs), =:children=,
+   =:tangle-target-omn=, =:prefixes=, =:prefixdefs=, =:resourcedefs=,
+   and positional markers.
+
+4. *Update prefix abbreviations* — =elot-update-link-abbrev= scans the
+   hierarchy for nodes with =:prefixdefs "yes"= and populates
+   =org-link-abbrev-alist-local= so that CURIE expansion works in later
+   annotation-value formatting.
+
+5. *Generate prefix block* — for each top-level ontology node,
+   =elot-omn-prefix-block= locates the prefix sub-node and formats the
+   =Prefix:= declarations that open the OMN file.
+
+6. *Generate resource frames* — =elot-omn-resource-declarations=
+   recursively visits all children of the ontology node.  For each
+   resource it calls =elot-omn-resource-frame=, which emits the OMN
+   frame keyword (=Class:=, =ObjectProperty:=, etc.) followed by
+   annotations (=elot-omn-format-annotations=) and restrictions such as
+   =SubClassOf:= (=elot-omn-format-restrictions=).
+
+7. *Merge with user OMN blocks* — =elot-tangle-around-advice= also
+   invokes the normal =org-babel-tangle= pass, which extracts any
+   literal =#+begin_src omn= source blocks.  Their content is appended
+   after the outline-generated OMN in the target file.
+
+8. *Write output file* — the combined OMN string is written to the path
+   declared in =:HEADER-ARGS\:OMN: :tangle <file>.omn=.  Any Emacs
+   buffer already visiting that file is silently reverted.
+
+9. *Post-process to Turtle* — =elot-robot-omn-to-ttl= invokes ROBOT
+   (=java -jar robot.jar convert=) to validate and convert the =.omn=
+   file into a =.ttl= Turtle file.  In interactive mode this runs
+   asynchronously; in batch mode it runs synchronously and calls
+   =kill-emacs= on failure.
 
 * Function Reference
 
-@LLM: fill in the table
-| Function | Purpose | Source block |
-|----------+---------+--------------|
-|          |         |              |
+| Function                           | Purpose                                                         | Source block                                      |
+|------------------------------------+-----------------------------------------------------------------+---------------------------------------------------|
+| =elot-update-headline-hierarchy=   | Entry point: run sanity checks, parse buffer, set hierarchy var | Contextual Extractors / "How to run it"           |
+| =elot-parse-headline-hierarchy=    | Convert org-element AST into nested plist tree                  | Contextual Extractors / "Function declarations"   |
+| =elot-entity-from-header=          | Extract URI or CURIE from an Org headline title string          | Helpers / "resource from Org heading"             |
+| =elot-sanity-check-prefixes=       | Ensure Prefixes headings have =:prefixdefs: yes=                | "Sanity check" section                            |
+| =elot-sanity-check-resource-sections= | Ensure resource headings have =:ID:= and =:resourcedefs: yes= | "Sanity check" section                            |
+| =elot-update-link-abbrev=          | Refresh =org-link-abbrev-alist-local= from hierarchy prefixes   | "Helper: update org-link-abbrev-alist-local"      |
+| =elot-omn-prefix-block=            | Generate OMN =Prefix:= block from an ontology node             | OMN Generators / "Prefix block"                   |
+| =elot-omn-resource-declarations=   | Recursively emit OMN frames for all resource nodes              | OMN Generators / "Resource declarations"          |
+| =elot-omn-resource-frame=          | Emit one OMN resource frame with annotations and restrictions   | OMN Generators / "Resource declarations"          |
+| =elot-omn-format-annotations=      | Format annotation key-value list as OMN text                    | OMN Generators / "Resource declarations"          |
+| =elot-omn-format-restrictions=     | Format restriction list (=SubClassOf:= etc.) as OMN text        | OMN Generators / "Resource declarations"          |
+| =elot-get-ontology-node-omn=       | Combine prefix block + resource declarations into OMN string    | Tangling Entrypoint / "Helper functions"          |
+| =elot-tangle-buffer-to-omn=        | Interactive top-level: parse buffer and write =.omn= files      | Tangling Entrypoint                               |
+| =elot-tangle-around-advice=        | Around-advice merging outline OMN with user =omn= source blocks | "Post-Tangle: Merge Outline with User OMN Blocks" |
+| =elot-robot-omn-to-ttl=            | Convert =.omn= to =.ttl= using ROBOT (batch or async)           | Support / "OMN → Turtle conversion"               |
+| =elot-build-slurp=                 | Flatten hierarchy into =(URI label attrs)= list for display     | New slurp implementation / "Function declarations"|
+| =elot-slurp-to-vars=               | Populate =elot-slurp=, =elot-codelist-ht=, =elot-attriblist-ht= | New slurp / "How to run it"                       |
 
 
 * Phased Plan
