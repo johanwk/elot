@@ -1015,31 +1015,66 @@ Uses PARENT-URI to automatically emit taxonomy axioms."
                 (revert-buffer t t t))))
           (message "Tangled OMN outline to %s" target))))))
 
-(defun elot-tangle-include-outline (&rest _args)
-  "Prepend outline-generated OMN to each tangled .omn file.
-This runs as advice after `org-babel-tangle', in the Org source buffer.
-It reads each .omn tangle target, prepends the AST-generated outline,
-and saves the file."
-  (when (bound-and-true-p elot-headline-hierarchy)
-    (let ((nodes (plist-get elot-headline-hierarchy :children)))
-      (dolist (node nodes)
-        (let ((node-target (plist-get node :tangle-target-omn)))
-          (when node-target
-            (let ((target-full (expand-file-name node-target)))
-              (when (file-exists-p target-full)
-                (let ((outline-omn (elot-get-ontology-node-omn node)))
-                  (unless (string-empty-p outline-omn)
-                    (with-current-buffer (find-file-noselect target-full)
-                      (goto-char (point-min))
-                      (insert outline-omn "\n\n")
-                      (save-buffer)
-                      ;; If the buffer wasn't already open, kill it
-                      )
-                    (message "Prepended outline OMN to %s" node-target)))))))))))
+(defun elot-tangle-around-advice (orig-fn &rest args)
+  "Around advice for `org-babel-tangle' that merges ELOT outline with user OMN.
+ORIG-FN is `org-babel-tangle'; ARGS are its arguments.
+Only activates in buffers where `elot-headline-hierarchy' is set."
+  (if (not (bound-and-true-p elot-headline-hierarchy))
+      ;; Not an ELOT buffer -- just call the original
+      (apply orig-fn args)
+    ;; ELOT buffer: delete stale .omn files, let babel tangle, then merge.
+    ;;
+    ;; IMPORTANT: We must collect ontology nodes AFTER orig-fn runs,
+    ;; because org-babel-pre-tangle-hook calls elot-update-headline-hierarchy
+    ;; which refreshes elot-headline-hierarchy from the current buffer.
+    ;; Collecting before orig-fn would use the STALE hierarchy, causing
+    ;; a one-tangle delay before edits appear in the output.
 
-(add-hook 'org-babel-pre-tangle-hook #'elot--remember-org-source nil t)
-(add-hook 'org-babel-pre-tangle-hook #'elot-tangle-buffer-to-omn nil t)
-(advice-add 'org-babel-tangle :after #'elot-tangle-include-outline)
+    ;; 1. Delete stale .omn files so we can detect whether babel wrote them.
+    ;;    We only need target paths here, which we can get from the
+    ;;    (possibly stale) hierarchy -- the paths don't change.
+    (let ((omn-target-paths nil))
+      (dolist (node (plist-get elot-headline-hierarchy :children))
+        (when-let ((target (plist-get node :tangle-target-omn)))
+          (let ((target-full (expand-file-name target)))
+            (push target-full omn-target-paths)
+            (when (file-exists-p target-full)
+              (delete-file target-full)))))
+
+      ;; 2. Let org-babel-tangle run -- this triggers pre-tangle hooks
+      ;;    (which refresh elot-headline-hierarchy) and writes user omn
+      ;;    blocks (if any)
+      (apply orig-fn args)
+
+      ;; 3. Now collect targets from the FRESH hierarchy and merge
+      (dolist (node (plist-get elot-headline-hierarchy :children))
+        (when-let ((target (plist-get node :tangle-target-omn)))
+          (let* ((target-full (expand-file-name target))
+                 (outline-omn (elot-get-ontology-node-omn node))
+                 (user-omn    (when (file-exists-p target-full)
+                                (with-temp-buffer
+                                  (insert-file-contents target-full)
+                                  (buffer-string)))))
+            (with-temp-file target-full
+              (insert outline-omn)
+              (when (and user-omn (not (string-empty-p user-omn)))
+                (insert "\n\n" user-omn)))
+            ;; Silently revert any visiting buffer
+            (let ((buf (find-buffer-visiting target-full)))
+              (when buf
+                (with-current-buffer buf
+                  (revert-buffer t t t))))
+            (message "Tangled OMN to %s%s" target-full
+                     (if user-omn " (with user blocks)" ""))
+            (elot-robot-omn-to-ttl target-full)))))))
+
+(defun elot-tangle--install-advice ()
+  "Install the around-advice on `org-babel-tangle' for ELOT merging."
+  (advice-add 'org-babel-tangle :around #'elot-tangle-around-advice))
+
+(defun elot-tangle--remove-advice ()
+  "Remove the around-advice on `org-babel-tangle'."
+  (advice-remove 'org-babel-tangle #'elot-tangle-around-advice))
 
 (provide 'elot-tangle)
 ;;; elot-tangle.el ends here
