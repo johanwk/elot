@@ -1047,6 +1047,7 @@ avoid byte compiler warnings.
 
 #+name: src-hydra-menu
 #+begin_src emacs-lisp
+  (when (fboundp 'defhydra)
   (defhydra elot-hydra (:color blue :hint nil)
     "
    --- ELOT helpdesk --- press F5 to toggle labels ---
@@ -1072,7 +1073,7 @@ avoid byte compiler warnings.
     ("obd" (tempo-template-elot-block-rdfpuml-diagram))
     ("odh" (tempo-template-elot-doc-header))
     ("ods" (tempo-template-elot-ont-skeleton))
-    ("otr" (tempo-template-elot-table-of-resources)))
+    ("otr" (tempo-template-elot-table-of-resources))))
 #+end_src
 
 #+RESULTS:
