@@ -94,7 +94,8 @@ into the new file =elot-tangle.org=:
 - Create initial ERT regression tests in =test/test-elot-tangle.el=
 - Open draft PR referencing the issue
 
-** TODO Phase 1: Extract tangle-to-OMN code
+** DONE Phase 1: Extract tangle-to-OMN code
+CLOSED: [2026-04-03 fre. 00:03]
 :PROPERTIES:
 :END:
 
@@ -131,7 +132,8 @@ Work entirely inside =elot-tangle.org=:
 - Add narrative prose sections explaining design choices
 - Improve inline comments in source blocks
 
-** TODO Phase 4: Refactor Org-reading functions to org-element API
+** DONE Phase 4: Refactor Org-reading functions to org-element API
+CLOSED: [2026-04-03 fre. 00:03]
 :PROPERTIES:
 :END:
 
@@ -143,7 +145,8 @@ Replace ad-hoc outline traversal in =elot-org-list-siblings= and
   =org-element-map=
 - Ensure regression tests continue to pass
 
-** TODO Phase 5: Harden OMN generation and taxonomy functions
+** DONE Phase 5: Harden OMN generation and taxonomy functions
+CLOSED: [2026-04-03 fre. 00:03]
 :PROPERTIES:
 :END:
 
@@ -159,22 +162,3 @@ Improve robustness of =elot-resource-taxonomy-from-l=,
 This section captures design notes and rationale as they arise during
 the work.
 
-** Borderline code: =src-prefix-links=
-
-The =src-prefix-links= block is used both by the tangle pipeline (to
-resolve prefixed URIs into expanded forms for OMN output) and by the
-interactive display functions (e.g., link-abbrev setup in Org buffers).
-
-Decision pending: either move it and add a cross-reference, or duplicate
-a minimal version for =elot-tangle.org= while keeping the original in
-=elot-defs.org=.
-
-** =org-link-abbrev-alist-local= dependency
-
-Several tangle functions (notably =elot-annotation-entries= and
-=elot-unprefix-uri=) rely on the buffer-local variable
-=org-link-abbrev-alist-local= to filter and expand prefixed URIs.  This
-tight coupling to buffer state complicates unit testing.
-
-Phase 4 should consider making the prefix alist an explicit function
-parameter rather than an implicit buffer-local variable.
