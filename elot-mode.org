@@ -66,7 +66,7 @@ Users can activate =elot-mode= in several ways:
   ;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
   ;; URL: https://github.com/johanwk/elot
   ;; Version: 2.0.0
-  ;; Package-Requires: ((emacs "29.1") (htmlize "1.58") (ht "2.3") (omn-mode "1.3") (hydra "0.15.0") (sparql-mode "4.0.2"))
+  ;; Package-Requires: ((emacs "29.1") (ht "2.3"))
   ;; Keywords: languages outlines tools org ontology
 
   ;; This file is not part of GNU Emacs.
@@ -106,17 +106,18 @@ Users can activate =elot-mode= in several ways:
 
 ** Module requires
 
-Load the ELOT modules.  For now, we pull in the legacy =elot= library
-(from =elot-defs.org=) for functions not yet migrated, and the new
-=elot-tangle= module.
+Load the core ELOT modules.  =elot-lint= is autoloaded -- it is only
+pulled in when the user explicitly calls =elot-org-lint=.
 
 #+name: src-mode-require
 #+begin_src emacs-lisp
   (require 'elot-tangle)
   (require 'elot-label-display)
-  (require 'elot-lint)
   (require 'org-tempo)
   (require 'ob-lob)
+
+  ;; Lint is optional -- only loaded when the user invokes it
+  (autoload 'elot-org-lint "elot-lint" "Refresh `elot-slurp', then run `org-lint'." t)
 #+end_src
 
 ** Customization group

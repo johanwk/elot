@@ -106,6 +106,17 @@ This section collects functions and variables that enable reading the Org outlin
     "List of all Manchester syntax keywords, both property and misc keywords.")
 #+end_src
 
+***** OWL built-in resources
+#+begin_src emacs-lisp
+(defvar elot-owl-builtin-resources
+  '("owl:Thing" "owl:Nothing" "xsd:string" "xsd:boolean" "xsd:decimal" "xsd:integer"
+    "xsd:float" "xsd:double" "xsd:dateTime" "xsd:time" "xsd:date" "xsd:gYear"
+    "xsd:gMonth" "xsd:gDay" "xsd:gYearMonth" "xsd:gMonthDay" "xsd:hexBinary"
+    "xsd:base64Binary" "xsd:anyURI" "xsd:normalizedString" "xsd:token" "xsd:language"
+    "xsd:Name" "xsd:NCName" "xsd:NMTOKEN" "rdf:PlainLiteral")
+  "List of built-in OWL and XSD resources that are always considered known.")
+#+end_src
+
 ***** TODO CURIE pattern
 Check this against other similar pattern in use
 #+begin_src emacs-lisp
@@ -113,6 +124,50 @@ Check this against other similar pattern in use
     "^\\([a-zA-Z][-a-zA-Z0-9_.]*\\|\\):\\([-[:word:]_./]*\\)$")
 #+end_src
 
+
+**** Context identification
+Functions that retrieve ELOT context properties from the Org property
+drawer hierarchy.  Used by tempo templates, lint checks, and the old
+pipeline.
+
+#+begin_src emacs-lisp
+  (defun elot-context-type ()
+    "Retrieve value of property ELOT-context-type for a governing heading.
+  This will return \"ontology\" if point is under a heading that
+  declares an ontology."
+    (org-entry-get-with-inheritance "ELOT-context-type"))
+  (defun elot-context-localname ()
+    "Retrieve value of property ELOT-context-localname for a governing heading.
+  This will return the localname of the ontology
+  if point is under a heading that declares an ontology."
+    (org-entry-get-with-inheritance "ELOT-context-localname"))
+  (defun elot-default-prefix ()
+    "Retrieve value of property ELOT-default-prefix for a governing heading.
+  This will return the default prefix for ontology resources
+  if point is under a heading that declares an ontology."
+    (org-entry-get-with-inheritance "ELOT-default-prefix"))
+  (defun elot-governing-hierarchy ()
+    "Return the governing hierarchy ID if inside a hierarchy section, or nil."
+    (let ((this-ID (org-entry-get-with-inheritance "ID")))
+      (when (and this-ID
+                 (string-match-p "-hierarchy$" this-ID))
+        this-ID)))
+#+end_src
+
+***** Looking at
+Functions to know where we are in an ELOT tree.
+#+begin_src emacs-lisp
+  (defun elot-at-ontology-heading ()
+    "Return TRUE if point is in a heading that declares ontology."
+    (let ((id (or (org-entry-get (point) "ID") "")))
+     (string-match "ontology-declaration" id)))
+  (defun elot-in-class-tree ()
+    "Return TRUE if point is a class hierarchy heading."
+    (string-match-p "class-hierarchy" (elot-governing-hierarchy)))
+  (defun elot-in-property-tree ()
+    "Return TRUE if point is a property hierarchy heading."
+    (string-match-p "property-hierarchy" (elot-governing-hierarchy)))
+#+end_src
 
 **** Helper functions
 
