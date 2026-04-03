@@ -267,7 +267,6 @@ Insert a skeleton with =<ods=.
   :END:
    - owl:versionInfo :: 0.0 start of " (s ontlocalname) "
    - dcterms:title :: \"" (s ontlocalname) " ontology\"@en
-   - pav:lastUpdateOn :: {{{modification-time(\"%Y-%m-%dT%H:%M:%SZ\",t)}}}^^xsd:dateTime
    - dcterms:license :: [[https://creativecommons.org/licenses/by-sa/4.0/]]
    - dcterms:creator :: {{{author}}}
    - dcterms:modified ::  {{{modification-time(\"%Y-%m-%d\",t)}}}^^xsd:date
