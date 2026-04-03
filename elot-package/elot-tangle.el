@@ -1003,14 +1003,17 @@ Uses PARENT-URI to automatically emit taxonomy axioms."
   (elot-update-headline-hierarchy)
   (let ((ontology-nodes (plist-get elot-headline-hierarchy :children))
         (omn-tangle-blocks (org-babel-tangle-collect-blocks "omn"))
-        (abbrev-save org-link-abbrev-alist-local))
+        (abbrev-save org-link-abbrev-alist-local)
+        (omt-save org-macro-templates))
     ;; First tangle omn blocks. This writes the tangled contents to disk.
     (org-babel-tangle t t "omn")
     (dolist (node ontology-nodes)
       (when-let ((target (plist-get node :tangle-target-omn)))
         (let ((target-full (expand-file-name target)))
           (with-temp-file target-full
+            ;; restore abbrev and macro definitions
             (setq-local org-link-abbrev-alist-local abbrev-save)
+            (setq-local org-macro-templates omt-save)
             ;; 1. Insert the ontology node string (ontology from headings, main output)
             (insert (elot-get-ontology-node-omn node))
             ;; 2. If standard tangled blocks exist for this file...
