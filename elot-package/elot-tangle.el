@@ -990,91 +990,48 @@ Uses PARENT-URI to automatically emit taxonomy axioms."
     (mapconcat 'identity (nreverse frames) "\n\n")))
 
 (defun elot-get-ontology-node-omn (node)
-  "Return the OMN content for the given ONTOLOGY-NODE."
-  (let* ((prefix-block (elot-omn-prefix-block node))
-         (resources (elot-omn-resource-declarations (list node))))
-    (concat (or prefix-block "")
-            (if (and prefix-block (not (string-empty-p resources))) "\n\n" "")
-            resources)))
+    "Return the OMN content for the given ONTOLOGY-NODE."
+    (let* ((prefix-block (elot-omn-prefix-block node))
+           (resources (elot-omn-resource-declarations (list node))))
+      (concat (or prefix-block "")
+              (if (and prefix-block (not (string-empty-p resources))) "\n\n" "")
+              resources)))
 
 (defun elot-tangle-buffer-to-omn ()
   "Update hierarchy and export OMN for all ontologies to their tangle targets."
   (interactive)
   (elot-update-headline-hierarchy)
-  (let ((ontology-nodes (plist-get elot-headline-hierarchy :children)))
+  (let ((ontology-nodes (plist-get elot-headline-hierarchy :children))
+        (omn-tangle-blocks (org-babel-tangle-collect-blocks "omn"))
+        (abbrev-save org-link-abbrev-alist-local))
+    ;; First tangle omn blocks. This writes the tangled contents to disk.
+    (org-babel-tangle t t "omn")
     (dolist (node ontology-nodes)
       (when-let ((target (plist-get node :tangle-target-omn)))
         (let ((target-full (expand-file-name target)))
           (with-temp-file target-full
-            (insert (elot-get-ontology-node-omn node)))
+            (setq-local org-link-abbrev-alist-local abbrev-save)
+            ;; 1. Insert the ontology node string (ontology from headings, main output)
+            (insert (elot-get-ontology-node-omn node))
+            ;; 2. If standard tangled blocks exist for this file...
+            (when (assoc-string target-full omn-tangle-blocks)
+              (message "insert result of tangle from: %s" target-full)
+              ;; Ensure we are on a new line before appending
+              (unless (bolp) (insert "\n\n#\n# Tangle blocks\n#\n"))
+              ;; Slurp the contents that `org-babel-tangle` just wrote to disk
+              (when (file-exists-p target-full)
+                (let ((start (point)))
+                  (insert-file-contents target-full)
+                  ;; insert-file-contents leaves point at `start`, so we move to the end
+                  (goto-char (point-max))))))
           ;; If the .omn file is already open in a buffer, silently revert it
           ;; so Emacs won't prompt "file changed on disk; really edit the buffer?"
           (let ((buf (find-buffer-visiting target-full)))
             (when buf
               (with-current-buffer buf
                 (revert-buffer t t t))))
-          (message "Tangled OMN outline to %s" target))))))
-
-(defun elot-tangle-around-advice (orig-fn &rest args)
-  "Around advice for `org-babel-tangle' that merges ELOT outline with user OMN.
-ORIG-FN is `org-babel-tangle'; ARGS are its arguments.
-Only activates in buffers where `elot-headline-hierarchy' is set."
-  (if (not (bound-and-true-p elot-headline-hierarchy))
-      ;; Not an ELOT buffer -- just call the original
-      (apply orig-fn args)
-    ;; ELOT buffer: delete stale .omn files, let babel tangle, then merge.
-    ;;
-    ;; IMPORTANT: We must collect ontology nodes AFTER orig-fn runs,
-    ;; because org-babel-pre-tangle-hook calls elot-update-headline-hierarchy
-    ;; which refreshes elot-headline-hierarchy from the current buffer.
-    ;; Collecting before orig-fn would use the STALE hierarchy, causing
-    ;; a one-tangle delay before edits appear in the output.
-
-    ;; 1. Delete stale .omn files so we can detect whether babel wrote them.
-    ;;    We only need target paths here, which we can get from the
-    ;;    (possibly stale) hierarchy -- the paths don't change.
-    (let ((omn-target-paths nil))
-      (dolist (node (plist-get elot-headline-hierarchy :children))
-        (when-let ((target (plist-get node :tangle-target-omn)))
-          (let ((target-full (expand-file-name target)))
-            (push target-full omn-target-paths)
-            (when (file-exists-p target-full)
-              (delete-file target-full)))))
-
-      ;; 2. Let org-babel-tangle run -- this triggers pre-tangle hooks
-      ;;    (which refresh elot-headline-hierarchy) and writes user omn
-      ;;    blocks (if any)
-      (apply orig-fn args)
-
-      ;; 3. Now collect targets from the FRESH hierarchy and merge
-      (dolist (node (plist-get elot-headline-hierarchy :children))
-        (when-let ((target (plist-get node :tangle-target-omn)))
-          (let* ((target-full (expand-file-name target))
-                 (outline-omn (elot-get-ontology-node-omn node))
-                 (user-omn    (when (file-exists-p target-full)
-                                (with-temp-buffer
-                                  (insert-file-contents target-full)
-                                  (buffer-string)))))
-            (with-temp-file target-full
-              (insert outline-omn)
-              (when (and user-omn (not (string-empty-p user-omn)))
-                (insert "\n\n" user-omn)))
-            ;; Silently revert any visiting buffer
-            (let ((buf (find-buffer-visiting target-full)))
-              (when buf
-                (with-current-buffer buf
-                  (revert-buffer t t t))))
-            (message "Tangled OMN to %s%s" target-full
-                     (if user-omn " (with user blocks)" ""))
-            (elot-robot-omn-to-ttl target-full)))))))
-
-(defun elot-tangle--install-advice ()
-  "Install the around-advice on `org-babel-tangle' for ELOT merging."
-  (advice-add 'org-babel-tangle :around #'elot-tangle-around-advice))
-
-(defun elot-tangle--remove-advice ()
-  "Remove the around-advice on `org-babel-tangle'."
-  (advice-remove 'org-babel-tangle #'elot-tangle-around-advice))
+          (message "Tangled OMN outline to %s" target)
+          (elot-robot-omn-to-ttl target-full))))))
 
 (provide 'elot-tangle)
 ;;; elot-tangle.el ends here
