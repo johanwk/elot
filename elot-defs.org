@@ -1065,7 +1065,7 @@ avoid byte compiler warnings.
     ("ocp" (progn (outline-next-heading) (tempo-template-elot-class-iof-primitive)))
     ("ocd" (progn (outline-next-heading) (tempo-template-elot-class-iof-defined)))
     ("op" (progn (outline-next-heading) (tempo-template-elot-property-iof)))
-    ("t" (org-babel-tangle))
+    ("t" (elot-tangle-buffer-to-omn))
     ("h" (browse-url-of-file (expand-file-name (org-html-export-to-html))))
     ("obm" (tempo-template-elot-block-robot-metrics))
     ("obs" (tempo-template-elot-block-sparql-select))
