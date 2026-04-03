@@ -1247,7 +1247,8 @@ A top-level interactive function that parses the current buffer, finds all ontol
               (when buf
                 (with-current-buffer buf
                   (revert-buffer t t t))))
-            (message "Tangled OMN outline to %s" target))))))
+            (message "Tangled OMN outline to %s" target)
+            (elot-robot-omn-to-ttl target-full))))))
 #+end_src
 
 
