@@ -685,30 +685,22 @@ hooks and never removed them.
 #+begin_src emacs-lisp
   (defun elot-mode--add-hooks ()
     "Add buffer-local hooks for an ELOT buffer."
-    ;; Pre-tangle: remember source file and update hierarchy
+    ;; Pre-tangle: remember source file
     (add-hook 'org-babel-pre-tangle-hook #'elot--remember-org-source nil t)
-    (add-hook 'org-babel-pre-tangle-hook #'elot-update-headline-hierarchy nil t)
-    ;; Post-tangle: convert OMN to Turtle via ROBOT
-    (add-hook 'org-babel-post-tangle-hook #'elot-tangled-omn-to-ttl nil t)
-    ;; After babel execution: refresh inline images
     (add-hook 'org-babel-after-execute-hook #'org-redisplay-inline-images nil t)
     ;; After save: refresh link abbreviations and slurp data
     (add-hook 'after-save-hook #'elot-update-link-abbrev nil t)
     (add-hook 'after-save-hook #'elot-slurp-to-vars nil t)
     ;; xref: register the ELOT backend for M-. / M-?
-    (add-hook 'xref-backend-functions #'elot-xref-backend nil t)
-    (elot-tangle--install-advice))
+    (add-hook 'xref-backend-functions #'elot-xref-backend nil t))
 
   (defun elot-mode--remove-hooks ()
     "Remove buffer-local hooks added by `elot-mode--add-hooks'."
     (remove-hook 'org-babel-pre-tangle-hook #'elot--remember-org-source t)
-    (remove-hook 'org-babel-pre-tangle-hook #'elot-update-headline-hierarchy t)
-    (remove-hook 'org-babel-post-tangle-hook #'elot-tangled-omn-to-ttl t)
     (remove-hook 'org-babel-after-execute-hook #'org-redisplay-inline-images t)
     (remove-hook 'after-save-hook #'elot-update-link-abbrev t)
     (remove-hook 'after-save-hook #'elot-slurp-to-vars t)
-    (remove-hook 'xref-backend-functions #'elot-xref-backend t)
-    (elot-tangle--remove-advice))
+    (remove-hook 'xref-backend-functions #'elot-xref-backend t))
 #+end_src
 
 ** Enable and disable
