@@ -716,7 +716,7 @@ The link description is obtained using `(elot-codelist-id-label MATCH)`."
   ;; ------------------------------------------------------------
   ;; 3  Resolve prefixes in description list values
   ;; ------------------------------------------------------------
-  (elot--prepare-export-buffer))
+  (elot--resolve-prefixes-in-description-list))
 
 (add-hook 'org-export-before-processing-functions #'elot--prepare-export-buffer)
 ;; src-stable-links-export ends here
@@ -876,7 +876,7 @@ conducted."
   ("ocp" (progn (outline-next-heading) (tempo-template-elot-class-iof-primitive)))
   ("ocd" (progn (outline-next-heading) (tempo-template-elot-class-iof-defined)))
   ("op" (progn (outline-next-heading) (tempo-template-elot-property-iof)))
-  ("t" (org-babel-tangle))
+  ("t" (elot-tangle-buffer-to-omn))
   ("h" (browse-url-of-file (expand-file-name (org-html-export-to-html))))
   ("obm" (tempo-template-elot-block-robot-metrics))
   ("obs" (tempo-template-elot-block-sparql-select))
