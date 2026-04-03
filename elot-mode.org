@@ -643,7 +643,7 @@ replaces the ad-hoc =local-set-key= calls in =elot-setup-org-keybindings=.
     "ELOT Ontology Authoring Menu"
     '("ELOT"
       ["Check for common problems" elot-org-lint :active (fboundp 'elot-org-lint)]
-      ["Export to OWL (Tangle)" org-babel-tangle t]
+      ["Export to OWL (Tangle)" elot-tangle-buffer-to-omn t]
       ["Export to HTML" (lambda () (interactive) (browse-url-of-file (expand-file-name (org-html-export-to-html))))
        :active (fboundp 'org-html-export-to-html)]
       ["Import OWL ontology" elot-open-owl :active (fboundp 'elot-open-owl)]
