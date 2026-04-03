@@ -149,7 +149,7 @@ Treats `:' and `_' as word-constituent characters.")
  - dcterms:title :: \"" (s ontlocalname) " ontology\"@en
  - dcterms:license :: [[https://creativecommons.org/licenses/by-sa/4.0/]]
  - dcterms:creator :: {{{author}}}
- - dcterms:modified ::  {{{modification-time(\"%Y-%m-%d\",t)}}}^^xsd:date
+ - dcterms:modified ::  {{{time(\"%Y-%m-%d\",t)}}}^^xsd:date
  - dcterms:publisher :: https://example.org/thepublisher
  - dc:rights :: Copyright info here
  - dcterms:description :: The " (s ontlocalname) " ontology is ...
@@ -201,8 +201,6 @@ Treats `:' and `_' as word-constituent characters.")
  - rdfs:isDefinedBy :: http://purl.org/dc/terms/
 *** dc:rights
  - rdfs:isDefinedBy :: http://purl.org/dc/elements/1.1/
-*** pav:lastUpdateOn
- - rdfs:isDefinedBy :: http://purl.org/pav/
 *** skos:example
  - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
 *** skos:prefLabel
