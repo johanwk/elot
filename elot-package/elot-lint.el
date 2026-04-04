@@ -1,4 +1,39 @@
-;;; elot-lint.el  -*- lexical-binding: t; -*-
+;;; elot-lint.el --- ELOT lint checks for ontology buffers  -*- lexical-binding: t; -*-
+
+;; Copyright (C) 2024, 2025, 2026 Johan W. Kluewer
+
+;; Author: Johan W. Kluewer <johan.w.kluwer@gmail.com>
+;; URL: https://github.com/johanwk/elot
+;; Version: 2.0.0
+;; Keywords: languages tools org ontology
+
+;; This file is not part of GNU Emacs.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; Lint checks for ELOT (Emacs Literate Ontology Tool) buffers.
+;; Registers custom org-lint checkers for ontology-specific validation:
+;; heading identifiers, prefix tables, required sections, description
+;; list CURIEs, and axiom value checks.
+;;
+;; Autoloaded from elot-mode.el; loaded on demand when the user calls
+;; M-x elot-org-lint.
+
+;;; Code:
+
 (require 'org-element)
 (require 'org-lint)
 (require 'elot-tangle)
