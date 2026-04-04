@@ -233,8 +233,7 @@ Insert a document header with =<oh=.
                          "#+subtitle: An OWL ontology" > n
                          "#+author: " (p "Author name: " authname) > n
                          "#+date: Created " (format-time-string "%Y-%m-%d %H:%M") > n
-                         "#+call: theme-elot()" n n
-                         (progn (load-library "elot-defaults") (message "Loaded ELOT") ""))
+                         "#+call: theme-elot()" n n)
                          "<odh"
                          "ELOT document header"
                          'org-tempo-tags)
