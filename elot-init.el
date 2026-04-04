@@ -55,7 +55,7 @@
 
 ;; location of the elot package -- edit path to fit
 (push (expand-file-name "~/elisp/elot/elot-package/") load-path)
-(load-library "elot")
+(require 'elot-mode)
 
 (org-babel-do-load-languages
       'org-babel-load-languages
