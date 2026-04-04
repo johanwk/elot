@@ -131,36 +131,27 @@ UPDATE: Robot commands moved to new file ~elot-tangling.org~.
 #+begin_src emacs-lisp
   (defun elot-open-owl (owl-source)
     "Open an OWL ontology from OWL-SOURCE by converting with `elot-exporter'.
-  OWL-SOURCE can be a local file or a URL.  If a URL is provided, the
-  function requests the ontology using content negotiation, preferring
-  Turtle, RDF/XML, N3, JSON-LD, OWL Functional Syntax, or Manchester
-  Syntax.  The output is captured into a buffer named after the converted
-  file, with `.org' as the extension."
+  OWL-SOURCE can be a local file or a URL.  The source is passed directly
+  to `elot-exporter', which handles both local files and URLs (with
+  content negotiation).  The output is captured into a buffer named after
+  the source, with `.org' as the extension."
     (interactive "sEnter OWL file path or URL: ")
     (let* ((is-url (string-match-p "\\`https?://" owl-source))
-           (local-file (if is-url
-                           (let ((temp-file (make-temp-file "elot-ontology-" nil ".owl")))
-                             (elot-download-ontology owl-source temp-file)
-                             temp-file)
-                         owl-source))
-           (output-buffer-name (concat (file-name-sans-extension (file-name-nondirectory local-file)) ".org"))
+           (base-name (if is-url
+                          (file-name-sans-extension
+                           (file-name-nondirectory
+                            (url-filename (url-generic-parse-url owl-source))))
+                        (file-name-sans-extension
+                         (file-name-nondirectory owl-source))))
+           (output-buffer-name (concat base-name ".org"))
            (output-buffer (get-buffer-create output-buffer-name))
-           (command (concat elot-exporter-command-str " " (shell-quote-argument local-file))))
+           (command (concat elot-exporter-command-str " "
+                            (shell-quote-argument owl-source))))
       (with-current-buffer output-buffer
         (erase-buffer)
         (shell-command command output-buffer)
         (org-mode))
-      (pop-to-buffer output-buffer)
-      (when is-url
-        (delete-file local-file))))  ;; Clean up temp file after conversion
-
-  (defun elot-download-ontology (url dest-file)
-    "Download an ontology from URL with content negotiation, save it to DEST-FILE.
-  Requests the ontology in the best available format: Turtle, RDF/XML, N3,
-  JSON-LD, OWL Functional Syntax, or Manchester Syntax."
-    (let ((url-request-extra-headers
-           '(("Accept" . "text/turtle, application/rdf+xml, text/n3, application/ld+json, text/owl-functional, text/owl-manchester; q=0.9"))))
-      (url-copy-file url dest-file t)))
+      (pop-to-buffer output-buffer)))
 #+end_src
 *** OWL built-in resources
 Moved to =elot-tangling.org= → =elot-tangle.el=.
