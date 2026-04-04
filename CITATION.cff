@@ -17,8 +17,8 @@ authors:
     orcid: https://orcid.org/0000-0002-7336-3932
     email: melinda.hodkiewicz@uwa.edu.au
     affiliation: The University of Western Australia
-version: 1.0.6-pre
-date-released: 2025-04-08
+version: 2.0.0
+date-released: 2026-04-04
 license: GPL-3.0
 repository-code: https://github.com/johanwk/elot
 url: https://github.com/johanwk/elot
