@@ -27,25 +27,24 @@
 ;; (setq package-gnupghome-dir "~/.emacs.d/elpa/gnupg")
 
 
-;; various packages
+;; various packages used by the full ELOT environment
 (dolist (package '(htmlize
                    omn-mode
                    sparql-mode
                    plantuml-mode
                    hydra
                    org-ql
-                   ;; the following are completely optional
+                   ht
+                   ;; the following are for a modern Emacs interface (optional)
                    modus-themes
                    general
                    orderless
                    vertico
                    marginalia
                    consult
-                   ht
                    ))
  (unless (package-installed-p package)
-   (package-install package)
-   (require package)))
+   (package-install package)))
 
 (require 'ob-lob) ; Library of Babel
 (require 'ob-sparql)
@@ -56,6 +55,9 @@
 ;; location of the elot package -- edit path to fit
 (push (expand-file-name "~/elisp/elot/elot-package/") load-path)
 (require 'elot-mode)
+
+;; ELOT mode will now automatically activate for ontology files.
+;; You can also manually enable it with M-x elot-mode.
 
 (org-babel-do-load-languages
       'org-babel-load-languages
