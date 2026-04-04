@@ -16,34 +16,26 @@ from headlines and description lists. Export to OWL (OMN or Turtle)
 and documentation (HTML or PDF).  Diagrams are generated from Turtle
 blocks or SPARQL queries using the rdfpuml tool.
 
-**NEW** April 2025: Minimalistic templating from tables &#x2013; handy when you
-need to add many similar-looking classes and don't need complex
-template expansion.
+**NEW** April 2026: Org parsing rewritten.
 
-**NEW** March 2025:
+-   No longer uses "boilerplate" org-babel blocks
+-   Much more efficient on large files
 
--   Convert OWL files to ELOT's org-mode format.
-    Download the `jar` binary from [releases](https://github.com/johanwk/elot/releases), store as `elot-exporter.jar` in your `bin/`
-    and open existing OWL files with function `elot-open-owl`.
--   VS Code support: For instructions on how to run ELOT commands directly from within VS
-    Code on your own projects, please see the detailed 
-    [README](vscode-support/README.md).
-
--   [Prerequisites in brief](#org0009887)
--   [Installation](#org1082df1)
-    -   [Get Emacs](#org526a27b)
-    -   [Install ELOT in Emacs](#org7ce875d)
-    -   [Install ELOT auxiliaries](#org07f3450)
--   [Quick start using ELOT](#org861d91f)
-    -   [Adding an ontology](#org02c91d3)
-    -   [Adding classes and relations](#orgd7b0bb2)
-    -   [Adding annotations](#org3296cda)
-    -   [Querying the ontology](#org5838f19)
-    -   [Making a diagram](#org31c4f7d)
-    -   [Display labels instead of identifiers](#orga43d168)
+-   [Prerequisites in brief](#orgc137b62)
+-   [Installation](#org7d49c93)
+    -   [Get Emacs](#org3790fd7)
+    -   [Install ELOT in Emacs](#org4aeb69c)
+    -   [Install ELOT auxiliaries](#orgf439b08)
+-   [Quick start using ELOT](#org96abf8a)
+    -   [Adding an ontology](#orgf808072)
+    -   [Adding classes and relations](#org2619c43)
+    -   [Adding annotations](#orgb39dc69)
+    -   [Querying the ontology](#org8c7cf45)
+    -   [Making a diagram](#org33527b7)
+    -   [Display labels instead of identifiers](#org8075a93)
 
 
-<a id="org0009887"></a>
+<a id="orgc137b62"></a>
 
 ## Prerequisites in brief
 
@@ -56,12 +48,12 @@ template expansion.
     -   Open OWL files: Download `elot-exporter` from [releases](https://github.com/johanwk/elot/releases)
 
 
-<a id="org1082df1"></a>
+<a id="org7d49c93"></a>
 
 ## Installation
 
 
-<a id="org526a27b"></a>
+<a id="org3790fd7"></a>
 
 ### Get Emacs
 
@@ -76,7 +68,7 @@ If you are new to Emacs, the book [Mastering Emacs](https://www.masteringemacs.o
 recommended.
 
 
-<a id="org7ce875d"></a>
+<a id="org4aeb69c"></a>
 
 ### Install ELOT in Emacs
 
@@ -95,15 +87,15 @@ should *clone* the ELOT repository using Git.
     You should now have a subfolder of `elisp` called `elot`.
 3.  Ensure ELOT is loaded when Emacs starts up.
     -   For new Emacs users: find the file `elot-init.el` inside the `elot`
-        folder, and copy it to a new file named `.emacs` *in your home
-        folder*, then restart Emacs. You should now be looking at a
-        basic, working Emacs configuration.
-    -   Experienced Emacs users should open `elot-init.el` and look at the
-        list of packages that are required. Add
-        `~/elisp/elot/elot-package/` to your `load-path`.
+        folder, and copy its contents to your `.emacs` file (typically
+        found in your home folder), then restart Emacs. You should now
+        have a basic, working Emacs configuration that automatically
+        activates `elot-mode` when you open an ontology file.
+    -   Experienced Emacs users should add `~/elisp/elot/elot-package/`
+        to their `load-path` and `(require 'elot-mode)`.
 
 
-<a id="org07f3450"></a>
+<a id="orgf439b08"></a>
 
 ### Install ELOT auxiliaries
 
@@ -144,12 +136,12 @@ Get the tools:
         `elot-exporter.jar` in your `bin` folder.
 
 
-<a id="org861d91f"></a>
+<a id="org96abf8a"></a>
 
 ## Quick start using ELOT
 
 
-<a id="org02c91d3"></a>
+<a id="orgf808072"></a>
 
 ### Adding an ontology
 
@@ -165,7 +157,6 @@ To create a new ontology, do this in Emacs:
     From the bottom of the ELOT menu, select *Insert New Ontology Document Header*.
     Answer the prompts, and a header is produced, like the following.
     
-        # -*- eval: (load-library "elot-defaults") -*-
         #+title: My new ontology
         #+subtitle: An OWL ontology
         #+author: John Doe
@@ -195,7 +186,7 @@ Now create an OWL file from your new document.
 ![img](./documentation/images/firefox-skeleton1.png)
 
 
-<a id="orgd7b0bb2"></a>
+<a id="org2619c43"></a>
 
 ### Adding classes and relations
 
@@ -213,7 +204,7 @@ Now create an OWL file from your new document.
 ![img](documentation/images/elot-animal1.png)
 
 
-<a id="org3296cda"></a>
+<a id="orgb39dc69"></a>
 
 ### Adding annotations
 
@@ -224,7 +215,7 @@ In this screenshot, two annotations are added to the "transitive" characteristic
 ![img](documentation/images/elot-annotate-axiom1.png)
 
 
-<a id="org5838f19"></a>
+<a id="org8c7cf45"></a>
 
 ### Querying the ontology
 
@@ -237,7 +228,7 @@ In this screenshot, two annotations are added to the "transitive" characteristic
 ![img](documentation/images/elot-query1.png)
 
 
-<a id="org31c4f7d"></a>
+<a id="org33527b7"></a>
 
 ### Making a diagram
 
@@ -260,7 +251,7 @@ In this screenshot, two annotations are added to the "transitive" characteristic
 ![img](documentation/images/firefox-diagram1.png)
 
 
-<a id="orga43d168"></a>
+<a id="org8075a93"></a>
 
 ### Display labels instead of identifiers
 
@@ -292,8 +283,7 @@ Label overlays are enabled automatically in the `*xref*` buffer, so
 identifiers appear with readable labels if available. This makes it easier
 to explore large ontologies interactively.
 
-This functionality is activated automatically for Org files exported with
-ELOT startup code and does not require additional setup.
+This functionality is activated automatically for Org files when `elot-mode` is active.
 
 
 # HTML style
