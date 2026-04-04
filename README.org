@@ -16,17 +16,9 @@ from headlines and description lists. Export to OWL (OMN or Turtle)
 and documentation (HTML or PDF).  Diagrams are generated from Turtle
 blocks or SPARQL queries using the rdfpuml tool.
 
-*NEW* April 2025: Minimalistic templating from tables -- handy when you
-need to add many similar-looking classes and don't need complex
-template expansion.
-
-*NEW* March 2025:
- - Convert OWL files to ELOT's org-mode format.
-   Download the ~jar~ binary from [[https://github.com/johanwk/elot/releases][releases]], store as ~elot-exporter.jar~ in your ~bin/~
-   and open existing OWL files with function ~elot-open-owl~.
- - VS Code support: For instructions on how to run ELOT commands directly from within VS
-   Code on your own projects, please see the detailed 
-   [[file:vscode-support/README.md][README]].
+*NEW* April 2026: Org parsing rewritten.
+ - No longer uses "boilerplate" org-babel blocks
+ - Much more efficient on large files
 
    
 #+TOC: headlines 2 local
@@ -64,12 +56,12 @@ should /clone/ the ELOT repository using Git.
     You should now have a subfolder of =elisp= called =elot=.
  3. Ensure ELOT is loaded when Emacs starts up.
     - For new Emacs users: find the file =elot-init.el= inside the =elot=
-      folder, and copy it to a new file named =.emacs= /in your home
-      folder/, then restart Emacs. You should now be looking at a
-      basic, working Emacs configuration.
-    - Experienced Emacs users should open =elot-init.el= and look at the
-      list of packages that are required. Add
-      =~/elisp/elot/elot-package/= to your =load-path=.
+      folder, and copy its contents to your =.emacs= file (typically
+      found in your home folder), then restart Emacs. You should now
+      have a basic, working Emacs configuration that automatically
+      activates =elot-mode= when you open an ontology file.
+    - Experienced Emacs users should add =~/elisp/elot/elot-package/=
+      to their =load-path= and =(require 'elot-mode)=.
       
 *** Install ELOT auxiliaries
 ELOT relies on external software programs to query your ontologies
@@ -118,7 +110,6 @@ To create a new ontology, do this in Emacs:
    From the bottom of the ELOT menu, select /Insert New Ontology Document Header/.
    Answer the prompts, and a header is produced, like the following.
    #+begin_src org
-   # -*- eval: (load-library "elot-defaults") -*-
    #+title: My new ontology
    #+subtitle: An OWL ontology
    #+author: John Doe
@@ -221,8 +212,7 @@ Label overlays are enabled automatically in the ~*xref*~ buffer, so
 identifiers appear with readable labels if available. This makes it easier
 to explore large ontologies interactively.
 
-This functionality is activated automatically for Org files exported with
-ELOT startup code and does not require additional setup.
+This functionality is activated automatically for Org files when =elot-mode= is active.
 
 * HTML style
 HTML output from ELOT produces stable anchors for ontology resources,
