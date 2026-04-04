@@ -106,8 +106,17 @@ Users can activate =elot-mode= in several ways:
 
 ** Module requires
 
-Load the core ELOT modules.  =elot-lint= is autoloaded -- it is only
-pulled in when the user explicitly calls =elot-org-lint=.
+Load the core ELOT modules (zero external dependencies).  Then
+attempt to load the full =elot= package, which brings in SPARQL
+execution, Hydra menus, LaTeX export filters, OWL import, etc.
+The =(require 'elot nil t)= call is /soft/: if =elot.el= (or any of
+its external dependencies) is not installed, it silently falls back
+to the core.  Every menu item that depends on the full package is
+already guarded with =:active (fboundp ...)=, so the menu degrades
+gracefully.
+
+=elot-lint= is autoloaded -- it is only pulled in when the user
+explicitly calls =elot-org-lint=.
 
 #+name: src-mode-require
 #+begin_src emacs-lisp
@@ -118,6 +127,13 @@ pulled in when the user explicitly calls =elot-org-lint=.
   (require 'tempo)
   (require 'org-tempo)
   (require 'ob-lob)
+
+  ;; Load the full ELOT package (SPARQL, hydra, LaTeX export, OWL
+  ;; import, etc.) when available.  The `nil t' arguments mean "don't
+  ;; signal an error if elot.el is not on `load-path'", so users who
+  ;; only have the zero-dependency core still get a working `elot-mode'.
+  ;; Features guarded by `fboundp' in the ELOT menu degrade gracefully.
+  (require 'elot nil t)
 
   ;; Lint is optional -- only loaded when the user invokes it
   (autoload 'elot-org-lint "elot-lint" "Refresh `elot-slurp', then run `org-lint'." t)
@@ -628,7 +644,9 @@ replaces the ad-hoc =local-set-key= calls in =elot-setup-org-keybindings=.
   (defvar elot-mode-map
     (let ((map (make-sparse-keymap)))
       (define-key map (kbd "<f5>")   #'elot-toggle-label-display)
-      (define-key map (kbd "S-<f5>") #'elot-hydra/body)
+      ;; S-F5 -> hydra, but only when hydra is available (loaded via elot.el)
+      (when (fboundp 'elot-hydra/body)
+        (define-key map (kbd "S-<f5>") #'elot-hydra/body))
       map)
     "Keymap active when `elot-mode' is enabled.")
 #+end_src

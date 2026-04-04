@@ -50,6 +50,13 @@
 (require 'org-tempo)
 (require 'ob-lob)
 
+;; Load the full ELOT package (SPARQL, hydra, LaTeX export, OWL
+;; import, etc.) when available.  The `nil t' arguments mean "don't
+;; signal an error if elot.el is not on `load-path'", so users who
+;; only have the zero-dependency core still get a working `elot-mode'.
+;; Features guarded by `fboundp' in the ELOT menu degrade gracefully.
+(require 'elot nil t)
+
 ;; Lint is optional -- only loaded when the user invokes it
 (autoload 'elot-org-lint "elot-lint" "Refresh `elot-slurp', then run `org-lint'." t)
 
@@ -478,7 +485,9 @@ or `xsd:integer' on a column header will be applied to values."
 (defvar elot-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "<f5>")   #'elot-toggle-label-display)
-    (define-key map (kbd "S-<f5>") #'elot-hydra/body)
+    ;; S-F5 -> hydra, but only when hydra is available (loaded via elot.el)
+    (when (fboundp 'elot-hydra/body)
+      (define-key map (kbd "S-<f5>") #'elot-hydra/body))
     map)
   "Keymap active when `elot-mode' is enabled.")
 
