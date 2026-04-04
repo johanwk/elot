@@ -25,7 +25,8 @@ node ../elot-cli/dist/cli.js ../ny-part-12/IDO/ontology/LIS-14-for-FDIS.org - > 
 
 * What Must Be Removed
 
-** Files to delete from this repository
+** DONE Files to delete from this repository
+CLOSED: [2026-04-04 lør. 16:38]
 
 The following files are made obsolete by the new CLI and should be
 removed in a dedicated clean-up commit:
