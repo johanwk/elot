@@ -134,6 +134,7 @@ Get the tools:
     from a local file, or from a URL, with `M-x elot-open-owl`.
     -   download the latest Java JAR from [releases](https://github.com/johanwk/elot/releases) and save it as
         `elot-exporter.jar` in your `bin` folder.
+    -   the source code is available in [`tools/elot-exporter/`](tools/elot-exporter/) in this repository.
 
 
 <a id="org96abf8a"></a>
@@ -291,4 +292,15 @@ This functionality is activated automatically for Org files when `elot-mode` is 
 HTML output from ELOT produces stable anchors for ontology resources,
 and shows readable labels with internal, clickable links.
 ![img](documentation/images/elot-html-format.png)
+
+
+# Tools
+
+Two command-line tools are included under the [`tools/`](tools/) directory:
+
+-   **[elot-exporter](tools/elot-exporter/README.md)** — A Java CLI (OWLAPI + Maven) that converts existing OWL
+    ontologies into ELOT's Org-mode format, producing a shaded JAR.
+
+-   **[elot-cli](tools/elot-cli/README.md)** — A TypeScript CLI and VS Code extension that generates OWL
+    Manchester Syntax from Org-mode files (uses orgize WASM + esbuild).
 
