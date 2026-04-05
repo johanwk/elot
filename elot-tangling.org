@@ -190,9 +190,37 @@ Functions to know where we are in an ELOT tree.
                 puri)))
             puri)))
 
+  (defun elot--strip-continuation-indent (str)
+    "Remove common leading whitespace from continuation lines in STR.
+  Find the minimum number of leading spaces on lines after the first,
+  then remove exactly that many spaces from the beginning of each
+  continuation line.  The first line is left unchanged."
+    (if (not (string-match-p "\n" str))
+        str
+      (let* ((lines (split-string str "\n"))
+             (first-line (car lines))
+             (rest-lines (cdr lines))
+             ;; Find minimum indent among non-empty continuation lines
+             (min-indent
+              (cl-loop for line in rest-lines
+                       when (string-match "^\\( +\\)" line)
+                       minimize (length (match-string 1 line))
+                       into m
+                       finally return (or m 0))))
+        (if (zerop min-indent)
+            str
+          (let ((trimmed (mapcar (lambda (line)
+                                   (if (>= (length line) min-indent)
+                                       (substring line min-indent)
+                                     line))
+                                 rest-lines)))
+            (mapconcat #'identity (cons first-line trimmed) "\n"))))))
+
   (defun elot-annotation-string-or-uri (str)
     "Expand STR to be used as an annotation value in Manchester Syntax.
   Expand uri, or return number, or wrap in quotes."
+    ;; Strip common continuation-line indent first
+    (setq str (elot--strip-continuation-indent str))
     ;; maybe there's macros in the string, expand them
     (if (string-match "{{{.+}}}" str)
         (let ((omt org-macro-templates))
