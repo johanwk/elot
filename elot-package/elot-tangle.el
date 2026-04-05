@@ -126,13 +126,13 @@ if point is under a heading that declares an ontology."
   "Remove common leading whitespace from continuation lines in STR.
 Find the minimum number of leading spaces on lines after the first,
 then remove exactly that many spaces from the beginning of each
-continuation line.  The first line is left unchanged."
+continuation line.  The first line is left unchanged.
+Only strips from lines that actually begin with at least that many spaces."
   (if (not (string-match-p "\n" str))
       str
     (let* ((lines (split-string str "\n"))
            (first-line (car lines))
            (rest-lines (cdr lines))
-           ;; Find minimum indent among non-empty continuation lines
            (min-indent
             (cl-loop for line in rest-lines
                      when (string-match "^\\( +\\)" line)
@@ -141,11 +141,12 @@ continuation line.  The first line is left unchanged."
                      finally return (or m 0))))
       (if (zerop min-indent)
           str
-        (let ((trimmed (mapcar (lambda (line)
-                                 (if (>= (length line) min-indent)
-                                     (substring line min-indent)
-                                   line))
-                               rest-lines)))
+        (let* ((prefix (make-string min-indent ?\s))
+               (trimmed (mapcar (lambda (line)
+                                  (if (string-prefix-p prefix line)
+                                      (substring line min-indent)
+                                    line))
+                                rest-lines)))
           (mapconcat #'identity (cons first-line trimmed) "\n"))))))
 
 (defun elot-annotation-string-or-uri (str)
@@ -224,6 +225,7 @@ so meta-annotations are excluded from the literal text."
            ((eq type 'paragraph)
             (push (substring-no-properties (org-element-interpret-data child)) result))
            ((eq type 'plain-list)
+            ;; Check for meta-annotation sub-items first
             (let ((sub-result nil))
               (dolist (subitem (org-element-contents child))
                 (let ((tag (elot-org-elt-item-tag-str subitem)))
@@ -232,7 +234,12 @@ so meta-annotations are excluded from the literal text."
                         (when sub-result
                           (push (string-join (nreverse sub-result) "") result))
                         (throw 'stop t))
-                    (push (substring-no-properties (org-element-interpret-data subitem)) sub-result))))
+                    ;; Use raw buffer text instead of org-element-interpret-data
+                    ;; to preserve original numbering in ordered lists
+                    (let* ((beg (org-element-property :begin subitem))
+                           (end (org-element-property :end subitem)))
+                      (when (and beg end)
+                        (push (buffer-substring-no-properties beg end) sub-result))))))
               (when sub-result
                 (push (concat (string-join (nreverse sub-result) "")
                               (make-string (or (org-element-property :post-blank child) 0) ?\n))
