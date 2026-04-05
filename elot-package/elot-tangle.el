@@ -1015,6 +1015,7 @@ Uses PARENT-URI to automatically emit taxonomy axioms."
             ;; restore abbrev and macro definitions
             (setq-local org-link-abbrev-alist-local abbrev-save)
             (setq-local org-macro-templates omt-save)
+            (set-syntax-table elot-mode-syntax-table)
             ;; 1. Insert the ontology node string (ontology from headings, main output)
             (insert (elot-get-ontology-node-omn node))
             ;; 2. If standard tangled blocks exist for this file...
