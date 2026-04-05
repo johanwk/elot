@@ -1,0 +1,18 @@
+[package]
+name = "elot-orgize"
+version = "0.1.0"
+edition = "2021"
+description = "Org-mode parser for ELOT, compiled to WebAssembly via orgize"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+orgize = "0.10.0-alpha.10"
+wasm-bindgen = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+opt-level = "s"
+lto = true

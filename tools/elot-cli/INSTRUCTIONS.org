@@ -1,0 +1,49 @@
+#+TITLE: Instructions for Continuing elot-cli Development
+#+DESCRIPTION: Guidance for LLM-supported development of the Org->OMN pipeline
+
+* Project Context
+=elot-cli= is a TypeScript port of the [[https://github.com/johanwk/elot][ELOT]] Emacs Lisp pipeline. It converts Org-mode outlines into OWL Manchester Syntax (OMN). It uses the =orga= parser (v4+) which is unified-based.
+
+* Current Status (Milestone 5)
+Core logic for parsing headlines, properties, and generating OMN frames is implemented. However, a few "plumbing" bugs prevent perfect output, particularly regarding prefix handling and taxonomy.
+
+* Known Issues & Tasks
+
+** 1. (done)
+
+** 2. Taxonomy Deduplication
+- *Symptom:* If a headline has an explicit =SubClassOf: Parent= description, the generator might add another one if it detects the hierarchy.
+- *Task:* In =src/omnFrame.ts=, check if the restriction already exists before adding inferred taxonomy.
+- *Files:* =src/omnFrame.ts=.
+
+** 3. Diagnostic Tools
+- *Task:* Implement =src/debug-ast.ts= and =src/debug-hierarchy.ts= (currently empty).
+- *Utility:* These are essential for seeing how =orga= parses the specific Org files and how the hierarchy is built.
+- *Usage:*
+  #+begin_src bash
+  npx tsx src/debug-ast.ts examples/bfo-core.org
+  npx tsx src/debug-hierarchy.ts examples/bfo-core.org
+  #+end_src
+
+** 4. Golden Test Alignment
+- *Task:* Run =npm test= and align the output with =examples/bfo-core.omn=. Minor whitespace or comma differences might cause failures.
+
+* Key File Roles
+- =src/types.ts=: Core interfaces (=ElotNode=, =DescriptionItem=).
+- =src/parseHierarchy.ts=: The main AST-to-tree converter. Handles property extraction and level-based nesting.
+- =src/entityFromHeader.ts=: Regex-heavy parser for headline titles (URIs/CURIEs).
+- =src/annotationValue.ts=: Classifies and formats values (Strings, URIs, URNs).
+- =src/omnFrame.ts=: Formats individual =Class:=, =ObjectProperty:= frames.
+- =src/generateOmn.ts=: Assembles the final document.
+
+* How to Proceed in Next Session
+1. *Implement Debugging:* Start by populating =src/debug-ast.ts= to print the =orga= AST of =examples/bfo-core.org=.
+2. *Trace Prefixes:* Use the debug output to see why =prefixdefs: yes= might be missed or why the table isn't found.
+3. *Fix & Verify:* Apply fixes and run the golden test (=npm test=).
+
+* Common Commands
+#+begin_src bash
+npm install     # Install dependencies
+npm test        # Run golden tests
+npm run elot -- <input.org> [output.omn] # Run the CLI
+#+end_src

@@ -1,0 +1,29 @@
+node_modules/
+dist/
+*.js.map
+*.tsbuildinfo
+
+# Generated WASM artifacts (built by wasm-pack)
+src/wasm/
+
+# Rust build artifacts
+elot-orgize/target/
+
+# VS Code extension package
+*.vsix
+
+# Visual Studio cache
+.vs/
+
+# Emacs backup files (ending in ~)
+*~
+
+# Emacs auto-save files (surrounded by #)
+#*#
+
+# Lock files (created for buffers)
+.#*
+
+# Additional temporary files
+*.elc
+

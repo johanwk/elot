@@ -1,0 +1,37 @@
+# Source files (compiled to dist/)
+src/
+tsconfig.json
+esbuild.mjs
+
+# Dev files
+node_modules/
+.gitignore
+*.tsbuildinfo
+
+# Rust crate and WASM source artifacts (bundled into dist/ by esbuild)
+elot-orgize/
+src/wasm/
+
+# Visual Studio cache
+.vs/
+
+# Emacs backup/auto-save files
+*~
+\#*\#
+.#*
+*.elc
+
+# Temporary/work files
+t.omn
+t.omn~
+INSTRUCTIONS.org
+INSTRUCTIONS.org~
+PLAN.org
+
+# Examples and elisp (not needed at runtime)
+examples/
+elot-elisp/
+
+# Other dev/doc files
+gemini-orga-20260328.org
+# README.md is required by the VS Code Marketplace — do NOT exclude it

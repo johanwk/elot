@@ -1,0 +1,113 @@
+{
+  "name": "elot",
+  "displayName": "Elot: Org-mode Ontology Editor",
+  "version": "0.1.0",
+  "publisher": "johanw",
+  "description": "Manchester Syntax generation for ontologies written in Org-mode",
+  "icon": "images/elot-icon.png",
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
+  "keywords": [
+    "ontology",
+    "OWL",
+    "Manchester Syntax",
+    "Org-mode",
+    "RDF",
+    "knowledge graph"
+  ],
+  "badges": [],
+  "qna": "marketplace",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/johanwk/elot-cli"
+  },
+  "license": "GPL-3.0-or-later",
+  "main": "./dist/extension.js",
+  "categories": [
+    "Programming Languages",
+    "Data Science"
+  ],
+  "bin": {
+    "elot": "./dist/cli.js"
+  },
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "activationEvents": [],
+  "contributes": {
+    "commands": [
+      {
+        "command": "elot.tangle",
+        "title": "Elot: Tangle to Manchester Syntax"
+      },
+      {
+        "command": "elot.toggleLabels",
+        "title": "Elot: Toggle Label Display",
+        "icon": "$(tag)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "elot.toggleLabels",
+        "key": "f5",
+        "when": "resourceExtname == .org"
+      }
+    ],
+    "configuration": {
+      "title": "ELOT",
+      "properties": {
+        "elot.labelDisplay.fontStyle": {
+          "type": "string",
+          "default": "italic",
+          "enum": ["italic", "normal", "oblique"],
+          "description": "Font style for displayed labels (when label display is ON)"
+        },
+        "elot.labelDisplay.hoverEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show hover information (label, type, annotations) for CURIEs in Org files"
+        }
+      }
+    },
+    "menus": {
+      "editor/title": [
+        {
+          "command": "elot.toggleLabels",
+          "when": "resourceExtname == .org",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "elot.tangle",
+          "when": "resourceExtname == .org",
+          "group": "navigation"
+        },
+        {
+          "command": "elot.toggleLabels",
+          "when": "resourceExtname == .org",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run bundle",
+    "build:wasm": "cd elot-orgize && wasm-pack build --target nodejs --out-dir ../src/wasm",
+    "bundle": "npm run build:wasm && node esbuild.mjs",
+    "build": "tsc",
+    "compile": "tsc",
+    "watch": "tsc -w",
+    "test": "tsx src/tests/golden.test.ts",
+    "elot": "tsx src/cli.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@types/vscode": "^1.75.0",
+    "tsx": "^4.0.0",
+    "esbuild": "^0.25.0"
+  }
+}

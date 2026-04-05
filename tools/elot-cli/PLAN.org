@@ -1,0 +1,212 @@
+#+TITLE: elot-cli Implementation Plan
+#+DESCRIPTION: Port of ELOT Org->OMN pipeline from Emacs Lisp to TypeScript CLI
+
+* Overview
+
+Port the core ELOT functionality — reading an Org-mode outline and generating
+OWL Manchester Syntax (OMN) — from Emacs Lisp (=elot-tangle.el=) to a
+standalone TypeScript CLI using =orga= for Org parsing.
+
+Reference Elisp source: =elot-elisp/elot-tangling.org=
+Golden test fixture: =examples/bfo-core.org= -> =examples/bfo-core.omn=
+
+* Milestone 1: Foundation [4/4]
+
+** DONE =src/types.ts= — Core interfaces
+- [X] =EntityInfo= (uri, label) returned by =entityFromHeader=
+- [X] =DescriptionItem= (tag, value, meta-annotations)
+- [X] =ElotNode= plist-equivalent (level, title, uri, label, rdfType, tags, descriptions, children, ...)
+- [X] =PrefixEntry= (prefix, uri)
+- [X] Entity type constants (owl:Class, owl:ObjectProperty, etc.)
+- [X] =ID_SUFFIX_TO_TYPE= map (ancestor :ID: suffix -> rdfType)
+- [X] =RDF_TYPE_TO_OMN_KEYWORD= map (rdfType -> OMN frame keyword)
+
+** DONE =src/entityFromHeader.ts= — Heading title parser
+Port of =elot-entity-from-header=. Extracts identifier from heading text.
+- [X] Single full URI at start of line: =http://example.org/Foo=
+- [X] Single full URI in parentheses: ="label" (http://...)=
+- [X] Single CURIE at start of line: =ex:Foo=
+- [X] CURIE in parentheses: ="label"@en (ex:Foo)=
+- [X] Two URIs in parentheses (ontology + version): =(http://ont http://ver)=
+- [X] CURIE + URI in parentheses: =(ex:ont http://ver)=
+- [X] Two CURIEs in parentheses: =(ex:ont ex:ver)=
+- [X] URN identifier: =<urn:isbn:0943396611>=
+- [X] URN in parentheses: =(<urn:isbn:...>)=
+- [X] Return null when no identifier found (noerror mode)
+- [X] Label extraction: text before =(...)= becomes rdfs:label
+- [X] Unit tests covering all patterns above (25/25 passing)
+
+** DONE =src/omnKeywords.ts= — OMN keyword lists
+Port of =elot-omn-property-keywords= and =elot-omn-misc-keywords=.
+- [X] =propertyKeywords= array (SubClassOf, DisjointWith, Domain, Range, InverseOf, etc.)
+- [X] =miscKeywords= array (DisjointClasses, EquivalentClasses, etc.)
+- [X] =allKeywords= combined array
+- [X] =isPropertyKeyword()= / =isMiscKeyword()= / =isOmnKeyword()= helpers
+- [X] O(1) Set-based lookup
+
+** DONE =src/annotationValue.ts= — Value classifier
+Port of =elot-annotation-string-or-uri= and =elot-unprefix-uri=. Classifies annotation values for OMN.
+- [X] Numbers -> passthrough
+- [X] Bare URI / bracketed URI -> =<uri>=
+- [X] Org double-bracket links =[[http://...]]=
+- [X] URN in angles -> passthrough
+- [X] URN:UUID without angles -> ="..."^^xsd:string=
+- [X] Booleans -> ="true"^^xsd:boolean=
+- [X] Typed strings -> passthrough (="..."^^xsd:type=)
+- [X] Language-tagged strings -> passthrough (="..."@en=)
+- [X] CURIE that expands to URI -> =<expanded>=
+- [X] Plain strings -> ="string"=
+- [X] Escaped quotes within strings
+- [X] =unprefixUri()= — CURIE expansion with prefix map
+- [X] Unit tests (30 cases)
+
+* Milestone 2: Org Parsing [3/3]
+
+** DONE =src/prefixes.ts= — Prefix table extraction
+Port of =elot-get-prefixes-alist=.
+- [X] Find table under headline with =:prefixdefs: yes=
+- [X] Parse table rows into =PrefixEntry[]=
+- [X] Build prefix->URI =Map= for CURIE expansion
+- [X] Skip header row (="prefix" / "uri"=)
+
+** DONE =src/parseHierarchy.ts= — AST walker -> ElotNode tree
+Port of =elot-parse-headline-hierarchy= and =elot--extract-headline-descriptions=.
+- [X] Walk orga AST to extract headlines, levels, tags, title text
+- [X] Extract property drawer keys (=:ID:=, =:ELOT-context-type:=, =:resourcedefs:=, =:prefixdefs:=, etc.)
+- [X] Determine =rdfType= from ancestor =:ID:= suffix (=-class-hierarchy= -> owl:Class, etc.)
+- [X] Parse =entityFromHeader= on each title to get uri + label
+- [X] Extract description lists with tag + body separation
+- [X] Handle nested description lists (meta-annotations)
+- [X] =:nodeclare:= tag detection
+- [X] Detect and extract tangle target from =:header-args:omn:=
+- [X] Auto-add =rdfs:label= annotation when label differs from uri
+- [X] Auto-add =rdf:type= to descriptions
+- [X] Build parent->child tree from headline nesting
+
+** DONE =src/textContent.ts= — orga text extraction utility
+- [X] Recursive text extraction from orga AST nodes
+- [X] Handle subscript/superscript nodes (underscore preservation)
+
+* Milestone 3: OMN Generation [4/4]
+
+** DONE =src/omnPrefix.ts= — Prefix block formatter
+Port of =elot-omn-prefix-block=.
+- [X] Format =Prefix: name: <uri>= lines
+- [X] Correct alignment/padding
+
+** DONE =src/omnFrame.ts= — Resource frame formatter
+Port of =elot-omn-resource-frame=, =elot-omn-misc-frames=.
+- [X] Partition descriptions into annotations vs. restrictions (by keyword)
+- [X] Format =Annotations:= block with correct indentation
+- [X] Format restriction lines (=SubClassOf:=, =Domain:=, etc.)
+- [X] Handle meta-annotations (=Annotations:= within a restriction)
+- [X] Inferred =SubClassOf= / =SubPropertyOf= from parent URI
+- [X] =:nodeclare:= headings: emit misc frames only (no =Class:= declaration)
+- [X] Ontology frame: =Ontology: uri <versionIRI>=
+
+** DONE =src/omnDeclarations.ts= — Recursive OMN assembly
+Port of =elot-omn-resource-declarations=.
+- [X] Recursive traversal of ElotNode tree
+- [X] Frame + misc-frame generation per node
+- [X] Blank-line separation between frames
+
+** DONE =src/generateOmn.ts= — Top-level document assembly
+Port of =elot-get-ontology-node-omn=.
+- [X] Combine prefix block + resource declarations
+- [X] Extract =#+begin_src omn= blocks and append their content
+- [X] Handle multiple ontologies in one file (future)
+
+* Milestone 4: CLI & Testing [2/3]
+
+** DONE =src/cli.ts= — Command-line entry point
+- [X] Read Org file from argv
+- [X] Parse -> generate -> write =.omn= file
+- [ ] Error reporting with source location (deferred)
+
+** DONE =src/tests/golden.test.ts= — Golden file comparison
+- [X] Parse =examples/bfo-core.org=
+- [X] Generate OMN output
+- [X] Compare against =examples/bfo-core.omn= (ignoring trailing whitespace)
+- [X] Report first diff location on failure
+
+** DONE =src/tests/entityFromHeader.test.ts= — Unit tests for header parser
+- [X] All 10+ regex patterns (25/25 passing)
+- [X] Edge cases: empty string, no parens, multiple parens
+- [X] Label extraction correctness
+
+* Milestone 5: Stabilization & Refinement [2/5]
+
+- [X] *Fix `getProperty` naming and scope* — Renamed `getPropertyFromNode` to `getProperty` and updated to handle root sections in `parseHierarchy.ts`.
+- [X] *Fix Prefix Table Search* — `findTable` is recursive but `getBodyNodes` filters out sections; need to ensure tables inside sections are found.
+- [ ] *Taxonomy Deduplication* — Prevent double `SubClassOf` / `SubPropertyOf` when an explicit property exists.
+- [ ] *Diagnostic Tools* — Add `src/debug-ast.ts` and `src/debug-hierarchy.ts` as referenced in README.
+- [ ] *Golden Test Alignment* — Align output with `bfo-core.omn` regarding whitespace and trailing commas in multi-line values.
+
+* Milestone 6: VS Code Extension / VSIX [0/4]
+
+Package and distribute the CLI as a VS Code extension so users can run OMN
+generation directly from the editor without a separate Node.js install.
+
+** TODO =package.json= — Extension manifest
+- [ ] Add =publisher=, =engines.vscode=, =activationEvents=, and =contributes= fields
+- [ ] Register a =elot.generateOmn= command
+- [ ] Add =vscode= to =devDependencies= and run =vscode-install= in CI
+
+** TODO =src/extension.ts= — VS Code extension entry point
+- [ ] Implement =activate()= / =deactivate()= lifecycle hooks
+- [ ] Register command handler: resolve active editor's file path, call =generateOmn=, show progress notification
+- [ ] Surface errors (missing =#+begin_src omn= target, parse failures) as VS Code error messages
+- [ ] Open the generated =.omn= file in a new editor tab on success
+
+** TODO Build & package pipeline
+- [ ] Add =vsce= (VS Code Extension CLI) as a dev dependency
+- [ ] Add npm scripts: =vscode:prepublish=, =package= (runs =vsce package=)
+- [ ] Ensure =tsconfig.json= emits to =out/= (VS Code convention) and extension entry is =out/extension.js=
+- [ ] Verify bundled =.vsix= includes all compiled JS and the =orga= dependency
+- [ ] Add a =.vscodeignore= to exclude sources, tests, and dev artifacts from the package
+
+** TODO Distribution & documentation
+- [ ] Document one-click install: =Extensions: Install from VSIX…= in the Command Palette
+- [ ] Add a =CHANGELOG.md= with version history
+- [ ] Update =README.md= with extension usage section (keybinding, right-click menu, output location)
+- [ ] Consider publishing to the VS Code Marketplace under the =elot= publisher slug
+
+* Module Dependency Graph
+
+#+begin_example
+cli.ts
+  └─ generateOmn.ts
+       ├─ omnPrefix.ts
+       ├─ omnDeclarations.ts
+       │    ├─ omnFrame.ts
+       │    │    ├─ omnKeywords.ts
+       │    │    └─ annotationValue.ts
+       │    └─ (recurse)
+       └─ parseHierarchy.ts
+            ├─ entityFromHeader.ts
+            ├─ prefixes.ts
+            └─ textContent.ts
+#+end_example
+
+* Elisp->TypeScript Function Mapping
+
+| Elisp function                         | TypeScript module            | Notes                         |
+|----------------------------------------+------------------------------+-------------------------------|
+| =elot-entity-from-header=               | =entityFromHeader.ts=          | 10+ regex patterns            |
+| =elot-annotation-string-or-uri=         | =annotationValue.ts=           | 15 regex branches             |
+| =elot-unprefix-uri=                     | =annotationValue.ts=           | CURIE expansion               |
+| =elot-omn-property-keywords=            | =omnKeywords.ts=               | Static list                   |
+| =elot-omn-misc-keywords=                | =omnKeywords.ts=               | Static list                   |
+| =elot-parse-headline-hierarchy=         | =parseHierarchy.ts=            | Core AST walker               |
+| =elot--extract-headline-descriptions=   | =parseHierarchy.ts=            | Desc list extraction          |
+| =elot-org-elt-item-pars-str=            | =parseHierarchy.ts=            | Meta-annotation stop logic    |
+| =elot-meta-annotation-tag-p=            | =parseHierarchy.ts=            | CURIE-is-URI check            |
+| =elot-get-prefixes-alist=               | =prefixes.ts=                  | Table->alist                   |
+| =elot-omn-prefix-block=                 | =omnPrefix.ts=                 | Format prefix lines           |
+| =elot-omn-resource-frame=               | =omnFrame.ts=                  | Single entity frame           |
+| =elot-omn-misc-frames=                  | =omnFrame.ts=                  | Standalone axioms             |
+| =elot-omn-format-annotations=           | =omnFrame.ts=                  | Annotation block              |
+| =elot-omn-format-restrictions=          | =omnFrame.ts=                  | Restriction lines             |
+| =elot-omn-resource-declarations=        | =omnDeclarations.ts=           | Recursive traversal           |
+| =elot-get-ontology-node-omn=            | =generateOmn.ts=               | Glue prefix+resources         |
+| =elot-tangle-buffer-to-omn=             | =cli.ts=                       | Read->parse->write              |
