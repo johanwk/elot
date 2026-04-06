@@ -573,8 +573,12 @@ Creates a dummy root at level 0 to handle multiple top-level ontologies."
                  (extracted-desc (elot--extract-headline-descriptions hl))
                  (desc (let ((d extracted-desc))
                          ;; Automatically add rdfs:label if it differs from the URI
+                         ;; but only when this exact label value isn't already present
+                         ;; (there may be other rdfs:label entries with different language tags)
                          (when (and uri label (not (equal label uri))
-                                    (not (assoc "rdfs:label" d)))
+                                    (not (cl-find label d
+                                                  :key #'cadr
+                                                  :test #'equal)))
                            (push (list "rdfs:label" label) d))
                          (if (and uri rdf-type)
                              (cons (list "rdf:type" rdf-type) d)
@@ -929,9 +933,16 @@ Includes the property keyword (e.g., `SubClassOf:`)."
                  (let* ((key (car y))
                         (val (cadr y))
                         (meta (cddr y))
-                        (formatted-val (if (member key elot-omn-all-keywords)
-                                           val
-                                         (string-trim-left (elot-annotation-string-or-uri val)))))
+                        (formatted-val (cond
+                                        ;; Import values are URIs that need angle-bracket wrapping
+                                        ((equal key "Import")
+                                         (string-trim-left (elot-annotation-string-or-uri val)))
+                                        ;; Other OMN keywords pass through unchanged
+                                        ((member key elot-omn-all-keywords)
+                                         val)
+                                        ;; Annotation values go through full formatting
+                                        (t
+                                         (string-trim-left (elot-annotation-string-or-uri val))))))
                    (cond
                     ;; Rule annotations are not supported in Manchester Syntax
                     ;; (OWLAPI parser rejects them), so emit a warning comment
