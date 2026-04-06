@@ -572,14 +572,16 @@ or `xsd:integer' on a column header will be applied to values."
   (defun elot-mode--maybe-setup-labels ()
     "Set up label-display, prompting the user for large files.
 If `elot-label-display-size-threshold' is nil, always set up.
-If the buffer is larger than the threshold, ask the user first."
-    (let ((threshold elot-label-display-size-threshold))
-      (when (or (null threshold)
-                (<= (buffer-size) threshold)
-                (y-or-n-p
-                 (format "Buffer is %s KB -- enable ELOT label-display? "
-                         (/ (buffer-size) 1024))))
-        (elot-label-display-setup))))
+If the buffer is larger than the threshold, ask the user first.
+In batch mode (`noninteractive'), skip label-display entirely."
+    (unless noninteractive
+      (let ((threshold elot-label-display-size-threshold))
+        (when (or (null threshold)
+                  (<= (buffer-size) threshold)
+                  (y-or-n-p
+                   (format "Buffer is %s KB -- enable ELOT label-display? "
+                           (/ (buffer-size) 1024))))
+          (elot-label-display-setup)))))
 
   (defun elot-mode--disable ()
     "Tear down ELOT in the current Org buffer."
