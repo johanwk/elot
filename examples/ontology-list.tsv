@@ -1,0 +1,11 @@
+# id	source_type	source_uri
+pizza	url	https://raw.githubusercontent.com/owlcs/pizza-ontology/master/pizza.owl
+bfo-core	url	https://raw.githubusercontent.com/BFO-ontology/BFO-2020/master/21838-2/owl/bfo-core.owl
+ro	url	http://purl.obolibrary.org/obo/ro.owl
+om-2	url	https://raw.githubusercontent.com/HajoRijgersberg/OM/master/om-2.0.rdf
+# gistCore	url	https://ontologies.semanticarts.com/o/gistCore
+DOLCE-Lite	url	http://www.loa-cnr.it/ontologies/DOLCE-Lite.owl
+cl-basic	url	http://purl.org/iso25964/skos-thes
+plant-ontology	url	http://purl.obolibrary.org/obo/po.owl
+manchester-syntax-quick-reference	local	sources/manchester-syntax-quick-reference.omn
+test-llm-citrus	local	sources/citrus.omn
