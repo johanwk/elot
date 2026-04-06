@@ -1,6 +1,7 @@
 # id	source_type	source_uri
 pizza	url	https://raw.githubusercontent.com/owlcs/pizza-ontology/master/pizza.owl
 bfo-core	url	https://raw.githubusercontent.com/BFO-ontology/BFO-2020/master/21838-2/owl/bfo-core.owl
+skos	url	https://www.w3.org/2009/08/skos-reference/skos.rdf
 ro	url	http://purl.obolibrary.org/obo/ro.owl
 om-2	url	https://raw.githubusercontent.com/HajoRijgersberg/OM/master/om-2.0.rdf
 # gistCore	url	https://ontologies.semanticarts.com/o/gistCore
