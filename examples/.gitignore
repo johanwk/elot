@@ -1,0 +1,20 @@
+# Generated/downloaded — not tracked in git
+org/
+output/
+reports/
+.stamps/
+roundtrip-report.md
+
+# Downloaded source ontologies (but NOT local/committed ones)
+# The local files like sources/manchester-syntax-quick-reference.omn
+# and sources/citrus.omn ARE committed.
+sources/*-baseline.omn
+sources/*.owl
+sources/*.rdf
+sources/*.ttl
+sources/*.owx
+sources/*.ofn
+sources/*.obo
+# Explicitly un-ignore committed local sources:
+!sources/manchester-syntax-quick-reference.omn
+!sources/citrus.omn
