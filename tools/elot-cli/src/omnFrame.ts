@@ -130,6 +130,18 @@ export function formatRestrictions(
         : indentLines(formattedVal, subInd, true);
 
       if (meta.length > 0) {
+        // Rule annotations are not supported in Manchester Syntax
+        // (OWLAPI parser rejects them), so emit a warning comment
+        // and drop the annotations.
+        if (key === "Rule") {
+          return (
+            ind +
+            key +
+            ": # WARNING: Rule annotations are not supported in Manchester Syntax\n" +
+            " ".repeat(indentLevel + 4) +
+            finalVal
+          );
+        }
         const metaInd = " ".repeat(indentLevel + 4);
         return (
           ind +

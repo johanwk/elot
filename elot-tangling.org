@@ -518,22 +518,29 @@ helper, an asynchronous interactive helper, and the main dispatcher.
     ;; --- Common Setup ---
     (message "[elot-robot-omn-to-ttl] Starting conversion for: %s (Mode: %s)"
              omnfile (if noninteractive "Batch" "Interactive"))
-    (unless (and (boundp 'elot-robot-jar-path) elot-robot-jar-path (file-exists-p elot-robot-jar-path))
-      (error "elot-robot-jar-path is not set or invalid: %s" elot-robot-jar-path))
+    (if (not (and (boundp 'elot-robot-jar-path)
+                 elot-robot-jar-path
+                 (not (string-empty-p elot-robot-jar-path))
+                 (file-exists-p elot-robot-jar-path)))
+        ;; ROBOT jar not available — skip silently in batch, error interactively
+        (if noninteractive
+            (message "[elot-robot-omn-to-ttl] Skipping ROBOT conversion: jar path is empty or invalid.")
+          (error "elot-robot-jar-path is not set or invalid: %s" elot-robot-jar-path))
 
-    (let* ((output-file (concat (file-name-sans-extension omnfile) ".ttl"))
-           ;; Base command arguments list (suitable for both helpers)
-           (command-args (list "java" "-jar" elot-robot-jar-path
-                               "convert" "-vvv" ; Keep verbose ROBOT output for parsing
-                               "--input" omnfile
-                               "--output" output-file)))
+      ;; ROBOT jar available — proceed with conversion
+      (let* ((output-file (concat (file-name-sans-extension omnfile) ".ttl"))
+             ;; Base command arguments list (suitable for both helpers)
+             (command-args (list "java" "-jar" elot-robot-jar-path
+                                 "convert" "-vvv" ; Keep verbose ROBOT output for parsing
+                                 "--input" omnfile
+                                 "--output" output-file)))
 
-      (message "[elot-robot-omn-to-ttl] Target ttlfile: %s" output-file)
+        (message "[elot-robot-omn-to-ttl] Target ttlfile: %s" output-file)
 
-      ;; --- Dispatch based on mode ---
-      (if noninteractive
-          (elot-robot-omn-to-ttl--batch omnfile output-file command-args)
-        (elot-robot-omn-to-ttl--interactive omnfile output-file command-args))))
+        ;; --- Dispatch based on mode ---
+        (if noninteractive
+            (elot-robot-omn-to-ttl--batch omnfile output-file command-args)
+          (elot-robot-omn-to-ttl--interactive omnfile output-file command-args)))))
 #+end_src
 
 **** Error navigation
@@ -601,11 +608,14 @@ tangling completes.
     (setq elot-last-org-source (buffer-file-name)))
 
   (defun elot-tangled-omn-to-ttl ()
-    "After tangling to OMN, call ROBOT to convert to Turtle."
+    "After tangling to OMN, call ROBOT to convert to Turtle.
+  Skips conversion when `elot-robot-jar-path' is empty or unset."
     (let* ((omnfile (buffer-file-name))  ;; will run in the tangled buffer
            (omn-p (string-match-p ".omn$" omnfile)))
-      (if omn-p
-          (elot-robot-omn-to-ttl omnfile))))
+      (when (and omn-p
+                (bound-and-true-p elot-robot-jar-path)
+                (not (string-empty-p elot-robot-jar-path)))
+        (elot-robot-omn-to-ttl omnfile))))
 #+end_src
 
 *** Scraps
@@ -1120,13 +1130,21 @@ With ~M-:~ we get at the ~:children~ of ~elot-headline-hierarchy~; which is a li
                           (formatted-val (if (member key elot-omn-all-keywords)
                                              val
                                            (string-trim-left (elot-annotation-string-or-uri val)))))
-                     (if meta
-                         (concat ind key ": \n"
-                                 (make-string (+ indent-level 4) ?\s) "Annotations: \n"
-                                 (elot-omn-format-annotations meta (+ indent-level 8))
-                                 "\n"
-                                 (make-string (+ indent-level 4) ?\s) formatted-val)
-                       (concat ind key ": " formatted-val))))
+                     (cond
+                      ;; Rule annotations are not supported in Manchester Syntax
+                      ;; (OWLAPI parser rejects them), so emit a warning comment
+                      ;; and drop the annotations.
+                      ((and (equal key "Rule") meta)
+                       (concat ind key ": # WARNING: Rule annotations are not supported in Manchester Syntax\n"
+                               (make-string (+ indent-level 4) ?\s) formatted-val))
+                      (meta
+                       (concat ind key ": \n"
+                               (make-string (+ indent-level 4) ?\s) "Annotations: \n"
+                               (elot-omn-format-annotations meta (+ indent-level 8))
+                               "\n"
+                               (make-string (+ indent-level 4) ?\s) formatted-val))
+                      (t
+                       (concat ind key ": " formatted-val)))))
                  l
                  "\n")))
 
