@@ -229,9 +229,9 @@ Functions to know where we are in an ELOT tree.
                             (insert str) (org-macro-replace-all omt)
                             (setq str (buffer-string)))))
     (cond
-     ;; a number -- return the string
+     ;; a number -- return the string in quotes
      ((string-match "^[[:digit:]]+[.]?[[:digit:]]*$" str)
-      (concat "  " str))
+      (concat "  \"" str "\""))
      ;; a bare URI, which org-mode wraps in double brackets -- wrap in angles
      ((string-match "^[[][[]\\(http[^ ]*\\)[]][]]$" str)
       (concat "  <" (match-string 1 str) ">"))
