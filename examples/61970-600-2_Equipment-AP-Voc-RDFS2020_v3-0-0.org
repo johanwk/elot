@@ -1,17 +1,13 @@
-# -*- eval: (load-library "elot-defaults") -*-
-#+ELOT_EXPORTER_CHECKSUM: 6c2b2611acd87d559d3ffd7f043dbc45c39007c6f2e1cb1efd52bd2c7bd75794
-# This org-mode file was created using elot-exporter version 0.9.
-# Source ontology: [URL] https://github.com/Sveino/Inst4CIM-KG/raw/refs/heads/develop/rdfs-improved/CGMES/ttl/61970-600-2_Equipment-AP-Voc-RDFS2020_v3-0-0.ttl
+# This org-mode file was created using elot-exporter version 0.10.0.
+#+ELOT_EXPORTER_CHECKSUM: 98fd124945dc30d342e3c533887017607502c22a64164aaf81a43c773e69e401
+# Source ontology: [URL] https://raw.githubusercontent.com/Sveino/Inst4CIM-KG/refs/heads/develop/rdfs-improved/CGMES/ttl/61970-600-2_Equipment-AP-Voc-RDFS2020_v3-0-0.ttl
 
 #+title: Core Equipment Vocabulary
 #+subtitle: An OWL ontology
 #+author: 
-#+date: WIP (version of 2026-03-03 20:48)
+#+date: WIP (version of 2026-04-06 09:59)
 #+call: theme-elot()
 
-
-#+OPTIONS: broken-links:mark
-#+OPTIONS: ^:{} H:14 num:14
 
 * Ontology
 :PROPERTIES:
@@ -19,51 +15,15 @@
 :ELOT-context-type: ontology
 :ELOT-context-localname: Ontology
 :ELOT-default-prefix: Ontology
-:header-args:omn: :tangle ./Ontology.omn :noweb yes
+:header-args:omn: :tangle ./61970-EquipmentCore.omn :noweb yes
 :header-args:emacs-lisp: :tangle no :exports results
 :header-args: :padline yes
 :END:
-:OMN:
-#+begin_src omn :exports none
-##
-## This is the Ontology ontology
-## This document is in OWL 2 Manchester Syntax, see https://www.w3.org/TR/owl2-manchester-syntax/
-##
-
-## Prefixes
-<<omn-prefixes()>>
-
-## Ontology declaration
-<<resource-declarations(hierarchy="Ontology-ontology-declaration", owl-type="Ontology", owl-relation="")>>
-
-## Datatype declarations
-<<resource-declarations(hierarchy="Ontology-datatypes", owl-type="Datatype")>>
-
-## Class declarations
-<<resource-declarations(hierarchy="Ontology-class-hierarchy", owl-type="Class")>>
-
-## Object property declarations
-<<resource-declarations(hierarchy="Ontology-object-property-hierarchy", owl-type="ObjectProperty")>>
-
-## Data property declarations
-<<resource-declarations(hierarchy="Ontology-data-property-hierarchy", owl-type="DataProperty")>>
-
-## Annotation property declarations
-<<resource-declarations(hierarchy="Ontology-annotation-property-hierarchy", owl-type="AnnotationProperty")>>
-
-## Individual declarations
-<<resource-declarations(hierarchy="Ontology-individuals", owl-type="Individual")>>
-
-## Resource taxonomies
-<<resource-taxonomy(hierarchy="Ontology-class-hierarchy", owl-type="Class", owl-relation="SubClassOf")>>
-<<resource-taxonomy(hierarchy="Ontology-object-property-hierarchy", owl-type="ObjectProperty", owl-relation="SubPropertyOf")>>
-<<resource-taxonomy(hierarchy="Ontology-data-property-hierarchy", owl-type="DataProperty", owl-relation="SubPropertyOf")>>
-<<resource-taxonomy(hierarchy="Ontology-annotation-property-hierarchy", owl-type="AnnotationProperty", owl-relation="SubPropertyOf")>>
-<<resource-taxonomy(hierarchy="Ontology-datatypes", owl-type="Datatype", owl-relation="")>>
-#+end_src
-:END:
 
 ** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
 The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
 
 #+name: prefix-table
@@ -91,26 +51,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 | xml: | http://www.w3.org/XML/1998/namespace |
 | xsd: | http://www.w3.org/2001/XMLSchema# |
 
-*** Source blocks for prefixes                                     :noexport:
-:PROPERTIES:
-:header-args:omn: :tangle no
-:END:
-#+name: sparql-prefixes
-#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
-  (elot-prefix-block-from-alist prefixes 'sparql)
-#+end_src
-
-#+name: omn-prefixes
-#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
-  (elot-prefix-block-from-alist prefixes 'omn)
-#+end_src
-
-#+name: ttl-prefixes
-#+begin_src emacs-lisp :var prefixes=prefix-table :exports none
-  (elot-prefix-block-from-alist prefixes 'ttl)
-#+end_src
-
-** Ontology ontology (eq:Ontology <http://iec.ch/TC57/ns/CIM/CoreEquipment-EU/3.0>)
+** Ontology ontology (eq:Ontology http://iec.ch/TC57/ns/CIM/CoreEquipment-EU/3.0)
 :PROPERTIES:
 :ID:       Ontology-ontology-declaration
 :custom_id: Ontology-ontology-declaration
@@ -1676,8 +1617,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 *** phases (cim:Terminal.phases)
  - cims:multiplicity :: cims:M:0..1
  - cims:stereotype :: uml:attribute
- - rdfs:comment :: "Represents the normal network phasing condition. If the attribute is missing, three phases (ABC) shall be assumed, except for terminals of grounding classes (specializations of EarthFaultCompensator, GroundDisconnector, and Ground) which will be assumed to be N. Therefore, phase code ABCN is explicitly declared when needed, e.g. for star point grounding equipment.
-          The phase code on terminals connecting same ConnectivityNode or same TopologicalNode as well as for equipment between two terminals shall be consistent."@en
+ - rdfs:comment :: Represents the normal network phasing condition. If the attribute is missing, three phases (ABC) shall be assumed, except for terminals of grounding classes (specializations of EarthFaultCompensator, GroundDisconnector, and Ground) which will be assumed to be N. Therefore, phase code ABCN is explicitly declared when needed, e.g. for star point grounding equipment.
+   The phase code on terminals connecting same ConnectivityNode or same TopologicalNode as well as for equipment between two terminals shall be consistent.
  - Domain :: cim:Terminal
  - Range :: cim:PhaseCode
  - Characteristics :: Functional
@@ -5930,7 +5871,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 
 **** M (cim:UnitMultiplier.M)
  - cims:stereotype :: enum
- - qudt:prefixMultiplier :: 1000000.0
+ - qudt:prefixMultiplier :: 1E6
  - rdfs:comment :: "Mega 10**6."@en
  - skos:exactMatch :: prefix:Mega
  - Types :: cim:UnitMultiplier
