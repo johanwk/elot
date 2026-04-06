@@ -374,7 +374,7 @@ public class AxiomFormatter {
         List<OWLEquivalentClassesAxiom> axioms = context.ontology().axioms(AxiomType.EQUIVALENT_CLASSES)
             .sorted(Comparator.comparing(ax -> context.renderer().render(ax)))
             .collect(Collectors.toList());
-        Set<String> uniqueClauses = new LinkedHashSet<>();
+        LinkedHashMap<String, OWLEquivalentClassesAxiom> clauseToAxiom = new LinkedHashMap<>();
         for (OWLEquivalentClassesAxiom ax : axioms) {
             List<String> renderedExprs = ax.classExpressions()
                 .map(e -> context.renderer().render(e))
@@ -382,18 +382,19 @@ public class AxiomFormatter {
             if (renderedExprs.size() > 2) {
                 Collections.sort(renderedExprs);
                 String clause = "EquivalentClasses :: " + String.join(", ", renderedExprs);
-                uniqueClauses.add(clause);
+                clauseToAxiom.putIfAbsent(clause, ax);
             }
         }
-        if (uniqueClauses.isEmpty()) {
+        if (clauseToAxiom.isEmpty()) {
             return "";
         }
-        List<String> sortedClauses = new ArrayList<>(uniqueClauses);
+        List<String> sortedClauses = new ArrayList<>(clauseToAxiom.keySet());
         Collections.sort(sortedClauses);
         StringBuilder sb = new StringBuilder();
         sb.append("*** Equivalence clauses                                           :nodeclare:\n");
         for (String clause : sortedClauses) {
             sb.append(" - ").append(clause).append("\n");
+            sb.append(annotationFormatter.formatMetaAnnotations(clauseToAxiom.get(clause).annotations(), 4));
         }
         return sb.toString();
     }
@@ -402,7 +403,7 @@ public class AxiomFormatter {
         List<OWLDisjointClassesAxiom> axioms = context.ontology().axioms(AxiomType.DISJOINT_CLASSES)
             .sorted(Comparator.comparing(ax -> context.renderer().render(ax)))
             .collect(Collectors.toList());
-        Set<String> uniqueClauses = new LinkedHashSet<>();
+        LinkedHashMap<String, OWLDisjointClassesAxiom> clauseToAxiom = new LinkedHashMap<>();
         for (OWLDisjointClassesAxiom ax : axioms) {
             List<String> renderedExprs = ax.classExpressions()
                 .map(e -> context.renderer().render(e))
@@ -410,18 +411,19 @@ public class AxiomFormatter {
             if (renderedExprs.size() > 2) {
                 Collections.sort(renderedExprs);
                 String clause = "DisjointClasses :: " + String.join(", ", renderedExprs);
-                uniqueClauses.add(clause);
+                clauseToAxiom.putIfAbsent(clause, ax);
             }
         }
-        if (uniqueClauses.isEmpty()) {
+        if (clauseToAxiom.isEmpty()) {
             return "";
         }
-        List<String> sortedClauses = new ArrayList<>(uniqueClauses);
+        List<String> sortedClauses = new ArrayList<>(clauseToAxiom.keySet());
         Collections.sort(sortedClauses);
         StringBuilder sb = new StringBuilder();
         sb.append("*** Disjointness clauses                                          :nodeclare:\n");
         for (String clause : sortedClauses) {
             sb.append(" - ").append(clause).append("\n");
+            sb.append(annotationFormatter.formatMetaAnnotations(clauseToAxiom.get(clause).annotations(), 4));
         }
         return sb.toString();
     }
@@ -430,7 +432,7 @@ public class AxiomFormatter {
         List<OWLDifferentIndividualsAxiom> axioms = context.ontology().axioms(AxiomType.DIFFERENT_INDIVIDUALS)
             .sorted(Comparator.comparing(ax -> context.renderer().render(ax)))
             .collect(Collectors.toList());
-        Set<String> uniqueClauses = new LinkedHashSet<>();
+        LinkedHashMap<String, OWLDifferentIndividualsAxiom> clauseToAxiom = new LinkedHashMap<>();
         for (OWLDifferentIndividualsAxiom ax : axioms) {
             Set<String> indSet = ax.individuals()
                 .filter(e -> !e.isAnonymous())
@@ -440,18 +442,19 @@ public class AxiomFormatter {
                 List<String> sortedInds = new ArrayList<>(indSet);
                 Collections.sort(sortedInds);
                 String clause = "DifferentIndividuals :: " + String.join(", ", sortedInds);
-                uniqueClauses.add(clause);
+                clauseToAxiom.putIfAbsent(clause, ax);
             }
         }
-        if (uniqueClauses.isEmpty()) {
+        if (clauseToAxiom.isEmpty()) {
             return "";
         }
-        List<String> sortedClauses = new ArrayList<>(uniqueClauses);
+        List<String> sortedClauses = new ArrayList<>(clauseToAxiom.keySet());
         Collections.sort(sortedClauses);
         StringBuilder sb = new StringBuilder();
         sb.append("*** Differentness clauses                                          :nodeclare:\n");
         for (String clause : sortedClauses) {
             sb.append(" - ").append(clause).append("\n");
+            sb.append(annotationFormatter.formatMetaAnnotations(clauseToAxiom.get(clause).annotations(), 4));
         }
         return sb.toString();
     }
@@ -460,7 +463,7 @@ public class AxiomFormatter {
         List<OWLEquivalentObjectPropertiesAxiom> axioms = context.ontology().axioms(AxiomType.EQUIVALENT_OBJECT_PROPERTIES)
             .sorted(Comparator.comparing(ax -> context.renderer().render(ax)))
             .collect(Collectors.toList());
-        Set<String> uniqueClauses = new LinkedHashSet<>();
+        LinkedHashMap<String, OWLEquivalentObjectPropertiesAxiom> clauseToAxiom = new LinkedHashMap<>();
         for (OWLEquivalentObjectPropertiesAxiom ax : axioms) {
             List<String> renderedProps = ax.properties()
                 .map(p -> context.renderer().render(p))
@@ -468,18 +471,19 @@ public class AxiomFormatter {
             if (renderedProps.size() > 2) {
                 Collections.sort(renderedProps);
                 String clause = "EquivalentProperties :: " + String.join(", ", renderedProps);
-                uniqueClauses.add(clause);
+                clauseToAxiom.putIfAbsent(clause, ax);
             }
         }
-        if (uniqueClauses.isEmpty()) {
+        if (clauseToAxiom.isEmpty()) {
             return "";
         }
-        List<String> sortedClauses = new ArrayList<>(uniqueClauses);
+        List<String> sortedClauses = new ArrayList<>(clauseToAxiom.keySet());
         Collections.sort(sortedClauses);
         StringBuilder sb = new StringBuilder();
         sb.append("*** Equivalence clauses                                           :nodeclare:\n");
         for (String clause : sortedClauses) {
             sb.append(" - ").append(clause).append("\n");
+            sb.append(annotationFormatter.formatMetaAnnotations(clauseToAxiom.get(clause).annotations(), 4));
         }
         return sb.toString();
     }
@@ -488,7 +492,7 @@ public class AxiomFormatter {
         List<OWLDisjointObjectPropertiesAxiom> axioms = context.ontology().axioms(AxiomType.DISJOINT_OBJECT_PROPERTIES)
             .sorted(Comparator.comparing(ax -> context.renderer().render(ax)))
             .collect(Collectors.toList());
-        Set<String> uniqueClauses = new LinkedHashSet<>();
+        LinkedHashMap<String, OWLDisjointObjectPropertiesAxiom> clauseToAxiom = new LinkedHashMap<>();
         for (OWLDisjointObjectPropertiesAxiom ax : axioms) {
             List<String> renderedProps = ax.properties()
                 .map(p -> context.renderer().render(p))
@@ -496,18 +500,19 @@ public class AxiomFormatter {
             if (renderedProps.size() > 2) {
                 Collections.sort(renderedProps);
                 String clause = "DisjointProperties :: " + String.join(", ", renderedProps);
-                uniqueClauses.add(clause);
+                clauseToAxiom.putIfAbsent(clause, ax);
             }
         }
-        if (uniqueClauses.isEmpty()) {
+        if (clauseToAxiom.isEmpty()) {
             return "";
         }
-        List<String> sortedClauses = new ArrayList<>(uniqueClauses);
+        List<String> sortedClauses = new ArrayList<>(clauseToAxiom.keySet());
         Collections.sort(sortedClauses);
         StringBuilder sb = new StringBuilder();
         sb.append("*** Disjointness clauses                                          :nodeclare:\n");
         for (String clause : sortedClauses) {
             sb.append(" - ").append(clause).append("\n");
+            sb.append(annotationFormatter.formatMetaAnnotations(clauseToAxiom.get(clause).annotations(), 4));
         }
         return sb.toString();
     }
@@ -516,7 +521,7 @@ public class AxiomFormatter {
         List<OWLEquivalentDataPropertiesAxiom> axioms = context.ontology().axioms(AxiomType.EQUIVALENT_DATA_PROPERTIES)
             .sorted(Comparator.comparing(ax -> context.renderer().render(ax)))
             .collect(Collectors.toList());
-        Set<String> uniqueClauses = new LinkedHashSet<>();
+        LinkedHashMap<String, OWLEquivalentDataPropertiesAxiom> clauseToAxiom = new LinkedHashMap<>();
         for (OWLEquivalentDataPropertiesAxiom ax : axioms) {
             List<String> renderedProps = ax.properties()
                 .map(p -> context.renderer().render(p))
@@ -524,18 +529,19 @@ public class AxiomFormatter {
             if (renderedProps.size() > 2) {
                 Collections.sort(renderedProps);
                 String clause = "EquivalentProperties :: " + String.join(", ", renderedProps);
-                uniqueClauses.add(clause);
+                clauseToAxiom.putIfAbsent(clause, ax);
             }
         }
-        if (uniqueClauses.isEmpty()) {
+        if (clauseToAxiom.isEmpty()) {
             return "";
         }
-        List<String> sortedClauses = new ArrayList<>(uniqueClauses);
+        List<String> sortedClauses = new ArrayList<>(clauseToAxiom.keySet());
         Collections.sort(sortedClauses);
         StringBuilder sb = new StringBuilder();
         sb.append("*** Equivalence clauses                                           :nodeclare:\n");
         for (String clause : sortedClauses) {
             sb.append(" - ").append(clause).append("\n");
+            sb.append(annotationFormatter.formatMetaAnnotations(clauseToAxiom.get(clause).annotations(), 4));
         }
         return sb.toString();
     }
@@ -544,7 +550,7 @@ public class AxiomFormatter {
         List<OWLDisjointDataPropertiesAxiom> axioms = context.ontology().axioms(AxiomType.DISJOINT_DATA_PROPERTIES)
             .sorted(Comparator.comparing(ax -> context.renderer().render(ax)))
             .collect(Collectors.toList());
-        Set<String> uniqueClauses = new LinkedHashSet<>();
+        LinkedHashMap<String, OWLDisjointDataPropertiesAxiom> clauseToAxiom = new LinkedHashMap<>();
         for (OWLDisjointDataPropertiesAxiom ax : axioms) {
             List<String> renderedProps = ax.properties()
                 .map(p -> context.renderer().render(p))
@@ -552,18 +558,19 @@ public class AxiomFormatter {
             if (renderedProps.size() > 2) {
                 Collections.sort(renderedProps);
                 String clause = "DisjointProperties :: " + String.join(", ", renderedProps);
-                uniqueClauses.add(clause);
+                clauseToAxiom.putIfAbsent(clause, ax);
             }
         }
-        if (uniqueClauses.isEmpty()) {
+        if (clauseToAxiom.isEmpty()) {
             return "";
         }
-        List<String> sortedClauses = new ArrayList<>(uniqueClauses);
+        List<String> sortedClauses = new ArrayList<>(clauseToAxiom.keySet());
         Collections.sort(sortedClauses);
         StringBuilder sb = new StringBuilder();
         sb.append("*** Disjointness clauses                                          :nodeclare:\n");
         for (String clause : sortedClauses) {
             sb.append(" - ").append(clause).append("\n");
+            sb.append(annotationFormatter.formatMetaAnnotations(clauseToAxiom.get(clause).annotations(), 4));
         }
         return sb.toString();
     }
@@ -572,7 +579,7 @@ public class AxiomFormatter {
         List<OWLSameIndividualAxiom> axioms = context.ontology().axioms(AxiomType.SAME_INDIVIDUAL)
             .sorted(Comparator.comparing(ax -> context.renderer().render(ax)))
             .collect(Collectors.toList());
-        Set<String> uniqueClauses = new LinkedHashSet<>();
+        LinkedHashMap<String, OWLSameIndividualAxiom> clauseToAxiom = new LinkedHashMap<>();
         for (OWLSameIndividualAxiom ax : axioms) {
             Set<String> indSet = ax.individuals()
                 .filter(e -> !e.isAnonymous())
@@ -582,18 +589,19 @@ public class AxiomFormatter {
                 List<String> sortedInds = new ArrayList<>(indSet);
                 Collections.sort(sortedInds);
                 String clause = "SameIndividual :: " + String.join(", ", sortedInds);
-                uniqueClauses.add(clause);
+                clauseToAxiom.putIfAbsent(clause, ax);
             }
         }
-        if (uniqueClauses.isEmpty()) {
+        if (clauseToAxiom.isEmpty()) {
             return "";
         }
-        List<String> sortedClauses = new ArrayList<>(uniqueClauses);
+        List<String> sortedClauses = new ArrayList<>(clauseToAxiom.keySet());
         Collections.sort(sortedClauses);
         StringBuilder sb = new StringBuilder();
         sb.append("*** Sameness clauses                                              :nodeclare:\n");
         for (String clause : sortedClauses) {
             sb.append(" - ").append(clause).append("\n");
+            sb.append(annotationFormatter.formatMetaAnnotations(clauseToAxiom.get(clause).annotations(), 4));
         }
         return sb.toString();
     }
