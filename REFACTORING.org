@@ -5,8 +5,6 @@
 
 * Overview
 
-This document is the working project plan for improving ELOT.
-
  - introduce proper testing
  - document using "literate org" files, to help maintenance
  - introduce new CLI for running in batch or as VS Code plugin
@@ -84,7 +82,7 @@ pipeline runs in roughly nine steps:
 | =elot-get-ontology-node-omn=          | Combine prefix block + resource declarations into OMN string    | Tangling Entrypoint / "Helper functions"           |
 | =elot-tangle-buffer-to-omn=           | Interactive top-level: parse buffer and write =.omn= files        | Tangling Entrypoint                                |
 | =elot-tangle-around-advice=           | Around-advice merging outline OMN with user =omn= source blocks   | "Post-Tangle: Merge Outline with User OMN Blocks"  |
-| =elot-robot-omn-to-ttl=               | Convert =.omn= to =.ttl= using ROBOT (batch or async)               | Support / "OMN → Turtle conversion"               |
+| =elot-robot-omn-to-ttl=               | Convert =.omn= to =.ttl= using ROBOT (batch or async)               | Support / "OMN -> Turtle conversion"               |
 | =elot-build-slurp=                    | Flatten hierarchy into =(URI label attrs)= list for display       | New slurp implementation / "Function declarations" |
 | =elot-slurp-to-vars=                  | Populate =elot-slurp=, =elot-codelist-ht=, =elot-attriblist-ht=       | New slurp / "How to run it"                        |
 
@@ -92,8 +90,6 @@ pipeline runs in roughly nine steps:
 * Phased Plan
 
 ** TODO Phase 2: Add ERT regression tests
-:PROPERTIES:
-:END:
 
 Expand =test/test-elot-tangle.el= with full coverage of the extracted
 functions:
@@ -104,8 +100,6 @@ functions:
 - Confirm all tests pass both before and after Phase 1 extraction
 
 ** TODO Phase 3: Improve docstrings and narrative
-:PROPERTIES:
-:END:
 
 Work entirely inside =elot-tangle.org=:
 
