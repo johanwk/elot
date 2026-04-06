@@ -1,7 +1,7 @@
 # Makefile for elot-exporter — friendly aliases for Maven commands.
 # Run "make help" to see available targets.
 
-VERSION  := 0.10.0
+VERSION  := 0.10.1
 JAR      := target/elot-exporter-$(VERSION).jar
 
 .PHONY: help all build test clean run
