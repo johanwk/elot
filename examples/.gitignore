@@ -16,5 +16,5 @@ sources/*.owx
 sources/*.ofn
 sources/*.obo
 # Explicitly un-ignore committed local sources:
-!sources/manchester-syntax-quick-reference.omn
+!manchester-syntax-quick-reference.omn
 !sources/citrus.omn
