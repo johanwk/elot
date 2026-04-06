@@ -1,125 +1,201 @@
+# ELOT Examples — Round-Trip Testing
 
-# Table of Contents
+This directory contains a **round-trip test suite** for
+[ELOT](https://github.com/johanwk/elot).  The tests exercise the full
+ELOT pipeline on a collection of real-world ontologies, checking
+whether an ontology survives the journey from OWL through ELOT's Org
+format and back again.
 
-1.  [Examples made with `elot-exporter` jar](#org199d4d4)
-    1.  [Cell Ontology](#orga638bfd)
-    2.  [Units of Measure](#org60d27ee)
-    3.  [UBERON](#org39a3ef5)
-    4.  [CIM Equipment](#org20dd32a)
-    5.  [BFO-2020](#orgdcc5532)
-    6.  [Plant Ontology](#orga16c65e)
-2.  [Other examples](#org24ab471)
-    1.  [Maintenance](#org985d60d)
-    2.  [Pizza](#org1a09fee)
+## Motivation
 
+ELOT lets you author OWL ontologies in Emacs Org mode.  A key part of
+the workflow is *importing* an existing OWL ontology into Org (via
+`elot-exporter`) and *exporting* it back to OWL (via `elot-tangle`).
+Ideally this round-trip would be lossless — the output ontology would
+be logically identical to the input.  In practice, some information
+may be lost or transformed:
 
+- **Annotation patterns** that ELOT does not yet represent may be
+  dropped or simplified during export to Org.
+- **Axiom structures** such as complex class expressions, property
+  chains, or GCIs may not survive the Org representation faithfully.
+- **Serialisation differences** (blank node IDs, ordering, syntactic
+  sugar) can produce superficial diffs even when the ontology is
+  logically equivalent.
 
-<a id="org199d4d4"></a>
+Running these tests regularly serves two purposes:
 
-# Examples made with `elot-exporter` jar
+1. **Bug detection.**  A regression that silently drops axioms shows
+   up as new diff lines in the report.
+2. **Documenting limitations.**  The diffs that persist across runs
+   make explicit what ELOT cannot (yet) represent.  This sets clear
+   expectations for users who import third-party ontologies.
 
-These examples are generated with the `elot-exporter` (see <https://github.com/johanwk/elot/releases>), eg:
+## How It Works
 
-    java -jar elot-exporter-0.3-SNAPSHOT.jar ontology.ttl > ontology.org
+The pipeline has seven steps, orchestrated by `make`:
 
-![img](plant-ontology.png)
+```
+ ┌──────────────┐
+ │ ontology-list│   Ontology IDs, source types, and URIs
+ │    .tsv      │
+ └──────┬───────┘
+        │
+        ▼
+ ┌──────────────┐
+ │  1. Fetch    │   Download remote OWL files (or locate local ones)
+ │   sources/   │   → sources/<id>.<ext>
+ └──────┬───────┘
+        │
+        ▼
+ ┌──────────────┐
+ │  2. Baseline │   robot convert → OMN (canonical form for diffing)
+ │   OMN        │   → sources/<id>-baseline.omn
+ └──────┬───────┘
+        │
+        ▼
+ ┌──────────────┐
+ │  3. Export   │   elot-exporter.jar: OWL → ELOT Org
+ │   to Org     │   → org/<id>.org
+ └──────┬───────┘
+        │
+        ▼
+ ┌──────────────┐
+ │  4. Tangle   │   Emacs batch: Org → OMN via elot-tangle
+ │   to OMN     │   → output/<id>.omn
+ └──────┬───────┘
+        │
+        ▼
+ ┌──────────────┐
+ │  5. Diff     │   robot diff: baseline vs. round-tripped OMN
+ │              │   → reports/<id>.diff, reports/<id>.diff.html
+ └──────┬───────┘
+        │
+        ▼
+ ┌──────────────┐
+ │  6. Report   │   JSON summary per ontology
+ │   JSON       │   → reports/<id>.json
+ └──────┬───────┘
+        │
+        ▼
+ ┌──────────────────────┐
+ │  7. Summary report   │   Markdown table of all results
+ │  roundtrip-report.md │
+ └──────────────────────┘
+```
 
+### Step 1 — Fetch Sources
 
-<a id="orga638bfd"></a>
+Ontologies are listed in `ontology-list.tsv` (tab-separated: `id`,
+`source_type`, `source_uri`).  Remote ontologies (`url` type) are
+downloaded with `curl`; local ones (`local` type) are used in place.
 
-## Cell Ontology
+### Step 2 — Baseline OMN
 
-[cl-basic.org](./cl-basic.md): 2.2Mb
+Each source is converted to OWL Manchester Syntax (`.omn`) using
+[ROBOT](http://robot.obolibrary.org/).  This normalised OMN serves as
+the reference for the diff — it removes serialisation variation from
+the comparison.
 
-CL-basic from <http://purl.obolibrary.org/obo/cl/cl-basic.owl>.
-This is part of the Cell Ontology, see <https://www.ebi.ac.uk/ols4/ontologies/cl> and <http://purl.obolibrary.org/obo/cl.owl>.
+### Step 3 — Export to Org
 
+The ELOT exporter (`elot-exporter.jar`) reads the source OWL file and
+writes an ELOT-format Org file.  This is the "import" half of the
+round-trip.
 
-<a id="org60d27ee"></a>
+### Step 4 — Tangle to OMN
 
-## Units of Measure
+Emacs runs in batch mode, loads `elot-mode`, visits the generated Org
+file, and tangles it back to OMN.  This is the "export" half of the
+round-trip.
 
-[om-2.org](./om-2.md): 840kB
+### Step 5 — Diff
 
-Ontology of Units of Measure from <http://www.ontology-of-units-of-measure.org/page/om-2>
+ROBOT's `diff` command compares the baseline OMN (step 2) against the
+round-tripped OMN (step 4).  Both a plain-text diff and an HTML
+report are produced for each ontology.
 
+### Step 6 — JSON Report
 
-<a id="org39a3ef5"></a>
+A small JSON file per ontology records metadata (source URI,
+timestamp, ELOT version) alongside the diff outcome (status and number
+of diff lines).
 
-## UBERON
+### Step 7 — Summary Report
 
-[uberon.org](./uberon.md): 29Mb
+The script `generate-roundtrip-report.sh` reads all JSON reports and
+produces `roundtrip-report.md` — a Markdown table showing each
+ontology's round-trip status at a glance.
 
-Uberon Multi-species Anatomy Ontology from <https://obophenotype.github.io/uberon/> and <http://purl.obolibrary.org/obo/uberon.owl>.
+## Quick Start
 
-Warning: 
+```sh
+# Prerequisites: java, emacs, curl, and ROBOT on PATH (or configured below).
 
--   The file is very large. `elot` startup code has been removed from that file to speed up loading.
--   But still, Emacs may hang for a very long time before responding (eg 10 minutes). So it's perhaps better to use `find-file-literally` to avoid that.
+# Run the full pipeline:
+make
 
+# Run in parallel (recommended for many ontologies):
+make -j4
 
-<a id="org20dd32a"></a>
+# Process a single ontology end-to-end:
+make pizza.roundtrip
 
-## CIM Equipment
+# Download sources only:
+make fetch-sources
 
-[BROKEN LINK: 61970-600-2\_Equipment-AP-Voc-RDFS2020\_v3-0-0.org]: 305kB
+# See all available targets:
+make help
+```
 
-Electrical CIM: equipment ontology from [61970-600-2\_Equipment-AP-Voc-RDFS2020\_v3-0-0.ttl](https://github.com/Sveino/Inst4CIM-KG/blob/develop/rdfs-improved/CGMES/ttl/61970-600-2_Equipment-AP-Voc-RDFS2020_v3-0-0.ttl)
+### Configuration
 
+Override tool paths via environment variables or on the `make`
+command line:
 
-<a id="orgdcc5532"></a>
+| Variable             | Default                          | Description                          |
+|----------------------|----------------------------------|--------------------------------------|
+| `ELOT_EXPORTER_JAR`  | `java -jar ~/bin/elot-exporter.jar` | ELOT exporter command             |
+| `ROBOT`              | `java -jar ~/bin/robot.jar`      | ROBOT command                        |
+| `EMACS`              | `emacs`                          | Emacs binary                         |
+| `ELOT_PACKAGE_DIR`   | `../elot-package`                | Path to elot-package elisp directory |
 
-## BFO-2020
+## Adding a New Ontology
 
-[bfo-core.org](bfo-core.md)
+Append a line to `ontology-list.tsv`:
 
-Basic Formal Ontology (BFO-2020) from <https://github.com/BFO-ontology/BFO-2020/releases/tag/release-2024-01-29>.
-An "About" section has been added after conversion.
+```tsv
+my-ontology	url	https://example.com/my-ontology.owl
+```
 
+Or for a local file already in `sources/`:
 
-<a id="orga16c65e"></a>
+```tsv
+my-ontology	local	sources/my-ontology.omn
+```
 
-## Plant Ontology
+Then run `make my-ontology.roundtrip` to test it, or just `make` for
+the full suite.
 
-[BROKEN LINK: plant-ontology.obo.org]: 1.8M
+## Interpreting Results
 
-Plant Ontology from <https://github.com/Planteome/plant-ontology/releases>
+The summary in `roundtrip-report.md` shows:
 
+- **✅ identical** — the round-trip preserved all axioms.  The
+  ontology is fully representable in ELOT's Org format.
+- **⚠️ differences** — some axioms differ.  Inspect the diff
+  (`reports/<id>.diff`) or the HTML report (`reports/<id>.diff.html`)
+  to understand what was lost or changed.
+- **❌ error** — a pipeline step failed (download, conversion,
+  tangle, or diff).
 
-<a id="org24ab471"></a>
+A persistent diff is not necessarily a bug — it may reflect a known
+limitation of ELOT's Org representation.  Diffs that *appear* after a
+code change, however, likely indicate a regression.
 
-# Other examples
+## Cleanup
 
-These examples were made before the `elot-exporter` was available. They
-will eventually be updated, once the exporter is more complete.
-
-
-<a id="org985d60d"></a>
-
-## Maintenance
-
-[maintenance.org](maintenance.md)
-
-This is the Industrial Ontology Foundry (IOF) Maintenance ontology, from <https://spec.industrialontologies.org/iof/ontology/maintenance/Maintenance/>.
-
-This example is noteworthy for showing how ELOT's *label display* feature simplifies working with non-informative resource identifiers from BFO. 
-E.g. a subclass axiom like the following, from the class *failure effect* ([iof-maint:FailureEffect](https://spec.industrialontologies.org/iof/ontology/maintenance/Maintenance/FailureEffect)), appears in the buffer as the list entry
-
-> -   **SubClassOf:** *preceded by* some (*failure event* or *failure process*)
-
-which is much better than
-
-> -   **SubClassOf:** obo:BFO\_0000062 some (iof-maint:FailureEvent or iof-maint:FailureProcess)
-
-
-<a id="org1a09fee"></a>
-
-## Pizza
-
-[pizza.org](pizza.md)
-
-This is the famous Pizza ontology used in well-known tutorials.
-
-This example is useful for containing sections with ROBOT metrics,
-SPARQL queries, and an *rdfpuml* diagram.
-
+```sh
+make clean       # Remove derived files (org/, output/, reports/), keep downloads
+make distclean   # Also remove downloaded sources (local files are kept)
+```
