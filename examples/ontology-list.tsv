@@ -7,4 +7,4 @@ om-2	url	https://raw.githubusercontent.com/HajoRijgersberg/OM/master/om-2.0.rdf
 DOLCE-Lite	url	http://www.loa-cnr.it/ontologies/DOLCE-Lite.owl
 cl-basic	url	http://purl.org/iso25964/skos-thes
 plant-ontology	url	http://purl.obolibrary.org/obo/po.owl
-test-llm-citrus	local	sources/citrus.omn
+
