@@ -1,6 +1,6 @@
 ;;; elot-tangle.el --- ELOT tangling and OMN generation  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2024, 2025 Johan W. Klüwer
+;; Copyright (C) 2024, 2025, 2026 Johan W. Klüwer
 
 ;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
 ;; URL: https://github.com/johanwk/elot

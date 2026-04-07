@@ -1,6 +1,6 @@
 ;;; elot-defaults.el --- Emacs Literate Ontology Tool (ELOT): Default settings   -*- lexical-binding: t; no-native-compile: t; -*-
 
-;; Copyright (C) 2024, 2025 Johan W. Klüwer
+;; Copyright (C) 2024, 2025, 2026 Johan W. Klüwer
 
 ;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
 ;; URL: https://github.com/johanwk/elot
