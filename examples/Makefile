@@ -268,12 +268,17 @@ $(CLI_DIR)/%.omn: $(ORG_DIR)/%.org .stamps/cli-built | .stamps/dir-cli
 # ════════════════════════════════════════════════════════════════════
 # STEP 5b: Compare Elisp vs CLI OMN output
 # ════════════════════════════════════════════════════════════════════
-# Plain text diff between the Emacs-tangled OMN and the CLI-tangled OMN.
-# This catches divergences between the two implementations.
+# Semantic diff (via ROBOT) between the Emacs-tangled OMN and the
+# CLI-tangled OMN.  A plain text `diff -u` is inappropriate here
+# because two OMN files can be semantically identical while differing
+# in axiom/prefix ordering and whitespace.
 $(COMPARE_DIR)/%.diff: $(OUTPUT_DIR)/%.omn $(CLI_DIR)/%.omn | .stamps/dir-compare
-	@diff -u $< $(word 2,$^) > $@ 2>&1 || true
+	@$(ROBOT) diff \
+		--left $< \
+		--right $(word 2,$^) \
+		--output $@ 2>&1 || true
 	@if [ -s $@ ]; then \
-		echo "⚠️  ELISP≠CLI: $* ($$(wc -l < $@ | tr -d ' ') diff lines)"; \
+		echo "⚠️  ELISP≠CLI: $* (semantic differences)"; \
 	else \
 		echo "✅ ELISP=CLI: $*"; \
 	fi
