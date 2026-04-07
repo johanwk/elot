@@ -184,10 +184,28 @@ dt + dd::after {
     white-space: pre;
 }
 
+/* Suppress the extra linebreak after a dd that contains a nested dl.
+   Without this, the dt+dd::after "\A" newline creates a blank line
+   below the nested sub-items. */
+dd:has(> dl)::after {
+    content: none;
+}
+
 /* Nested description list inside a dd */
 dd dl {
-    margin: 0.3em 0 0.3em 1.5em;  /* soft vertical spacing + slight indent */
+    display: block;
+    margin: 0.3em 0 0em 1.5em;  /* soft top spacing + indent, no bottom margin */
     padding: 0;
+}
+
+/* Remove extra space from paragraphs inside dd */
+dd p {
+    margin: 0;
+    padding: 0;
+}
+
+dd p + dl {
+    margin-top: 0.3em;
 }
 
 /* Remove any unexpected spacing between nested dl and the next top-level dt */
