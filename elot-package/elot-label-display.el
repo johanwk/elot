@@ -256,6 +256,7 @@ Output to OUT-FILE as an elisp list."
   "Read identifier-label pairs and initialise label-display."
   (interactive)
   (progn
+    (elot-update-headline-hierarchy)
     (elot-slurp-to-vars)
     (elot-update-codelist-fontify-regexp)
     (elot-update-fontify-keyword)
