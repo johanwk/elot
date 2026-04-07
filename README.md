@@ -1,25 +1,37 @@
 
+# ELOT — Literate Ontology Engineering
 
-# What
+*A single plain-text document that is simultaneously your ontology source, its documentation, its query workspace, and its diagram generator.*
 
-This repository contains a template for writing OWL ontologies as
-[Org Mode](https://orgmode.org/) documents, with supporting functions and scripts.
-ELOT works on Windows, MacOS, and Linux.
+## Why ELOT?
 
-[Literate programming](https://en.wikipedia.org/wiki/Literate_programming) is a paradigm where the creator of some technical artefact focuses on the explanation and readability of each technical construct, rather than its formal machine-readable definition.
-The machine-readable artefacts are then extracted through a process called "tangling".
+Ontology engineering today is fragmented across disconnected tools: you author in Protégé, generate documentation with WIDOCO or PyLODE, visualize in WebVOWL, and manage versions in Git — each tool speaking its own language.
+This fragmentation creates friction, makes it hard to keep documentation and formalization in sync, and discourages prose justification of design decisions.
 
-ELOT takes inspiration from this paradigm and uses the excellent Emacs
-Orgmode plain-text format to create an author- and reader-friendly
-ontology authoring environment. Ontological constructs are generated
-from headlines and description lists. Export to OWL (OMN or Turtle)
-and documentation (HTML or PDF).  Diagrams are generated from Turtle
-blocks or SPARQL queries using the rdfpuml tool.
+ELOT introduces **literate ontology engineering**: a workflow, inspired by Knuth's literate programming tradition, in which a single [Org Mode](https://orgmode.org/) plain-text file is the authoritative source for everything.
+Headlines are the taxonomy; description lists are the axioms and annotations.
+Documentation is not generated after the fact from `rdfs:comment` fields — it lives alongside the formal content, and HTML or PDF export captures both.
+SPARQL queries and rdfpuml diagrams execute in place, so the document is also an analytical workspace.
+Because the source is plain text, ontology changes produce clean, human-readable diffs; and because it is plain text, it is naturally consumable by LLMs for AI-assisted authoring.
 
-**NEW** April 2026: Org parsing rewritten.
+This approach has real-world validation: ELOT has been used across scores of ontology projects, including the ISO 23726-3 Industrial Data Ontology.
+In collaborative standards work, having a single source for ontology and documentation is a decisive practical advantage.
 
--   No longer uses "boilerplate" org-babel blocks
--   Much more efficient on large files
+## What's New in 2026
+
+-   **v2.0 refactoring** — Ontology content is now derived directly from Org headlines and description lists; no more boilerplate `org-babel` source blocks required. Parsing is cleaner, significantly more efficient on large files, and supports multiple ontologies per file.
+-   **elot-exporter** (Java/OWLAPI) — Comprehensive OWL→Org conversion with checksum protection and Manchester Syntax rendering.
+    Import any existing ontology and continue working in ELOT.
+    Download from [releases](https://github.com/johanwk/elot/releases); source in [`tools/elot-exporter/`](tools/elot-exporter/).
+-   **elot-cli** (TypeScript/WASM) and **VS Code extension** — An editor-independent Org→OWL pipeline built on orgize (Rust) compiled to WASM.
+    ELOT is no longer Emacs-only. Source in [`tools/elot-cli/`](tools/elot-cli/).
+-   **Round-trip test suite** — Systematic validation against real-world ontologies (BFO, Pizza, and others) with automated diffing.
+
+## How It Compares
+
+Most ontology tools occupy a single niche: Protégé is an authoring GUI, WIDOCO/PyLODE generate reference documentation, WebVOWL provides interactive visualization, and VoCol supports Git-based collaboration workflows.
+ELOT is the only tool that spans authoring, documentation generation, integrated SPARQL querying, diagram generation, and VCS-friendly plain-text format in a single workflow — at the cost of a higher initial learning curve.
+The `elot-cli` and VS Code extension are progressively lowering that barrier.
 
 -   [Prerequisites in brief](#orgc137b62)
 -   [Installation](#org7d49c93)
