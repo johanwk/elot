@@ -6,7 +6,7 @@
 ## Why ELOT?
 
 Ontology engineering today is fragmented across disconnected tools: you author in Protégé, generate documentation with WIDOCO or PyLODE, visualize in WebVOWL, and manage versions in Git — each tool speaking its own language.
-This fragmentation creates friction, makes it hard to keep documentation and formalization in sync, and — most damagingly — discourages the prose justification of design decisions that ontologies desperately need.
+This fragmentation creates friction, makes it hard to keep documentation and formalization in sync, and discourages prose justification of design decisions.
 
 ELOT introduces **literate ontology engineering**: a workflow, inspired by Knuth's literate programming tradition, in which a single [Org Mode](https://orgmode.org/) plain-text file is the authoritative source for everything.
 Headlines are the taxonomy; description lists are the axioms and annotations.
