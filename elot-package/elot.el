@@ -681,11 +681,17 @@ The link description is obtained using `(elot-codelist-id-label MATCH)`."
   (when (org-export-derived-backend-p backend 'latex)
     (cl-return-from elot--prepare-export-buffer))
   ;; ------------------------------------------------------------
+  ;; 0  Re-parse the headline hierarchy in the export clone
+  ;;    (buffer-local vars like `elot-headline-hierarchy' and
+  ;;    `org-link-abbrev-alist-local' are nil in a fresh clone)
+  ;; ------------------------------------------------------------
+  (elot-update-headline-hierarchy)
+  ;; ------------------------------------------------------------
   ;; 1  Turn uses of defined resources into links
   ;; ------------------------------------------------------------
   (org-fold-show-all)
   (elot-label-display-setup)
-  ;;(font-lock-fontify-buffer)
+  (font-lock-fontify-buffer) ;; because "linkify" reads properties
   (elot--linkify-codelist-items-in-buffer)
   ;; ------------------------------------------------------------
   ;; 2  Ensure CUSTOM_ID drawers
