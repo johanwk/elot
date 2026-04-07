@@ -1,6 +1,7 @@
 # Generated/downloaded — not tracked in git
 org/
 output/
+output-cli/
 reports/
 .stamps/
 roundtrip-report.md

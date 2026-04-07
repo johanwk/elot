@@ -21,12 +21,16 @@ ELOT_EXPORTER_JAR ?= java -jar ~/bin/elot-exporter.jar
 ROBOT             ?= java -jar ~/bin/robot.jar
 EMACS             ?= emacs
 ELOT_PACKAGE_DIR  ?= ../elot-package
+ELOT_CLI_DIR      ?= ../tools/elot-cli
+ELOT_CLI          ?= npx --prefix $(ELOT_CLI_DIR) tsx $(ELOT_CLI_DIR)/src/cli.ts
 
 # ── Directories ──────────────────────────────────────────────────────
-SOURCES_DIR := sources
-ORG_DIR     := org
-OUTPUT_DIR  := output
-REPORTS_DIR := reports
+SOURCES_DIR  := sources
+ORG_DIR      := org
+OUTPUT_DIR   := output
+CLI_DIR      := output-cli
+REPORTS_DIR  := reports
+COMPARE_DIR  := reports/elisp-vs-cli
 
 # ── Derived version / timestamp ──────────────────────────────────────
 ELOT_VERSION ?= $(shell git -C .. describe --tags --always 2>/dev/null || echo unknown)
@@ -37,7 +41,7 @@ TIMESTAMP     = $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 ENTRIES := $(shell awk -F'\t' '/^[^#]/ && NF>=3 {print $$1}' ontology-list.tsv)
 
 # ── Phony targets ────────────────────────────────────────────────────
-.PHONY: all fetch-sources baselines org roundtrip diff report clean distclean help
+.PHONY: all fetch-sources baselines org roundtrip roundtrip-cli compare diff report clean clean-cli distclean help
 
 all: diff report  ## Full pipeline: download → convert → export → tangle → diff → report
 
@@ -48,7 +52,11 @@ baselines: $(patsubst %,$(SOURCES_DIR)/%-baseline.omn,$(ENTRIES))  ## Convert al
 
 org: $(patsubst %,$(ORG_DIR)/%.org,$(ENTRIES))  ## Export all sources to ELOT Org format
 
-roundtrip: $(patsubst %,$(OUTPUT_DIR)/%.omn,$(ENTRIES))  ## Tangle all Org files back to OMN
+roundtrip: $(patsubst %,$(OUTPUT_DIR)/%.omn,$(ENTRIES))  ## Tangle all Org files back to OMN (Elisp)
+
+roundtrip-cli: $(patsubst %,$(CLI_DIR)/%.omn,$(ENTRIES))  ## Tangle all Org files back to OMN (elot-cli)
+
+compare: $(patsubst %,$(COMPARE_DIR)/%.diff,$(ENTRIES))  ## Compare Elisp vs CLI output for all ontologies
 
 diff: $(patsubst %,$(REPORTS_DIR)/%.json,$(ENTRIES)) $(patsubst %,$(REPORTS_DIR)/%.diff.html,$(ENTRIES))  ## Run robot diff and write JSON + HTML reports
 
@@ -64,6 +72,7 @@ help:  ## Show this help
 	@echo ""
 	@echo "Per-ontology targets (replace <id> with ontology name from ontology-list.tsv):"
 	@printf "  %-28s %s\n" "<id>.roundtrip" "Run full pipeline for a single ontology"
+	@printf "  %-28s %s\n" "<id>.compare" "Compare Elisp vs CLI output for a single ontology"
 	@printf "  %-28s %s\n" "sources/<id>.<ext>" "Download/copy a single source (extension from URI)"
 	@printf "  %-28s %s\n" "sources/<id>-baseline.omn" "Convert a single source to baseline OMN"
 	@printf "  %-28s %s\n" "org/<id>.org" "Export a single source to Org"
@@ -79,11 +88,16 @@ help:  ## Show this help
 	@echo "  ROBOT              $(ROBOT)"
 	@echo "  EMACS              $(EMACS)"
 	@echo "  ELOT_PACKAGE_DIR   $(ELOT_PACKAGE_DIR)"
+	@echo "  ELOT_CLI_DIR       $(ELOT_CLI_DIR)"
+	@echo "  ELOT_CLI           $(ELOT_CLI)"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make                         # run full pipeline"
 	@echo "  make -j4                     # run in parallel"
 	@echo "  make pizza.roundtrip         # single ontology end-to-end"
+	@echo "  make pizza.compare           # compare Elisp vs CLI for pizza"
+	@echo "  make roundtrip-cli           # tangle all with elot-cli"
+	@echo "  make compare                 # compare all: Elisp vs CLI"
 	@echo "  make sources/pizza.owl       # download just pizza"
 	@echo "  make fetch-sources           # download all"
 	@echo "  make clean                   # remove derived files"
@@ -106,8 +120,16 @@ help:  ## Show this help
 	@mkdir -p $(OUTPUT_DIR)
 	@touch $@
 
+.stamps/dir-cli: | .stamps
+	@mkdir -p $(CLI_DIR)
+	@touch $@
+
 .stamps/dir-reports: | .stamps
 	@mkdir -p $(REPORTS_DIR)
+	@touch $@
+
+.stamps/dir-compare: | .stamps
+	@mkdir -p $(COMPARE_DIR)
 	@touch $@
 
 # ════════════════════════════════════════════════════════════════════
@@ -224,6 +246,39 @@ $(OUTPUT_DIR)/%.omn: $(ORG_DIR)/%.org | .stamps/dir-output
 	@echo "Tangled to OMN: $@"
 
 # ════════════════════════════════════════════════════════════════════
+# STEP 4b: Tangle Org to OMN via elot-cli (TypeScript)
+# ════════════════════════════════════════════════════════════════════
+# Uses elot-cli (tools/elot-cli) to convert the same Org file to OMN.
+# Output goes into cli/ so it can be compared against the Elisp output.
+#
+# The CLI must be built first: npm install + npm run bundle (wasm + esbuild).
+# We use a stamp file to avoid rebuilding on every invocation.
+
+.stamps/cli-built: $(ELOT_CLI_DIR)/package.json $(ELOT_CLI_DIR)/esbuild.mjs | .stamps
+	cd $(ELOT_CLI_DIR) && npm install && npm run bundle
+	@touch $@
+
+$(CLI_DIR)/%.omn: $(ORG_DIR)/%.org .stamps/cli-built | .stamps/dir-cli
+	@if $(ELOT_CLI) "$<" "$@"; then \
+		echo "CLI tangled to OMN: $@"; \
+	else \
+		echo "WARNING: elot-cli failed for $* — skipping CLI tangle" >&2; \
+	fi
+
+# ════════════════════════════════════════════════════════════════════
+# STEP 5b: Compare Elisp vs CLI OMN output
+# ════════════════════════════════════════════════════════════════════
+# Plain text diff between the Emacs-tangled OMN and the CLI-tangled OMN.
+# This catches divergences between the two implementations.
+$(COMPARE_DIR)/%.diff: $(OUTPUT_DIR)/%.omn $(CLI_DIR)/%.omn | .stamps/dir-compare
+	@diff -u $< $(word 2,$^) > $@ 2>&1 || true
+	@if [ -s $@ ]; then \
+		echo "⚠️  ELISP≠CLI: $* ($$(wc -l < $@ | tr -d ' ') diff lines)"; \
+	else \
+		echo "✅ ELISP=CLI: $*"; \
+	fi
+
+# ════════════════════════════════════════════════════════════════════
 # STEP 5: Diff original OMN vs round-tripped OMN
 # ════════════════════════════════════════════════════════════════════
 $(REPORTS_DIR)/%.diff: $(SOURCES_DIR)/%-baseline.omn $(OUTPUT_DIR)/%.omn | .stamps/dir-reports
@@ -273,12 +328,18 @@ roundtrip-report.md: $(patsubst %,$(REPORTS_DIR)/%.json,$(ENTRIES)) generate-rou
 %.roundtrip: $(REPORTS_DIR)/%.json
 	@echo "Round-trip complete for $*"
 
+%.compare: $(COMPARE_DIR)/%.diff
+	@echo "Elisp vs CLI comparison complete for $*"
+
 # ════════════════════════════════════════════════════════════════════
 # Cleanup
 # ════════════════════════════════════════════════════════════════════
 clean:  ## Remove derived files (keep downloads and baselines)
-	rm -rf $(ORG_DIR) $(OUTPUT_DIR) $(REPORTS_DIR) .stamps
+	rm -rf $(ORG_DIR) $(OUTPUT_DIR) $(CLI_DIR) $(REPORTS_DIR) $(COMPARE_DIR) .stamps
 	rm -f roundtrip-report.md
+
+clean-cli:  ## Force rebuild of elot-cli on next run
+	rm -f .stamps/cli-built
 
 clean-baselines:  ## Remove baseline OMN files
 	rm -f $(SOURCES_DIR)/*-baseline.omn

@@ -59,18 +59,23 @@ The pipeline has seven steps, orchestrated by `make`:
  │   to Org     │   → org/<id>.org
  └──────┬───────┘
         │
-        ▼
- ┌──────────────┐
- │  4. Tangle   │   Emacs batch: Org → OMN via elot-tangle
- │   to OMN     │   → output/<id>.omn
- └──────┬───────┘
-        │
-        ▼
- ┌──────────────┐
- │  5. Diff     │   robot diff: baseline vs. round-tripped OMN
- │              │   → reports/<id>.diff, reports/<id>.diff.html
- └──────┬───────┘
-        │
+        ├──────────────────────────────┐
+        ▼                              ▼
+ ┌──────────────┐               ┌──────────────┐
+ │ 4a. Tangle   │               │ 4b. Tangle   │
+ │  (Elisp)     │               │  (elot-cli)  │
+ │  Emacs batch │               │  TypeScript   │
+ └──────┬───────┘               └──────┬───────┘
+        │ → output/<id>.omn            │ → output-cli/<id>.omn
+        │                              │
+        ├──────────────────────────────┤
+        │                              │
+        ▼                              ▼
+ ┌──────────────┐               ┌──────────────┐
+ │  5. Diff     │               │ 5b. Compare  │
+ │  vs baseline │               │ Elisp vs CLI │
+ └──────┬───────┘               └──────────────┘
+        │                        → reports/elisp-vs-cli/<id>.diff
         ▼
  ┌──────────────┐
  │  6. Report   │   JSON summary per ontology
@@ -105,15 +110,27 @@ round-trip.
 
 ### Step 4 — Tangle to OMN
 
-Emacs runs in batch mode, loads `elot-mode`, visits the generated Org
-file, and tangles it back to OMN.  This is the "export" half of the
-round-trip.
+Two tangling implementations run on the same Org files:
+
+- **Step 4a (Elisp):** Emacs runs in batch mode, loads `elot-mode`,
+  visits the generated Org file, and tangles it to OMN via
+  `elot-tangle-buffer-to-omn`.  Output: `output/<id>.omn`.
+
+- **Step 4b (elot-cli):** The TypeScript CLI (`tools/elot-cli`) parses
+  the same Org file via orgize WASM and generates OMN.  Output:
+  `output-cli/<id>.omn`.
 
 ### Step 5 — Diff
 
 ROBOT's `diff` command compares the baseline OMN (step 2) against the
-round-tripped OMN (step 4).  Both a plain-text diff and an HTML
+round-tripped OMN (step 4a).  Both a plain-text diff and an HTML
 report are produced for each ontology.
+
+### Step 5b — Compare Elisp vs CLI
+
+A plain `diff -u` between `output/<id>.omn` and `output-cli/<id>.omn`
+catches divergences between the two implementations.  Results go to
+`reports/elisp-vs-cli/<id>.diff`.
 
 ### Step 6 — JSON Report
 
@@ -141,6 +158,15 @@ make -j4
 # Process a single ontology end-to-end:
 make pizza.roundtrip
 
+# Compare Elisp vs CLI for a single ontology:
+make pizza.compare
+
+# Tangle all ontologies with elot-cli:
+make roundtrip-cli
+
+# Compare all: Elisp vs CLI output:
+make compare
+
 # Download sources only:
 make fetch-sources
 
@@ -159,6 +185,8 @@ command line:
 | `ROBOT`              | `java -jar ~/bin/robot.jar`      | ROBOT command                        |
 | `EMACS`              | `emacs`                          | Emacs binary                         |
 | `ELOT_PACKAGE_DIR`   | `../elot-package`                | Path to elot-package elisp directory |
+| `ELOT_CLI_DIR`       | `../tools/elot-cli`              | Path to elot-cli TypeScript project  |
+| `ELOT_CLI`           | (derived from ELOT_CLI_DIR)      | Full elot-cli invocation command     |
 
 ## Adding a New Ontology
 
