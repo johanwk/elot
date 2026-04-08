@@ -213,6 +213,54 @@ assert(
   ' "Line1\nLine2"@en'
 );
 
+// ── stripContinuationIndent tests ──
+
+import { stripContinuationIndent } from "../annotationValue.js";
+
+assert(
+  "stripContinuationIndent: no newline returns unchanged",
+  stripContinuationIndent("hello world"),
+  "hello world"
+);
+
+assert(
+  "stripContinuationIndent: strips common indent from continuation lines",
+  stripContinuationIndent("first line\n          second line\n          third line"),
+  "first line\nsecond line\nthird line"
+);
+
+assert(
+  "stripContinuationIndent: preserves relative indent differences",
+  stripContinuationIndent("A\n    B\n        C\n    D"),
+  "A\nB\n    C\nD"
+);
+
+assert(
+  "stripContinuationIndent: no indent → unchanged",
+  stripContinuationIndent("A\nB\nC"),
+  "A\nB\nC"
+);
+
+// Test that annotationStringOrUri strips continuation indent before quoting
+assert(
+  "annotationStringOrUri: multi-line with continuation indent stripped",
+  annotationStringOrUri(
+    "A 3D model represents some kind of 3D content. For the\n                     case of a single file, use zip.",
+    prefixes
+  ),
+  '  "A 3D model represents some kind of 3D content. For the\ncase of a single file, use zip."'
+);
+
+// Test that double newlines (blank lines between paragraphs) are preserved
+assert(
+  "annotationStringOrUri: double newline preserved",
+  annotationStringOrUri(
+    "A reservation for boat travel.\n\nNote: This type is for information about actual reservations.",
+    prefixes
+  ),
+  '  "A reservation for boat travel.\n\nNote: This type is for information about actual reservations."'
+);
+
 // ── Summary ──
 
 console.log(`\n${passed} passed, ${failed} failed out of ${total.length}`);

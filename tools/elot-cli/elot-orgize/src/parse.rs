@@ -433,7 +433,7 @@ fn extract_items_from_list(list_node: &orgize::SyntaxNode, items: &mut Vec<Descr
             }
         }
 
-        let full_text = text_parts.join("\n");
+        let full_text = text_parts.join("\n\n");
         // Look for the " :: " separator
         if let Some(sep_pos) = full_text.find(" :: ") {
             let tag_text = full_text[..sep_pos].trim().to_string();
@@ -510,10 +510,12 @@ fn extract_content_text_and_nested_lists(
         }
     }
 
-    // Join paragraphs with newline (handles multi-line values like SubClassOf
-    // with continuation lines).  Then trim leading whitespace from the *first*
-    // line only — continuation lines keep their original indentation.
-    let joined = text_parts.join("\n");
+    // Join separate paragraphs with "\n\n" (double newline) to preserve
+    // the blank line between them.  Within a single paragraph, orgize already
+    // includes newlines for continuation lines.
+    // Then trim leading whitespace from the *first* line only — continuation
+    // lines keep their original indentation.
+    let joined = text_parts.join("\n\n");
     (joined.trim_start().to_string(), nested_lists)
 }
 
@@ -1080,5 +1082,33 @@ No table here.
             "expected only the non-:tangle-no block, got {}: {:?}",
             onto.omn_src_blocks.len(), onto.omn_src_blocks);
         assert!(onto.omn_src_blocks[0].contains("SHOULD be extracted"));
+    }
+
+    #[test]
+    fn test_description_list_blank_line_preserved() {
+        // A description value that spans two paragraphs (separated by a blank
+        // line in the Org source) should retain the double newline (\n\n).
+        let org_text = r#"* Classes
+:PROPERTIES:
+:ID:       my-onto-class-hierarchy
+:resourcedefs: yes
+:END:
+** "BoatReservation"@en (schema:BoatReservation)
+ - rdfs:comment :: A reservation for boat travel.
+
+   Note: This type is for information about actual reservations.
+"#;
+        let root = parse_to_elot(org_text);
+        let boat = &root.children[0].children[0];
+        let descs = &boat.descriptions;
+
+        assert_eq!(descs.len(), 1,
+            "expected 1 description item, got {}: {:?}", descs.len(), descs);
+        assert_eq!(descs[0].tag, "rdfs:comment");
+        // The value must contain \n\n (double newline) between the paragraphs
+        assert!(descs[0].value.contains("\n\n"),
+            "expected double newline in value, got: {:?}", descs[0].value);
+        assert!(descs[0].value.contains("A reservation for boat travel."));
+        assert!(descs[0].value.contains("Note: This type"));
     }
 }

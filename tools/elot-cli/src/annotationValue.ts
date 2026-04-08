@@ -9,6 +9,41 @@
 import type { PrefixEntry } from "./types.js";
 
 /**
+ * Remove common leading whitespace from continuation lines in a string.
+ *
+ * Port of `elot--strip-continuation-indent` from elot-tangle.el.
+ *
+ * Finds the minimum number of leading spaces on lines after the first,
+ * then removes exactly that many spaces from the beginning of each
+ * continuation line.  The first line is left unchanged.
+ * Only strips from lines that actually begin with at least that many spaces.
+ */
+export function stripContinuationIndent(str: string): string {
+  if (!str.includes("\n")) return str;
+
+  const lines = str.split("\n");
+  const firstLine = lines[0];
+  const restLines = lines.slice(1);
+
+  // Find the minimum indent among continuation lines that have leading spaces
+  let minIndent = Infinity;
+  for (const line of restLines) {
+    const m = line.match(/^( +)/);
+    if (m) {
+      minIndent = Math.min(minIndent, m[1].length);
+    }
+  }
+  // If no continuation line had leading spaces, or min is 0, return unchanged
+  if (!isFinite(minIndent) || minIndent === 0) return str;
+
+  const prefix = " ".repeat(minIndent);
+  const trimmed = restLines.map((line) =>
+    line.startsWith(prefix) ? line.slice(minIndent) : line
+  );
+  return [firstLine, ...trimmed].join("\n");
+}
+
+/**
  * The CURIE regex from elot-puri-re.
  * Matches "prefix:localname" where prefix can be empty (default prefix).
  * Anchored to ^...$ to match the whole string.
@@ -67,6 +102,9 @@ export function annotationStringOrUri(
   str: string,
   prefixes: Map<string, string> | null
 ): string {
+  // Strip common continuation-line indent first (port of Elisp behaviour).
+  str = stripContinuationIndent(str);
+
   // Skip Org macro expansion ({{{...}}}) — not applicable in CLI context.
   // The CLI reads the raw Org text; macros are an Emacs-only feature.
 

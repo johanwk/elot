@@ -82,8 +82,16 @@ export function formatAnnotations(
       }
 
       const formattedVal = annotationStringOrUri(val, prefixMap);
+      // Only re-indent continuation lines for multi-line values that are
+      // NOT quoted strings.  Newlines inside quoted strings (e.g.
+      // rdfs:comment) are content, not formatting — re-indenting them
+      // would inject whitespace into the string literal.
+      const trimmedVal = formattedVal.trimStart();
+      const isQuotedString = /^"/.test(trimmedVal);
       const subInd = indentLevel + key.length + 1; // +1 for the space after key
-      const finalVal = indentLines(formattedVal.trimStart(), subInd, true);
+      const finalVal = isQuotedString
+        ? trimmedVal
+        : indentLines(trimmedVal, subInd, true);
 
       return metaBlock + ind + key + " " + finalVal;
     })
