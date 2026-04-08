@@ -261,6 +261,53 @@ assert(
   '  "A reservation for boat travel.\n\nNote: This type is for information about actual reservations."'
 );
 
+// Test: the Elisp `elot--strip-continuation-indent` only counts lines that
+// HAVE leading spaces when computing minIndent.  A blank line (empty string)
+// has no leading spaces so it does NOT contribute a 0 to the minimum.
+// This means a blank-line-separated paragraph where the continuation
+// lines before the blank line have indent 4 → minIndent = 4, and those
+// 4 spaces are stripped.  The blank line and the unindented paragraph
+// after it are left untouched (no prefix match).
+// With per-paragraph stripping, each blank-line-separated paragraph
+// has its own continuation indent stripped independently.
+assert(
+  "stripContinuationIndent: blank line does not force minIndent to 0",
+  stripContinuationIndent(
+    "A FundingAgency manages\n    the granting process.\n    A funding agency is not always required.\n\nExamples of funding agencies include ERC."
+  ),
+  "A FundingAgency manages\nthe granting process.\nA funding agency is not always required.\n\nExamples of funding agencies include ERC."
+);
+
+assert(
+  "annotationStringOrUri: FundingAgency-style multi-paragraph with continuation indent",
+  annotationStringOrUri(
+    "A FundingAgency manages\n    the granting process.\n    A funding agency is not always required.\n\nExamples of funding agencies include ERC.",
+    prefixes
+  ),
+  '  "A FundingAgency manages\nthe granting process.\nA funding agency is not always required.\n\nExamples of funding agencies include ERC."'
+);
+
+// Test: FundingAgency full case — paragraph 1 has 14-space indent,
+// paragraph 2 has 10-space indent.  Each paragraph is treated independently.
+assert(
+  "stripContinuationIndent: FundingAgency full Org-format value",
+  stripContinuationIndent(
+    "A FundingAgency is an organization that implements one or more [[FundingScheme]]s and manages\n              the granting process (via [[Grant]]s, typically [[MonetaryGrant]]s).\n              A funding agency is not always required for grant funding, e.g. philanthropic giving, corporate sponsorship etc.\n\n          Examples of funding agencies include ERC, REA, NIH, Bill and Melinda Gates Foundation, ..."
+  ),
+  "A FundingAgency is an organization that implements one or more [[FundingScheme]]s and manages\nthe granting process (via [[Grant]]s, typically [[MonetaryGrant]]s).\nA funding agency is not always required for grant funding, e.g. philanthropic giving, corporate sponsorship etc.\n\nExamples of funding agencies include ERC, REA, NIH, Bill and Melinda Gates Foundation, ..."
+);
+
+// Test: IPTCDigitalSourceEnumeration case — continuation lines have
+// 10 and 11 spaces.  Single-pass strips minIndent=10, leaving line 3
+// with 1 leading space (" for <a...") which is meaningful content.
+assert(
+  "stripContinuationIndent: preserves relative indent (IPTC case)",
+  stripContinuationIndent(
+    "IPTC codes for use with digitalSourceType.\n          In general these codes are not declared.\n           for detailed definitions of all terms."
+  ),
+  "IPTC codes for use with digitalSourceType.\nIn general these codes are not declared.\n for detailed definitions of all terms."
+);
+
 // ── Summary ──
 
 console.log(`\n${passed} passed, ${failed} failed out of ${total.length}`);

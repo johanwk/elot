@@ -9,7 +9,8 @@
 import type { PrefixEntry } from "./types.js";
 
 /**
- * Remove common leading whitespace from continuation lines in a string.
+ * Remove common leading whitespace from continuation lines in a single
+ * paragraph (no blank-line separators).
  *
  * Port of `elot--strip-continuation-indent` from elot-tangle.el.
  *
@@ -17,11 +18,14 @@ import type { PrefixEntry } from "./types.js";
  * then removes exactly that many spaces from the beginning of each
  * continuation line.  The first line is left unchanged.
  * Only strips from lines that actually begin with at least that many spaces.
+ *
+ * This is a **single pass** — it preserves relative indentation differences
+ * between continuation lines.  For example, if line 2 has 10 spaces and
+ * line 3 has 11 spaces, only 10 are stripped, leaving line 3 with 1 space.
  */
-export function stripContinuationIndent(str: string): string {
-  if (!str.includes("\n")) return str;
+function stripContinuationIndentParagraph(lines: string[]): string[] {
+  if (lines.length <= 1) return lines;
 
-  const lines = str.split("\n");
   const firstLine = lines[0];
   const restLines = lines.slice(1);
 
@@ -34,13 +38,72 @@ export function stripContinuationIndent(str: string): string {
     }
   }
   // If no continuation line had leading spaces, or min is 0, return unchanged
-  if (!isFinite(minIndent) || minIndent === 0) return str;
+  if (!isFinite(minIndent) || minIndent === 0) return lines;
 
   const prefix = " ".repeat(minIndent);
   const trimmed = restLines.map((line) =>
     line.startsWith(prefix) ? line.slice(minIndent) : line
   );
-  return [firstLine, ...trimmed].join("\n");
+  return [firstLine, ...trimmed];
+}
+
+/**
+ * Remove common leading whitespace from continuation lines in a string,
+ * treating each blank-line-separated paragraph independently.
+ *
+ * In Org description lists, a long annotation value may span multiple
+ * paragraphs (separated by blank lines).  Each paragraph may have its
+ * own continuation-line indentation from Org formatting.  The Elisp
+ * code processes each paragraph independently (via `org-element`), so
+ * we do the same: split on blank lines, strip each paragraph's
+ * continuation indent separately, then rejoin.
+ */
+export function stripContinuationIndent(str: string): string {
+  if (!str.includes("\n")) return str;
+
+  const lines = str.split("\n");
+
+  // Split lines into paragraphs (groups separated by empty lines).
+  // Blank lines (empty strings) act as separators.
+  const paragraphs: string[][] = [];
+  let current: string[] = [];
+  for (const line of lines) {
+    if (line === "") {
+      // Blank line → end current paragraph, record the blank line as its own group
+      if (current.length > 0) {
+        paragraphs.push(current);
+        current = [];
+      }
+      paragraphs.push([""]); // the blank line itself
+    } else {
+      current.push(line);
+    }
+  }
+  if (current.length > 0) {
+    paragraphs.push(current);
+  }
+
+  // Strip continuation indent within each non-blank paragraph.
+  // For paragraphs after the first, also trim the leading whitespace
+  // of the first line — that's Org continuation indent, not content.
+  // (The Rust parser only trim_start()s the very first line of the
+  // entire value; subsequent paragraphs retain their Org indent.)
+  const result: string[] = [];
+  let isFirstParagraph = true;
+  for (const para of paragraphs) {
+    if (para.length === 1 && para[0] === "") {
+      result.push("");
+    } else {
+      const stripped = stripContinuationIndentParagraph(para);
+      if (!isFirstParagraph && stripped.length > 0) {
+        stripped[0] = stripped[0].trimStart();
+      }
+      result.push(...stripped);
+      isFirstParagraph = false;
+    }
+  }
+
+  return result.join("\n");
 }
 
 /**
