@@ -507,7 +507,7 @@ Result FORMAT is tabular `csv', or Turtle RDF `ttl'."
 ;; [[file:../elot-defs.org::src-sparql-exec-patch][src-sparql-exec-patch]]
 (defun elot--is-elot-buffer ()
   "Check if the current buffer is an ELOT buffer."
-  (bound-and-true-p elot-buffer-p))
+  (bound-and-true-p elot-mode))
 
 (defun elot--custom-org-babel-execute-sparql (orig-fun &rest args)
   "ELOT-specific SPARQL execution with support for ROBOT.
