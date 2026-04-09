@@ -573,12 +573,14 @@ Creates a dummy root at level 0 to handle multiple top-level ontologies."
                  (extracted-desc (elot--extract-headline-descriptions hl))
                  (desc (let ((d extracted-desc))
                          ;; Automatically add rdfs:label if it differs from the URI
-                         ;; but only when this exact label value isn't already present
+                         ;; but only when an rdfs:label with this exact value isn't already present
                          ;; (there may be other rdfs:label entries with different language tags)
                          (when (and uri label (not (equal label uri))
-                                    (not (cl-find label d
-                                                  :key #'cadr
-                                                  :test #'equal)))
+                                    (not (cl-find-if
+                                          (lambda (entry)
+                                            (and (equal (car entry) "rdfs:label")
+                                                 (equal (cadr entry) label)))
+                                          d)))
                            (push (list "rdfs:label" label) d))
                          (if (and uri rdf-type)
                              (cons (list "rdf:type" rdf-type) d)
