@@ -6,6 +6,7 @@ import { generateFullOmn } from "./generateOmn.js";
 import { registerHoverProvider, clearSlurpCache } from "./hoverProvider.js";
 import { registerLabelDecorations } from "./labelDecorations.js";
 import { registerFoldingProvider } from "./foldingProvider.js";
+import { registerOrgIndent } from "./orgIndent.js";
 
 export function activate(context: vscode.ExtensionContext) {
   const tangle = async (doc: vscode.TextDocument, manual = false) => {
@@ -75,6 +76,9 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Headline-based folding for Org files
   const folding = registerFoldingProvider();
+
+  // Org-indent-mode: visual indentation based on headline level
+  registerOrgIndent(context);
 
   // Clean up cached slurp maps when documents are closed
   const onClose = vscode.workspace.onDidCloseTextDocument((doc) => {

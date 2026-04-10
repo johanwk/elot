@@ -46,6 +46,11 @@
         "command": "elot.toggleLabels",
         "title": "Elot: Toggle Label Display",
         "icon": "$(tag)"
+      },
+      {
+        "command": "elot.toggleOrgIndent",
+        "title": "Elot: Toggle Org Indent Mode",
+        "icon": "$(indent)"
       }
     ],
     "keybindings": [
@@ -68,6 +73,11 @@
         "command": "editor.unfoldAll",
         "key": "shift+tab",
         "when": "editorTextFocus && resourceExtname == .org && editorLangId == org && foldingEnabled && editor.someFoldsCollapsed"
+      },
+      {
+        "command": "elot.toggleOrgIndent",
+        "key": "ctrl+shift+i",
+        "when": "editorTextFocus && resourceExtname == .org"
       }
     ],
     "configuration": {
@@ -92,6 +102,11 @@
           "command": "elot.toggleLabels",
           "when": "resourceExtname == .org",
           "group": "navigation"
+        },
+        {
+          "command": "elot.toggleOrgIndent",
+          "when": "resourceExtname == .org",
+          "group": "navigation"
         }
       ],
       "editor/context": [
@@ -102,6 +117,11 @@
         },
         {
           "command": "elot.toggleLabels",
+          "when": "resourceExtname == .org",
+          "group": "navigation"
+        },
+        {
+          "command": "elot.toggleOrgIndent",
           "when": "resourceExtname == .org",
           "group": "navigation"
         }
