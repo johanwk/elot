@@ -10,6 +10,7 @@ import { registerOrgIndent } from "./orgIndent.js";
 import { registerDescriptionListDecorations } from "./descriptionListDecorations.js";
 import { registerHeadlineBoldDecorations } from "./headlineBoldDecorations.js";
 import { registerDefinitionProvider } from "./definitionProvider.js";
+import { registerCompletionProvider } from "./completionProvider.js";
 
 export function activate(context: vscode.ExtensionContext) {
   const tangle = async (doc: vscode.TextDocument, manual = false) => {
@@ -92,12 +93,15 @@ export function activate(context: vscode.ExtensionContext) {
   // Go-to-definition: Ctrl+Click / F12 jumps to the heading declaring a CURIE
   const definition = registerDefinitionProvider();
 
+  // Completion provider: insert existing resource by CURIE or label
+  const completion = registerCompletionProvider();
+
   // Clean up cached slurp maps when documents are closed
   const onClose = vscode.workspace.onDidCloseTextDocument((doc) => {
     clearSlurpCache(doc.uri.toString());
   });
 
-  context.subscriptions.push(disposable, onSave, hover, folding, definition, onClose);
+  context.subscriptions.push(disposable, onSave, hover, folding, definition, completion, onClose);
 }
 
 export function deactivate() {}
