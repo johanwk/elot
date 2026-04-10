@@ -37,6 +37,9 @@ OWL Manchester Syntax.
 - **Description List Tags**: The tag portion of Org description lists (e.g.
   `- rdfs:isDefinedBy ::`) is rendered in a subdued colour to make values stand
   out.
+- **IntelliSense Completion**: Press Ctrl+Space to get a dropdown of all OWL
+  entities declared in the file — searchable by label or CURIE, showing type
+  and annotations. Selecting an item inserts the CURIE.
 
 ## Label Display (CURIE → Human-readable Labels)
 
@@ -180,6 +183,48 @@ Two always-on decorations enhance readability of Org files:
 These are applied automatically when an `.org` file is opened — no toggle or
 configuration needed.
 
+## IntelliSense: Insert Existing Resource
+
+The extension provides a VS Code *CompletionItemProvider* (IntelliSense) that
+lets you insert any OWL entity declared in the current Org file via an
+autocomplete dropdown — the VS Code equivalent of Emacs's `completing-read` for
+ontology resources.
+
+When triggered, the dropdown shows every entity from the document's heading
+hierarchy:
+
+| Field | Content |
+|---|---|
+| **Label** (main text) | Human-readable name, e.g. *"entity"@en* |
+| **Description** (right-aligned) | CURIE, e.g. `obo:BFO_0000001` |
+| **Detail** (subtitle) | RDF type, e.g. `owl:Class` |
+| **Icon** | Class icon for `owl:Class`, Property for properties, Value for individuals |
+| **Documentation panel** | Full detail with label, CURIE, type, and description properties (same info as hover) |
+
+Selecting an item inserts the **CURIE** into the document.
+
+### How to trigger
+
+| Action | Method |
+|---|---|
+| **Trigger completion** | **Ctrl+Space** (standard VS Code IntelliSense) |
+| **Auto-trigger** | Type `:` after a prefix name (e.g. `obo:`) |
+| **Browse the list** | Arrow keys, then **Enter** or **Tab** to insert |
+| **See full details** | The documentation panel opens for the selected item |
+
+### Filtering and sorting
+
+You can filter by typing either the **label** or the **CURIE** — for example,
+typing `entity` or `obo:BFO` both find `obo:BFO_0000001`. Items are grouped
+by type (Classes → Properties → Individuals → Other), then sorted
+alphabetically by label within each group.
+
+### No configuration needed
+
+The provider registers programmatically — no `package.json` contributes entry
+or language server is required. It works for any file matched as `{ language:
+"org" }` or `**/*.org`.
+
 ## Tip: Word Wrap for Org Files
 
 Org files often have long lines. VS Code can wrap them visually (like Emacs's
@@ -191,6 +236,51 @@ add this to your VS Code `settings.json` for a persistent per-language setting:
     "editor.wordWrap": "on"
 }
 ```
+
+## Converting OWL Files to Org (elot-exporter)
+
+If you have an existing OWL ontology (in RDF/XML, Turtle, or any standard RDF
+format) and want to edit it as an Org file with the Elot VS Code extension, use
+**elot-exporter** — a standalone Java tool that converts OWL files into Elot's
+Org-mode format.
+
+### Obtaining elot-exporter
+
+Download the latest `elot-exporter.jar` from the
+[Elot releases page](https://github.com/johanwk/elot/releases).
+
+**Prerequisite:** Java (JRE 11 or later) must be installed on your system.
+Verify with:
+
+```bash
+java -version
+```
+
+### Usage
+
+```bash
+# Convert an OWL file to Org format
+java -jar elot-exporter.jar input-ontology.owl -o output.org
+
+# Pipe from stdin
+cat ontology.ttl | java -jar elot-exporter.jar -f turtle -o output.org
+```
+
+The resulting `.org` file can be opened directly in VS Code with the Elot
+extension, giving you label display, folding, IntelliSense, and all other
+features described above.
+
+### Bundling the JAR inside the extension?
+
+The `elot-exporter.jar` is currently **not** bundled inside the VSIX extension.
+The JAR adds approximately 20–30 MB to the download size (it includes embedded
+dependencies like the OWL API and Apache Jena). While VS Code extensions can
+technically include JARs (the Java and Red Hat extensions do this), it would
+significantly increase the extension size — the current VSIX is well under 1 MB.
+
+For now, downloading the JAR separately from the releases page is the
+recommended approach. Users are responsible for having Java installed. A future
+version may add a VS Code command that auto-downloads the JAR on first use.
 
 ## Quick Start — `make help`
 
