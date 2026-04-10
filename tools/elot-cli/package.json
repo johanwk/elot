@@ -21,7 +21,7 @@
   "qna": "marketplace",
   "repository": {
     "type": "git",
-    "url": "https://github.com/johanwk/elot-cli"
+    "url": "https://github.com/johanwk/elot"
   },
   "license": "GPL-3.0-or-later",
   "main": "./dist/extension.js",
