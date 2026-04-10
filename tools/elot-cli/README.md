@@ -25,6 +25,18 @@ OWL Manchester Syntax.
   `:header-args:omn: :tangle`.
 - **Label Display**: Hover over CURIEs to see labels and annotations; press F5
   to visually replace CURIEs with human-readable labels (see below).
+- **Headline Folding**: Click the fold/unfold gutter chevrons, or press Tab on a
+  heading to toggle folding — like Emacs Org-mode's visibility cycling.
+- **Go to Definition**: Ctrl+Click or press F12 on a CURIE to jump to the heading
+  where that entity is declared — the VS Code equivalent of Emacs's `M-.`
+  (`xref-find-definitions`).
+- **Org Indent Mode**: Toggle visual indentation that mirrors Emacs's
+  `org-indent-mode` — sub-headings and body text are visually indented without
+  modifying the file.
+- **Headline Fontification**: Org headings are rendered in **bold** automatically.
+- **Description List Tags**: The tag portion of Org description lists (e.g.
+  `- rdfs:isDefinedBy ::`) is rendered in a subdued colour to make values stand
+  out.
 
 ## Label Display (CURIE → Human-readable Labels)
 
@@ -77,6 +89,108 @@ Toggle methods:
 | `elot.labelDisplay.hoverEnabled` | `true` | Show hover cards for CURIEs |
 
 These can be changed in VS Code Settings (search for "elot").
+
+## Headline Folding
+
+Org headings can be folded and unfolded, just like in Emacs Org-mode. The
+extension registers a VS Code
+[FoldingRangeProvider](https://code.visualstudio.com/api/references/vscode-api#FoldingRangeProvider)
+that understands Org headline hierarchy — each heading's fold region extends to
+just before the next sibling or ancestor heading.
+
+### How to fold
+
+| Action | Method |
+|---|---|
+| **Toggle fold at cursor** | Press **Tab** on a heading line |
+| **Fold at cursor** | `Ctrl+Shift+[` (`⌘+⌥+[` on Mac) |
+| **Unfold at cursor** | `Ctrl+Shift+]` (`⌘+⌥+]` on Mac) |
+| **Fold all** | `Shift+Tab` (when some headings are unfolded), or `Ctrl+K Ctrl+0` |
+| **Unfold all** | `Shift+Tab` (when all folded), or `Ctrl+K Ctrl+J` |
+| **Fold to level N** | `Ctrl+K Ctrl+N` (e.g. `Ctrl+K Ctrl+1` for level 1) |
+| **Click gutter** | Click the ▸ / ▾ chevron in the left gutter next to a heading |
+
+The Tab and Shift+Tab bindings are scoped to `.org` files, so they don't
+interfere with normal Tab behaviour in other file types.
+
+> **Note:** VS Code's fold toggle is two-state (folded ↔ unfolded), unlike
+> Emacs Org-mode's three-state TAB cycling (folded → children → subtree).
+> Shift+Tab provides the global overview/show-all toggle.
+
+## Go to Definition (Jump to Entity Heading)
+
+When you see a CURIE like `obo:BFO_0000001` anywhere in an Org file, you can
+jump directly to the heading where that entity is declared. This is the VS Code
+equivalent of Emacs's `M-.` (`xref-find-definitions`).
+
+| Action | Method |
+|---|---|
+| **Go to definition** | **F12**, or **Ctrl+Click** (`Cmd+Click` on Mac) on a CURIE |
+| **Peek definition** (inline preview) | **Alt+F12** |
+| **Go back** | **Alt+←** (like Emacs `M-,`) |
+| **Right-click** | Context menu → *Go to Definition* / *Peek Definition* |
+
+This works purely within the current Org file — it scans headlines for entity
+declarations (using the same `entityFromHeader` parser as the build pipeline)
+and jumps to the matching heading. No external index or language server is
+required.
+
+## Org Indent Mode (Visual Indentation)
+
+Toggle visual indentation that mimics Emacs's `org-indent-mode`. When enabled,
+sub-headings and their body text are indented proportional to their depth, and
+leading stars on sub-headings are hidden — all without modifying the file.
+
+| Headline level | Visual indent |
+|---|---|
+| `*` (level 1) | 0 (left margin) |
+| `**` (level 2) | 2 spaces |
+| `***` (level 3) | 4 spaces |
+| Body text | Same as its parent heading |
+
+### How to toggle
+
+| Action | Method |
+|---|---|
+| **Keyboard shortcut** | **Ctrl+Shift+I** (in an `.org` file) |
+| **Command Palette** | *Elot: Toggle Org Indent Mode* |
+| **Status bar** | Click the **Flat** / **Indent** indicator (bottom-right) |
+| **Title bar** | Click the indent icon ($(indent)) in the editor title area |
+| **Right-click** | Context menu → *Elot: Toggle Org Indent Mode* |
+
+### How it works
+
+- Uses VS Code's `TextEditorDecorationType` API with `before` pseudo-elements
+  to prepend invisible spacing — the file content is never changed.
+- Leading stars on sub-headings are visually hidden (font-size: 0), so
+  `*** Heading` appears as `* Heading` at the indented position.
+- The status bar shows **Indent** (highlighted) when ON, **Flat** when OFF.
+
+## Fontification
+
+Two always-on decorations enhance readability of Org files:
+
+- **Bold headlines** — All Org headings (`*`, `**`, `***`, …) are rendered in
+  **bold**.
+- **Subdued description list tags** — In description lists like
+  `- rdfs:isDefinedBy :: lis-ont:core`, the tag portion (`- rdfs:isDefinedBy ::`)
+  is shown in a muted colour with italic styling, so the description value
+  stands out.
+
+These are applied automatically when an `.org` file is opened — no toggle or
+configuration needed.
+
+## Tip: Word Wrap for Org Files
+
+Org files often have long lines. VS Code can wrap them visually (like Emacs's
+`visual-line-mode`) without modifying the file. Press **Alt+Z** to toggle, or
+add this to your VS Code `settings.json` for a persistent per-language setting:
+
+```json
+"[org]": {
+    "editor.wordWrap": "on"
+}
+```
 
 ## Quick Start — `make help`
 

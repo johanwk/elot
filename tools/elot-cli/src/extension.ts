@@ -7,6 +7,9 @@ import { registerHoverProvider, clearSlurpCache } from "./hoverProvider.js";
 import { registerLabelDecorations } from "./labelDecorations.js";
 import { registerFoldingProvider } from "./foldingProvider.js";
 import { registerOrgIndent } from "./orgIndent.js";
+import { registerDescriptionListDecorations } from "./descriptionListDecorations.js";
+import { registerHeadlineBoldDecorations } from "./headlineBoldDecorations.js";
+import { registerDefinitionProvider } from "./definitionProvider.js";
 
 export function activate(context: vscode.ExtensionContext) {
   const tangle = async (doc: vscode.TextDocument, manual = false) => {
@@ -80,12 +83,21 @@ export function activate(context: vscode.ExtensionContext) {
   // Org-indent-mode: visual indentation based on headline level
   registerOrgIndent(context);
 
+  // Description list tag fontification (always-on for Org files)
+  registerDescriptionListDecorations(context);
+
+  // Bold headline fontification (always-on for Org files)
+  registerHeadlineBoldDecorations(context);
+
+  // Go-to-definition: Ctrl+Click / F12 jumps to the heading declaring a CURIE
+  const definition = registerDefinitionProvider();
+
   // Clean up cached slurp maps when documents are closed
   const onClose = vscode.workspace.onDidCloseTextDocument((doc) => {
     clearSlurpCache(doc.uri.toString());
   });
 
-  context.subscriptions.push(disposable, onSave, hover, folding, onClose);
+  context.subscriptions.push(disposable, onSave, hover, folding, definition, onClose);
 }
 
 export function deactivate() {}
