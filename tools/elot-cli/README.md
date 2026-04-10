@@ -402,7 +402,7 @@ Rust crate, examples, dev tooling, etc.).
 To install the extension locally:
 
 ```bash
-code --install-extension elot-0.1.0.vsix
+code --install-extension elot-0.1.1.vsix
 ```
 
 ## Testing
