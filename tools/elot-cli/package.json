@@ -53,6 +53,21 @@
         "command": "elot.toggleLabels",
         "key": "f5",
         "when": "resourceExtname == .org"
+      },
+      {
+        "command": "editor.toggleFold",
+        "key": "tab",
+        "when": "editorTextFocus && resourceExtname == .org && editorLangId == org && foldingEnabled"
+      },
+      {
+        "command": "editor.foldAll",
+        "key": "shift+tab",
+        "when": "editorTextFocus && resourceExtname == .org && editorLangId == org && foldingEnabled && !editor.someFoldsCollapsed"
+      },
+      {
+        "command": "editor.unfoldAll",
+        "key": "shift+tab",
+        "when": "editorTextFocus && resourceExtname == .org && editorLangId == org && foldingEnabled && editor.someFoldsCollapsed"
       }
     ],
     "configuration": {

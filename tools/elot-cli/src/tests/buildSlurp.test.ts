@@ -3,13 +3,9 @@
 // Tests for buildSlurp and buildLabelMap.
 
 import { readFileSync } from "fs";
-import { resolve, dirname } from "path";
-import { fileURLToPath } from "url";
+import { resolve } from "path";
 import { parseOrg } from "../parseOrgWasm.js";
 import { buildSlurp, buildLabelMap } from "../buildSlurp.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 const examplesDir = resolve(__dirname, "../../examples");
 

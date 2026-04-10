@@ -5,6 +5,7 @@ import { parseOrg } from "./parseOrgWasm.js";
 import { generateFullOmn } from "./generateOmn.js";
 import { registerHoverProvider, clearSlurpCache } from "./hoverProvider.js";
 import { registerLabelDecorations } from "./labelDecorations.js";
+import { registerFoldingProvider } from "./foldingProvider.js";
 
 export function activate(context: vscode.ExtensionContext) {
   const tangle = async (doc: vscode.TextDocument, manual = false) => {
@@ -72,12 +73,15 @@ export function activate(context: vscode.ExtensionContext) {
   // Label decoration toggle (elot.toggleLabels / F5)
   registerLabelDecorations(context);
 
+  // Headline-based folding for Org files
+  const folding = registerFoldingProvider();
+
   // Clean up cached slurp maps when documents are closed
   const onClose = vscode.workspace.onDidCloseTextDocument((doc) => {
     clearSlurpCache(doc.uri.toString());
   });
 
-  context.subscriptions.push(disposable, onSave, hover, onClose);
+  context.subscriptions.push(disposable, onSave, hover, folding, onClose);
 }
 
 export function deactivate() {}

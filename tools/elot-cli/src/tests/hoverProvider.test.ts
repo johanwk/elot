@@ -6,13 +6,9 @@
 // and get meaningful hover content?
 
 import { readFileSync } from "fs";
-import { resolve, dirname } from "path";
-import { fileURLToPath } from "url";
+import { resolve } from "path";
 import { parseOrg } from "../parseOrgWasm.js";
 import { buildSlurp, type SlurpEntry } from "../buildSlurp.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 const orgPath = resolve(__dirname, "../../examples/bfo-core.org");
 const orgText = readFileSync(orgPath, "utf-8");

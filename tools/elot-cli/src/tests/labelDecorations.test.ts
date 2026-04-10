@@ -9,13 +9,9 @@
 //   3. The toggle state management works
 
 import { readFileSync } from "fs";
-import { resolve, dirname } from "path";
-import { fileURLToPath } from "url";
+import { resolve } from "path";
 import { parseOrg } from "../parseOrgWasm.js";
 import { buildSlurp, buildLabelMap } from "../buildSlurp.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 // ─── CURIE regex (duplicated for testing; same as in labelDecorations.ts) ────
 const CURIE_GLOBAL_RE = /(?:[a-zA-Z][-a-zA-Z0-9_.]*|):[-\w_./]+/g;

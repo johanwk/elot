@@ -11,13 +11,9 @@
 // Run: npx tsx src/tests/integration.test.ts
 
 import { readFileSync } from "fs";
-import { resolve, dirname } from "path";
-import { fileURLToPath } from "url";
+import { resolve } from "path";
 import { buildSlurp, buildLabelMap } from "../buildSlurp.js";
 import { parseOrg } from "../parseOrgWasm.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 const bfoOrgPath = resolve(__dirname, "../../examples/bfo-core.org");
 const pkgJsonPath = resolve(__dirname, "../../package.json");
 
