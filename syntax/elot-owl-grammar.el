@@ -46,8 +46,12 @@
   (individual-list () (and individual (* (and ws "," ws individual))))
   ;; Class expression list (for DisjointWith, EquivalentTo, DisjointUnionOf, SubClassOf, Domain, Range, Types)
   (class-expression-list () (and class-expression (* (and ows "," ows class-expression))))
+  ;; description2List: at least 2 class expressions (for misc DisjointClasses, EquivalentClasses)
+  (class-expression-2-list () (and class-expression (+ (and ows "," ows class-expression))))
   ;; Object property expression list (for SubPropertyOf, EquivalentTo, DisjointWith, InverseOf on properties)
   (object-property-expression-list () (and object-property-expression (* (and ows "," ows object-property-expression))))
+  ;; objectProperty2List / dataProperty2List: at least 2 (for misc DisjointProperties, EquivalentProperties)
+  (object-property-expression-2-list () (and object-property-expression (+ (and ows "," ows object-property-expression))))
   ;; Fact: [ 'not' ] (objectPropertyIRI individual | objectPropertyIRI literal)
   ;; Since object/data property IRIs are syntactically identical, we merge:
   ;; try Literal first (data property fact), then Individual (object property fact).
