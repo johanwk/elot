@@ -466,141 +466,178 @@ and not annotation properties, and that parentheses are balanced."
 
 (defun elot-parse-class-expression-list (input)
   "Parse INPUT as a comma-separated list of OWL Manchester Syntax class expressions.
-Return t if the entire string is consumed, nil otherwise."
+Return t if the entire string is consumed, or the 1-based column
+position where parsing stopped on failure."
   (with-temp-buffer
     (insert input)
     (goto-char (point-min))
     (condition-case nil
         (with-peg-rules (elot-owl-grammar)
-          (let ((result (peg-run (peg class-expression-list))))
-            (and result (eobp))))
-      (error nil))))
+          (let ((ok (peg-run (peg class-expression-list))))
+            (if (and ok (eobp)) t (point))))
+      (error (point)))))
 
 (defun elot-parse-class-expression (input)
   "Parse INPUT as an OWL Manchester Syntax class expression.
-Return t if the entire string is consumed, nil otherwise."
+Return t if the entire string is consumed, or the 1-based column
+position where parsing stopped on failure."
   (with-temp-buffer
     (insert input)
     (goto-char (point-min))
     (condition-case nil
         (with-peg-rules (elot-owl-grammar)
-          (let ((result (peg-run (peg class-expression))))
-            (and result (eobp))))
-      (error nil))))
+          (let ((ok (peg-run (peg class-expression))))
+            (if (and ok (eobp)) t (point))))
+      (error (point)))))
 
 (defun elot-parse-property-expression-list (input)
   "Parse INPUT as a comma-separated list of OWL Manchester Syntax object property expressions.
-Return t if the entire string is consumed, nil otherwise."
+Return t if the entire string is consumed, or the 1-based column
+position where parsing stopped on failure."
   (with-temp-buffer
     (insert input)
     (goto-char (point-min))
     (condition-case nil
         (with-peg-rules (elot-owl-grammar)
-          (let ((result (peg-run (peg object-property-expression-list))))
-            (and result (eobp))))
-      (error nil))))
+          (let ((ok (peg-run (peg object-property-expression-list))))
+            (if (and ok (eobp)) t (point))))
+      (error (point)))))
 
 (defun elot-parse-property-expression (input)
   "Parse INPUT as an OWL Manchester Syntax object property expression.
-Return t if the entire string is consumed, nil otherwise."
+Return t if the entire string is consumed, or the 1-based column
+position where parsing stopped on failure."
   (with-temp-buffer
     (insert input)
     (goto-char (point-min))
     (condition-case nil
         (with-peg-rules (elot-owl-grammar)
-          (let ((result (peg-run (peg object-property-expression))))
-            (and result (eobp))))
-      (error nil))))
+          (let ((ok (peg-run (peg object-property-expression))))
+            (if (and ok (eobp)) t (point))))
+      (error (point)))))
 
 (defun elot-parse-sub-property-chain (input)
   "Parse INPUT as an OWL Manchester Syntax sub-property chain.
-Return t if the entire string is consumed, nil otherwise."
+Return t if the entire string is consumed, or the 1-based column
+position where parsing stopped on failure."
   (with-temp-buffer
     (insert input)
     (goto-char (point-min))
     (condition-case nil
         (with-peg-rules (elot-owl-grammar)
-          (let ((result (peg-run (peg sub-property-chain))))
-            (and result (eobp))))
-      (error nil))))
+          (let ((ok (peg-run (peg sub-property-chain))))
+            (if (and ok (eobp)) t (point))))
+      (error (point)))))
 
 (defun elot-parse-data-range (input)
   "Parse INPUT as an OWL Manchester Syntax data range.
-Return t if the entire string is consumed, nil otherwise."
+Return t if the entire string is consumed, or the 1-based column
+position where parsing stopped on failure."
   (with-temp-buffer
     (insert input)
     (goto-char (point-min))
     (condition-case nil
         (with-peg-rules (elot-owl-grammar)
-          (let ((result (peg-run (peg data-range))))
-            (and result (eobp))))
-      (error nil))))
+          (let ((ok (peg-run (peg data-range))))
+            (if (and ok (eobp)) t (point))))
+      (error (point)))))
 
 (defun elot-parse-fact (input)
   "Parse INPUT as an OWL Manchester Syntax fact.
-Return t if the entire string is consumed, nil otherwise."
+Return t if the entire string is consumed, or the 1-based column
+position where parsing stopped on failure."
   (with-temp-buffer
     (insert input)
     (goto-char (point-min))
     (condition-case nil
         (with-peg-rules (elot-owl-grammar)
-          (let ((result (peg-run (peg fact))))
-            (and result (eobp))))
-      (error nil))))
+          (let ((ok (peg-run (peg fact))))
+            (if (and ok (eobp)) t (point))))
+      (error (point)))))
 
 (defun elot-parse-individual-iri-list (input)
   "Parse INPUT as a comma-separated list of individuals.
-Return t if the entire string is consumed, nil otherwise."
+Return t if the entire string is consumed, or the 1-based column
+position where parsing stopped on failure."
   (with-temp-buffer
     (insert input)
     (goto-char (point-min))
     (condition-case nil
         (with-peg-rules (elot-owl-grammar)
-          (let ((result (peg-run (peg individual-iri-list))))
-            (and result (eobp))))
-      (error nil))))
+          (let ((ok (peg-run (peg individual-iri-list))))
+            (if (and ok (eobp)) t (point))))
+      (error (point)))))
 
 (defun elot-parse-class-expression-2-list (input)
   "Parse INPUT as a comma-separated list of at least 2 class expressions.
-Return t if the entire string is consumed, nil otherwise."
+Return t if the entire string is consumed, or the 1-based column
+position where parsing stopped on failure."
   (with-temp-buffer
     (insert input)
     (goto-char (point-min))
     (condition-case nil
         (with-peg-rules (elot-owl-grammar)
-          (let ((result (peg-run (peg class-expression-2-list))))
-            (and result (eobp))))
-      (error nil))))
+          (let ((ok (peg-run (peg class-expression-2-list))))
+            (if (and ok (eobp)) t (point))))
+      (error (point)))))
 
 (defun elot-parse-property-expression-2-list (input)
   "Parse INPUT as a comma-separated list of at least 2 property expressions.
-Return t if the entire string is consumed, nil otherwise."
+Return t if the entire string is consumed, or the 1-based column
+position where parsing stopped on failure."
   (with-temp-buffer
     (insert input)
     (goto-char (point-min))
     (condition-case nil
         (with-peg-rules (elot-owl-grammar)
-          (let ((result (peg-run (peg object-property-expression-2-list))))
-            (and result (eobp))))
-      (error nil))))
+          (let ((ok (peg-run (peg object-property-expression-2-list))))
+            (if (and ok (eobp)) t (point))))
+      (error (point)))))
 
 (defun elot-parse-individual-2-list (input)
   "Parse INPUT as a comma-separated list of at least 2 individuals.
-Return t if the entire string is consumed, nil otherwise."
+Return t if the entire string is consumed, or the 1-based column
+position where parsing stopped on failure."
   (with-temp-buffer
     (insert input)
     (goto-char (point-min))
     (condition-case nil
         (with-peg-rules (elot-owl-grammar)
-          (let ((result (peg-run (peg individual-2-list))))
-            (and result (eobp))))
-      (error nil))))
+          (let ((ok (peg-run (peg individual-2-list))))
+            (if (and ok (eobp)) t (point))))
+      (error (point)))))
+
+(defun elot--format-parse-error (term contents fail-pos)
+  "Format an OMN parse error message for keyword TERM.
+CONTENTS is the input string, FAIL-POS is the 1-based position
+where parsing stopped (an integer), or nil if position is unknown."
+  (if (and (integerp fail-pos)
+           (<= fail-pos (length contents)))
+      (let* ((col fail-pos)
+             (before (substring contents 0 (min (1- col) (length contents))))
+             (after (substring contents (min (1- col) (length contents))))
+             ;; Truncate context for readability
+             (before-ctx (if (> (length before) 20)
+                             (concat "..." (substring before -20))
+                           before))
+             (after-ctx (if (> (length after) 20)
+                            (concat (substring after 0 20) "...")
+                          after)))
+        (format "ERROR: Invalid %s at column %d: \"%s▶%s\""
+                term col before-ctx after-ctx))
+    ;; Fallback: no position info
+    (format "ERROR: Invalid %s expression: %s"
+            term
+            (if (> (length contents) 60)
+                (concat (substring contents 0 57) "...")
+              contents))))
 
 (defun elot-check-omn-syntax (tree)
   "ELOT rule: validate OWL Manchester Syntax in axiom description list values.
 For each description list item whose tag is an OMN keyword with a known
 parser (see `elot-omn-keyword-parser-alist'), parse the value and report
-an error if it does not conform to the grammar."
+an error if it does not conform to the grammar.  When the parser reports
+a failure position, the error message indicates the exact column."
   (let (issues)
     (org-element-map tree 'item
       (lambda (item)
@@ -619,16 +656,14 @@ an error if it does not conform to the grammar."
                                      (org-element-contents item))))
                        ;; Clean up: remove leading/trailing whitespace and
                        ;; trailing newlines left by org-element-interpret-data
-                       (contents (string-trim contents-raw)))
+                       (contents (string-trim contents-raw))
+                       (result (when (not (string-empty-p contents))
+                                 (funcall parser-fn contents))))
                   (when (and (not (string-empty-p contents))
-                             (not (funcall parser-fn contents)))
+                             (not (eq result t)))
                     (push (list (org-element-property :begin item)
                                 (propertize
-                                 (format "ERROR: Invalid %s expression: %s"
-                                         term
-                                         (if (> (length contents) 60)
-                                             (concat (substring contents 0 57) "...")
-                                           contents))
+                                 (elot--format-parse-error term contents result)
                                  'face 'error))
                           issues))))))))
       tree)

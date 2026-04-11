@@ -9,129 +9,137 @@
 (load-file (expand-file-name "elot-owl-grammar.el"))
 
 ;; 3. Utility functions: parse INPUT starting from a specific grammar rule.
-;;    Return t on full match, nil otherwise.
+;;    Return t on full match, or the 1-based failure position otherwise.
 
 (defun elot-parse-class-expression-list (input)
   "Try to parse INPUT as a comma-separated list of OWL Manchester Syntax class expressions.
-Return t if the entire string is consumed, nil otherwise."
+Return t if the entire string is consumed, or the 1-based column
+position where parsing stopped on failure."
   (with-temp-buffer
     (insert input)
     (goto-char (point-min))
     (condition-case err
         (with-peg-rules (elot-owl-grammar)
-          (let ((result (peg-run (peg class-expression-list))))
-            (and result (eobp))))
+          (let ((ok (peg-run (peg class-expression-list))))
+            (if (and ok (eobp)) t (point))))
       (error
        (message "  PARSE ERROR: %S" err)
-       nil))))
+       (point)))))
 
 (defun elot-parse-property-expression-list (input)
   "Try to parse INPUT as a comma-separated list of object property expressions.
-Return t if the entire string is consumed, nil otherwise."
+Return t if the entire string is consumed, or the 1-based column
+position where parsing stopped on failure."
   (with-temp-buffer
     (insert input)
     (goto-char (point-min))
     (condition-case err
         (with-peg-rules (elot-owl-grammar)
-          (let ((result (peg-run (peg object-property-expression-list))))
-            (and result (eobp))))
+          (let ((ok (peg-run (peg object-property-expression-list))))
+            (if (and ok (eobp)) t (point))))
       (error
        (message "  PARSE ERROR: %S" err)
-       nil))))
+       (point)))))
 
 (defun elot-parse-class-expression (input)
   "Try to parse INPUT as an OWL Manchester Syntax class expression.
-Return t if the entire string is consumed, nil otherwise."
+Return t if the entire string is consumed, or the 1-based column
+position where parsing stopped on failure."
   (with-temp-buffer
     (insert input)
     (goto-char (point-min))
     (condition-case err
         (with-peg-rules (elot-owl-grammar)
-          (let ((result (peg-run (peg class-expression))))
-            (and result (eobp))))
+          (let ((ok (peg-run (peg class-expression))))
+            (if (and ok (eobp)) t (point))))
       (error
        (message "  PARSE ERROR: %S" err)
-       nil))))
+       (point)))))
 
 (defun elot-parse-property-expression (input)
   "Try to parse INPUT as an OWL Manchester Syntax object property expression.
-Return t if the entire string is consumed, nil otherwise."
+Return t if the entire string is consumed, or the 1-based column
+position where parsing stopped on failure."
   (with-temp-buffer
     (insert input)
     (goto-char (point-min))
     (condition-case err
         (with-peg-rules (elot-owl-grammar)
-          (let ((result (peg-run (peg object-property-expression))))
-            (and result (eobp))))
+          (let ((ok (peg-run (peg object-property-expression))))
+            (if (and ok (eobp)) t (point))))
       (error
        (message "  PARSE ERROR: %S" err)
-       nil))))
+       (point)))))
 
 (defun elot-parse-sub-property-chain (input)
   "Try to parse INPUT as an OWL Manchester Syntax sub-property chain.
 A chain is two or more objectPropertyExpressions joined by \='o\='.
-Return t if the entire string is consumed, nil otherwise."
+Return t if the entire string is consumed, or the 1-based column
+position where parsing stopped on failure."
   (with-temp-buffer
     (insert input)
     (goto-char (point-min))
     (condition-case err
         (with-peg-rules (elot-owl-grammar)
-          (let ((result (peg-run (peg sub-property-chain))))
-            (and result (eobp))))
+          (let ((ok (peg-run (peg sub-property-chain))))
+            (if (and ok (eobp)) t (point))))
       (error
        (message "  PARSE ERROR: %S" err)
-       nil))))
+       (point)))))
 
 (defun elot-parse-data-range (input)
   "Try to parse INPUT as an OWL Manchester Syntax data range.
 Supports datatype IRIs, faceted restrictions (e.g. xsd:integer[>= 0]),
 data conjunctions/disjunctions, and negation.
-Return t if the entire string is consumed, nil otherwise."
+Return t if the entire string is consumed, or the 1-based column
+position where parsing stopped on failure."
   (with-temp-buffer
     (insert input)
     (goto-char (point-min))
     (condition-case err
         (with-peg-rules (elot-owl-grammar)
-          (let ((result (peg-run (peg data-range))))
-            (and result (eobp))))
+          (let ((ok (peg-run (peg data-range))))
+            (if (and ok (eobp)) t (point))))
       (error
        (message "  PARSE ERROR: %S" err)
-       nil))))
+       (point)))))
 
 (defun elot-parse-fact (input)
   "Try to parse INPUT as an OWL Manchester Syntax fact.
 A fact is [ `not' ] objectPropertyIRI (Literal | Individual).
-Return t if the entire string is consumed, nil otherwise."
+Return t if the entire string is consumed, or the 1-based column
+position where parsing stopped on failure."
   (with-temp-buffer
     (insert input)
     (goto-char (point-min))
     (condition-case err
         (with-peg-rules (elot-owl-grammar)
-          (let ((result (peg-run (peg fact))))
-            (and result (eobp))))
+          (let ((ok (peg-run (peg fact))))
+            (if (and ok (eobp)) t (point))))
       (error
        (message "  PARSE ERROR: %S" err)
-       nil))))
+       (point)))))
 
 (defun elot-parse-individual-iri-list (input)
   "Try to parse INPUT as a comma-separated list of individuals.
 Each individual is an IRI or a blank-node ID (_:name).
-Return t if the entire string is consumed, nil otherwise."
+Return t if the entire string is consumed, or the 1-based column
+position where parsing stopped on failure."
   (with-temp-buffer
     (insert input)
     (goto-char (point-min))
     (condition-case err
         (with-peg-rules (elot-owl-grammar)
-          (let ((result (peg-run (peg individual-iri-list))))
-            (and result (eobp))))
+          (let ((ok (peg-run (peg individual-iri-list))))
+            (if (and ok (eobp)) t (point))))
       (error
        (message "  PARSE ERROR: %S" err)
-       nil))))
+       (point)))))
 
 ;; 3b. Test helper (used by the test runner below).
 (defun elot-test-parse (input)
   "Try to parse INPUT as an OWL Manchester Syntax class expression.
-Return t if the entire string is consumed, nil otherwise.
+Return t if the entire string is consumed, or the failure position.
 Delegates to `elot-parse-class-expression'."
   (elot-parse-class-expression input))
 
@@ -533,19 +541,21 @@ Delegates to `elot-parse-class-expression'."
   (dolist (tc elot-test-cases)
     (let* ((desc  (car tc))
            (input (cadr tc))
-           (ok    (elot-test-parse input)))
-      (if ok
+           (result (elot-test-parse input)))
+      (if (eq result t)
           (progn (cl-incf pass)
                  (message "  PASS: %s" desc))
         (cl-incf fail)
         (message "  FAIL: %s" desc)
-        (message "        input: %s" input))))
+        (message "        input: %s" input)
+        (when (integerp result)
+          (message "        stopped at column: %d" result)))))
   ;; Negative cases: must NOT parse successfully
   (dolist (tc elot-negative-test-cases)
     (let* ((desc  (car tc))
            (input (cadr tc))
-           (ok    (elot-test-parse input)))
-      (if (not ok)
+           (result (elot-test-parse input)))
+      (if (not (eq result t))
           (progn (cl-incf pass)
                  (message "  PASS: %s" desc))
         (cl-incf fail)
@@ -555,19 +565,21 @@ Delegates to `elot-parse-class-expression'."
   (dolist (tc elot-sub-property-chain-test-cases)
     (let* ((desc  (car tc))
            (input (cadr tc))
-           (ok    (elot-parse-sub-property-chain input)))
-      (if ok
+           (result (elot-parse-sub-property-chain input)))
+      (if (eq result t)
           (progn (cl-incf pass)
                  (message "  PASS: %s" desc))
         (cl-incf fail)
         (message "  FAIL: %s" desc)
-        (message "        input: %s" input))))
+        (message "        input: %s" input)
+        (when (integerp result)
+          (message "        stopped at column: %d" result)))))
   ;; SubPropertyChain negative cases: must NOT parse
   (dolist (tc elot-sub-property-chain-negative-test-cases)
     (let* ((desc  (car tc))
            (input (cadr tc))
-           (ok    (elot-parse-sub-property-chain input)))
-      (if (not ok)
+           (result (elot-parse-sub-property-chain input)))
+      (if (not (eq result t))
           (progn (cl-incf pass)
                  (message "  PASS: %s" desc))
         (cl-incf fail)
@@ -577,19 +589,21 @@ Delegates to `elot-parse-class-expression'."
   (dolist (tc elot-data-range-test-cases)
     (let* ((desc  (car tc))
            (input (cadr tc))
-           (ok    (elot-parse-data-range input)))
-      (if ok
+           (result (elot-parse-data-range input)))
+      (if (eq result t)
           (progn (cl-incf pass)
                  (message "  PASS: %s" desc))
         (cl-incf fail)
         (message "  FAIL: %s" desc)
-        (message "        input: %s" input))))
+        (message "        input: %s" input)
+        (when (integerp result)
+          (message "        stopped at column: %d" result)))))
   ;; Data range negative cases: must NOT parse
   (dolist (tc elot-data-range-negative-test-cases)
     (let* ((desc  (car tc))
            (input (cadr tc))
-           (ok    (elot-parse-data-range input)))
-      (if (not ok)
+           (result (elot-parse-data-range input)))
+      (if (not (eq result t))
           (progn (cl-incf pass)
                  (message "  PASS: %s" desc))
         (cl-incf fail)
@@ -599,19 +613,21 @@ Delegates to `elot-parse-class-expression'."
   (dolist (tc elot-fact-test-cases)
     (let* ((desc  (car tc))
            (input (cadr tc))
-           (ok    (elot-parse-fact input)))
-      (if ok
+           (result (elot-parse-fact input)))
+      (if (eq result t)
           (progn (cl-incf pass)
                  (message "  PASS: %s" desc))
         (cl-incf fail)
         (message "  FAIL: %s" desc)
-        (message "        input: %s" input))))
+        (message "        input: %s" input)
+        (when (integerp result)
+          (message "        stopped at column: %d" result)))))
   ;; Fact negative cases: must NOT parse
   (dolist (tc elot-fact-negative-test-cases)
     (let* ((desc  (car tc))
            (input (cadr tc))
-           (ok    (elot-parse-fact input)))
-      (if (not ok)
+           (result (elot-parse-fact input)))
+      (if (not (eq result t))
           (progn (cl-incf pass)
                  (message "  PASS: %s" desc))
         (cl-incf fail)
@@ -621,19 +637,21 @@ Delegates to `elot-parse-class-expression'."
   (dolist (tc elot-individual-iri-list-test-cases)
     (let* ((desc  (car tc))
            (input (cadr tc))
-           (ok    (elot-parse-individual-iri-list input)))
-      (if ok
+           (result (elot-parse-individual-iri-list input)))
+      (if (eq result t)
           (progn (cl-incf pass)
                  (message "  PASS: %s" desc))
         (cl-incf fail)
         (message "  FAIL: %s" desc)
-        (message "        input: %s" input))))
+        (message "        input: %s" input)
+        (when (integerp result)
+          (message "        stopped at column: %d" result)))))
   ;; Individual IRI list negative cases: must NOT parse
   (dolist (tc elot-individual-iri-list-negative-test-cases)
     (let* ((desc  (car tc))
            (input (cadr tc))
-           (ok    (elot-parse-individual-iri-list input)))
-      (if (not ok)
+           (result (elot-parse-individual-iri-list input)))
+      (if (not (eq result t))
           (progn (cl-incf pass)
                  (message "  PASS: %s" desc))
         (cl-incf fail)
@@ -643,19 +661,21 @@ Delegates to `elot-parse-class-expression'."
   (dolist (tc elot-class-expression-list-test-cases)
     (let* ((desc  (car tc))
            (input (cadr tc))
-           (ok    (elot-parse-class-expression-list input)))
-      (if ok
+           (result (elot-parse-class-expression-list input)))
+      (if (eq result t)
           (progn (cl-incf pass)
                  (message "  PASS: %s" desc))
         (cl-incf fail)
         (message "  FAIL: %s" desc)
-        (message "        input: %s" input))))
+        (message "        input: %s" input)
+        (when (integerp result)
+          (message "        stopped at column: %d" result)))))
   ;; Class expression list negative cases: must NOT parse
   (dolist (tc elot-class-expression-list-negative-test-cases)
     (let* ((desc  (car tc))
            (input (cadr tc))
-           (ok    (elot-parse-class-expression-list input)))
-      (if (not ok)
+           (result (elot-parse-class-expression-list input)))
+      (if (not (eq result t))
           (progn (cl-incf pass)
                  (message "  PASS: %s" desc))
         (cl-incf fail)
@@ -665,19 +685,21 @@ Delegates to `elot-parse-class-expression'."
   (dolist (tc elot-property-expression-list-test-cases)
     (let* ((desc  (car tc))
            (input (cadr tc))
-           (ok    (elot-parse-property-expression-list input)))
-      (if ok
+           (result (elot-parse-property-expression-list input)))
+      (if (eq result t)
           (progn (cl-incf pass)
                  (message "  PASS: %s" desc))
         (cl-incf fail)
         (message "  FAIL: %s" desc)
-        (message "        input: %s" input))))
+        (message "        input: %s" input)
+        (when (integerp result)
+          (message "        stopped at column: %d" result)))))
   ;; Object property expression list negative cases: must NOT parse
   (dolist (tc elot-property-expression-list-negative-test-cases)
     (let* ((desc  (car tc))
            (input (cadr tc))
-           (ok    (elot-parse-property-expression-list input)))
-      (if (not ok)
+           (result (elot-parse-property-expression-list input)))
+      (if (not (eq result t))
           (progn (cl-incf pass)
                  (message "  PASS: %s" desc))
         (cl-incf fail)
