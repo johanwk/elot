@@ -1,7 +1,7 @@
 # Makefile for elot-cli — friendly aliases for npm commands.
 # Run "make help" to see available targets.
 
-.PHONY: help all install bundle build watch test clean package cli
+.PHONY: help all install bundle build watch test test-syntax clean package cli
 
 all: install bundle test package ## Full build from scratch: install → bundle → test → package
 
@@ -23,6 +23,9 @@ watch: ## Watch mode — recompile TypeScript on every file change
 
 test: ## Run the golden-file test suite
 	npm test
+
+test-syntax: ## Run the OMN syntax-checking tests (Peggy grammar)
+	npm run test:syntax
 
 cli: ## Run CLI on examples/bfo-core.org (dev mode, no bundling needed)
 	npm run elot -- examples/bfo-core.org
