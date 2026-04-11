@@ -23,8 +23,9 @@ AtomicExpression
   / "(" OWS ClassExpression OWS ")"
 
 // --- SubPropertyChain ---
+// The "o" separator must not be part of a longer name, so we check !NameChar after it.
 SubPropertyChain
-  = ObjectPropertyExpression (WS "o" WS ObjectPropertyExpression)+
+  = ObjectPropertyExpression (WS "o" !NameChar WS ObjectPropertyExpression)+
 
 // --- Restrictions ---
 // Object property restrictions use class expressions as fillers;
@@ -73,8 +74,8 @@ FacetRestriction
   = Facet WS Literal
 
 Facet
-  = "length" / "minLength" / "maxLength" / "pattern" / "langRange"
-  / "<=" / "<" / ">=" / ">"
+  = "minLength" / "maxLength" / "length" / "pattern" / "langRange"
+  / "<=" / ">=" / "<" / ">"
 
 // --- Fact (Individual frame assertion) ---
 // fact ::= [ 'not' ] (objectPropertyFact | dataPropertyFact)
@@ -97,7 +98,11 @@ NodeID
 
 // --- Lists ---
 ClassExpressionList          = ClassExpression (OWS "," OWS ClassExpression)*
+// description2List: at least 2 class expressions (for misc DisjointClasses, EquivalentClasses)
+ClassExpression2List         = ClassExpression (OWS "," OWS ClassExpression)+
 ObjectPropertyExpressionList = ObjectPropertyExpression (OWS "," OWS ObjectPropertyExpression)*
+// objectProperty2List / dataProperty2List: at least 2 (for misc DisjointProperties, EquivalentProperties)
+ObjectPropertyExpression2List = ObjectPropertyExpression (OWS "," OWS ObjectPropertyExpression)+
 IndividualList = Individual (WS "," WS Individual)*
 LiteralList    = Literal (WS "," WS Literal)*
 
@@ -123,16 +128,36 @@ PrefixedName
 IndividualIRIList = Individual (WS "," WS Individual)*
 
 // BareName: an identifier that is NOT an OWL keyword.
-// NOTE: The !KeywordToken negative lookahead below is NOT handled by
-// peggy-to-peg.el; it is manually translated into (not ...) forms in
-// the generated elot-owl-grammar.el.  See comments there.
-// BareName = !KeywordToken LocalName
-// KeywordToken = ("and"/"or"/"not"/"some"/"only"/"value"/"min"/"max"
-//                /"exactly"/"Self"/"Thing"/"Nothing"/"inverse"/"o"
-//                /"length"/"minLength"/"maxLength"/"pattern"/"langRange") ![a-zA-Z0-9_-]
+// Uses negative lookahead (!) to reject keywords as bare names.
+BareName = !KeywordBoundary LocalName
+
+// KeywordBoundary: a keyword that is a complete token (not a prefix of a longer name).
+// We check: keyword followed by NOT [a-zA-Z0-9_-].
+KeywordBoundary
+  = "and" !NameChar
+  / "or" !NameChar
+  / "not" !NameChar
+  / "some" !NameChar
+  / "only" !NameChar
+  / "value" !NameChar
+  / "min" !NameChar
+  / "max" !NameChar
+  / "exactly" !NameChar
+  / "Self" !NameChar
+  / "Thing" !NameChar
+  / "Nothing" !NameChar
+  / "inverse" !NameChar
+  / "o" !NameChar
+  / "minLength" !NameChar
+  / "maxLength" !NameChar
+  / "length" !NameChar
+  / "pattern" !NameChar
+  / "langRange" !NameChar
+
+NameChar = [a-zA-Z0-9_-]
 
 Prefix    = [a-zA-Z0-9_-]+
-LocalName = [a-zA-Z0-9_-]+
+LocalName = [a-zA-Z_] [a-zA-Z0-9_-]*
 
 Literal
   = '"' [^"]* '"' ("^^" DatatypeIRI / "@" LanguageTag)?
