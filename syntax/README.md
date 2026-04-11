@@ -25,6 +25,8 @@ of the W3C specification:
 | `object-property-expression` | InverseOf, SubPropertyOf                       |
 | `sub-property-chain`   | SubPropertyChain (two or more properties joined by `o`) |
 | `data-range`           | Data ranges with faceted restrictions, conjunctions, disjunctions |
+| `fact`                 | Facts (property assertions on individuals)            |
+| `individual-iri-list`  | SameAs, DifferentFrom (comma-separated individuals)   |
 
 ### What is parsed
 
@@ -34,6 +36,9 @@ of the W3C specification:
 - **Object property expressions**: prefixed IRIs, full IRIs (`<...>`), `inverse`
 - **Enumerations**: `{ individual , ... }` (oneOf)
 - **Literals**: `"string"`, `"string"^^datatype`, `"string"@lang`
+- **Facts**: `prop individual`, `prop "literal"`, `not prop individual`
+- **Individual lists**: `ind1 , ind2 , ...` (for SameAs/DifferentFrom)
+- **Blank nodes**: `_:name` (in facts and individual lists)
 - **Data ranges**: datatype IRIs, `{ literal , ... }` (oneOf), faceted restrictions
   (e.g. `xsd:integer[>= "0"^^xsd:integer, <= "100"^^xsd:integer]`), data
   `and`/`or`/`not`
@@ -99,6 +104,8 @@ This runs all positive and negative test cases for:
 - Class expressions (46 tests)
 - SubPropertyChain expressions (9 tests)
 - Data range expressions (16 tests)
+- Fact expressions (17 tests)
+- Individual IRI lists (11 tests)
 
 ## Usage in Elot
 
@@ -110,6 +117,10 @@ The grammar provides three main entry-point functions (defined in
 (elot-parse-property-expression "inverse ex:partOf")    ;; → t
 (elot-parse-sub-property-chain "ex:p1 o ex:p2")         ;; → t
 (elot-parse-data-range "xsd:integer [>= \"0\"^^xsd:integer]") ;; → t
+(elot-parse-fact "hasWife Mary")                        ;; → t
+(elot-parse-fact "not hasChild Susan")                  ;; → t
+(elot-parse-fact "hasAge \"33\"^^xsd:integer")           ;; → t
+(elot-parse-individual-iri-list "ex:John , ex:Mary")    ;; → t
 ```
 
 Each function returns `t` if the input is a valid OMN expression, `nil`

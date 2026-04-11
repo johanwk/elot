@@ -76,8 +76,27 @@ Facet
   = "length" / "minLength" / "maxLength" / "pattern" / "langRange"
   / "<=" / "<" / ">=" / ">"
 
+// --- Fact (Individual frame assertion) ---
+// fact ::= [ 'not' ] (objectPropertyFact | dataPropertyFact)
+// objectPropertyFact ::= objectPropertyIRI individual
+// dataPropertyFact   ::= dataPropertyIRI literal
+// Since objectPropertyIRI and dataPropertyIRI are syntactically identical,
+// we merge: try Literal first (data property fact), then Individual (object property fact).
+Fact
+  = "not" WS ObjectPropertyIRI WS (Literal / Individual)
+  / ObjectPropertyIRI WS (Literal / Individual)
+
+// --- Individual ---
+// individual ::= individualIRI | nodeID
+// NodeID tried first since _:foo also matches PrefixedName
+Individual
+  = NodeID / IndividualIRI
+
+NodeID
+  = "_:" LocalName
+
 // --- Lists ---
-IndividualList = IndividualIRI (WS "," WS IndividualIRI)*
+IndividualList = Individual (WS "," WS Individual)*
 LiteralList    = Literal (WS "," WS Literal)*
 
 // --- Terminals & Identifiers ---
@@ -95,6 +114,11 @@ FullIRI
 PrefixedName
   = Prefix ":" LocalName
   / ":" LocalName
+
+// --- Individual IRI list (for SameAs / DifferentFrom) ---
+// In Elot org files, each SameAs/DifferentFrom entry is typically a single
+// individual, but OMN allows comma-separated lists in annotated-list form.
+IndividualIRIList = Individual (WS "," WS Individual)*
 
 // BareName: an identifier that is NOT an OWL keyword.
 // NOTE: The !KeywordToken negative lookahead below is NOT handled by

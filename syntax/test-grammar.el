@@ -70,6 +70,36 @@ Return t if the entire string is consumed, nil otherwise."
        (message "  PARSE ERROR: %S" err)
        nil))))
 
+(defun elot-parse-fact (input)
+  "Try to parse INPUT as an OWL Manchester Syntax fact.
+A fact is [ `not' ] objectPropertyIRI (Literal | Individual).
+Return t if the entire string is consumed, nil otherwise."
+  (with-temp-buffer
+    (insert input)
+    (goto-char (point-min))
+    (condition-case err
+        (with-peg-rules (elot-owl-grammar)
+          (let ((result (peg-run (peg fact))))
+            (and result (eobp))))
+      (error
+       (message "  PARSE ERROR: %S" err)
+       nil))))
+
+(defun elot-parse-individual-iri-list (input)
+  "Try to parse INPUT as a comma-separated list of individuals.
+Each individual is an IRI or a blank-node ID (_:name).
+Return t if the entire string is consumed, nil otherwise."
+  (with-temp-buffer
+    (insert input)
+    (goto-char (point-min))
+    (condition-case err
+        (with-peg-rules (elot-owl-grammar)
+          (let ((result (peg-run (peg individual-iri-list))))
+            (and result (eobp))))
+      (error
+       (message "  PARSE ERROR: %S" err)
+       nil))))
+
 ;; 3b. Test helper (used by the test runner below).
 (defun elot-test-parse (input)
   "Try to parse INPUT as an OWL Manchester Syntax class expression.
@@ -334,6 +364,82 @@ Delegates to `elot-parse-class-expression'."
     )
   "List of (DESCRIPTION INPUT) data range negative test cases.")
 
+;; 4g. Fact positive test cases.
+(defvar elot-fact-test-cases
+  '(("Fact: object property assertion"
+     "hasWife Mary")
+    ("Fact: negated object property assertion"
+     "not hasChild Susan")
+    ("Fact: data property with integer literal"
+     "hasAge \"33\"^^xsd:integer")
+    ("Fact: data property with plain literal"
+     "hasFirstName \"John\"")
+    ("Fact: data property with typed literal"
+     "hasFirstName \"Jack\"^^xsd:string")
+    ("Fact: object property with prefixed IRI"
+     "ex:locatedInRegion ex:UnitedStates")
+    ("Fact: data property with decimal literal"
+     "ex:acidity_pH \"2.5\"^^xsd:decimal")
+    ("Fact: object property with blank node"
+     "hasChild _:child1")
+    ("Fact: negated with prefixed names"
+     "not ex:hasPart ex:wheel1")
+    ("Fact: data property with language-tagged literal"
+     "ex:hasLabel \"hello\"@en")
+    ("Fact: full IRI object property"
+     "<http://example.org/r> <http://example.org/b>")
+    ("Fact: default namespace"
+     ":hasPart :component1")
+    )
+  "List of (DESCRIPTION INPUT) Fact positive test cases.")
+
+;; 4h. Fact negative test cases.
+(defvar elot-fact-negative-test-cases
+  '(("Reject fact: empty string"
+     "")
+    ("Reject fact: bare property (no object)"
+     "hasWife")
+    ("Reject fact: bare keyword 'not'"
+     "not")
+    ("Reject fact: class expression (not a fact)"
+     "ex:A and ex:B")
+    ("Reject fact: restriction syntax"
+     "ex:hasPart some ex:Wheel")
+    )
+  "List of (DESCRIPTION INPUT) Fact negative test cases.")
+
+;; 4i. Individual IRI list positive test cases.
+(defvar elot-individual-iri-list-test-cases
+  '(("IndividualList: single IRI"
+     "ex:John")
+    ("IndividualList: two IRIs"
+     "Jack , Susan")
+    ("IndividualList: three IRIs with prefixes"
+     "ex:John , ex:Jack , ex:Joe")
+    ("IndividualList: full IRIs"
+     "<http://example.org/John> , <http://example.org/Mary>")
+    ("IndividualList: mixed prefixed and bare"
+     "John , ex:Mary , Susan")
+    ("IndividualList: blank nodes"
+     "_:child1 , _:child2")
+    ("IndividualList: mixed IRIs and blank nodes"
+     "ex:John , _:child1 , Mary")
+    ("IndividualList: default namespace"
+     ":a , :b , :c")
+    )
+  "List of (DESCRIPTION INPUT) individual IRI list positive test cases.")
+
+;; 4j. Individual IRI list negative test cases.
+(defvar elot-individual-iri-list-negative-test-cases
+  '(("Reject individual list: empty string"
+     "")
+    ("Reject individual list: trailing comma"
+     "ex:John ,")
+    ("Reject individual list: double comma"
+     "ex:John , , ex:Mary")
+    )
+  "List of (DESCRIPTION INPUT) individual IRI list negative test cases.")
+
 ;; 5. Run the tests
 (message "\n=== OWL Manchester Syntax Grammar Tests ===\n")
 (let ((pass 0) (fail 0))
@@ -397,6 +503,50 @@ Delegates to `elot-parse-class-expression'."
     (let* ((desc  (car tc))
            (input (cadr tc))
            (ok    (elot-parse-data-range input)))
+      (if (not ok)
+          (progn (cl-incf pass)
+                 (message "  PASS: %s" desc))
+        (cl-incf fail)
+        (message "  FAIL: %s  (should not have parsed!)" desc)
+        (message "        input: %s" input))))
+  ;; Fact positive cases
+  (dolist (tc elot-fact-test-cases)
+    (let* ((desc  (car tc))
+           (input (cadr tc))
+           (ok    (elot-parse-fact input)))
+      (if ok
+          (progn (cl-incf pass)
+                 (message "  PASS: %s" desc))
+        (cl-incf fail)
+        (message "  FAIL: %s" desc)
+        (message "        input: %s" input))))
+  ;; Fact negative cases: must NOT parse
+  (dolist (tc elot-fact-negative-test-cases)
+    (let* ((desc  (car tc))
+           (input (cadr tc))
+           (ok    (elot-parse-fact input)))
+      (if (not ok)
+          (progn (cl-incf pass)
+                 (message "  PASS: %s" desc))
+        (cl-incf fail)
+        (message "  FAIL: %s  (should not have parsed!)" desc)
+        (message "        input: %s" input))))
+  ;; Individual IRI list positive cases
+  (dolist (tc elot-individual-iri-list-test-cases)
+    (let* ((desc  (car tc))
+           (input (cadr tc))
+           (ok    (elot-parse-individual-iri-list input)))
+      (if ok
+          (progn (cl-incf pass)
+                 (message "  PASS: %s" desc))
+        (cl-incf fail)
+        (message "  FAIL: %s" desc)
+        (message "        input: %s" input))))
+  ;; Individual IRI list negative cases: must NOT parse
+  (dolist (tc elot-individual-iri-list-negative-test-cases)
+    (let* ((desc  (car tc))
+           (input (cadr tc))
+           (ok    (elot-parse-individual-iri-list input)))
       (if (not ok)
           (progn (cl-incf pass)
                  (message "  PASS: %s" desc))

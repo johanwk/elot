@@ -43,7 +43,18 @@
   (datatype-restriction () (and datatype-iri ws "[" ows facet-restriction (* (and ows "," ows facet-restriction)) ows "]"))
   (facet-restriction () (and facet ws literal))
   (facet () (or "minLength" "maxLength" "length" "pattern" "langRange" "<=" ">=" "<" ">"))
-  (individual-list () (and individual-iri (* (and ws "," ws individual-iri))))
+  (individual-list () (and individual (* (and ws "," ws individual))))
+  ;; Fact: [ 'not' ] (objectPropertyIRI individual | objectPropertyIRI literal)
+  ;; Since object/data property IRIs are syntactically identical, we merge:
+  ;; try Literal first (data property fact), then Individual (object property fact).
+  (fact () (or (and "not" ws object-property-iri ws (or literal individual))
+              (and object-property-iri ws (or literal individual))))
+  ;; Individual: individualIRI | nodeID
+  ;; nodeID tried first since _:foo also matches prefixed-name (prefix="_", name="foo")
+  (individual () (or node-id individual-iri))
+  (node-id () (and "_:" local-name))
+  ;; Individual IRI list (for SameAs / DifferentFrom)
+  (individual-iri-list () (and individual (* (and ws "," ws individual))))
   (literal-list () (and literal (* (and ws "," ws literal))))
   (class-iri () iri)
   (object-property-iri () iri)
