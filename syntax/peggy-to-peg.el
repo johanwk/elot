@@ -15,6 +15,7 @@
 ;;   - Zero-or-more:       E*
 ;;   - One-or-more:        E+
 ;;   - Optional:           E?
+;;   - Negative lookahead: !E
 ;;   - Grouping:           ( ... )
 ;;   - String literals:    "foo" and 'foo'
 ;;   - Character classes:  [a-zA-Z0-9_-]  [^>]  [ \t\n\r]
@@ -42,7 +43,7 @@
 
 (cl-defstruct (peggy--tok (:constructor peggy--tok-make))
   type   ; symbol: string, class, ident, slash, star, plus, qmark,
-         ;         lparen, rparen, lbrace, rbrace, eq, eof
+         ;         lparen, rparen, lbrace, rbrace, eq, bang, eof
   value) ; string payload
 
 (defvar peggy--input nil "Input string being tokenized.")
@@ -133,6 +134,7 @@
      ((= c ?{)  (peggy--advance) (peggy--tok-make :type 'lbrace :value "{"))
      ((= c ?})  (peggy--advance) (peggy--tok-make :type 'rbrace :value "}"))
      ((= c ?=)  (peggy--advance) (peggy--tok-make :type 'eq :value "="))
+     ((= c ?!)  (peggy--advance) (peggy--tok-make :type 'bang :value "!"))
      ((or (<= ?a c ?z) (<= ?A c ?Z) (= c ?_))
       (let ((id (peggy--read-ident)))
         (peggy--tok-make :type 'ident :value id)))
@@ -175,6 +177,7 @@
 ;;   (star EXPR)
 ;;   (plus EXPR)
 ;;   (opt EXPR)
+;;   (not EXPR)
 ;;   (str "value")
 ;;   (class "spec")
 ;;   (ref NAME)
@@ -235,7 +238,7 @@ We peek ahead in the token stream without consuming."
   "Parse a sequence of postfix expressions."
   (let (items)
     (while (and (memq (peggy--tok-type peggy--current-token)
-                      '(string class ident lparen lbrace rbrace))
+                      '(string class ident lparen lbrace rbrace bang))
                 ;; Don't consume an ident that starts a new rule
                 (not (peggy--looking-at-rule-start-p)))
       (push (peggy--parse-postfix) items))
@@ -255,6 +258,10 @@ We peek ahead in the token stream without consuming."
 (defun peggy--parse-atom ()
   "Parse an atomic expression."
   (cond
+   ((peggy--at 'bang)
+    (peggy--eat 'bang)
+    (let ((inner (peggy--parse-atom)))
+      `(not ,inner)))
    ((peggy--at 'string)
     (let ((v (peggy--tok-value (peggy--eat 'string))))
       `(str ,v)))
@@ -295,14 +302,22 @@ Handles transitions like:
   (let ((case-fold-search nil))
     (intern
      (downcase
-      ;; Two-pass conversion, case-sensitive (letting case-fold-search = nil):
-      ;; Pass 1: Insert hyphen between lowercase/digit and uppercase: fooBar → foo-Bar
-      ;; Pass 2: Insert hyphen between uppercase run and uppercase+lowercase: XMLParser → XML-Parser
+      ;; Four-pass conversion, case-sensitive (letting case-fold-search = nil):
+      ;; Pass 1: Insert hyphen between letter and digit: Expression2 → Expression-2
+      ;; Pass 2: Insert hyphen between digit and letter: 2List → 2-List
+      ;; Pass 3: Insert hyphen between lowercase/digit and uppercase: fooBar → foo-Bar
+      ;; Pass 4: Insert hyphen between uppercase run and uppercase+lowercase: XMLParser → XML-Parser
       (replace-regexp-in-string
        "\\([A-Z]+\\)\\([A-Z][a-z]\\)" "\\1-\\2"
        (replace-regexp-in-string
         "\\([a-z0-9]\\)\\([A-Z]\\)" "\\1-\\2"
-        name nil nil)
+        (replace-regexp-in-string
+         "\\([0-9]\\)\\([a-zA-Z]\\)" "\\1-\\2"
+         (replace-regexp-in-string
+          "\\([a-zA-Z]\\)\\([0-9]\\)" "\\1-\\2"
+          name nil nil)
+         nil nil)
+        nil nil)
        nil nil)))))
 
 (defun peggy--format-char (c)
@@ -411,6 +426,8 @@ Single characters are emitted as one-char strings so peg.el can handle them."
      `(+ ,(peggy--emit-expr inner)))
     (`(opt ,inner)
      `(opt ,(peggy--emit-expr inner)))
+    (`(not ,inner)
+     `(not ,(peggy--emit-expr inner)))
     (_ (error "Unknown AST node: %S" node))))
 
 (defun peggy--emit-rule (node)
@@ -431,9 +448,9 @@ Single characters are emitted as one-char strings so peg.el can handle them."
    ;; Character (integer that should print as ?x)
    ((peggy--peg-char-p sexp)
     (peggy--format-char sexp))
-   ;; String
+   ;; String — ensure control characters are properly escaped
    ((stringp sexp)
-    (prin1-to-string sexp))
+    (peggy--pp-string sexp))
    ;; Symbol
    ((symbolp sexp)
     (symbol-name sexp))
@@ -442,6 +459,22 @@ Single characters are emitted as one-char strings so peg.el can handle them."
     (concat "(" (mapconcat #'peggy--pp-sexp sexp " ") ")"))
    ;; Fallback
    (t (prin1-to-string sexp))))
+
+(defun peggy--pp-string (s)
+  "Pretty-print string S with proper escape sequences for control chars."
+  (let ((result "\""))
+    (dotimes (i (length s))
+      (let ((c (aref s i)))
+        (setq result
+              (concat result
+                      (cond
+                       ((= c ?\") "\\\"")
+                       ((= c ?\\) "\\\\")
+                       ((= c ?\t) "\\t")
+                       ((= c ?\n) "\\n")
+                       ((= c ?\r) "\\r")
+                       (t (char-to-string c)))))))
+    (concat result "\"")))
 
 (defun peggy--peg-char-p (x)
   "Return non-nil if X is a character value used in peg.el (not a range int)."
