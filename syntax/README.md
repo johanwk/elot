@@ -126,6 +126,33 @@ The grammar provides three main entry-point functions (defined in
 Each function returns `t` if the input is a valid OMN expression, `nil`
 otherwise.
 
+## Integration with `elot-lint`
+
+The grammar is used by `elot-lint.el` to validate axiom values as you
+edit.  When you run `M-x elot-org-lint` (or use the ELOT menu →
+"Check for common problems"), description list entries whose tags are
+OMN keywords are automatically parsed against the grammar and flagged
+if invalid.
+
+The mapping from keyword to parser entry point is defined by
+`elot-omn-keyword-parser-alist` in `elot-lint.el`:
+
+| OMN keyword       | Parser function                      |
+|--------------------|--------------------------------------|
+| SubClassOf         | `elot-parse-class-expression`        |
+| EquivalentTo       | `elot-parse-class-expression`        |
+| DisjointWith       | `elot-parse-class-expression`        |
+| DisjointUnionOf    | `elot-parse-class-expression`        |
+| Domain             | `elot-parse-class-expression`        |
+| Range              | `elot-parse-class-expression`        |
+| Types              | `elot-parse-class-expression`        |
+| InverseOf          | `elot-parse-property-expression`     |
+| SubPropertyOf      | `elot-parse-property-expression`     |
+| SubPropertyChain   | `elot-parse-sub-property-chain`      |
+| Facts              | `elot-parse-fact`                    |
+| SameAs             | `elot-parse-individual-iri-list`     |
+| DifferentFrom      | `elot-parse-individual-iri-list`     |
+
 ## Planned: TypeScript version
 
 A TypeScript implementation of the same grammar will be added later, for use
