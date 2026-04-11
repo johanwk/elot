@@ -48,6 +48,7 @@
 (require 'ox) ; export functions
 (require 'ol) ; link functions
 (require 'xref) ; jump around
+(require 'hydra) ; hydra menu
 (require 'button) ; for text‑buttons
 (require 'help-mode) ; nice keymap & look
 (require 'url) ; for opening online ontologies
@@ -543,6 +544,80 @@ ELOT buffer."
 
 (advice-add 'org-babel-execute:sparql :around #'elot--custom-org-babel-execute-sparql)
 ;; src-sparql-exec-patch ends here
+
+;; [[file:../elot-defs.org::src-babel-passthrough][src-babel-passthrough]]
+(defun elot-org-babel-execute-passthrough (body params)
+  "Return BODY unchanged when executing an Org Babel block.
+
+This function is used to define a passthrough execution behavior
+for Org Babel blocks with the language `ttl'.  It ensures that
+the contents of a `#+begin_src ttl' block are returned as-is,
+without any processing or transformation.
+
+This is useful for passing Turtle (TTL) content to other source
+blocks without modification.
+
+PARAMS is ignored."
+  (progn
+    (always params)  ;; ignore argument
+    body))
+
+(unless (fboundp #'org-babel-execute:ttl)
+  (defalias #'org-babel-execute:ttl #'elot-org-babel-execute-passthrough))
+;; src-babel-passthrough ends here
+
+;; [[file:../elot-defs.org::src-rdfpuml-execute][src-rdfpuml-execute]]
+(defun elot-rdfpuml-execute (ttl &optional prefixes config add-options epilogue)
+  "Run rdfpuml on Turtle RDF content and return PlantUML code.
+TTL is a Turtle string, PREFIXES optional prefix block,
+CONFIG optional Turtle for rdfpuml configuration,
+ADD-OPTIONS a string of PlantUML options added to rdfpuml defaults,
+EPILOGUE extra PlantUML clauses."
+  (let* ((options-str
+         (if add-options
+             (concat "[] puml:options \"\"\""
+                     elot-rdfpuml-options "\n"
+                     add-options
+                     "\n\"\"\".\n")))
+        (input-ttl-file (org-babel-temp-file "rdfpuml-" ".ttl"))
+        (output-puml-file (concat (file-name-sans-extension input-ttl-file) ".puml")))
+    (with-temp-file input-ttl-file
+      (insert (mapconcat #'identity
+                         (list prefixes ttl config options-str) "\n")))
+    ;; apparently prefixes.ttl is needed to reside in current dir, will overwrite
+    (if prefixes (with-temp-file "prefixes.ttl"
+                   (insert prefixes "\n")))
+    (elot-rdfpuml-command input-ttl-file)
+    (with-temp-file output-puml-file
+      (insert-file-contents output-puml-file)
+      ;; Perform the sed-like replacement
+      (goto-char (point-min))
+      (while (re-search-forward " : rdfs:\\(subClassOf\\|subPropertyOf\\)" nil t)
+        (replace-match ""))
+      (when epilogue
+        (save-excursion
+          (goto-char (point-min))
+          (while (search-forward "@enduml" nil t)
+            (replace-match (concat epilogue "\n@enduml") t t)))))
+    output-puml-file))
+;; src-rdfpuml-execute ends here
+
+;; [[file:../elot-defs.org::src-plantuml-execute][src-plantuml-execute]]
+(defun elot-plantuml-execute (puml-file output-name format)
+  "With PlantUML, read PUML-FILE and write image file to OUTPUT-NAME.FORMAT.
+The file is stored in the ELOT default image directory.
+Return output file name."
+  (if (or (string= org-plantuml-jar-path "") (not (file-exists-p org-plantuml-jar-path)))
+    (error "PlantUML not found.  Set org-plantuml-jar-path with M-x customize-variable"))
+  (let ((tmp-output-file (concat (file-name-sans-extension puml-file) "." format))
+  (output-file (concat elot-default-image-path output-name "." format)))
+    (message (concat puml-file " --> " output-file))
+    (make-directory elot-default-image-path :always)
+    (shell-command
+     (concat "java -jar " org-plantuml-jar-path " -t" format " " puml-file))
+    (copy-file tmp-output-file output-file :allow-overwrite)
+    output-file))
+;; src-plantuml-execute ends here
 
 ;; [[file:../elot-defs.org::src-write-class][src-write-class]]
 (defun elot-class-oneof-from-header (l)
