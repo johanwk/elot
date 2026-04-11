@@ -37,7 +37,8 @@ of the W3C specification:
 - **Restrictions**: `some`, `only`, `value`, `min`, `max`, `exactly`, `Self`
 - **Object property expressions**: prefixed IRIs, full IRIs (`<...>`), `inverse`
 - **Enumerations**: `{ individual , ... }` (oneOf)
-- **Literals**: `"string"`, `"string"^^datatype`, `"string"@lang`
+- **Literals**: `"string"`, `"string"^^datatype`, `"string"@lang`, naked
+  numeric literals (`42`, `-3`, `2.5`, `1.5e10`, `1.5f`)
 - **Facts**: `prop individual`, `prop "literal"`, `not prop individual`
 - **Individual lists**: `ind1 , ind2 , ...` (for SameAs/DifferentFrom)
 - **Class expression lists**: `expr1 , expr2 , ...` (for annotated list keywords like SubClassOf, DisjointWith)
@@ -105,12 +106,12 @@ cd syntax && emacs --batch -l test-grammar.el
 ```
 
 This runs all positive and negative test cases for:
-- Class expressions (46 tests)
+- Class expressions (51 tests)
 - Class expression lists (12 tests)
 - Object property expression lists (7 tests)
 - SubPropertyChain expressions (9 tests)
 - Data range expressions (16 tests)
-- Fact expressions (17 tests)
+- Fact expressions (20 tests)
 - Individual IRI lists (11 tests)
 
 ## Usage in Elot

@@ -163,9 +163,23 @@ LocalName = [a-zA-Z_] [a-zA-Z0-9_-]*
 
 Literal
   = '"' [^"]* '"' ("^^" DatatypeIRI / "@" LanguageTag)?
+  / FloatingPointLiteral
+  / DecimalLiteral
+  / IntegerLiteral
 
 LanguageTag = [a-zA-Z]+ ("-" [a-zA-Z0-9]+)*
-Integer     = [0-9]+
+
+// Numeric literals per OWL 2 Manchester Syntax §2.1
+// Note: sign uses ("+" / "-") grouping, NOT ["+" / "-"] bracket notation,
+// because peggy-to-peg.el treats [...] as a character class.
+IntegerLiteral  = ("+" / "-")? Digits !("." / [eEfF])
+DecimalLiteral  = ("+" / "-")? Digits "." Digits !([eEfF])
+FloatingPointLiteral
+  = ("+" / "-")? Digits ("." Digits)? [eE] ("+" / "-")? Digits [fF]?
+  / ("+" / "-")? Digits ("." Digits)? [fF]
+
+Digits  = [0-9]+
+Integer = [0-9]+
 
 // Whitespace (mandatory or optional depending on context)
 WS "whitespace"

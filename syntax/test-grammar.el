@@ -301,6 +301,18 @@ Delegates to `elot-parse-class-expression'."
     ;; --- Literal with complex language tag (e.g. en-US) ---
     ("Data property value with regional language tag"
      "ex:hasLabel value \"color\"@en-US")
+
+    ;; --- Naked numeric literals (no quotes, no datatype) ---
+    ("QR: value with naked integer"
+     "rdl:A100170 value 1000")
+    ("QR: value with naked negative integer"
+     "ex:hasTemp value -10")
+    ("QR: value with naked decimal"
+     "ex:hasPH value 2.5")
+    ("QR: value with naked float (exponent)"
+     "ex:hasWeight value 1.5e10")
+    ("QR: value with naked float (f suffix)"
+     "ex:hasWeight value 1.5f")
     )
   "List of (DESCRIPTION INPUT) test cases.")
 
@@ -426,6 +438,12 @@ Delegates to `elot-parse-class-expression'."
      "<http://example.org/r> <http://example.org/b>")
     ("Fact: default namespace"
      ":hasPart :component1")
+    ("Fact: data property with naked integer"
+     "hasAge 33")
+    ("Fact: data property with naked negative integer"
+     "ex:hasTemp -10")
+    ("Fact: data property with naked decimal"
+     "ex:acidity_pH 2.5")
     )
   "List of (DESCRIPTION INPUT) Fact positive test cases.")
 
