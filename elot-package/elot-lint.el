@@ -190,14 +190,13 @@ Add warnings or errors to ISSUES at POINT."
                    (string= (elot-context-type) "ontology"))
           (save-excursion
             (goto-char (org-element-property :begin hl))
-            (let ((result (elot-update-link-abbrev)))
-              (when (or (null org-link-abbrev-alist-local)
-                        (equal org-link-abbrev-alist-local '(("prefix" . "uri"))))
-                (push (list (point)
-                            (propertize "ERROR: prefix-table is missing or malformed"
-                                        'face 'error))
-                      issues))))))
-      tree)
+            (elot-update-link-abbrev)
+            (when (or (null org-link-abbrev-alist-local)
+                      (equal org-link-abbrev-alist-local '(("prefix" . "uri"))))
+              (push (list (point)
+                          (propertize "ERROR: prefix-table is missing or malformed"
+                                      'face 'error))
+                    issues))))))
     issues))
 
 (org-lint-add-checker
@@ -298,7 +297,7 @@ Add warnings or errors to ISSUES at POINT."
   "List of annotation properties allowed in description lists without declaration.")
 
 (defun elot-check-description-list-curies (tree)
-  "Check that CURIE terms in description lists exist as annotation properties in `elot-slurp` or are allowed exceptions."
+  "Check CURIE terms in description lists are declared annotation properties."
   (let (issues)
     (org-element-map tree 'item
       (lambda (item)
@@ -465,7 +464,7 @@ and not annotation properties, and that parentheses are balanced."
   "Alist mapping OMN keywords to their PEG parser entry-point functions.")
 
 (defun elot-parse-class-expression-list (input)
-  "Parse INPUT as a comma-separated list of OWL Manchester Syntax class expressions.
+  "Parse INPUT as a comma-separated list of OWL class expressions.
 Return t if the entire string is consumed, or the 1-based column
 position where parsing stopped on failure."
   (with-temp-buffer
@@ -491,7 +490,7 @@ position where parsing stopped on failure."
       (error (point)))))
 
 (defun elot-parse-property-expression-list (input)
-  "Parse INPUT as a comma-separated list of OWL Manchester Syntax object property expressions.
+  "Parse INPUT as a comma-separated list of OWL property expressions.
 Return t if the entire string is consumed, or the 1-based column
 position where parsing stopped on failure."
   (with-temp-buffer
