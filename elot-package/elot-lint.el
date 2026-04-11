@@ -442,20 +442,39 @@ and not annotation properties, and that parentheses are balanced."
 ;;; ---- OWL Manchester Syntax validation via PEG grammar ----
 
 (defconst elot-omn-keyword-parser-alist
-  '(("SubClassOf"     . elot-parse-class-expression)
-    ("EquivalentTo"   . elot-parse-class-expression)
-    ("DisjointWith"   . elot-parse-class-expression)
-    ("DisjointUnionOf" . elot-parse-class-expression)
-    ("Domain"         . elot-parse-class-expression)
-    ("Range"          . elot-parse-class-expression)
-    ("Types"          . elot-parse-class-expression)
-    ("InverseOf"      . elot-parse-property-expression)
-    ("SubPropertyOf"  . elot-parse-property-expression)
+  '(("SubClassOf"     . elot-parse-class-expression-list)
+    ("EquivalentTo"   . elot-parse-class-expression-list)
+    ("DisjointWith"   . elot-parse-class-expression-list)
+    ("DisjointUnionOf" . elot-parse-class-expression-list)
+    ("Domain"         . elot-parse-class-expression-list)
+    ("Range"          . elot-parse-class-expression-list)
+    ("Types"          . elot-parse-class-expression-list)
+    ("InverseOf"      . elot-parse-property-expression-list)
+    ("SubPropertyOf"  . elot-parse-property-expression-list)
     ("SubPropertyChain" . elot-parse-sub-property-chain)
     ("Facts"          . elot-parse-fact)
     ("SameAs"         . elot-parse-individual-iri-list)
-    ("DifferentFrom"  . elot-parse-individual-iri-list))
+    ("DifferentFrom"  . elot-parse-individual-iri-list)
+    ;; Misc category keywords (description2List / property2List / individual2List)
+    ("DisjointClasses"      . elot-parse-class-expression-2-list)
+    ("EquivalentClasses"    . elot-parse-class-expression-2-list)
+    ("DisjointProperties"   . elot-parse-property-expression-2-list)
+    ("EquivalentProperties" . elot-parse-property-expression-2-list)
+    ("SameIndividual"       . elot-parse-individual-2-list)
+    ("DifferentIndividuals" . elot-parse-individual-2-list))
   "Alist mapping OMN keywords to their PEG parser entry-point functions.")
+
+(defun elot-parse-class-expression-list (input)
+  "Parse INPUT as a comma-separated list of OWL Manchester Syntax class expressions.
+Return t if the entire string is consumed, nil otherwise."
+  (with-temp-buffer
+    (insert input)
+    (goto-char (point-min))
+    (condition-case nil
+        (with-peg-rules (elot-owl-grammar)
+          (let ((result (peg-run (peg class-expression-list))))
+            (and result (eobp))))
+      (error nil))))
 
 (defun elot-parse-class-expression (input)
   "Parse INPUT as an OWL Manchester Syntax class expression.
@@ -466,6 +485,18 @@ Return t if the entire string is consumed, nil otherwise."
     (condition-case nil
         (with-peg-rules (elot-owl-grammar)
           (let ((result (peg-run (peg class-expression))))
+            (and result (eobp))))
+      (error nil))))
+
+(defun elot-parse-property-expression-list (input)
+  "Parse INPUT as a comma-separated list of OWL Manchester Syntax object property expressions.
+Return t if the entire string is consumed, nil otherwise."
+  (with-temp-buffer
+    (insert input)
+    (goto-char (point-min))
+    (condition-case nil
+        (with-peg-rules (elot-owl-grammar)
+          (let ((result (peg-run (peg object-property-expression-list))))
             (and result (eobp))))
       (error nil))))
 
@@ -526,6 +557,42 @@ Return t if the entire string is consumed, nil otherwise."
     (condition-case nil
         (with-peg-rules (elot-owl-grammar)
           (let ((result (peg-run (peg individual-iri-list))))
+            (and result (eobp))))
+      (error nil))))
+
+(defun elot-parse-class-expression-2-list (input)
+  "Parse INPUT as a comma-separated list of at least 2 class expressions.
+Return t if the entire string is consumed, nil otherwise."
+  (with-temp-buffer
+    (insert input)
+    (goto-char (point-min))
+    (condition-case nil
+        (with-peg-rules (elot-owl-grammar)
+          (let ((result (peg-run (peg class-expression-2-list))))
+            (and result (eobp))))
+      (error nil))))
+
+(defun elot-parse-property-expression-2-list (input)
+  "Parse INPUT as a comma-separated list of at least 2 property expressions.
+Return t if the entire string is consumed, nil otherwise."
+  (with-temp-buffer
+    (insert input)
+    (goto-char (point-min))
+    (condition-case nil
+        (with-peg-rules (elot-owl-grammar)
+          (let ((result (peg-run (peg object-property-expression-2-list))))
+            (and result (eobp))))
+      (error nil))))
+
+(defun elot-parse-individual-2-list (input)
+  "Parse INPUT as a comma-separated list of at least 2 individuals.
+Return t if the entire string is consumed, nil otherwise."
+  (with-temp-buffer
+    (insert input)
+    (goto-char (point-min))
+    (condition-case nil
+        (with-peg-rules (elot-owl-grammar)
+          (let ((result (peg-run (peg individual-2-list))))
             (and result (eobp))))
       (error nil))))
 

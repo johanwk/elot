@@ -21,8 +21,10 @@ of the W3C specification:
 
 | Entry point            | Used for axioms                                      |
 |------------------------|------------------------------------------------------|
-| `class-expression`     | SubClassOf, EquivalentTo, DisjointWith, Domain, Range, Types |
-| `object-property-expression` | InverseOf, SubPropertyOf                       |
+| `class-expression`     | (single class expression)                            |
+| `class-expression-list`| SubClassOf, EquivalentTo, DisjointWith, DisjointUnionOf, Domain, Range, Types |
+| `object-property-expression` | (single property expression)                   |
+| `object-property-expression-list` | InverseOf, SubPropertyOf, EquivalentTo, DisjointWith (on properties) |
 | `sub-property-chain`   | SubPropertyChain (two or more properties joined by `o`) |
 | `data-range`           | Data ranges with faceted restrictions, conjunctions, disjunctions |
 | `fact`                 | Facts (property assertions on individuals)            |
@@ -38,6 +40,8 @@ of the W3C specification:
 - **Literals**: `"string"`, `"string"^^datatype`, `"string"@lang`
 - **Facts**: `prop individual`, `prop "literal"`, `not prop individual`
 - **Individual lists**: `ind1 , ind2 , ...` (for SameAs/DifferentFrom)
+- **Class expression lists**: `expr1 , expr2 , ...` (for annotated list keywords like SubClassOf, DisjointWith)
+- **Object property expression lists**: `prop1 , prop2 , ...` (for SubPropertyOf, InverseOf, etc.)
 - **Blank nodes**: `_:name` (in facts and individual lists)
 - **Data ranges**: datatype IRIs, `{ literal , ... }` (oneOf), faceted restrictions
   (e.g. `xsd:integer[>= "0"^^xsd:integer, <= "100"^^xsd:integer]`), data
@@ -102,6 +106,8 @@ cd syntax && emacs --batch -l test-grammar.el
 
 This runs all positive and negative test cases for:
 - Class expressions (46 tests)
+- Class expression lists (12 tests)
+- Object property expression lists (7 tests)
 - SubPropertyChain expressions (9 tests)
 - Data range expressions (16 tests)
 - Fact expressions (17 tests)
@@ -114,7 +120,9 @@ The grammar provides three main entry-point functions (defined in
 
 ```elisp
 (elot-parse-class-expression "ex:A and ex:B")          ;; → t
+(elot-parse-class-expression-list "ex:A , ex:B and ex:C") ;; → t
 (elot-parse-property-expression "inverse ex:partOf")    ;; → t
+(elot-parse-property-expression-list "hasSpouse , loves") ;; → t
 (elot-parse-sub-property-chain "ex:p1 o ex:p2")         ;; → t
 (elot-parse-data-range "xsd:integer [>= \"0\"^^xsd:integer]") ;; → t
 (elot-parse-fact "hasWife Mary")                        ;; → t
@@ -139,15 +147,15 @@ The mapping from keyword to parser entry point is defined by
 
 | OMN keyword       | Parser function                      |
 |--------------------|--------------------------------------|
-| SubClassOf         | `elot-parse-class-expression`        |
-| EquivalentTo       | `elot-parse-class-expression`        |
-| DisjointWith       | `elot-parse-class-expression`        |
-| DisjointUnionOf    | `elot-parse-class-expression`        |
-| Domain             | `elot-parse-class-expression`        |
-| Range              | `elot-parse-class-expression`        |
-| Types              | `elot-parse-class-expression`        |
-| InverseOf          | `elot-parse-property-expression`     |
-| SubPropertyOf      | `elot-parse-property-expression`     |
+| SubClassOf         | `elot-parse-class-expression-list`   |
+| EquivalentTo       | `elot-parse-class-expression-list`   |
+| DisjointWith       | `elot-parse-class-expression-list`   |
+| DisjointUnionOf    | `elot-parse-class-expression-list`   |
+| Domain             | `elot-parse-class-expression-list`   |
+| Range              | `elot-parse-class-expression-list`   |
+| Types              | `elot-parse-class-expression-list`   |
+| InverseOf          | `elot-parse-property-expression-list`|
+| SubPropertyOf      | `elot-parse-property-expression-list`|
 | SubPropertyChain   | `elot-parse-sub-property-chain`      |
 | Facts              | `elot-parse-fact`                    |
 | SameAs             | `elot-parse-individual-iri-list`     |

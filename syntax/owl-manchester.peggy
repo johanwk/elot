@@ -96,6 +96,8 @@ NodeID
   = "_:" LocalName
 
 // --- Lists ---
+ClassExpressionList          = ClassExpression (OWS "," OWS ClassExpression)*
+ObjectPropertyExpressionList = ObjectPropertyExpression (OWS "," OWS ObjectPropertyExpression)*
 IndividualList = Individual (WS "," WS Individual)*
 LiteralList    = Literal (WS "," WS Literal)*
 

@@ -11,6 +11,34 @@
 ;; 3. Utility functions: parse INPUT starting from a specific grammar rule.
 ;;    Return t on full match, nil otherwise.
 
+(defun elot-parse-class-expression-list (input)
+  "Try to parse INPUT as a comma-separated list of OWL Manchester Syntax class expressions.
+Return t if the entire string is consumed, nil otherwise."
+  (with-temp-buffer
+    (insert input)
+    (goto-char (point-min))
+    (condition-case err
+        (with-peg-rules (elot-owl-grammar)
+          (let ((result (peg-run (peg class-expression-list))))
+            (and result (eobp))))
+      (error
+       (message "  PARSE ERROR: %S" err)
+       nil))))
+
+(defun elot-parse-property-expression-list (input)
+  "Try to parse INPUT as a comma-separated list of object property expressions.
+Return t if the entire string is consumed, nil otherwise."
+  (with-temp-buffer
+    (insert input)
+    (goto-char (point-min))
+    (condition-case err
+        (with-peg-rules (elot-owl-grammar)
+          (let ((result (peg-run (peg object-property-expression-list))))
+            (and result (eobp))))
+      (error
+       (message "  PARSE ERROR: %S" err)
+       nil))))
+
 (defun elot-parse-class-expression (input)
   "Try to parse INPUT as an OWL Manchester Syntax class expression.
 Return t if the entire string is consumed, nil otherwise."
@@ -408,7 +436,65 @@ Delegates to `elot-parse-class-expression'."
     )
   "List of (DESCRIPTION INPUT) Fact negative test cases.")
 
-;; 4i. Individual IRI list positive test cases.
+;; 4i. Class expression list positive test cases.
+(defvar elot-class-expression-list-test-cases
+  '(("ClassExprList: single expression"
+     "ex:Person")
+    ("ClassExprList: two expressions"
+     "ex:Person , ex:Agent")
+    ("ClassExprList: three expressions with restrictions"
+     "ex:Person , ex:hasAge some xsd:integer , ex:Agent")
+    ("ClassExprList: complex expressions"
+     "ex:A and ex:B , ex:C or ex:D")
+    ("ClassExprList: from BFO — SubClassOf with comma"
+     "hasSSN max 1, hasSSN min 1")
+    ("ClassExprList: DisjointWith with comma"
+     "g:Rock , g:Mineral")
+    ("ClassExprList: Domain with comma (from quick ref)"
+     "Person , Man")
+    ("ClassExprList: Range with comma"
+     "Person, Woman")
+    ("ClassExprList: full IRIs comma-separated"
+     "<http://purl.obolibrary.org/obo/BFO_0000004>, <http://purl.obolibrary.org/obo/BFO_0000020>, <http://purl.obolibrary.org/obo/BFO_0000031>")
+    )
+  "List of (DESCRIPTION INPUT) class expression list positive test cases.")
+
+;; 4i-neg. Class expression list negative test cases.
+(defvar elot-class-expression-list-negative-test-cases
+  '(("Reject class expr list: empty string"
+     "")
+    ("Reject class expr list: trailing comma"
+     "ex:A ,")
+    ("Reject class expr list: double comma"
+     "ex:A , , ex:B")
+    )
+  "List of (DESCRIPTION INPUT) class expression list negative test cases.")
+
+;; 4i2. Object property expression list positive test cases.
+(defvar elot-property-expression-list-test-cases
+  '(("PropExprList: single property"
+     "ex:hasPart")
+    ("PropExprList: two properties"
+     "hasSpouse, loves")
+    ("PropExprList: SubPropertyOf with comma (from quick ref)"
+     "hasSpouse , loves")
+    ("PropExprList: InverseOf with comma (from quick ref)"
+     "hasSpouse, inverse hasSpouse")
+    ("PropExprList: DisjointWith properties"
+     "hates , hates")
+    )
+  "List of (DESCRIPTION INPUT) object property expression list positive test cases.")
+
+;; 4i2-neg. Object property expression list negative test cases.
+(defvar elot-property-expression-list-negative-test-cases
+  '(("Reject prop expr list: empty string"
+     "")
+    ("Reject prop expr list: trailing comma"
+     "ex:hasPart ,")
+    )
+  "List of (DESCRIPTION INPUT) object property expression list negative test cases.")
+
+;; 4j. Individual IRI list positive test cases.
 (defvar elot-individual-iri-list-test-cases
   '(("IndividualList: single IRI"
      "ex:John")
@@ -547,6 +633,50 @@ Delegates to `elot-parse-class-expression'."
     (let* ((desc  (car tc))
            (input (cadr tc))
            (ok    (elot-parse-individual-iri-list input)))
+      (if (not ok)
+          (progn (cl-incf pass)
+                 (message "  PASS: %s" desc))
+        (cl-incf fail)
+        (message "  FAIL: %s  (should not have parsed!)" desc)
+        (message "        input: %s" input))))
+  ;; Class expression list positive cases
+  (dolist (tc elot-class-expression-list-test-cases)
+    (let* ((desc  (car tc))
+           (input (cadr tc))
+           (ok    (elot-parse-class-expression-list input)))
+      (if ok
+          (progn (cl-incf pass)
+                 (message "  PASS: %s" desc))
+        (cl-incf fail)
+        (message "  FAIL: %s" desc)
+        (message "        input: %s" input))))
+  ;; Class expression list negative cases: must NOT parse
+  (dolist (tc elot-class-expression-list-negative-test-cases)
+    (let* ((desc  (car tc))
+           (input (cadr tc))
+           (ok    (elot-parse-class-expression-list input)))
+      (if (not ok)
+          (progn (cl-incf pass)
+                 (message "  PASS: %s" desc))
+        (cl-incf fail)
+        (message "  FAIL: %s  (should not have parsed!)" desc)
+        (message "        input: %s" input))))
+  ;; Object property expression list positive cases
+  (dolist (tc elot-property-expression-list-test-cases)
+    (let* ((desc  (car tc))
+           (input (cadr tc))
+           (ok    (elot-parse-property-expression-list input)))
+      (if ok
+          (progn (cl-incf pass)
+                 (message "  PASS: %s" desc))
+        (cl-incf fail)
+        (message "  FAIL: %s" desc)
+        (message "        input: %s" input))))
+  ;; Object property expression list negative cases: must NOT parse
+  (dolist (tc elot-property-expression-list-negative-test-cases)
+    (let* ((desc  (car tc))
+           (input (cadr tc))
+           (ok    (elot-parse-property-expression-list input)))
       (if (not ok)
           (progn (cl-incf pass)
                  (message "  PASS: %s" desc))
