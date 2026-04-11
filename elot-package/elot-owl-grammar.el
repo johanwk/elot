@@ -34,6 +34,7 @@
   (object-property-expression-list () (and object-property-expression (* (and ows "," ows object-property-expression))))
   (object-property-expression-2-list () (and object-property-expression (+ (and ows "," ows object-property-expression))))
   (individual-list () (and individual (* (and ws "," ws individual))))
+  (individual-2-list () (and individual (+ (and ws "," ws individual))))
   (literal-list () (and literal (* (and ws "," ws literal))))
   (class-iri () iri)
   (object-property-iri () iri)
