@@ -104,6 +104,8 @@ ObjectPropertyExpressionList = ObjectPropertyExpression (OWS "," OWS ObjectPrope
 // objectProperty2List / dataProperty2List: at least 2 (for misc DisjointProperties, EquivalentProperties)
 ObjectPropertyExpression2List = ObjectPropertyExpression (OWS "," OWS ObjectPropertyExpression)+
 IndividualList = Individual (WS "," WS Individual)*
+// individual2List: at least 2 individuals (for misc SameIndividual, DifferentIndividuals)
+Individual2List = Individual (WS "," WS Individual)+
 LiteralList    = Literal (WS "," WS Literal)*
 
 // --- Terminals & Identifiers ---
