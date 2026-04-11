@@ -38,6 +38,7 @@
 (require 'org-lint)
 (require 'elot-tangle)
 (require 'elot-label-display)
+(require 'elot-owl-grammar)
 
 (defun elot--resourcedefs-here-p ()
   "Return t if headline at point sets :resourcedefs: yes."
@@ -436,6 +437,142 @@ and not annotation properties, and that parentheses are balanced."
  :categories '(default elot)
  :trust 'high)
 
+
+
+;;; ---- OWL Manchester Syntax validation via PEG grammar ----
+
+(defconst elot-omn-keyword-parser-alist
+  '(("SubClassOf"     . elot-parse-class-expression)
+    ("EquivalentTo"   . elot-parse-class-expression)
+    ("DisjointWith"   . elot-parse-class-expression)
+    ("DisjointUnionOf" . elot-parse-class-expression)
+    ("Domain"         . elot-parse-class-expression)
+    ("Range"          . elot-parse-class-expression)
+    ("Types"          . elot-parse-class-expression)
+    ("InverseOf"      . elot-parse-property-expression)
+    ("SubPropertyOf"  . elot-parse-property-expression)
+    ("SubPropertyChain" . elot-parse-sub-property-chain)
+    ("Facts"          . elot-parse-fact)
+    ("SameAs"         . elot-parse-individual-iri-list)
+    ("DifferentFrom"  . elot-parse-individual-iri-list))
+  "Alist mapping OMN keywords to their PEG parser entry-point functions.")
+
+(defun elot-parse-class-expression (input)
+  "Parse INPUT as an OWL Manchester Syntax class expression.
+Return t if the entire string is consumed, nil otherwise."
+  (with-temp-buffer
+    (insert input)
+    (goto-char (point-min))
+    (condition-case nil
+        (with-peg-rules (elot-owl-grammar)
+          (let ((result (peg-run (peg class-expression))))
+            (and result (eobp))))
+      (error nil))))
+
+(defun elot-parse-property-expression (input)
+  "Parse INPUT as an OWL Manchester Syntax object property expression.
+Return t if the entire string is consumed, nil otherwise."
+  (with-temp-buffer
+    (insert input)
+    (goto-char (point-min))
+    (condition-case nil
+        (with-peg-rules (elot-owl-grammar)
+          (let ((result (peg-run (peg object-property-expression))))
+            (and result (eobp))))
+      (error nil))))
+
+(defun elot-parse-sub-property-chain (input)
+  "Parse INPUT as an OWL Manchester Syntax sub-property chain.
+Return t if the entire string is consumed, nil otherwise."
+  (with-temp-buffer
+    (insert input)
+    (goto-char (point-min))
+    (condition-case nil
+        (with-peg-rules (elot-owl-grammar)
+          (let ((result (peg-run (peg sub-property-chain))))
+            (and result (eobp))))
+      (error nil))))
+
+(defun elot-parse-data-range (input)
+  "Parse INPUT as an OWL Manchester Syntax data range.
+Return t if the entire string is consumed, nil otherwise."
+  (with-temp-buffer
+    (insert input)
+    (goto-char (point-min))
+    (condition-case nil
+        (with-peg-rules (elot-owl-grammar)
+          (let ((result (peg-run (peg data-range))))
+            (and result (eobp))))
+      (error nil))))
+
+(defun elot-parse-fact (input)
+  "Parse INPUT as an OWL Manchester Syntax fact.
+Return t if the entire string is consumed, nil otherwise."
+  (with-temp-buffer
+    (insert input)
+    (goto-char (point-min))
+    (condition-case nil
+        (with-peg-rules (elot-owl-grammar)
+          (let ((result (peg-run (peg fact))))
+            (and result (eobp))))
+      (error nil))))
+
+(defun elot-parse-individual-iri-list (input)
+  "Parse INPUT as a comma-separated list of individuals.
+Return t if the entire string is consumed, nil otherwise."
+  (with-temp-buffer
+    (insert input)
+    (goto-char (point-min))
+    (condition-case nil
+        (with-peg-rules (elot-owl-grammar)
+          (let ((result (peg-run (peg individual-iri-list))))
+            (and result (eobp))))
+      (error nil))))
+
+(defun elot-check-omn-syntax (tree)
+  "ELOT rule: validate OWL Manchester Syntax in axiom description list values.
+For each description list item whose tag is an OMN keyword with a known
+parser (see `elot-omn-keyword-parser-alist'), parse the value and report
+an error if it does not conform to the grammar."
+  (let (issues)
+    (org-element-map tree 'item
+      (lambda (item)
+        (let* ((parent (org-element-property :parent item))
+               (type (org-element-property :type parent)))
+          (when (eq type 'descriptive)
+            (let* ((tag (org-element-property :tag item))
+                   (term (org-element-interpret-data tag))
+                   (parser-fn (cdr (assoc term elot-omn-keyword-parser-alist))))
+              (when parser-fn
+                ;; Extract the value text, excluding sublists (meta-annotations)
+                (let* ((contents-raw
+                        (org-element-interpret-data
+                         (seq-remove (lambda (child)
+                                       (eq (org-element-type child) 'plain-list))
+                                     (org-element-contents item))))
+                       ;; Clean up: remove leading/trailing whitespace and
+                       ;; trailing newlines left by org-element-interpret-data
+                       (contents (string-trim contents-raw)))
+                  (when (and (not (string-empty-p contents))
+                             (not (funcall parser-fn contents)))
+                    (push (list (org-element-property :begin item)
+                                (propertize
+                                 (format "ERROR: Invalid %s expression: %s"
+                                         term
+                                         (if (> (length contents) 60)
+                                             (concat (substring contents 0 57) "...")
+                                           contents))
+                                 'face 'error))
+                          issues))))))))
+      tree)
+    issues))
+
+(org-lint-add-checker
+ 'elot/omn-syntax
+ "ELOT: validate OWL Manchester Syntax in axiom values"
+ #'elot-check-omn-syntax
+ :categories '(default elot)
+ :trust 'high)
 
 
 (provide 'elot-lint)
