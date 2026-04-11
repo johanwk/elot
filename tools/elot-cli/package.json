@@ -51,6 +51,15 @@
         "command": "elot.toggleOrgIndent",
         "title": "Elot: Toggle Org Indent Mode",
         "icon": "$(indent)"
+      },
+      {
+        "command": "elot.importOwl",
+        "title": "Elot: Import OWL Ontology",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "elot.downloadExporter",
+        "title": "Elot: Download/Update elot-exporter"
       }
     ],
     "keybindings": [
@@ -88,6 +97,11 @@
           "type": "boolean",
           "default": true,
           "description": "Show hover information (label, type, annotations) for CURIEs in Org files"
+        },
+        "elot.javaPath": {
+          "type": "string",
+          "default": "java",
+          "description": "Path to the Java executable (Java 21+ required for elot-exporter)"
         }
       }
     },
@@ -117,6 +131,11 @@
         },
         {
           "command": "elot.toggleOrgIndent",
+          "when": "resourceExtname == .org",
+          "group": "navigation"
+        },
+        {
+          "command": "elot.importOwl",
           "when": "resourceExtname == .org",
           "group": "navigation"
         }

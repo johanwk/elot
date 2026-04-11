@@ -12,6 +12,7 @@ import { registerHeadlineBoldDecorations } from "./headlineBoldDecorations.js";
 import { registerDefinitionProvider } from "./definitionProvider.js";
 import { registerCompletionProvider } from "./completionProvider.js";
 import { registerDiagnosticsProvider } from "./diagnosticsProvider.js";
+import { registerImportOwlCommand, registerDownloadExporterCommand } from "./importOwl.js";
 
 export function activate(context: vscode.ExtensionContext) {
   const tangle = async (doc: vscode.TextDocument, manual = false) => {
@@ -100,12 +101,18 @@ export function activate(context: vscode.ExtensionContext) {
   // OMN syntax diagnostics: red squiggly underlines on invalid axiom values
   registerDiagnosticsProvider(context);
 
+  // Import OWL ontology via elot-exporter.jar
+  const importOwl = registerImportOwlCommand(context);
+
+  // Explicit download/update of elot-exporter.jar
+  const downloadExporter = registerDownloadExporterCommand(context);
+
   // Clean up cached slurp maps when documents are closed
   const onClose = vscode.workspace.onDidCloseTextDocument((doc) => {
     clearSlurpCache(doc.uri.toString());
   });
 
-  context.subscriptions.push(disposable, onSave, hover, folding, definition, completion, onClose);
+  context.subscriptions.push(disposable, onSave, hover, folding, definition, completion, importOwl, downloadExporter, onClose);
 }
 
 export function deactivate() {}

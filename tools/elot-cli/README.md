@@ -15,6 +15,7 @@ required.
 | Feature | Shortcut |
 |---|---|
 | **Org→OWL export** | Right-click → *Tangle to Manchester Syntax* |
+| **Import OWL ontology** | Command Palette → *Elot: Import OWL Ontology* |
 | **Label display** (hover + toggle) | **F5** |
 | **Headline folding** | **Tab** / **Shift+Tab** |
 | **Go to definition** | **F12** / **Ctrl+Click** |
@@ -37,19 +38,41 @@ required.
 6. **Press F12** on a CURIE to jump to its definition.
 7. **Press Ctrl+Space** to search and insert entities.
 
-### Converting existing OWL files
+### Importing existing OWL ontologies
 
-Have an existing ontology in RDF/XML, Turtle, or another format? Download
-**elot-exporter** from the
-[releases page](https://github.com/johanwk/elot/releases) — a standalone Java
-tool that converts any OWL file into ELOT's Org-mode format:
+Have an existing ontology in RDF/XML, Turtle, or another OWL format? The
+extension can convert it to ELOT's Org-mode format directly from VS Code — no
+command line needed.
+
+1. Open the **Command Palette** (`Ctrl+Shift+P`) and run **Elot: Import OWL
+   Ontology**.
+2. Choose whether to **enter a URL** or **browse for a local file**.
+3. The extension runs `elot-exporter.jar` (downloaded automatically on first
+   use) and converts the ontology to Org-mode.
+4. After conversion you are prompted for a **file location** to save the result
+   with an `.org` extension. The default filename is derived from the top-level
+   heading — for example, if the ontology's top-level heading is `* core`, the
+   suggested filename is `core.org`.
+5. The saved `.org` file opens immediately with **all ELOT features active**
+   (label display, IntelliSense, syntax checking, etc.).
+
+> **Why the save prompt?** VS Code features like hover, completion, and
+> diagnostics are tied to the file extension. An unsaved buffer doesn't have an
+> `.org` extension, so ELOT functions won't activate until the file is saved.
+> If you cancel the save dialog the converted text still opens as an untitled
+> buffer — just save it as `.org` later to enable ELOT.
+
+Requires **Java 21+** (the extension uses the `elot.javaPath` setting, which
+defaults to `java`).
+
+You can also run the exporter from the command line:
 
 ```bash
 java -jar elot-exporter.jar input-ontology.owl -o output.org
 ```
 
-Open the resulting `.org` file in VS Code and all extension features work
-immediately. Requires Java 11+.
+Download it from the
+[releases page](https://github.com/johanwk/elot/releases).
 
 ---
 
@@ -218,6 +241,7 @@ Applied automatically — no toggle or configuration needed.
 |---|---|---|
 | `elot.labelDisplay.fontStyle` | `"italic"` | Font style for labels: `italic`, `normal`, or `oblique` |
 | `elot.labelDisplay.hoverEnabled` | `true` | Show hover cards for CURIEs |
+| `elot.javaPath` | `"java"` | Path to the Java executable (Java 21+ required for OWL import) |
 
 Change in VS Code Settings (search for "elot").
 
