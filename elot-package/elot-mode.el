@@ -60,11 +60,23 @@
 ;; Lint is optional -- only loaded when the user invokes it
 (autoload 'elot-org-lint "elot-lint" "Refresh `elot-slurp', then run `org-lint'." t)
 
+;; Flymake backend for in-buffer squiggly-line diagnostics
+(autoload 'elot-flymake-setup    "elot-flymake" "Enable ELOT Flymake backend." t)
+(autoload 'elot-flymake-teardown "elot-flymake" "Disable ELOT Flymake backend.")
+
 (defgroup elot
     nil
     "Customization group for Emacs Literate Ontology Tool (ELOT)."
     :prefix "elot-"
     :group 'org)
+
+  (defcustom elot-flymake-enable t
+    "When non-nil, `elot-mode' enables Flymake for in-buffer diagnostics.
+This gives you squiggly-line underlines (like VS Code) in addition
+to the `org-lint' list view.  Set to nil if you prefer to run
+linting only on demand with \\[elot-org-lint]."
+    :type 'boolean
+    :group 'elot)
 
   (defcustom elot-label-display-size-threshold (* 500 1024)
     "Buffer size (bytes) above which `elot-mode' asks before enabling label-display.
@@ -494,6 +506,7 @@ or `xsd:integer' on a column header will be applied to values."
   "ELOT Ontology Authoring Menu"
   '("ELOT"
     ["Check for common problems" elot-org-lint :active (fboundp 'elot-org-lint)]
+    ["Toggle in-buffer diagnostics (Flymake)" flymake-mode :active (fboundp 'flymake-mode)]
     ["Export to OWL (Tangle)" elot-tangle-buffer-to-omn t]
     ["Export to HTML" (lambda () (interactive) (browse-url-of-file (expand-file-name (org-html-export-to-html))))
      :active (fboundp 'org-html-export-to-html)]
@@ -566,7 +579,11 @@ or `xsd:integer' on a column header will be applied to values."
     ;; 6. Label-display: set up immediately (with size-gated prompt)
     (elot-mode--maybe-setup-labels)
 
-    ;; 7. Set initial fold visibility
+    ;; 7. Flymake: enable in-buffer squiggly-line diagnostics
+    (when elot-flymake-enable
+      (elot-flymake-setup))
+
+    ;; 8. Set initial fold visibility
     (org-cycle-set-startup-visibility))
 
   (defun elot-mode--maybe-setup-labels ()
@@ -593,7 +610,11 @@ In batch mode (`noninteractive'), skip label-display entirely."
       (with-silent-modifications
         (elot-remove-prop-display)))
 
-    ;; 3. Restore syntax table
+    ;; 3. Disable Flymake backend
+    (when (fboundp 'elot-flymake-teardown)
+      (elot-flymake-teardown))
+
+    ;; 4. Restore syntax table
     (set-syntax-table org-mode-syntax-table))
 
 ;;;###autoload
