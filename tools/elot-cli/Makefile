@@ -12,8 +12,11 @@ help: ## Show this help
 install: ## Install Node dependencies (run once after cloning)
 	npm install
 
-bundle: ## Full build: compile Rust→WASM then bundle TypeScript→dist/
+bundle: ## Full build: compile Rust→WASM, generate Peggy parser, then bundle TypeScript→dist/
 	npm run bundle
+
+build-parser: ## Regenerate the Peggy parser from owl-manchester.peggy
+	npm run build:parser
 
 build: ## Type-check TypeScript only (no bundling)
 	npm run build
@@ -33,5 +36,5 @@ cli: ## Run CLI on examples/bfo-core.org (dev mode, no bundling needed)
 package: ## Build a .vsix for VS Code (runs bundle automatically)
 	npx @vscode/vsce package
 
-clean: ## Remove build artifacts (dist/ and src/wasm/)
-	rm -rf dist src/wasm
+clean: ## Remove build artifacts (dist/, src/wasm/, and generated parser)
+	rm -rf dist src/wasm src/omnParser.js

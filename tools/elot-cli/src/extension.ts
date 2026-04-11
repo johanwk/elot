@@ -11,6 +11,7 @@ import { registerDescriptionListDecorations } from "./descriptionListDecorations
 import { registerHeadlineBoldDecorations } from "./headlineBoldDecorations.js";
 import { registerDefinitionProvider } from "./definitionProvider.js";
 import { registerCompletionProvider } from "./completionProvider.js";
+import { registerDiagnosticsProvider } from "./diagnosticsProvider.js";
 
 export function activate(context: vscode.ExtensionContext) {
   const tangle = async (doc: vscode.TextDocument, manual = false) => {
@@ -95,6 +96,9 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Completion provider: insert existing resource by CURIE or label
   const completion = registerCompletionProvider();
+
+  // OMN syntax diagnostics: red squiggly underlines on invalid axiom values
+  registerDiagnosticsProvider(context);
 
   // Clean up cached slurp maps when documents are closed
   const onClose = vscode.workspace.onDidCloseTextDocument((doc) => {

@@ -6,6 +6,9 @@ dist/
 # Generated WASM artifacts (built by wasm-pack)
 src/wasm/
 
+# Generated Peggy parser (built by npm run build:parser)
+src/omnParser.js
+
 # Rust build artifacts
 elot-orgize/target/
 

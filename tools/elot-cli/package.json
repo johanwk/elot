@@ -1,7 +1,7 @@
 {
   "name": "elot",
   "displayName": "Elot: Org-mode Ontology Editor",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "publisher": "johanwk",
   "description": "Manchester Syntax generation for ontologies written in Org-mode",
   "icon": "images/elot-icon.png",
@@ -131,7 +131,8 @@
   "scripts": {
     "vscode:prepublish": "npm run bundle",
     "build:wasm": "cd elot-orgize && wasm-pack build --target nodejs --out-dir ../src/wasm",
-    "bundle": "npm run build:wasm && node esbuild.mjs",
+    "build:parser": "npx peggy --format commonjs ../../syntax/owl-manchester.peggy -o src/omnParser.js --allowed-start-rules ClassExpression,ClassExpressionList,ObjectPropertyExpressionList,SubPropertyChain,DataRange,Fact,IndividualIRIList",
+    "bundle": "npm run build:wasm && npm run build:parser && node esbuild.mjs",
     "build": "tsc",
     "compile": "tsc",
     "watch": "tsc -w",

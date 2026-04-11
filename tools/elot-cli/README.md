@@ -40,6 +40,10 @@ OWL Manchester Syntax.
 - **IntelliSense Completion**: Press Ctrl+Space to get a dropdown of all OWL
   entities declared in the file — searchable by label or CURIE, showing type
   and annotations. Selecting an item inserts the CURIE.
+- **OWL Axiom Syntax Checking**: Real-time validation of OWL Manchester Syntax
+  axioms in description lists. Invalid expressions (e.g. `SubClassOf`,
+  `EquivalentTo`, `Domain`, `Range`, `Facts`, etc.) are highlighted with red
+  squiggly underlines and error messages.
 
 ## Label Display (CURIE → Human-readable Labels)
 
@@ -225,6 +229,41 @@ The provider registers programmatically — no `package.json` contributes entry
 or language server is required. It works for any file matched as `{ language:
 "org" }` or `**/*.org`.
 
+## OWL Axiom Syntax Checking
+
+The extension validates OWL Manchester Syntax axioms as you type. Any
+description list item whose tag is an OMN keyword (`SubClassOf`,
+`EquivalentTo`, `DisjointWith`, `Domain`, `Range`, `SubPropertyOf`,
+`InverseOf`, `SubPropertyChain`, `Types`, `Facts`, `SameAs`,
+`DifferentFrom`, etc.) is parsed against the OWL Manchester Syntax grammar.
+
+If the axiom value is malformed, a red squiggly underline appears on the
+offending text with an error message explaining what the parser expected.
+Diagnostics are updated on every save and when the file is opened.
+
+### What is checked
+
+| Keyword | Grammar rule |
+|---|---|
+| `SubClassOf`, `EquivalentTo`, `DisjointWith`, `Domain`, `Range`, `Types` | `ClassExpressionList` |
+| `SubPropertyOf`, `InverseOf` | `ObjectPropertyExpressionList` |
+| `SubPropertyChain` | `SubPropertyChain` |
+| `Facts` | `Fact` |
+| `SameAs`, `DifferentFrom` | `IndividualIRIList` |
+
+### Example
+
+```org
+- SubClassOf :: obo:BFO_0000139 only (obo:BFO_0000015 or obo:BFO_0000035)
+```
+
+If you accidentally wrote `only` where `or` should be, or used a malformed
+IRI, the error is caught immediately — no need to load the ontology into a
+reasoner or external tool first.
+
+The grammar is shared between the Emacs ELOT package and the VS Code extension
+(maintained as a single Peggy/PEG source file in `syntax/owl-manchester.peggy`).
+
 ## Tip: Word Wrap for Org Files
 
 Org files often have long lines. VS Code can wrap them visually (like Emacs's
@@ -402,7 +441,7 @@ Rust crate, examples, dev tooling, etc.).
 To install the extension locally:
 
 ```bash
-code --install-extension elot-0.1.1.vsix
+code --install-extension elot-0.2.0.vsix
 ```
 
 ## Testing
