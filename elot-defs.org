@@ -65,6 +65,7 @@ in SPARQL select results.
 	(require 'ox) ; export functions
 	(require 'ol) ; link functions
 	(require 'xref) ; jump around
+	(require 'hydra) ; hydra menu
 	(require 'button) ; for text‑buttons
 	(require 'help-mode) ; nice keymap & look
 	(require 'url) ; for opening online ontologies
