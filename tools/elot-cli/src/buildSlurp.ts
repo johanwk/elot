@@ -20,7 +20,7 @@ export interface SlurpEntry {
   label: string;
   /** The rdf:type, e.g. "owl:Class" */
   rdfType?: string;
-  /** Additional description properties (tag→value pairs), excluding rdf:type and rdfs:label */
+  /** Additional description properties (tag to value pairs), excluding rdf:type and rdfs:label */
   properties?: Array<{ tag: string; value: string }>;
 }
 

@@ -331,7 +331,10 @@ export function registerDiagnosticsProvider(
       const omnDiagnostics = mapOmnToDiagnostics(doc, omnErrors);
 
       // ELOT lint diagnostics (new — checkers #1–#8)
-      const lintErrors = collectAllLintErrors(root);
+      const lintEnabled = vscode.workspace
+        .getConfiguration("elot.lint")
+        .get<boolean>("enabled", true);
+      const lintErrors = lintEnabled ? collectAllLintErrors(root) : [];
       const lintDiagnostics = mapLintToDiagnostics(doc, lintErrors);
 
       // Merge into one collection

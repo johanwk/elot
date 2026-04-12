@@ -98,7 +98,7 @@ export function activate(context: vscode.ExtensionContext) {
   // Completion provider: insert existing resource by CURIE or label
   const completion = registerCompletionProvider();
 
-  // OMN syntax diagnostics: red squiggly underlines on invalid axiom values
+  // OMN syntax + ELOT lint diagnostics: squiggly underlines on invalid axiom values and ontology issues
   registerDiagnosticsProvider(context);
 
   // Import OWL ontology via elot-exporter.jar

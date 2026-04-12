@@ -14,16 +14,20 @@ import type { SlurpEntry } from "./buildSlurp.js";
 // ─── Constants ──────────────────────────────────────────────────
 
 /**
- * Known annotation properties that are always allowed in description
- * lists without being declared in the ontology.
+ * Known annotation properties and structural predicates that are always
+ * allowed in description lists without being declared in the ontology.
  *
- * Mirrors `elot-known-annotation-properties` from elot-lint.el.
+ * Mirrors `elot-known-annotation-properties` from elot-lint.el, plus
+ * `rdf:type` which is auto-injected by the parser (parseOrgWasm.ts
+ * infers it from the governing section's :ID: suffix and inserts a
+ * synthetic `rdf:type` description item).
  */
 const KNOWN_ANNOTATION_PROPERTIES = new Set([
   "rdfs:label",
   "rdfs:comment",
   "rdfs:seeAlso",
   "rdfs:isDefinedBy",
+  "rdf:type",
 ]);
 
 /**

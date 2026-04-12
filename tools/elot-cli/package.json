@@ -1,7 +1,7 @@
 {
   "name": "elot",
   "displayName": "Elot: Org-mode Ontology Editor",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "johanwk",
   "description": "Manchester Syntax generation for ontologies written in Org-mode",
   "icon": "images/elot-icon.png",
@@ -102,6 +102,11 @@
           "type": "string",
           "default": "java",
           "description": "Path to the Java executable (Java 21+ required for elot-exporter)"
+        },
+        "elot.lint.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable ELOT ontology lint checks (structural, CURIE validation, keyword appropriateness)"
         }
       }
     },

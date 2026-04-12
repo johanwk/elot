@@ -255,17 +255,11 @@ function main() {
     ]);
     const slurp = new Map<string, SlurpEntry>();
     const diags = checkDescriptionListCuries(root, slurp);
-    // "rdf:type" matches CURIE regex and is NOT a known annotation property
-    // or OMN keyword, so it would warn unless in slurp. But "Some plain text"
-    // and "123" don't match CURIE regex, so they're skipped.
-    assertCount(diags, 1, "non-CURIE tags");
-    assertHas(
-      diags,
-      "warning",
-      "rdf:type",
-      "non-CURIE tags rdf:type",
-    );
-    console.log("  non-CURIE tags (plain text skipped, rdf:type flagged): OK");
+    // "rdf:type" is now in KNOWN_ANNOTATION_PROPERTIES (it's auto-injected
+    // by the parser), "Some plain text" and "123" don't match CURIE regex.
+    // So no warnings should be produced.
+    assertCount(diags, 0, "non-CURIE tags");
+    console.log("  non-CURIE tags (plain text skipped, rdf:type known): OK");
     passed++;
   }
 
