@@ -676,5 +676,105 @@ a failure position, the error message indicates the exact column."
  :trust 'high)
 
 
+;;; ---- OMN keyword appropriateness per section type ----
+
+;; Each section type maps to the OMN keywords that are valid in description
+;; lists under its headings, per the OWL 2 Manchester Syntax specification
+;; (W3C Recommendation, Section 2.5 Frames and Miscellaneous).
+
+(defconst elot-omn-keywords-by-section
+  '(("-datatypes"
+     "EquivalentTo")
+    ("-class-hierarchy"
+     "SubClassOf" "EquivalentTo" "DisjointWith" "DisjointUnionOf" "HasKey")
+    ("-object-property-hierarchy"
+     "SubPropertyOf" "EquivalentTo" "DisjointWith" "Domain" "Range"
+     "Characteristics" "InverseOf" "SubPropertyChain")
+    ("-data-property-hierarchy"
+     "SubPropertyOf" "EquivalentTo" "DisjointWith" "Domain" "Range"
+     "Characteristics")
+    ("-annotation-property-hierarchy"
+     "SubPropertyOf" "Domain" "Range")
+    ("-individuals"
+     "Types" "Facts" "SameAs" "DifferentFrom"))
+  "Alist mapping ELOT section ID suffixes to allowed OMN frame keywords.
+Derived from the OWL 2 Manchester Syntax specification, Section 2.5.")
+
+(declare-function elot-governing-section-id "elot-tangle")
+
+(defun elot--section-suffix-from-id (section-id)
+  "Extract the well-known section suffix from SECTION-ID.
+Return e.g. \"-class-hierarchy\" from \"pizza-class-hierarchy\",
+or nil if no known suffix matches."
+  (when section-id
+    (cond
+     ((string-suffix-p "-datatypes" section-id) "-datatypes")
+     ((string-suffix-p "-class-hierarchy" section-id) "-class-hierarchy")
+     ((string-suffix-p "-object-property-hierarchy" section-id)
+      "-object-property-hierarchy")
+     ((string-suffix-p "-data-property-hierarchy" section-id)
+      "-data-property-hierarchy")
+     ((string-suffix-p "-annotation-property-hierarchy" section-id)
+      "-annotation-property-hierarchy")
+     ((string-suffix-p "-individuals" section-id) "-individuals"))))
+
+(defun elot-check-omn-keyword-appropriateness (tree)
+  "ELOT rule: check that OMN keywords are appropriate for their section context.
+For each description list item whose tag is an OMN keyword, verify that the
+keyword is valid for the enclosing ELOT section (Classes, Object properties,
+etc.) according to the OWL 2 Manchester Syntax specification."
+  (let (issues)
+    (org-element-map tree 'item
+      (lambda (item)
+        (let* ((parent (org-element-property :parent item))
+               (type (org-element-property :type parent)))
+          (when (eq type 'descriptive)
+            (let* ((tag (org-element-property :tag item))
+                   (term (org-element-interpret-data tag)))
+              ;; Only check OMN frame keywords (not annotation CURIEs like
+              ;; rdfs:comment).  Skip "misc" keywords (EquivalentClasses,
+              ;; DisjointClasses, etc.) which are not bound to any frame
+              ;; and are valid in any resource-defining section.
+              (when (and (member term elot-omn-all-keywords)
+                         (not (member term elot-omn-misc-keywords)))
+                (let* ((section-id
+                        (save-excursion
+                          (goto-char (org-element-property :begin item))
+                          (elot-governing-section-id)))
+                       (suffix (elot--section-suffix-from-id section-id))
+                       (allowed (cdr (assoc suffix elot-omn-keywords-by-section))))
+                  ;; Only flag if we are inside a known section and the
+                  ;; keyword is NOT in the allowed list for that section
+                  (when (and suffix allowed
+                             (not (member term allowed)))
+                    (let ((section-name
+                           (cond
+                            ((string= suffix "-datatypes") "Datatypes")
+                            ((string= suffix "-class-hierarchy") "Classes")
+                            ((string= suffix "-object-property-hierarchy")
+                             "Object properties")
+                            ((string= suffix "-data-property-hierarchy")
+                             "Data properties")
+                            ((string= suffix "-annotation-property-hierarchy")
+                             "Annotation properties")
+                            ((string= suffix "-individuals") "Individuals"))))
+                      (push (list (org-element-property :begin item)
+                                  (propertize
+                                   (format "ERROR: \"%s\" is not valid in %s section (allowed: %s)"
+                                           term section-name
+                                           (string-join allowed ", "))
+                                   'face 'error))
+                            issues)))))))))
+      tree)
+    issues))
+
+(org-lint-add-checker
+ 'elot/omn-keyword-appropriateness
+ "ELOT: check OMN keywords are appropriate for their section type"
+ #'elot-check-omn-keyword-appropriateness
+ :categories '(default elot)
+ :trust 'high)
+
+
 (provide 'elot-lint)
 ;;; elot-lint.el ends here

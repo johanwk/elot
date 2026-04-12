@@ -74,26 +74,44 @@
   "^\\([a-zA-Z][-a-zA-Z0-9_.]*\\|\\):\\([-[:word:]_./]*\\)$")
 
 (defun elot-context-type ()
-  "Retrieve value of property ELOT-context-type for a governing heading.
-This will return \"ontology\" if point is under a heading that
-declares an ontology."
-  (org-entry-get-with-inheritance "ELOT-context-type"))
-(defun elot-context-localname ()
-  "Retrieve value of property ELOT-context-localname for a governing heading.
-This will return the localname of the ontology
-if point is under a heading that declares an ontology."
-  (org-entry-get-with-inheritance "ELOT-context-localname"))
-(defun elot-default-prefix ()
-  "Retrieve value of property ELOT-default-prefix for a governing heading.
-This will return the default prefix for ontology resources
-if point is under a heading that declares an ontology."
-  (org-entry-get-with-inheritance "ELOT-default-prefix"))
-(defun elot-governing-hierarchy ()
-  "Return the governing hierarchy ID if inside a hierarchy section, or nil."
-  (let ((this-ID (org-entry-get-with-inheritance "ID")))
-    (when (and this-ID
-               (string-match-p "-hierarchy$" this-ID))
-      this-ID)))
+    "Retrieve value of property ELOT-context-type for a governing heading.
+  This will return \"ontology\" if point is under a heading that
+  declares an ontology."
+    (org-entry-get-with-inheritance "ELOT-context-type"))
+  (defun elot-context-localname ()
+    "Retrieve value of property ELOT-context-localname for a governing heading.
+  This will return the localname of the ontology
+  if point is under a heading that declares an ontology."
+    (org-entry-get-with-inheritance "ELOT-context-localname"))
+  (defun elot-default-prefix ()
+    "Retrieve value of property ELOT-default-prefix for a governing heading.
+  This will return the default prefix for ontology resources
+  if point is under a heading that declares an ontology."
+    (org-entry-get-with-inheritance "ELOT-default-prefix"))
+  (defun elot-governing-hierarchy ()
+    "Return the governing hierarchy ID if inside a hierarchy section, or nil."
+    (let ((this-ID (org-entry-get-with-inheritance "ID")))
+      (when (and this-ID
+                 (string-match-p "-hierarchy$" this-ID))
+        this-ID)))
+
+  (defun elot-governing-section-id ()
+    "Return the governing ELOT section ID, or nil.
+Recognizes all well-known section suffixes: -datatypes,
+-class-hierarchy, -object-property-hierarchy,
+-data-property-hierarchy, -annotation-property-hierarchy,
+-individuals, and -ontology-declaration."
+    (let ((this-ID (org-entry-get-with-inheritance "ID")))
+      (when (and this-ID
+                 (string-match-p
+                  (concat "\\(?:-datatypes\\|-class-hierarchy"
+                          "\\|-object-property-hierarchy"
+                          "\\|-data-property-hierarchy"
+                          "\\|-annotation-property-hierarchy"
+                          "\\|-individuals"
+                          "\\|-ontology-declaration\\)$")
+                  this-ID))
+        this-ID)))
 
 (defun elot-at-ontology-heading ()
   "Return TRUE if point is in a heading that declares ontology."

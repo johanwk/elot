@@ -153,6 +153,24 @@ pipeline.
       (when (and this-ID
                  (string-match-p "-hierarchy$" this-ID))
         this-ID)))
+
+  (defun elot-governing-section-id ()
+    "Return the governing ELOT section ID, or nil.
+Recognizes all well-known section suffixes: -datatypes,
+-class-hierarchy, -object-property-hierarchy,
+-data-property-hierarchy, -annotation-property-hierarchy,
+-individuals, and -ontology-declaration."
+    (let ((this-ID (org-entry-get-with-inheritance "ID")))
+      (when (and this-ID
+                 (string-match-p
+                  (concat "\\(?:-datatypes\\|-class-hierarchy"
+                          "\\|-object-property-hierarchy"
+                          "\\|-data-property-hierarchy"
+                          "\\|-annotation-property-hierarchy"
+                          "\\|-individuals"
+                          "\\|-ontology-declaration\\)$")
+                  this-ID))
+        this-ID)))
 #+end_src
 
 ***** Looking at
