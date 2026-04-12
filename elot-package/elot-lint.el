@@ -48,6 +48,39 @@
   "Return t when point is inside any :resourcedefs: yes section."
   (string-equal (org-entry-get-with-inheritance "resourcedefs") "yes"))
 
+(defun elot--inside-ontology-context-p ()
+  "Return t when point is under a heading with :ELOT-context-type: ontology."
+  (string-equal (org-entry-get-with-inheritance "ELOT-context-type") "ontology"))
+
+(defun elot--inside-elot-scope-p ()
+  "Return t when point is inside an ELOT ontology context AND a :resourcedefs: section.
+This is the combined guard for ELOT-specific lint checkers: only items
+under a heading with :ELOT-context-type: ontology that also inherit
+:resourcedefs: yes should be checked."
+  (and (elot--inside-ontology-context-p)
+       (elot--inside-resourcedefs-p)))
+
+(defun elot--heading-nodeclare-p ()
+  "Return t when the heading at point or any ancestor has tag :nodeclare:.
+Walks up the outline tree checking each ancestor's tags."
+  (save-excursion
+    (let ((found nil))
+      (while (and (not found) (org-up-heading-safe))
+        (when (member "nodeclare" (org-get-tags nil t))
+          (setq found t)))
+      found)))
+
+(defun elot--item-under-nodeclare-p (pos)
+  "Return t when POS is under a heading tagged :nodeclare:.
+Checks the immediately enclosing headline and its ancestors."
+  (save-excursion
+    (goto-char pos)
+    (if (org-before-first-heading-p)
+        nil
+      (org-back-to-heading-or-point-min t)
+      (or (member "nodeclare" (org-get-tags nil t))
+          (elot--heading-nodeclare-p)))))
+
 (declare-function elot-entity-from-header "elot-tangle")
 (declare-function elot-unprefix-uri "elot-tangle")
 (declare-function elot-context-type "elot-tangle")
@@ -72,7 +105,7 @@
     (org-element-map tree 'headline
       (lambda (hl)
         (goto-char (org-element-property :begin hl))
-        (when (and (elot--inside-resourcedefs-p)
+        (when (and (elot--inside-elot-scope-p)
                    (not (elot--resourcedefs-here-p)))
           (let* ((title (org-get-heading nil t))
                  (tags  (org-element-property :tags hl))
@@ -304,26 +337,28 @@ Add warnings or errors to ISSUES at POINT."
         (let* ((parent (org-element-property :parent item))
                (type (org-element-property :type parent)))
           (when (eq type 'descriptive)
-            (let* ((tag (org-element-property :tag item))
-                   (term (org-element-interpret-data tag)))
-              (when (and (stringp term)
-                         (string-match "\\`[-_./[:alnum:]]*:[-_/.[:alnum:]]*\\'" term))
-                (unless (or
-                         ;; allowed exceptions
-                         (member term elot-known-annotation-properties)
-                         ;; declared in elot-slurp as AnnotationProperty
-                         (cl-find term elot-slurp
-                                  :key #'car
-                                  :test #'string=
-                                  :if (lambda (x)
-                                        (let ((plist (nth 2 x)))
-                                          (and (plist-get plist "rdf:type")
-                                               (string= (plist-get plist "rdf:type")
-                                                        "owl:AnnotationProperty"))))))
-                  (push (list (org-element-property :begin item)
-                              (propertize (format "WARNING: Unknown or invalid annotation property: %s" term)
-                                          'face 'warning))
-                        issues)))))))
+            (goto-char (org-element-property :begin item))
+            (when (elot--inside-elot-scope-p)
+              (let* ((tag (org-element-property :tag item))
+                     (term (org-element-interpret-data tag)))
+                (when (and (stringp term)
+                           (string-match "\\`[-_./[:alnum:]]*:[-_/.[:alnum:]]*\\'" term))
+                  (unless (or
+                           ;; allowed exceptions
+                           (member term elot-known-annotation-properties)
+                           ;; declared in elot-slurp as AnnotationProperty
+                           (cl-find term elot-slurp
+                                    :key #'car
+                                    :test #'string=
+                                    :if (lambda (x)
+                                          (let ((plist (nth 2 x)))
+                                            (and (plist-get plist "rdf:type")
+                                                 (string= (plist-get plist "rdf:type")
+                                                          "owl:AnnotationProperty"))))))
+                    (push (list (org-element-property :begin item)
+                                (propertize (format "WARNING: Unknown or invalid annotation property: %s" term)
+                                            'face 'warning))
+                          issues))))))))
       tree)
     issues))
 
@@ -376,54 +411,56 @@ and not annotation properties, and that parentheses are balanced."
     (org-element-map tree 'item
       (lambda (item)
         (let* ((parent (org-element-property :parent item))
-               (type (org-element-property :type parent))
-               (hierarchy-id
-                (save-excursion
-                  (goto-char (org-element-property :begin item))
-                  (elot-governing-hierarchy)))
-               (in-annotation-section
-                (and hierarchy-id
-                     (string-match-p "annotation-property-hierarchy$" hierarchy-id))))
+               (type (org-element-property :type parent)))
           (when (eq type 'descriptive)
-            (let* ((tag (org-element-property :tag item))
-                   (term (org-element-interpret-data tag))
-                   ;; exclude sublists from contents
-                   (contents (org-element-interpret-data
-                              (seq-remove (lambda (child)
-                                            (eq (org-element-type child) 'plain-list))
-                                          (org-element-contents item)))))
-              ;; Only apply check if term is a Manchester keyword
-              (when (member term elot-omn-all-keywords)
-                ;; Check CURIEs
-                (let ((curies (seq-filter (lambda (word)
-                                            (and (string-match "\\`[-_./[:alnum:]]*:[-_/.[:alnum:]]*\\'" word)
-                                                 (not (string-match "\\`https?://" word))))
-                                          (split-string contents "[ \n\t,]+" t))))
-                  (dolist (curie curies)
-                    (let ((entry (cl-find curie elot-slurp :key #'car :test #'string=)))
-                      (cond
-                       ((or (member curie elot-owl-builtin-resources)
-                            entry)
-                        ;; Built-in or known: only warn if it’s an annotation property
-                        (when (and entry
-                                   (not in-annotation-section)
-                                   (string= (plist-get (nth 2 entry) "rdf:type" #'equal)
-                                            "owl:AnnotationProperty"))
-                          (push (list (org-element-property :begin item)
-                                      (propertize (format "WARNING: Annotation property used in axiom: %s" curie)
-                                                  'face 'warning))
-                                issues)))
-                       (t
-                        (push (list (org-element-property :begin item)
-                                    (propertize (format "WARNING: Unknown CURIE in axiom: %s" curie)
-                                                'face 'warning))
-                              issues))))))
-                ;; Check balanced parentheses
-                (unless (elot-string-balanced-parentheses-p contents)
-                  (push (list (org-element-property :begin item)
-                              (propertize "WARNING: Unbalanced parentheses in axiom value"
-                                          'face 'warning))
-                        issues)))))))
+            (goto-char (org-element-property :begin item))
+            (when (elot--inside-elot-scope-p)
+              (let* ((hierarchy-id
+                      (save-excursion
+                        (goto-char (org-element-property :begin item))
+                        (elot-governing-hierarchy)))
+                     (in-annotation-section
+                      (and hierarchy-id
+                           (string-match-p "annotation-property-hierarchy$" hierarchy-id))))
+                (let* ((tag (org-element-property :tag item))
+                       (term (org-element-interpret-data tag))
+                       ;; exclude sublists from contents
+                       (contents (org-element-interpret-data
+                                  (seq-remove (lambda (child)
+                                                (eq (org-element-type child) 'plain-list))
+                                              (org-element-contents item)))))
+                  ;; Only apply check if term is a Manchester keyword
+                  (when (member term elot-omn-all-keywords)
+                    ;; Check CURIEs
+                    (let ((curies (seq-filter (lambda (word)
+                                                (and (string-match "\\`[-_./[:alnum:]]*:[-_/.[:alnum:]]*\\'" word)
+                                                     (not (string-match "\\`https?://" word))))
+                                              (split-string contents "[ \n\t,]+" t))))
+                      (dolist (curie curies)
+                        (let ((entry (cl-find curie elot-slurp :key #'car :test #'string=)))
+                          (cond
+                           ((or (member curie elot-owl-builtin-resources)
+                                entry)
+                            ;; Built-in or known: only warn if it's an annotation property
+                            (when (and entry
+                                       (not in-annotation-section)
+                                       (string= (plist-get (nth 2 entry) "rdf:type" #'equal)
+                                                "owl:AnnotationProperty"))
+                              (push (list (org-element-property :begin item)
+                                          (propertize (format "WARNING: Annotation property used in axiom: %s" curie)
+                                                      'face 'warning))
+                                    issues)))
+                           (t
+                            (push (list (org-element-property :begin item)
+                                        (propertize (format "WARNING: Unknown CURIE in axiom: %s" curie)
+                                                    'face 'warning))
+                                  issues))))))
+                    ;; Check balanced parentheses
+                    (unless (elot-string-balanced-parentheses-p contents)
+                      (push (list (org-element-property :begin item)
+                                  (propertize "WARNING: Unbalanced parentheses in axiom value"
+                                              'face 'warning))
+                            issues)))))))))
       tree)
     issues))
 
@@ -636,35 +673,40 @@ where parsing stopped (an integer), or nil if position is unknown."
 For each description list item whose tag is an OMN keyword with a known
 parser (see `elot-omn-keyword-parser-alist'), parse the value and report
 an error if it does not conform to the grammar.  When the parser reports
-a failure position, the error message indicates the exact column."
+a failure position, the error message indicates the exact column.
+Only items inside an ELOT ontology context (:ELOT-context-type: ontology)
+and :resourcedefs: yes section are checked.  Headings tagged :nodeclare:
+are skipped."
   (let (issues)
     (org-element-map tree 'item
       (lambda (item)
         (let* ((parent (org-element-property :parent item))
                (type (org-element-property :type parent)))
           (when (eq type 'descriptive)
-            (let* ((tag (org-element-property :tag item))
-                   (term (org-element-interpret-data tag))
-                   (parser-fn (cdr (assoc term elot-omn-keyword-parser-alist))))
-              (when parser-fn
-                ;; Extract the value text, excluding sublists (meta-annotations)
-                (let* ((contents-raw
-                        (org-element-interpret-data
-                         (seq-remove (lambda (child)
-                                       (eq (org-element-type child) 'plain-list))
-                                     (org-element-contents item))))
-                       ;; Clean up: remove leading/trailing whitespace and
-                       ;; trailing newlines left by org-element-interpret-data
-                       (contents (string-trim contents-raw))
-                       (result (when (not (string-empty-p contents))
-                                 (funcall parser-fn contents))))
-                  (when (and (not (string-empty-p contents))
-                             (not (eq result t)))
-                    (push (list (org-element-property :begin item)
-                                (propertize
-                                 (elot--format-parse-error term contents result)
-                                 'face 'error))
-                          issues))))))))
+            (goto-char (org-element-property :begin item))
+            (when (elot--inside-elot-scope-p)
+              (let* ((tag (org-element-property :tag item))
+                     (term (org-element-interpret-data tag))
+                     (parser-fn (cdr (assoc term elot-omn-keyword-parser-alist))))
+                (when parser-fn
+                  ;; Extract the value text, excluding sublists (meta-annotations)
+                  (let* ((contents-raw
+                          (org-element-interpret-data
+                           (seq-remove (lambda (child)
+                                         (eq (org-element-type child) 'plain-list))
+                                       (org-element-contents item))))
+                         ;; Clean up: remove leading/trailing whitespace and
+                         ;; trailing newlines left by org-element-interpret-data
+                         (contents (string-trim contents-raw))
+                         (result (when (not (string-empty-p contents))
+                                   (funcall parser-fn contents))))
+                    (when (and (not (string-empty-p contents))
+                               (not (eq result t)))
+                      (push (list (org-element-property :begin item)
+                                  (propertize
+                                   (elot--format-parse-error term contents result)
+                                   'face 'error))
+                            issues)))))))))
       tree)
     issues))
 
@@ -722,49 +764,53 @@ or nil if no known suffix matches."
   "ELOT rule: check that OMN keywords are appropriate for their section context.
 For each description list item whose tag is an OMN keyword, verify that the
 keyword is valid for the enclosing ELOT section (Classes, Object properties,
-etc.) according to the OWL 2 Manchester Syntax specification."
+etc.) according to the OWL 2 Manchester Syntax specification.
+Only checks items inside an ELOT ontology context and :resourcedefs: section.
+Headings tagged :nodeclare: are skipped."
   (let (issues)
     (org-element-map tree 'item
       (lambda (item)
         (let* ((parent (org-element-property :parent item))
                (type (org-element-property :type parent)))
           (when (eq type 'descriptive)
-            (let* ((tag (org-element-property :tag item))
-                   (term (org-element-interpret-data tag)))
-              ;; Only check OMN frame keywords (not annotation CURIEs like
-              ;; rdfs:comment).  Skip "misc" keywords (EquivalentClasses,
-              ;; DisjointClasses, etc.) which are not bound to any frame
-              ;; and are valid in any resource-defining section.
-              (when (and (member term elot-omn-all-keywords)
-                         (not (member term elot-omn-misc-keywords)))
-                (let* ((section-id
-                        (save-excursion
-                          (goto-char (org-element-property :begin item))
-                          (elot-governing-section-id)))
-                       (suffix (elot--section-suffix-from-id section-id))
-                       (allowed (cdr (assoc suffix elot-omn-keywords-by-section))))
-                  ;; Only flag if we are inside a known section and the
-                  ;; keyword is NOT in the allowed list for that section
-                  (when (and suffix allowed
-                             (not (member term allowed)))
-                    (let ((section-name
-                           (cond
-                            ((string= suffix "-datatypes") "Datatypes")
-                            ((string= suffix "-class-hierarchy") "Classes")
-                            ((string= suffix "-object-property-hierarchy")
-                             "Object properties")
-                            ((string= suffix "-data-property-hierarchy")
-                             "Data properties")
-                            ((string= suffix "-annotation-property-hierarchy")
-                             "Annotation properties")
-                            ((string= suffix "-individuals") "Individuals"))))
-                      (push (list (org-element-property :begin item)
-                                  (propertize
-                                   (format "ERROR: \"%s\" is not valid in %s section (allowed: %s)"
-                                           term section-name
-                                           (string-join allowed ", "))
-                                   'face 'error))
-                            issues)))))))))
+            (goto-char (org-element-property :begin item))
+            (when (elot--inside-elot-scope-p)
+              (let* ((tag (org-element-property :tag item))
+                     (term (org-element-interpret-data tag)))
+                ;; Only check OMN frame keywords (not annotation CURIEs like
+                ;; rdfs:comment).  Skip "misc" keywords (EquivalentClasses,
+                ;; DisjointClasses, etc.) which are not bound to any frame
+                ;; and are valid in any resource-defining section.
+                (when (and (member term elot-omn-all-keywords)
+                           (not (member term elot-omn-misc-keywords)))
+                  (let* ((section-id
+                          (save-excursion
+                            (goto-char (org-element-property :begin item))
+                            (elot-governing-section-id)))
+                         (suffix (elot--section-suffix-from-id section-id))
+                         (allowed (cdr (assoc suffix elot-omn-keywords-by-section))))
+                    ;; Only flag if we are inside a known section and the
+                    ;; keyword is NOT in the allowed list for that section
+                    (when (and suffix allowed
+                               (not (member term allowed)))
+                      (let ((section-name
+                             (cond
+                              ((string= suffix "-datatypes") "Datatypes")
+                              ((string= suffix "-class-hierarchy") "Classes")
+                              ((string= suffix "-object-property-hierarchy")
+                               "Object properties")
+                              ((string= suffix "-data-property-hierarchy")
+                               "Data properties")
+                              ((string= suffix "-annotation-property-hierarchy")
+                               "Annotation properties")
+                              ((string= suffix "-individuals") "Individuals"))))
+                        (push (list (org-element-property :begin item)
+                                    (propertize
+                                     (format "ERROR: \"%s\" is not valid in %s section (allowed: %s)"
+                                             term section-name
+                                             (string-join allowed ", "))
+                                     'face 'error))
+                              issues))))))))))
       tree)
     issues))
 
