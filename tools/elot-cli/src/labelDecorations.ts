@@ -25,6 +25,12 @@ import { parseOrg } from "./parseOrgWasm.js";
  */
 const CURIE_GLOBAL_RE = /(?:[a-zA-Z][-a-zA-Z0-9_.]*|):[-\w_./]+/g;
 
+/**
+ * Global regex matching full URIs in angle brackets like <http://...>.
+ * Must use /g flag for iterating over matches.
+ */
+const ANGLE_URI_GLOBAL_RE = /<(https?:\/\/[^>]+)>/g;
+
 // ─── State ───────────────────────────────────────────────────────
 
 /** Whether label display is currently active */
@@ -121,7 +127,7 @@ function applyDecorationsToEditor(editor: vscode.TextEditor): void {
 
   const text = doc.getText();
 
-  // Reset regex lastIndex
+  // --- Match CURIEs (e.g. obo:BFO_0000001) ---
   CURIE_GLOBAL_RE.lastIndex = 0;
   let match: RegExpExecArray | null;
 
@@ -135,6 +141,32 @@ function applyDecorationsToEditor(editor: vscode.TextEditor): void {
 
     const startPos = doc.positionAt(match.index);
     const endPos = doc.positionAt(match.index + curie.length);
+    const range = new vscode.Range(startPos, endPos);
+
+    const label = entry.label;
+    let ranges = rangesByLabel.get(label);
+    if (!ranges) {
+      ranges = [];
+      rangesByLabel.set(label, ranges);
+    }
+    ranges.push(range);
+  }
+
+  // --- Match full URIs in angle brackets (e.g. <http://...>) ---
+  ANGLE_URI_GLOBAL_RE.lastIndex = 0;
+
+  while ((match = ANGLE_URI_GLOBAL_RE.exec(text)) !== null) {
+    // The slurp map stores URIs as "<http://...>" (with angle brackets)
+    const uriKey = `<${match[1]}>`;
+    const entry = slurpMap.get(uriKey);
+    if (!entry) continue;
+
+    // Don't decorate if label is same as URI (no benefit)
+    if (entry.label === entry.uri) continue;
+
+    // Decorate the entire <http://...> including angle brackets
+    const startPos = doc.positionAt(match.index);
+    const endPos = doc.positionAt(match.index + match[0].length);
     const range = new vscode.Range(startPos, endPos);
 
     const label = entry.label;

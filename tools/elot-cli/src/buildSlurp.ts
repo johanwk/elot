@@ -10,6 +10,17 @@
 import type { ElotNode, DescriptionItem } from "./types.js";
 
 /**
+ * Strip enclosing quotes and language tag from a label string.
+ * E.g. '"independent continuant"@en' → 'independent continuant'
+ *      '"entity"@en' → 'entity'
+ *      'plain label' → 'plain label' (unchanged)
+ */
+function stripLangTag(label: string): string {
+  const m = label.match(/^"(.*)"@[a-zA-Z-]+$/);
+  return m ? m[1] : label;
+}
+
+/**
  * A single "slurp" entry: everything we know about one OWL entity
  * from the Org-mode source.
  */
@@ -43,7 +54,7 @@ export function buildSlurp(root: ElotNode): Map<string, SlurpEntry> {
 
     if (node.uri) {
       const uri = node.uri;
-      const label = node.label ?? uri;
+      const label = stripLangTag(node.label ?? uri);
 
       // Collect extra properties from descriptions
       const properties: Array<{ tag: string; value: string }> = [];

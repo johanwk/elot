@@ -25,6 +25,11 @@ const CURIE_RE = /(?:[a-zA-Z][-a-zA-Z0-9_.]*|):[-\w_./]+/;
 // Matches a full URI wrapped in angle brackets like <http://...>
 const ANGLE_URI_RE = /<(https?:\/\/[^>]+)>/;
 
+// Matches a bare http(s) URL (without angle brackets).
+// Used as a fallback when the cursor is on the URL text itself, where
+// VS Code's built-in link detection would otherwise be the only hover.
+const BARE_URL_RE = /https?:\/\/[^\s>,)}\]]+/;
+
 /**
  * At a given document position, try to find a CURIE or <URI> under the cursor.
  * Returns [the matched string (as stored in the slurp map), the Range] or null.
@@ -40,15 +45,24 @@ function curieAtPosition(
     return [text, curieRange];
   }
 
-  // Try angle-bracket URI
+  // Try angle-bracket URI (cursor on < or >)
   const uriRange = document.getWordRangeAtPosition(position, ANGLE_URI_RE);
   if (uriRange) {
     const rawText = document.getText(uriRange);
-    // The slurp map stores URIs as "<http://...>"
     const match = rawText.match(ANGLE_URI_RE);
     if (match) {
       return [`<${match[1]}>`, uriRange];
     }
+  }
+
+  // Try bare URL (cursor on the http://... text inside angle brackets).
+  // VS Code's built-in link detector matches this region too, but both
+  // hovers are shown — ours with entity details, theirs with "Follow link".
+  const bareRange = document.getWordRangeAtPosition(position, BARE_URL_RE);
+  if (bareRange) {
+    const bareUrl = document.getText(bareRange);
+    // Look up as "<url>" since that's how the slurp map stores full URIs
+    return [`<${bareUrl}>`, bareRange];
   }
 
   return null;
@@ -59,10 +73,18 @@ function curieAtPosition(
 function renderHover(entry: SlurpEntry): vscode.MarkdownString {
   const md = new vscode.MarkdownString();
   md.supportThemeIcons = true;
+  md.isTrusted = true;
 
   // Header: label (bold) — URI
   md.appendMarkdown(`**${escapeMarkdown(entry.label)}**`);
-  md.appendMarkdown(`\n\n\`${entry.uri}\``);
+
+  // Show URI — if it's a full URI (angle-bracket form), make it a clickable link
+  const fullUriMatch = entry.uri.match(/^<(https?:\/\/.+)>$/);
+  if (fullUriMatch) {
+    md.appendMarkdown(`\n\n[${escapeMarkdown(fullUriMatch[1])}](${fullUriMatch[1]})`);
+  } else {
+    md.appendMarkdown(`\n\n\`${entry.uri}\``);
+  }
 
   // Type
   if (entry.rdfType) {
