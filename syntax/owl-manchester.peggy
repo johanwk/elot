@@ -19,7 +19,7 @@ AtomicExpression
   / ClassIRI
   / "Thing"
   / "Nothing"
-  / "{" WS IndividualList WS "}"
+  / "{" OWS IndividualList OWS "}"
   / "(" OWS ClassExpression OWS ")"
 
 // --- SubPropertyChain ---
@@ -63,7 +63,7 @@ DataPrimary
 DataAtomic
   = DatatypeRestriction
   / DatatypeIRI
-  / "{" WS LiteralList WS "}"
+  / "{" OWS LiteralList OWS "}"
   / "(" OWS DataRange OWS ")"
 
 // Faceted datatype restriction: Datatype [ facet value, ... ]
@@ -103,10 +103,10 @@ ClassExpression2List         = ClassExpression (OWS "," OWS ClassExpression)+
 ObjectPropertyExpressionList = ObjectPropertyExpression (OWS "," OWS ObjectPropertyExpression)*
 // objectProperty2List / dataProperty2List: at least 2 (for misc DisjointProperties, EquivalentProperties)
 ObjectPropertyExpression2List = ObjectPropertyExpression (OWS "," OWS ObjectPropertyExpression)+
-IndividualList = Individual (WS "," WS Individual)*
+IndividualList = Individual (OWS "," OWS Individual)*
 // individual2List: at least 2 individuals (for misc SameIndividual, DifferentIndividuals)
-Individual2List = Individual (WS "," WS Individual)+
-LiteralList    = Literal (WS "," WS Literal)*
+Individual2List = Individual (OWS "," OWS Individual)+
+LiteralList    = Literal (OWS "," OWS Literal)*
 
 // --- Terminals & Identifiers ---
 ClassIRI          = IRI
