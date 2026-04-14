@@ -99,12 +99,13 @@ export function parseWithRule(
 }
 
 /**
- * Check the syntax of an OMN axiom value for a given keyword.
- *
- * @param keyword  The OMN keyword (e.g. "SubClassOf", "Domain", "Facts")
- * @param value    The axiom value string (after " :: ")
- * @returns        SyntaxResult — ok: true if valid, or error info
+ * Keywords whose values should be parsed laxly: try ClassExpressionList
+ * first, then fall back to DataRange.  This lets "Range" and "Domain"
+ * accept both class expressions (object properties) and data ranges
+ * (data properties) without section-context awareness.
  */
+const LAX_CLASS_OR_DATA_KEYWORDS = new Set(["Domain", "Range"]);
+
 export function checkOmnSyntax(
   keyword: string,
   value: string
@@ -114,5 +115,15 @@ export function checkOmnSyntax(
     // Unknown keyword — skip (don't flag as error)
     return { ok: true };
   }
-  return parseWithRule(value.trim(), startRule);
+
+  const trimmed = value.trim();
+
+  // For Domain/Range: try ClassExpressionList first, fall back to DataRange
+  if (LAX_CLASS_OR_DATA_KEYWORDS.has(keyword)) {
+    const classResult = parseWithRule(trimmed, "ClassExpressionList");
+    if (classResult.ok) return classResult;
+    return parseWithRule(trimmed, "DataRange");
+  }
+
+  return parseWithRule(trimmed, startRule);
 }

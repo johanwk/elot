@@ -53,7 +53,8 @@
   (string-equal (org-entry-get-with-inheritance "ELOT-context-type") "ontology"))
 
 (defun elot--inside-elot-scope-p ()
-  "Return t when point is inside an ELOT ontology context AND a :resourcedefs: section.
+  "Return t when point is inside
+an ELOT ontology context AND a :resourcedefs: section.
 This is the combined guard for ELOT-specific lint checkers: only items
 under a heading with :ELOT-context-type: ontology that also inherit
 :resourcedefs: yes should be checked."
@@ -482,8 +483,8 @@ and not annotation properties, and that parentheses are balanced."
     ("EquivalentTo"   . elot-parse-class-expression-list)
     ("DisjointWith"   . elot-parse-class-expression-list)
     ("DisjointUnionOf" . elot-parse-class-expression-list)
-    ("Domain"         . elot-parse-class-expression-list)
-    ("Range"          . elot-parse-class-expression-list)
+    ("Domain"         . elot-parse-class-or-data-range)
+    ("Range"          . elot-parse-class-or-data-range)
     ("Types"          . elot-parse-class-expression-list)
     ("InverseOf"      . elot-parse-property-expression-list)
     ("SubPropertyOf"  . elot-parse-property-expression-list)
@@ -499,6 +500,19 @@ and not annotation properties, and that parentheses are balanced."
     ("SameIndividual"       . elot-parse-individual-2-list)
     ("DifferentIndividuals" . elot-parse-individual-2-list))
   "Alist mapping OMN keywords to their PEG parser entry-point functions.")
+
+(defun elot-parse-class-or-data-range (input)
+  "Parse INPUT as either a class expression list or a data range.
+Tries `elot-parse-class-expression-list' first; if that fails, falls
+back to `elot-parse-data-range'.  This allows \='Range\=' and \='Domain\='
+to accept both class expressions (object properties) and data ranges
+(data properties) without requiring section-context awareness.
+Return t if the entire string is consumed, or the 1-based column
+position where parsing stopped on failure."
+  (let ((result (elot-parse-class-expression-list input)))
+    (if (eq result t)
+        t
+      (elot-parse-data-range input))))
 
 (defun elot-parse-class-expression-list (input)
   "Parse INPUT as a comma-separated list of OWL class expressions.
