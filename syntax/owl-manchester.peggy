@@ -44,8 +44,13 @@ Restriction
   / ObjectPropertyExpression WS "Self"
 
 // --- Relational Expressions ---
+// The OMN spec says: inverseObjectProperty ::= 'inverse' objectPropertyIRI
+// but tools like Protégé and the OWL API also accept the parenthesized form:
+//   inverse ( objectPropertyIRI )
+// We support both.
 ObjectPropertyExpression
-  = "inverse" WS ObjectPropertyIRI
+  = "inverse" WS "(" OWS ObjectPropertyIRI OWS ")"
+  / "inverse" WS ObjectPropertyIRI
   / ObjectPropertyIRI
 
 // --- Data Ranges ---
