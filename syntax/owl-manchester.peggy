@@ -73,7 +73,7 @@ DataAtomic
 
 // Faceted datatype restriction: Datatype [ facet value, ... ]
 DatatypeRestriction
-  = DatatypeIRI WS "[" OWS FacetRestriction (OWS "," OWS FacetRestriction)* OWS "]"
+  = DatatypeIRI OWS "[" OWS FacetRestriction (OWS "," OWS FacetRestriction)* OWS "]"
 
 FacetRestriction
   = Facet WS Literal

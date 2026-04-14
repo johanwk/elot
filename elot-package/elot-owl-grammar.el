@@ -23,7 +23,7 @@
   (data-conjunction () (and data-primary (* (and ws "and" ws data-primary))))
   (data-primary () (or (and "not" ws data-primary) data-atomic))
   (data-atomic () (or datatype-restriction datatype-iri (and "{" ows literal-list ows "}") (and "(" ows data-range ows ")")))
-  (datatype-restriction () (and datatype-iri ws "[" ows facet-restriction (* (and ows "," ows facet-restriction)) ows "]"))
+  (datatype-restriction () (and datatype-iri ows "[" ows facet-restriction (* (and ows "," ows facet-restriction)) ows "]"))
   (facet-restriction () (and facet ws literal))
   (facet () (or "minLength" "maxLength" "length" "pattern" "langRange" "<=" ">=" "<" ">"))
   (fact () (or (and "not" ws object-property-iri ws (or literal individual)) (and object-property-iri ws (or literal individual))))

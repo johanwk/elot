@@ -63,11 +63,22 @@
   "List of all Manchester syntax keywords, both property and misc keywords.")
 
 (defvar elot-owl-builtin-resources
-  '("owl:Thing" "owl:Nothing" "xsd:string" "xsd:boolean" "xsd:decimal" "xsd:integer"
-    "xsd:float" "xsd:double" "xsd:dateTime" "xsd:time" "xsd:date" "xsd:gYear"
+  '("owl:Thing" "owl:Nothing" "owl:rational" "owl:real"
+    "xsd:string" "xsd:boolean" "xsd:decimal" "xsd:integer"
+    "xsd:float" "xsd:double" "xsd:dateTime" "xsd:dateTimeStamp"
+    "xsd:time" "xsd:date" "xsd:gYear"
     "xsd:gMonth" "xsd:gDay" "xsd:gYearMonth" "xsd:gMonthDay" "xsd:hexBinary"
     "xsd:base64Binary" "xsd:anyURI" "xsd:normalizedString" "xsd:token" "xsd:language"
-    "xsd:Name" "xsd:NCName" "xsd:NMTOKEN" "rdf:PlainLiteral")
+    "xsd:Name" "xsd:NCName" "xsd:NMTOKEN"
+    "xsd:nonNegativeInteger" "xsd:nonPositiveInteger"
+    "xsd:positiveInteger" "xsd:negativeInteger"
+    "xsd:long" "xsd:unsignedLong" "xsd:int" "xsd:unsignedInt"
+    "xsd:short" "xsd:unsignedShort" "xsd:byte" "xsd:unsignedByte"
+    "rdf:PlainLiteral" "rdf:XMLLiteral"
+    ;; OWL 2 section 3.2 constraining facets
+    "xsd:minInclusive" "xsd:maxInclusive" "xsd:minExclusive" "xsd:maxExclusive"
+    "xsd:minLength" "xsd:maxLength" "xsd:length" "xsd:pattern"
+    "rdf:langRange")
   "List of built-in OWL and XSD resources that are always considered known.")
 
 (defconst elot-puri-re 
@@ -721,7 +732,7 @@ Scans the hierarchy for nodes with `:prefixdefs \"yes\"' and adds their
     (setq-local org-link-abbrev-alist-local (nreverse new-abbrevs))))
 
 (defun elot-sanity-check-prefixes ()
-  "Ensure level 1 'Prefixes' headings have the required property drawer.
+  "Ensure level 1 `Prefixes' headings have the required property drawer.
 Silently adds :prefixdefs: yes if missing."
   (save-excursion
     (goto-char (point-min))
