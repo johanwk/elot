@@ -136,7 +136,7 @@ IndividualIRIList = Individual (WS "," WS Individual)*
 
 // BareName: an identifier that is NOT an OWL keyword.
 // Uses negative lookahead (!) to reject keywords as bare names.
-BareName = !KeywordBoundary LocalName
+BareName = !KeywordBoundary BareLocalName
 
 // KeywordBoundary: a keyword that is a complete token (not a prefix of a longer name).
 // We check: keyword followed by NOT [a-zA-Z0-9_-].
@@ -161,10 +161,11 @@ KeywordBoundary
   / "pattern" !NameChar
   / "langRange" !NameChar
 
-NameChar = [a-zA-Z0-9_-]
+NameChar = [a-zA-Z0-9_.:/-]
 
 Prefix    = [a-zA-Z0-9_-]+
-LocalName = [a-zA-Z_] [a-zA-Z0-9_-]*
+LocalName = [a-zA-Z_0-9:] ([a-zA-Z0-9_:/-] / "." [a-zA-Z0-9_.:/-])*
+BareLocalName = [a-zA-Z_] ([a-zA-Z0-9_:/-] / "." [a-zA-Z0-9_.:/-])*
 
 Literal
   = '"' [^"]* '"' ("^^" DatatypeIRI / "@" LanguageTag)?
