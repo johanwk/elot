@@ -423,7 +423,15 @@ fn extract_items_from_list(list_node: &orgize::SyntaxNode, items: &mut Vec<Descr
         let mut nested_lists: Vec<orgize::SyntaxNode> = Vec::new();
         for cc in content_node.children() {
             if cc.kind() == SyntaxKind::LIST {
-                nested_lists.push(cc);
+                if is_description_list(&cc) {
+                    nested_lists.push(cc);
+                } else {
+                    // Plain ordered/unordered list — render as text content
+                    let list_text = render_plain_list_as_text(&cc);
+                    if !list_text.is_empty() {
+                        text_parts.push(list_text);
+                    }
+                }
             } else if cc.kind() == SyntaxKind::PARAGRAPH {
                 let para_text = cc.text().to_string();
                 let trimmed_end = para_text.trim_end();
@@ -433,7 +441,7 @@ fn extract_items_from_list(list_node: &orgize::SyntaxNode, items: &mut Vec<Descr
             }
         }
 
-        let full_text = text_parts.join("\n\n");
+        let full_text = text_parts.join("\n");
         // Look for the " :: " separator
         if let Some(sep_pos) = full_text.find(" :: ") {
             let tag_text = full_text[..sep_pos].trim().to_string();
@@ -482,6 +490,65 @@ fn extract_tag_text(tag_node: &orgize::SyntaxNode) -> String {
     text.trim().to_string()
 }
 
+/// Check whether a LIST syntax node looks like a description list.
+fn is_description_list(list_node: &orgize::SyntaxNode) -> bool {
+    for child in list_node.children() {
+        if child.kind() != SyntaxKind::LIST_ITEM {
+            continue;
+        }
+        if child.children().any(|c| c.kind() == SyntaxKind::LIST_ITEM_TAG) {
+            return true;
+        }
+        let content = child.children().find(|c| c.kind() == SyntaxKind::LIST_ITEM_CONTENT);
+        if let Some(cn) = content {
+            let text = cn.text().to_string();
+            if text.contains(" :: ") {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+/// Render a plain (non-description) list node as text lines.
+fn render_plain_list_as_text(list_node: &orgize::SyntaxNode) -> String {
+    let mut lines: Vec<String> = Vec::new();
+    let mut counter = 0u32;
+
+    for child in list_node.children() {
+        if child.kind() != SyntaxKind::LIST_ITEM {
+            continue;
+        }
+        counter += 1;
+
+        // Detect ordered list by checking if the item's raw text starts
+        // with a digit followed by '.'
+        let raw = child.text().to_string();
+        let trimmed = raw.trim_start();
+        let is_ordered = trimmed.starts_with(|c: char| c.is_ascii_digit())
+            && trimmed.contains('.');
+
+        // Get the content text
+        let mut item_text = String::new();
+        let content = child.children().find(|c| c.kind() == SyntaxKind::LIST_ITEM_CONTENT);
+        if let Some(cn) = content {
+            for cc in cn.children() {
+                if cc.kind() == SyntaxKind::PARAGRAPH {
+                    item_text.push_str(&cc.text().to_string().trim().to_string());
+                }
+            }
+        }
+
+        if is_ordered {
+            lines.push(format!("{}.  {}", counter, item_text));
+        } else {
+            lines.push(format!("- {}", item_text));
+        }
+    }
+
+    lines.join("\n")
+}
+
 /// Extract the value text and any nested LIST nodes from a LIST_ITEM_CONTENT node.
 ///
 /// The content node contains PARAGRAPH nodes (the value text) and possibly
@@ -491,31 +558,41 @@ fn extract_tag_text(tag_node: &orgize::SyntaxNode) -> String {
 fn extract_content_text_and_nested_lists(
     content_node: &orgize::SyntaxNode,
 ) -> (String, Vec<orgize::SyntaxNode>) {
-    let mut text_parts: Vec<String> = Vec::new();
+    let mut parts: Vec<(String, bool)> = Vec::new(); // (text, is_paragraph)
     let mut nested_lists: Vec<orgize::SyntaxNode> = Vec::new();
 
     for child in content_node.children() {
         if child.kind() == SyntaxKind::LIST {
-            nested_lists.push(child);
+            if is_description_list(&child) {
+                nested_lists.push(child);
+            } else {
+                let list_text = render_plain_list_as_text(&child);
+                if !list_text.is_empty() {
+                    parts.push((list_text, false));
+                }
+            }
         } else if child.kind() == SyntaxKind::PARAGRAPH {
             let para_text = child.text().to_string();
-            // Trim trailing whitespace/newlines but preserve leading whitespace
-            // on continuation lines.  The Org source has pre-formatted
-            // indentation (e.g. for multi-line SubClassOf values) that the OMN
-            // output should pass through verbatim.
             let trimmed_end = para_text.trim_end();
             if !trimmed_end.is_empty() {
-                text_parts.push(trimmed_end.to_string());
+                parts.push((trimmed_end.to_string(), true));
             }
         }
     }
 
-    // Join separate paragraphs with "\n\n" (double newline) to preserve
-    // the blank line between them.  Within a single paragraph, orgize already
-    // includes newlines for continuation lines.
-    // Then trim leading whitespace from the *first* line only — continuation
-    // lines keep their original indentation.
-    let joined = text_parts.join("\n\n");
+    let mut joined = String::new();
+    for (i, (text, is_para)) in parts.iter().enumerate() {
+        if i > 0 {
+            let prev_is_para = parts[i - 1].1;
+            if *is_para && prev_is_para {
+                joined.push_str("\n\n");
+            } else {
+                joined.push('\n');
+            }
+        }
+        joined.push_str(text);
+    }
+
     (joined.trim_start().to_string(), nested_lists)
 }
 
@@ -1082,6 +1159,35 @@ No table here.
             "expected only the non-:tangle-no block, got {}: {:?}",
             onto.omn_src_blocks.len(), onto.omn_src_blocks);
         assert!(onto.omn_src_blocks[0].contains("SHOULD be extracted"));
+    }
+
+    #[test]
+    fn test_description_list_numbered_list_in_value() {
+        let org_text = r#"* Classes
+:PROPERTIES:
+:ID:       my-onto-class-hierarchy
+:resourcedefs: yes
+:END:
+** ControlArea (cim:ControlArea)
+ - rdfs:comment :: "The following general principles apply to ControlArea:
+          1.  Orientation for net interchange is positive for import.
+          2.  Net interchange is determined by summing flows.
+          3.  A tie between two areas must be modelled in both.
+          4.  Normal orientation of Terminal flow is positive into equipment."@en
+"#;
+        let root = parse_to_elot(org_text);
+        let ca = &root.children[0].children[0];
+        let descs = &ca.descriptions;
+
+        assert_eq!(descs.len(), 1,
+            "expected 1 description item, got {}: {:?}", descs.len(), descs);
+        assert_eq!(descs[0].tag, "rdfs:comment");
+        assert!(descs[0].value.contains("Orientation for net interchange"),
+            "numbered list item 1 missing from value: {:?}", descs[0].value);
+        assert!(descs[0].value.contains("Normal orientation"),
+            "numbered list item 4 missing from value: {:?}", descs[0].value);
+        assert!(descs[0].meta.is_empty(),
+            "numbered list should not produce meta-annotations: {:?}", descs[0].meta);
     }
 
     #[test]
