@@ -199,6 +199,19 @@ export function omnResourceFrame(
   const annotations: DescriptionItem[] = [];
   const restrictions: DescriptionItem[] = [];
 
+  // Auto-add rdfs:label from the heading label if it differs from the URI
+  // and isn't already present with the same value (there may be other
+  // rdfs:label entries with different language tags — those are kept).
+  const headingLabel = node.label;
+  if (headingLabel && headingLabel !== uri) {
+    const alreadyPresent = desc.some(
+      (d) => d.tag === "rdfs:label" && d.value === headingLabel
+    );
+    if (!alreadyPresent) {
+      annotations.push({ tag: "rdfs:label", value: headingLabel });
+    }
+  }
+
   for (const d of desc) {
     if (isPropertyKeyword(d.tag)) {
       restrictions.push(d);
