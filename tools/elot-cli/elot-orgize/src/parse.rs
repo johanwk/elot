@@ -245,8 +245,10 @@ fn extract_prefix_table(headline: &Headline) -> Vec<PrefixEntry> {
             let col1 = cells[0].trim().to_string();
             let col2 = cells[1].trim().to_string();
 
-            // Skip header row
-            if col1.to_lowercase() == "prefix" || col1.to_lowercase() == "prefix:" {
+            // Skip header row (both columns must match header pattern)
+            if (col1.to_lowercase() == "prefix" || col1.to_lowercase() == "prefix:")
+                && (col2.to_lowercase() == "uri" || col2.to_lowercase() == "uri:")
+            {
                 continue;
             }
 

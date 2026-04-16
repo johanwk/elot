@@ -171,10 +171,10 @@ export function annotationStringOrUri(
   // Skip Org macro expansion ({{{...}}}) — not applicable in CLI context.
   // The CLI reads the raw Org text; macros are an Emacs-only feature.
 
-  // 1. A number — return the string
-  if (/^\d+\.?\d*$/.test(str)) {
-    return `  ${str}`;
-  }
+  // 1. A number — treat as a plain string (wrap in quotes).
+  //    We cannot reliably guess the XSD datatype (xsd:integer, xsd:double,
+  //    xsd:decimal, xsd:short …) so we quote it, matching the Elisp exporter.
+  //    Users who need typed literals can write "1000.0"^^xsd:double explicitly.
 
   // 2. A bare URI wrapped in Org double-bracket links: [[http://...]]
   {

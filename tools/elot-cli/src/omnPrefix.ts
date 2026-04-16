@@ -23,7 +23,7 @@ export function omnPrefixBlock(ontologyNode: ElotNode): string | null {
       // Skip header row if present (case-insensitive)
       const p = entry.prefix.toLowerCase();
       const u = entry.uri.toLowerCase();
-      return p !== "prefix" && u !== "uri";
+      return !(p === "prefix" && u === "uri") && !(p === "prefix:" && u === "uri");
     })
     .map((entry) => {
       const pfx = entry.prefix.endsWith(":") ? entry.prefix : entry.prefix + ":";
