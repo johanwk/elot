@@ -82,7 +82,7 @@
   "List of built-in OWL and XSD resources that are always considered known.")
 
 (defconst elot-puri-re 
-  "^\\([a-zA-Z][-a-zA-Z0-9_.]*\\|\\):\\([-[:word:]_./]*\\)$")
+  "^\\([a-zA-Z][-a-zA-Z0-9_.]*\\|\\):\\([-[:word:]_./:]*\\)$")
 
 (defun elot-context-type ()
     "Retrieve value of property ELOT-context-type for a governing heading.

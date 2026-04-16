@@ -83,7 +83,7 @@ function assert(condition: boolean, name: string, detail?: string) {
 
 {
   // Simulate what the hover provider does: match a CURIE pattern in text
-  const CURIE_RE = /(?:[a-zA-Z][-a-zA-Z0-9_.]*|):[-\w_./]+/;
+  const CURIE_RE = /(?:[a-zA-Z][-a-zA-Z0-9_.]*|):[-\w_./:]+/;
   const testLines = [
     "SubClassOf: obo:BFO_0000001",
     "rdf:type owl:Class",

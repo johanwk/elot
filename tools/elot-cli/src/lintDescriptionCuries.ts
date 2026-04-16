@@ -38,7 +38,7 @@ const KNOWN_ANNOTATION_PROPERTIES = new Set([
  * Mirrors the Elisp regex:
  *   "\\`[-_./[:alnum:]]*:[-_/.[:alnum:]]*\\'"
  */
-const CURIE_REGEX = /^[-_./\w]*:[-_./\w]*$/;
+const CURIE_REGEX = /^[-_./:\w]*:[-_./:\w]*$/;
 
 // ─── Checker #6 ─────────────────────────────────────────────────
 

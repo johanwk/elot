@@ -133,7 +133,7 @@ This section collects functions and variables that enable reading the Org outlin
 Check this against other similar pattern in use
 #+begin_src emacs-lisp
   (defconst elot-puri-re 
-    "^\\([a-zA-Z][-a-zA-Z0-9_.]*\\|\\):\\([-[:word:]_./]*\\)$")
+    "^\\([a-zA-Z][-a-zA-Z0-9_.]*\\|\\):\\([-[:word:]_./:]*\\)$")
 #+end_src
 
 

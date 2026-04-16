@@ -20,7 +20,7 @@ import { parseOrg } from "./parseOrgWasm.js";
 // ─── CURIE / URI detection ───────────────────────────────────────
 
 // Matches a CURIE like "obo:BFO_0000001" or ":localName"
-const CURIE_RE = /(?:[a-zA-Z][-a-zA-Z0-9_.]*|):[-\w_./]+/;
+const CURIE_RE = /(?:[a-zA-Z][-a-zA-Z0-9_.]*|):[-\w_./:]+/;
 
 // Matches a full URI wrapped in angle brackets like <http://...>
 const ANGLE_URI_RE = /<(https?:\/\/[^>]+)>/;

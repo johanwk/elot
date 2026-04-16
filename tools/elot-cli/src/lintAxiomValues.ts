@@ -76,7 +76,7 @@ export const BUILTIN_RESOURCES = new Set([
  * Regex matching CURIE-shaped tokens in axiom values.
  * Same pattern used in lintDescriptionCuries.ts.
  */
-const CURIE_REGEX = /^[-_./\w]*:[-_./\w]*$/;
+const CURIE_REGEX = /^[-_./:\w]*:[-_./:\w]*$/;
 
 /**
  * Map from section ID suffix to allowed OMN frame keywords.

@@ -16,7 +16,7 @@ import { entityFromHeader } from "./entityFromHeader.js";
 
 // ─── CURIE / URI detection (same patterns as hoverProvider.ts) ───
 
-const CURIE_RE = /(?:[a-zA-Z][-a-zA-Z0-9_.]*|):[-\w_./]+/;
+const CURIE_RE = /(?:[a-zA-Z][-a-zA-Z0-9_.]*|):[-\w_./:]+/;
 const ANGLE_URI_RE = /<(https?:\/\/[^>]+)>/;
 
 /**

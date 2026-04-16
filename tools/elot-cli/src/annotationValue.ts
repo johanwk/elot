@@ -112,7 +112,7 @@ export function stripContinuationIndent(str: string): string {
  * Anchored to ^...$ to match the whole string.
  */
 const CURIE_RE =
-  /^([a-zA-Z][-a-zA-Z0-9_.]*|):([-\w_./]*)$/;
+  /^([a-zA-Z][-a-zA-Z0-9_.]*|):([-\w_./:]*)$/;
 
 /**
  * Expand a CURIE to a full URI using the given prefix map.

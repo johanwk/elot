@@ -67,7 +67,7 @@ assert(
 // ─── 2. Hover resolution ────────────────────────────────────────
 
 // Simulate what the hover provider does: match a CURIE, look it up
-const CURIE_RE = /(?:[a-zA-Z][-a-zA-Z0-9_.]*|):[-\w_./]+/;
+const CURIE_RE = /(?:[a-zA-Z][-a-zA-Z0-9_.]*|):[-\w_./:]+/;
 
 const testLines = [
   'SubClassOf: obo:BFO_0000001',
