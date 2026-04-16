@@ -257,31 +257,35 @@ Functions to know where we are in an ELOT tree.
           (with-temp-buffer (org-mode)
                             (insert str) (org-macro-replace-all omt)
                             (setq str (buffer-string)))))
+    ;; NOTE: Use \\` and \\' (string-start/string-end) instead of ^ and $
+    ;; (line-start/line-end) so that multiline values like
+    ;;   "Likely to be obsoleted. See:\nhttps://example.com"
+    ;; are NOT falsely matched as a bare URI.
     (cond
      ;; a number -- return the string in quotes
-     ((string-match "^[[:digit:]]+[.]?[[:digit:]]*$" str)
+     ((string-match "\\`[[:digit:]]+[.]?[[:digit:]]*\\'" str)
       (concat "  \"" str "\""))
      ;; a bare URI, which org-mode wraps in double brackets -- wrap in angles
-     ((string-match "^[[][[]\\(http[^ ]*\\)[]][]]$" str)
+     ((string-match "\\`[[][[]\\(http[^ ]*\\)[]][]]\\'" str)
       (concat "  <" (match-string 1 str) ">"))
      ;; a bare URI, but no double brackets -- wrap in angles
-     ((string-match "^\\(http[^ ]*\\)$" str)
+     ((string-match "\\`\\(http[^ ]*\\)\\'" str)
       (concat "  <" (match-string 1 str) ">"))
      ;; a bare URI, in angles
-     ((string-match "^\\(<http[^ ]*>\\)$" str)
+     ((string-match "\\`\\(<http[^ ]*>\\)\\'" str)
       (concat "  " (match-string 1 str)))
      ;; a bare URN, in angles
-     ((string-match "^\\(<urn:[^>]+>\\)$" str)
+     ((string-match "\\`\\(<urn:[^>]+>\\)\\'" str)
       (concat "  " (match-string 1 str)))
      ;; a URN without angles, explicitly treat as xsd:string
-     ((string-match "^\\(urn:uuid[^ ]+\\)$" str)
+     ((string-match "\\`\\(urn:uuid[^ ]+\\)\\'" str)
       (concat "  \"" (match-string 1 str) "\"^^xsd:string"))
      ;; true -- make it an explicit boolean (case-sensitive: "True" is a label, not a boolean)
-     ((let ((case-fold-search nil)) (string-match "^true$" str)) " \"true\"^^xsd:boolean")
+     ((let ((case-fold-search nil)) (string-match "\\`true\\'" str)) " \"true\"^^xsd:boolean")
      ;; false -- make it an explicit boolean (case-sensitive: "False" is a label, not a boolean)
-     ((let ((case-fold-search nil)) (string-match "^false$" str)) " \"false\"^^xsd:boolean")
+     ((let ((case-fold-search nil)) (string-match "\\`false\\'" str)) " \"false\"^^xsd:boolean")
      ;; string with datatype -- return unchanged
-     ((string-match "^\".*\"\\^\\^[-_[:alnum:]]*:[-_[:alnum:]]+$" str)
+     ((string-match "\\`\".*\"\\^\\^[-_[:alnum:]]*:[-_[:alnum:]]+\\'" str)
       (concat "  " str))
      ;; not a puri -- normal string, wrap in quotes
      ((equal str (elot-unprefix-uri str org-link-abbrev-alist-local))
