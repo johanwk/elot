@@ -1,7 +1,7 @@
 {
   "name": "elot",
   "displayName": "Elot: Org-mode Ontology Editor",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "publisher": "johanwk",
   "description": "Manchester Syntax generation for ontologies written in Org-mode",
   "icon": "images/elot-icon.png",
