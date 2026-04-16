@@ -1018,9 +1018,11 @@ Returns nil if NODE does not define a resource or is tagged :nodeclare:."
       (when parent-uri
         (cond
          ((equal type "owl:Class")
-          (push (list "SubClassOf" parent-uri) restrictions))
+          (unless (member (list "SubClassOf" parent-uri) restrictions)
+            (push (list "SubClassOf" parent-uri) restrictions)))
          ((and type (string-match-p "Property$" type))
-          (push (list "SubPropertyOf" parent-uri) restrictions))))
+          (unless (member (list "SubPropertyOf" parent-uri) restrictions)
+            (push (list "SubPropertyOf" parent-uri) restrictions)))))
       
       ;; 3. Build the strictly-formatted OMN frame string
       (let* ((omn-type (cond
