@@ -418,8 +418,11 @@ fn extract_items_from_list(list_node: &orgize::SyntaxNode, items: &mut Vec<Descr
             None => continue,
         };
 
-        // Gather paragraph text and nested lists from the content node
-        let mut text_parts: Vec<String> = Vec::new();
+        // Gather paragraph text and nested lists from the content node.
+        // Track each chunk as (text, is_paragraph) so we can choose the
+        // right separator: paragraph→paragraph = "\n\n", anything
+        // involving a rendered plain list = "\n".
+        let mut parts: Vec<(String, bool)> = Vec::new(); // (text, is_paragraph)
         let mut nested_lists: Vec<orgize::SyntaxNode> = Vec::new();
         for cc in content_node.children() {
             if cc.kind() == SyntaxKind::LIST {
@@ -429,19 +432,30 @@ fn extract_items_from_list(list_node: &orgize::SyntaxNode, items: &mut Vec<Descr
                     // Plain ordered/unordered list — render as text content
                     let list_text = render_plain_list_as_text(&cc);
                     if !list_text.is_empty() {
-                        text_parts.push(list_text);
+                        parts.push((list_text, false));
                     }
                 }
             } else if cc.kind() == SyntaxKind::PARAGRAPH {
                 let para_text = cc.text().to_string();
                 let trimmed_end = para_text.trim_end();
                 if !trimmed_end.is_empty() {
-                    text_parts.push(trimmed_end.to_string());
+                    parts.push((trimmed_end.to_string(), true));
                 }
             }
         }
 
-        let full_text = text_parts.join("\n");
+        let mut full_text = String::new();
+        for (i, (text, is_para)) in parts.iter().enumerate() {
+            if i > 0 {
+                let prev_is_para = parts[i - 1].1;
+                if *is_para && prev_is_para {
+                    full_text.push_str("\n\n");
+                } else {
+                    full_text.push('\n');
+                }
+            }
+            full_text.push_str(text);
+        }
         // Look for the " :: " separator
         if let Some(sep_pos) = full_text.find(" :: ") {
             let tag_text = full_text[..sep_pos].trim().to_string();
@@ -511,42 +525,38 @@ fn is_description_list(list_node: &orgize::SyntaxNode) -> bool {
 }
 
 /// Render a plain (non-description) list node as text lines.
+///
+/// We preserve the original text verbatim (minus shared leading indentation)
+/// rather than reformatting, because these "list items" are often inside
+/// quoted string values where the original numbering/bullets must be kept
+/// exactly as authored (e.g. "1) ...", "- ...", "-foo" etc.).
 fn render_plain_list_as_text(list_node: &orgize::SyntaxNode) -> String {
-    let mut lines: Vec<String> = Vec::new();
-    let mut counter = 0u32;
-
-    for child in list_node.children() {
-        if child.kind() != SyntaxKind::LIST_ITEM {
-            continue;
-        }
-        counter += 1;
-
-        // Detect ordered list by checking if the item's raw text starts
-        // with a digit followed by '.'
-        let raw = child.text().to_string();
-        let trimmed = raw.trim_start();
-        let is_ordered = trimmed.starts_with(|c: char| c.is_ascii_digit())
-            && trimmed.contains('.');
-
-        // Get the content text
-        let mut item_text = String::new();
-        let content = child.children().find(|c| c.kind() == SyntaxKind::LIST_ITEM_CONTENT);
-        if let Some(cn) = content {
-            for cc in cn.children() {
-                if cc.kind() == SyntaxKind::PARAGRAPH {
-                    item_text.push_str(&cc.text().to_string().trim().to_string());
-                }
-            }
-        }
-
-        if is_ordered {
-            lines.push(format!("{}.  {}", counter, item_text));
-        } else {
-            lines.push(format!("- {}", item_text));
-        }
+    let raw = list_node.text().to_string();
+    let lines: Vec<&str> = raw.lines().collect();
+    if lines.is_empty() {
+        return String::new();
     }
-
-    lines.join("\n")
+    // Find the minimum leading whitespace across non-empty lines
+    let min_indent = lines
+        .iter()
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| l.len() - l.trim_start().len())
+        .min()
+        .unwrap_or(0);
+    // Strip that shared indent and join
+    lines
+        .iter()
+        .map(|l| {
+            if l.len() >= min_indent {
+                &l[min_indent..]
+            } else {
+                l.trim()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+        .trim_end()
+        .to_string()
 }
 
 /// Extract the value text and any nested LIST nodes from a LIST_ITEM_CONTENT node.
