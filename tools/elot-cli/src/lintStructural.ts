@@ -59,7 +59,6 @@ export function checkOntologyPresence(root: ElotNode): LintDiagnostic[] {
  * - :ID: must be present and non-empty.
  * - :ELOT-context-localname: should match :ID:.
  * - :header-args:omn: must have a valid .omn tangle target.
- * - :ELOT-default-prefix: should be in the prefix table.
  *
  * Returns ERROR/WARNING diagnostics.
  */
@@ -103,21 +102,7 @@ export function checkOntologyHeader(root: ElotNode): LintDiagnostic[] {
     // TODO: Check :noweb yes in :header-args:omn: — the WASM parser doesn't
     // extract arbitrary header-args, so we skip this sub-check for now.
 
-    // Check :ELOT-default-prefix: is in the prefix table
-    if (onto.elotDefaultPrefix && prefixMap) {
-      // Strip trailing colon for comparison — prefixMap keys have no colon
-      const prefixKey = onto.elotDefaultPrefix.endsWith(":")
-        ? onto.elotDefaultPrefix.slice(0, -1)
-        : onto.elotDefaultPrefix;
-      if (!prefixMap.has(prefixKey)) {
-        diagnostics.push({
-          node: onto,
-          message:
-            ":ELOT-default-prefix: is not defined in the prefix table",
-          severity: "warning",
-        });
-      }
-    }
+
   }
 
   return diagnostics;

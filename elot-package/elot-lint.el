@@ -191,11 +191,6 @@ Add warnings or errors to ISSUES at POINT."
               (push (list (point)
                           (propertize "WARNING: :ELOT-context-localname: should match :ID:" 'face 'warning))
                     issues))
-            (when (null (assoc prefix org-link-abbrev-alist-local))
-              (push (list (point)
-                          (propertize "WARNING: :ELOT-default-prefix: is not defined in org-link-abbrev-alist-local"
-                                      'face 'warning))
-                    issues))
             ;; Run helper check on :header-args:omn
             (setq issues (elot--check-omn-args omn-args (point) issues)))))
       tree)

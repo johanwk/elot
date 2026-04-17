@@ -194,33 +194,14 @@ function main() {
     passed++;
   }
 
-  // ── checkOntologyHeader: unknown default prefix ───────────────
-  {
-    const root = makeValidOntologyRoot();
-    const onto = root.children![0];
-    onto.elotDefaultPrefix = "unknown";
-    const diags = checkOntologyHeader(root);
-    assertHas(
-      diags,
-      "warning",
-      ":ELOT-default-prefix: is not defined",
-      "header: unknown prefix",
-    );
-    console.log("  checkOntologyHeader (unknown default prefix): OK");
-    passed++;
-  }
-
   // ── checkOntologyHeader: default prefix with colon ────────────
   {
     const root = makeValidOntologyRoot();
     const onto = root.children![0];
     onto.elotDefaultPrefix = "pizza:";
     const diags = checkOntologyHeader(root);
-    // "pizza:" should match "pizza" in the prefix map (colon stripped)
-    const prefixDiags = diags.filter((d) =>
-      d.message.includes(":ELOT-default-prefix:"),
-    );
-    assertCount(prefixDiags, 0, "header: prefix with colon should match");
+    // No prefix-related diagnostics at all (check was removed)
+    assertCount(diags, 0, "header: prefix with colon should not warn");
     console.log("  checkOntologyHeader (prefix with colon): OK");
     passed++;
   }
