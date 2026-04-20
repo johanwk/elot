@@ -605,7 +605,11 @@ export function preprocessOrgForLinksWithMeta(orgText: string): PreprocessResult
             // This makes annotation property names clickable.
             const curieTagRe = /^(?:[a-zA-Z][-a-zA-Z0-9_.]*|):[-\w_./]*[-\w_/]$/;
             if (curieTagRe.test(tagText)) {
-              tag = `${prefix}[[#${tagText}][${tagText}]]`;
+              // Use label from slurp if the annotation property is declared
+              // in this Org file (e.g. "*** definition (obo:IAO_0000115)").
+              // Falls back to the CURIE itself for foreign/undeclared properties.
+              const tagLabel = curieToLabel.get(tagText) ?? tagText;
+              tag = `${prefix}[[#${tagText}][${tagLabel}]]`;
             }
           }
           value = linkifyCuries(value, declaredCuries, curieToLabel);
