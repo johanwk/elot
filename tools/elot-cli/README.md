@@ -21,6 +21,7 @@ required.
 | **Go to definition** | **F12** / **Ctrl+Click** |
 | **IntelliSense completion** | **Ctrl+Space** |
 | **Org Indent Mode** | **Ctrl+Shift+I** |
+| **Export to HTML** | Right-click → *Export to HTML* (requires Pandoc) |
 | **OWL axiom syntax checking** | Automatic (red squiggly underlines) |
 | **Bold headlines & fontified description lists** | Always on |
 
@@ -336,7 +337,18 @@ node dist/cli.js examples/bfo-core.org output.omn
 
 # Uses the :tangle target from the Org file, or stdout
 node dist/cli.js examples/bfo-core.org
+
+# Export to styled HTML (requires Pandoc on PATH)
+node dist/cli.js --html examples/bfo-core.org
+
+# Export to HTML with explicit output path
+node dist/cli.js --html examples/bfo-core.org output.html
 ```
+
+The `--html` flag exports to styled HTML via Pandoc instead of generating
+Manchester Syntax. It applies the same CURIE linkification, label resolution,
+and ELOT CSS/JS theming as the VS Code "Export to HTML" command. If no output
+path is given, the `.org` extension is replaced with `.html`.
 
 ### VS Code Extension Packaging
 

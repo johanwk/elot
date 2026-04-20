@@ -637,6 +637,112 @@ export function preprocessOrgForLinksWithMeta(orgText: string): PreprocessResult
 }
 
 /**
+ * Post-process Pandoc HTML to wrap headings in Org-style outline divs
+ * and fix section number classes to match the Elisp export structure.
+ *
+ * Transforms:
+ *   <hN id="ID"><span class="header-section-number">X.Y.Z</span> Title</hN>
+ *   ...content...
+ * Into:
+ *   <div id="outline-container-ID" class="outline-N">
+ *   <hN id="ID"><span class="section-number-N">X.Y.Z.</span> Title</hN>
+ *   <div class="outline-text-N" id="text-ID">
+ *   ...content...
+ *   </div>
+ *   </div>
+ */
+export function wrapOutlineDivs(html: string): string {
+  // Only process headings inside <div id="content">...</div>.
+  // This avoids wrapping the title, TOC heading, or footer elements.
+  const contentStart = html.indexOf('<div id="content">');
+  if (contentStart < 0) return html;
+  const contentTagEnd = html.indexOf('>', contentStart) + 1;
+  // Find the closing </div> for the content div — it's the last </div>
+  // before the <script> tag or end of body.
+  const scriptIdx = html.indexOf('<script', contentTagEnd);
+  const contentClose = scriptIdx >= 0
+    ? html.lastIndexOf('</div>', scriptIdx)
+    : html.lastIndexOf('</div>');
+  if (contentClose < contentTagEnd) return html;
+
+  const prefix = html.substring(0, contentTagEnd);
+  const body = html.substring(contentTagEnd, contentClose);
+  const suffix = html.substring(contentClose);
+
+  // Match all heading tags (h1-h12) with id attributes inside the body
+  const headingRe = /<h(\d+)\s[^>]*?\bid="([^"]+)"[^>]*>[\s\S]*?<\/h\1>/g;
+  const headings: Array<{
+    start: number;
+    end: number;
+    level: number;
+    id: string;
+    fullMatch: string;
+  }> = [];
+
+  let hm: RegExpExecArray | null;
+  while ((hm = headingRe.exec(body)) !== null) {
+    headings.push({
+      start: hm.index,
+      end: hm.index + hm[0].length,
+      level: parseInt(hm[1], 10),
+      id: hm[2],
+      fullMatch: hm[0],
+    });
+  }
+
+  if (headings.length === 0) return html;
+
+  // Build output by processing sections between headings.
+  const parts: string[] = [];
+  const stack: Array<{ level: number }> = [];
+
+  // Content before the first heading (e.g. <h1 class="title"> without id)
+  parts.push(body.substring(0, headings[0].start));
+
+  for (let i = 0; i < headings.length; i++) {
+    const h = headings[i];
+    const contentStart2 = h.end;
+    const contentEnd = i + 1 < headings.length ? headings[i + 1].start : body.length;
+
+    // Close outline divs for headings at same or deeper level
+    while (stack.length > 0 && stack[stack.length - 1].level >= h.level) {
+      parts.push('</div>\n</div>\n');
+      stack.pop();
+    }
+
+    // Fix the heading's section number span
+    let fixedHeading = h.fullMatch;
+    // Replace Pandoc's "header-section-number" with "section-number-N" + trailing dot
+    fixedHeading = fixedHeading.replace(
+      /<span\s+class="header-section-number">([^<]*)<\/span>/,
+      (_m, num) => `<span class="section-number-${h.level}">${num.replace(/\.?\s*$/, '.')}</span>`
+    );
+    // Also fix already-renamed section-number-N spans (from <p class="heading"> conversion)
+    fixedHeading = fixedHeading.replace(
+      /<span\s*[\r\n]*class="section-number-(\d+)">([^<]*)<\/span>/,
+      (_m, _lvl, num) => `<span class="section-number-${h.level}">${num.replace(/\.?\s*$/, '.')}</span>`
+    );
+
+    // Open outline container + text divs
+    parts.push(`<div id="outline-container-${h.id}" class="outline-${h.level}">\n`);
+    parts.push(fixedHeading + '\n');
+    parts.push(`<div class="outline-text-${h.level}" id="text-${h.id}">\n`);
+
+    // Content between this heading and the next
+    parts.push(body.substring(contentStart2, contentEnd));
+    stack.push({ level: h.level });
+  }
+
+  // Close remaining open divs
+  while (stack.length > 0) {
+    parts.push('</div>\n</div>\n');
+    stack.pop();
+  }
+
+  return prefix + parts.join('') + suffix;
+}
+
+/**
  * Export an Org file to HTML using Pandoc with the ELOT theme.
  *
  * Pre-processes the Org text to inject CUSTOM_ID properties (using the
@@ -696,7 +802,7 @@ export async function exportOrgToHtml(
         // Remove <p>...</p> wrapping inside <dd> when followed by a sub-<dl>
         // Pandoc wraps in <p> for "loose" lists; ELOT expects bare text.
         // Must run BEFORE the org-dl class addition so <dl> is still bare.
-        html = html.replace(/<dd>\r?\n?<p>(.*?)<\/p>\r?\n?<dl/gs, (m, content) => `<dd>\n${content}\n<dl`);
+        html = html.replace(/<dd>\r?\n?<p>(.*?)<\/p>\r?\n?<dl/gs, (_m, content) => `<dd>\n${content}\n<dl`);
         // Add class="org-dl" to all <dl> elements (for ELOT CSS)
         html = html.replace(/<dl>/g, '<dl class="org-dl">');
         // Convert <p class="heading" id="...">...</p> to proper <hN> elements.
@@ -705,13 +811,19 @@ export async function exportOrgToHtml(
         html = html.replace(
           /<p class="heading"[^>]*?\bid="([^"]+)"[^>]*>(.*?)<\/p>/gs,
           (_m, id, content) => {
-            // headingIdToLevel has the Org level (1-based).
-            // With --shift-heading-level-by=1, Org level N → HTML h(N+1).
             const orgLevel = headingIdToLevel.get(id);
             const hLevel = orgLevel ? orgLevel + 1 : 7;
             return `<h${hLevel} id="${id}">${content}</h${hLevel}>`;
           }
         );
+        // Wrap headings in outline divs and fix section number classes
+        // to match the Elisp export structure:
+        //   <div id="outline-container-ID" class="outline-N">
+        //   <hN id="ID"><span class="section-number-N">X.Y.Z.</span> Title</hN>
+        //   <div class="outline-text-N" id="text-ID">
+        //   ...content...
+        //   </div></div>
+        html = wrapOutlineDivs(html);
         writeFileSync(outPath, html, "utf-8");
       } catch { /* non-fatal: HTML is still valid without these tweaks */ }
       resolve(outPath);

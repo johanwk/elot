@@ -18,6 +18,7 @@ The extension provides:
 - **Org Indent Mode** — Toggle visual indentation (Ctrl+Shift+I) that mimics Emacs's `org-indent-mode`
 - **IntelliSense Completion** — Press Ctrl+Space for a dropdown of all OWL entities in the file, searchable by label or CURIE
 - **Bold Headlines & Description List Fontification** — Always-on visual enhancements for readability
+- **HTML Export** — Generate styled HTML documentation via Pandoc, with clickable CURIE links and section numbering
 
 See the full [extension README](tools/elot-cli/README.md) for keybindings, settings, and screenshots.
 
@@ -76,7 +77,7 @@ The VS Code extension and `elot-cli` are progressively lowering that barrier.
 | **IntelliSense** | ✅ Ctrl+Space | ✅ `completing-read` |
 | **SPARQL queries** | — (planned) | ✅ `org-babel` |
 | **Diagrams** | — (planned) | ✅ rdfpuml integration |
-| **HTML export** | — (planned) | ✅ `org-export` |
+| **HTML export** | ✅ Built-in (Pandoc) | ✅ `org-export` |
 
 ---
 
@@ -378,5 +379,5 @@ Two command-line tools are included under the [`tools/`](tools/) directory:
     ontologies into ELOT's Org-mode format, producing a shaded JAR.
 
 -   **[elot-cli](tools/elot-cli/README.md)** — A TypeScript CLI and VS Code extension that generates OWL
-    Manchester Syntax from Org-mode files (uses orgize WASM + esbuild).
+    Manchester Syntax and HTML documentation from Org-mode files (uses orgize WASM + esbuild + Pandoc).
     **Available on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=johanwk.elot).**

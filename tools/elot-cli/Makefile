@@ -1,9 +1,9 @@
 # Makefile for elot-cli — friendly aliases for npm commands.
 # Run "make help" to see available targets.
 
-.PHONY: help all install bundle build watch test test-syntax clean package cli
+.PHONY: help all install bundle build watch test test-syntax test-html test-html-post test-html-integration test-html-all clean package cli
 
-all: install bundle test package ## Full build from scratch: install → bundle → test → package
+all: install bundle test test-html-all package ## Full build from scratch: install → bundle → test → package
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
@@ -29,6 +29,18 @@ test: ## Run the golden-file test suite
 
 test-syntax: ## Run the OMN syntax-checking tests (Peggy grammar)
 	npm run test:syntax
+
+test-html: ## Run the HTML export preprocessing tests
+	npm run test:html
+
+test-html-post: ## Run the HTML post-processing tests (outline divs, CSS classes)
+	npm run test:html-post
+
+test-html-integration: ## Run the HTML export integration tests (requires Pandoc)
+	npm run test:html-integration
+
+test-html-all: ## Run all HTML export tests
+	npm run test:html-all
 
 cli: ## Run CLI on examples/bfo-core.org (dev mode, no bundling needed)
 	npm run elot -- examples/bfo-core.org

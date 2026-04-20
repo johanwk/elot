@@ -171,6 +171,10 @@
     "watch": "tsc -w",
     "test": "tsx src/tests/golden.test.ts",
     "test:syntax": "tsx src/tests/omnSyntaxCheck.test.ts",
+    "test:html": "tsx src/tests/exportHtml.test.ts",
+    "test:html-post": "tsx src/tests/exportHtmlPostprocess.test.ts",
+    "test:html-integration": "tsx src/tests/exportHtmlIntegration.test.ts",
+    "test:html-all": "npm run test:html && npm run test:html-post && npm run test:html-integration",
     "elot": "tsx src/cli.ts"
   },
   "dependencies": {},
