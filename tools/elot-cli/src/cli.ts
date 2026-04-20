@@ -9,83 +9,75 @@
 
 import { readFileSync, writeFileSync } from "fs";
 import { resolve, dirname } from "path";
+import { Command } from "commander";
 import { parseOrg } from "./parseOrgWasm.js";
 import { generateFullOmn } from "./generateOmn.js";
 import { findPandoc, exportOrgToHtml } from "./exportHtml.js";
 
-function printUsage() {
-  console.error("Usage: elot-cli <input.org> [output]");
-  console.error("       elot-cli --html <input.org> [output.html]");
-  console.error("");
-  console.error("Options:");
-  console.error("  --html    Export to styled HTML via Pandoc (requires Pandoc on PATH)");
-  console.error("");
-  console.error("Without --html, generates OWL Manchester Syntax.");
-  console.error("If output is omitted, uses tangle target from Org file (OMN) or stdout.");
-  console.error("If output is '-', writes to stdout (OMN only).");
-}
+// Read version from package.json at build time (inlined by esbuild)
+const VERSION = "0.3.4";
 
-async function main() {
-  const rawArgs = process.argv.slice(2);
+const program = new Command();
 
-  if (rawArgs.length === 0 || rawArgs.includes("--help") || rawArgs.includes("-h")) {
-    printUsage();
-    process.exit(rawArgs.length === 0 ? 1 : 0);
-  }
+program
+  .name("elot-cli")
+  .description("Convert ELOT Org-mode ontology files to OWL Manchester Syntax or HTML")
+  .version(VERSION, "-V, --version")
+  .argument("<input.org>", "Input Org-mode ontology file")
+  .argument("[output]", "Output file path (default: tangle target or stdout for OMN; input.html for HTML)")
+  .option("--html", "Export to styled HTML via Pandoc (requires Pandoc on PATH)")
+  .addHelpText("after", `
+Examples:
+  $ elot-cli ontology.org                  Generate OMN (tangle target or stdout)
+  $ elot-cli ontology.org output.omn       Generate OMN to explicit file
+  $ elot-cli ontology.org -                Generate OMN to stdout
+  $ elot-cli --html ontology.org           Export to HTML (requires Pandoc)
+  $ elot-cli --html ontology.org out.html  Export to HTML with explicit output`)
+  .action(async (input: string, output: string | undefined, opts: { html?: boolean }) => {
+    const inputPath = resolve(input);
 
-  // Parse flags
-  const htmlMode = rawArgs.includes("--html");
-  const args = rawArgs.filter(a => a !== "--html");
+    if (opts.html) {
+      // ── HTML export via Pandoc ──
+      const pandocPath = findPandoc();
+      if (!pandocPath) {
+        console.error("Error: Pandoc not found on PATH.");
+        console.error("Install Pandoc from https://pandoc.org/installing.html");
+        process.exit(1);
+      }
 
-  if (args.length === 0) {
-    printUsage();
-    process.exit(1);
-  }
-
-  const inputPath = resolve(args[0]);
-
-  if (htmlMode) {
-    // ── HTML export via Pandoc ──
-    const pandocPath = findPandoc();
-    if (!pandocPath) {
-      console.error("Error: Pandoc not found on PATH.");
-      console.error("Install Pandoc from https://pandoc.org/installing.html");
-      process.exit(1);
-    }
-
-    const outputPath = args[1] ? resolve(args[1]) : undefined;
-    try {
-      const outPath = await exportOrgToHtml(inputPath, pandocPath, outputPath);
-      console.error(`HTML written to ${outPath}`);
-    } catch (err: any) {
-      console.error(`HTML export failed: ${err.message}`);
-      process.exit(1);
-    }
-  } else {
-    // ── OMN export ──
-    const orgText = readFileSync(inputPath, "utf-8");
-    const root = parseOrg(orgText);
-    const omn = generateFullOmn(root);
-
-    if (args[1] && args[1] !== "-" && args[1] !== "/dev/stdout") {
-      const outputPath = resolve(args[1]);
-      writeFileSync(outputPath, omn, "utf-8");
-      console.error(`Written to ${outputPath}`);
-    } else if (args[1] === "-" || args[1] === "/dev/stdout") {
-      process.stdout.write(omn);
+      const outputPath = output ? resolve(output) : undefined;
+      try {
+        const outPath = await exportOrgToHtml(inputPath, pandocPath, outputPath);
+        console.error(`HTML written to ${outPath}`);
+      } catch (err: any) {
+        console.error(`HTML export failed: ${err.message}`);
+        process.exit(1);
+      }
     } else {
-      const firstOntology = (root.children ?? [])[0];
-      const tangleTarget = firstOntology?.tangleTargetOmn;
+      // ── OMN export ──
+      const orgText = readFileSync(inputPath, "utf-8");
+      const root = parseOrg(orgText);
+      const omn = generateFullOmn(root);
 
-      if (tangleTarget) {
-        const outputPath = resolve(dirname(inputPath), tangleTarget);
+      if (output && output !== "-" && output !== "/dev/stdout") {
+        const outputPath = resolve(output);
         writeFileSync(outputPath, omn, "utf-8");
         console.error(`Written to ${outputPath}`);
-      } else {
+      } else if (output === "-" || output === "/dev/stdout") {
         process.stdout.write(omn);
+      } else {
+        const firstOntology = (root.children ?? [])[0];
+        const tangleTarget = firstOntology?.tangleTargetOmn;
+
+        if (tangleTarget) {
+          const outputPath = resolve(dirname(inputPath), tangleTarget);
+          writeFileSync(outputPath, omn, "utf-8");
+          console.error(`Written to ${outputPath}`);
+        } else {
+          process.stdout.write(omn);
+        }
       }
     }
-  }
-}
+  });
 
-main();
+program.parseAsync(process.argv);

@@ -177,7 +177,9 @@
     "test:html-all": "npm run test:html && npm run test:html-post && npm run test:html-integration",
     "elot": "tsx src/cli.ts"
   },
-  "dependencies": {},
+  "dependencies": {
+    "commander": "^12.1.0"
+  },
   "devDependencies": {
     "@types/node": "^25.5.0",
     "@types/vscode": "^1.75.0",
