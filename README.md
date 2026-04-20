@@ -22,15 +22,20 @@ The extension provides:
 
 See the full [extension README](tools/elot-cli/README.md) for keybindings, settings, and screenshots.
 
-### Converting existing OWL files for use in VS Code
+### Importing existing OWL ontologies into VS Code
 
-Have an existing ontology? Download **elot-exporter** from the [releases page](https://github.com/johanwk/elot/releases) — a standalone Java tool that converts any OWL file (RDF/XML, Turtle, etc.) into Elot's Org-mode format:
+Have an existing ontology? The Elot extension can import it directly:
+
+1. Open the Command Palette (`Ctrl+Shift+P`) and run **Elot: Import OWL Ontology**
+2. Choose a local file or paste a URL (e.g. from a published ontology IRI)
+3. The extension downloads `elot-exporter.jar` automatically (requires Java 11+ on PATH) and converts the OWL file into Elot's Org-mode format
+4. You are prompted to save the resulting `.org` file — once saved, all Elot features activate immediately
+
+You can also use the CLI directly:
 
 ```bash
-java -jar elot-exporter.jar input-ontology.owl -o output.org
+node dist/cli.js input-ontology.owl -o output.org
 ```
-
-Open the resulting `.org` file in VS Code with the Elot extension installed, and you immediately get label display, folding, IntelliSense, and all other features.
 
 ---
 
@@ -91,7 +96,7 @@ The VS Code extension and `elot-cli` are progressively lowering that barrier.
 6. **Press F12** on a CURIE to jump to its definition
 7. **Press Ctrl+Space** to search and insert entities
 
-For converting existing OWL files to Org, download `elot-exporter.jar` from [releases](https://github.com/johanwk/elot/releases). Requires Java 11+.
+To import an existing OWL file, use the **Elot: Import OWL Ontology** command — the extension downloads `elot-exporter` automatically. Requires Java 11+.
 
 ---
 
