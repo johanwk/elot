@@ -455,7 +455,17 @@ function expandBarePrefix(
  *
  * Returns the modified Org text ready for Pandoc.
  */
+export interface PreprocessResult {
+  orgText: string;
+  /** Map from heading CUSTOM_ID to Org heading level (1-based) */
+  headingIdToLevel: Map<string, number>;
+}
+
 export function preprocessOrgForLinks(orgText: string): string {
+  return preprocessOrgForLinksWithMeta(orgText).orgText;
+}
+
+export function preprocessOrgForLinksWithMeta(orgText: string): PreprocessResult {
   const lines = orgText.split("\n");
 
   // --- Pass 1: collect all declared CURIEs and their labels ----------
@@ -467,6 +477,7 @@ export function preprocessOrgForLinks(orgText: string): string {
 
   const curieToLabel = new Map<string, string>();
   const declaredCuries = new Set<string>();
+  const headingIdToLevel = new Map<string, number>();
 
   for (const [uri, entry] of slurp) {
     // Only handle simple CURIEs (not <URI> or composite)
@@ -478,7 +489,7 @@ export function preprocessOrgForLinks(orgText: string): string {
   // Build the prefix→URI map for bare-prefix expansion
   const prefixMap = getPrefixMap(root);
 
-  if (declaredCuries.size === 0 && !prefixMap) return orgText;
+  if (declaredCuries.size === 0 && !prefixMap) return { orgText, headingIdToLevel };
   if (declaredCuries.size === 0 && prefixMap) {
     // Only prefix expansion needed, no CURIE linkification — fall through
   }
@@ -498,6 +509,7 @@ export function preprocessOrgForLinks(orgText: string): string {
 
       // Determine CURIE for this heading by checking if any declared
       // CURIE appears as a word in the heading text.
+      const headingLevel = headingMatch[1].length;
       const titleText = headingMatch[2].replace(/\s*:[\w:]+:\s*$/, "");
       let curie: string | null = null;
       for (const c of declaredCuries) {
@@ -531,6 +543,7 @@ export function preprocessOrgForLinks(orgText: string): string {
         if (curie && !hasCustomId) {
           result.push(`:CUSTOM_ID: ${curie}`);
         }
+        if (curie) headingIdToLevel.set(curie, headingLevel);
 
         // Push the rest of the drawer properties
         for (const dl of drawerLines) {
@@ -547,6 +560,7 @@ export function preprocessOrgForLinks(orgText: string): string {
         result.push(":PROPERTIES:");
         result.push(`:CUSTOM_ID: ${curie}`);
         result.push(":END:");
+        headingIdToLevel.set(curie, headingLevel);
       }
     } else {
       // Body line — replace CURIE references with [[#curie][label]] links,
@@ -613,10 +627,13 @@ export function preprocessOrgForLinks(orgText: string): string {
 
   // Ensure Pandoc treats all heading levels as actual headings (not list items)
   const joined = result.join("\n");
+  let finalOrg: string;
   if (/^#\+OPTIONS:/im.test(joined)) {
-    return joined.replace(/^(#\+OPTIONS:.*)/im, "$1 H:12 ^:nil");
+    finalOrg = joined.replace(/^(#\+OPTIONS:.*)/im, "$1 H:12 ^:nil");
+  } else {
+    finalOrg = "#+OPTIONS: H:12 ^:nil\n" + joined;
   }
-  return "#+OPTIONS: H:12 ^:nil\n" + joined;
+  return { orgText: finalOrg, headingIdToLevel };
 }
 
 /**
@@ -637,7 +654,7 @@ export async function exportOrgToHtml(
 
   // Read and pre-process the Org file
   const rawOrg = readFileSync(inputPath, "utf-8");
-  const processedOrg = preprocessOrgForLinks(rawOrg);
+  const { orgText: processedOrg, headingIdToLevel } = preprocessOrgForLinksWithMeta(rawOrg);
 
   // Write pre-processed Org to a temp file (Pandoc reads from file)
   const tmpOrgPath = join(os.tmpdir(), `elot-export-${Date.now()}.org`);
@@ -655,7 +672,8 @@ export async function exportOrgToHtml(
     "--template", templatePath,
     "--toc",
     "--toc-depth=6",
-    "--shift-heading-level-by=-1",
+    "--number-sections",
+    "--shift-heading-level-by=1",
     "-o", outPath,
   ];
 
@@ -681,6 +699,19 @@ export async function exportOrgToHtml(
         html = html.replace(/<dd>\r?\n?<p>(.*?)<\/p>\r?\n?<dl/gs, (m, content) => `<dd>\n${content}\n<dl`);
         // Add class="org-dl" to all <dl> elements (for ELOT CSS)
         html = html.replace(/<dl>/g, '<dl class="org-dl">');
+        // Convert <p class="heading" id="...">...</p> to proper <hN> elements.
+        // Pandoc caps at h6; deeper headings become <p class="heading">.
+        // ELOT (like the Elisp exporter) uses non-standard h7, h8, etc.
+        html = html.replace(
+          /<p class="heading"[^>]*?\bid="([^"]+)"[^>]*>(.*?)<\/p>/gs,
+          (_m, id, content) => {
+            // headingIdToLevel has the Org level (1-based).
+            // With --shift-heading-level-by=1, Org level N → HTML h(N+1).
+            const orgLevel = headingIdToLevel.get(id);
+            const hLevel = orgLevel ? orgLevel + 1 : 7;
+            return `<h${hLevel} id="${id}">${content}</h${hLevel}>`;
+          }
+        );
         writeFileSync(outPath, html, "utf-8");
       } catch { /* non-fatal: HTML is still valid without these tweaks */ }
       resolve(outPath);
