@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { writeFileSync } from "fs";
-import { resolve, dirname } from "path";
+import { resolve, dirname, basename } from "path";
 import { parseOrg } from "./parseOrgWasm.js";
 import { generateFullOmn } from "./generateOmn.js";
 import { registerHoverProvider, clearSlurpCache } from "./hoverProvider.js";
@@ -13,6 +13,7 @@ import { registerDefinitionProvider } from "./definitionProvider.js";
 import { registerCompletionProvider } from "./completionProvider.js";
 import { registerDiagnosticsProvider } from "./diagnosticsProvider.js";
 import { registerImportOwlCommand, registerDownloadExporterCommand } from "./importOwl.js";
+import { ensurePandoc, exportOrgToHtml } from "./exportHtml.js";
 
 export function activate(context: vscode.ExtensionContext) {
   const tangle = async (doc: vscode.TextDocument, manual = false) => {
@@ -107,12 +108,65 @@ export function activate(context: vscode.ExtensionContext) {
   // Explicit download/update of elot-exporter.jar
   const downloadExporter = registerDownloadExporterCommand(context);
 
+  // Export to HTML via Pandoc
+  const exportHtml = vscode.commands.registerCommand("elot.exportHtml", async () => {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor || !editor.document.fileName.endsWith(".org")) {
+      vscode.window.showErrorMessage("Not an Org file");
+      return;
+    }
+
+    const storageDir = context.globalStorageUri.fsPath;
+    const pandocSetting = vscode.workspace.getConfiguration("elot").get<string>("pandocPath") || "pandoc";
+
+    try {
+      const pandocPath = await ensurePandoc({
+        pandocPath: pandocSetting,
+        storageDir,
+        onDownloadPrompt: async () => {
+          const choice = await vscode.window.showInformationMessage(
+            "Pandoc is required for HTML export but was not found. Download it now?",
+            "Download", "Cancel"
+          );
+          return choice === "Download";
+        },
+        onProgress: (msg) => vscode.window.setStatusBarMessage(msg, 5000),
+      });
+
+      if (!pandocPath) return;
+
+      const inputPath = editor.document.fileName;
+      const defaultOutput = inputPath.replace(/\.org$/, ".html");
+
+      const saveUri = await vscode.window.showSaveDialog({
+        defaultUri: vscode.Uri.file(defaultOutput),
+        filters: { "HTML": ["html"], "All files": ["*"] },
+        title: "Export HTML to…",
+      });
+      if (!saveUri) return;
+
+      const outPath = await vscode.window.withProgress(
+        { location: vscode.ProgressLocation.Notification, title: "Exporting to HTML…" },
+        () => exportOrgToHtml(inputPath, pandocPath, saveUri.fsPath)
+      );
+
+      const openChoice = await vscode.window.showInformationMessage(
+        `Exported to ${basename(outPath)}`, "Open in Browser", "OK"
+      );
+      if (openChoice === "Open in Browser") {
+        vscode.env.openExternal(vscode.Uri.file(outPath));
+      }
+    } catch (err: any) {
+      vscode.window.showErrorMessage(`HTML export failed: ${err.message}`);
+    }
+  });
+
   // Clean up cached slurp maps when documents are closed
   const onClose = vscode.workspace.onDidCloseTextDocument((doc) => {
     clearSlurpCache(doc.uri.toString());
   });
 
-  context.subscriptions.push(disposable, onSave, hover, folding, definition, completion, importOwl, downloadExporter, onClose);
+  context.subscriptions.push(disposable, onSave, hover, folding, definition, completion, importOwl, downloadExporter, exportHtml, onClose);
 }
 
 export function deactivate() {}

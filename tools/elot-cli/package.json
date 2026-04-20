@@ -1,7 +1,7 @@
 {
   "name": "elot",
   "displayName": "Elot: Org-mode Ontology Editor",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "publisher": "johanwk",
   "description": "Manchester Syntax generation for ontologies written in Org-mode",
   "icon": "images/elot-icon.png",
@@ -60,6 +60,10 @@
       {
         "command": "elot.downloadExporter",
         "title": "Elot: Download/Update elot-exporter"
+      },
+      {
+        "command": "elot.exportHtml",
+        "title": "Elot: Export to HTML"
       }
     ],
     "keybindings": [
@@ -107,6 +111,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable ELOT ontology lint checks (structural, CURIE validation, keyword appropriateness)"
+        },
+        "elot.pandocPath": {
+          "type": "string",
+          "default": "pandoc",
+          "description": "Path to the Pandoc executable (auto-downloaded if not found; required for HTML export)"
         }
       }
     },
@@ -141,6 +150,11 @@
         },
         {
           "command": "elot.importOwl",
+          "when": "resourceExtname == .org",
+          "group": "navigation"
+        },
+        {
+          "command": "elot.exportHtml",
           "when": "resourceExtname == .org",
           "group": "navigation"
         }

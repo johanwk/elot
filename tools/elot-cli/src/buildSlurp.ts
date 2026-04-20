@@ -54,7 +54,7 @@ export function buildSlurp(root: ElotNode): Map<string, SlurpEntry> {
 
     if (node.uri) {
       const uri = node.uri;
-      const label = stripLangTag(node.label ?? uri);
+      let label = stripLangTag(node.label ?? uri);
 
       // Collect extra properties from descriptions
       const properties: Array<{ tag: string; value: string }> = [];
@@ -65,7 +65,11 @@ export function buildSlurp(root: ElotNode): Map<string, SlurpEntry> {
           // Use explicit rdf:type if present
           if (!rdfType) rdfType = desc.value;
         } else if (desc.tag === "rdfs:label") {
-          // Skip — we already have the label from the heading
+          // Use explicit rdfs:label when the heading didn't provide
+          // a distinct label (i.e. label fell back to the URI itself).
+          if (label === uri) {
+            label = stripLangTag(desc.value);
+          }
         } else {
           properties.push({ tag: desc.tag, value: desc.value });
         }
