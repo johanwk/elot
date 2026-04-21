@@ -16,6 +16,39 @@ to be:
 - *Incrementally updatable* — each step has a status field; a decisions log
   and changelog at the bottom capture ongoing refinements.
 
+* Non-goals
+
+To keep scope honest and forestall drift into adjacent problem spaces,
+this subsystem is explicitly *not* the following:
+
+- *Not a triplestore.* The DB stores flattened =(id, label, source,
+  data_source)= rows plus EAV-style =(prop, value)= attributes. It has
+  no notion of graphs, named graphs, datatypes, inference, or SPARQL
+  evaluation. If those are needed, use Jena/Fuseki, Oxigraph, rdflib,
+  or similar — do not grow this schema toward them.
+- *Not authoritative.* All contents are derived from primary sources
+  (Org files, CSV/TSV, Turtle, SPARQL =.rq= queries). The DB is a
+  cache; primary sources remain the source of truth.
+- *Not persistent in the data-preservation sense.* The DB is
+  rebuildable from its sources at any time. Losing =elot-cache.sqlite=
+  is an inconvenience, not a data loss. Users and tools may delete it
+  freely.
+- *Not a query language target.* Consumers access data through the
+  =elot-db-*= Elisp API (and the equivalent TypeScript API in the VS
+  Code port), not by writing SQL or SPARQL against it. The schema is
+  an implementation detail of that API.
+- *Not a shared / multi-user store.* One user, one cache, local disk.
+  Cross-editor sharing (Emacs ↔ VS Code on the same machine) is a
+  deferred stretch goal; cross-machine or multi-user sharing is out of
+  scope entirely.
+- *Not a general-purpose identifier registry.* It serves ELOT's
+  label-display and completion needs. It is not intended as a backend
+  for unrelated ontology tooling.
+
+If a future requirement pushes against any of these boundaries, that
+is a signal to reconsider the architecture (and likely to adopt an
+existing tool) rather than to extend this cache.
+
 * Background & Current State
 
 ** The existing =elot-slurp= mechanism
