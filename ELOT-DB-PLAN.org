@@ -1,0 +1,626 @@
+#+title: Implementation Plan: Global Slurp & Label-Display for ELOT
+#+startup: overview
+
+* Overview
+
+This plan describes the addition of a *global, SQLite-backed label store* to
+ELOT, complementing the existing buffer-local =elot-slurp= mechanism. It
+enables label-display in both ELOT =.org= files and in foreign file types
+(Turtle, CSV/TSV, SPARQL queries, JSON, etc.), with per-project source
+selection and cross-editor portability (Emacs now, VS Code / CLI later).
+
+This document is the authoritative reference for the feature. It is designed
+to be:
+- *Self-contained* — an LLM or human contributor can pick it up without
+  needing the original design conversation.
+- *Incrementally updatable* — each step has a status field; a decisions log
+  and changelog at the bottom capture ongoing refinements.
+
+* Background & Current State
+
+** The existing =elot-slurp= mechanism
+
+When an ELOT =.org= buffer is parsed, a buffer-local variable =elot-slurp= is
+populated with a list of entries in the shape:
+
+#+begin_example
+(ID LABEL PLIST)
+#+end_example
+
+where =PLIST= is a flat list =("prop1" "val1" "prop2" "val2" ...)=.
+Example entry:
+
+#+begin_example
+("obo:BFO_0000001" "entity"
+ ("rdf:type" "owl:Class"
+  "dc11:identifier" "001-BFO"
+  "skos:definition" "\"An entity is anything that exists...\"@en"))
+#+end_example
+
+From =elot-slurp= two buffer-local hash tables are built:
+- =elot-codelist-ht= : id → label
+- =elot-attriblist-ht= : label → plist-of-attributes
+
+Label-display then uses these tables during font-lock to replace CURIEs
+with their human-readable labels via text properties.
+
+** The obsolete =elot-slurp-global=
+
+The current code has a flat in-memory =elot-slurp-global= variable,
+populated by =elot-read-slurp-global= from Elisp =.el= files produced
+by ad-hoc SPARQL queries. This does not scale (regex-size limit,
+no per-project filtering, no priority resolution when sources disagree)
+and will be *replaced* by the SQLite-backed store described here.
+
+** Key terms (glossary)
+
+- *CURIE* — compact URI, e.g. =obo:BFO_0000001=. ELOT identifies resources
+  by CURIEs throughout.
+- *slurp* — the =(ID LABEL PLIST)= data shape above; the common currency
+  between parsers, the DB, and lookup code.
+- *source* — a file or SPARQL query registered as a provider of slurp
+  entries. Identified by its path or URL.
+- *active sources* — the subset of registered sources enabled in the
+  current buffer/project, in priority order (index 0 = highest).
+- *ROBOT* — external Java tool used to execute SPARQL queries against
+  OWL files; already integrated in ELOT via =elot-robot-execute-query=.
+- *ELOT buffer* — an Org-mode buffer that follows ELOT conventions
+  (headlines with =:ID:= properties declaring ontology resources).
+
+* Design Reference
+
+This section gathers the concrete design decisions and canonical code
+snippets referenced by the steps below. When a step says "see Design
+Reference", it points here.
+
+** Database schema (authoritative DDL)
+
+#+begin_src sql
+PRAGMA foreign_keys = ON;
+
+CREATE TABLE IF NOT EXISTS schema_version (
+  version INTEGER PRIMARY KEY
+);
+
+CREATE TABLE IF NOT EXISTS sources (
+  source        TEXT PRIMARY KEY,
+  type          TEXT,     -- 'org', 'csv', 'tsv', 'ttl', 'rq'
+  last_modified REAL,     -- file mtime at last parse (0.0 for remote queries)
+  last_updated  REAL      -- wall-clock time of last successful update
+);
+
+CREATE TABLE IF NOT EXISTS entities (
+  id     TEXT,
+  label  TEXT,
+  source TEXT,
+  PRIMARY KEY (id, source),
+  FOREIGN KEY (source) REFERENCES sources(source) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS attributes (
+  id     TEXT,
+  source TEXT,
+  prop   TEXT,
+  value  TEXT,
+  FOREIGN KEY (id, source) REFERENCES entities(id, source) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_attrs_id_source ON attributes(id, source);
+CREATE INDEX IF NOT EXISTS idx_entities_id     ON entities(id);
+#+end_src
+
+** Update transaction (reference implementation)
+
+#+begin_src emacs-lisp
+(defun elot-db-update-source (source type data &optional file-mtime)
+  "Replace DB records for SOURCE with DATA.
+DATA is a list of (id label plist) triples."
+  (sqlite-transaction elot-db
+    (sqlite-execute elot-db
+      "DELETE FROM entities WHERE source = ?" (list source))
+    (dolist (row data)
+      (let ((id    (nth 0 row))
+            (label (nth 1 row))
+            (plist (nth 2 row)))
+        (sqlite-execute elot-db
+          "INSERT OR REPLACE INTO entities (id, label, source) VALUES (?, ?, ?)"
+          (list id label source))
+        (cl-loop for (prop val) on plist by #'cddr do
+          (sqlite-execute elot-db
+            "INSERT INTO attributes (id, source, prop, value) VALUES (?, ?, ?, ?)"
+            (list id source prop val)))))
+    (sqlite-execute elot-db
+      "INSERT OR REPLACE INTO sources (source, type, last_modified, last_updated)
+       VALUES (?, ?, ?, ?)"
+      (list source type (or file-mtime 0.0) (float-time)))))
+#+end_src
+
+** Priority-aware lookup (reference implementation)
+
+The active-sources list is both a *filter* (only these sources count) and
+an *ordering* (earlier = higher priority). Emacs sorts the candidate rows
+by the list position of their =source= column.
+
+#+begin_src emacs-lisp
+(defun elot-db-get-label (id &optional active-sources)
+  "Return label for ID, restricted and prioritized by ACTIVE-SOURCES.
+ACTIVE-SOURCES defaults to buffer-local `elot-active-label-sources'."
+  (let ((sources (or active-sources elot-active-label-sources)))
+    (when sources
+      (let* ((ph    (mapconcat (lambda (_) "?") sources ", "))
+             (query (format
+                     "SELECT label, source FROM entities
+                       WHERE id = ? AND source IN (%s)" ph))
+             (rows  (sqlite-select elot-db query (cons id sources))))
+        (caar (sort rows
+                    (lambda (a b)
+                      (< (cl-position (nth 1 a) sources :test #'equal)
+                         (cl-position (nth 1 b) sources :test #'equal)))))))))
+
+(defun elot-db-get-attr (id prop &optional active-sources)
+  "Return value of PROP for ID, priority-resolved."
+  (let ((sources (or active-sources elot-active-label-sources)))
+    (when sources
+      (let* ((ph    (mapconcat (lambda (_) "?") sources ", "))
+             (query (format
+                     "SELECT value, source FROM attributes
+                       WHERE id = ? AND prop = ? AND source IN (%s)" ph))
+             (rows  (sqlite-select elot-db query
+                                   (append (list id prop) sources))))
+        (caar (sort rows
+                    (lambda (a b)
+                      (< (cl-position (nth 1 a) sources :test #'equal)
+                         (cl-position (nth 1 b) sources :test #'equal)))))))))
+#+end_src
+
+** Two-tier lookup (local HT first, DB fallback)
+
+These replace the current definitions in =elot-label-display.org=:
+
+#+begin_src emacs-lisp
+(defun elot-codelist-id-label (idstring)
+  "Return label for IDSTRING: local hash table first, then global DB."
+  (or (elot--strip-lang-tag (gethash idstring elot-codelist-ht))
+      (and (fboundp 'elot-db-get-label)
+           (elot-db-get-label idstring))))
+
+(defun elot-attriblist-label-value (label prop)
+  "Return PROP from attribute plist for LABEL: local first, then global DB."
+  (or (plist-get (gethash label elot-attriblist-ht) prop 'equal)
+      (and (fboundp 'elot-db-get-attr)
+           (elot-db-get-attr label prop))))
+#+end_src
+
+** Needs-update check (mtime comparison)
+
+#+begin_src emacs-lisp
+(defun elot-db-source-needs-update-p (file)
+  "Return t if FILE has been modified since last parsed into the DB."
+  (let* ((mtime (float-time (file-attribute-modification-time
+                             (file-attributes file))))
+         (row   (sqlite-select elot-db
+                 "SELECT last_modified FROM sources WHERE source = ?"
+                 (list file)))
+         (db-mtime (caar row)))
+    (or (null db-mtime) (> mtime db-mtime))))
+#+end_src
+
+** Local slurp → DB sync
+
+In =elot-slurp-to-vars= (defined in =elot-tangling.org=), after building
+the local hash tables, push the same data into the DB:
+
+#+begin_src emacs-lisp
+(when (and slurp (buffer-file-name) (fboundp 'elot-db-update-source))
+  (elot-db-update-source
+   (buffer-file-name) "org" slurp
+   (float-time (file-attribute-modification-time
+                (file-attributes (buffer-file-name))))))
+#+end_src
+
+* File & Module Layout
+
+| File                           | Status    | Role                                           |
+|--------------------------------+-----------+------------------------------------------------|
+| =elot-package/elot-db.el=      | *new*     | DB abstraction layer (only file that talks SQL)|
+| =elot-package/elot-sources.el= | *new*     | Source parsers + registration UI               |
+| =elot-db.org=                  | *new*     | Literate source of =elot-db.el=                |
+| =elot-sources.org=             | *new*     | Literate source of =elot-sources.el=           |
+| =schema.sql=                   | *new*     | Canonical DDL, shared with VS Code port        |
+| =elot-label-display.org=       | modified  | Two-tier lookup; global minor mode             |
+| =elot-tangling.org=            | modified  | =elot-slurp-to-vars= syncs to DB               |
+| =elot-mode.org=                | modified  | Hook registration; keybindings                 |
+| =test/elot-db-test.el=         | *new*     | ERT tests for DB layer                         |
+| =test/elot-sources-test.el=    | *new*     | ERT tests for parsers + registration           |
+| =test/fixtures/=               | *new*     | Shared test fixtures (CSV/TSV/Org/TTL)         |
+| =vscode-elot/=                 | *new* (S2)| VS Code extension source tree                  |
+
+* Portability Boundary
+
+Everything below the line =elot-db-*= API is Emacs-specific (uses
+=sqlite.el=). Everything above is pure Elisp working on slurp lists.
+The VS Code port reimplements *only* the =elot-db-*= functions in
+TypeScript against =sql.js=; parsers are re-authored in TS but produce
+the same slurp shape. The =schema.sql= file is shared verbatim.
+
+* Status Legend
+
+- =TODO= — not started
+- =WIP=  — in progress
+- =DONE= — implemented, tested, merged
+- =BLOCKED= — waiting on external factor (see notes)
+
+* Guiding Principles
+
+1. *Thin DB abstraction layer.* All SQLite access goes through a small set of functions (=elot-db-*=). Nothing else in the codebase knows the storage backend. This is the seam for the VS Code port.
+2. *Local always wins.* Buffer-local =elot-slurp= for the current ELOT file is authoritative for its own identifiers. The DB is a fallback / enrichment source.
+3. *Incremental, testable steps.* Each step ends in a working state with passing tests. No "big bang" integration.
+4. *Portable SQL.* DDL and query strings written once, reused verbatim by the VS Code port.
+5. *Graceful degradation.* If SQLite is unavailable, network is down, or a file is missing, ELOT keeps working on whatever it has.
+
+---
+
+** Stage 1: Emacs Implementation
+
+*** Step 1.1 — DB layer foundation (=elot-db.el=)
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+*Goal:* Create a new Elisp file containing only low-level DB operations. No UI, no integration yet.
+
+*Deliverables:*
+- =elot-db.el= with:
+  - =elot-db-file= defcustom (default: =(locate-user-emacs-file "elot-cache.sqlite")=)
+  - =elot-db= global variable (the open connection)
+  - =elot-db-init= — opens connection, creates schema if absent, enables =PRAGMA foreign_keys = ON=
+  - =elot-db-close= — for cleanup / tests
+  - Schema:
+    - =sources(source TEXT PK, type TEXT, last_modified REAL, last_updated REAL)=
+    - =entities(id TEXT, label TEXT, source TEXT, PK(id,source), FK source→sources CASCADE)=
+    - =attributes(id TEXT, source TEXT, prop TEXT, value TEXT, FK(id,source)→entities CASCADE)=
+    - Index =idx_attrs_id_source ON attributes(id, source)=
+    - Index =idx_entities_id ON entities(id)= (for cross-source lookup)
+
+*Tests (=test/elot-db-test.el=):*
+- =test-elot-db-init-creates-tables= — verify schema exists after init
+- =test-elot-db-init-idempotent= — calling twice doesn't error
+- =test-elot-db-cascade-delete= — deleting a source removes entities and attributes
+- Uses a temp DB file via =make-temp-file=, cleans up in teardown
+
+---
+
+*** Step 1.2 — DB write/read primitives
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+Reference implementations for all primitives listed below are given
+in *Design Reference* above (=elot-db-update-source=, =elot-db-get-label=,
+=elot-db-get-attr=, =elot-db-source-needs-update-p=).
+
+*Goal:* CRUD operations at the source granularity.
+
+*Deliverables in =elot-db.el=:*
+- =elot-db-update-source (source type data &optional file-mtime)= — wraps delete+insert in a transaction
+- =elot-db-source-exists-p (source)=
+- =elot-db-source-needs-update-p (source)= — compare file mtime against =last_modified=
+- =elot-db-remove-source (source)= — explicit deletion (cascades)
+- =elot-db-list-sources ()= — returns alist of =(source type last-updated)=
+- =elot-db-get-label (id &optional active-sources)= — priority-aware (see Design Reference)
+- =elot-db-get-attr (id prop &optional active-sources)= — priority-aware (see Design Reference)
+- =elot-db-get-all-attrs (id &optional active-sources)= — returns plist
+
+*Tests:*
+- =test-elot-db-update-source-roundtrip= — insert, read back identical
+- =test-elot-db-update-source-replaces= — re-inserting same source replaces
+- =test-elot-db-priority-lookup= — two sources with same id, active list determines winner
+- =test-elot-db-priority-attr-lookup= — same for attributes
+- =test-elot-db-needs-update-mtime= — file mtime vs. stored mtime
+- =test-elot-db-missing-source= — lookup returns nil, no error
+
+---
+
+*** Step 1.3 — Source parsers
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+*Goal:* One parser per source type, all producing the common =(id label plist)= slurp format.
+
+*Deliverables in =elot-sources.el=:*
+- =elot-source-parse (source)= — dispatcher on file extension
+- =elot-source-parse-org (file)= — visits file, calls existing =elot-build-slurp= in a temp buffer
+- =elot-source-parse-csv (file)= / =elot-source-parse-tsv (file)= — header-row-aware; column 1 = id, column 2 = label, further columns = plist keyed by header
+- =elot-source-parse-ttl (file)= — uses ROBOT (existing =elot-robot-execute-query= path) to run the label-attribs SPARQL query
+- =elot-source-parse-rq (file)= — reads =.rq= file; expects metadata header comment =# endpoint: https://...= and runs query
+- =elot-source-supported-extensions= — alist of ext → parser function
+
+*Tests (with fixtures in =test/fixtures/=):*
+- =test-parse-csv-basic= — 3-row fixture → 3 slurp entries
+- =test-parse-tsv-with-attributes= — extra columns become plist entries
+- =test-parse-org-minimal= — tiny ELOT file fixture
+- =test-parse-dispatcher= — correct parser selected by extension
+- SPARQL/TTL tests *gated* by env var =ELOT_TEST_NETWORK=1= (skipped otherwise)
+
+---
+
+*** Step 1.4 — Source registration UI
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+*Goal:* User-facing commands for managing DB contents.
+
+*Deliverables in =elot-sources.el=:*
+- =elot-label-register-source (source)= — interactive; parses + writes via =elot-db-update-source=; skips if =elot-db-source-needs-update-p= is false
+- =elot-label-register-current-buffer= — convenience wrapper
+- =elot-label-unregister-source (source)= — completing-read over registered sources
+- =elot-label-refresh-source (source)= — force re-parse even if mtime unchanged
+- =elot-label-refresh-all-sources= — iterate all; =condition-case= around each so one failure doesn't abort the batch; report successes/failures at end
+- =elot-label-list-sources= — tabulated-list-mode buffer showing source, type, last-updated, entity count
+
+*Tests:*
+- =test-register-source-adds-to-db=
+- =test-register-source-skips-unchanged=
+- =test-refresh-all-continues-on-error= — one source throws, others still processed
+- =test-unregister-source-cascades=
+
+---
+
+*** Step 1.5 — Per-project active-sources configuration
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+*Goal:* =.dir-locals.el=-friendly mechanism for selecting which registered sources are active, with priority.
+
+*Deliverables in =elot-sources.el=:*
+- =elot-active-label-sources= — buffer-local variable, list of source identifiers in priority order
+- =elot-label-activate-source= / =elot-label-deactivate-source= — interactive commands that modify the buffer-local list and optionally write back to =.dir-locals.el= (via =add-dir-local-variable=)
+- =elot-label-set-active-sources= — bulk setter
+- Safe-local-variable predicate so Emacs doesn't prompt for every file
+
+*Tests:*
+- =test-active-sources-buffer-local=
+- =test-activate-source-updates-list-order=
+- =test-priority-respected-in-lookup= — integration: two sources in DB, different =elot-active-label-sources= orderings yield different labels
+
+---
+
+*** Step 1.6 — Integration with =elot-slurp-to-vars=
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+Reference implementations for the two-tier lookup functions and the
+local→DB sync snippet are given in *Design Reference* above.
+
+*Goal:* Auto-sync local ELOT buffers into the DB; make =elot-codelist-id-label= / =elot-attriblist-label-value= two-tier.
+
+*Deliverables:*
+- Modify =elot-slurp-to-vars= (in =elot-tangling.org=):
+  - Remove =elot-slurp-global= append
+  - Add DB sync call after building local hash tables
+- Modify =elot-codelist-id-label= and =elot-attriblist-label-value= (in =elot-label-display.org=):
+  - Local HT first, fall back to =elot-db-get-label= / =elot-db-get-attr=
+- Deprecate =elot-slurp-global= and =elot-read-slurp-global= with obsolescence warnings (keep as shims for one release cycle)
+
+*Tests:*
+- =test-local-slurp-takes-precedence= — same id in local HT and DB, local label returned
+- =test-db-fallback-when-local-missing= — id only in DB, DB label returned
+- =test-save-hook-syncs-to-db= — save an ELOT buffer, verify DB updated
+
+---
+
+*** Step 1.7 — Activation for non-ELOT buffers
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+*Goal:* Simple minor mode for turning on label display in Turtle / CSV / SPARQL / arbitrary files.
+
+*Deliverables in =elot-label-display.el=:*
+- =elot-global-label-display-mode= — minor mode that:
+  - Reads =elot-active-label-sources= (from dir-locals or prompt)
+  - Calls =elot-update-codelist-fontify-regexp= using IDs drawn from DB (new function =elot-db-all-active-ids=)
+  - Installs font-lock keywords
+  - No dependency on =elot-slurp= being populated
+- =elot-global-label-display-setup= — one-shot equivalent
+- Keybinding suggestion: same F5 toggle works in both modes
+
+*Tests:*
+- =test-global-mode-enables-in-ttl-buffer=
+- =test-global-mode-regexp-built-from-db=
+- =test-global-mode-no-local-slurp-required=
+
+---
+
+*** Step 1.8 — Documentation & examples
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+*Deliverables:*
+- New chapter in =elot-manual.org=: "Global label sources"
+- Example =.dir-locals.el= snippets for aquaculture / building-industry scenarios
+- Migration note for users of the old =elot-slurp-global=
+- README update listing new commands
+
+*No tests, but:* a smoke-test org file that exercises the full flow end-to-end and can be run by CI.
+
+---
+
+*** Step 1.9 — Performance pass
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+*Goal:* Confirm acceptable latency with large DBs.
+
+*Deliverables:*
+- Benchmark script: populate DB with 100k entities across 10 sources, measure:
+  - Font-lock refresh time on a 1000-line buffer
+  - =elot-db-get-label= median/p99 latency
+- If p99 > 5ms, add an in-memory LRU cache layer in =elot-db.el= keyed by =(id . active-sources-hash)=
+
+*Tests:*
+- =test-benchmark-lookup-under-threshold= (marked slow; opt-in via =ELOT_TEST_SLOW=1=)
+
+---
+
+** Stage 2: VS Code / CLI Port
+
+*** Step 2.1 — Shared schema artifact
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+*Goal:* Single source of truth for DDL.
+
+*Deliverables:*
+- Extract all =CREATE TABLE= / =CREATE INDEX= statements from =elot-db.el= into =schema.sql=
+- Both Emacs and VS Code implementations read/apply this file at init
+- Ensures schema drift between platforms is impossible
+
+---
+
+*** Step 2.2 — TypeScript DB layer with =sql.js=
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+*Deliverables in =vscode-elot/src/db.ts=:*
+- =ElotDb= class mirroring the Elisp API: =init()=, =updateSource()=, =getLabel()=, =getAttr()=, =listSources()=, =removeSource()=
+- Load =.sqlite= file into =Uint8Array= on activation; =db.export()= + =fs.writeFile= on shutdown and after each =updateSource=
+- Debounced writes (e.g., 500ms) to avoid disk churn during batch refreshes
+
+*Tests (Jest):*
+- Mirror the Elisp test suite one-to-one — same fixtures, same assertions
+- Round-trip test: Emacs writes DB, TypeScript reads it, labels identical
+
+---
+
+*** Step 2.3 — TypeScript source parsers
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+*Deliverables:*
+- =parsers/org.ts=, =parsers/csv.ts=, =parsers/tsv.ts=, =parsers/ttl.ts=, =parsers/rq.ts=
+- Same =(id, label, plist)= output shape as Elisp side (as TS interface =SlurpEntry=)
+- Org parser: minimum viable — parse headline IDs + =:PROPERTIES:= drawers; can defer full ELOT parsing to a later milestone
+- CSV/TSV: use =papaparse= or equivalent
+- TTL: invoke ROBOT as subprocess (same strategy as Emacs)
+
+*Tests:* shared fixture files between Elisp and TypeScript test suites.
+
+---
+
+*** Step 2.4 — VS Code UI
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+*Deliverables:*
+- Commands: =elot.registerSource=, =elot.refreshAllSources=, =elot.listSources=
+- Decoration provider: uses VS Code =TextEditor.setDecorations= with =before=/=after= content to show labels inline, analogous to Elisp text properties
+- Per-workspace settings: =elot.activeLabelSources= in =.vscode/settings.json=
+- Tree view in sidebar listing registered sources, last-updated, entity count
+
+*Tests:*
+- Extension integration tests via =@vscode/test-electron=
+- Smoke test: open a Turtle file in a configured workspace, assert decorations present
+
+---
+
+*** Step 2.5 — CLI tool (optional but recommended)
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+*Deliverables:*
+- =elot-db= CLI binary (Node-based, shares =db.ts= and parsers): =elot-db register <file>=, =elot-db refresh=, =elot-db list=, =elot-db lookup <id>=
+- Useful for CI, scripting, and cross-editor users
+- Becomes the reference implementation against which both Emacs and VS Code can be validated
+
+*Tests:*
+- End-to-end CLI tests using =execa= / shell scripts
+
+---
+
+** Cross-cutting: Test Infrastructure
+
+*Set up in Stage 1.1:*
+- =test/= directory with =ert= runner script: =test/run-tests.sh=
+- CI (GitHub Actions) matrix: Emacs 29.1, 29.4, 30.1; Linux + macOS
+- Fixtures directory shared across Elisp and (later) TypeScript tests
+- Coverage target: 80%+ on new code, measured with =undercover.el=
+- Network-dependent tests gated by env var, run only in a dedicated CI job
+
+*Regression guards:*
+- Every bug found post-release gets a named test case reproducing it
+- =test-elot-label-display-regressions.el= accumulates these
+
+---
+
+** Milestones & Ordering
+
+| Milestone                  |         Steps | Outcome                                                     |
+|----------------------------+---------------+-------------------------------------------------------------|
+| *M1: DB foundations*         |      1.1, 1.2 | Working DB layer with tests; no user features yet           |
+| *M2: Parsers & registration* |      1.3, 1.4 | User can populate DB from files; listable/removable         |
+| *M3: Project activation*     |           1.5 | =.dir-locals.el=-driven source selection works                |
+| *M4: ELOT integration*       |           1.6 | Existing ELOT buffers benefit; =elot-slurp-global= deprecated |
+| *M5: Non-ELOT display*       |      1.7, 1.8 | Turtle/CSV/SPARQL files show labels; docs complete          |
+| *M6: Hardening*              |           1.9 | Performance validated; ready for release                    |
+| *M7: Portability*            |           2.1 | Schema extracted; Emacs still green                         |
+| *M8: VS Code MVP*            | 2.2, 2.3, 2.4 | Read-only label display in VS Code                          |
+| *M9: CLI & parity*           |           2.5 | Full parity across editors                                  |
+
+Each milestone is a potential release point. M6 is the minimum for a user-visible "global slurp" feature announcement.
+
+---
+
+** Risks & Mitigations
+
+| Risk                                        | Mitigation                                                                           |
+|---------------------------------------------+--------------------------------------------------------------------------------------|
+| SQLite unavailable (Emacs built without it) | Detect at init; fall back to old in-memory =elot-slurp-global= behavior with a warning |
+| Schema evolution                            | Add =schema_version= table from day one; write migration functions per version bump    |
+| =.dir-locals.el= prompts annoy users          | Register all new vars as safe-local-variable via a predicate                         |
+| ROBOT subprocess slow                       | Cache aggressively via mtime check; offer async refresh                              |
+| Cross-editor DB lock contention             | SQLite's default WAL mode handles this; document shared-use caveat                   |
+| TypeScript Org parser incompleteness        | Scope to "read DB written by Emacs" initially; defer TS-side Org parsing             |
+
+---
+
+* Open Questions
+
+Use this section to record questions that arise during implementation
+and are not yet resolved. Move resolved items into *Decisions Log*.
+
+- [ ] Should =elot-db-file= default to =(locate-user-emacs-file ...)=
+  or to an XDG path to ease cross-editor sharing?
+- [ ] For SPARQL =.rq= sources, what is the exact metadata header syntax
+  (=# endpoint:=, =# limit:=, =# filter:=)? Needs a small spec.
+- [ ] Schema migration strategy: automatic on version mismatch, or
+  require explicit user opt-in?
+- [ ] Should CSV/TSV parsers accept a configurable column mapping, or
+  fix on "col1=id, col2=label, cols3+=attrs"?
+
+* Decisions Log
+
+Append-only record of architectural decisions, newest first. Each entry:
+date, decision, rationale.
+
+- /(none yet — first entry goes here when implementation starts)/
+
+* Changelog
+
+Append-only record of changes to *this plan document*, newest first.
+
+- YYYY-MM-DD — Plan expanded with Background, Design Reference, File
+  Layout, Status properties, Open Questions, Decisions Log, and
+  Changelog sections. Original step structure preserved.
+- YYYY-MM-DD — Initial plan drafted from design conversation.
