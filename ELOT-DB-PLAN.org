@@ -11,9 +11,9 @@ selection and cross-editor portability (Emacs now, VS Code / CLI later).
 
 This document is the authoritative reference for the feature. It is designed
 to be:
-- *Self-contained* — an LLM or human contributor can pick it up without
+- *Self-contained* - an LLM or human contributor can pick it up without
   needing the original design conversation.
-- *Incrementally updatable* — each step has a status field; a decisions log
+- *Incrementally updatable* - each step has a status field; a decisions log
   and changelog at the bottom capture ongoing refinements.
 
 * Use Cases
@@ -35,7 +35,7 @@ written for.
 ** UC2: Code- and data-browsing developer (cross-editor)
 
 A developer works with source files and data files in which RDF
-identifiers appear as opaque strings — typically long GUIDs or
+identifiers appear as opaque strings - typically long GUIDs or
 CURIEs embedded in Python, Java, JSON, JSON-LD, Turtle, SPARQL
 results, or Jupyter notebooks. Without support, the file is
 effectively unreadable; reviewers and maintainers cannot tell what
@@ -73,9 +73,9 @@ relevant steps rather than here:
    and f-strings. V1 should start with a conservative regex (full
    IRI =<...>= and =prefix:localname= where =prefix= is a registered
    prefix) and loosen per language as needed.
-2. *rdflib-flavoured identifiers.* =URIRef("http://…")= and literal
+2. *rdflib-flavoured identifiers.* =URIRef("http://...")= and literal
    CURIEs are in scope for v1; namespace-object dotted access
-   (=EX.foo= where =EX = Namespace(…)=) requires light static
+   (=EX.foo= where =EX = Namespace(...)=) requires light static
    analysis and is a v2 concern.
 3. *Jupyter notebooks.* =.ipynb= is JSON and VS Code's notebook API
    exposes cells as independent editors; decoration providers must
@@ -85,7 +85,7 @@ relevant steps rather than here:
    properties (in-place replacement); VS Code uses
    =TextEditor.setDecorations= with =before=/=after= content
    (adjacent annotation). For source code this is arguably
-   preferable — the original identifier remains visible — but it
+   preferable - the original identifier remains visible - but it
    is a conscious design difference to flag in user-facing docs.
 5. *Populating the DB without Emacs.* Step 2.5 (CLI) is
    load-bearing for UC2: it is how a non-Emacs user refreshes the
@@ -98,6 +98,46 @@ relevant steps rather than here:
    1.3.5 or an addition to Step 1.5) and is called out here so it
    is not forgotten.
 
+** UC3: Generic identifier-label mapping (any project)
+
+A developer works on a project that has nothing to do with
+ontologies but is nonetheless littered with opaque identifiers:
+employee codes (=EMP-12345=) in HR tooling, product SKUs
+(=ACME-SKU-9=) in inventory code, ticket IDs (=PROJ-4711=) in
+commit messages and source comments, standards part numbers,
+short git SHAs paired with commit subjects, database primary keys
+alongside display-name lookup tables. Without support, the file
+reads as a wall of meaningless tokens; with a label mapping, each
+token is annotated in place with its human-readable meaning.
+
+The value proposition is identical to UC2 - opaque tokens become
+readable where they are written - but no RDF / ontology vocabulary
+is involved anywhere in the pipeline. The mapping source is a
+flat CSV / TSV / JSON file (=employees.csv=, =skus.json=,
+=ticket-subjects.tsv=) and the consumer buffer is a =.py=, =.java=,
+=.md=, =.sh=, or =.org= file containing those raw identifiers.
+
+The architecture already supports this case with minimal
+additional effort:
+- The =(id, label, plist)= slurp shape is identifier-agnostic.
+- The DB schema stores opaque strings; =entities.kind= defaults to
+  ='unknown'=, no RDF assumption.
+- The two-pass lookup's *first pass* is a literal =id= match;
+  sources without any prefix/URI structure are served entirely by
+  that pass, and the prefix machinery of Step 1.1.1 is simply
+  never consulted.
+- Active-source selection and priority via =.dir-locals.el= is
+  project-generic.
+- The font-lock regex for non-ELOT buffers (Step 1.7) is built
+  from the literal IDs present in the active sources, so the
+  scanner does not need a language- or vocabulary-specific
+  tokeniser to hit =EMP-12345= in Python source.
+
+UC3 is treated as a peer of UC1/UC2 throughout this plan: every
+subsequent step must stay honest about users who have no
+ontologies, no URIs, and no CURIEs, only flat =id -> label= maps
+and source files referring to those ids.
+
 * Non-goals
 
 To keep scope honest and forestall drift into adjacent problem spaces,
@@ -107,7 +147,7 @@ this subsystem is explicitly *not* the following:
   data_source)= rows plus EAV-style =(prop, value)= attributes. It has
   no notion of graphs, named graphs, datatypes, inference, or SPARQL
   evaluation. If those are needed, use Jena/Fuseki, Oxigraph, rdflib,
-  or similar — do not grow this schema toward them.
+  or similar - do not grow this schema toward them.
 - *Not authoritative.* All contents are derived from primary sources
   (Org files, CSV/TSV, Turtle, SPARQL =.rq= queries). The DB is a
   cache; primary sources remain the source of truth.
@@ -120,12 +160,17 @@ this subsystem is explicitly *not* the following:
   Code port), not by writing SQL or SPARQL against it. The schema is
   an implementation detail of that API.
 - *Not a shared / multi-user store.* One user, one cache, local disk.
-  Cross-editor sharing (Emacs ↔ VS Code on the same machine) is a
+  Cross-editor sharing (Emacs <-> VS Code on the same machine) is a
   deferred stretch goal; cross-machine or multi-user sharing is out of
   scope entirely.
-- *Not a general-purpose identifier registry.* It serves ELOT's
-  label-display and completion needs. It is not intended as a backend
-  for unrelated ontology tooling.
+- *Not authoritative, not shared, not a triplestore - but
+  deliberately general-purpose.* Although the subsystem grew out of
+  ELOT, it is *not* restricted to ontology work: any project with an
+  =id -> label= mapping (CSV/TSV/JSON) and source files that
+  reference those ids can use it (see UC3). What it is *not* is a
+  multi-user registry, a cross-machine service, or a system of
+  record; it remains a single-user, single-machine, rebuildable
+  local cache. ELOT is simply the first consumer.
 
 If a future requirement pushes against any of these boundaries, that
 is a signal to reconsider the architecture (and likely to adopt an
@@ -153,8 +198,8 @@ Example entry:
 #+end_example
 
 From =elot-slurp= two buffer-local hash tables are built:
-- =elot-codelist-ht= : id → label
-- =elot-attriblist-ht= : label → plist-of-attributes
+- =elot-codelist-ht= : id -> label
+- =elot-attriblist-ht= : label -> plist-of-attributes
 
 Label-display then uses these tables during font-lock to replace CURIEs
 with their human-readable labels via text properties.
@@ -169,17 +214,17 @@ and will be *replaced* by the SQLite-backed store described here.
 
 ** Key terms (glossary)
 
-- *CURIE* — compact URI, e.g. =obo:BFO_0000001=. ELOT identifies resources
+- *CURIE* - compact URI, e.g. =obo:BFO_0000001=. ELOT identifies resources
   by CURIEs throughout.
-- *slurp* — the =(ID LABEL PLIST)= data shape above; the common currency
+- *slurp* - the =(ID LABEL PLIST)= data shape above; the common currency
   between parsers, the DB, and lookup code.
-- *source* — a file or SPARQL query registered as a provider of slurp
+- *source* - a file or SPARQL query registered as a provider of slurp
   entries. Identified by its path or URL.
-- *active sources* — the subset of registered sources enabled in the
+- *active sources* - the subset of registered sources enabled in the
   current buffer/project, in priority order (index 0 = highest).
-- *ROBOT* — external Java tool used to execute SPARQL queries against
+- *ROBOT* - external Java tool used to execute SPARQL queries against
   OWL files; already integrated in ELOT via =elot-robot-execute-query=.
-- *ELOT buffer* — an Org-mode buffer that follows ELOT conventions
+- *ELOT buffer* - an Org-mode buffer that follows ELOT conventions
   (headlines with =:ID:= properties declaring ontology resources).
 
 * Design Reference
@@ -227,6 +272,78 @@ CREATE TABLE IF NOT EXISTS attributes (
 CREATE INDEX IF NOT EXISTS idx_attrs_id_source ON attributes(id, source, data_source);
 CREATE INDEX IF NOT EXISTS idx_entities_id     ON entities(id);
 #+end_src
+
+** Prefix tables (authoritative DDL, schema v2)
+
+Introduced by Step 1.1.1. Two tables: =prefixes= is per-source and
+cascades with its owning source; =global_prefixes= is a small, user-
+extensible set of de facto universal prefixes seeded by =elot-db-init=.
+
+#+begin_src sql
+CREATE TABLE IF NOT EXISTS prefixes (
+  source        TEXT NOT NULL,
+  data_source   TEXT NOT NULL DEFAULT '',
+  prefix        TEXT NOT NULL,         -- e.g. 'obo'  (empty string allowed for default ':' prefix)
+  expansion     TEXT NOT NULL,         -- e.g. 'http://purl.obolibrary.org/obo/'
+  PRIMARY KEY (source, data_source, prefix),
+  FOREIGN KEY (source, data_source)
+    REFERENCES sources(source, data_source) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS global_prefixes (
+  prefix      TEXT PRIMARY KEY,         -- 'rdf', 'rdfs', 'owl', 'xsd', 'skos', 'dcterms', 'foaf', 'obo', ...
+  expansion   TEXT NOT NULL,
+  trust       INTEGER NOT NULL DEFAULT 1  -- reserved for future weighting; 1 = de facto universal
+);
+
+CREATE INDEX IF NOT EXISTS idx_prefixes_expansion ON prefixes(expansion);
+#+end_src
+
+*=entities.id= invariant.* =entities.id= holds *the canonical form
+the parser saw*: a full URI when the parser was able to resolve the
+identifier (declared =@prefix=, configured prefix map, or known
+global prefix), otherwise the CURIE literal as written in the
+source (e.g. =ex:hello=). The column is never empty. CURIE/URI
+forms are *derived* at lookup time by joining against the
+applicable prefix tables (source-scoped first, then
+=global_prefixes=). The DB never stores =URI= and =CURIE= as sibling
+columns; see Decisions Log for why.
+
+An optional companion column =entities.kind= (=TEXT=, values
+='uri'= / ='curie'= / ='unknown'=) records which form =id= holds. It
+is informational only - useful for debugging and for the lookup
+code to skip pointless CURIE-to-URI round-trips - and is not part
+of any key.
+
+*Unresolved CURIEs.* Many real-world sources ship CURIEs whose
+prefixes cannot be resolved at parse time: SPARQL =.rq= files
+without =PREFIX= lines, CSV/Org tables of bare CURIEs, Python code
+that uses string CURIEs without an accompanying =Namespace=
+binding. The DB *accepts these*: =entities.id= stores the CURIE
+literal and =kind = 'curie'=. Label-display still works, because
+lookup matches on the literal =id= first. Two consequences worth
+naming: (1) if a prefix binding arrives later from another source,
+the same resource may end up represented twice (once as CURIE,
+once as URI) - v1 accepts this duplication, both rows resolve to
+their labels, reconciliation is deferred; (2) different sources
+that happen to use the same prefix string for different expansions
+will collide on =id= - the source-scoped =prefixes= table and the
+priority order of =elot-active-label-sources= keep the right one
+winning in a given buffer.
+
+*Two-pass lookup.* The DB-level label lookup
+(=elot-db-get-label-any=, defined in Step 1.1.1) does:
+
+1. Try =id= literal match. Covers both stored-as-URI and
+   stored-as-CURIE cases without any prefix work.
+2. If miss and the queried token *looks like* a CURIE, expand it
+   via the active source's =prefixes= rows (then =global_prefixes=)
+   and re-lookup as a full URI.
+3. If miss and the queried token *looks like* a full URI, contract
+   it via the same prefix tables (longest-expansion match) and
+   re-lookup as each candidate CURIE.
+
+No further passes; if all three miss, the lookup returns =nil=.
 
 ** Update transaction (reference implementation)
 
@@ -349,7 +466,7 @@ DATA-SOURCE disambiguates .rq sources; nil otherwise."
     (or (null db-mtime) (> mtime db-mtime))))
 #+end_src
 
-** Local slurp → DB sync
+** Local slurp -> DB sync
 
 In =elot-slurp-to-vars= (defined in =elot-tangling.org=), after building
 the local hash tables, push the same data into the DB:
@@ -388,18 +505,18 @@ start them under a sibling =slurp/= folder and move them later. Rationale:
   =elot-db-*=) resolve naturally without conditional path handling.
 
 *What stays outside =elot-package/=:*
-- *Tests and fixtures* — MELPA packages should not ship their test
+- *Tests and fixtures* - MELPA packages should not ship their test
   harness. Tests live at a top-level =test/= (see Test Infrastructure).
-- *VS Code port* (=vscode-elot/=) — separate tree, unaffected by MELPA.
+- *VS Code port* (=vscode-elot/=) - separate tree, unaffected by MELPA.
 
 *What ships inside =elot-package/= besides =.el= files:*
-- =schema.sql= — canonical DDL, shared verbatim with the VS Code port.
+- =schema.sql= - canonical DDL, shared verbatim with the VS Code port.
   Located at runtime via
   =(expand-file-name "schema.sql" (file-name-directory (locate-library "elot-db")))=.
   Included in the MELPA recipe's =:files= clause.
 
 We also *break with the literate-Org pattern* for this subsystem:
-=elot-db.el= and =elot-sources.el= are authored directly as Elisp — no
+=elot-db.el= and =elot-sources.el= are authored directly as Elisp - no
 =elot-db.org= literate source file. Each file carries a =;;; Commentary:=
 header referencing this plan document so the =slurp/=-as-topical-group
 idea is preserved in documentation even without a dedicated folder.
@@ -427,7 +544,7 @@ The eventual MELPA recipe will need to include both =.el= files and the
 
 #+begin_src emacs-lisp
 (elot :fetcher github
-      :repo "…/elot"
+      :repo ".../elot"
       :files ("elot-package/*.el"
               "elot-package/schema.sql"
               "elot-package/elot-lob.org"
@@ -462,10 +579,10 @@ the same slurp shape. The =schema.sql= file is shared verbatim.
 
 * Status Legend
 
-- =TODO= — not started
-- =WIP=  — in progress
-- =DONE= — implemented, tested, merged
-- =BLOCKED= — waiting on external factor (see notes)
+- =TODO= - not started
+- =WIP=  - in progress
+- =DONE= - implemented, tested, merged
+- =BLOCKED= - waiting on external factor (see notes)
 
 * Guiding Principles
 
@@ -479,7 +596,8 @@ the same slurp shape. The =schema.sql= file is shared verbatim.
 
 ** Stage 1: Emacs Implementation
 
-*** Step 1.1 — DB layer foundation (=elot-db.el=)
+*** DONE Step 1.1 - DB layer foundation (=elot-db.el=)
+CLOSED: [2026-04-22 ons. 17:28]
 :PROPERTIES:
 :STATUS: DONE
 :END:
@@ -490,29 +608,139 @@ the same slurp shape. The =schema.sql= file is shared verbatim.
 - =elot-package/elot-db.el= with:
   - =elot-db-file= defcustom (default: =(locate-user-emacs-file "elot-cache.sqlite")=). We deliberately do *not* attempt a shared XDG path with VS Code / other editors at this stage; cross-editor DB sharing is out of scope.
   - =elot-db= global variable (the open connection)
-  - =elot-db-init (&optional path)= — opens connection (at =path= if given, else =elot-db-file=), creates schema if absent, enables =PRAGMA foreign_keys = ON=, and seeds =schema_version= with the current version on fresh databases. The optional =path= argument exists specifically so tests can point at a temp file without =let=-binding =elot-db-file=.
-  - =elot-db-close= — for cleanup / tests
+  - =elot-db-init (&optional path)= - opens connection (at =path= if given, else =elot-db-file=), creates schema if absent, enables =PRAGMA foreign_keys = ON=, and seeds =schema_version= with the current version on fresh databases. The optional =path= argument exists specifically so tests can point at a temp file without =let=-binding =elot-db-file=.
+  - =elot-db-close= - for cleanup / tests
   - =elot-db-schema-version= constant (currently =1=)
-  - =elot-db-migrate= — stub that checks =schema_version= against =elot-db-schema-version= and *signals an explicit error* on mismatch (no automatic migration; see Decisions Log). Invoked from =elot-db-init= after opening a pre-existing database.
+  - =elot-db-migrate= - stub that checks =schema_version= against =elot-db-schema-version= and *signals an explicit error* on mismatch (no automatic migration; see Decisions Log). Invoked from =elot-db-init= after opening a pre-existing database.
   - Schema:
-    - =schema_version(version INTEGER PK)= — seeded with a single row =(1)= on fresh init
-    - =sources(source TEXT, data_source TEXT NOT NULL DEFAULT '', type TEXT, last_modified REAL, last_updated REAL, PK(source, data_source))= — =data_source= is the empty string =""= for org/csv/tsv/ttl and carries the query target (local file path or endpoint URL) for =.rq= sources. The =NOT NULL DEFAULT ''= constraint is required so the composite FK's =MATCH SIMPLE= cascade actually fires (see Decisions Log).
-    - =entities(id TEXT, label TEXT, source TEXT, data_source TEXT NOT NULL DEFAULT '', PK(id, source, data_source), FK(source, data_source)→sources CASCADE)=
-    - =attributes(id TEXT, source TEXT, data_source TEXT NOT NULL DEFAULT '', prop TEXT, value TEXT, FK(id, source, data_source)→entities CASCADE)=
+    - =schema_version(version INTEGER PK)= - seeded with a single row =(1)= on fresh init
+    - =sources(source TEXT, data_source TEXT NOT NULL DEFAULT '', type TEXT, last_modified REAL, last_updated REAL, PK(source, data_source))= - =data_source= is the empty string =""= for org/csv/tsv/ttl and carries the query target (local file path or endpoint URL) for =.rq= sources. The =NOT NULL DEFAULT ''= constraint is required so the composite FK's =MATCH SIMPLE= cascade actually fires (see Decisions Log).
+    - =entities(id TEXT, label TEXT, source TEXT, data_source TEXT NOT NULL DEFAULT '', PK(id, source, data_source), FK(source, data_source)->sources CASCADE)=
+    - =attributes(id TEXT, source TEXT, data_source TEXT NOT NULL DEFAULT '', prop TEXT, value TEXT, FK(id, source, data_source)->entities CASCADE)=
     - Index =idx_attrs_id_source ON attributes(id, source, data_source)=
     - Index =idx_entities_id ON entities(id)= (for cross-source lookup)
 
 *Tests (=test/elot-db-test.el=):*
-- =test-elot-db-init-creates-tables= — verify schema exists after init
-- =test-elot-db-init-idempotent= — calling twice doesn't error
-- =test-elot-db-cascade-delete= — deleting a source removes entities and attributes
-- =test-elot-db-schema-version-seeded= — fresh init leaves =schema_version= containing exactly one row equal to =elot-db-schema-version=
-- =test-elot-db-migrate-mismatch-errors= — opening a DB whose =schema_version= differs from the code constant signals an error via =elot-db-migrate=
+- =test-elot-db-init-creates-tables= - verify schema exists after init
+- =test-elot-db-init-idempotent= - calling twice doesn't error
+- =test-elot-db-cascade-delete= - deleting a source removes entities and attributes
+- =test-elot-db-schema-version-seeded= - fresh init leaves =schema_version= containing exactly one row equal to =elot-db-schema-version=
+- =test-elot-db-migrate-mismatch-errors= - opening a DB whose =schema_version= differs from the code constant signals an error via =elot-db-migrate=
 - Uses a temp DB file via =make-temp-file= passed to =elot-db-init=, cleans up in teardown
 
 ---
 
-*** Step 1.2 — DB write/read primitives
+*** Step 1.1.1 - Prefix handling (schema v2)
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+*Goal:* Add first-class prefix support to the DB so that
+=http://example.org/hello= and =ex:hello= are recognised as the same
+resource, and so that sources shipping bare CURIEs (with or without
+resolvable prefixes) are usable as label sources.
+
+*Prefix tables are optional infrastructure.* Sources whose
+identifiers are opaque tokens with no prefix or URI structure at all
+(UC3: =EMP-12345=, =ACME-SKU-9=, =PROJ-4711=, ...) do not populate
+the =prefixes= table, leave =entities.kind = 'unknown'=, and work
+entirely through the *first pass* of =elot-db-get-label-any= (literal
+=id= match). The CURIE/URI resolution passes are skipped when the
+queried token matches neither the CURIE nor the URI shape. Implementers
+should resist the temptation to route UC3 sources through any part of
+the prefix machinery.
+
+*Numbering note:* this step is inserted as 1.1.1 rather than
+renumbering subsequent steps, so existing references to Steps 1.2,
+1.3, ... remain stable.
+
+*Deliverables in =elot-package/elot-db.el=:*
+- Bump =elot-db-schema-version= to =2=.
+- Extend the schema DDL with the =prefixes= and =global_prefixes=
+  tables and the =idx_prefixes_expansion= index, exactly as given in
+  the Design Reference.
+- Add an optional =entities.kind TEXT= column (values: ='uri'=,
+  ='curie'=, ='unknown'=) recording which form =entities.id= holds.
+  Informational only; not part of any key. Defaults to ='unknown'=
+  for backward compatibility on rows the parser does not classify.
+- Extend =elot-db-migrate= with an explicit v1-to-v2 branch that:
+  - Adds the new tables and index.
+  - Adds the =entities.kind= column via =ALTER TABLE= (defaulting
+    existing rows to ='unknown'=).
+  - Seeds =global_prefixes= (see below).
+  - Updates the stored =schema_version= to =2=.
+  Mismatches outside the v1-to-v2 path remain hard errors.
+- Seed =global_prefixes= at =elot-db-init= time from a built-in
+  defcustom =elot-db-default-global-prefixes= containing at least:
+  =rdf=, =rdfs=, =owl=, =xsd=, =skos=, =dcterms=, =foaf=, =obo=,
+  =sh=, =prov=. Re-seeding is idempotent (=INSERT OR IGNORE=); user
+  edits to =global_prefixes= are not overwritten.
+- New API:
+  - =elot-db-add-prefix (source data-source prefix expansion)= -
+    upserts a row in =prefixes=.
+  - =elot-db-list-prefixes (&optional source data-source)= -
+    returns prefix-table contents, optionally scoped.
+  - =elot-db-expand-curie (curie &optional active-sources)= -
+    returns the full URI given a =prefix:localname= string, by
+    looking up =prefix= in the active sources' =prefixes= tables
+    (in priority order), then in =global_prefixes=. Returns =nil=
+    if no expansion is known. The default (empty) prefix =':foo'=
+    is supported via =prefix = ''=.
+  - =elot-db-contract-uri (uri &optional active-sources)= - returns
+    a list of candidate CURIE strings for a full URI, ordered by
+    longest-expansion-first then by active-source priority.
+  - =elot-db-get-label-any (token &optional active-sources)= -
+    implements the two-pass lookup defined in the Design Reference
+    (literal =id= match -> CURIE-to-URI re-lookup -> URI-to-CURIE
+    re-lookup). Used by the label-display layer in Step 2.x.
+
+*Parser responsibilities (wired in Step 1.4):*
+- TTL parsers extract =@prefix= declarations and write them into
+  =prefixes= for the source.
+- =.rq= parsers extract =PREFIX= declarations from the query header
+  (and from =SERVICE= bodies where present).
+- CSV/Org parsers accept a per-source prefix map from
+  =.dir-locals.el= and write it into =prefixes=.
+- When =entities.id= is stored as a full URI, =kind= is set to
+  ='uri'=; when stored as a CURIE literal because no expansion was
+  available, =kind= is ='curie'=.
+
+*Tests (=test/elot-db-test.el=):*
+1. =test-elot-db-prefixes-table-exists= - schema v2 init creates
+   both tables and the index.
+2. =test-elot-db-global-prefixes-seeded= - fresh init populates
+   =global_prefixes= with the built-in defaults; counts and a
+   spot-check on =rdfs= / =obo=.
+3. =test-elot-db-migrate-v1-to-v2= - open a v1 DB written by Step
+   1.1, run =elot-db-migrate=, assert v2 schema and seed are in
+   place and old rows still query.
+4. =test-elot-db-prefixes-cascade-on-source-delete= - deleting a
+   source removes its =prefixes= rows.
+5. =test-elot-db-expand-curie-source-scoped= - same =ex:= bound
+   differently in two sources resolves per active-source order.
+6. =test-elot-db-expand-curie-global-fallback= - prefix not in any
+   source-scoped =prefixes= falls through to =global_prefixes=.
+7. =test-elot-db-default-empty-prefix= - =':foo'= resolves via a
+   row with =prefix = ''=.
+8. =test-elot-db-contract-uri-longest-match= - URI matching two
+   expansions returns the longer-prefix CURIE first.
+9. =test-elot-db-get-label-any-roundtrip= - same entity stored
+   under one form is found via lookup with the other form.
+10. =test-elot-db-get-label-curie-only-source= - source ships
+    =entities.id = 'ex:hello'= with no =prefixes= row; lookup with
+    =ex:hello= still returns the label (literal =id= match wins
+    before any prefix machinery runs). Documents the
+    valuable-with-no-resolution case.
+11. =test-elot-db-get-label-late-binding-duplicates= - source A
+    stores =ex:hello=; source B later supplies =ex: ->
+    http://example.org/= and ingests =http://example.org/hello=;
+    both rows resolve to their labels via
+    =elot-db-get-label-any=. The duplication is asserted as a
+    documented limitation (see Decisions Log).
+
+---
+
+*** Step 1.2 - DB write/read primitives
 :PROPERTIES:
 :STATUS: TODO
 :END:
@@ -524,26 +752,26 @@ in *Design Reference* above (=elot-db-update-source=, =elot-db-get-label=,
 *Goal:* CRUD operations at the source granularity.
 
 *Deliverables in =elot-package/elot-db.el=:*
-- =elot-db-update-source (source data-source type data &optional file-mtime)= — wraps delete+insert in a transaction; =data-source= is =nil= for non-=.rq= sources
+- =elot-db-update-source (source data-source type data &optional file-mtime)= - wraps delete+insert in a transaction; =data-source= is =nil= for non-=.rq= sources
 - =elot-db-source-exists-p (source &optional data-source)=
-- =elot-db-source-needs-update-p (source &optional data-source)= — compare file mtime against =last_modified=
-- =elot-db-remove-source (source &optional data-source)= — explicit deletion (cascades)
-- =elot-db-list-sources ()= — returns list of =(source data-source type last-updated)=
-- =elot-db-get-label (id &optional active-sources)= — priority-aware (see Design Reference)
-- =elot-db-get-attr (id prop &optional active-sources)= — priority-aware (see Design Reference)
-- =elot-db-get-all-attrs (id &optional active-sources)= — returns plist
+- =elot-db-source-needs-update-p (source &optional data-source)= - compare file mtime against =last_modified=
+- =elot-db-remove-source (source &optional data-source)= - explicit deletion (cascades)
+- =elot-db-list-sources ()= - returns list of =(source data-source type last-updated)=
+- =elot-db-get-label (id &optional active-sources)= - priority-aware (see Design Reference)
+- =elot-db-get-attr (id prop &optional active-sources)= - priority-aware (see Design Reference)
+- =elot-db-get-all-attrs (id &optional active-sources)= - returns plist
 
 *Tests:*
-- =test-elot-db-update-source-roundtrip= — insert, read back identical
-- =test-elot-db-update-source-replaces= — re-inserting same source replaces
-- =test-elot-db-priority-lookup= — two sources with same id, active list determines winner
-- =test-elot-db-priority-attr-lookup= — same for attributes
-- =test-elot-db-needs-update-mtime= — file mtime vs. stored mtime
-- =test-elot-db-missing-source= — lookup returns nil, no error
+- =test-elot-db-update-source-roundtrip= - insert, read back identical
+- =test-elot-db-update-source-replaces= - re-inserting same source replaces
+- =test-elot-db-priority-lookup= - two sources with same id, active list determines winner
+- =test-elot-db-priority-attr-lookup= - same for attributes
+- =test-elot-db-needs-update-mtime= - file mtime vs. stored mtime
+- =test-elot-db-missing-source= - lookup returns nil, no error
 
 ---
 
-*** Step 1.3 — Source parsers
+*** Step 1.3 - Source parsers
 :PROPERTIES:
 :STATUS: TODO
 :END:
@@ -551,11 +779,24 @@ in *Design Reference* above (=elot-db-update-source=, =elot-db-get-label=,
 *Goal:* One parser per source type, all producing the common =(id label plist)= slurp format.
 
 *Deliverables in =elot-package/elot-sources.el=:*
-- =elot-source-parse (source)= — dispatcher on file extension
-- =elot-source-parse-org (file)= — visits file, calls existing =elot-build-slurp= in a temp buffer
-- =elot-source-parse-csv (file)= / =elot-source-parse-tsv (file)= — header-row-aware; column 1 = id, column 2 = label, further columns = plist keyed by header
-- =elot-source-parse-ttl (file)= — uses ROBOT (existing =elot-robot-execute-query= in =elot.el=) to run the label-attribs SPARQL query
-- =elot-source-parse-rq (query-file data-source)= — SPARQL =.rq= support.
+- =elot-source-parse (source)= - dispatcher that looks up the file
+  extension in =elot-source-supported-extensions= and invokes the
+  registered parser.
+- =elot-source-supported-extensions= - *defcustom* (not a constant)
+  of the form =(("org" . elot-source-parse-org) ("csv" . elot-source-parse-csv) ...)=.
+  Users may register additional parsers (e.g. project-specific YAML or
+  XML formats) by =add-to-list='ing without patching ELOT.
+- =elot-source-parse-org (file)= - visits file, calls existing =elot-build-slurp= in a temp buffer
+- =elot-source-parse-csv (file)= / =elot-source-parse-tsv (file)= - header-row-aware; column 1 = id, column 2 = label, further columns = plist keyed by header. *Primary UC3 path.*
+- =elot-source-parse-json (file)= - accepts either a flat dict
+  =({"id1": "label1", "id2": "label2", ...})= or a nested dict
+  =({"id1": {"label": "...", "otherprop": "..."}, ...})=. In the
+  nested form, =label= becomes =entities.label= and remaining keys
+  become plist attributes. This covers the common ad-hoc mapping
+  shape found in config files, translation files, and legend JSON
+  from dashboards - the most practical UC3 extension beyond CSV.
+- =elot-source-parse-ttl (file)= - uses ROBOT (existing =elot-robot-execute-query= in =elot.el=) to run the label-attribs SPARQL query
+- =elot-source-parse-rq (query-file data-source)= - SPARQL =.rq= support.
   The source's identity is the *pair* =(query-file, data-source)=,
   where =data-source= is either a local RDF file path (=.ttl= / =.owl= /
   =.rdf=) or a SPARQL endpoint URL. Execution always routes through
@@ -577,21 +818,29 @@ in *Design Reference* above (=elot-db-update-source=, =elot-db-get-label=,
   intact and surfaces ROBOT's stderr via =user-error=. No auto-refresh
   on activation. Tests use pre-baked cache fixtures and never invoke
   ROBOT or the network.
-- =elot-source-supported-extensions= — alist of ext → parser function
+- *UC3 coverage summary:* the CSV, TSV, and JSON parsers are the
+  path for non-ontology projects. No other parser in this step is
+  required for UC3; the prefix-aware TTL / =.rq= parsers are UC1/UC2
+  machinery and are inert for UC3 sources.
 
 *Tests (with fixtures in =test/fixtures/=):*
-- =test-parse-csv-basic= — 3-row fixture → 3 slurp entries
-- =test-parse-tsv-with-attributes= — extra columns become plist entries
-- =test-parse-org-minimal= — tiny ELOT file fixture
-- =test-parse-dispatcher= — correct parser selected by extension
-- =test-parse-rq-from-cache= — with a pre-baked =.elot-cache/foo.<hash>.csv= fixture and an =.rq= + local =data-source=, verify the parser loads CSV without invoking ROBOT (cache newer than both inputs)
-- =test-parse-rq-cache-path= — cache filename is deterministic given =(query-path, data-source)=
-- =test-parse-rq-empty-result-preserves-cache= — simulate an empty result; old cache and DB rows remain untouched
+- =test-parse-csv-basic= - 3-row fixture -> 3 slurp entries
+- =test-parse-tsv-with-attributes= - extra columns become plist entries
+- =test-parse-org-minimal= - tiny ELOT file fixture
+- =test-parse-dispatcher= - correct parser selected by extension
+- =test-parse-dispatcher-user-extensible= - adding an entry to
+  =elot-source-supported-extensions= makes a new extension parse
+  through the dispatcher without code changes
+- =test-parse-json-flat-dict= - flat =({"id": "label", ...})= fixture produces slurp rows with empty plist
+- =test-parse-json-nested-dict= - nested =({"id": {"label": ..., "prop": ...}})= fixture maps label correctly and promotes other keys to plist
+- =test-parse-rq-from-cache= - with a pre-baked =.elot-cache/foo.<hash>.csv= fixture and an =.rq= + local =data-source=, verify the parser loads CSV without invoking ROBOT (cache newer than both inputs)
+- =test-parse-rq-cache-path= - cache filename is deterministic given =(query-path, data-source)=
+- =test-parse-rq-empty-result-preserves-cache= - simulate an empty result; old cache and DB rows remain untouched
 - SPARQL/TTL live-execution tests *gated* by env var =ELOT_TEST_NETWORK=1= (skipped otherwise)
 
 ---
 
-*** Step 1.4 — Source registration UI
+*** Step 1.4 - Source registration UI
 :PROPERTIES:
 :STATUS: TODO
 :END:
@@ -599,22 +848,22 @@ in *Design Reference* above (=elot-db-update-source=, =elot-db-get-label=,
 *Goal:* User-facing commands for managing DB contents.
 
 *Deliverables in =elot-package/elot-sources.el=:*
-- =elot-label-register-source (source)= — interactive; parses + writes via =elot-db-update-source=; skips if =elot-db-source-needs-update-p= is false
-- =elot-label-register-current-buffer= — convenience wrapper
-- =elot-label-unregister-source (source)= — completing-read over registered sources
-- =elot-label-refresh-source (source)= — force re-parse even if mtime unchanged
-- =elot-label-refresh-all-sources= — iterate all; =condition-case= around each so one failure doesn't abort the batch; report successes/failures at end
-- =elot-label-list-sources= — tabulated-list-mode buffer showing source, type, last-updated, entity count
+- =elot-label-register-source (source)= - interactive; parses + writes via =elot-db-update-source=; skips if =elot-db-source-needs-update-p= is false
+- =elot-label-register-current-buffer= - convenience wrapper
+- =elot-label-unregister-source (source)= - completing-read over registered sources
+- =elot-label-refresh-source (source)= - force re-parse even if mtime unchanged
+- =elot-label-refresh-all-sources= - iterate all; =condition-case= around each so one failure doesn't abort the batch; report successes/failures at end
+- =elot-label-list-sources= - tabulated-list-mode buffer showing source, type, last-updated, entity count
 
 *Tests:*
 - =test-register-source-adds-to-db=
 - =test-register-source-skips-unchanged=
-- =test-refresh-all-continues-on-error= — one source throws, others still processed
+- =test-refresh-all-continues-on-error= - one source throws, others still processed
 - =test-unregister-source-cascades=
 
 ---
 
-*** Step 1.5 — Per-project active-sources configuration
+*** Step 1.5 - Per-project active-sources configuration
 :PROPERTIES:
 :STATUS: TODO
 :END:
@@ -622,11 +871,11 @@ in *Design Reference* above (=elot-db-update-source=, =elot-db-get-label=,
 *Goal:* =.dir-locals.el=-friendly mechanism for selecting which registered sources are active, with priority.
 
 *Deliverables in =elot-package/elot-sources.el=:*
-- =elot-active-label-sources= — buffer-local variable, an *ordered list*
+- =elot-active-label-sources= - buffer-local variable, an *ordered list*
   of entries. Each entry is a two-element list =(SOURCE DATA-SOURCE)=:
   - =SOURCE= is the primary file path (org / csv / tsv / ttl / rq).
   - =DATA-SOURCE= is either =nil= (for non-=.rq= sources) or a string
-    giving the =.rq= query's target — a local RDF file path, or an
+    giving the =.rq= query's target - a local RDF file path, or an
     HTTP(S) URL of a SPARQL endpoint. URL vs file is distinguished by
     =(string-match-p "\\`https?://" DATA-SOURCE)=.
   There is *no* numeric priority column. Priority is encoded by list
@@ -640,24 +889,24 @@ in *Design Reference* above (=elot-db-update-source=, =elot-db-get-label=,
                ("wd-labels.rq"      "https://query.wikidata.org/sparql")
                ("local-labels.rq"   "ontology/merged.ttl"))))))
   #+end_src
-- =elot-label-activate-source= / =elot-label-deactivate-source= — interactive commands that modify the buffer-local list and optionally write back to =.dir-locals.el= (via =add-dir-local-variable=)
-- =elot-label-set-active-sources= — bulk setter
+- =elot-label-activate-source= / =elot-label-deactivate-source= - interactive commands that modify the buffer-local list and optionally write back to =.dir-locals.el= (via =add-dir-local-variable=)
+- =elot-label-set-active-sources= - bulk setter
 - Safe-local-variable predicate so Emacs doesn't prompt for every file
 
 *Tests:*
 - =test-active-sources-buffer-local=
 - =test-activate-source-updates-list-order=
-- =test-priority-respected-in-lookup= — integration: two sources in DB, different =elot-active-label-sources= orderings yield different labels
+- =test-priority-respected-in-lookup= - integration: two sources in DB, different =elot-active-label-sources= orderings yield different labels
 
 ---
 
-*** Step 1.6 — Integration with =elot-slurp-to-vars=
+*** Step 1.6 - Integration with =elot-slurp-to-vars=
 :PROPERTIES:
 :STATUS: TODO
 :END:
 
 Reference implementations for the two-tier lookup functions and the
-local→DB sync snippet are given in *Design Reference* above.
+local->DB sync snippet are given in *Design Reference* above.
 
 *Goal:* Auto-sync local ELOT buffers into the DB (when Emacs 29+ /
 SQLite is available); make =elot-codelist-id-label= /
@@ -688,43 +937,83 @@ directly. Only the *new* subsystem files introduced by this plan
     cycle so that any stray user config doesn't error, then delete
 
 *Tests:*
-- =test-local-slurp-takes-precedence= — same id in local HT and DB, local label returned
-- =test-db-fallback-when-local-missing= — id only in DB, DB label returned
-- =test-save-hook-syncs-to-db= — save an ELOT buffer, verify DB updated
+- =test-local-slurp-takes-precedence= - same id in local HT and DB, local label returned
+- =test-db-fallback-when-local-missing= - id only in DB, DB label returned
+- =test-save-hook-syncs-to-db= - save an ELOT buffer, verify DB updated
 
 ---
 
-*** Step 1.7 — Activation for non-ELOT buffers
+*** Step 1.7 - Activation for non-ELOT buffers
 :PROPERTIES:
 :STATUS: TODO
 :END:
 
-*Goal:* Simple minor mode for turning on label display in Turtle / CSV / SPARQL / arbitrary files.
+*Goal:* Simple minor mode for turning on label display in Turtle / CSV /
+SPARQL / arbitrary files - including source/data files from
+non-ontology projects (UC3: Python, Java, Markdown, shell scripts,
+plain text) whose only commonality is that they contain identifiers
+present in an active label source.
+
+*DB-driven font-lock regex (first-class design point).* The font-lock
+regex used to find identifiers in the consumer buffer is *built from
+the DB*, not from a language- or vocabulary-specific grammar. The
+mode queries the set of literal =id= strings across the active
+sources and constructs =(regexp-opt IDS 'symbols)= (or a =\\b=-anchored
+equivalent) at activation time. This is what makes UC3 work: a buffer
+full of =EMP-12345= is decorated without any awareness of Python
+syntax or RDF structure, simply because those strings are in the DB.
+For UC1/UC2, the same mechanism covers stored URIs and CURIEs; no
+separate language mode is needed in v1.
 
 *Deliverables in =elot-package/elot-label-display.el= (tangled from =elot-label-display.org=):*
-- =elot-global-label-display-mode= — minor mode that:
+- =elot-db-all-active-ids (&optional active-sources)= - returns the
+  list of =entities.id= strings across the active sources, deduped.
+  This is the input to the font-lock regex and is the first-class
+  deliverable enabling UC3 (not an incidental helper).
+- =elot-global-label-display-mode= - minor mode that:
   - Reads =elot-active-label-sources= (from dir-locals or prompt)
-  - Calls =elot-update-codelist-fontify-regexp= using IDs drawn from DB (new function =elot-db-all-active-ids=)
+  - Calls =elot-update-codelist-fontify-regexp= using IDs from
+    =elot-db-all-active-ids=, via =regexp-opt= with word/symbol
+    boundaries
   - Installs font-lock keywords
   - No dependency on =elot-slurp= being populated
-- =elot-global-label-display-setup= — one-shot equivalent
+  - No dependency on prefix tables or on the buffer's major mode
+- =elot-global-label-display-setup= - one-shot equivalent
 - Keybinding suggestion: same F5 toggle works in both modes
+
+*Scope limit (v1).* Matching is *literal tokens only*. No capture
+groups, no per-source regex templates, no partial-string substitution
+inside larger tokens, no language-selection for multi-label entries.
+See Decisions Log.
 
 *Tests:*
 - =test-global-mode-enables-in-ttl-buffer=
 - =test-global-mode-regexp-built-from-db=
 - =test-global-mode-no-local-slurp-required=
+- =test-global-mode-uc3-python-buffer= - with an =employees.csv=
+  source registered and active, opening a =.py= fixture containing
+  =EMP-12345= decorates that token with the employee's name; no
+  Python-aware tokenising involved
 
 ---
 
-*** Step 1.8 — Documentation & examples
+*** Step 1.8 - Documentation & examples
 :PROPERTIES:
 :STATUS: TODO
 :END:
 
 *Deliverables:*
-- New chapter in =elot-manual.org=: "Global label sources"
-- Example =.dir-locals.el= snippets for aquaculture / building-industry scenarios
+- New chapter in =elot-manual.org=: "Global label sources" - framed
+  as a general-purpose label-display subsystem, with ELOT as its
+  first (but not only) consumer. One sentence states plainly that
+  the subsystem is usable standalone in projects with no ontology
+  work at all; no code rename is implied.
+- Example =.dir-locals.el= snippets for:
+  - UC1/UC2: aquaculture / building-industry ontology scenarios
+  - *UC3: non-ontology scenario* - an =employees.csv= file as a
+    label source, activated for a directory of Python code that
+    references employee codes; reviewers see names inline without
+    touching the ontology tooling.
 - Migration note for users of the old =elot-slurp-global=
 - README update listing new commands
 
@@ -732,7 +1021,7 @@ directly. Only the *new* subsystem files introduced by this plan
 
 ---
 
-*** Step 1.9 — Performance pass
+*** Step 1.9 - Performance pass
 :PROPERTIES:
 :STATUS: TODO
 :END:
@@ -752,7 +1041,7 @@ directly. Only the *new* subsystem files introduced by this plan
 
 ** Stage 2: VS Code / CLI Port
 
-*** Step 2.1 — Shared schema artifact
+*** Step 2.1 - Shared schema artifact
 :PROPERTIES:
 :STATUS: TODO
 :END:
@@ -775,7 +1064,7 @@ same file.
 
 ---
 
-*** Step 2.2 — TypeScript DB layer with =sql.js=
+*** Step 2.2 - TypeScript DB layer with =sql.js=
 :PROPERTIES:
 :STATUS: TODO
 :END:
@@ -786,12 +1075,12 @@ same file.
 - Debounced writes (e.g., 500ms) to avoid disk churn during batch refreshes
 
 *Tests (Jest):*
-- Mirror the Elisp test suite one-to-one — same fixtures, same assertions
+- Mirror the Elisp test suite one-to-one - same fixtures, same assertions
 - Round-trip test: Emacs writes DB, TypeScript reads it, labels identical
 
 ---
 
-*** Step 2.3 — TypeScript source parsers
+*** Step 2.3 - TypeScript source parsers
 :PROPERTIES:
 :STATUS: TODO
 :END:
@@ -799,7 +1088,7 @@ same file.
 *Deliverables:*
 - =parsers/org.ts=, =parsers/csv.ts=, =parsers/tsv.ts=, =parsers/ttl.ts=, =parsers/rq.ts=
 - Same =(id, label, plist)= output shape as Elisp side (as TS interface =SlurpEntry=)
-- Org parser: minimum viable — parse headline IDs + =:PROPERTIES:= drawers; can defer full ELOT parsing to a later milestone
+- Org parser: minimum viable - parse headline IDs + =:PROPERTIES:= drawers; can defer full ELOT parsing to a later milestone
 - CSV/TSV: use =papaparse= or equivalent
 - TTL: invoke ROBOT as subprocess (same strategy as Emacs)
 
@@ -807,7 +1096,7 @@ same file.
 
 ---
 
-*** Step 2.4 — VS Code UI
+*** Step 2.4 - VS Code UI
 :PROPERTIES:
 :STATUS: TODO
 :END:
@@ -824,7 +1113,7 @@ same file.
 
 ---
 
-*** Step 2.5 — CLI tool (optional but recommended)
+*** Step 2.5 - CLI tool (optional but recommended)
 :PROPERTIES:
 :STATUS: TODO
 :END:
@@ -843,7 +1132,7 @@ same file.
 
 ELOT does not yet have a general-purpose ERT harness. What exists in
 the repository today:
-- =syntax/test-grammar.el= and =syntax/test.el= — Elisp tests for the
+- =syntax/test-grammar.el= and =syntax/test.el= - Elisp tests for the
   Manchester/axiom grammar, driven by =syntax/Makefile= and the JSON
   cases in =syntax/test-cases.json=. These are self-contained and do
   *not* use ERT as a shared project-wide runner.
@@ -925,6 +1214,56 @@ moved to the Decisions Log.)
 Append-only record of architectural decisions, newest first. Each entry:
 date, decision, rationale.
 
+- *=entities.id= holds URI-if-known-else-CURIE-literal:* the
+  invariant for =entities.id= is "the canonical form the parser
+  saw" - a full URI when an expansion for the prefix was available
+  at parse time (declared =@prefix=, configured prefix map, known
+  global prefix), and the CURIE literal otherwise. The column is
+  never empty. An optional =entities.kind= column ('uri' / 'curie'
+  / 'unknown') records which form was stored. Rationale: refusing
+  to ingest sources whose CURIEs cannot be resolved would strip
+  label-display of exactly the users it most helps - SPARQL
+  =.rq= files without =PREFIX= lines, CSV/Org tables of bare
+  CURIEs, Python source using string CURIEs without an
+  accompanying =Namespace= binding. The literal-id match is the
+  first pass of =elot-db-get-label-any= and works without any
+  prefix machinery, so the valuable case (label-display over an
+  unresolvable CURIE) is supported by construction. *Known
+  limitation (v1):* if a prefix binding arrives later from a
+  different source, the same resource may end up stored twice
+  (once as CURIE, once as URI). v1 accepts the duplication; both
+  rows resolve to their labels via the two-pass lookup.
+  Reconciliation strategies (rewrite-on-binding-insertion;
+  query-time merge) are deferred until users hit the case.
+- *Prefix support is two tables, not =URI=/=CURIE= sibling columns:*
+  added in schema v2 (Step 1.1.1) as =prefixes= (per-source,
+  cascading) plus =global_prefixes= (small, user-extensible,
+  seeded at init). =entities.id= remains the canonical form (URI
+  when known, CURIE literal otherwise; see preceding entry); CURIE
+  forms for a stored URI are derived at lookup time. The rejected
+  alternative was to add =URI= and =CURIE= columns to =entities=
+  alongside =id=. Reasons for rejection: (1) redundant storage
+  (every row carries the full prefix expansion, costly for OBO /
+  SNOMED-scale ontologies); (2) update anomalies if a prefix
+  expansion is later changed (rewrite every row vs. update one
+  prefix row); (3) ambiguity when a URI has multiple valid CURIE
+  forms (e.g. =obo:RO_0002160= vs =RO:0002160= via the "banana"
+  convention) - two columns force one answer, a prefix table lets
+  both coexist and the renderer choose; (4) =id= becomes
+  ambiguous about which form it holds; (5) prefixes are a property
+  of *sources*, not entities - a 1-to-many =sources -> prefixes=
+  relationship that entity-level columns cannot scope. The
+  source-scoped vs. global split mirrors how prefixes are used in
+  practice: project-level bindings are local; =rdf=, =rdfs=, =owl=,
+  =xsd=, =skos=, =dcterms=, =foaf=, =obo=, =sh=, =prov= are de
+  facto universal and worth ambient availability. Conflict
+  resolution: source-scoped =prefixes= rows win over
+  =global_prefixes=; among source-scoped rows, the priority order
+  of =elot-active-label-sources= breaks ties. Round-trip ambiguity
+  for URI-to-CURIE contraction is resolved by longest-expansion
+  first, then active-source priority. The =data_source= column on
+  =prefixes= follows the =NOT NULL DEFAULT ''= convention for the
+  same =MATCH SIMPLE= reason as the other tables.
 - *=data_source= is =NOT NULL DEFAULT ''= on all three tables:* in
   =sources=, =entities=, and =attributes=, the =data_source= column is
   declared =TEXT NOT NULL DEFAULT ''=. The empty string is the sentinel
@@ -932,7 +1271,7 @@ date, decision, rationale.
   sources without a separate data target, should any arise). Rationale:
   SQLite's composite-FK semantics default to =MATCH SIMPLE=, under which
   a child row whose FK contains *any* =NULL= is considered to reference
-  no parent — so =ON DELETE CASCADE= silently skips it. =MATCH FULL= is
+  no parent - so =ON DELETE CASCADE= silently skips it. =MATCH FULL= is
   parsed but not implemented by SQLite, so the only reliable fix is to
   forbid =NULL= in the FK columns. Using =''= rather than, say, =-= or
   =none= keeps the sentinel visually unobtrusive in dumps and joins
@@ -958,7 +1297,7 @@ date, decision, rationale.
 - *Project source list is a two-column ordered list (no priority
   integer):* =elot-active-label-sources= holds entries of the form
   =(SOURCE DATA-SOURCE)= (with =DATA-SOURCE= =nil= except for =.rq=).
-  Priority is the list order — first entry wins. Rationale: row
+  Priority is the list order - first entry wins. Rationale: row
   order in =.dir-locals.el= is naturally linear and self-evident;
   an explicit integer is redundant and invites stale or conflicting
   values.
@@ -1038,10 +1377,10 @@ date, decision, rationale.
   attributes keyed by header name=. No configurable mapping at this
   stage.
 - *SPARQL result shape contract:* any user-supplied SPARQL query used
-  as a label source *must* return at least two columns — the first
+  as a label source *must* return at least two columns - the first
   with URI/CURIE content (string or URI datatype), the second with a
   literal label (string datatype). Additional columns are treated as
-  optional attributes (column name → plist key).
+  optional attributes (column name -> plist key).
 - *Primary label not duplicated in attributes:* =rdfs:label= (or the
   chosen primary label property) populates =entities.label= only; it
   is not also written to =attributes=. Alternative / language-tagged
@@ -1053,19 +1392,100 @@ date, decision, rationale.
 - *Empty active-sources list:* if =elot-active-label-sources= is empty
   in the current buffer, no DB lookup is performed and no labels are
   produced by the global layer. This is not an error.
+- *v1 matching is literal tokens only (line in the sand):* the
+  font-lock matcher built in Step 1.7 looks for *literal* =id=
+  strings from the DB, anchored by word/symbol boundaries, nothing
+  more. Explicitly *out of scope for v1*: regex-captured identifiers
+  (e.g. =#1234= with the digits looked up after a capture), per-source
+  display templates, partial-string substitution inside larger
+  tokens, multi-label-per-id with language selection, language- or
+  major-mode-specific tokenisers, and identifier alias resolution
+  beyond the two-pass URI/CURIE lookup already defined in Step 1.1.1.
+  Rationale: once UC3 is blessed, requests of this shape are
+  predictable and each is individually reasonable; committing to
+  literal-only matching now keeps v1 small, keeps the DB-driven
+  regex construction tractable, and provides a documented baseline
+  against which future proposals must justify themselves.
+- *Subsystem is general-purpose; ELOT is the first consumer (UC3
+  blessed):* the global-slurp subsystem intentionally supports three
+  peer use cases - UC1 (ELOT author), UC2 (cross-editor ontology
+  browsing), and UC3 (generic =id -> label= mapping in projects with
+  no ontology involvement). The non-goal previously phrased as "not
+  a general-purpose identifier registry" was too narrow and has been
+  revised; the real limits are single-user, single-machine, non-
+  authoritative, non-triplestore, which remain in force. No rename
+  of the =elot-*= symbol space is undertaken; the standalone story is
+  a documentation concern (Step 1.8) only.
+- *Parser dispatcher is user-extensible:* =elot-source-supported-extensions=
+  is a =defcustom=, not an internal constant, so users can register
+  project-specific parsers (JSON variants, YAML, XML, domain-specific
+  formats) without patching ELOT. Low-cost lever for UC3.
+- *JSON parser is in v1:* a simple JSON-dict parser (flat or
+  =label=-nested) ships in Step 1.3. Rationale: flat =id -> label=
+  JSON dicts are the most common ad-hoc mapping shape in non-RDF
+  projects (config, i18n, dashboard legends); CSV alone forces users
+  to convert, and they won't. Adding JSON at the time CSV/TSV are
+  added costs very little and dramatically broadens UC3 coverage.
 
 * Changelog
 
 Append-only record of changes to *this plan document*, newest first.
 
-- YYYY-MM-DD — Added /Use Cases/ section documenting UC1 (ELOT
+- YYYY-MM-DD - Broadened scope to include UC3 (generic
+  identifier-label mapping for projects with no ontology involvement)
+  as a peer of UC1 and UC2. New /UC3/ subsection added to /Use
+  Cases/. Non-goal #6 ("not a general-purpose identifier registry")
+  rewritten to preserve the real limits (single-user, single-machine,
+  non-authoritative, non-triplestore) while dropping the
+  ontology-exclusivity. Step 1.1.1 intro now states that the prefix
+  machinery is optional infrastructure - UC3 sources with opaque
+  identifiers bypass it entirely via the literal =id= match in
+  =elot-db-get-label-any=. Step 1.3 (a) promotes
+  =elot-source-supported-extensions= from an internal constant to a
+  =defcustom=, (b) adds an =elot-source-parse-json= parser for flat
+  and =label=-nested JSON dicts, (c) calls out CSV/TSV/JSON as the
+  UC3 path; new ERT cases =test-parse-dispatcher-user-extensible=,
+  =test-parse-json-flat-dict=, =test-parse-json-nested-dict=. Step
+  1.7 lifts DB-driven font-lock regex construction
+  (=elot-db-all-active-ids= + =regexp-opt=) from an incidental detail
+  to a first-class deliverable and explicit design point, with a
+  scope-limit paragraph pinning v1 to literal-token matching; new
+  ERT case =test-global-mode-uc3-python-buffer= exercises a =.py=
+  buffer against an =employees.csv= source. Step 1.8 adds a
+  non-ontology example (=employees.csv= + Python code via
+  =.dir-locals.el=) and reframes the manual chapter as a
+  general-purpose label-display subsystem with ELOT as first
+  consumer. Decisions Log gains four new entries: literal-token-only
+  matching as the v1 line in the sand; subsystem-is-general-purpose
+  / UC3-blessed; parser dispatcher is a user-extensible defcustom;
+  JSON parser is in v1.
+- YYYY-MM-DD - Relaxed the =entities.id= invariant to "URI if
+  known, else CURIE literal as parsed; never empty" and added an
+  optional =entities.kind= companion column. New /Unresolved
+  CURIEs/ paragraph in the Design Reference documents the
+  motivating case (sources that ship bare CURIEs with no resolvable
+  prefix - SPARQL =.rq= files without =PREFIX= lines, CSV/Org
+  tables, Python string CURIEs) and spells out the two-pass lookup
+  used by =elot-db-get-label-any=. Step 1.1.1 outline updated to
+  introduce =entities.kind=, document the two-pass lookup as the
+  semantics of =elot-db-get-label-any=, and add two ERT cases
+  (=test-elot-db-get-label-curie-only-source=,
+  =test-elot-db-get-label-late-binding-duplicates=). New Decisions
+  Log entry records the relaxation, the late-binding duplication
+  as a known v1 limitation, and the deferred reconciliation
+  strategies. Also: added Step 1.1.1 (Prefix handling, schema v2)
+  itself - inserted as 1.1.1 rather than renumbering existing
+  steps - and the previously omitted Decisions Log entry rejecting
+  the =URI=/=CURIE= sibling-columns alternative in favour of the
+  two-table design.
+- YYYY-MM-DD - Added /Use Cases/ section documenting UC1 (ELOT
   author in Emacs) and UC2 (cross-editor code/data browsing,
   motivated by the rdflib-in-Jupyter-in-VS-Code scenario). UC2
   records execution risks (identifier recognition, rdflib dotted
   access, notebook cells, UX differences, DB population without
   Emacs, prefix-map handling) so design choices in Stages 1 and 2
   remain accountable to both users. No step statuses changed.
-- YYYY-MM-DD — Step 1.1 implemented and merged; status flipped to
+- YYYY-MM-DD - Step 1.1 implemented and merged; status flipped to
   =DONE=. Schema DDL in Step 1.1 and the Design Reference updated to
   declare =data_source TEXT NOT NULL DEFAULT ''= on =sources=,
   =entities=, and =attributes=, so that the composite FK's
@@ -1074,7 +1494,7 @@ Append-only record of changes to *this plan document*, newest first.
   cascade). New Decisions Log entry records the rationale and the
   empty-string sentinel convention for non-=.rq= sources. All six ERT
   tests in =test/elot-db-test.el= pass locally on MSYS2 / Emacs 30.
-- YYYY-MM-DD — =.rq= support un-deferred and fully specified: schema
+- YYYY-MM-DD - =.rq= support un-deferred and fully specified: schema
   gains a nullable =data_source= column (composite PK/FK across
   =sources=/=entities=/=attributes=); =elot-active-label-sources=
   becomes a two-column ordered list =(SOURCE DATA-SOURCE)= with no
@@ -1088,7 +1508,7 @@ Append-only record of changes to *this plan document*, newest first.
   place of the previous "deferred stub" approach. Open Question #1
   closed; Decisions Log gains five new entries covering the =.rq=
   model, schema shape, config syntax, executor choice, and caching.
-- YYYY-MM-DD — Pre-implementation review resolutions folded in:
+- YYYY-MM-DD - Pre-implementation review resolutions folded in:
   (a) clarified that only *new* files break the literate-Org
   convention; modifications target the =.org= sources and are tangled;
   (b) Step 1.1 now explicitly seeds =schema_version= and introduces a
@@ -1099,12 +1519,12 @@ Append-only record of changes to *this plan document*, newest first.
   =.rq= parsing behind a stub pending the header-syntax spec;
   (f) v1 language-tag write policy fixed (stripped label in
   =entities.label=, =elot:labelLang= attribute row, no alt-language
-  labels); (g) GitHub Actions CI explicitly descoped — testing is
+  labels); (g) GitHub Actions CI explicitly descoped - testing is
   local-only on Linux / Emacs 30. Open Questions #2 closed; #1 marked
   deferred. Blocker item #1 from the review (missing function names)
-  withdrawn — the names exist in the tree and were simply missed by a
+  withdrawn - the names exist in the tree and were simply missed by a
   too-narrow search.
-- YYYY-MM-DD — MELPA alignment: ELOT will be submitted to MELPA. New
+- YYYY-MM-DD - MELPA alignment: ELOT will be submitted to MELPA. New
   Elisp files (=elot-db.el=, =elot-sources.el=) are now authored
   directly under =elot-package/= from Step 1.1 rather than under a
   sibling =slurp/= folder, so no later file-move is required. Tests
@@ -1112,16 +1532,16 @@ Append-only record of changes to *this plan document*, newest first.
   =schema.sql= ships inside =elot-package/= and is located at runtime
   via =locate-library=. Added MELPA recipe sketch to the File &
   Module Layout section and updated the Decisions Log accordingly.
-- YYYY-MM-DD — Incorporated review decisions: new =slurp/= folder;
+- YYYY-MM-DD - Incorporated review decisions: new =slurp/= folder;
   drop =elot-db.org= literate source; retire =elot-slurp-global=;
   Emacs-29 requirement scoped to global slurp only; explicit
   =elot-db-migrate=; fixed CSV column mapping; SPARQL result-shape
   contract; primary label not duplicated in attributes; store labels
   without language tag (tag promoted to attribute); empty active
-  sources ⇒ no lookup; noted existing =syntax/= tests as starting
+  sources -> no lookup; noted existing =syntax/= tests as starting
   point for the test harness. Open Questions and Decisions Log
   updated accordingly.
-- YYYY-MM-DD — Plan expanded with Background, Design Reference, File
+- YYYY-MM-DD - Plan expanded with Background, Design Reference, File
   Layout, Status properties, Open Questions, Decisions Log, and
   Changelog sections. Original step structure preserved.
-- YYYY-MM-DD — Initial plan drafted from design conversation.
+- YYYY-MM-DD - Initial plan drafted from design conversation.
