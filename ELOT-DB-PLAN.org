@@ -913,10 +913,8 @@ shell shim.
 
 ---
 
-*** Step 1.4 - Source registration UI
-:PROPERTIES:
-:STATUS: TODO
-:END:
+*** DONE Step 1.4 - Source registration UI
+CLOSED: [2026-04-22 ons. 20:03]
 
 *Goal:* User-facing commands for managing DB contents.
 
@@ -936,10 +934,7 @@ shell shim.
 
 ---
 
-*** Step 1.5 - Per-project active-sources configuration
-:PROPERTIES:
-:STATUS: TODO
-:END:
+*** TODO Step 1.5 - Per-project active-sources configuration
 
 *Goal:* =.dir-locals.el=-friendly mechanism for selecting which registered sources are active, with priority.
 

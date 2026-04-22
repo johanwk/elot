@@ -606,6 +606,16 @@ retrieval is the job of `elot-db-get-all-attrs'."
                   (list id prop src ds))
        when row return (caar row)))))
 
+(defun elot-db-source-entity-count (source &optional data-source)
+  "Return the number of `entities' rows for (SOURCE, DATA-SOURCE).
+DATA-SOURCE defaults to the empty-string sentinel.  Used by the
+Step 1.4 source-listing UI."
+  (caar (sqlite-select
+         elot-db
+         "SELECT COUNT(*) FROM entities
+           WHERE source = ? AND data_source = ?"
+         (list source (elot-db--normalize-ds data-source)))))
+
 (defun elot-db-get-all-attrs (id &optional active-sources)
   "Return a flat plist of all attributes for ID from ACTIVE-SOURCES.
 Sources are consulted in priority order; within each source,
