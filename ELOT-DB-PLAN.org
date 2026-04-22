@@ -934,7 +934,8 @@ CLOSED: [2026-04-22 ons. 20:03]
 
 ---
 
-*** TODO Step 1.5 - Per-project active-sources configuration
+*** DONE Step 1.5 - Per-project active-sources configuration
+CLOSED: [2026-04-22 ons. 20:10]
 
 *Goal:* =.dir-locals.el=-friendly mechanism for selecting which registered sources are active, with priority.
 
@@ -968,10 +969,7 @@ CLOSED: [2026-04-22 ons. 20:03]
 
 ---
 
-*** Step 1.6 - Integration with =elot-slurp-to-vars=
-:PROPERTIES:
-:STATUS: TODO
-:END:
+*** TODO Step 1.6 - Integration with =elot-slurp-to-vars=
 
 Reference implementations for the two-tier lookup functions and the
 local->DB sync snippet are given in *Design Reference* above.

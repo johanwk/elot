@@ -2,12 +2,12 @@ EMACS ?= emacs
 
 PACKAGE_DIR := ../elot-package
 
-.PHONY: all test db-test prefix-test crud-test sources-test register-test clean help
+.PHONY: all test db-test prefix-test crud-test sources-test register-test active-sources-test clean help
 
 all: test
 
 # Run the full ELOT ERT test suite.
-test: db-test prefix-test crud-test sources-test register-test
+test: db-test prefix-test crud-test sources-test register-test active-sources-test
 
 # Step 1.1 tests: SQLite DB layer.
 db-test:
@@ -53,6 +53,15 @@ register-test:
 	  -l elot-sources-register-test.el \
 	  -f ert-run-tests-batch-and-exit
 
+# Step 1.5 tests: per-project active-sources configuration.
+active-sources-test:
+	$(EMACS) --batch \
+	  -L $(PACKAGE_DIR) \
+	  -L . \
+	  -l ert \
+	  -l elot-active-sources-test.el \
+	  -f ert-run-tests-batch-and-exit
+
 clean:
 	rm -f *.elc
 
@@ -64,6 +73,7 @@ help:
 	@echo "  crud-test    run test/elot-db-crud-test.el (Step 1.2)"
 	@echo "  sources-test run test/elot-sources-test.el (Step 1.3)"
 	@echo "  register-test run test/elot-sources-register-test.el (Step 1.4)"
+	@echo "  active-sources-test run test/elot-active-sources-test.el (Step 1.5)"
 	@echo "  clean        remove compiled artifacts"
 	@echo "  help         show this help"
 	@echo ""
