@@ -1368,6 +1368,146 @@ simply doesn't activate); no data is touched. The include-list
 requirement makes misconfiguration (e.g. forgetting to list any
 modes) fail closed rather than noisy.
 
+*** TODO Step 1.7.2 - UI for managing active-source priority order
+
+*Goal:* Give users an ergonomic way to view and reorder
+=elot-active-label-sources= in a buffer, and to have the
+=elot-global-label-display-mode= font-lock state stay in sync as
+the list changes -- without requiring a manual
+=M-x elot-global-label-display-setup=.
+
+*Motivation:* =elot-active-label-sources= is an ordered list;
+first match wins in =elot-db-get-label=. In practice this means
+upper-ontology / shared-vocabulary sources must precede
+project-specific sources, or their labels get shadowed by
+empty/missing entries in the project source. This was discovered
+the hard way when a lower-priority =LIS-14-for-FDIS.org= failed
+to produce labels for ids also present (unlabelled) in a
+higher-priority =itxm-core.org=.
+
+Two concrete UX gaps today:
+
+1. No command reorders the list. Users must either manually edit
+   =.dir-locals.el= or =deactivate= then re-=activate= sources in
+   the desired order -- tedious and error-prone.
+2. =elot-global-label-display-mode= caches the font-lock regex at
+   activation time. Subsequent changes to
+   =elot-active-label-sources= (via =activate=, =deactivate=, or
+   any future reorder command) do /not/ rebuild it. Labels for
+   newly-added ids silently do not render until the user runs
+   =elot-global-label-display-setup= manually.
+
+*Deliverables:*
+
+- New command =elot-label-list-active-sources= (separate from the
+  existing =elot-label-list-sources=, which shows /registered/
+  sources). Opens a =tabulated-list-mode= buffer with columns:
+  /Position/, /Source/, /Data-source/. Rows reflect current
+  =elot-active-label-sources= order top-to-bottom (position 0 =
+  highest priority).
+- Keybindings in the tabulated buffer:
+  - =M-<up>= / =M-<down>= -- move the entry at point up/down one
+    position. Re-renders the buffer; keeps point on the moved row.
+  - =d= -- deactivate (remove) the entry at point.
+  - =+= -- activate a new source
+    (=completing-read= over =elot-db-list-sources=), inserted at
+    a chosen position.
+  - =P= -- persist current order to =.dir-locals.el= at project
+    root (same mechanism as =C-u elot-label-activate-source=).
+    Uppercase to avoid collision with =tabulated-list-mode='s
+    inherited =p= binding (=previous-line=).
+  - =g= -- refresh view from the current variable value.
+  - =q= -- quit window.
+- *Header-line reminder*: the buffer's =header-line-format=
+  shows a one-line key legend, e.g.
+  ="M-up/M-down move  d remove  + add  P persist  g refresh  q quit"=.
+  Always visible, zero vertical cost, doesn't scroll with
+  content. Full key reference also in the mode docstring
+  (=C-h m=) and discoverable via =which-key=.
+- Companion interactive commands for users who don't want to open
+  the buffer:
+  - =elot-label-move-source-up (source &optional data-source)=
+  - =elot-label-move-source-down (source &optional data-source)=
+  Both use =completing-read= over the current active-sources
+  list, mutate the list, and trigger the refresh hook below.
+- *Auto-refresh hook* (the footgun fix):
+  - New abnormal hook =elot-active-label-sources-change-hook=,
+    run (with no args) whenever the list is mutated by any of
+    =elot-label-set-active-sources=,
+    =elot-label-activate-source=,
+    =elot-label-deactivate-source=, or the new reorder commands.
+  - On mode activation, =elot-global-label-display-mode= adds
+    =elot-global-label-display-setup= to the /buffer-local/
+    value of this hook. Teardown removes it.
+  - *Origin-buffer dispatch*: mutations initiated from the
+    tabulated-list buffer act on the /origin/ buffer (the one
+    the user was in when =elot-label-list-active-sources= was
+    invoked), not on the list buffer itself. The list buffer
+    stashes the origin in a buffer-local
+    =elot-label--active-sources-origin=; every mutator wraps
+    its body in =(with-current-buffer origin ...)= so the
+    buffer-local =elot-active-label-sources= /and/ the
+    buffer-local change-hook both resolve correctly. Without
+    this, the hook would fire in the list buffer (where no
+    global mode is active) and never refresh the real target.
+  - Result: changing active sources in a buffer where the global
+    mode is on automatically rebuilds the regex and refontifies,
+    including when the change was made via the tabulated UI
+    from a different window.
+- *Auto-repersist semantics*: conditional.
+  - If the current buffer's =.dir-locals.el= already contains an
+    =elot-active-label-sources= entry, any reorder / activate /
+    deactivate command re-persists the new value to the same
+    file automatically. User intent is unambiguous: they have
+    already opted in to persistence, and the persisted state
+    should track the buffer-local state.
+  - If no dir-locals entry exists yet, changes stay buffer-local.
+    Explicit =P= in the tabulated buffer (or =C-u= on the
+    individual commands) is required for the first-time write.
+  - Rationale: avoids silently creating =.dir-locals.el= on a
+    casual reorder (commit-noise, surprise) while keeping
+    already-persisted setups in sync without extra keystrokes.
+
+*Tests (new =test/elot-active-sources-ui-test.el=):*
+- =test-move-source-up-reorders= - 3 entries; move #2 up; assert
+  order.
+- =test-move-source-down-at-bottom-noop= - moving the last entry
+  down is a no-op (no error).
+- =test-move-source-up-at-top-noop= - symmetric.
+- =test-tabulated-list-reflects-order= - populate list,
+  =elot-label--active-build-entries= returns rows in variable
+  order with correct position column.
+- =test-change-hook-fires-on-activate-deactivate-reorder= - set
+  a counter via the hook; assert it increments on each mutation.
+- =test-global-mode-refreshes-on-source-change= - enable global
+  mode, activate a new source, assert the new source's ids are
+  now in =elot-global--fontify-regexp= without a manual
+  =setup= call.
+- =test-auto-repersist-when-dir-locals-exists= - pre-existing
+  =.dir-locals.el= with entry; reorder; assert file updated.
+- =test-no-auto-persist-when-dir-locals-absent= - no dir-locals;
+  reorder; assert no file is created.
+
+*Non-goals:*
+- No drag-and-drop / mouse reorder. Keyboard suffices.
+- No multi-select / bulk move. One entry at a time.
+- No "priority number" editing in-place. Move up/down is
+  expressive enough and avoids renumbering edge cases.
+- No cross-buffer propagation. Reordering in buffer A does not
+  touch the active-sources of other live buffers; the dir-local
+  mechanism handles cross-buffer consistency via file revisit
+  or reload.
+- No merge/union semantics across sources. First match still
+  wins; this task is purely about making that ordering visible
+  and editable.
+
+*Risk:* Low. The tabulated buffer is additive; the reorder
+commands only mutate an already-buffer-local variable; the
+auto-refresh hook replaces a currently-broken implicit contract
+with an explicit one. Auto-repersist is gated on the prior
+existence of the dir-locals entry so there is no silent
+filesystem surprise.
+
 *** TODO Step 1.6.1 - Path canonicalisation for cross-platform stability
 
 *Goal:* Ensure file paths that enter the DB (as =sources.source=,
