@@ -1195,6 +1195,178 @@ same file.
 
 ** Stage 3: Tasks picked up along the way
 *** TODO Improve ~elot-robot-execute-query~
+*** DONE Write ~.dir-locals.el~ to project root by default
+
+*Goal:* When ~elot-label-activate-source~ / ~elot-label-deactivate-source~
+/ ~elot-label-set-active-sources~ are invoked with a prefix argument to
+persist, write the ~.dir-locals.el~ file at the project root rather
+than at ~default-directory~.
+
+*Motivation:* Currently =elot-label--persist-to-dir-locals= relies on
+=add-dir-local-variable=, which reuses the nearest existing
+~.dir-locals.el~ walking upward and otherwise creates one in
+=default-directory=. In a typical ELOT workflow the user is editing an
+ontology file deep inside a project tree (e.g.
+=<repo>/ontology/foo.org=), so the dir-local lands in =ontology/= and
+does not apply to siblings like =<repo>/docs/= or =<repo>/src/=. Users
+then have to move the file manually. Project-root placement matches
+the "project-wide label sources" mental model implied by the prefix-
+arg persistence path.
+
+*Deliverables:*
+- Detect project root via =project-current= (preferred) with
+  =vc-root-dir= fallback; if neither returns a directory, fall back to
+  current =default-directory= (today's behaviour).
+- =elot-label--persist-to-dir-locals= should bind =default-directory=
+  to the detected root before calling =add-dir-local-variable=, so the
+  file is created there when none exists above.
+- If a =.dir-locals.el= already exists /above/ the project root (rare,
+  e.g. a user-global one in =$HOME=), =add-dir-local-variable='s
+  upward-walk would reuse it. Decide whether to force root placement
+  anyway by passing the root as an explicit path to
+  =add-dir-local-variable= (its first arg accepts a directory string).
+  Recommended: force root placement; document the override.
+- Optional defcustom =elot-label-dir-locals-location= with values
+  ='project-root= (default), ='current-directory= (legacy), or a
+  function returning a directory.
+
+*Tests:*
+- =test-persist-writes-to-project-root= - temp project with a Git or
+  =project.el=-recognised marker at root; activate from a
+  subdirectory; assert =.dir-locals.el= appears at root, not in the
+  subdirectory.
+- =test-persist-falls-back-without-project= - no project marker;
+  assert fallback to =default-directory=.
+- =test-persist-respects-custom-location-function=.
+
+*Non-goals (explicitly deferred):*
+- Relative-path rewriting inside =.dir-locals.el=. Paths continue to
+  be stored absolute. This means the file is not portable across
+  machines / checkouts, and should not be committed to Git without
+  caveats. A future task could add a
+  =elot-label-dir-locals-relative-paths= defcustom plus a read-side
+  resolver that expands entries against the dir-locals file's own
+  directory; skipped for now in favour of the simpler root-placement
+  win.
+
+*Risk:* Low. Behaviour change is limited to the persist path (prefix-
+arg flows); non-persist activation is unaffected. Existing
+=.dir-locals.el= files in subdirectories keep working because
+dir-local resolution still walks upward from the visited file.
+
+*Implementation note (done):* Added =elot-label--project-root= helper
+(tries =project-current= / =project-root=, then =vc-root-dir=). In
+=elot-label--persist-to-dir-locals=, the target directory is now the
+project root (fallback: =default-directory=). To force root
+placement even when an ancestor =.dir-locals.el= exists, an empty
+=.dir-locals.el= is pre-created at the target so
+=add-dir-local-variable='s upward walk terminates there. The
+optional =elot-label-dir-locals-location= defcustom was /not/ added
+(YAGNI for now; trivial to add later if a user needs it).
+Relative-path rewriting remains deferred.
+
+*** TODO Step 1.7.1 - Project-scoped auto-activation of =elot-global-label-display-mode=
+
+*Goal:* Allow =elot-global-label-display-mode= to turn itself on
+automatically for file-visiting buffers inside a project that has
+=elot-active-label-sources= configured (typically via a
+project-root =.dir-locals.el=), without requiring the user to run
+=M-x elot-global-label-display-mode= in every buffer.
+
+*Motivation:* Once a user has set up label sources for a project
+(Step 1.5 + Stage-3 project-root persistence), the natural
+expectation is that opening any file under that project shows the
+labels. Requiring a manual per-buffer toggle defeats the point.
+However, auto-enabling the mode indiscriminately (all modes, all
+sizes) is wrong: it would activate in =dired=, =magit-status=,
+image buffers, minified logs, etc., with surprising or expensive
+results. Since the space of "buffers where labels are wanted" is
+project- and user-specific with no sensible universal default, the
+correct policy is /explicit opt-in per major-mode/.
+
+*Mechanism:* =hack-local-variables-hook= (not =find-file-hook=),
+so that =elot-active-label-sources= picked up from =.dir-locals.el=
+is already bound when the predicate runs.
+
+*Deliverables (in =elot-package/elot-sources.el= or
+=elot-label-display.el= -- pick the one that already owns the
+global mode):*
+
+- Defcustom =elot-global-label-display-auto-enable= (boolean,
+  default =nil=). Master switch; nothing auto-enables until the
+  user flips this on. Default off preserves backward
+  compatibility and avoids surprising existing users.
+- Defcustom =elot-global-label-display-include-modes= (list of
+  major-mode symbols, default =nil=). *The only mode-selection
+  knob.* Auto-activation only fires when the buffer's major mode
+  is =derived-mode-p= of one of the listed symbols. Default =nil=
+  means "never auto-enable anywhere" -- users must explicitly
+  list the file types they want labels in (e.g.
+  ='(prog-mode text-mode markdown-mode ttl-mode)=). No
+  exclude-list, no defaults: there is no universal sensible set,
+  so we refuse to guess.
+- Defcustom =elot-global-label-display-max-file-size= (integer or
+  =nil=, default =500000=). Skip buffers larger than this many
+  bytes; =nil= disables the check. Defensive bound against
+  pathological buffers (large generated files, logs) where
+  =regexp-opt= over thousands of IDs + a linear scan could stutter.
+- New hook function =elot-global-label-display--maybe-enable=,
+  added to =hack-local-variables-hook=. Enables the mode iff all
+  of:
+  1. =elot-global-label-display-auto-enable= is non-nil,
+  2. =buffer-file-name= is non-nil,
+  3. =elot-active-label-sources= is non-nil,
+  4. =elot-global-label-display-include-modes= is non-nil and the
+     major mode is =derived-mode-p= of one of its entries,
+  5. =(or (null elot-global-label-display-max-file-size)
+        (<= (buffer-size) elot-global-label-display-max-file-size))=,
+  6. the mode is not already on.
+- Per-buffer escape hatch: a buffer-local
+  =elot-global-label-display-inhibit= variable (declared
+  safe-local-variable for =booleanp=); when non-nil, the hook
+  skips the buffer. Lets a user add
+  =((nil . ((elot-global-label-display-inhibit . t))))= for a
+  single problem directory or file without editing the mode list.
+
+*Tests (new =test/elot-global-mode-auto-test.el=):*
+- =test-auto-enable-off-by-default= - master switch =nil=, mode
+  does not activate even with sources and matching mode.
+- =test-auto-enable-requires-active-sources= - switch =t=, mode
+  list set, no active sources -> no activation.
+- =test-auto-enable-requires-include-mode-match= - switch =t=,
+  active sources present, major mode /not/ in include list -> no
+  activation.
+- =test-auto-enable-happy-path= - switch =t=, include list
+  covers the major mode, active sources set -> mode activates.
+- =test-auto-enable-respects-size-threshold= - buffer larger
+  than =max-file-size= -> no activation; nil threshold disables
+  the check.
+- =test-auto-enable-respects-inhibit-flag= - buffer-local
+  =elot-global-label-display-inhibit= = t blocks activation
+  even when all other conditions are met.
+- =test-auto-enable-idempotent= - hook firing twice (e.g.
+  after =revert-buffer=) does not re-enable / flicker.
+
+*Non-goals:*
+- No exclude list and no default include list. Endless variation
+  across user setups; any default would be wrong for someone.
+  Explicit opt-in per mode is the contract.
+- No "globalized minor mode" via =define-globalized-minor-mode=.
+  Wrong granularity (all Emacs buffers, not project-scoped).
+- No walking of already-open buffers at activation time. Users
+  who flip the defcustom mid-session can run
+  =M-x elot-global-label-display-setup= in any existing buffer,
+  or revisit the file.
+- No automatic =(eval . (elot-global-label-display-mode 1))= in
+  =.dir-locals.el=. That path works today for users who want it,
+  but the defcustom + hook is cleaner and avoids
+  =safe-local-eval= prompts.
+
+*Risk:* Low. Default =auto-enable nil= means zero behavioural
+change for existing users. All failure modes are silent (mode
+simply doesn't activate); no data is touched. The include-list
+requirement makes misconfiguration (e.g. forgetting to list any
+modes) fail closed rather than noisy.
 
 *** TODO Step 1.6.1 - Path canonicalisation for cross-platform stability
 
