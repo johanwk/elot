@@ -630,10 +630,8 @@ CLOSED: [2026-04-22 ons. 17:28]
 
 ---
 
-*** Step 1.1.1 - Prefix handling (schema v2)
-:PROPERTIES:
-:STATUS: TODO
-:END:
+*** DONE Step 1.1.1 - Prefix handling (schema v2)
+CLOSED: [2026-04-22 ons. 17:56]
 
 *Goal:* Add first-class prefix support to the DB so that
 =http://example.org/hello= and =ex:hello= are recognised as the same
