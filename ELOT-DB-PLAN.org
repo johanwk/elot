@@ -16,6 +16,88 @@ to be:
 - *Incrementally updatable* — each step has a status field; a decisions log
   and changelog at the bottom capture ongoing refinements.
 
+* Use Cases
+
+The plan serves two distinct primary users. Keeping both visible
+during implementation prevents design drift toward the first at the
+expense of the second.
+
+** UC1: ELOT author working in Emacs
+
+An ontology author edits =.org= files under the ELOT conventions,
+uses label-display in the current buffer, and benefits from global
+slurp when cross-referencing identifiers defined in sibling files,
+CSV code lists, Turtle imports, or SPARQL queries against local
+=.ttl= files or remote endpoints (e.g. Wikidata). This is the
+historical ELOT audience and the scenario the existing codebase was
+written for.
+
+** UC2: Code- and data-browsing developer (cross-editor)
+
+A developer works with source files and data files in which RDF
+identifiers appear as opaque strings — typically long GUIDs or
+CURIEs embedded in Python, Java, JSON, JSON-LD, Turtle, SPARQL
+results, or Jupyter notebooks. Without support, the file is
+effectively unreadable; reviewers and maintainers cannot tell what
+any given identifier refers to without leaving the editor.
+
+The concrete motivating scenario: a colleague using =rdflib= in
+Jupyter notebooks inside VS Code, reading and writing code that
+manipulates RDF terms whose URIs convey nothing to the human reader.
+Inline labels rendered beside each identifier make the code
+readable, reviewable, and maintainable.
+
+Supporting UC2 drives several decisions already captured in this
+plan:
+- The =elot-db-*= API is the single Emacs-specific seam; parsers
+  produce a language-neutral slurp shape; =schema.sql= is shared
+  verbatim with the VS Code port. A VS Code extension reading the
+  =.sqlite= written by Emacs is a first-class path, not an
+  afterthought (see /Portability Boundary/).
+- Source registration is independent of the consumer's file type:
+  a =.py= / =.ipynb= / =.java= / =.ttl= / =.rq= buffer all ask the
+  same question ("given this token, what's its label?") against the
+  same DB.
+- =.dir-locals.el= (Emacs) and =.vscode/settings.json= (VS Code)
+  both configure =elot-active-label-sources= for the same
+  workspace, so the two editors show the same labels from the same
+  ontologies.
+- A CLI tool (Step 2.5) is the escape hatch for developers who use
+  neither Emacs nor the VS Code extension directly (CI, Docker,
+  server-side kernels, shared-cache population).
+
+Known execution risks specific to UC2, to be addressed in the
+relevant steps rather than here:
+1. *Identifier recognition in code/data files.* CURIEs and full
+   IRIs appear inside string literals, dict keys, URL fragments,
+   and f-strings. V1 should start with a conservative regex (full
+   IRI =<...>= and =prefix:localname= where =prefix= is a registered
+   prefix) and loosen per language as needed.
+2. *rdflib-flavoured identifiers.* =URIRef("http://…")= and literal
+   CURIEs are in scope for v1; namespace-object dotted access
+   (=EX.foo= where =EX = Namespace(…)=) requires light static
+   analysis and is a v2 concern.
+3. *Jupyter notebooks.* =.ipynb= is JSON and VS Code's notebook API
+   exposes cells as independent editors; decoration providers must
+   handle cells, not just flat text documents. Step 2.4 carries
+   this as an explicit line item.
+4. *UX difference between editors.* Emacs uses =display= text
+   properties (in-place replacement); VS Code uses
+   =TextEditor.setDecorations= with =before=/=after= content
+   (adjacent annotation). For source code this is arguably
+   preferable — the original identifier remains visible — but it
+   is a conscious design difference to flag in user-facing docs.
+5. *Populating the DB without Emacs.* Step 2.5 (CLI) is
+   load-bearing for UC2: it is how a non-Emacs user refreshes the
+   cache. Its status is effectively *recommended*, not "optional",
+   notwithstanding the label in the milestone table.
+6. *Prefix / namespace management.* A Python file's =ex:Foo= cannot
+   be resolved unless something tells the system that =ex:= expands
+   to the same URI the DB was populated with. Prefix-map handling
+   deserves an explicit home in Stage 1 (candidate: a new Step
+   1.3.5 or an addition to Step 1.5) and is called out here so it
+   is not forgotten.
+
 * Non-goals
 
 To keep scope honest and forestall drift into adjacent problem spaces,
@@ -976,6 +1058,13 @@ date, decision, rationale.
 
 Append-only record of changes to *this plan document*, newest first.
 
+- YYYY-MM-DD — Added /Use Cases/ section documenting UC1 (ELOT
+  author in Emacs) and UC2 (cross-editor code/data browsing,
+  motivated by the rdflib-in-Jupyter-in-VS-Code scenario). UC2
+  records execution risks (identifier recognition, rdflib dotted
+  access, notebook cells, UX differences, DB population without
+  Emacs, prefix-map handling) so design choices in Stages 1 and 2
+  remain accountable to both users. No step statuses changed.
 - YYYY-MM-DD — Step 1.1 implemented and merged; status flipped to
   =DONE=. Schema DDL in Step 1.1 and the Design Reference updated to
   declare =data_source TEXT NOT NULL DEFAULT ''= on =sources=,
