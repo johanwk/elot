@@ -1,0 +1,5 @@
+{
+  "ex:Widget": "Widget",
+  "ex:Gadget": "Gadget",
+  "ex:connectsTo": "connectsTo"
+}

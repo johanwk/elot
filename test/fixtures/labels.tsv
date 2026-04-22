@@ -1,0 +1,4 @@
+id	label	definition	kind
+EMP-001	Alice Anderson	Senior engineer in the platform team.	employee
+EMP-002	Bob Baker	Product manager, widgets division.	employee
+EMP-003	Carol Chen	Site reliability engineer.	employee

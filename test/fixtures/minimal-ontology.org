@@ -1,0 +1,66 @@
+# Minimal ELOT ontology fixture for Step 1.3 parser tests.
+# Hand-written; independent of examples/ontology-list.tsv. Keep tiny and stable.
+
+#+title: Minimal Test Ontology
+#+author: ELOT test suite
+
+* minimal.owl
+:PROPERTIES:
+:ID:       minimal.owl
+:ELOT-context-type: ontology
+:ELOT-context-localname: minimal.owl
+:header-args:omn: :tangle ../minimal.omn :noweb yes
+:ELOT-default-prefix: ex
+:END:
+
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+
+| prefix | uri                                         |
+|--------+---------------------------------------------|
+| ex:    | http://example.org/ex/                      |
+| owl:   | http://www.w3.org/2002/07/owl#              |
+| rdf:   | http://www.w3.org/1999/02/22-rdf-syntax-ns# |
+| rdfs:  | http://www.w3.org/2000/01/rdf-schema#       |
+| skos:  | http://www.w3.org/2004/02/skos/core#        |
+| dc11:  | http://purl.org/dc/elements/1.1/            |
+
+** minimal.owl ontology (http://example.org/ex/minimal.owl)
+:PROPERTIES:
+:ID:       minimal.owl-ontology-declaration
+:resourcedefs: yes
+:END:
+
+ - dc11:title :: Minimal Test Ontology
+
+** Classes
+:PROPERTIES:
+:ID:       minimal.owl-class-hierarchy
+:resourcedefs: yes
+:END:
+*** Widget (ex:Widget)
+ - rdfs:label :: Widget
+ - skos:definition :: A generic widget used for testing.
+**** Gadget (ex:Gadget)
+ - rdfs:label :: Gadget
+ - skos:definition :: A gadget, subclass of widget.
+
+
+** Object properties
+:PROPERTIES:
+:ID:       minimal.owl-object-property-hierarchy
+:resourcedefs: yes
+:END:
+*** connectsTo (ex:connectsTo)
+ - rdfs:label :: connectsTo
+ - skos:definition :: Relates one widget to another.
+
+** Annotation properties
+:PROPERTIES:
+:ID:       minimal.owl-annotation-property-hierarchy
+:resourcedefs: yes
+:END:
+*** dc11:title
+*** skos:definition

@@ -1,0 +1,9 @@
+# Dummy local data source for the .rq-from-cache test.
+# Content is irrelevant; the test only reads mtime to verify the cache
+# is considered fresh relative to this file.
+
+@prefix ex: <http://example.org/ex/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+ex:Widget rdfs:label "Widget" .
+ex:Gadget rdfs:label "Gadget" .
