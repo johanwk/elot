@@ -768,10 +768,7 @@ in *Design Reference* above (=elot-db-update-source=, =elot-db-get-label=,
 ---
 
 *** DONE Step 1.3 - Source parsers
-CLOSED: [2026-04-22 ons. 19:07]
-:PROPERTIES:
-:STATUS: TODO
-:END:
+CLOSED: [2026-04-22 ons. 19:52]
 
 *Goal:* One parser per source type, all producing the common =(id label plist)= slurp format.
 
@@ -834,6 +831,85 @@ CLOSED: [2026-04-22 ons. 19:07]
 - =test-parse-rq-cache-path= - cache filename is deterministic given =(query-path, data-source)=
 - =test-parse-rq-empty-result-preserves-cache= - simulate an empty result; old cache and DB rows remain untouched
 - SPARQL/TTL live-execution tests *gated* by env var =ELOT_TEST_NETWORK=1= (skipped otherwise)
+**** DONE Step 1.3.1 - Tier 1 (ROBOT-local tests)
+CLOSED: [2026-04-22 ons. 19:52]
+
+*Goal:* Exercise the TTL and =.rq= code paths with real ROBOT
+invocations, against local TTL fixtures only.  No network, no
+endpoint.  Catches ROBOT arg construction, CSV result-shape
+variance between ROBOT versions, and cache invalidation logic.
+
+*Gate:* =elot-robot-available-p= -- checks
+=elot-robot-jar-path= (the canonical ELOT setting, as used by
+=elot-robot-omn-to-ttl= in =elot-tangle.el=) first; falls back to a
+=robot= shim on =PATH=.  Tests =ert-skip= cleanly when ROBOT is
+absent, so =make test= stays green on a bare Emacs.
+
+*Deliverables in =elot-package/elot-sources.el=:*
+- =elot-robot-available-p= - public predicate.  Lifted here
+  because Steps 1.4 and 1.7 also need it (for deciding whether to
+  offer TTL/RQ registration commands).
+- =elot-source--robot-run (query-file input-file output-file)= -
+  internal helper that invokes =java -jar elot-robot-jar-path
+  query --input ... --query ... OUTPUT.csv= via =call-process=,
+  falls back to =robot= on =PATH=, captures stderr, and raises
+  =user-error= on non-zero exit.  =elot-source-parse-ttl= and
+  =elot-source--rq-execute= route through this instead of the
+  earlier =elot-robot-execute-query= stub (whose signature was
+  inconsistent with the call sites anyway; reconciling the public
+  API in =elot.el= is tracked separately).
+
+*Fixtures:*
+- =test/fixtures/rq/data.ttl= -- extended to three entities
+  (=ex:Widget=, =ex:Gadget=, =ex:connectsTo=), each with
+  =rdfs:label= and =skos:definition=.  The =skos:definition=
+  column exercises the multi-column CSV -> plist promotion path.
+- =test/fixtures/rq/local-labels.rq= -- new.  Pure local query,
+  no =SERVICE= clause.  Projects =?id ?label ?definition=.
+- =test/fixtures/rq/wd-labels.rq= -- retained as-is, still used by
+  Tier 0 cache-shape tests and the Tier 2 gated smoke test.
+
+*Tests (all skip cleanly if ROBOT absent):*
+- =test-parse-ttl-with-robot-local= - runs ROBOT on =data.ttl=
+  with a definition-projecting query; asserts exact =(id, label,
+  plist)= round-trip for =Widget= and =Gadget=, including the
+  promoted =definition= plist key.
+- =test-parse-rq-with-robot-fresh-cache= - no cache -> invokes
+  =elot-source-parse-rq=, asserts cache file created at the
+  deterministic =<root>/.elot-cache/local-labels.<sha1>.csv= path
+  with the expected rows.
+- =test-parse-rq-stale-cache-reingests= - seeds an old cache with
+  deliberately wrong rows, touches =data.ttl= newer than cache,
+  confirms =elot-source-parse-rq= re-runs ROBOT (cache mtime
+  advances, stale rows are gone, real rows appear).
+
+*Retained (Tier 2 placeholder):*
+- =test-parse-ttl-gated= remains gated on =ELOT_TEST_NETWORK=1=,
+  now /also/ gated on =elot-robot-available-p=.  Serves as the
+  remote-endpoint smoke slot when Tier 2 fixtures eventually
+  arrive.
+
+*Deferred (documented, not planned for v1):*
+- *Tier 2 (remote SPARQL endpoints).* Enterprise/intranet
+  endpoints are a real UC1/UC2 use case, but no stable public
+  endpoint makes a reliable CI test; Wikidata/DBpedia rate-limit
+  and return mutable labels.  Interested users may run the
+  single gated test manually with =ELOT_TEST_NETWORK=1=.
+- *Tier 3 (containerised Fuseki/Blazegraph).* Requires Docker +
+  CI complexity disproportionate to v1 scope.  Tier 1 already
+  exercises the same CSV-result-shape and cache logic that a
+  live-endpoint test would; the marginal confidence gain is low.
+  Revisit only if real-world UC1/UC2 bugs trace to wire-protocol
+  assumptions Tier 1 can't catch.
+
+*Decisions Log entry:* ROBOT availability in tests (and at
+runtime for registration commands) is probed via
+=elot-robot-jar-path= first, =(executable-find "robot")= as
+fallback.  This matches how =elot-tangle.el= already gates its
+ROBOT calls (=elot-robot-omn-to-ttl= etc.) and handles the
+common =java -jar ~/bin/robot.jar= setup without requiring a
+shell shim.
+
 
 ---
 
@@ -1124,6 +1200,9 @@ same file.
 - End-to-end CLI tests using =execa= / shell scripts
 
 ---
+
+** Stage 3: Tasks picked up along the way
+*** TODO Improve ~elot-robot-execute-query~
 
 ** Cross-cutting: Test Infrastructure
 

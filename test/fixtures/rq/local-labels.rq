@@ -1,0 +1,11 @@
+# Tier 1 fixture: pure local SPARQL query against data.ttl.
+# Projects ?id, ?label, ?definition -- exercises the CSV parser's
+# multi-column -> plist promotion through ROBOT's CSV result shape.
+
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?id ?label ?definition WHERE {
+  ?id rdfs:label ?label .
+  OPTIONAL { ?id skos:definition ?definition . }
+}

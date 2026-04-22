@@ -2,12 +2,12 @@ EMACS ?= emacs
 
 PACKAGE_DIR := ../elot-package
 
-.PHONY: all test db-test prefix-test crud-test clean help
+.PHONY: all test db-test prefix-test crud-test sources-test clean help
 
 all: test
 
 # Run the full ELOT ERT test suite.
-test: db-test prefix-test crud-test
+test: db-test prefix-test crud-test sources-test
 
 # Step 1.1 tests: SQLite DB layer.
 db-test:
@@ -33,6 +33,16 @@ crud-test:
 	  -l elot-db-crud-test.el \
 	  -f ert-run-tests-batch-and-exit
 
+# Step 1.3 + 1.3.1 tests: source parsers (org / csv / tsv / json / rq-cache)
+# plus ROBOT-local Tier 1 tests (skipped cleanly if ROBOT absent).
+sources-test:
+	$(EMACS) --batch \
+	  -L $(PACKAGE_DIR) \
+	  -L . \
+	  -l ert \
+	  -l elot-sources-test.el \
+	  -f ert-run-tests-batch-and-exit
+
 clean:
 	rm -f *.elc
 
@@ -42,6 +52,7 @@ help:
 	@echo "  db-test      run test/elot-db-test.el (Step 1.1)"
 	@echo "  prefix-test  run test/elot-db-prefixes-test.el (Step 1.1.1)"
 	@echo "  crud-test    run test/elot-db-crud-test.el (Step 1.2)"
+	@echo "  sources-test run test/elot-sources-test.el (Step 1.3)"
 	@echo "  clean        remove compiled artifacts"
 	@echo "  help         show this help"
 	@echo ""
