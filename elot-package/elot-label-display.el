@@ -340,5 +340,140 @@ Output to OUT-FILE as an elisp list."
         (insert (elot-attriblist-label-value selected-label "puri"))
         (forward-char 1)))))
 
+
+
+;;;; -------------------------------------------------------------------
+;;;; Step 1.7: Activation for non-ELOT buffers
+;;;; -------------------------------------------------------------------
+;;
+;; `elot-global-label-display-mode' is a general-purpose buffer-local
+;; minor mode that decorates identifiers in *any* buffer (Turtle,
+;; SPARQL, CSV, Python, Markdown, shell scripts, etc.) with labels
+;; drawn from the active label sources recorded in the ELOT DB.
+;;
+;; It has no dependency on:
+;;   - `elot-slurp' being populated in the buffer
+;;   - prefix tables / CURIE syntax
+;;   - the buffer's major mode
+;;
+;; The font-lock matcher is built from the DB: `regexp-opt' is
+;; applied to the union of `entities.id' strings across the active
+;; sources (`elot-db-all-active-ids'), producing a literal-token
+;; matcher.  This is what lets UC3 buffers (e.g. a Python file
+;; containing `EMP-12345') get labelled without any language-aware
+;; tokenising.
+;;
+;; Scope limit (v1): matching is literal tokens only.  No capture
+;; groups, no per-source regex templates, no partial-string
+;; substitution inside larger tokens.  See the Decisions Log in
+;; ELOT-DB-PLAN.org.
+
+(declare-function elot-db-all-active-ids "elot-db" (&optional active-sources))
+(declare-function elot-db-init "elot-db" (&optional path))
+
+(defvar-local elot-global--fontify-regexp nil
+  "Buffer-local regexp used by `elot-global-label-display-mode'.
+Built from `elot-db-all-active-ids' at activation time.")
+
+(defvar-local elot-global--keywords nil
+  "Buffer-local font-lock keywords installed by the global mode.")
+
+(defun elot-global--build-regexp (ids)
+  "Return a DB-driven font-lock regexp matching literal IDS.
+IDS is a list of strings (entity identifiers).  The returned
+regexp uses `regexp-opt' with `symbols' boundaries so matches are
+anchored at token boundaries rather than inside longer
+identifiers.  Returns nil when IDS is empty."
+  (when ids
+    (regexp-opt ids 'symbols)))
+
+(defun elot-global--build-keywords (regexp)
+  "Return a font-lock keyword form decorating REGEXP with labels.
+The matcher looks the matched id up via `elot-db-get-label-any'
+and, on a hit, installs the `elot-label-display' text property
+(aliased to `display' via `char-property-alias-alist').  The
+property is only applied when the buffer-local toggle
+`elot-label-display' is `on', so \[elot-toggle-label-display]
+can hide labels without disabling the mode."
+  `((,regexp
+     (0 (let* ((id (match-string 0))
+               (label (and (fboundp 'elot-db-get-label-any)
+                           (ignore-errors (elot-db-get-label-any id)))))
+          (when label
+            (put-text-property (match-beginning 0) (match-end 0)
+                               'help-echo (concat id "  " label))
+            (when (eq elot-label-display 'on)
+              (put-text-property (match-beginning 0) (match-end 0)
+                                 'elot-label-display label)
+              (put-text-property (match-beginning 0) (match-end 0)
+                                 'face (if (boundp 'elot-label-display-face)
+                                           elot-label-display-face
+                                         'italic)))))))))
+
+(defun elot-global--install ()
+  "Build regexp + keywords from the DB and install them in this buffer."
+  (when (and (fboundp 'elot-db-init)
+             (or (not (boundp 'elot-db)) (null elot-db)))
+    (ignore-errors (elot-db-init)))
+  ;; Ensure the `display' alias is registered so that setting the
+  ;; `elot-label-display' text property actually swaps the glyph.
+  (unless (rassoc '(elot-label-display) char-property-alias-alist)
+    (push '(display elot-label-display) char-property-alias-alist))
+  (let* ((ids (and (fboundp 'elot-db-all-active-ids)
+                   (ignore-errors (elot-db-all-active-ids))))
+         (regexp (elot-global--build-regexp ids)))
+    (setq elot-global--fontify-regexp regexp)
+    (setq elot-global--keywords
+          (and regexp (elot-global--build-keywords regexp)))
+    (when elot-global--keywords
+      (with-silent-modifications
+        (font-lock-add-keywords nil elot-global--keywords 'append))
+      (font-lock-flush))))
+
+(defun elot-global--uninstall ()
+  "Remove decorations and font-lock keywords installed by the mode."
+  (when elot-global--keywords
+    (with-silent-modifications
+      (font-lock-remove-keywords nil elot-global--keywords)
+      (remove-text-properties (point-min) (point-max)
+                              '(elot-label-display nil help-echo nil))))
+  (setq elot-global--keywords nil)
+  (setq elot-global--fontify-regexp nil)
+  (font-lock-flush))
+
+;;;###autoload
+(define-minor-mode elot-global-label-display-mode
+  "Display labels from ELOT active label sources in any buffer.
+
+When enabled, identifiers present in the active sources
+(`elot-active-label-sources', usually set via `.dir-locals.el' or
+`M-x elot-label-activate-source') are decorated in place with
+their labels.  Works in any major mode: the font-lock matcher is
+built from the DB, not from a language grammar.
+
+Toggle with \\[elot-toggle-label-display] (F5) once enabled.  Use
+\\[elot-global-label-display-setup] for a one-shot refresh after
+registering or activating new sources."
+  :lighter " ELOT-L"
+  (if elot-global-label-display-mode
+      (progn
+        (elot-global--install)
+        (make-local-variable 'elot-label-display)
+        (setq elot-label-display 'on)
+        (local-set-key (kbd "<f5>") #'elot-toggle-label-display))
+    (elot-global--uninstall)
+    (setq elot-label-display 'off)))
+
+;;;###autoload
+(defun elot-global-label-display-setup ()
+  "One-shot: (re)build the DB-driven font-lock regexp in this buffer.
+Use after registering or activating new label sources to refresh
+decorations without toggling the minor mode off and on."
+  (interactive)
+  (elot-global--uninstall)
+  (elot-global--install)
+  (unless elot-global-label-display-mode
+    (elot-global-label-display-mode 1)))
+
 (provide 'elot-label-display)
 ;;; elot-label-display.el ends here

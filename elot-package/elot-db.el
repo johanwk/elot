@@ -641,6 +641,37 @@ source has rows for ID."
        (cl-loop for row in rows
                 append (list (nth 0 row) (nth 1 row)))))))
 
+
+;;;; -------------------------------------------------------------------
+;;;; Step 1.7: DB-driven font-lock support (all-active-ids)
+;;;; -------------------------------------------------------------------
+
+(defun elot-db-all-active-ids (&optional active-sources)
+  "Return a deduped list of `entities.id' strings across ACTIVE-SOURCES.
+ACTIVE-SOURCES defaults to the buffer-local `elot-active-label-sources'.
+Order is not significant; the result is suitable as input to
+`regexp-opt' for building a DB-driven font-lock matcher in
+`elot-global-label-display-mode' (Step 1.7).  Returns nil if no
+active sources are set or none contain any entities."
+  (let ((sources (elot-db--active-or-default active-sources)))
+    (when sources
+      (let ((seen (make-hash-table :test 'equal))
+            (out nil))
+        (dolist (entry sources)
+          (let* ((src (nth 0 entry))
+                 (ds  (elot-db--normalize-ds (nth 1 entry)))
+                 (rows (sqlite-select
+                        elot-db
+                        "SELECT DISTINCT id FROM entities
+                          WHERE source = ? AND data_source = ?"
+                        (list src ds))))
+            (dolist (row rows)
+              (let ((id (car row)))
+                (unless (gethash id seen)
+                  (puthash id t seen)
+                  (push id out))))))
+        (nreverse out)))))
+
 (provide 'elot-db)
 
 ;;; elot-db.el ends here

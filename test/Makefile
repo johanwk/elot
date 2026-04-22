@@ -2,12 +2,12 @@ EMACS ?= emacs
 
 PACKAGE_DIR := ../elot-package
 
-.PHONY: all test db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test clean help
+.PHONY: all test db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test clean help
 
 all: test
 
 # Run the full ELOT ERT test suite.
-test: db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test
+test: db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test
 
 # Step 1.1 tests: SQLite DB layer.
 db-test:
@@ -72,6 +72,16 @@ slurp-integration-test:
 	  -l elot-slurp-integration-test.el \
 	  -f ert-run-tests-batch-and-exit
 
+# Step 1.7 tests: elot-global-label-display-mode (DB-driven font-lock
+# regex; decorates identifiers in any buffer / any major mode).
+global-mode-test:
+	$(EMACS) --batch \
+	  -L $(PACKAGE_DIR) \
+	  -L . \
+	  -l ert \
+	  -l elot-global-mode-test.el \
+	  -f ert-run-tests-batch-and-exit
+
 clean:
 	rm -f *.elc
 
@@ -85,6 +95,7 @@ help:
 	@echo "  register-test run test/elot-sources-register-test.el (Step 1.4)"
 	@echo "  active-sources-test run test/elot-active-sources-test.el (Step 1.5)"
 	@echo "  slurp-integration-test run test/elot-slurp-integration-test.el (Step 1.6)"
+	@echo "  global-mode-test run test/elot-global-mode-test.el (Step 1.7)"
 	@echo "  clean        remove compiled artifacts"
 	@echo "  help         show this help"
 	@echo ""

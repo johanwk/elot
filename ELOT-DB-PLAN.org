@@ -1013,7 +1013,8 @@ directly. Only the *new* subsystem files introduced by this plan
 
 ---
 
-*** TODO Step 1.7 - Activation for non-ELOT buffers
+*** DONE Step 1.7 - Activation for non-ELOT buffers
+CLOSED: [2026-04-22 ons. 23:06]
 
 *Goal:* Simple minor mode for turning on label display in Turtle / CSV /
 SPARQL / arbitrary files - including source/data files from
@@ -1064,10 +1065,7 @@ See Decisions Log.
 
 ---
 
-*** Step 1.8 - Documentation & examples
-:PROPERTIES:
-:STATUS: TODO
-:END:
+*** TODO Step 1.8 - Documentation & examples
 
 *Deliverables:*
 - New chapter in =elot-manual.org=: "Global label sources" - framed
