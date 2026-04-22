@@ -1,6 +1,6 @@
 {
   "ex:Widget": {
-    "label": "Widget",
+      "label": "Widget (nested)",
     "definition": "A generic widget used for testing.",
     "kind": "Class"
   },
