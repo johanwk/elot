@@ -62,11 +62,23 @@ and return position.  If not found, return nil and leave point unchanged."
       (replace-regexp-in-string "^\"\\([^\"]+\\)\".*" "\\1" s)
     s))
 (defun elot-codelist-id-label (idstring)
-  "Given curie IDSTRING, return label if found."
-  (elot--strip-lang-tag (gethash idstring elot-codelist-ht)))
+  "Given curie IDSTRING, return label if found.
+Two-tier lookup: local `elot-codelist-ht' first, then the ELOT label
+DB (`elot-db-get-label-any') if available and not found locally."
+  (or (and (hash-table-p elot-codelist-ht)
+           (elot--strip-lang-tag (gethash idstring elot-codelist-ht)))
+      (and (fboundp 'elot-db-get-label-any)
+           (fboundp 'sqlite-open)
+           (ignore-errors (elot-db-get-label-any idstring)))))
 (defun elot-attriblist-label-value (idstring prop)
-  "Given label IDSTRING and PROP, return puri if found."
-  (plist-get (gethash idstring elot-attriblist-ht) prop 'equal))
+  "Given label IDSTRING and PROP, return value if found.
+Two-tier: local `elot-attriblist-ht' first, then `elot-db-get-attr'
+if available."
+  (or (and (hash-table-p elot-attriblist-ht)
+           (plist-get (gethash idstring elot-attriblist-ht) prop 'equal))
+      (and (fboundp 'elot-db-get-attr)
+           (fboundp 'sqlite-open)
+           (ignore-errors (elot-db-get-attr idstring prop)))))
 
 (defvar elot-codelist-fontify-regexp
   "\\<\\([-a-z_A-Z0-9]*\\):\\([a-z_A-Z0-9.-]*\\)\\>"

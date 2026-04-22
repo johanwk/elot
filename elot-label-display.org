@@ -129,11 +129,26 @@ These helper functions use built-in ~puthash~ / ~gethash~ -- no external depende
         (replace-regexp-in-string "^\"\\([^\"]+\\)\".*" "\\1" s)
       s))
   (defun elot-codelist-id-label (idstring)
-    "Given curie IDSTRING, return label if found."
-    (elot--strip-lang-tag (gethash idstring elot-codelist-ht)))
+    "Given curie IDSTRING, return label if found.
+Two-tier lookup: local `elot-codelist-ht' first, then the ELOT label
+DB (`elot-db-get-label' / `elot-db-get-label-any') if available and
+not found locally."
+    (or (and (hash-table-p elot-codelist-ht)
+             (elot--strip-lang-tag (gethash idstring elot-codelist-ht)))
+        (and (fboundp 'elot-db-get-label-any)
+             (fboundp 'sqlite-open)
+             (ignore-errors (elot-db-get-label-any idstring)))))
   (defun elot-attriblist-label-value (idstring prop)
-    "Given label IDSTRING and PROP, return puri if found."
-    (plist-get (gethash idstring elot-attriblist-ht) prop 'equal))
+    "Given label IDSTRING and PROP, return value if found.
+Two-tier: local `elot-attriblist-ht' first, then `elot-db-get-attr'
+if available.  Note IDSTRING is a label (not an id) for the local HT
+path; the DB fallback treats it as an id, so is only useful when the
+lookup is being driven by id."
+    (or (and (hash-table-p elot-attriblist-ht)
+             (plist-get (gethash idstring elot-attriblist-ht) prop 'equal))
+        (and (fboundp 'elot-db-get-attr)
+             (fboundp 'sqlite-open)
+             (ignore-errors (elot-db-get-attr idstring prop)))))
 #+end_src
 ** TODO Regexp that matches the found identifiers
 Sometimes the regex becomes too complex. Then we can fall back to just

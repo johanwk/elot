@@ -438,15 +438,17 @@ First hit wins; returns nil if no source has ID.  Entries are
    tables (longest-expansion first, then by active-source priority)
    and try each candidate CURIE.
 
-Return the label, or nil if all passes miss."
-  (or (elot-db--label-in-sources token active-sources)
-      (and (elot-db--looks-like-curie-p token)
-           (let ((uri (elot-db-expand-curie token active-sources)))
-             (and uri (elot-db--label-in-sources uri active-sources))))
-      (and (elot-db--looks-like-uri-p token)
-           (cl-some (lambda (curie)
-                      (elot-db--label-in-sources curie active-sources))
-                    (elot-db-contract-uri token active-sources)))))
+Return the label, or nil if all passes miss.
+ACTIVE-SOURCES defaults to the buffer-local `elot-active-label-sources'."
+  (let ((active-sources (elot-db--active-or-default active-sources)))
+    (or (elot-db--label-in-sources token active-sources)
+        (and (elot-db--looks-like-curie-p token)
+             (let ((uri (elot-db-expand-curie token active-sources)))
+               (and uri (elot-db--label-in-sources uri active-sources))))
+        (and (elot-db--looks-like-uri-p token)
+             (cl-some (lambda (curie)
+                        (elot-db--label-in-sources curie active-sources))
+                      (elot-db-contract-uri token active-sources))))))
 
 
 ;;;; -------------------------------------------------------------------

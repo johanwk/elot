@@ -2,12 +2,12 @@ EMACS ?= emacs
 
 PACKAGE_DIR := ../elot-package
 
-.PHONY: all test db-test prefix-test crud-test sources-test register-test active-sources-test clean help
+.PHONY: all test db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test clean help
 
 all: test
 
 # Run the full ELOT ERT test suite.
-test: db-test prefix-test crud-test sources-test register-test active-sources-test
+test: db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test
 
 # Step 1.1 tests: SQLite DB layer.
 db-test:
@@ -62,6 +62,16 @@ active-sources-test:
 	  -l elot-active-sources-test.el \
 	  -f ert-run-tests-batch-and-exit
 
+# Step 1.6 tests: elot-slurp-to-vars integration with the DB +
+# two-tier lookup in elot-codelist-id-label / elot-attriblist-label-value.
+slurp-integration-test:
+	$(EMACS) --batch \
+	  -L $(PACKAGE_DIR) \
+	  -L . \
+	  -l ert \
+	  -l elot-slurp-integration-test.el \
+	  -f ert-run-tests-batch-and-exit
+
 clean:
 	rm -f *.elc
 
@@ -74,6 +84,7 @@ help:
 	@echo "  sources-test run test/elot-sources-test.el (Step 1.3)"
 	@echo "  register-test run test/elot-sources-register-test.el (Step 1.4)"
 	@echo "  active-sources-test run test/elot-active-sources-test.el (Step 1.5)"
+	@echo "  slurp-integration-test run test/elot-slurp-integration-test.el (Step 1.6)"
 	@echo "  clean        remove compiled artifacts"
 	@echo "  help         show this help"
 	@echo ""

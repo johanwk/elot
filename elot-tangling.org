@@ -1032,7 +1032,13 @@ for fontification and lookup.
     "List of resources declared in an ELOT buffer.
   Each member is a list of curie, label, and plist of attributes.")
   (defvar elot-slurp-global nil
-    "List of resources retrieved from SPARQL endpoints.")
+    "List of resources retrieved from SPARQL endpoints.
+
+  Obsolete: retained only as a transitional no-op.  Use the ELOT label
+  DB (`elot-db-*' / `elot-label-register-source') instead.")
+  (make-obsolete-variable 'elot-slurp-global
+    "use the ELOT label DB (`elot-db-*') via `elot-label-register-source' instead."
+    "ELOT 2.1")
   (defvar-local elot-codelist-ht nil
     "Hashtable holding pairs of curie and label for ELOT label-display.")
   (defvar-local elot-attriblist-ht nil
@@ -1060,18 +1066,39 @@ The following simply replaces ~elot-slurp-entities~ with ~elot-build-slurp~, and
 
   (defun elot-slurp-to-vars ()
     "Read resources declared in ELOT buffer into local variables.
-  The variables are ELOT-SLURP (plist) and ELOT-CODELIST-HT,
-  ELOT-ATTRIBLIST-HT (hashtable).  Outside ELOT buffers, use ELOT-SLURP-GLOBAL."
+  The variables are ELOT-SLURP (list), ELOT-CODELIST-HT and
+  ELOT-ATTRIBLIST-HT (hashtables).
+
+  If SQLite support is available (`sqlite-open' and
+  `elot-db-update-source' bound) and the buffer is visiting a file,
+  also sync the parsed entries into the ELOT label DB under
+  `buffer-file-name', so other buffers can look them up via
+  `elot-db-get-label' / `elot-db-get-label-any'.  Errors during
+  sync are reported but do not break the local HT population."
     (let ((slurp (elot-build-slurp)))
-      (setq elot-slurp (or slurp elot-slurp-global))
+      (setq elot-slurp slurp)
       (setq elot-codelist-ht
-            (elot--ht-from-plist (elot-codelist-from-slurp
-                                  ;; only fontify what's locally declared
-                                  elot-slurp)))
+            (elot--ht-from-plist (elot-codelist-from-slurp elot-slurp)))
       (setq elot-attriblist-ht
-            (elot--ht-from-alist (elot-attriblist-from-slurp
-                                  ;; lookup includes the global list
-                                  (append slurp elot-slurp-global))))))
+            (elot--ht-from-alist (elot-attriblist-from-slurp elot-slurp)))
+      ;; Optional DB sync (Step 1.6): if SQLite is available, try to load
+      ;; the elot-db subsystem on first use, then write the slurp.
+      (when (and slurp
+                 buffer-file-name
+                 (fboundp 'sqlite-open))
+        (require 'elot-db nil t)
+        (when (fboundp 'elot-db-update-source)
+          (condition-case err
+              (progn
+                (when (fboundp 'elot-db-init) (elot-db-init))
+                (elot-db-update-source buffer-file-name nil "org" slurp
+                                       (float-time
+                                        (file-attribute-modification-time
+                                         (file-attributes buffer-file-name)))))
+            (error
+             (message "elot-slurp-to-vars: DB sync failed: %s"
+                      (error-message-string err))))))
+      slurp))
 #+end_src
 
 To update the hashtables for fontification:

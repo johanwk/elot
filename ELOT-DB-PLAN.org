@@ -969,7 +969,8 @@ CLOSED: [2026-04-22 ons. 20:10]
 
 ---
 
-*** STARTED Step 1.6 - Integration with =elot-slurp-to-vars=
+*** DONE Step 1.6 - Integration with =elot-slurp-to-vars=
+CLOSED: [2026-04-22 ons. 22:49]
 :PROPERTIES:
 :STATUS: STARTED
 :END:
@@ -1012,10 +1013,7 @@ directly. Only the *new* subsystem files introduced by this plan
 
 ---
 
-*** Step 1.7 - Activation for non-ELOT buffers
-:PROPERTIES:
-:STATUS: TODO
-:END:
+*** TODO Step 1.7 - Activation for non-ELOT buffers
 
 *Goal:* Simple minor mode for turning on label display in Turtle / CSV /
 SPARQL / arbitrary files - including source/data files from
