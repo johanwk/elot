@@ -85,7 +85,7 @@
          (w (elot-sources-test--find "ex:Widget" entries)))
     (should (= 3 (length entries)))
     (should w)
-    (should (equal "Widget" (nth 1 w)))
+    (should (equal "Widget (nested)" (nth 1 w)))
     (should (equal "A generic widget used for testing."
                    (plist-get (nth 2 w) "definition" #'equal)))
     (should (equal "Class" (plist-get (nth 2 w) "kind" #'equal)))
