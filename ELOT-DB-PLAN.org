@@ -1368,7 +1368,8 @@ simply doesn't activate); no data is touched. The include-list
 requirement makes misconfiguration (e.g. forgetting to list any
 modes) fail closed rather than noisy.
 
-*** TODO Step 1.7.2 - UI for managing active-source priority order
+*** DONE Step 1.7.2 - UI for managing active-source priority order
+CLOSED: [2026-04-23 tor. 01:11]
 
 *Goal:* Give users an ergonomic way to view and reorder
 =elot-active-label-sources= in a buffer, and to have the

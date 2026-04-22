@@ -1,0 +1,312 @@
+#+TITLE: ELOT global label display -- user guide
+#+AUTHOR: ELOT contributors
+#+OPTIONS: toc:2 num:nil
+
+* Status
+
+This document is a /temporary/ user-facing write-up covering the
+"global slurp + label display" subsystem delivered by Stage 1 of the
+ELOT-DB plan (Steps 1.1 through 1.7.2). It will eventually be folded
+into =elot-manual.org= once that file exists; until then, this README
+is the authoritative end-user reference for the feature.
+
+For design rationale, status, and open work items, see
+[[file:ELOT-DB-PLAN.org][=ELOT-DB-PLAN.org=]].
+
+* What this feature does
+
+Turn opaque identifiers into readable labels, in any buffer, without
+modifying the underlying file:
+
+- In an ELOT Org buffer, the existing in-buffer label-display
+  machinery (=F5=) now also draws on labels from other registered
+  sources via a shared on-disk SQLite cache.
+- In /any other/ buffer -- Python, TSV, Markdown, Manchester syntax
+  =.omn=, plain text, etc. -- a new buffer-local minor mode
+  =elot-global-label-display-mode= recognises the identifiers you've
+  registered and overlays their labels using font-lock =display=
+  properties.
+
+The labels come from any combination of:
+
+- ELOT Org ontologies (e.g. =itxm-core.org=, =LIS-14-for-FDIS.org=),
+- RDF Turtle files (=.ttl=, via ROBOT),
+- SPARQL results cached from =.rq= queries,
+- plain =.csv= / =.tsv= / =.json= dictionaries of =id -> label=
+  (ideal for non-ontology use cases: employee codes, SKUs, ticket
+  IDs, etc.).
+
+All mappings are cached in a single SQLite DB at =elot-db-file=
+(default =~/.emacs.d/elot-db.sqlite=).
+
+* Concepts in 60 seconds
+
+- /Source/. A file that provides =id -> label= mappings. Registered
+  once; re-ingested on demand.
+- /Registered source/. A source whose contents have been parsed and
+  written into the DB. See =M-x elot-label-list-sources=.
+- /Active source/. A registered source that the /current buffer/ is
+  configured to consult. Controlled by the buffer-local variable
+  =elot-active-label-sources=.
+- /Priority/. =elot-active-label-sources= is an /ordered/ list.
+  First match wins. Upper-ontology sources that define labels should
+  come /first/; downstream files that only use the labels come
+  /later/.
+- /Project-wide activation/. Persist =elot-active-label-sources= to
+  =.dir-locals.el= at the project root so every file in the repo
+  inherits the same source list.
+
+* Quick start
+
+** 1. Register a source
+
+From an ELOT Org buffer (once it has been saved at least once after
+loading ELOT, it is already registered automatically on save). To
+register explicitly:
+
+#+begin_src
+M-x elot-label-register-current-buffer
+#+end_src
+
+Or, for an arbitrary file:
+
+#+begin_src
+M-x elot-label-register-source
+  Source: path/to/labels.csv
+#+end_src
+
+Supported types: =.org=, =.csv=, =.tsv=, =.json=, =.ttl= (needs
+ROBOT), =.rq= (needs ROBOT, prompts for a data source). See
+=elot-source-supported-extensions= to add more.
+
+Inspect registered sources:
+
+#+begin_src
+M-x elot-label-list-sources
+#+end_src
+
+Keys: =g= refresh view, =r= re-ingest entry, =d= unregister, =+= add
+new.
+
+** 2. Activate a source in the current buffer
+
+#+begin_src
+M-x elot-label-activate-source
+  Source: path/to/labels.csv
+  Data source: (RET for none)
+  Position: (RET to append at lowest priority, 0 for highest)
+#+end_src
+
+Check:
+
+#+begin_src elisp
+elot-active-label-sources
+#+end_src
+
+** 3. Persist activation to the Git project
+
+Prefix =C-u= makes the activation persistent via =.dir-locals.el=:
+
+#+begin_src
+C-u M-x elot-label-activate-source
+#+end_src
+
+The =.dir-locals.el= file is written at the /project root/ (detected
+via =project-current= / =vc-root-dir=; falls back to
+=default-directory= if no project is identified). Any file opened
+under that root inherits =elot-active-label-sources=. Emacs will
+prompt once to mark the value safe; answer =!= to remember.
+
+** 4. Turn on label display in a non-ELOT buffer
+
+Open any file under the project (or any file, if you've set
+=elot-active-label-sources= manually), then:
+
+#+begin_src
+M-x elot-global-label-display-mode
+#+end_src
+
+Identifiers from your active sources are now rendered as labels.
+=F5= toggles display on/off without leaving the mode. Disable
+entirely by running the command again.
+
+* Managing active sources
+
+** List and reorder
+
+#+begin_src
+M-x elot-label-list-active-sources
+#+end_src
+
+A tabulated buffer showing the ordered list for the buffer you were
+in. Keys:
+
+| Key          | Action                          |
+|--------------+---------------------------------|
+| =M-<up>=     | move entry up (higher priority) |
+| =M-<down>=   | move entry down                 |
+| =d=          | remove entry                    |
+| =+=          | add a new registered source     |
+| =P=          | persist current order to dir-locals |
+| =g=          | refresh view                    |
+| =q=          | quit                            |
+
+Reminder banner appears once in the echo area on buffer entry; the
+header line shows the same legend (unless your theme -- e.g. Nano --
+repurposes the header line). =C-h m= always works.
+
+All edits take effect in the /origin buffer/ (the one you ran the
+command from), not in the list buffer. The global label-display
+mode, if active there, rebuilds its font-lock regex automatically on
+every change -- no need to re-run setup.
+
+** Keyboard commands (no buffer)
+
+#+begin_src
+M-x elot-label-move-source-up
+M-x elot-label-move-source-down
+M-x elot-label-activate-source
+M-x elot-label-deactivate-source
+#+end_src
+
+Each prompts for the source via completion over the current list.
+=C-u= on =activate= / =deactivate= persists to =.dir-locals.el=.
+
+** Priority matters -- a worked example
+
+Scenario: =itxm-core.omn= references =lis:Activity= but does not
+define a label for it. =LIS-14-for-FDIS.org= is the upper ontology
+that /does/ define =rdfs:label "Activity"= for =lis:Activity=.
+
+Wrong order (downstream first, upstream second):
+
+#+begin_src elisp
+(("itxm-core.org" nil)
+ ("LIS-14-for-FDIS.org" nil))
+#+end_src
+
+Result: labels defined in =itxm-core.org= are shown, but
+=lis:Activity= is not labelled -- =get-label= looks in =itxm-core.org=
+first, finds no row for =lis:Activity=, and stops. /Wrong/, because
+=get-label= is "first source with a hit wins", not "first source with
+any entry for this ID wins across all sources."
+
+Right order (upper ontology first):
+
+#+begin_src elisp
+(("LIS-14-for-FDIS.org" nil)
+ ("itxm-core.org" nil))
+#+end_src
+
+Result: =lis:Activity -> "Activity"= from the upper ontology;
+=itxm-core= IDs fall through and are labelled from =itxm-core.org=.
+
+Rule of thumb: /sources that define labels should precede sources
+that only use them./
+
+* Refreshing sources
+
+- /Automatic/. Saving an ELOT Org file re-ingests it via
+  =elot-slurp-to-vars=.
+- /Explicit/. =M-x elot-label-refresh-source= re-parses one source
+  regardless of mtime; =M-x elot-label-refresh-all-sources= iterates
+  the entire registered list.
+
+* Removing sources
+
+- /From the current buffer only/. =M-x elot-label-deactivate-source=.
+- /From the DB entirely/. =M-x elot-label-unregister-source= --
+  cascades through entities, attributes, and prefixes.
+
+* Troubleshooting
+
+** "I registered a source but =elot-active-label-sources= is still nil"
+
+Registration and activation are separate. Run
+=elot-label-activate-source= after =elot-label-register-current-buffer=.
+
+** "Labels from my newly activated source do not appear"
+
+If you activated /before/ enabling =elot-global-label-display-mode=,
+the regex was built without the new IDs. Since Step 1.7.2 this
+rebuilds automatically on activation. If you still see it, run:
+
+#+begin_src
+M-x elot-global-label-display-setup
+#+end_src
+
+** "=F5= says 'turned off' but labels remain"
+
+Fixed in Step 1.6.1 / 1.7. Ensure =elot-label-display.el= is current.
+
+** "=.dir-locals.el= was written in a subdirectory, not the repo root"
+
+Fixed in the Stage-3 /project-root dir-locals/ task. =C-u M-x
+elot-label-activate-source= now writes at =project-current= /
+=vc-root-dir= (absolute paths). If you have an older =.dir-locals.el=
+at a subdirectory level, move or delete it.
+
+** "The label I see is wrong / from the wrong source"
+
+Check priority: =elot-active-label-sources= is ordered. Reorder via
+=M-x elot-label-list-active-sources= with =M-<up>= / =M-<down>=.
+
+** "Nothing shows up at all in a plain-text buffer"
+
+Diagnose:
+
+#+begin_src elisp
+elot-active-label-sources       ;; non-nil?
+(elot-db-all-active-ids)        ;; returns the ID list?
+elot-global--fontify-regexp     ;; non-nil string after mode enable?
+#+end_src
+
+If =elot-db-all-active-ids= is nil, your active sources point at
+unregistered files. Re-register.
+
+* Limits / non-goals (v1)
+
+- /Literal token match only./ Labels are shown where an identifier
+  appears as a whole symbol (=\_<...\_>=). No capture groups, no
+  substring substitution, no per-source display templates.
+- /Single user, single machine./ The DB is not a shared cache and
+  is not authoritative -- re-derivable from sources at any time.
+- /No cross-source label merging./ For attributes other than labels,
+  =get-all-attrs= returns the first source with any rows.
+- /No default include-mode list for automatic activation./ See
+  Step 1.7.1 in the plan for the opt-in auto-enable design.
+
+* Reference: commands
+
+| Command                              | Purpose                                        |
+|--------------------------------------+------------------------------------------------|
+| =elot-label-register-current-buffer= | register the file the current buffer visits    |
+| =elot-label-register-source=         | register a file by path                        |
+| =elot-label-unregister-source=       | remove a source from the DB (cascades)         |
+| =elot-label-refresh-source=          | force re-ingest of one source                  |
+| =elot-label-refresh-all-sources=     | re-ingest every registered source              |
+| =elot-label-list-sources=            | tabulated buffer of /registered/ sources       |
+| =elot-label-activate-source=         | add to =elot-active-label-sources= (=C-u= to persist) |
+| =elot-label-deactivate-source=       | remove from =elot-active-label-sources= (=C-u= to persist) |
+| =elot-label-set-active-sources=      | bulk setter (Lisp-level)                       |
+| =elot-label-move-source-up=          | raise priority of a source                     |
+| =elot-label-move-source-down=        | lower priority of a source                     |
+| =elot-label-list-active-sources=     | tabulated buffer for ordered /active/ sources  |
+| =elot-global-label-display-mode=     | buffer-local label rendering (non-ELOT)        |
+| =elot-global-label-display-setup=    | force regex rebuild for the global mode        |
+| =elot-toggle-label-display=          | =F5= -- flip rendering on/off                  |
+
+* Reference: variables
+
+| Variable                              | Meaning                                            |
+|---------------------------------------+----------------------------------------------------|
+| =elot-db-file=                        | SQLite DB path                                     |
+| =elot-active-label-sources=           | buffer-local ordered list =((SOURCE DATA-SOURCE) ...)= |
+| =elot-source-supported-extensions=    | parser dispatcher alist (=defcustom=, extensible)  |
+| =elot-robot-jar-path=                 | for =.ttl= / =.rq= ingestion                       |
+| =elot-active-label-sources-change-hook= | abnormal hook fired on any mutation              |
+
+* See also
+
+- [[file:ELOT-DB-PLAN.org][=ELOT-DB-PLAN.org=]] -- full design, status, and open work.
+- [[file:test/fixtures/][=test/fixtures/=]] -- minimal examples of every supported source format.

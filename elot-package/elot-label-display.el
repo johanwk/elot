@@ -460,9 +460,15 @@ registering or activating new sources."
         (elot-global--install)
         (make-local-variable 'elot-label-display)
         (setq elot-label-display 'on)
-        (local-set-key (kbd "<f5>") #'elot-toggle-label-display))
+        (local-set-key (kbd "<f5>") #'elot-toggle-label-display)
+        (when (boundp 'elot-active-label-sources-change-hook)
+          (add-hook 'elot-active-label-sources-change-hook
+                    #'elot-global-label-display-setup nil t)))
     (elot-global--uninstall)
-    (setq elot-label-display 'off)))
+    (setq elot-label-display 'off)
+    (when (boundp 'elot-active-label-sources-change-hook)
+      (remove-hook 'elot-active-label-sources-change-hook
+                   #'elot-global-label-display-setup t))))
 
 ;;;###autoload
 (defun elot-global-label-display-setup ()
