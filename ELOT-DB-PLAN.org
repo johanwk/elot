@@ -969,7 +969,10 @@ CLOSED: [2026-04-22 ons. 20:10]
 
 ---
 
-*** TODO Step 1.6 - Integration with =elot-slurp-to-vars=
+*** STARTED Step 1.6 - Integration with =elot-slurp-to-vars=
+:PROPERTIES:
+:STATUS: STARTED
+:END:
 
 Reference implementations for the two-tier lookup functions and the
 local->DB sync snippet are given in *Design Reference* above.
@@ -1196,6 +1199,61 @@ same file.
 
 ** Stage 3: Tasks picked up along the way
 *** TODO Improve ~elot-robot-execute-query~
+
+*** TODO Step 1.6.1 - Path canonicalisation for cross-platform stability
+
+*Goal:* Ensure file paths that enter the DB (as =sources.source=,
+=sources.data_source=) and =elot-active-label-sources= are stored in a
+single canonical form, so the same file is never represented by two
+different strings across code paths or platforms.
+
+*Motivation:* On MSYS2/Windows, the same file may be referenced as:
+- =c:/Data/elot/foo.org= (Emacs =buffer-file-name=, lowercase drive)
+- =C:/Data/elot/foo.org= (uppercase drive, e.g. from =read-file-name=
+  depending on user input)
+- =/c/Data/elot/foo.org= (MSYS2 shell form, e.g. via
+  =shell-command-to-string=)
+- =C:\Data\elot\foo.org= (backslashes, e.g. pasted from Explorer)
+
+Without canonicalisation we risk duplicate =sources= rows,
+=elot-db-source-needs-update-p= false negatives (re-ingest on every
+save), and =.dir-locals.el= entries that do not match what
+=elot-slurp-to-vars= wrote.
+
+*Deliverables:*
+- =elot-db--canonicalize-path (path)= helper: =expand-file-name= +
+  drive-letter downcasing on =windows-nt=. Forward slashes come from
+  =expand-file-name= for free. Nil-safe.
+- Apply at every write-path boundary:
+  =elot-db-update-source=, =elot-db-remove-source=,
+  =elot-db-source-exists-p=, =elot-db-source-needs-update-p=,
+  =elot-db-source-entity-count=, =elot-db-add-prefix=,
+  =elot-db-list-sources= (on read, for presentation stability).
+- Apply in =elot-label--normalize-entry= so
+  =elot-active-label-sources= entries are canonical before being used
+  as lookup keys or written to =.dir-locals.el=.
+
+*Tests:* (new =test/elot-db-path-canon-test.el=)
+- =test-canonicalize-downcases-drive-letter-on-windows= - gated on
+  =(eq system-type 'windows-nt)=.
+- =test-canonicalize-idempotent= - f(f(x)) = f(x) for various inputs.
+- =test-update-source-dedup-across-case-variants= - register with
+  =C:/...=, re-register with =c:/...=, expect one row, not two.
+- =test-source-exists-after-case-variant-lookup= - round-trip via
+  differently-cased path still finds the source.
+- =test-dir-locals-roundtrip-canonical= - entry written with mixed
+  case comes back canonical.
+
+*Non-goals:*
+- No MSYS2 =/c/...= -> =c:/= conversion in v1. =expand-file-name=
+  already does this inside Emacs; external callers passing MSYS2
+  shell paths directly are out of scope.
+- No UNC path handling.
+- No =file-truename= resolution (would follow symlinks, changing
+  identity semantics).
+
+*Risk:* Low. Helper is ~10 lines; call-site changes are mechanical;
+tests are deterministic and platform-gated where needed.
 
 ** Cross-cutting: Test Infrastructure
 
