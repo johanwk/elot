@@ -17,13 +17,17 @@
 ;; verbatim.
 ;;
 ;; See `ELOT-DB-PLAN.org' (top-level of the repository) for the
-;; authoritative design.  This module implements Steps 1.1 and 1.1.1:
-;; the schema (v2, with prefix support), the connection lifecycle
-;; (`elot-db-init', `elot-db-close'), the migration stub
-;; (`elot-db-migrate', including a v1->v2 branch), a small prefix API
-;; (`elot-db-add-prefix', `elot-db-list-prefixes',
-;; `elot-db-expand-curie', `elot-db-contract-uri'), and the two-pass
-;; label lookup (`elot-db-get-label-any').
+;; authoritative design.  This module implements Steps 1.1, 1.1.1,
+;; and 1.2: the schema (v2, with prefix support), the connection
+;; lifecycle (`elot-db-init', `elot-db-close'), the migration stub
+;; (`elot-db-migrate', including a v1->v2 branch), a small prefix
+;; API (`elot-db-add-prefix', `elot-db-list-prefixes',
+;; `elot-db-expand-curie', `elot-db-contract-uri'), the two-pass
+;; label lookup (`elot-db-get-label-any'), plus the read/write
+;; primitives (`elot-db-update-source', `elot-db-remove-source',
+;; `elot-db-source-exists-p', `elot-db-list-sources',
+;; `elot-db-source-needs-update-p', `elot-db-get-label',
+;; `elot-db-get-attr', `elot-db-get-all-attrs').
 ;;
 ;; Note: unlike most of ELOT, this file is authored directly as Elisp
 ;; rather than tangled from an Org document -- see the Decisions Log
@@ -78,6 +82,25 @@ corresponding migration branch.")
 
 (defvar elot-db nil
   "Open SQLite connection used by the `elot-db-*' API, or nil.")
+
+(defvar elot-active-label-sources nil
+  "Buffer-local ordered list of active label sources.
+Each entry is a (SOURCE DATA-SOURCE) pair; DATA-SOURCE is nil (or
+the empty string) for non-SPARQL sources.  Earlier entries have
+higher priority.  Wired up in Step 1.5; defined here so that
+Step 1.2 lookup primitives have a stable default to fall back on.")
+(make-variable-buffer-local 'elot-active-label-sources)
+;;;###autoload
+(put 'elot-active-label-sources 'safe-local-variable
+     (lambda (v)
+       (and (listp v)
+            (cl-every (lambda (e)
+                        (and (listp e)
+                             (>= (length e) 1)
+                             (stringp (nth 0 e))
+                             (or (null (nth 1 e))
+                                 (stringp (nth 1 e)))))
+                      v))))
 
 ;;;; Schema
 
@@ -424,6 +447,187 @@ Return the label, or nil if all passes miss."
            (cl-some (lambda (curie)
                       (elot-db--label-in-sources curie active-sources))
                     (elot-db-contract-uri token active-sources)))))
+
+
+;;;; -------------------------------------------------------------------
+;;;; Step 1.2 subtask A: write path
+;;;; -------------------------------------------------------------------
+
+(defun elot-db-source-exists-p (source &optional data-source)
+  "Return non-nil if a `sources' row exists for (SOURCE, DATA-SOURCE).
+DATA-SOURCE defaults to the empty-string sentinel."
+  (let ((row (sqlite-select
+              elot-db
+              "SELECT 1 FROM sources
+                WHERE source = ? AND data_source = ? LIMIT 1"
+              (list source (elot-db--normalize-ds data-source)))))
+    (and row t)))
+
+(defun elot-db-list-sources ()
+  "Return a list of rows (SOURCE DATA-SOURCE TYPE LAST-MODIFIED LAST-UPDATED)
+for every registered source.  DATA-SOURCE is returned as stored (empty
+string for non-SPARQL sources)."
+  (sqlite-select
+   elot-db
+   "SELECT source, data_source, type, last_modified, last_updated
+     FROM sources
+     ORDER BY source, data_source"))
+
+(defun elot-db-remove-source (source &optional data-source)
+  "Delete the sources row for (SOURCE, DATA-SOURCE) and cascade.
+Returns non-nil if a row was removed, nil otherwise."
+  (let ((existed (elot-db-source-exists-p source data-source)))
+    (when existed
+      (sqlite-execute
+       elot-db
+       "DELETE FROM sources WHERE source = ? AND data_source = ?"
+       (list source (elot-db--normalize-ds data-source))))
+    existed))
+
+(defun elot-db-source-needs-update-p (file &optional data-source)
+  "Return t if FILE has been modified since last parsed into the DB.
+Returns t when the source is unknown (i.e. has never been
+registered).  DATA-SOURCE defaults to the empty-string sentinel."
+  (let* ((attrs (file-attributes file))
+         (mtime (and attrs
+                     (float-time (file-attribute-modification-time attrs))))
+         (row   (sqlite-select
+                 elot-db
+                 "SELECT last_modified FROM sources
+                   WHERE source = ? AND data_source = ? LIMIT 1"
+                 (list file (elot-db--normalize-ds data-source))))
+         (db-mtime (caar row)))
+    (cond
+     ((null db-mtime) t)
+     ((null mtime)    nil)
+     (t (> mtime db-mtime)))))
+
+(defun elot-db-update-source (source data-source type data &optional file-mtime)
+  "Replace DB records for (SOURCE, DATA-SOURCE) with DATA.
+DATA is a list of (ID LABEL PLIST) triples, where PLIST is a flat
+list of \"prop\" \"value\" pairs and may also contain a
+`:kind' keyword whose value ('uri' / 'curie' / 'unknown') is
+written to `entities.kind' (the `:kind' pair is *not* written to
+`attributes').  DATA-SOURCE is nil or the empty-string sentinel
+for non-SPARQL sources; a local file path or endpoint URL for
+SPARQL sources.  TYPE is e.g. \"org\", \"csv\", \"tsv\", \"ttl\",
+\"rq\".  FILE-MTIME is stored as `last_modified' (0.0 if nil).
+
+The whole operation runs inside a single transaction: the
+existing source row (and, by cascade, its entities / attributes /
+prefixes) is deleted first, then the new source row is written
+and DATA is ingested.  Returns the number of entity rows written."
+  (let ((ds       (elot-db--normalize-ds data-source))
+        (mtime    (or file-mtime 0.0))
+        (now      (float-time))
+        (n        0)
+        (ok       nil))
+    (sqlite-transaction elot-db)
+    (unwind-protect
+        (progn
+          (sqlite-execute
+           elot-db
+           "DELETE FROM sources WHERE source = ? AND data_source = ?"
+           (list source ds))
+          (sqlite-execute
+           elot-db
+           "INSERT INTO sources (source, data_source, type, last_modified, last_updated)
+             VALUES (?, ?, ?, ?, ?)"
+           (list source ds type mtime now))
+          (dolist (row data)
+            (let* ((id    (nth 0 row))
+                   (label (nth 1 row))
+                   (plist (nth 2 row))
+                   (kind  (or (plist-get plist :kind) "unknown")))
+              (sqlite-execute
+               elot-db
+               "INSERT OR REPLACE INTO entities (id, label, source, data_source, kind)
+                 VALUES (?, ?, ?, ?, ?)"
+               (list id label source ds kind))
+              (cl-loop for (prop val) on plist by #'cddr
+                       unless (keywordp prop) do
+                       (sqlite-execute
+                        elot-db
+                        "INSERT INTO attributes (id, source, data_source, prop, value)
+                          VALUES (?, ?, ?, ?, ?)"
+                        (list id source ds prop val)))
+              (cl-incf n)))
+          (sqlite-commit elot-db)
+          (setq ok t))
+      (unless ok
+        (ignore-errors (sqlite-rollback elot-db))))
+    n))
+
+
+;;;; -------------------------------------------------------------------
+;;;; Step 1.2 subtask B: priority-aware read path
+;;;; -------------------------------------------------------------------
+
+(defun elot-db--active-or-default (active-sources)
+  "Return ACTIVE-SOURCES or, if nil, `elot-active-label-sources'."
+  (or active-sources elot-active-label-sources))
+
+(defun elot-db-get-label (id &optional active-sources)
+  "Return label for ID, restricted and prioritised by ACTIVE-SOURCES.
+ACTIVE-SOURCES defaults to the buffer-local `elot-active-label-sources'.
+Returns nil if ACTIVE-SOURCES is empty or no active source has ID."
+  (let ((sources (elot-db--active-or-default active-sources)))
+    (when sources
+      (cl-loop
+       for entry in sources
+       for src = (nth 0 entry)
+       for ds  = (elot-db--normalize-ds (nth 1 entry))
+       for row = (sqlite-select
+                  elot-db
+                  "SELECT label FROM entities
+                    WHERE id = ? AND source = ? AND data_source = ?
+                    LIMIT 1"
+                  (list id src ds))
+       when row return (caar row)))))
+
+(defun elot-db-get-attr (id prop &optional active-sources)
+  "Return the value of PROP for ID, priority-resolved over ACTIVE-SOURCES.
+First active source that has a matching attribute row wins.  If a
+given source has multiple attribute rows for the same (ID, PROP),
+the first one SQLite returns is used; multi-valued attribute
+retrieval is the job of `elot-db-get-all-attrs'."
+  (let ((sources (elot-db--active-or-default active-sources)))
+    (when sources
+      (cl-loop
+       for entry in sources
+       for src = (nth 0 entry)
+       for ds  = (elot-db--normalize-ds (nth 1 entry))
+       for row = (sqlite-select
+                  elot-db
+                  "SELECT value FROM attributes
+                    WHERE id = ? AND prop = ?
+                      AND source = ? AND data_source = ?
+                    LIMIT 1"
+                  (list id prop src ds))
+       when row return (caar row)))))
+
+(defun elot-db-get-all-attrs (id &optional active-sources)
+  "Return a flat plist of all attributes for ID from ACTIVE-SOURCES.
+Sources are consulted in priority order; within each source,
+attribute rows are collected in insertion order.  The first source
+that has any attribute row for ID wins and its rows are returned;
+lower-priority sources are not merged (v1 policy: a single source
+owns an entity's attribute view).  Returns nil when no active
+source has rows for ID."
+  (let ((sources (elot-db--active-or-default active-sources)))
+    (when sources
+      (cl-loop
+       for entry in sources
+       for src = (nth 0 entry)
+       for ds  = (elot-db--normalize-ds (nth 1 entry))
+       for rows = (sqlite-select
+                   elot-db
+                   "SELECT prop, value FROM attributes
+                     WHERE id = ? AND source = ? AND data_source = ?"
+                   (list id src ds))
+       when rows return
+       (cl-loop for row in rows
+                append (list (nth 0 row) (nth 1 row)))))))
 
 (provide 'elot-db)
 
