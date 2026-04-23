@@ -1460,9 +1460,21 @@ set). Deliverables landed:
 - =puri= fallback in the slurp-path annotator made nil-safe
   (=(or ... "")= before =split-string=).
 
-/Item B status:/ TODO (ELOT menu attachment to
-=elot-global-label-display-mode-map= with ELOT-only entries
-conditionally greyed out).
+/Item B status:/ DONE.  ELOT menu is attached to
+=elot-global-label-display-mode-map= via sibling =with-eval-after-load=
+snippets in =elot-mode.el= and =elot-label-display.el=, each binding
+the menu with =:visible (not (bound-and-true-p elot-mode))= so only
+one copy shows when both modes are active.  The predicate
+=elot--in-elot-buffer-p= (defined in =elot-mode.el=) is used as the
+=:enable= guard on ELOT-Org-only entries (tangle, lint, xref,
+templates, SPARQL/RDFPUML blocks, doc/ontology skeletons, class/property
+headings, label-display refresh).  Entries that remain enabled
+everywhere: /Insert Existing Resource ID/ (=elot-label-lookup=), the
+two display toggles, and the entire /Labels & sources/ submenu.
+=elot-mode--enable= additionally refuses activation outside Org-mode
+buffers (signals =user-error=, turns itself back off) to prevent a
+second ELOT menu from being installed in non-Org files.  Tests in
+=test/elot-menu-item-b-test.el= (5 tests).
 
 /Numbering note:/ this step is a new entry rather than an
 extension of Step 1.11 because the two items below are
@@ -1699,7 +1711,7 @@ any buffer) and avoids two code paths that can drift.
   =elot-global-label-display-mode= is on (with ELOT-Org-only
   entries greyed out).
 
-**** Tests
+**** TODO Tests
 
 /Item A - =elot-label-lookup= generalisation:/
 - =test-elot-db-all-active-labels-basic= - two sources with
