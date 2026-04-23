@@ -95,13 +95,22 @@ minus the LaTeX-specific settings."
    org-export-headline-levels 8             ; deep numbering
    org-export-with-section-numbers 8))      ; deep numbering
 
+(defun elot--in-elot-buffer-p ()
+  "Return non-nil when the current buffer is an active ELOT Org buffer.
+Used as an `:enable' guard in the ELOT menu to grey out entries that
+only make sense inside an ELOT Org file (tangle, lint, templates,
+xref navigation, etc.) when the menu is visible via
+`elot-global-label-display-mode' in a non-ELOT buffer."
+  (and (derived-mode-p 'org-mode)
+       (bound-and-true-p elot-mode)))
+
 (defvar elot-mode-syntax-table
-  (let ((st (make-syntax-table org-mode-syntax-table)))
-    (modify-syntax-entry ?: "w" st)
-    (modify-syntax-entry ?_ "w" st)
-    st)
-  "Syntax table for `elot-mode'.
-Treats `:' and `_' as word-constituent characters.")
+    (let ((st (make-syntax-table org-mode-syntax-table)))
+      (modify-syntax-entry ?: "w" st)
+      (modify-syntax-entry ?_ "w" st)
+      st)
+    "Syntax table for `elot-mode'.
+  Treats `:' and `_' as word-constituent characters.")
 
 (tempo-define-template "elot-doc-header"
                        '("#+title: " (p "Document title: " doctitle) > n
@@ -494,33 +503,60 @@ or `xsd:integer' on a column header will be applied to values."
 (easy-menu-define elot-menu elot-mode-map
   "ELOT Ontology Authoring Menu"
   '("ELOT"
-    ["Check for common problems" elot-org-lint :active (fboundp 'elot-org-lint)]
-    ["Export to OWL (Tangle)" elot-tangle-buffer-to-omn t]
+    ["Check for common problems" elot-org-lint
+     :active (fboundp 'elot-org-lint)
+     :enable (elot--in-elot-buffer-p)]
+    ["Export to OWL (Tangle)" elot-tangle-buffer-to-omn
+     :enable (elot--in-elot-buffer-p)]
     ["Export to HTML" (lambda () (interactive) (browse-url-of-file (expand-file-name (org-html-export-to-html))))
-     :active (fboundp 'org-html-export-to-html)]
-    ["Import OWL ontology" elot-open-owl :active (fboundp 'elot-open-owl)]
+     :active (fboundp 'org-html-export-to-html)
+     :enable (elot--in-elot-buffer-p)]
+    ["Import OWL ontology" elot-open-owl
+     :active (fboundp 'elot-open-owl)
+     :enable (elot--in-elot-buffer-p)]
     "---"
     ["Insert Existing Resource ID" elot-label-lookup :active (fboundp 'elot-label-lookup)]
     ["Insert Class heading" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-class-skos))
-     :active (fboundp 'tempo-template-elot-class-skos)]
+     :active (fboundp 'tempo-template-elot-class-skos)
+     :enable (elot--in-elot-buffer-p)]
     ["Insert Property heading" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-property-skos))
-     :active (fboundp 'tempo-template-elot-property-skos)]
+     :active (fboundp 'tempo-template-elot-property-skos)
+     :enable (elot--in-elot-buffer-p)]
     "---"
-    ["Jump to Resource Headline (M-.)" xref-find-definitions t]
-    ["Find References to Resource (M-?)" xref-find-references t]
-    ["Quick-Describe Resource" elot-describe-curie-at-point t]
+    ["Jump to Resource Headline (M-.)" xref-find-definitions
+     :enable (elot--in-elot-buffer-p)]
+    ["Find References to Resource (M-?)" xref-find-references
+     :enable (elot--in-elot-buffer-p)]
+    ["Quick-Describe Resource" elot-describe-curie-at-point
+     :enable (elot--in-elot-buffer-p)]
     ["Toggle Label-Display (F5)" elot-toggle-label-display :active (fboundp 'elot-toggle-label-display)]
-    ["Refresh Label-Display Index" elot-label-display-setup :active (fboundp 'elot-label-display-setup)]
+    ["Refresh Label-Display Index" elot-label-display-setup
+     :active (fboundp 'elot-label-display-setup)
+     :enable (elot--in-elot-buffer-p)]
     "---"
-    ["Insert Table declaring Resources" tempo-template-elot-table-of-resources :active (fboundp 'tempo-template-elot-table-of-resources)]
-    ["Generate Outline from Table" elot-headings-from-table :active (fboundp 'elot-headings-from-table)]
+    ["Insert Table declaring Resources" tempo-template-elot-table-of-resources
+     :active (fboundp 'tempo-template-elot-table-of-resources)
+     :enable (elot--in-elot-buffer-p)]
+    ["Generate Outline from Table" elot-headings-from-table
+     :active (fboundp 'elot-headings-from-table)
+     :enable (elot--in-elot-buffer-p)]
     "---"
-    ["Insert SPARQL Select Block" tempo-template-elot-block-sparql-select :active (fboundp 'tempo-template-elot-block-sparql-select)]
-    ["Insert SPARQL Construct Block" tempo-template-elot-block-sparql-construct :active (fboundp 'tempo-template-elot-block-sparql-construct)]
-    ["Insert RDFPUML Diagram Block" tempo-template-elot-block-rdfpuml-diagram :active (fboundp 'tempo-template-elot-block-rdfpuml-diagram)]
+    ["Insert SPARQL Select Block" tempo-template-elot-block-sparql-select
+     :active (fboundp 'tempo-template-elot-block-sparql-select)
+     :enable (elot--in-elot-buffer-p)]
+    ["Insert SPARQL Construct Block" tempo-template-elot-block-sparql-construct
+     :active (fboundp 'tempo-template-elot-block-sparql-construct)
+     :enable (elot--in-elot-buffer-p)]
+    ["Insert RDFPUML Diagram Block" tempo-template-elot-block-rdfpuml-diagram
+     :active (fboundp 'tempo-template-elot-block-rdfpuml-diagram)
+     :enable (elot--in-elot-buffer-p)]
     "---"
-    ["Insert New Document Header" tempo-template-elot-doc-header :active (fboundp 'tempo-template-elot-doc-header)]
-    ["Insert New Ontology Skeleton" tempo-template-elot-ont-skeleton :active (fboundp 'tempo-template-elot-ont-skeleton)]
+    ["Insert New Document Header" tempo-template-elot-doc-header
+     :active (fboundp 'tempo-template-elot-doc-header)
+     :enable (elot--in-elot-buffer-p)]
+    ["Insert New Ontology Skeleton" tempo-template-elot-ont-skeleton
+     :active (fboundp 'tempo-template-elot-ont-skeleton)
+     :enable (elot--in-elot-buffer-p)]
     "---"
     ("Labels & sources"
      ("Source registration"
@@ -584,16 +620,21 @@ or `xsd:integer' on a column header will be applied to values."
                       (eq elot-label-display 'on))]))
     ))
 
-;; Also surface the ELOT menu when `elot-global-label-display-mode'
-;; is active in a non-ELOT buffer.  We attach the same menu keymap
-;; to the global mode's keymap.  `with-eval-after-load' guards the
-;; load order: if elot-label-display.el loads later, the sibling
-;; snippet there picks up `elot-menu' the other way around.
+; Also surface the ELOT menu when `elot-global-label-display-mode'
+;; is active in a non-ELOT buffer.  We bind the same menu into the
+;; global mode's keymap, but mark it `:visible' only when `elot-mode'
+;; is NOT active -- that prevents a duplicate ELOT menu when both
+;; modes are enabled in the same buffer (elot-mode-map already
+;; provides the entry in that case).
+;; `with-eval-after-load' guards the load order: if elot-label-display.el
+;; loads later, the sibling snippet there handles the other direction.
 (with-eval-after-load 'elot-label-display
   (when (and (boundp 'elot-global-label-display-mode-map)
              (boundp 'elot-menu))
-    (easy-menu-add-item elot-global-label-display-mode-map
-                        '("menu-bar") elot-menu)))
+    (define-key elot-global-label-display-mode-map
+                [menu-bar ELOT]
+                `(menu-item "ELOT" ,elot-menu
+                            :visible (not (bound-and-true-p elot-mode))))))
 
 (defun elot-mode--add-hooks ()
   "Add buffer-local hooks for an ELOT buffer."
@@ -616,6 +657,13 @@ or `xsd:integer' on a column header will be applied to values."
 
 (defun elot-mode--enable ()
     "Set up ELOT in the current Org buffer."
+    ;; Guard: elot-mode is only meaningful inside Org-mode buffers.
+    ;; Silently refuse when invoked in a non-Org file so that visiting
+    ;; a .ttl (or any non-Org) file does not accidentally spawn a
+    ;; second ELOT menu via this mode's keymap.
+    (unless (derived-mode-p 'org-mode)
+      (elot-mode -1)
+      (user-error "elot-mode is only supported in Org-mode buffers"))
     ;; 1. Buffer-local variables
     (elot-mode--set-buffer-locals)
 

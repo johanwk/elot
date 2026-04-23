@@ -321,10 +321,6 @@ are the annotation fields.  All arguments are strings (possibly empty)."
    (make-string (max (- 24 (length (or rdf-type ""))) 0) 32)
    (or definition "")))
 
-;; ----------------------------------------------------------------
-;; Slurp-backed path (existing ELOT Org buffer)
-;; ----------------------------------------------------------------
-
 (defun elot-label-lookup-annotations (label)
   "Annotation function for `elot-label-lookup' using `elot-label-lookup-tmp-attriblist-ht'.
 Provides a preview string for LABEL during completing-read."
@@ -356,10 +352,6 @@ Provides a preview string for LABEL during completing-read."
         (insert (elot-attriblist-label-value selected-label "puri"))
         (forward-char 1)))))
 
-;; ----------------------------------------------------------------
-;; DB-backed path (non-ELOT buffer with active label sources)
-;; ----------------------------------------------------------------
-
 (defun elot-label-lookup--db-annotations (label)
   "Annotation function for `elot-label-lookup--from-db'.
 Looks up LABEL in `elot-label-lookup-tmp-attriblist-ht' (which
@@ -369,17 +361,14 @@ in the DB path stores label->id) and fetches attributes from the DB."
                             (fboundp 'elot-db-get-all-attrs)
                             (elot-db-get-all-attrs id)))
          (rdf-type   (plist-get attrib-plist "rdf:type" 'string=))
-         ;; Derive a prefix from the id itself.
          (prefix     (when id
                        (cond
                         ((and (fboundp 'elot-db--looks-like-uri-p)
                               (elot-db--looks-like-uri-p id)
                               (fboundp 'elot-db-contract-uri))
-                         ;; IRI: use the first CURIE contraction's prefix part.
                          (let ((curie (car (elot-db-contract-uri
-                                           id elot-active-label-sources))))
-                           (when curie
-                             (car (split-string curie ":")))))
+                                            id elot-active-label-sources))))
+                           (when curie (car (split-string curie ":")))))
                         ((string-match "\\`\\([^:]+\\):" id)
                          (match-string 1 id))
                         (t nil))))
@@ -400,7 +389,6 @@ in the DB path stores label->id) and fetches attributes from the DB."
          (completion-extra-properties
           (append completion-extra-properties
                   '(:annotation-function elot-label-lookup--db-annotations))))
-    ;; Stash label->id in the shared temp var so the annotation fn can read it.
     (setq elot-label-lookup-tmp-attriblist-ht label->id)
     (let ((selected-label
            (completing-read "Label: " label->id)))
@@ -419,10 +407,6 @@ in the DB path stores label->id) and fetches attributes from the DB."
             (backward-char 1)
             (insert token)
             (forward-char 1)))))))
-
-;; ----------------------------------------------------------------
-;; Public dispatcher
-;; ----------------------------------------------------------------
 
 ;;;###autoload
 (defun elot-label-lookup ()
@@ -685,12 +669,17 @@ decorations without toggling the minor mode off and on."
 
 ;; If `elot-mode' is (or becomes) loaded, surface its ELOT menu in
 ;; buffers where only `elot-global-label-display-mode' is active.
+;; The menu is bound with `:visible (not elot-mode)' so that it
+;; disappears once elot-mode activates and adds its own copy via
+;; elot-mode-map -- preventing duplicate ELOT menu entries.
 ;; The sibling snippet in elot-mode.el covers the opposite load order.
 (with-eval-after-load 'elot-mode
   (when (and (boundp 'elot-global-label-display-mode-map)
              (boundp 'elot-menu))
-    (easy-menu-add-item elot-global-label-display-mode-map
-                        '("menu-bar") elot-menu)))
+    (define-key elot-global-label-display-mode-map
+                [menu-bar ELOT]
+                `(menu-item "ELOT" ,elot-menu
+                            :visible (not (bound-and-true-p elot-mode))))))
 
 (provide 'elot-label-display)
 ;;; elot-label-display.el ends here

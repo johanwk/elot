@@ -831,12 +831,17 @@ with active label sources).
 
   ;; If `elot-mode' is (or becomes) loaded, surface its ELOT menu in
   ;; buffers where only `elot-global-label-display-mode' is active.
+  ;; The menu is bound with `:visible (not elot-mode)' so that it
+  ;; disappears once elot-mode activates and adds its own copy via
+  ;; elot-mode-map -- preventing duplicate ELOT menu entries.
   ;; The sibling snippet in elot-mode.el covers the opposite load order.
   (with-eval-after-load 'elot-mode
     (when (and (boundp 'elot-global-label-display-mode-map)
                (boundp 'elot-menu))
-      (easy-menu-add-item elot-global-label-display-mode-map
-                          '("menu-bar") elot-menu)))
+      (define-key elot-global-label-display-mode-map
+                  [menu-bar ELOT]
+                  `(menu-item "ELOT" ,elot-menu
+                              :visible (not (bound-and-true-p elot-mode))))))
 #+end_src
 
 
