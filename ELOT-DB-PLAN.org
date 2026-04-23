@@ -1099,7 +1099,7 @@ warranted for v1.
 
 ---
 
-*** Step 1.9 - Performance pass
+*** DEFERRED Step 1.9 - Performance pass
 :PROPERTIES:
 :STATUS: TODO
 :END:
