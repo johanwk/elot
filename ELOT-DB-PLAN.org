@@ -1438,6 +1438,35 @@ existing lazy-open pattern (commands open the DB on first call).
 :STATUS: TODO
 :END:
 
+/Item A status:/ DONE. =elot-label-lookup= now dispatches between the
+slurp-backed path (ELOT Org buffer with populated =elot-attriblist-ht=)
+and a new DB-backed path (any buffer with =elot-active-label-sources=
+set). Deliverables landed:
+- =elot-db.el=: new =elot-db-all-active-labels= helper (a single-pass
+  SQL scan returning a =label -> id= hashtable, priority-aware via
+  source order, suitable as a =completing-read= COLLECTION).
+- =elot-label-display.el= / =elot-label-display.org=:
+  - Shared annotation formatter =elot-label-lookup--format-annotation=
+    (label prefix rdf-type definition).
+  - Slurp-backed helper =elot-label-lookup--from-attriblist= (existing
+    body, now a named function).
+  - DB-backed helper =elot-label-lookup--from-db= with its own
+    annotator =elot-label-lookup--db-annotations= (derives prefix from
+    the id via =elot-db-contract-uri=; fetches definition via
+    =elot-db-get-all-attrs=).
+  - =elot-label-lookup= turned into a thin =cond= dispatcher with an
+    =;;;###autoload= cookie.
+  - =C-c C-x r= keybinding added to =elot-global-label-display-mode=
+    at activation time.
+- =elot-label-lookup-annotations= retained as the slurp-path annotator
+  (still references =elot-label-lookup-tmp-attriblist-ht=).
+- =puri= fallback in the slurp-path annotator made nil-safe
+  (=(or ... "")= before =split-string=).
+
+/Item B status:/ TODO (ELOT menu attachment to
+=elot-global-label-display-mode-map= with ELOT-only entries
+conditionally greyed out).
+
 /Numbering note:/ this step is a new entry rather than an
 extension of Step 1.11 because the two items below are
 functionally distinct from 1.11's autoload / mode-polish goal.
@@ -1564,7 +1593,7 @@ what is available. No changes to slurp; no changes to
   =elot-label-display.el= and =elot-db.el= must be loadable
   standalone - verify no hard top-level references to Org or
   ELOT-Org machinery at load time (runtime guards are fine).
-- /Keybinding./ The existing =C-c C-l r= dispatcher in
+- /Keybinding./ The existing =C-c C-x r= dispatcher in
   =elot-defs.org= is bound in =elot-mode-map=; also bind
   =elot-label-lookup= in =elot-global-label-display-mode-map=
   (added in Step 1.7) so the keybinding follows the feature
@@ -1663,7 +1692,7 @@ any buffer) and avoids two code paths that can drift.
   - Introduce =elot--in-elot-buffer-p= and add =:enable= forms
     to all non-global menu entries.
 - =elot-defs.org= / =elot-mode.org=: bind =elot-label-lookup=
-  in =elot-global-label-display-mode-map= under =C-c C-l r=
+  in =elot-global-label-display-mode-map= under =C-c C-x r=
   (item A decision 4).
 - README-global-label-display.org: /Reference: commands/ gains
   =elot-label-lookup=; /Quick start/ mentions that the ELOT
