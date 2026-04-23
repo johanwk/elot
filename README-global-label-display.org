@@ -6,7 +6,7 @@
 
 This document is a /temporary/ user-facing write-up covering the
 "global slurp + label display" subsystem delivered by Stage 1 of the
-ELOT-DB plan (Steps 1.1 through 1.7.2). It will eventually be folded
+ELOT-DB plan (Steps 1.1 through 1.7.3). It will eventually be folded
 into =elot-manual.org= once that file exists; until then, this README
 is the authoritative end-user reference for the feature.
 
@@ -29,9 +29,12 @@ modifying the underlying file:
 
 The labels come from any combination of:
 
-- ELOT Org ontologies (e.g. =itxm-core.org=, =LIS-14-for-FDIS.org=),
-- RDF Turtle files (=.ttl=, via ROBOT),
-- SPARQL results cached from =.rq= queries,
+- ELOT Org ontologies (e.g. =itxm-core.org=, =LIS-14.org=),
+- RDF Turtle files (=.ttl=, via ROBOT -- =@prefix= declarations are
+  harvested so CURIE tokens like =sea:id51929cf8...= in source
+  files resolve correctly even though the DB stores full IRIs),
+- SPARQL results cached from =.rq= queries (=PREFIX= declarations in
+  the =.rq= file are harvested the same way),
 - plain =.csv= / =.tsv= / =.json= dictionaries of =id -> label=
   (ideal for non-ontology use cases: employee codes, SKUs, ticket
   IDs, etc.).
@@ -52,6 +55,13 @@ All mappings are cached in a single SQLite DB at =elot-db-file=
   First match wins. Upper-ontology sources that define labels should
   come /first/; downstream files that only use the labels come
   /later/.
+- /Identifier form/. The DB stores IDs in the form the parser
+  produced (full IRIs for TTL/RQ sources; whatever the source file
+  declares for Org/CSV/TSV/JSON). The global-mode matcher
+  automatically accepts /both/ the stored form /and/ its CURIE
+  contraction, so a buffer can reference =sea:id51929cf8...= even
+  though the DB row is keyed on the full =http://.../id51929cf8...=
+  IRI.
 - /Project-wide activation/. Persist =elot-active-label-sources= to
   =.dir-locals.el= at the project root so every file in the repo
   inherits the same source list.
@@ -158,7 +168,16 @@ repurposes the header line). =C-h m= always works.
 All edits take effect in the /origin buffer/ (the one you ran the
 command from), not in the list buffer. The global label-display
 mode, if active there, rebuilds its font-lock regex automatically on
-every change -- no need to re-run setup.
+every change -- no need to re-run setup. This is driven by the
+abnormal hook =elot-active-label-sources-change-hook=, which every
+mutator fires after the list changes.
+
+/Auto-repersist/. If =.dir-locals.el= already binds
+=elot-active-label-sources= for the project, any reorder / add /
+remove is written back automatically. If it does not, changes stay
+buffer-local until you hit =P= (persist) in the list buffer or
+re-run =C-u M-x elot-label-activate-source=. The policy avoids
+silently creating =.dir-locals.el= behind your back.
 
 ** Keyboard commands (no buffer)
 
@@ -175,14 +194,14 @@ Each prompts for the source via completion over the current list.
 ** Priority matters -- a worked example
 
 Scenario: =itxm-core.omn= references =lis:Activity= but does not
-define a label for it. =LIS-14-for-FDIS.org= is the upper ontology
+define a label for it. =LIS-14.org= is the upper ontology
 that /does/ define =rdfs:label "Activity"= for =lis:Activity=.
 
 Wrong order (downstream first, upstream second):
 
 #+begin_src elisp
 (("itxm-core.org" nil)
- ("LIS-14-for-FDIS.org" nil))
+ ("LIS-14.org" nil))
 #+end_src
 
 Result: labels defined in =itxm-core.org= are shown, but
@@ -194,7 +213,7 @@ any entry for this ID wins across all sources."
 Right order (upper ontology first):
 
 #+begin_src elisp
-(("LIS-14-for-FDIS.org" nil)
+(("LIS-14.org" nil)
  ("itxm-core.org" nil))
 #+end_src
 
@@ -251,18 +270,59 @@ at a subdirectory level, move or delete it.
 Check priority: =elot-active-label-sources= is ordered. Reorder via
 =M-x elot-label-list-active-sources= with =M-<up>= / =M-<down>=.
 
+** "My TTL source has 1000+ entries and labels do not appear"
+
+Two independent causes, both addressed in Step 1.7.3:
+
+1. /Prefix rows missing./ If the TTL file was registered /before/
+   Step 1.7.3 landed, =@prefix= declarations were never harvested,
+   so CURIE tokens like =sea:id...= in the buffer cannot be
+   expanded to the full IRIs stored in the DB. Diagnose:
+
+   #+begin_src elisp
+   (elot-db-list-prefixes "c:/path/to/file.ttl")   ;; nil means not harvested
+   #+end_src
+
+   Fix: force re-ingest (bypasses the mtime check):
+
+   #+begin_src
+   M-x elot-label-refresh-source
+   #+end_src
+
+   Then =M-x elot-global-label-display-setup= to rebuild the regex.
+
+2. /Regex too large./ With thousands of IDs, =regexp-opt= can
+   exceed the regex engine's compiled-NFA limit. The matcher
+   degrades in three tiers automatically:
+
+   - Tier 1: tight union of IRIs + CURIEs (preferred).
+   - Tier 2: CURIEs only (drops full-IRI alternatives; loses
+     verbatim-IRI matching but catches what users actually type).
+   - Tier 3: generic =\_<PREFIX:LOCAL\_>= pattern; all CURIE-shaped
+     tokens are probed via =elot-db-get-label-any=, unknown ones
+     return nil and are skipped harmlessly.
+
+   A =*Messages*= line reports when Tier 3 is used. The hard cap
+   =elot-global-label-display-max-ids= (default 10000, nil to
+   disable) is an additional safety net that disables the matcher
+   entirely rather than letting font-lock hang.
+
 ** "Nothing shows up at all in a plain-text buffer"
 
 Diagnose:
 
 #+begin_src elisp
-elot-active-label-sources       ;; non-nil?
-(elot-db-all-active-ids)        ;; returns the ID list?
-elot-global--fontify-regexp     ;; non-nil string after mode enable?
+elot-active-label-sources          ;; non-nil?
+(elot-db-all-active-ids)           ;; returns the ID list?
+(elot-db-all-active-ids nil t)     ;; returns IDs + CURIE contractions?
+elot-global--fontify-regexp        ;; non-nil string after mode enable?
 #+end_src
 
 If =elot-db-all-active-ids= is nil, your active sources point at
-unregistered files. Re-register.
+unregistered files. Re-register. If the plain list has entries but
+the =nil t= variant is the same length, no prefix rows are available
+to contract IRIs into CURIEs -- see the TTL troubleshooting entry
+above.
 
 * Limits / non-goals (v1)
 
@@ -305,6 +365,7 @@ unregistered files. Re-register.
 | =elot-source-supported-extensions=    | parser dispatcher alist (=defcustom=, extensible)  |
 | =elot-robot-jar-path=                 | for =.ttl= / =.rq= ingestion                       |
 | =elot-active-label-sources-change-hook= | abnormal hook fired on any mutation              |
+| =elot-global-label-display-max-ids=   | hard cap on matcher size (default 10000, nil disables) |
 
 * See also
 
