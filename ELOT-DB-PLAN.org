@@ -1118,9 +1118,6 @@ warranted for v1.
 ---
 
 *** DONE Step 1.10 - Extend the ELOT menu with global-slurp commands
-:PROPERTIES:
-:STATUS: DONE
-:END:
 
 /Status:/ Menu additions landed in =elot-mode.org= (submenu /Labels & sources/
 with /Source registration/, /Active sources (per buffer / project)/, and
@@ -1262,7 +1259,41 @@ menu-entry-points-resolve test catches at load time.
 
 ---
 
-*** TODO Step 1.11 - =elot-global-label-display-mode= as a first-class feature
+*** DONE Step 1.11 - =elot-global-label-display-mode= as a first-class feature
+
+/Status/: implemented. The mode now emits a one-shot,
+buffer-local-debounced message when activated in a buffer with no
+active label sources, pointing the user at
+=elot-label-activate-source= / =.dir-locals.el=; the mode still
+turns on so the toggle state is honest and subsequent source
+additions take effect via the existing
+=elot-active-label-sources-change-hook=.
+=elot-global-label-display-setup= clears the warning flag when
+sources become non-nil (so a later drop back to empty re-emits the
+hint). Collision resolution is unchanged and already satisfies
+decision (1) -- highest-priority-wins, silent -- verified via
+=elot-db-get-label-any= in the new regression test. Autoload
+cookies required by decision (4) were already in place on every
+listed command (=elot-global-label-display-mode=,
+=elot-global-label-display-setup=, =elot-label-register-source=,
+=elot-label-register-current-buffer=, =elot-label-activate-source=,
+=elot-label-deactivate-source=, =elot-label-list-sources=,
+=elot-label-list-active-sources=); the new test suite asserts this
+and will catch regressions. Menu wiring from Step 1.10 requires
+nothing further. README gains a troubleshooting entry for the
+"no active sources" message and a one-line note under /Priority
+matters/ that first-match-wins is enforced silently.
+
+New tests live in =test/elot-step-1-11-test.el= (Makefile target
+=step-1-11-test=, included in =make test=):
+=test-global-mode-messages-when-no-active-sources=,
+=test-global-mode-idempotent-message=,
+=test-global-mode-silent-when-sources-present=,
+=test-collision-highest-priority-wins=,
+=test-autoload-cookies-present=,
+=test-autoload-commands-are-fboundp=.
+
+
 
 /Numbering note:/ this step is 1.11 rather than 1.10 because the
 ELOT menu must be extended first (Step 1.10) - the autoload
@@ -1286,7 +1317,8 @@ has never opened an ELOT Org file" path from working.
 
 *Loose ends to close (decisions recorded):*
 
-1. /Collisions across active sources./ When the same token
+1. (this is already done) 
+   /Collisions across active sources./ When the same token
    resolves through multiple active sources - e.g. the literal
    =id= appears in source A and source B, each with a different
    label - the matcher uses =elot-db-get-label-any= which sorts
@@ -2642,7 +2674,7 @@ date, decision, rationale.
   projects (config, i18n, dashboard legends); CSV alone forces users
   to convert, and they won't. Adding JSON at the time CSV/TSV are
   added costs very little and dramatically broadens UC3 coverage.
-
+  
 * Changelog
 
 Append-only record of changes to *this plan document*, newest first.

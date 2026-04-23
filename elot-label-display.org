@@ -666,6 +666,24 @@ Then the ~completing-read~ -- rewriting ~elot-label-lookup~ using hashtable.
     (setq elot-global--fontify-regexp nil)
     (font-lock-flush))
 
+  (defvar-local elot-global--no-sources-warned nil
+    "Non-nil once the no-active-sources hint has been emitted in this buffer.
+  Cleared by `elot-global-label-display-setup' when the active-sources
+  list becomes non-nil, so the hint is re-emitted if sources are later
+  removed again.")
+
+  (defun elot-global--maybe-warn-no-sources ()
+    "Emit a one-shot hint when the mode is enabled without active sources.
+  Debounced via the buffer-local `elot-global--no-sources-warned' so
+  toggling the mode off and on in a buffer that has no sources does not
+  spam the echo area.  The flag is cleared by
+  `elot-global-label-display-setup' when sources eventually appear."
+    (when (and (null elot-active-label-sources)
+               (not elot-global--no-sources-warned))
+      (setq elot-global--no-sources-warned t)
+      (message
+       "elot-global-label-display-mode: no active label sources in this buffer; use M-x elot-label-activate-source or set via .dir-locals.el")))
+
   ;;;###autoload
   (define-minor-mode elot-global-label-display-mode
     "Display labels from ELOT active label sources in any buffer.
@@ -675,6 +693,12 @@ Then the ~completing-read~ -- rewriting ~elot-label-lookup~ using hashtable.
   `M-x elot-label-activate-source') are decorated in place with
   their labels.  Works in any major mode: the font-lock matcher is
   built from the DB, not from a language grammar.
+
+  If the buffer has no active sources, the mode still turns on (so
+  the toggle state is honest) but nothing is decorated; a one-shot
+  hint is emitted in the echo area pointing at
+  `elot-label-activate-source'.  Adding a source afterwards triggers
+  an automatic refresh via `elot-active-label-sources-change-hook'.
 
   Toggle with \\[elot-toggle-label-display] (F5) once enabled.  Use
   \\[elot-global-label-display-setup] for a one-shot refresh after
@@ -689,7 +713,8 @@ Then the ~completing-read~ -- rewriting ~elot-label-lookup~ using hashtable.
           (local-set-key (kbd "<f5>") #'elot-toggle-label-display)
           (when (boundp 'elot-active-label-sources-change-hook)
             (add-hook 'elot-active-label-sources-change-hook
-                      #'elot-global-label-display-setup nil t)))
+                      #'elot-global-label-display-setup nil t))
+          (elot-global--maybe-warn-no-sources))
       (elot-global--uninstall)
       (setq elot-label-display 'off)
       (when (boundp 'elot-active-label-sources-change-hook)
@@ -705,7 +730,13 @@ Then the ~completing-read~ -- rewriting ~elot-label-lookup~ using hashtable.
     (elot-global--uninstall)
     (elot-global--install)
     (unless elot-global-label-display-mode
-      (elot-global-label-display-mode 1)))
+      (elot-global-label-display-mode 1))
+    ;; If sources are now present, clear the one-shot warning flag so
+    ;; that a later drop back to empty re-emits the hint.  If sources
+    ;; are still nil, emit the hint (debounced).
+    (if elot-active-label-sources
+        (setq elot-global--no-sources-warned nil)
+      (elot-global--maybe-warn-no-sources)))
 
   ;; If `elot-mode' is (or becomes) loaded, surface its ELOT menu in
   ;; buffers where only `elot-global-label-display-mode' is active.

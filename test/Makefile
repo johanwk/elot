@@ -2,12 +2,12 @@ EMACS ?= emacs
 
 PACKAGE_DIR := ../elot-package
 
-.PHONY: all test db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test clean help
+.PHONY: all test db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test clean help
 
 all: test
 
 # Run the full ELOT ERT test suite.
-test: db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test
+test: db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test
 
 # Step 1.1 tests: SQLite DB layer.
 db-test:
@@ -103,6 +103,16 @@ ttl-prefix-test:
 	  -l elot-ttl-prefix-test.el \
 	  -f ert-run-tests-batch-and-exit
 
+# Step 1.11 tests: `elot-global-label-display-mode' polish
+# (no-sources hint, collision resolution, autoload cookies).
+step-1-11-test:
+	$(EMACS) --batch \
+	  -L $(PACKAGE_DIR) \
+	  -L . \
+	  -l ert \
+	  -l elot-step-1-11-test.el \
+	  -f ert-run-tests-batch-and-exit
+
 # Step 1.10 tests: ELOT menu `Labels & sources' submenu
 # (structure, entry resolution, :enable / :style toggle guards).
 menu-test:
@@ -130,6 +140,7 @@ help:
 	@echo "  active-sources-ui-test run test/elot-active-sources-ui-test.el (Step 1.7.2)"
 	@echo "  ttl-prefix-test run test/elot-ttl-prefix-test.el (Step 1.7.3)"
 	@echo "  menu-test    run test/elot-menu-test.el (Step 1.10)"
+	@echo "  step-1-11-test run test/elot-step-1-11-test.el (Step 1.11)"
 	@echo "  clean        remove compiled artifacts"
 	@echo "  help         show this help"
 	@echo ""

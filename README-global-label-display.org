@@ -294,6 +294,12 @@ Result: =lis:Activity -> "Activity"= from the upper ontology;
 Rule of thumb: /sources that define labels should precede sources
 that only use them./
 
+Note: first-match-wins is enforced silently. If two active sources
+both carry a row for the same identifier, the higher-priority
+source's label is returned and the lower-priority one is ignored
+with no warning. This is a feature, not a bug -- reorder via
+=M-x elot-label-list-active-sources= to change which source wins.
+
 * Refreshing sources
 
 - /Automatic/. Saving an ELOT Org file re-ingests it via
@@ -309,6 +315,16 @@ that only use them./
   cascades through entities, attributes, and prefixes.
 
 * Troubleshooting
+
+** "I enabled =elot-global-label-display-mode= and saw a message about no active sources"
+
+The mode turns on unconditionally, but decorations require at
+least one entry in =elot-active-label-sources=. Activate a
+registered source with =M-x elot-label-activate-source=, or set
+=elot-active-label-sources= via =.dir-locals.el= for the whole
+project. Once sources appear the display refreshes automatically
+via =elot-active-label-sources-change-hook=; no need to toggle
+the mode.
 
 ** "I registered a source but =elot-active-label-sources= is still nil"
 
