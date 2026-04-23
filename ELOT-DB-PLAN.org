@@ -1509,6 +1509,175 @@ with an explicit one. Auto-repersist is gated on the prior
 existence of the dir-locals entry so there is no silent
 filesystem surprise.
 
+*** TODO Step 1.7.3 - TTL prefix harvest + dual-form matcher for =elot-global-label-display-mode=
+
+*Goal:* Make =elot-global-label-display-mode= decorate identifiers in
+non-Org buffers regardless of whether the buffer uses /CURIE/ form
+(=ellsea:id4f5d6...=) or /full-IRI/ form
+(=http://data.dnv.com/ontology/ellsea/asset/id4f5d6...=), for sources
+whose stored ids are full IRIs (TTL, RQ-from-cache, and any future
+SPARQL-backed source).
+
+*Motivation:* Symptom reported against =smallttl.ttl=:
+- Source registers cleanly (4 entities).
+- Global mode installed, source activated.
+- No labels are displayed in the buffer, even though the buffer
+  clearly contains =ellsea:idNNNN...= tokens and the DB clearly
+  contains matching labels.
+
+Root cause, two layers:
+
+1. /ID form mismatch./ ROBOT expands prefixes on CSV output, so
+   =elot-source-parse-ttl= hands =elot-db-update-source= full-IRI
+   ids. The buffer, however, uses the CURIE form declared via
+   =@prefix ellsea: <...>=. The global mode's font-lock matcher is
+   built by =regexp-opt= over =elot-db-all-active-ids=, i.e. only
+   full IRIs. Those strings never appear verbatim in the buffer;
+   hence no match, hence no decoration.
+2. /No prefix rows for TTL sources./ The TTL parser never captures
+   =@prefix= declarations, so =elot-db-list-prefixes smallttl.ttl=
+   is empty. Even the three-pass =elot-db-get-label-any= cannot
+   bridge CURIE->IRI for this source: there is nothing to expand
+   =ellsea:= against in the scoped table, and =ellsea= is not a
+   global default.
+
+/Not in scope today:/ Org/ELOT buffers are unaffected. They use the
+ELOT-native label-display path (=elot-label-display-setup= + local
+HT regexes), whose matcher is built from the buffer's own
+=elot-slurp=. URIs and CURIEs both work there today; adding heavy
+TTL sources to the DB only affects the /fallback/ lookup, which is
+a point query and carries no regex cost. Confirmed empirically on
+=examples/bfo-fortest.org= with 4 active sources including a
+1361-IRI TTL file.
+
+*Design decision -- keep IRIs as the canonical stored id.*
+
+The alternative ("store CURIEs in =entities.id=") was considered and
+rejected:
+- Lossy: contracting on ingest requires picking /one/ CURIE among
+  potentially many valid contractions, baking a choice into the
+  store.
+- Fragile: renaming or removing a prefix silently misresolves all
+  stored ids that used it.
+- Inconsistent with what ROBOT emits -- would require a
+  post-processing pass on every TTL ingest.
+- Breaks cross-source identity: two TTL files that both mention
+  =<http://.../BFO_0000001>= via different prefix names would
+  produce non-matching ids and fail to cross-reference.
+
+Instead, fix the two layers separately.
+
+*Deliverables:*
+
+- *A. TTL prefix harvest* (in =elot-package/elot-sources.el=):
+  - New helper =elot-source--ttl-prefixes (file)=: regexp sweep
+    over the TTL file extracting =@prefix NAME: <EXPANSION> .= and
+    =PREFIX NAME: <EXPANSION>= (SPARQL form, for RQ sources
+    later). Returns an alist =((name . expansion) ...)=.
+    Handles empty prefix (=@prefix : <...>=), trailing-dot
+    variation, whitespace, comments. ~15 lines.
+  - =elot-source-parse-ttl= returns a slurp whose first element is
+    a sentinel =(:prefixes ((name . expansion) ...))= entry, or --
+    cleaner -- changes the dispatcher contract so parsers may
+    return =(entries . prefixes)= conses when they have prefixes
+    to contribute. TBD in implementation; the plan allows either
+    shape as long as =elot-label-register-source= can thread the
+    rows through to =elot-db-add-prefix=.
+  - =elot-label--do-register= (the internal write path) calls
+    =elot-db-add-prefix= for each harvested row, scoped to the
+    source. Existing CSV/TSV/JSON/Org paths contribute an empty
+    prefix list and are unchanged.
+  - /RQ sources/: the cached CSV does not carry the original TTL's
+    prefix declarations. Harvest from the =.rq= file itself
+    (=PREFIX= lines) instead. Same helper, adapted regex.
+
+- *B. Dual-form font-lock matcher* (in
+  =elot-package/elot-label-display.el=):
+  - =elot-db-all-active-ids= gains an optional =&key include-curies=
+    argument (or a sibling =elot-db-all-active-ids-with-curies=),
+    returning the union of: every stored id, plus, for each stored
+    id that is a full IRI, its longest-match contraction via
+    =elot-db-contract-uri= against the source's prefixes +
+    globals. Deduped, order preserved (IRI-first so fallback
+    lookup is deterministic).
+  - =elot-global--build-regexp= consumes this augmented list.
+    =regexp-opt= will factor the common IRI prefix trees and the
+    common CURIE prefixes (=ex:=, =ellsea:=, etc.) independently,
+    keeping the trie compact.
+  - Keyword body unchanged: =elot-db-get-label-any= already handles
+    both CURIE and IRI shapes via pass 1 (literal) and pass 2
+    (CURIE->URI). No extra resolution logic required.
+
+- *C. Safety net* (opportunistic, decoupled from (A)/(B) but
+  worth landing together):
+  - Wrap the font-lock matcher body in =condition-case= so a
+    runaway regex on one source cannot silently disable decoration
+    for the whole buffer. On error, =message= once and continue
+    with decoration unchanged for that region.
+  - Soft cap: =defcustom elot-global-label-display-max-ids= (default
+    10000). If the augmented id list exceeds it,
+    =elot-global--install= logs a warning and falls back to
+    /pass-through/ (no matcher installed, global mode still
+    enabled for consistency of the toggle UX). Users who want
+    labels in such buffers can reduce their active-sources set.
+
+*Tests (new =test/elot-ttl-prefix-test.el=):*
+- =test-ttl-prefix-harvest-basic= - tiny TTL fixture with 3
+  =@prefix= lines incl. empty-prefix; asserts parsed alist shape.
+- =test-ttl-prefix-harvest-handles-whitespace-and-comments= -
+  prefix lines preceded by =#= comments, multi-space alignment.
+- =test-register-ttl-adds-prefix-rows= - register the existing
+  =test/fixtures/rq/data.ttl= (ROBOT-gated), assert
+  =elot-db-list-prefixes= is non-empty for that source.
+- =test-smallttl-regression= - ships a trimmed copy of the
+  reported =smallttl.ttl= as =test/fixtures/smallttl.ttl= (4
+  entities, 1 =@prefix ellsea:=); register; assert
+  =elot-db-expand-curie "ellsea:id51929cf8..." data.ttl= succeeds.
+- =test-all-active-ids-include-curies= - source with one IRI id
+  and one matching prefix row; assert the CURIE form appears in
+  =(elot-db-all-active-ids-with-curies)= output.
+- =test-global-mode-matches-curie-form-in-ttl-buffer= - end-to-end:
+  open a buffer containing =ellsea:id51929cf8...=, register +
+  activate =smallttl.ttl=, enable global mode, assert the token
+  gets an =elot-label-display= text property equal to =thimble B=.
+- =test-global-mode-matches-iri-form-in-same-buffer= - buffer with
+  =<http://.../id51929cf8...>= (the angle-bracket form ROBOT
+  would produce); same assertion. One matcher, two forms.
+- =test-safety-net-cap= (gated on reasonable ROBOT absence; pure
+  unit): set =elot-global-label-display-max-ids= to 2, register a
+  4-entity source, assert matcher is nil and a warning is
+  =message='d, and the mode is still enabled.
+
+*Non-goals:*
+- No change to Org/ELOT label-display path. =elot-codelist-id-label=
+  and =elot-attriblist-label-value= already work for both ID forms
+  because their regex is built from the local slurp, not the DB.
+- No prefix-table UI. Prefix harvest is silent; users who want to
+  inspect run =M-x elot-db-list-prefixes=.
+- No CURIE rewriting of stored ids. Canonical form remains the
+  IRI, period.
+- No handling of =BASE= directives in TTL (rare in the wild for
+  label-carrying sources; relative-IRI resolution is a ROBOT
+  concern, not ours).
+- No dynamic re-harvest on prefix edits to the source. Users
+  re-register the source if they change =@prefix= declarations;
+  this matches existing CSV/TSV mtime-based re-ingest behaviour.
+
+*Risk:* Low-to-moderate.
+- Parser contract change (entries-vs-=(entries . prefixes)=) touches
+  the dispatcher and every existing parser call site. The change
+  is mechanical but spreads across =elot-source-parse=,
+  =elot-label--do-register=, and all six active parsers. Mitigated
+  by returning a cons only when prefixes are non-empty and
+  treating a bare list as today's shape -- strict backward-compat.
+- =regexp-opt= trie size grows by roughly 2x for IRI-heavy sources
+  (both forms present). The safety net cap in (C) bounds the worst
+  case. Empirically 1361 IRIs produce a workable regex today when
+  constructed carefully; dual-form should remain comfortable below
+  10k ids.
+- No migration needed. Existing DBs simply acquire prefix rows the
+  next time a TTL/RQ source is re-registered.
+
 *** TODO Step 1.6.1 - Path canonicalisation for cross-platform stability
 
 *Goal:* Ensure file paths that enter the DB (as =sources.source=,
