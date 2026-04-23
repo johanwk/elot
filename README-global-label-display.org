@@ -42,6 +42,50 @@ The labels come from any combination of:
 All mappings are cached in a single SQLite DB at =elot-db-file=
 (default =~/.emacs.d/elot-db.sqlite=).
 
+* Beyond ontology development
+
+Although this feature was built for ELOT and is most obviously useful
+while editing or reviewing OWL ontologies, the machinery is entirely
+generic: it maps opaque tokens to human-readable strings in any file
+Emacs can open. ELOT is the first consumer, not the only one.
+
+Some concrete non-ontology uses:
+
+- /Code review and source browsing./ Python, Java, TypeScript,
+  Jupyter notebooks, Go, shell scripts -- any codebase that
+  embeds long identifiers (URIs, GUIDs, compact codes) in string
+  literals, dict keys, or log lines becomes readable at a glance
+  without leaving the editor. The file on disk is unchanged; only
+  the rendering carries the labels.
+- /Data files./ CSV / TSV / JSON / YAML exports from a database or
+  data-lake tool typically carry primary keys and foreign keys but
+  no display names. A small companion =.csv= of =id,label= pairs,
+  registered as a source, turns those exports into self-describing
+  tables in the editor.
+- /SPARQL, Turtle, and Manchester syntax./ =.ttl=, =.omn=, and
+  =.rq= buffers that reference external vocabularies (OBO, SKOS,
+  QUDT, Wikidata subsets, enterprise code lists) display the term
+  labels inline without any =rdfs:label= triples being present in
+  the buffer.
+- /Configuration and log files./ Employee codes in HR tooling,
+  product SKUs in inventory scripts, ticket IDs in commit messages
+  and source comments, short git SHAs paired with commit subjects,
+  standards part numbers -- any flat =id -> label= mapping loaded
+  from a =.csv= / =.tsv= / =.json= file annotates every occurrence
+  of the id in any buffer where the minor mode is enabled.
+- /Translation and i18n dictionaries./ A JSON dictionary of
+  message-key -> localised-string can be used to render message
+  keys in source code as their localised text.
+- /Cross-repository navigation./ Activating sources from several
+  unrelated projects in one workspace gives a single consistent
+  "what does this identifier mean?" layer across all of them.
+
+The matcher in =elot-global-label-display-mode= is built from the
+literal =id= strings in your active sources (Stage 1 is strictly
+literal-token matching), so no grammar or parser for the host file
+type is required. If a registered source happens to contain the
+token, the label is shown; otherwise the token is left alone.
+
 * Concepts in 60 seconds
 
 - /Source/. A file that provides =id -> label= mappings. Registered
@@ -126,6 +170,33 @@ via =project-current= / =vc-root-dir=; falls back to
 =default-directory= if no project is identified). Any file opened
 under that root inherits =elot-active-label-sources=. Emacs will
 prompt once to mark the value safe; answer =!= to remember.
+
+A persisted =.dir-locals.el= typically looks like this:
+
+#+begin_src emacs-lisp
+;;; Directory Local Variables            -*- no-byte-compile: t -*-
+;;; For more information see (info "(emacs) Directory Variables")
+
+((nil . ((elot-active-label-sources
+          . (("c:/Projects/example-project/vocab/domain-core.org"
+              nil)
+             ("c:/Projects/example-project/vocab/domain-module.ttl"
+              nil))))))
+#+end_src
+
+Notes:
+
+- Paths are absolute. They are not portable across machines or
+  checkouts; treat the file as per-workstation configuration
+  rather than something to commit unchanged to a shared repo.
+  (Relative-path support is noted in the plan as a deferred
+  enhancement.)
+- The second element of each entry is the /data source/. It is
+  =nil= for Org, CSV, TSV, JSON, and TTL sources. For =.rq=
+  queries it carries the query target -- either a local RDF file
+  path or a SPARQL endpoint URL.
+- Order is priority. The first matching source wins; see the
+  worked example under /Priority matters/ below.
 
 ** 4. Turn on label display in a non-ELOT buffer
 
