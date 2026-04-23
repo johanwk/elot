@@ -1117,10 +1117,57 @@ warranted for v1.
 
 ---
 
-*** TODO Step 1.10 - Extend the ELOT menu with global-slurp commands
+*** DONE Step 1.10 - Extend the ELOT menu with global-slurp commands
 :PROPERTIES:
-:STATUS: TODO
+:STATUS: DONE
 :END:
+
+/Status:/ Menu additions landed in =elot-mode.org= (submenu /Labels & sources/
+with /Source registration/, /Active sources (per buffer / project)/, and
+/Display/ groups). =:active= guards wrap every entry in =fboundp= so a
+minimal load (without =elot-sources.el= / =elot-label-display.el=) stays
+non-broken; =:enable= guards are set on deactivate / move /
+unregister / refresh entries per the spec; =:style toggle= with
+=:selected= is used for the two display-state commands
+(=elot-global-label-display-mode=, =elot-toggle-label-display=).
+=elot-label-set-active-sources= intentionally omitted. Tests live in
+=test/elot-menu-test.el= (Makefile target =menu-test=, included in
+=make test=): they walk the compiled =elot-menu= keymap (via
+=map-keymap=, since =easy-menu-define= stores a keymap rather than
+the source descriptor) and verify the submenu structure, full
+command coverage, =fboundp= resolution for every referenced
+command, =:enable= semantics for both the active-sources-sensitive
+entries (deactivate / move up / move down) and the
+DB-registered-sources-sensitive entries (unregister / refresh /
+refresh-all, =elot-db-list-sources= stubbed via =cl-letf=), the
+=:button (:toggle . EXPR)= encoding on the two display-state
+commands (the keymap form of =:style toggle :selected EXPR=), and
+the absence of =elot-label-set-active-sources=. All 7 tests pass.
+
+Incidental fixes made while landing this step:
+- =elot-defs.org= =src-require= block: =(require 'hydra)= softened to
+  =(require 'hydra nil t)= so a missing optional dep no longer
+  aborts load of =elot.el= (and transitively =elot-mode=). Consistent
+  with the existing optional-deps =dolist= that already tracks
+  hydra, and with the =(fboundp 'defhydra)= / =(fboundp
+  'elot-hydra/body)= guards already in place around the hydra
+  definition and its keybinding.
+- =elot-label-display.org=: =define-minor-mode
+  elot-global-label-display-mode= given =:keymap (make-sparse-keymap)=
+  so =elot-global-label-display-mode-map= exists as a bound
+  variable (needed both for the menu-attachment =with-eval-after-load=
+  forms below and for Step 1.12 Item B's planned keybindings).
+- Menu attachment to =elot-global-label-display-mode-map= via
+  mirrored =with-eval-after-load= forms in =elot-mode.org= and
+  =elot-label-display.org=, so the ELOT menu bar item appears
+  whenever either mode is active, independent of load order.
+  (This is Step 1.12 Item B's menu-attachment piece landing
+  early; the per-item =:enable= split that greys out ELOT-only
+  commands specifically in non-ELOT buffers via
+  =elot--in-elot-buffer-p= is still pending under 1.12.)
+
+Menu keymap attachment to =elot-global-label-display-mode-map= and
+the per-buffer enablement split are deferred to Step 1.12 Item B.
 
 *Goal:* Surface the global-slurp / label-display commands in the
 ELOT major-mode menu so users can discover and invoke them without
@@ -1216,9 +1263,6 @@ menu-entry-points-resolve test catches at load time.
 ---
 
 *** TODO Step 1.11 - =elot-global-label-display-mode= as a first-class feature
-:PROPERTIES:
-:STATUS: TODO
-:END:
 
 /Numbering note:/ this step is 1.11 rather than 1.10 because the
 ELOT menu must be extended first (Step 1.10) - the autoload

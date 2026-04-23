@@ -60,23 +60,11 @@
 ;; Lint is optional -- only loaded when the user invokes it
 (autoload 'elot-org-lint "elot-lint" "Refresh `elot-slurp', then run `org-lint'." t)
 
-;; Flymake backend for in-buffer squiggly-line diagnostics
-(autoload 'elot-flymake-setup    "elot-flymake" "Enable ELOT Flymake backend." t)
-(autoload 'elot-flymake-teardown "elot-flymake" "Disable ELOT Flymake backend.")
-
 (defgroup elot
     nil
     "Customization group for Emacs Literate Ontology Tool (ELOT)."
     :prefix "elot-"
     :group 'org)
-
-  (defcustom elot-flymake-enable t
-    "When non-nil, `elot-mode' enables Flymake for in-buffer diagnostics.
-This gives you squiggly-line underlines (like VS Code) in addition
-to the `org-lint' list view.  Set to nil if you prefer to run
-linting only on demand with \\[elot-org-lint]."
-    :type 'boolean
-    :group 'elot)
 
   (defcustom elot-label-display-size-threshold (* 500 1024)
     "Buffer size (bytes) above which `elot-mode' asks before enabling label-display.
@@ -506,7 +494,6 @@ or `xsd:integer' on a column header will be applied to values."
   "ELOT Ontology Authoring Menu"
   '("ELOT"
     ["Check for common problems" elot-org-lint :active (fboundp 'elot-org-lint)]
-    ["Toggle in-buffer diagnostics (Flymake)" flymake-mode :active (fboundp 'flymake-mode)]
     ["Export to OWL (Tangle)" elot-tangle-buffer-to-omn t]
     ["Export to HTML" (lambda () (interactive) (browse-url-of-file (expand-file-name (org-html-export-to-html))))
      :active (fboundp 'org-html-export-to-html)]
@@ -533,7 +520,79 @@ or `xsd:integer' on a column header will be applied to values."
     "---"
     ["Insert New Document Header" tempo-template-elot-doc-header :active (fboundp 'tempo-template-elot-doc-header)]
     ["Insert New Ontology Skeleton" tempo-template-elot-ont-skeleton :active (fboundp 'tempo-template-elot-ont-skeleton)]
+    "---"
+    ("Labels & sources"
+     ("Source registration"
+      ["Register current buffer as label source"
+       elot-label-register-current-buffer
+       :active (fboundp 'elot-label-register-current-buffer)]
+      ["Register label source..."
+       elot-label-register-source
+       :active (fboundp 'elot-label-register-source)]
+      ["Unregister label source..."
+       elot-label-unregister-source
+       :active (fboundp 'elot-label-unregister-source)
+       :enable (and (fboundp 'elot-db-list-sources)
+                    (consp (ignore-errors (elot-db-list-sources))))]
+      ["Refresh label source..."
+       elot-label-refresh-source
+       :active (fboundp 'elot-label-refresh-source)
+       :enable (and (fboundp 'elot-db-list-sources)
+                    (consp (ignore-errors (elot-db-list-sources))))]
+      ["Refresh all label sources"
+       elot-label-refresh-all-sources
+       :active (fboundp 'elot-label-refresh-all-sources)
+       :enable (and (fboundp 'elot-db-list-sources)
+                    (consp (ignore-errors (elot-db-list-sources))))]
+      ["List registered label sources"
+       elot-label-list-sources
+       :active (fboundp 'elot-label-list-sources)])
+     ("Active sources (per buffer / project)"
+      ["Activate label source in buffer..."
+       elot-label-activate-source
+       :active (fboundp 'elot-label-activate-source)]
+      ["Deactivate label source in buffer..."
+       elot-label-deactivate-source
+       :active (fboundp 'elot-label-deactivate-source)
+       :enable (bound-and-true-p elot-active-label-sources)]
+      ["List/reorder active label sources"
+       elot-label-list-active-sources
+       :active (fboundp 'elot-label-list-active-sources)]
+      ["Raise active source priority..."
+       elot-label-move-source-up
+       :active (fboundp 'elot-label-move-source-up)
+       :enable (bound-and-true-p elot-active-label-sources)]
+      ["Lower active source priority..."
+       elot-label-move-source-down
+       :active (fboundp 'elot-label-move-source-down)
+       :enable (bound-and-true-p elot-active-label-sources)])
+     ("Display"
+      ["Toggle global label display (this buffer)"
+       elot-global-label-display-mode
+       :active (fboundp 'elot-global-label-display-mode)
+       :style toggle
+       :selected (bound-and-true-p elot-global-label-display-mode)]
+      ["Rebuild label-display matcher"
+       elot-global-label-display-setup
+       :active (fboundp 'elot-global-label-display-setup)]
+      ["Toggle label display (F5)"
+       elot-toggle-label-display
+       :active (fboundp 'elot-toggle-label-display)
+       :style toggle
+       :selected (and (boundp 'elot-label-display)
+                      (eq elot-label-display 'on))]))
     ))
+
+;; Also surface the ELOT menu when `elot-global-label-display-mode'
+;; is active in a non-ELOT buffer.  We attach the same menu keymap
+;; to the global mode's keymap.  `with-eval-after-load' guards the
+;; load order: if elot-label-display.el loads later, the sibling
+;; snippet there picks up `elot-menu' the other way around.
+(with-eval-after-load 'elot-label-display
+  (when (and (boundp 'elot-global-label-display-mode-map)
+             (boundp 'elot-menu))
+    (easy-menu-add-item elot-global-label-display-mode-map
+                        '("menu-bar") elot-menu)))
 
 (defun elot-mode--add-hooks ()
   "Add buffer-local hooks for an ELOT buffer."
@@ -579,11 +638,7 @@ or `xsd:integer' on a column header will be applied to values."
     ;; 6. Label-display: set up immediately (with size-gated prompt)
     (elot-mode--maybe-setup-labels)
 
-    ;; 7. Flymake: enable in-buffer squiggly-line diagnostics
-    (when elot-flymake-enable
-      (elot-flymake-setup))
-
-    ;; 8. Set initial fold visibility
+    ;; 7. Set initial fold visibility
     (org-cycle-set-startup-visibility))
 
   (defun elot-mode--maybe-setup-labels ()
@@ -610,11 +665,7 @@ In batch mode (`noninteractive'), skip label-display entirely."
       (with-silent-modifications
         (elot-remove-prop-display)))
 
-    ;; 3. Disable Flymake backend
-    (when (fboundp 'elot-flymake-teardown)
-      (elot-flymake-teardown))
-
-    ;; 4. Restore syntax table
+    ;; 3. Restore syntax table
     (set-syntax-table org-mode-syntax-table))
 
 ;;;###autoload

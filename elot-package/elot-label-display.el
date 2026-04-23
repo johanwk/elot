@@ -520,6 +520,7 @@ Toggle with \\[elot-toggle-label-display] (F5) once enabled.  Use
 \\[elot-global-label-display-setup] for a one-shot refresh after
 registering or activating new sources."
   :lighter " ELOT-L"
+  :keymap (make-sparse-keymap)
   (if elot-global-label-display-mode
       (progn
         (elot-global--install)
@@ -545,6 +546,15 @@ decorations without toggling the minor mode off and on."
   (elot-global--install)
   (unless elot-global-label-display-mode
     (elot-global-label-display-mode 1)))
+
+;; If `elot-mode' is (or becomes) loaded, surface its ELOT menu in
+;; buffers where only `elot-global-label-display-mode' is active.
+;; The sibling snippet in elot-mode.el covers the opposite load order.
+(with-eval-after-load 'elot-mode
+  (when (and (boundp 'elot-global-label-display-mode-map)
+             (boundp 'elot-menu))
+    (easy-menu-add-item elot-global-label-display-mode-map
+                        '("menu-bar") elot-menu)))
 
 (provide 'elot-label-display)
 ;;; elot-label-display.el ends here
