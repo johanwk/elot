@@ -1434,9 +1434,6 @@ existing lazy-open pattern (commands open the DB on first call).
 ---
 
 *** TODO Step 1.12 - Non-ELOT-buffer UX: =elot-label-lookup= and menu visibility
-:PROPERTIES:
-:STATUS: TODO
-:END:
 
 /Item A status:/ DONE. =elot-label-lookup= now dispatches between the
 slurp-backed path (ELOT Org buffer with populated =elot-attriblist-ht=)
@@ -1490,7 +1487,8 @@ Both items build on the Step 1.10 menu wiring and the Step 1.11
 autoload cookies; neither requires schema changes or new DB
 APIs beyond one small helper.
 
-**** Item A - =elot-label-lookup= in non-ELOT buffers
+**** DONE Item A - =elot-label-lookup= in non-ELOT buffers
+CLOSED: [2026-04-23 tor. 23:26]
 
 *Current state:* =elot-label-lookup= (in =elot-label-display.el=,
 tangled from =elot-label-display.org= under the /Interactive
@@ -1602,7 +1600,8 @@ what is available. No changes to slurp; no changes to
   invocation; cache per =(sources . db-mtime)= only if it
   becomes noticeable. Not needed for v1.
 
-**** Item B - ELOT menu visible but mostly greyed out in non-ELOT buffers
+**** DONE Item B - ELOT menu visible but mostly greyed out in non-ELOT buffers
+CLOSED: [2026-04-24 fre. 00:04]
 
 *Current state:* the ELOT menu is defined in =elot-mode.org=
 (tangled to =elot-mode.el=) and is attached to

@@ -43,6 +43,8 @@
 ;;; Code:
 
 (require 'elot-tangle)
+(require 'elot-db)
+(require 'elot-sources)
 (require 'elot-label-display)
 (require 'xref)
 (require 'easymenu)

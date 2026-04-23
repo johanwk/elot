@@ -121,6 +121,8 @@ explicitly calls =elot-org-lint=.
 #+name: src-mode-require
 #+begin_src emacs-lisp
   (require 'elot-tangle)
+  (require 'elot-db)
+  (require 'elot-sources)
   (require 'elot-label-display)
   (require 'xref)
   (require 'easymenu)
