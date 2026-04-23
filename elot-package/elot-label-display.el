@@ -368,8 +368,19 @@ Output to OUT-FILE as an elisp list."
 ;; substitution inside larger tokens.  See the Decisions Log in
 ;; ELOT-DB-PLAN.org.
 
-(declare-function elot-db-all-active-ids "elot-db" (&optional active-sources))
+(declare-function elot-db-all-active-ids "elot-db"
+                  (&optional active-sources include-curies))
 (declare-function elot-db-init "elot-db" (&optional path))
+
+(defcustom elot-global-label-display-max-ids 10000
+  "Soft cap on the number of ids fed to `regexp-opt' by the global mode.
+When `elot-db-all-active-ids' (augmented with CURIE contractions
+in Step 1.7.3) exceeds this value, `elot-global--install' logs a
+warning and installs no matcher; the mode itself stays enabled so
+the toggle UX remains consistent.  Set to nil to disable the cap."
+  :type '(choice (integer :tag "Maximum id count")
+                 (const :tag "No cap" nil))
+  :group 'elot)
 
 (defvar-local elot-global--fontify-regexp nil
   "Buffer-local regexp used by `elot-global-label-display-mode'.
@@ -394,21 +405,33 @@ and, on a hit, installs the `elot-label-display' text property
 (aliased to `display' via `char-property-alias-alist').  The
 property is only applied when the buffer-local toggle
 `elot-label-display' is `on', so \[elot-toggle-label-display]
-can hide labels without disabling the mode."
+can hide labels without disabling the mode.
+
+The matcher body is wrapped in `condition-case' so a failing
+lookup cannot silently disable font-lock for the whole buffer
+(Step 1.7.3 safety net)."
   `((,regexp
-     (0 (let* ((id (match-string 0))
-               (label (and (fboundp 'elot-db-get-label-any)
-                           (ignore-errors (elot-db-get-label-any id)))))
-          (when label
-            (put-text-property (match-beginning 0) (match-end 0)
-                               'help-echo (concat id "  " label))
-            (when (eq elot-label-display 'on)
-              (put-text-property (match-beginning 0) (match-end 0)
-                                 'elot-label-display label)
-              (put-text-property (match-beginning 0) (match-end 0)
-                                 'face (if (boundp 'elot-label-display-face)
-                                           elot-label-display-face
-                                         'italic)))))))))
+     (0 (condition-case err
+            ;; Capture match-beginning/end BEFORE calling lookup helpers,
+            ;; which use `string-match' internally and would otherwise
+            ;; clobber the global match data (Step 1.7.3 fix).
+            (let* ((mb (match-beginning 0))
+                   (me (match-end 0))
+                   (id (match-string 0))
+                   (label (and (fboundp 'elot-db-get-label-any)
+                               (ignore-errors
+                                 (elot-db-get-label-any id)))))
+              (when label
+                (put-text-property mb me 'help-echo (concat id "  " label))
+                (when (eq elot-label-display 'on)
+                  (put-text-property mb me 'elot-label-display label)
+                  (put-text-property mb me 'face
+                                     (if (boundp 'elot-label-display-face)
+                                         elot-label-display-face
+                                       'italic)))))
+          (error
+           (message "elot-global-label-display-mode: matcher error: %S" err)
+           nil))))))
 
 (defun elot-global--install ()
   "Build regexp + keywords from the DB and install them in this buffer."
@@ -420,8 +443,16 @@ can hide labels without disabling the mode."
   (unless (rassoc '(elot-label-display) char-property-alias-alist)
     (push '(display elot-label-display) char-property-alias-alist))
   (let* ((ids (and (fboundp 'elot-db-all-active-ids)
-                   (ignore-errors (elot-db-all-active-ids))))
-         (regexp (elot-global--build-regexp ids)))
+                   (ignore-errors (elot-db-all-active-ids nil t))))
+         (capped (and elot-global-label-display-max-ids
+                      ids
+                      (> (length ids) elot-global-label-display-max-ids)))
+         (regexp (and ids (not capped)
+                      (elot-global--build-regexp ids))))
+    (when capped
+      (message
+       "elot-global-label-display-mode: %d ids exceeds cap of %d; no matcher installed (customize `elot-global-label-display-max-ids')"
+       (length ids) elot-global-label-display-max-ids))
     (setq elot-global--fontify-regexp regexp)
     (setq elot-global--keywords
           (and regexp (elot-global--build-keywords regexp)))

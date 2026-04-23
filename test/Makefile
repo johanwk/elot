@@ -2,12 +2,12 @@ EMACS ?= emacs
 
 PACKAGE_DIR := ../elot-package
 
-.PHONY: all test db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test clean help
+.PHONY: all test db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test clean help
 
 all: test
 
 # Run the full ELOT ERT test suite.
-test: db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test
+test: db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test
 
 # Step 1.1 tests: SQLite DB layer.
 db-test:
@@ -92,6 +92,17 @@ active-sources-ui-test:
 	  -l elot-active-sources-ui-test.el \
 	  -f ert-run-tests-batch-and-exit
 
+# Step 1.7.3 tests: TTL @prefix harvest + dual-form (IRI/CURIE)
+# global-mode matcher + safety-net cap.  ROBOT-gated tests skip
+# cleanly when ROBOT is absent.
+ttl-prefix-test:
+	$(EMACS) --batch \
+	  -L $(PACKAGE_DIR) \
+	  -L . \
+	  -l ert \
+	  -l elot-ttl-prefix-test.el \
+	  -f ert-run-tests-batch-and-exit
+
 clean:
 	rm -f *.elc
 
@@ -107,6 +118,7 @@ help:
 	@echo "  slurp-integration-test run test/elot-slurp-integration-test.el (Step 1.6)"
 	@echo "  global-mode-test run test/elot-global-mode-test.el (Step 1.7)"
 	@echo "  active-sources-ui-test run test/elot-active-sources-ui-test.el (Step 1.7.2)"
+	@echo "  ttl-prefix-test run test/elot-ttl-prefix-test.el (Step 1.7.3)"
 	@echo "  clean        remove compiled artifacts"
 	@echo "  help         show this help"
 	@echo ""

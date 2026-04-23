@@ -646,13 +646,22 @@ source has rows for ID."
 ;;;; Step 1.7: DB-driven font-lock support (all-active-ids)
 ;;;; -------------------------------------------------------------------
 
-(defun elot-db-all-active-ids (&optional active-sources)
+(defun elot-db-all-active-ids (&optional active-sources include-curies)
   "Return a deduped list of `entities.id' strings across ACTIVE-SOURCES.
 ACTIVE-SOURCES defaults to the buffer-local `elot-active-label-sources'.
 Order is not significant; the result is suitable as input to
 `regexp-opt' for building a DB-driven font-lock matcher in
 `elot-global-label-display-mode' (Step 1.7).  Returns nil if no
-active sources are set or none contain any entities."
+active sources are set or none contain any entities.
+
+When INCLUDE-CURIES is non-nil, each id that looks like a full
+URI is additionally contracted via `elot-db-contract-uri'
+against the active sources' prefix tables + globals, and every
+resulting CURIE form is added to the output.  This is what lets
+`elot-global-label-display-mode' match CURIE-form tokens in
+buffers whose stored ids are full IRIs (Step 1.7.3).  IRI forms
+come first in the returned list for deterministic fallback
+behaviour; duplicates are removed with `equal' semantics."
   (let ((sources (elot-db--active-or-default active-sources)))
     (when sources
       (let ((seen (make-hash-table :test 'equal))
@@ -670,6 +679,15 @@ active sources are set or none contain any entities."
                 (unless (gethash id seen)
                   (puthash id t seen)
                   (push id out))))))
+        ;; Second pass: augment with CURIE contractions.
+        (when include-curies
+          (let ((iris (reverse out)))  ; insertion order (oldest first)
+            (dolist (id iris)
+              (when (elot-db--looks-like-uri-p id)
+                (dolist (curie (elot-db-contract-uri id sources))
+                  (unless (gethash curie seen)
+                    (puthash curie t seen)
+                    (push curie out)))))))
         (nreverse out)))))
 
 (provide 'elot-db)

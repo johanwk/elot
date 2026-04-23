@@ -199,7 +199,8 @@
               (insert "ex:Gadget,Gadget\n"))
             ;; Ensure the cache is newer than both inputs.
             (set-file-times cache (seconds-to-time (+ (float-time) 60)))
-            (let ((entries (elot-source-parse-rq q d)))
+            (let* ((result  (elot-source-parse-rq q d))
+                   (entries (car (elot-source--entries-and-prefixes result))))
               (should (= 2 (length entries)))
               (should (elot-sources-test--find "ex:Widget" entries))
               (should (elot-sources-test--find "ex:Gadget" entries)))))
@@ -225,7 +226,8 @@
               (insert "id,label\nex:Widget,Widget\n"))
             (set-file-times cache
                             (seconds-to-time (- (float-time) (* 3600 24))))
-            (let ((entries (elot-source-parse-rq q d)))
+            (let* ((result  (elot-source-parse-rq q d))
+                   (entries (car (elot-source--entries-and-prefixes result))))
               (should (= 1 (length entries)))
               (should (elot-sources-test--find "ex:Widget" entries)))
             (with-temp-buffer
@@ -243,8 +245,9 @@
     (ert-skip "ELOT_TEST_NETWORK not set; skipping live ROBOT test"))
   (unless (elot-robot-available-p)
     (ert-skip "ROBOT not available"))
-  (let ((entries (elot-source-parse-ttl
-                  (elot-sources-test--fx "rq/data.ttl"))))
+  (let* ((result  (elot-source-parse-ttl
+                   (elot-sources-test--fx "rq/data.ttl")))
+         (entries (car (elot-source--entries-and-prefixes result))))
     (should (> (length entries) 0))))
 
 ;;;; -------------------------------------------------------------------
@@ -269,8 +272,9 @@ SELECT ?id ?label ?definition WHERE {
   ?id rdfs:label ?label .
   OPTIONAL { ?id skos:definition ?definition . }
 }")
-         (entries (elot-source-parse-ttl
+         (result  (elot-source-parse-ttl
                    (elot-sources-test--fx "rq/data.ttl")))
+         (entries (car (elot-source--entries-and-prefixes result)))
          ;; ROBOT emits full IRIs in the CSV.
          (widget (elot-sources-test--find
                   "http://example.org/ex/Widget" entries))
@@ -295,7 +299,8 @@ SELECT ?id ?label ?definition WHERE {
                    (lambda (_) tmproot)))
           (let ((cache (elot-source-rq-cache-path q d)))
             (should-not (file-exists-p cache))
-            (let* ((entries (elot-source-parse-rq q d))
+            (let* ((result  (elot-source-parse-rq q d))
+                   (entries (car (elot-source--entries-and-prefixes result)))
                    (widget (elot-sources-test--find
                             "http://example.org/ex/Widget" entries)))
               (should (>= (length entries) 3))
@@ -330,7 +335,8 @@ SELECT ?id ?label ?definition WHERE {
                    (float-time
                     (file-attribute-modification-time
                      (file-attributes cache)))))
-              (let* ((entries (elot-source-parse-rq q d))
+              (let* ((result  (elot-source-parse-rq q d))
+                     (entries (car (elot-source--entries-and-prefixes result)))
                      (widget (elot-sources-test--find
                               "http://example.org/ex/Widget" entries))
                      (new-mtime
