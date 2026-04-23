@@ -1433,7 +1433,8 @@ existing lazy-open pattern (commands open the DB on first call).
 
 ---
 
-*** TODO Step 1.12 - Non-ELOT-buffer UX: =elot-label-lookup= and menu visibility
+*** DONE Step 1.12 - Non-ELOT-buffer UX: =elot-label-lookup= and menu visibility
+CLOSED: [2026-04-24 fre.]
 
 /Item A status:/ DONE. =elot-label-lookup= now dispatches between the
 slurp-backed path (ELOT Org buffer with populated =elot-attriblist-ht=)
@@ -1711,9 +1712,11 @@ any buffer) and avoids two code paths that can drift.
   =elot-global-label-display-mode= is on (with ELOT-Org-only
   entries greyed out).
 
-**** TODO Tests
+**** DONE Tests
+CLOSED: [2026-04-24 fre. 01:03]
 
-/Item A - =elot-label-lookup= generalisation:/
+/Item A tests/ live in =test/elot-label-lookup-test.el= (Makefile
+target =step-1-12-test=).  All 8 tests pass.
 - =test-elot-db-all-active-labels-basic= - two sources with
   overlapping labels; assert the returned map has the
   highest-priority id for each label.
@@ -1721,7 +1724,7 @@ any buffer) and avoids two code paths that can drift.
   returns an empty hash, does not error.
 - =test-label-lookup-dispatches-to-attriblist= - in an ELOT Org
   buffer with a populated =elot-attriblist-ht=, the slurp path
-  runs (check via an advice or a spy).
+  runs (spy via =advice-add= on the private helper).
 - =test-label-lookup-dispatches-to-db= - in a fundamental-mode
   buffer with =elot-active-label-sources= set, the DB path
   runs.
@@ -1733,27 +1736,57 @@ any buffer) and avoids two code paths that can drift.
   CURIE.
 - =test-label-lookup-inserts-curie-for-curie= - DB path;
   selected id is already a CURIE; inserted token is verbatim.
-- =test-label-lookup-autoloaded= - =emacs -Q= + =(require
-  'elot-autoloads)=; =(fboundp 'elot-label-lookup)= and
-  =(autoloadp ...)= as appropriate.
+- =test-label-lookup-autoloaded= - runs =emacs -Q -batch= in a
+  subprocess. Since there is no committed =elot-autoloads.el=,
+  the test generates one at runtime via =loaddefs-generate=
+  into a temp directory (Emacs 29+), puts that on =load-path=,
+  =(require 'elot-autoloads)=, and asserts =(autoloadp
+  (symbol-function 'elot-label-lookup))=. This matches the
+  decision recorded in Step 1.12 to load =elot-db= and
+  =elot-sources= eagerly from =elot-mode.el= and to /not/ ship
+  a committed autoloads file (MELPA/=package.el= generates its
+  own at install time).
 
-/Item B - menu visibility:/
+/Item B tests/ live in =test/elot-menu-item-b-test.el= (Makefile
+target =step-1-12-item-b-test=).  All 5 tests pass.
 - =test-menu-visible-in-global-mode-buffer= - fundamental-mode
   buffer with =elot-global-label-display-mode= on; the ELOT
-  menu exists under =[menu-bar elot]= (or whatever its keymap
-  path is).
-- =test-menu-global-entries-enabled-outside-elot= - inspect
-  each /Labels & sources/ entry's =:enable= form in the above
-  buffer; assert non-nil.
-- =test-menu-elot-only-entries-disabled-outside-elot= - inspect
-  tangle / lint / template entries; assert =:enable= form
-  returns nil.
-- =test-menu-not-visible-without-either-mode= - fresh
-  fundamental-mode buffer, neither mode on; the ELOT menu
-  keymap path is not resolved from the local keymap stack.
-- =test-menu-single-instance-when-both-modes-on= - open an ELOT
-  Org buffer (both modes active); assert there is exactly one
-  top-level "ELOT" menu item, not two.
+  menu entry exists in =elot-global-label-display-mode-map='s
+  =[menu-bar]= sub-keymap and resolves via =current-active-maps=.
+- =test-menu-global-entries-enabled-outside-elot= - for each
+  shared command (=elot-label-lookup=, register/list/activate,
+  display toggles), assert any =:enable= form does /not/
+  reference =elot--in-elot-buffer-p=.
+- =test-menu-elot-only-entries-disabled-outside-elot= - for
+  each ELOT-Org-only command (lint, tangle, open-owl, xref,
+  templates, SPARQL/RDFPUML blocks, doc-header, ontology
+  skeleton, label-display refresh), assert the =:enable= form
+  mentions =elot--in-elot-buffer-p= and evaluates to nil
+  outside an ELOT buffer.
+- =test-menu-not-visible-without-either-mode= - plain
+  fundamental-mode buffer with neither mode on; =[menu-bar
+  ELOT]= does not resolve via =current-active-maps=.
+- =test-menu-single-instance-when-both-modes-on= - read the
+  =:visible= form from =elot-global-label-display-mode-map='s
+  menu entry and evaluate it with =elot-mode= let-bound to nil
+  (expect =t=) and =t= (expect =nil=); confirm
+  =elot-mode-map='s copy carries no =:visible= guard.  This
+  exercises the duplicate-menu fix without needing a GUI.
+
+/Implementation notes carried over from writing the tests:/
+- =easy-menu-define= downcases menu names via =easy-menu-intern=,
+  so =elot-mode-map='s =[menu-bar]= entry is keyed under the
+  symbol =elot= (lowercase) while the explicit =define-key= in
+  =elot-global-label-display-mode-map= uses =ELOT= (uppercase).
+  Item-B tests look up both.
+- =(lookup-key KM [menu-bar ELOT])= returns the menu-item's
+  /target/ keymap, not the raw =(menu-item ...)= cell.  To
+  inspect =:visible= / =:enable= properties, tests walk the
+  =[menu-bar]= sub-keymap's alist directly via
+  =(assq NAME (cdr (lookup-key KM [menu-bar])))=.
+- Item A, test 6 (=curie-for-iri=) requires registering the
+  source row /before/ adding a prefix row, due to the
+  =prefixes.source= foreign-key constraint.
 
 **** Non-goals
 
