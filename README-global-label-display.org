@@ -442,6 +442,7 @@ above.
 | =elot-global-label-display-mode=     | buffer-local label rendering (non-ELOT)        |
 | =elot-global-label-display-setup=    | force regex rebuild for the global mode        |
 | =elot-toggle-label-display=          | =F5= -- flip rendering on/off                  |
+| =elot-label-lookup=                  | completing-read over labels; insert id at point (works in any buffer with active sources; =C-c C-x r= when =elot-global-label-display-mode= is on) |
 
 * Reference: variables
 
