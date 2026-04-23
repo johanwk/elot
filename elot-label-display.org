@@ -455,48 +455,138 @@ we ~let~ a temporary version before calling it.
   (defvar elot-label-lookup-tmp-attriblist-ht nil
     "Temporary storage for attribute list during label lookup.")
 
-  (defun elot-label-lookup-annotations (label)
-    "Helper function for `elot-label-lookup' provides preview string for LABEL."
-    (let* ((attrib-plist (gethash label elot-label-lookup-tmp-attriblist-ht))
-           (rdf-type (plist-get attrib-plist "rdf:type" 'string=))
-           (prefix (car (split-string (plist-get attrib-plist "puri" 'string=) ":")))
-           (definition (string-replace "\n" " " (string-limit
-                        (or (plist-get attrib-plist "iof-av:naturalLanguageDefinition" 'string=)
-                            (plist-get attrib-plist "skos:definition" 'string=)
-                            (plist-get attrib-plist "dcterms:description" 'string=)
-                            (plist-get attrib-plist "rdfs:comment" 'string=)
-                            "")
-                        120))))
-      (concat
-       ;; pad annotations to col 35
-       (make-string (max (- 35 (length label)) 0) 32)
-       "  "
-       prefix
-       (make-string (max (- 10 (length prefix)) 0) 32)
-       rdf-type
-       (make-string (max (- 24 (length rdf-type)) 0) 32)
-       definition)))
-#+end_src
+  (declare-function elot-db-all-active-labels "elot-db" (&optional active-sources))
+  (declare-function elot-db-get-all-attrs     "elot-db" (id &optional active-sources))
+  (declare-function elot-db-contract-uri      "elot-db" (uri &optional active-sources))
+  (declare-function elot-db--looks-like-uri-p "elot-db" (s))
 
-Then the ~completing-read~ -- rewriting ~elot-label-lookup~ using hashtable.
-#+name: src-lookup-id
-#+begin_src emacs-lisp
-  (defun elot-label-lookup ()
-    "Interactive lookup of resource identifier, with completion."
-    (interactive)
+  ;; Shared annotation formatter (Item A.3)
+  (defun elot-label-lookup--format-annotation (label prefix rdf-type definition)
+    "Return a padded annotation string for completion display.
+  LABEL is the completion candidate; PREFIX, RDF-TYPE, and DEFINITION
+  are the annotation fields.  All arguments are strings (possibly empty)."
+    (concat
+     ;; pad annotations to col 35
+     (make-string (max (- 35 (length label)) 0) 32)
+     "  "
+     (or prefix "")
+     (make-string (max (- 10 (length (or prefix ""))) 0) 32)
+     (or rdf-type "")
+     (make-string (max (- 24 (length (or rdf-type ""))) 0) 32)
+     (or definition "")))
+
+  (defun elot-label-lookup-annotations (label)
+    "Annotation function for `elot-label-lookup' using `elot-label-lookup-tmp-attriblist-ht'.
+  Provides a preview string for LABEL during completing-read."
+    (let* ((attrib-plist (gethash label elot-label-lookup-tmp-attriblist-ht))
+           (rdf-type   (plist-get attrib-plist "rdf:type" 'string=))
+           (prefix     (car (split-string (or (plist-get attrib-plist "puri" 'string=) "") ":")))
+           (definition (string-replace
+                        "\n" " "
+                        (string-limit
+                         (or (plist-get attrib-plist "iof-av:naturalLanguageDefinition" 'string=)
+                             (plist-get attrib-plist "skos:definition" 'string=)
+                             (plist-get attrib-plist "dcterms:description" 'string=)
+                             (plist-get attrib-plist "rdfs:comment" 'string=)
+                             "")
+                         120))))
+      (elot-label-lookup--format-annotation label prefix rdf-type definition)))
+
+  (defun elot-label-lookup--from-attriblist ()
+    "Run interactive label lookup backed by the buffer-local slurp hash tables."
     (let ((completion-extra-properties
            (append completion-extra-properties
                    '(:annotation-function elot-label-lookup-annotations))))
-      ;; Store the attriblist globally so annotation function can access it
       (setq elot-label-lookup-tmp-attriblist-ht elot-attriblist-ht)
       (let ((selected-label
-             (completing-read
-              "Label: " elot-attriblist-ht)))
+             (completing-read "Label: " elot-attriblist-ht)))
         (when selected-label
           (insert " ")     ;; Insert a space to avoid getting stuck under the text property
           (backward-char 1)
           (insert (elot-attriblist-label-value selected-label "puri"))
           (forward-char 1)))))
+
+  (defun elot-label-lookup--db-annotations (label)
+    "Annotation function for `elot-label-lookup--from-db'.
+  Looks up LABEL in `elot-label-lookup-tmp-attriblist-ht' (which
+  in the DB path stores label->id) and fetches attributes from the DB."
+    (let* ((id (gethash label elot-label-lookup-tmp-attriblist-ht))
+           (attrib-plist (and id
+                              (fboundp 'elot-db-get-all-attrs)
+                              (elot-db-get-all-attrs id)))
+           (rdf-type   (plist-get attrib-plist "rdf:type" 'string=))
+           (prefix     (when id
+                         (cond
+                          ((and (fboundp 'elot-db--looks-like-uri-p)
+                                (elot-db--looks-like-uri-p id)
+                                (fboundp 'elot-db-contract-uri))
+                           (let ((curie (car (elot-db-contract-uri
+                                              id elot-active-label-sources))))
+                             (when curie (car (split-string curie ":")))))
+                          ((string-match "\\`\\([^:]+\\):" id)
+                           (match-string 1 id))
+                          (t nil))))
+           (definition (string-replace
+                        "\n" " "
+                        (string-limit
+                         (or (plist-get attrib-plist "iof-av:naturalLanguageDefinition" 'string=)
+                             (plist-get attrib-plist "skos:definition" 'string=)
+                             (plist-get attrib-plist "dcterms:description" 'string=)
+                             (plist-get attrib-plist "rdfs:comment" 'string=)
+                             "")
+                         120))))
+      (elot-label-lookup--format-annotation label prefix rdf-type definition)))
+
+  (defun elot-label-lookup--from-db ()
+    "Run interactive label lookup backed by the ELOT DB active sources."
+    (let* ((label->id (elot-db-all-active-labels elot-active-label-sources))
+           (completion-extra-properties
+            (append completion-extra-properties
+                    '(:annotation-function elot-label-lookup--db-annotations))))
+      (setq elot-label-lookup-tmp-attriblist-ht label->id)
+      (let ((selected-label
+             (completing-read "Label: " label->id)))
+        (when selected-label
+          (let* ((id    (gethash selected-label label->id))
+                 (token (if (and id
+                                 (fboundp 'elot-db--looks-like-uri-p)
+                                 (elot-db--looks-like-uri-p id)
+                                 (fboundp 'elot-db-contract-uri))
+                            (or (car (elot-db-contract-uri
+                                      id elot-active-label-sources))
+                                id)
+                          id)))
+            (when token
+              (insert " ")     ;; Insert a space to avoid getting stuck under the text property
+              (backward-char 1)
+              (insert token)
+              (forward-char 1)))))))
+#+end_src
+
+Then the ~completing-read~ -- ~elot-label-lookup~ now dispatches between
+the slurp-backed path (ELOT Org buffer) and the DB-backed path (any buffer
+with active label sources).
+#+name: src-lookup-id
+#+begin_src emacs-lisp
+  ;;;###autoload
+  (defun elot-label-lookup ()
+    "Interactive lookup of resource identifier, with completion.
+  In an ELOT Org buffer with a populated slurp table, uses the local
+  hash tables (richer attributes).  In any other buffer with active
+  label sources configured in the ELOT DB, queries the DB directly.
+  Signals `user-error' when neither data source is available."
+    (interactive)
+    (cond
+     ((and (bound-and-true-p elot-attriblist-ht)
+           (hash-table-p elot-attriblist-ht)
+           (> (hash-table-count elot-attriblist-ht) 0))
+      (elot-label-lookup--from-attriblist))
+     ((and (bound-and-true-p elot-active-label-sources)
+           (fboundp 'elot-db-all-active-labels))
+      (elot-label-lookup--from-db))
+     (t
+      (user-error
+       "No ELOT labels available: no slurp data and no active DB sources"))))
 #+end_src
 ** Activation for non-ELOT buffers
 #+begin_src emacs-lisp
@@ -711,6 +801,7 @@ Then the ~completing-read~ -- rewriting ~elot-label-lookup~ using hashtable.
           (make-local-variable 'elot-label-display)
           (setq elot-label-display 'on)
           (local-set-key (kbd "<f5>") #'elot-toggle-label-display)
+          (local-set-key (kbd "C-c C-x r") #'elot-label-lookup)
           (when (boundp 'elot-active-label-sources-change-hook)
             (add-hook 'elot-active-label-sources-change-hook
                       #'elot-global-label-display-setup nil t))

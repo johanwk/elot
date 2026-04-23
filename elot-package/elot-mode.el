@@ -484,6 +484,7 @@ or `xsd:integer' on a column header will be applied to values."
 (defvar elot-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "<f5>")   #'elot-toggle-label-display)
+    (define-key map (kbd "C-c C-x r") #'elot-label-lookup)
     ;; S-F5 -> hydra, but only when hydra is available (loaded via elot.el)
     (when (fboundp 'elot-hydra/body)
       (define-key map (kbd "S-<f5>") #'elot-hydra/body))

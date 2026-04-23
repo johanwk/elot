@@ -690,6 +690,42 @@ behaviour; duplicates are removed with `equal' semantics."
                     (push curie out)))))))
         (nreverse out)))))
 
+;;;; -------------------------------------------------------------------
+;;;; Step 1.12 Item A: DB-driven label collection for elot-label-lookup
+;;;; -------------------------------------------------------------------
+
+(defun elot-db-all-active-labels (&optional active-sources)
+  "Return a hashtable mapping label -> id over ACTIVE-SOURCES.
+ACTIVE-SOURCES defaults to the buffer-local `elot-active-label-sources'.
+Sources are consulted in priority order; when two sources share a
+label, the higher-priority source's id wins and the lower-priority
+one is ignored silently -- first-match-wins, consistent with
+`elot-db-get-label'.  Returns an empty hashtable (never nil) when
+no active sources are set or none have labelled entities.
+
+The returned hashtable is suitable as a `completing-read' COLLECTION
+argument: keys are the human-readable labels, values are the
+corresponding `entities.id' strings."
+  (let ((sources (elot-db--active-or-default active-sources))
+        (ht (make-hash-table :test 'equal)))
+    (when sources
+      (dolist (entry sources)
+        (let* ((src  (nth 0 entry))
+               (ds   (elot-db--normalize-ds (nth 1 entry)))
+               (rows (sqlite-select
+                      elot-db
+                      "SELECT DISTINCT id, label FROM entities
+                        WHERE source = ? AND data_source = ?
+                          AND label IS NOT NULL"
+                      (list src ds))))
+          (dolist (row rows)
+            (let ((id    (nth 0 row))
+                  (label (nth 1 row)))
+              ;; First source wins: skip if label is already mapped.
+              (unless (gethash label ht)
+                (puthash label id ht)))))))
+    ht))
+
 (provide 'elot-db)
 
 ;;; elot-db.el ends here
