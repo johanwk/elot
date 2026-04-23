@@ -1065,24 +1065,37 @@ See Decisions Log.
 
 ---
 
-*** TODO Step 1.8 - Documentation & examples
+*** DONE Step 1.8 - Documentation & examples
+CLOSED: [2026-04-23 tor. 17:30]
 
-*Deliverables:*
-- New chapter in =elot-manual.org=: "Global label sources" - framed
-  as a general-purpose label-display subsystem, with ELOT as its
-  first (but not only) consumer. One sentence states plainly that
-  the subsystem is usable standalone in projects with no ontology
-  work at all; no code rename is implied.
-- Example =.dir-locals.el= snippets for:
-  - UC1/UC2: aquaculture / building-industry ontology scenarios
-  - *UC3: non-ontology scenario* - an =employees.csv= file as a
-    label source, activated for a directory of Python code that
-    references employee codes; reviewers see names inline without
-    touching the ontology tooling.
-- Migration note for users of the old =elot-slurp-global=
-- README update listing new commands
+/Scope pruned during execution./ A full =elot-manual.org= chapter is
+deferred until that manual file exists; the feature is documented in
+=README-global-label-display.org= instead, which the plan already
+calls out as authoritative until the manual lands. Migration notes
+for =elot-slurp-global= were dropped (no external users of that
+retired API to migrate). The smoke-test org file was dropped as not
+warranted for v1.
 
-*No tests, but:* a smoke-test org file that exercises the full flow end-to-end and can be run by CI.
+*Deliverables (landed):*
+- =README-global-label-display.org= is the end-user reference for
+  Stage 1. It covers concepts, commands, variables, activation,
+  priority, refresh, troubleshooting, and v1 limits.
+- New /Beyond ontology development/ section in the README frames
+  the subsystem as general-purpose label-display with ELOT as its
+  first consumer. Non-ontology uses enumerated (code review, data
+  files, SPARQL/Turtle/OMN, config and log files, i18n
+  dictionaries, cross-repo navigation). Makes the UC3 story
+  discoverable to readers who arrive via "I want inline labels in
+  my =.py=" rather than via ELOT.
+- Anonymised =.dir-locals.el= example added under /Persist
+  activation to the Git project/, showing the =(SOURCE DATA-SOURCE)=
+  shape, with notes on absolute-path portability, data-source
+  semantics for =.rq= vs. other types, and priority ordering.
+
+*Deferred (documented as such, not blocking closure):*
+- Full =elot-manual.org= chapter -- lands when the manual itself does.
+- Relative-path support in =.dir-locals.el= -- called out in the
+  README note; tracked as a future enhancement.
 
 ---
 
@@ -1101,6 +1114,559 @@ See Decisions Log.
 
 *Tests:*
 - =test-benchmark-lookup-under-threshold= (marked slow; opt-in via =ELOT_TEST_SLOW=1=)
+
+---
+
+*** TODO Step 1.10 - Extend the ELOT menu with global-slurp commands
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+*Goal:* Surface the global-slurp / label-display commands in the
+ELOT major-mode menu so users can discover and invoke them without
+memorising =M-x= names. This step is a prerequisite for Step 1.11
+(which promotes =elot-global-label-display-mode= to a first-class,
+autoloaded feature) - the menu additions below are the discovery
+path for users coming from the general Emacs menu bar rather than
+from an already-open ELOT buffer's keybindings.
+
+*Motivation:* the ELOT menu today exposes ELOT-Org-specific
+operations (tangle, lint, label-display toggle for the current
+buffer) but says nothing about the broader =elot-db= / global
+label-display machinery introduced in Steps 1.1-1.8. A user who
+has read =README-global-label-display.org= must fall back to =M-x=
+for every operation; a user who hasn't will not discover the
+feature exists. Since Step 1.11 will make the global mode
+autoload-eligible for non-ELOT buffers, the menu entries also
+need to remain reachable from an ELOT Org buffer (where the
+ELOT menu is live) so the user can /manage/ sources there before
+visiting the consumer buffers.
+
+*Deliverables:*
+
+Locate the ELOT menu definition (currently in =elot-mode.org=,
+tangled to =elot-mode.el=). Add a new submenu /Labels & sources/
+(or similar; final wording TBD during implementation) with the
+following entries, selected from =README-global-label-display.org='s
+/Reference: commands/ table. Grouping suggestion:
+
+- /Source registration/:
+  - =elot-label-register-current-buffer= - "Register current buffer as label source"
+  - =elot-label-register-source= - "Register label source..."
+  - =elot-label-unregister-source= - "Unregister label source..."
+  - =elot-label-refresh-source= - "Refresh label source..."
+  - =elot-label-refresh-all-sources= - "Refresh all label sources"
+  - =elot-label-list-sources= - "List registered label sources"
+- /Active sources (per buffer / project)/:
+  - =elot-label-activate-source= - "Activate label source in buffer..."
+  - =elot-label-deactivate-source= - "Deactivate label source in buffer..."
+  - =elot-label-list-active-sources= - "List/reorder active label sources"
+  - =elot-label-move-source-up= - "Raise active source priority..."
+  - =elot-label-move-source-down= - "Lower active source priority..."
+- /Display/:
+  - =elot-global-label-display-mode= - "Toggle global label display (this buffer)"
+  - =elot-global-label-display-setup= - "Rebuild label-display matcher"
+  - =elot-toggle-label-display= - "Toggle label display (F5)"
+
+Menu items that mutate state (register, unregister, activate,
+deactivate, move) should use =:enable= guards where appropriate
+(e.g. deactivate and the move commands are only meaningful when
+=elot-active-label-sources= is non-nil; unregister/refresh-source
+are only meaningful when =elot-db-list-sources= is non-empty).
+The display-related entries should use =:style toggle= with
+=:selected= bound to the appropriate state variable
+(=elot-global-label-display-mode=,
+=elot-label-display-enabled= or equivalent) so the menu shows
+the current on/off state.
+
+Intentionally /omitted/ from the menu:
+- =elot-label-set-active-sources= - Lisp-level bulk setter, not
+  a user-facing command.
+
+*Documentation updates:*
+- README-global-label-display.org: add a one-line note under
+  /Quick start/ that these commands are also available from the
+  ELOT menu.
+- =elot-manual.org= - when/if it exists, mirror the menu layout
+  in its command reference.
+
+*Tests (new =test/elot-menu-test.el=):*
+- =test-elot-menu-has-labels-submenu= - =lookup-key= against the
+  ELOT menu keymap finds the new submenu.
+- =test-elot-menu-entry-points-resolve= - every command symbol
+  referenced from the menu is =fboundp= after loading ELOT.
+- =test-elot-menu-enable-guard-respects-state= - simulate
+  empty vs populated =elot-active-label-sources= and assert the
+  deactivate/move entries' =:enable= forms return nil vs non-nil
+  as expected. (Exercise via =menu-item= descriptor inspection;
+  no GUI interaction required.)
+
+*Non-goals:*
+- No toolbar buttons; no tear-off sub-menus; no icons.
+- No reorganisation of existing ELOT menu entries; additions only.
+- No =easy-menu= -> =transient= conversion. If the ELOT menu today
+  uses =easy-menu-define=, the new submenu uses the same
+  mechanism.
+
+*Risk:* Low. Purely additive UI; all commands already exist and
+are tested in their own right. The only real failure mode is
+stale =:enable= guards if a command is later renamed, which the
+menu-entry-points-resolve test catches at load time.
+
+---
+
+*** TODO Step 1.11 - =elot-global-label-display-mode= as a first-class feature
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+/Numbering note:/ this step is 1.11 rather than 1.10 because the
+ELOT menu must be extended first (Step 1.10) - the autoload
+entry below depends on the menu wiring existing when a user
+invokes the command from an unvisited file type for the first
+time.
+
+*Goal:* Finish the work sketched in Step 1.7 by treating
+=elot-global-label-display-mode= as a supported, user-facing
+feature with the loose ends closed: deterministic behaviour
+under collisions, a clear user-visible signal when no active
+sources are configured, a menu entry (from Step 1.10), and
+autoload cookies so the mode is reachable in any buffer without
+first loading ELOT by hand.
+
+*Motivation:* Step 1.7 delivered the mode and Step 1.7.3 the
+dual-form matcher, but several /polish/ loose ends were deferred
+pending real-world use. With the README published and the menu
+landing in Step 1.10, those loose ends now block the "user who
+has never opened an ELOT Org file" path from working.
+
+*Loose ends to close (decisions recorded):*
+
+1. /Collisions across active sources./ When the same token
+   resolves through multiple active sources - e.g. the literal
+   =id= appears in source A and source B, each with a different
+   label - the matcher uses =elot-db-get-label-any= which sorts
+   by active-source priority. *Decision: keep the highest-
+   priority result and discard the rest, with no warning in the
+   interactive path.* Rationale: priority order is the
+   documented conflict-resolution mechanism (see /Priority
+   matters/ in the README); users who need visibility into
+   collisions can call =(elot-db-get-all-labels id)= from Lisp
+   or rely on =elot-label-list-active-sources= to understand
+   ordering. No new UI for diagnostics.
+
+2. /No active sources in a buffer where the mode is enabled./
+   Today the mode silently no-ops if =elot-active-label-sources=
+   is nil, leaving the user to wonder why nothing happened.
+   *Decision: inform the user.* On mode activation when
+   =elot-active-label-sources= is nil, emit a =message= (not a
+   warning popup) along the lines of
+   ="elot-global-label-display-mode: no active label sources in this buffer; use M-x elot-label-activate-source or set via .dir-locals.el"=.
+   The mode still turns on (so the toggle state is honest and
+   subsequent activations take effect via the change hook
+   introduced in Step 1.7.2) but does nothing observable until
+   sources appear.
+
+3. /Menu entry./ *Decision: provide one.* This is the entry
+   added in Step 1.10 under /Display/
+   (=elot-global-label-display-mode=, as a toggle item).
+   Nothing new in this step beyond confirming the entry exists
+   and is enabled regardless of current major mode (so it is
+   reachable from a fresh =text-mode= buffer the user has just
+   visited a =.py= file into).
+
+4. /Autoload./ *Decision: yes, add =;;;###autoload= cookies.*
+   Rationale: a user who has installed ELOT but never opened an
+   ELOT Org file in the session can still run
+   =M-x elot-global-label-display-mode= on any buffer and have
+   the feature work. Without the autoload, the command is
+   undefined until =elot.el= (or the file declaring the mode)
+   is loaded by some other means. Cookies go on:
+   - =elot-global-label-display-mode= (the minor mode itself).
+   - =elot-global-label-display-setup= (the one-shot equivalent,
+     useful from =eval-expression= / =.dir-locals.el=
+     =(eval . ...)= forms).
+   - =elot-label-register-source=, =elot-label-register-current-buffer=,
+     =elot-label-activate-source=, =elot-label-deactivate-source=,
+     =elot-label-list-sources=, =elot-label-list-active-sources=
+     - the minimum set a user needs to go from "ELOT installed"
+     to "labels visible in my =.py= buffer" without touching
+     any ELOT Org file first.
+   Autoload generation already runs for =elot-package/=; this
+   step adds the cookies, regenerates =elot-autoloads.el=, and
+   adds a smoke test that =autoload-do-load= resolves each.
+
+5. /Collision / missing-source behaviour should be documented./
+   Update =README-global-label-display.org= - /Troubleshooting/
+   gains a "no active sources" entry pointing at the new
+   message; /Priority matters/ gains a one-sentence note that
+   the first-match-wins rule is enforced silently and is not
+   a bug.
+
+*Deliverables:*
+
+- Code changes in =elot-label-display.el= (tangled from
+  =elot-label-display.org=) and/or =elot-sources.el=:
+  - =elot-global-label-display-mode= activation path emits the
+    "no active sources" message as specified in (2).
+  - Verify collision semantics in =elot-db-get-label-any= match
+    the "highest-priority-wins, silent" policy in (1); adjust
+    the sort-and-pick code path if it currently returns other
+    than =caar=.
+  - Add =;;;###autoload= cookies listed in (4).
+- Menu wiring in Step 1.10 - this step confirms rather than
+  duplicates the entry.
+- Regenerate =elot-autoloads.el= (the MELPA recipe already
+  declares it).
+- README update as specified in (5).
+
+*Tests:*
+- =test-global-mode-messages-when-no-active-sources= - capture
+  =message-log-max='s buffer; enable the mode with
+  =elot-active-label-sources= = nil; assert the documented
+  string appears exactly once.
+- =test-global-mode-idempotent-message= - toggling off/on does
+  not spam messages when sources remain nil (debounce via a
+  per-buffer flag or just accept one message per activation).
+- =test-global-mode-silent-when-sources-present= - the message
+  does /not/ appear when sources are non-nil.
+- =test-collision-highest-priority-wins= - two active sources,
+  both have a row for =ex:foo= with different labels; assert
+  =elot-db-get-label-any= returns the higher-priority label.
+  (This also indirectly re-covers =test-elot-db-priority-lookup=
+  from Step 1.2, but through the =-any= wrapper.)
+- =test-autoload-cookies-resolve= - for each symbol listed in
+  (4), assert =(autoloadp (symbol-function SYM))= or
+  =(fboundp SYM)= after a fresh =emacs -Q= + =(require 'elot-autoloads)=.
+
+*Non-goals:*
+- No collision-diagnostic UI (no "show me all labels for this id"
+  popup). The Lisp-level =elot-db-get-all-labels= and the existing
+  source-list buffer are sufficient for v1.
+- No warning escalation for the no-sources case. =message= only.
+- No automatic activation of the mode in any buffer type. That
+  remains Step 1.7.1's opt-in territory.
+- No change to the scope-limit on literal-token matching. The
+  v1 matching policy (see Decisions Log) stands.
+
+*Risk:* Low. The mode already works; this step only closes
+behavioural gaps and makes the command reachable without
+pre-loading ELOT. The one genuine footgun - autoload cookies
+on commands that touch the DB - is mitigated by =elot-db-init='s
+existing lazy-open pattern (commands open the DB on first call).
+
+---
+
+*** TODO Step 1.12 - Non-ELOT-buffer UX: =elot-label-lookup= and menu visibility
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+/Numbering note:/ this step is a new entry rather than an
+extension of Step 1.11 because the two items below are
+functionally distinct from 1.11's autoload / mode-polish goal.
+They only become /useful/ once 1.11 lands (a user in a plain
+=.py= buffer has activated =elot-global-label-display-mode=, and
+now wants to discover and use further commands), but they are
+not prerequisites for 1.11 and can ship independently.
+
+*Goal:* Close the last two usability gaps for the "user is
+working in a non-ELOT buffer" path:
+1. =elot-label-lookup= works from any buffer by querying the
+   active label sources directly, instead of requiring the
+   buffer-local =elot-attriblist-ht= that only ELOT Org buffers
+   populate.
+2. The ELOT menu appears in any buffer where
+   =elot-global-label-display-mode= is active, but with every
+   entry that is not relevant to the global label-display
+   pathway greyed out (disabled via =:enable=).
+
+Both items build on the Step 1.10 menu wiring and the Step 1.11
+autoload cookies; neither requires schema changes or new DB
+APIs beyond one small helper.
+
+**** Item A - =elot-label-lookup= in non-ELOT buffers
+
+*Current state:* =elot-label-lookup= (in =elot-label-display.el=,
+tangled from =elot-label-display.org= under the /Interactive
+query and insert/ section) is hard-wired to the buffer-local
+hash table =elot-attriblist-ht=. In a non-ELOT buffer this is
+=nil= and the command degrades silently (empty completion
+table). The completion-annotation helper
+=elot-label-lookup-annotations= and its temporary hash
+=elot-label-lookup-tmp-attriblist-ht= share the same
+assumption.
+
+*Design:* generalise the command to three collaborating
+pieces - collection, insert, annotation - with a dispatcher
+that picks slurp-backed or DB-backed implementations based on
+what is available. No changes to slurp; no changes to
+=elot-global-label-display-mode=; one new DB helper.
+
+1. /Replace the collection source./ Build, on demand, a
+   =label -> id= map over =elot-active-label-sources=. Add
+   =elot-db-all-active-labels (&optional active-sources)= next
+   to =elot-db-all-active-ids= in =elot-db.el= - a ~15-line
+   function issuing
+   #+begin_src sql
+   SELECT DISTINCT id, label FROM entities
+    WHERE source = ? AND data_source = ? AND label IS NOT NULL
+   #+end_src
+   per active entry, deduping on =label= by first occurrence so
+   the priority order baked into =elot-active-label-sources= is
+   preserved. Return a hashtable =label -> id= (or
+   =label -> (id source data-source)= if the annotator needs
+   the source). Do not reuse =elot-db-all-active-ids= + N
+   round-trips through =elot-db-get-label= - that is O(N) SQL
+   and unusable past a few thousand entities.
+
+2. /Replace the insert step./ The current path inserts the
+   ="puri"= slot synthesised by slurp; that slot does not exist
+   in the DB. Compute the token to insert at selection time:
+   #+begin_src elisp
+   (let* ((id     (gethash selected-label label->id))
+          (curies (and (elot-db--looks-like-uri-p id)
+                       (elot-db-contract-uri id elot-active-label-sources)))
+          (token  (or (car curies) id)))
+     (insert token))
+   #+end_src
+   This handles both the full-IRI case (contract via active
+   plus global prefixes) and the already-CURIE case (ids
+   stored as CURIEs - insert verbatim).
+
+3. /Generalise the annotation function./ Factor the existing
+   padding/format block in =elot-label-lookup-annotations= out
+   into a private helper that takes =(label prefix rdf-type
+   definition)= and returns the formatted annotation string.
+   The slurp-backed annotator (the existing body) and the new
+   DB-backed annotator both call this helper. The DB annotator
+   fetches attributes via =elot-db-get-all-attrs id
+   elot-active-label-sources= and reads
+   =rdf:type= / =iof-av:naturalLanguageDefinition= /
+   =skos:definition= / =dcterms:description= / =rdfs:comment=
+   in the same priority order used today.
+
+4. /Dispatch on context./ Turn =elot-label-lookup= into a thin
+   wrapper:
+   #+begin_src elisp
+   (defun elot-label-lookup ()
+     (interactive)
+     (cond
+      ((and (bound-and-true-p elot-attriblist-ht)
+            (hash-table-p elot-attriblist-ht)
+            (> (hash-table-count elot-attriblist-ht) 0))
+       (elot-label-lookup--from-attriblist))
+      ((and (bound-and-true-p elot-active-label-sources)
+            (fboundp 'elot-db-all-active-labels))
+       (elot-label-lookup--from-db))
+      (t
+       (user-error
+        "No ELOT labels available: no slurp data and no active DB sources"))))
+   #+end_src
+   Order matters: prefer the slurp cache inside ELOT buffers
+   (it carries richer attributes like
+   =iof-av:naturalLanguageDefinition= that are not in the DB
+   unless ingested); fall back to DB elsewhere.
+
+*Decisions (from the Q&A that produced this step):*
+- /Label collisions across sources./ Keep the highest-priority
+  result silently. This matches the Step 1.11 decision (1) for
+  =elot-db-get-label-any= and the documented /Priority matters/
+  rule in the README. Concretely:
+  =elot-db-all-active-labels= walks =elot-active-label-sources=
+  in order and skips labels that are already in the result
+  hash.
+- /No active sources./ =user-error= with a message pointing at
+  the source-list UI - same style as
+  =elot-global-label-display-mode='s no-sources message
+  (Step 1.11 decision 2), but this is a command not a mode, so
+  =user-error= is appropriate here rather than =message=.
+- /Autoload./ Add =;;;###autoload= to =elot-label-lookup= so a
+  user who has installed ELOT but has never opened an ELOT Org
+  file can still run =M-x elot-label-lookup= from, e.g., a
+  plain Python buffer. Transitively this means
+  =elot-label-display.el= and =elot-db.el= must be loadable
+  standalone - verify no hard top-level references to Org or
+  ELOT-Org machinery at load time (runtime guards are fine).
+- /Keybinding./ The existing =C-c C-l r= dispatcher in
+  =elot-defs.org= is bound in =elot-mode-map=; also bind
+  =elot-label-lookup= in =elot-global-label-display-mode-map=
+  (added in Step 1.7) so the keybinding follows the feature
+  into non-ELOT buffers.
+- /Performance./ =elot-db-all-active-labels= will run once per
+  invocation; cache per =(sources . db-mtime)= only if it
+  becomes noticeable. Not needed for v1.
+
+**** Item B - ELOT menu visible but mostly greyed out in non-ELOT buffers
+
+*Current state:* the ELOT menu is defined in =elot-mode.org=
+(tangled to =elot-mode.el=) and is attached to
+=elot-mode-map= - i.e. it only appears in buffers where
+ELOT-mode is active (essentially: ELOT Org files). After
+Step 1.10 the menu gains a /Labels & sources/ submenu whose
+commands are applicable in /any/ buffer, but the menu itself
+is still hidden everywhere ELOT-mode is not.
+
+*Design:* also attach the ELOT menu to
+=elot-global-label-display-mode-map=, with every entry that is
+not part of the "global" label-display pathway guarded by an
+=:enable= form that returns nil when the current buffer is not
+an ELOT buffer. Do /not/ duplicate the menu definition - reuse
+the same =easy-menu-define= result (or the same keymap slot)
+so there is a single source of truth.
+
+*Entries that remain enabled in non-ELOT buffers* (i.e. the
+"global" pathway) are the Step 1.10 /Labels & sources/
+submenu in full:
+- /Source registration/: register-current-buffer, register-source,
+  unregister-source, refresh-source, refresh-all-sources,
+  list-sources.
+- /Active sources (per buffer / project)/: activate-source,
+  deactivate-source, list-active-sources, move-source-up,
+  move-source-down.
+- /Display/: =elot-global-label-display-mode= toggle,
+  =elot-global-label-display-setup=,
+  =elot-toggle-label-display=, and (after Item A)
+  =elot-label-lookup=.
+
+*Entries that are greyed out in non-ELOT buffers* (anything
+that operates on ELOT-Org structure or tangling):
+- Tangle / export commands.
+- Lint / structure-check commands.
+- ELOT-template / skeleton commands.
+- The current-buffer slurp-rebuild commands that depend on
+  =elot-update-headline-hierarchy=.
+- Any entry that currently has no =:enable= guard - add one
+  that returns =(derived-mode-p 'org-mode)= and
+  =(bound-and-true-p elot-mode)= (or equivalent predicate; use
+  whatever the menu already uses as an implicit ELOT-buffer
+  signal).
+
+*Implementation notes:*
+- Pick /one/ of these mechanisms:
+  1. Use =easy-menu-add-item= once at load time to attach the
+     existing =elot-menu= to =elot-global-label-display-mode-map=.
+  2. Define the menu on a shared keymap used as a parent/ancestor
+     of both =elot-mode-map= and
+     =elot-global-label-display-mode-map=.
+  Option 1 is less invasive and matches how the menu is built
+  today; prefer it unless it creates double-free-on-teardown
+  issues.
+- Factor a single predicate =(defun elot--in-elot-buffer-p ()
+  ...)= and reference it from every =:enable= form on
+  ELOT-buffer-only entries. Avoid scattering ad-hoc
+  =(derived-mode-p ...)= checks across the menu definition.
+- When both =elot-mode= and =elot-global-label-display-mode= are
+  on in the same buffer (perfectly possible - the global mode
+  is not ELOT-specific), nothing should visibly change: the
+  menu is already present via =elot-mode-map=, and the =:enable=
+  forms evaluate to non-nil because the predicate holds. No
+  duplicate top-level "ELOT" entry in the menu bar.
+- When neither mode is active, the menu must /not/ appear (today's
+  behaviour). Do not attach to the global map.
+
+*Decision: do not build a separate "ELOT Global" menu.* Reusing
+the single ELOT menu keeps muscle memory (same menu path from
+any buffer) and avoids two code paths that can drift.
+
+**** Deliverables
+
+- =elot-db.el=: new =elot-db-all-active-labels= helper (item A.1).
+- =elot-label-display.el= (tangled from
+  =elot-label-display.org=):
+  - Split =elot-label-lookup= into =--from-attriblist= (existing
+    body, factored) + new =--from-db= + dispatcher (item A.4).
+  - Factor the annotation formatter (item A.3).
+  - Add =;;;###autoload= cookie to =elot-label-lookup= (item A
+    decision 3).
+  - Ensure the file is loadable without ELOT-Org context at
+    top level.
+- =elot-mode.el= (tangled from =elot-mode.org=):
+  - Attach the ELOT menu to
+    =elot-global-label-display-mode-map= (item B).
+  - Introduce =elot--in-elot-buffer-p= and add =:enable= forms
+    to all non-global menu entries.
+- =elot-defs.org= / =elot-mode.org=: bind =elot-label-lookup=
+  in =elot-global-label-display-mode-map= under =C-c C-l r=
+  (item A decision 4).
+- README-global-label-display.org: /Reference: commands/ gains
+  =elot-label-lookup=; /Quick start/ mentions that the ELOT
+  menu appears in any buffer where
+  =elot-global-label-display-mode= is on (with ELOT-Org-only
+  entries greyed out).
+
+**** Tests
+
+/Item A - =elot-label-lookup= generalisation:/
+- =test-elot-db-all-active-labels-basic= - two sources with
+  overlapping labels; assert the returned map has the
+  highest-priority id for each label.
+- =test-elot-db-all-active-labels-empty= - no active sources;
+  returns an empty hash, does not error.
+- =test-label-lookup-dispatches-to-attriblist= - in an ELOT Org
+  buffer with a populated =elot-attriblist-ht=, the slurp path
+  runs (check via an advice or a spy).
+- =test-label-lookup-dispatches-to-db= - in a fundamental-mode
+  buffer with =elot-active-label-sources= set, the DB path
+  runs.
+- =test-label-lookup-no-sources-user-error= - neither slurp
+  nor active sources; asserts =user-error= with the documented
+  message.
+- =test-label-lookup-inserts-curie-for-iri= - DB path; selected
+  id is a full IRI with a known prefix; inserted token is the
+  CURIE.
+- =test-label-lookup-inserts-curie-for-curie= - DB path;
+  selected id is already a CURIE; inserted token is verbatim.
+- =test-label-lookup-autoloaded= - =emacs -Q= + =(require
+  'elot-autoloads)=; =(fboundp 'elot-label-lookup)= and
+  =(autoloadp ...)= as appropriate.
+
+/Item B - menu visibility:/
+- =test-menu-visible-in-global-mode-buffer= - fundamental-mode
+  buffer with =elot-global-label-display-mode= on; the ELOT
+  menu exists under =[menu-bar elot]= (or whatever its keymap
+  path is).
+- =test-menu-global-entries-enabled-outside-elot= - inspect
+  each /Labels & sources/ entry's =:enable= form in the above
+  buffer; assert non-nil.
+- =test-menu-elot-only-entries-disabled-outside-elot= - inspect
+  tangle / lint / template entries; assert =:enable= form
+  returns nil.
+- =test-menu-not-visible-without-either-mode= - fresh
+  fundamental-mode buffer, neither mode on; the ELOT menu
+  keymap path is not resolved from the local keymap stack.
+- =test-menu-single-instance-when-both-modes-on= - open an ELOT
+  Org buffer (both modes active); assert there is exactly one
+  top-level "ELOT" menu item, not two.
+
+**** Non-goals
+
+- No redesign of the ELOT menu layout beyond adding =:enable=
+  guards. Layout changes (if any) remain Step 1.10's territory.
+- No per-user customisation for which entries are greyed out.
+  The split is defined by code, not configuration.
+- No "ELOT Global" sub-menu as an alternative top-level entry.
+  One menu, conditional enablement.
+- No change to completion-framework integration
+  (=marginalia= / =consult= / =embark=). The annotation
+  function already plays nicely with Emacs's built-in
+  completion-extra-properties mechanism; any framework that
+  reads it keeps working.
+- No lazy/streaming completion table for very large active
+  sources. If performance becomes an issue in practice,
+  revisit with a =completion-table-dynamic= variant.
+
+**** Risk
+
+Low-to-medium. Item A is mostly code motion with one small DB
+helper; the dispatcher pattern is standard. Item B has one
+genuine subtlety - getting the menu to attach to a second mode
+map without double-entries or teardown errors - but the
+=easy-menu-add-item= route is well-trodden. The
+=elot--in-elot-buffer-p= predicate must be conservative (false
+means "pretend this is not an ELOT buffer; disable ELOT-only
+menu entries") so that ELOT Org buffers are not accidentally
+demoted.
 
 ---
 
