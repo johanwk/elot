@@ -1034,8 +1034,8 @@ for fontification and lookup.
   (defvar elot-slurp-global nil
     "List of resources retrieved from SPARQL endpoints.
 
-  Obsolete: retained only as a transitional no-op.  Use the ELOT label
-  DB (`elot-db-*' / `elot-label-register-source') instead.")
+  Obsolete: this global list is retained only as a transitional no-op.
+  Use the ELOT label DB (`elot-db-*' / `elot-label-register-source') instead.")
   (make-obsolete-variable 'elot-slurp-global
     "use the ELOT label DB (`elot-db-*') via `elot-label-register-source' instead."
     "ELOT 2.1")
@@ -1072,8 +1072,8 @@ The following simply replaces ~elot-slurp-entities~ with ~elot-build-slurp~, and
   If SQLite support is available (`sqlite-open' and
   `elot-db-update-source' bound) and the buffer is visiting a file,
   also sync the parsed entries into the ELOT label DB under
-  `buffer-file-name', so other buffers can look them up via
-  `elot-db-get-label' / `elot-db-get-label-any'.  Errors during
+  `buffer-file-name', so other buffers / projects can look them 
+  up via `elot-db-get-label' / `elot-db-get-label-any'.  Errors during
   sync are reported but do not break the local HT population."
     (let ((slurp (elot-build-slurp)))
       (setq elot-slurp slurp)
