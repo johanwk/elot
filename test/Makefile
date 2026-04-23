@@ -2,12 +2,12 @@ EMACS ?= emacs
 
 PACKAGE_DIR := ../elot-package
 
-.PHONY: all test db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test clean help
+.PHONY: all test db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test clean help
 
 all: test
 
 # Run the full ELOT ERT test suite.
-test: db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test
+test: db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test
 
 # Step 1.1 tests: SQLite DB layer.
 db-test:
@@ -113,6 +113,16 @@ step-1-11-test:
 	  -l elot-step-1-11-test.el \
 	  -f ert-run-tests-batch-and-exit
 
+# Step 1.12 Item A tests: `elot-label-lookup' generalisation
+# (DB-backed label collection, dispatcher behaviour, autoload smoke test).
+step-1-12-test:
+	$(EMACS) --batch \
+	  -L $(PACKAGE_DIR) \
+	  -L . \
+	  -l ert \
+	  -l elot-label-lookup-test.el \
+	  -f ert-run-tests-batch-and-exit
+
 # Step 1.10 tests: ELOT menu `Labels & sources' submenu
 # (structure, entry resolution, :enable / :style toggle guards).
 menu-test:
@@ -141,6 +151,7 @@ help:
 	@echo "  ttl-prefix-test run test/elot-ttl-prefix-test.el (Step 1.7.3)"
 	@echo "  menu-test    run test/elot-menu-test.el (Step 1.10)"
 	@echo "  step-1-11-test run test/elot-step-1-11-test.el (Step 1.11)"
+	@echo "  step-1-12-test run test/elot-label-lookup-test.el (Step 1.12 Item A)"
 	@echo "  clean        remove compiled artifacts"
 	@echo "  help         show this help"
 	@echo ""
