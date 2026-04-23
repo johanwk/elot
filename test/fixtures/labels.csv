@@ -1,0 +1,4 @@
+id,label,definition,kind
+ex:Widget,Widget,A generic widget used for testing.,Class
+ex:Gadget,Gadget,"A gadget, subclass of widget.",Class
+ex:connectsTo,connectsTo,Relates one widget to another.,ObjectProperty

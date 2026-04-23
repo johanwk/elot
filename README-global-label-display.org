@@ -1,0 +1,461 @@
+#+TITLE: ELOT global label display -- user guide
+#+AUTHOR: ELOT contributors
+#+OPTIONS: toc:2 num:nil
+
+* Status
+
+This document is a /temporary/ user-facing write-up covering the
+"global slurp + label display" subsystem delivered by Stage 1 of the
+ELOT-DB plan (Steps 1.1 through 1.7.3). It will eventually be folded
+into =elot-manual.org= once that file exists; until then, this README
+is the authoritative end-user reference for the feature.
+
+For design rationale, status, and open work items, see
+[[file:ELOT-DB-PLAN.org][=ELOT-DB-PLAN.org=]].
+
+* What this feature does
+
+Turn opaque identifiers into readable labels, in any buffer, without
+modifying the underlying file:
+
+- In an ELOT Org buffer, the existing in-buffer label-display
+  machinery (=F5=) now also draws on labels from other registered
+  sources via a shared on-disk SQLite cache.
+- In /any other/ buffer -- Python, TSV, Markdown, Manchester syntax
+  =.omn=, plain text, etc. -- a new buffer-local minor mode
+  =elot-global-label-display-mode= recognises the identifiers you've
+  registered and overlays their labels using font-lock =display=
+  properties.
+
+The labels come from any combination of:
+
+- ELOT Org ontologies (e.g. =itxm-core.org=, =LIS-14.org=),
+- RDF Turtle files (=.ttl=, via ROBOT -- =@prefix= declarations are
+  harvested so CURIE tokens like =sea:id51929cf8...= in source
+  files resolve correctly even though the DB stores full IRIs),
+- SPARQL results cached from =.rq= queries (=PREFIX= declarations in
+  the =.rq= file are harvested the same way),
+- plain =.csv= / =.tsv= / =.json= dictionaries of =id -> label=
+  (ideal for non-ontology use cases: employee codes, SKUs, ticket
+  IDs, etc.).
+
+All mappings are cached in a single SQLite DB at =elot-db-file=
+(default =~/.emacs.d/elot-db.sqlite=).
+
+* Beyond ontology development
+
+Although this feature was built for ELOT and is most obviously useful
+while editing or reviewing OWL ontologies, the machinery is entirely
+generic: it maps opaque tokens to human-readable strings in any file
+Emacs can open. ELOT is the first consumer, not the only one.
+
+Some concrete non-ontology uses:
+
+- /Code review and source browsing./ Python, Java, TypeScript,
+  Jupyter notebooks, Go, shell scripts -- any codebase that
+  embeds long identifiers (URIs, GUIDs, compact codes) in string
+  literals, dict keys, or log lines becomes readable at a glance
+  without leaving the editor. The file on disk is unchanged; only
+  the rendering carries the labels.
+- /Data files./ CSV / TSV / JSON / YAML exports from a database or
+  data-lake tool typically carry primary keys and foreign keys but
+  no display names. A small companion =.csv= of =id,label= pairs,
+  registered as a source, turns those exports into self-describing
+  tables in the editor.
+- /SPARQL, Turtle, and Manchester syntax./ =.ttl=, =.omn=, and
+  =.rq= buffers that reference external vocabularies (OBO, SKOS,
+  QUDT, Wikidata subsets, enterprise code lists) display the term
+  labels inline without any =rdfs:label= triples being present in
+  the buffer.
+- /Configuration and log files./ Employee codes in HR tooling,
+  product SKUs in inventory scripts, ticket IDs in commit messages
+  and source comments, short git SHAs paired with commit subjects,
+  standards part numbers -- any flat =id -> label= mapping loaded
+  from a =.csv= / =.tsv= / =.json= file annotates every occurrence
+  of the id in any buffer where the minor mode is enabled.
+- /Translation and i18n dictionaries./ A JSON dictionary of
+  message-key -> localised-string can be used to render message
+  keys in source code as their localised text.
+- /Cross-repository navigation./ Activating sources from several
+  unrelated projects in one workspace gives a single consistent
+  "what does this identifier mean?" layer across all of them.
+
+The matcher in =elot-global-label-display-mode= is built from the
+literal =id= strings in your active sources (Stage 1 is strictly
+literal-token matching), so no grammar or parser for the host file
+type is required. If a registered source happens to contain the
+token, the label is shown; otherwise the token is left alone.
+
+* Concepts in 60 seconds
+
+- /Source/. A file that provides =id -> label= mappings. Registered
+  once; re-ingested on demand.
+- /Registered source/. A source whose contents have been parsed and
+  written into the DB. See =M-x elot-label-list-sources=.
+- /Active source/. A registered source that the /current buffer/ is
+  configured to consult. Controlled by the buffer-local variable
+  =elot-active-label-sources=.
+- /Priority/. =elot-active-label-sources= is an /ordered/ list.
+  First match wins. Upper-ontology sources that define labels should
+  come /first/; downstream files that only use the labels come
+  /later/.
+- /Identifier form/. The DB stores IDs in the form the parser
+  produced (full IRIs for TTL/RQ sources; whatever the source file
+  declares for Org/CSV/TSV/JSON). The global-mode matcher
+  automatically accepts /both/ the stored form /and/ its CURIE
+  contraction, so a buffer can reference =sea:id51929cf8...= even
+  though the DB row is keyed on the full =http://.../id51929cf8...=
+  IRI.
+- /Project-wide activation/. Persist =elot-active-label-sources= to
+  =.dir-locals.el= at the project root so every file in the repo
+  inherits the same source list.
+
+* Quick start
+
+** 1. Register a source
+
+From an ELOT Org buffer (once it has been saved at least once after
+loading ELOT, it is already registered automatically on save). To
+register explicitly:
+
+#+begin_src
+M-x elot-label-register-current-buffer
+#+end_src
+
+Or, for an arbitrary file:
+
+#+begin_src
+M-x elot-label-register-source
+  Source: path/to/labels.csv
+#+end_src
+
+Supported types: =.org=, =.csv=, =.tsv=, =.json=, =.ttl= (needs
+ROBOT), =.rq= (needs ROBOT, prompts for a data source). See
+=elot-source-supported-extensions= to add more.
+
+Inspect registered sources:
+
+#+begin_src
+M-x elot-label-list-sources
+#+end_src
+
+Keys: =g= refresh view, =r= re-ingest entry, =d= unregister, =+= add
+new.
+
+** 2. Activate a source in the current buffer
+
+#+begin_src
+M-x elot-label-activate-source
+  Source: path/to/labels.csv
+  Data source: (RET for none)
+  Position: (RET to append at lowest priority, 0 for highest)
+#+end_src
+
+Check:
+
+#+begin_src elisp
+elot-active-label-sources
+#+end_src
+
+** 3. Persist activation to the Git project
+
+Prefix =C-u= makes the activation persistent via =.dir-locals.el=:
+
+#+begin_src
+C-u M-x elot-label-activate-source
+#+end_src
+
+The =.dir-locals.el= file is written at the /project root/ (detected
+via =project-current= / =vc-root-dir=; falls back to
+=default-directory= if no project is identified). Any file opened
+under that root inherits =elot-active-label-sources=. Emacs will
+prompt once to mark the value safe; answer =!= to remember.
+
+A persisted =.dir-locals.el= typically looks like this:
+
+#+begin_src emacs-lisp
+;;; Directory Local Variables            -*- no-byte-compile: t -*-
+;;; For more information see (info "(emacs) Directory Variables")
+
+((nil . ((elot-active-label-sources
+          . (("c:/Projects/example-project/vocab/domain-core.org"
+              nil)
+             ("c:/Projects/example-project/vocab/domain-module.ttl"
+              nil))))))
+#+end_src
+
+Notes:
+
+- Paths are absolute. They are not portable across machines or
+  checkouts; treat the file as per-workstation configuration
+  rather than something to commit unchanged to a shared repo.
+  (Relative-path support is noted in the plan as a deferred
+  enhancement.)
+- The second element of each entry is the /data source/. It is
+  =nil= for Org, CSV, TSV, JSON, and TTL sources. For =.rq=
+  queries it carries the query target -- either a local RDF file
+  path or a SPARQL endpoint URL.
+- Order is priority. The first matching source wins; see the
+  worked example under /Priority matters/ below.
+
+** 4. Turn on label display in a non-ELOT buffer
+
+Open any file under the project (or any file, if you've set
+=elot-active-label-sources= manually), then:
+
+#+begin_src
+M-x elot-global-label-display-mode
+#+end_src
+
+Identifiers from your active sources are now rendered as labels.
+=F5= toggles display on/off without leaving the mode. Disable
+entirely by running the command again.
+
+* Managing active sources
+
+** List and reorder
+
+#+begin_src
+M-x elot-label-list-active-sources
+#+end_src
+
+A tabulated buffer showing the ordered list for the buffer you were
+in. Keys:
+
+| Key          | Action                          |
+|--------------+---------------------------------|
+| =M-<up>=     | move entry up (higher priority) |
+| =M-<down>=   | move entry down                 |
+| =d=          | remove entry                    |
+| =+=          | add a new registered source     |
+| =P=          | persist current order to dir-locals |
+| =g=          | refresh view                    |
+| =q=          | quit                            |
+
+Reminder banner appears once in the echo area on buffer entry; the
+header line shows the same legend (unless your theme -- e.g. Nano --
+repurposes the header line). =C-h m= always works.
+
+All edits take effect in the /origin buffer/ (the one you ran the
+command from), not in the list buffer. The global label-display
+mode, if active there, rebuilds its font-lock regex automatically on
+every change -- no need to re-run setup. This is driven by the
+abnormal hook =elot-active-label-sources-change-hook=, which every
+mutator fires after the list changes.
+
+/Auto-repersist/. If =.dir-locals.el= already binds
+=elot-active-label-sources= for the project, any reorder / add /
+remove is written back automatically. If it does not, changes stay
+buffer-local until you hit =P= (persist) in the list buffer or
+re-run =C-u M-x elot-label-activate-source=. The policy avoids
+silently creating =.dir-locals.el= behind your back.
+
+** Keyboard commands (no buffer)
+
+#+begin_src
+M-x elot-label-move-source-up
+M-x elot-label-move-source-down
+M-x elot-label-activate-source
+M-x elot-label-deactivate-source
+#+end_src
+
+Each prompts for the source via completion over the current list.
+=C-u= on =activate= / =deactivate= persists to =.dir-locals.el=.
+
+** Priority matters -- a worked example
+
+Scenario: =itxm-core.omn= references =lis:Activity= but does not
+define a label for it. =LIS-14.org= is the upper ontology
+that /does/ define =rdfs:label "Activity"= for =lis:Activity=.
+
+Wrong order (downstream first, upstream second):
+
+#+begin_src elisp
+(("itxm-core.org" nil)
+ ("LIS-14.org" nil))
+#+end_src
+
+Result: labels defined in =itxm-core.org= are shown, but
+=lis:Activity= is not labelled -- =get-label= looks in =itxm-core.org=
+first, finds no row for =lis:Activity=, and stops. /Wrong/, because
+=get-label= is "first source with a hit wins", not "first source with
+any entry for this ID wins across all sources."
+
+Right order (upper ontology first):
+
+#+begin_src elisp
+(("LIS-14.org" nil)
+ ("itxm-core.org" nil))
+#+end_src
+
+Result: =lis:Activity -> "Activity"= from the upper ontology;
+=itxm-core= IDs fall through and are labelled from =itxm-core.org=.
+
+Rule of thumb: /sources that define labels should precede sources
+that only use them./
+
+Note: first-match-wins is enforced silently. If two active sources
+both carry a row for the same identifier, the higher-priority
+source's label is returned and the lower-priority one is ignored
+with no warning. This is a feature, not a bug -- reorder via
+=M-x elot-label-list-active-sources= to change which source wins.
+
+* Refreshing sources
+
+- /Automatic/. Saving an ELOT Org file re-ingests it via
+  =elot-slurp-to-vars=.
+- /Explicit/. =M-x elot-label-refresh-source= re-parses one source
+  regardless of mtime; =M-x elot-label-refresh-all-sources= iterates
+  the entire registered list.
+
+* Removing sources
+
+- /From the current buffer only/. =M-x elot-label-deactivate-source=.
+- /From the DB entirely/. =M-x elot-label-unregister-source= --
+  cascades through entities, attributes, and prefixes.
+
+* Troubleshooting
+
+** "I enabled =elot-global-label-display-mode= and saw a message about no active sources"
+
+The mode turns on unconditionally, but decorations require at
+least one entry in =elot-active-label-sources=. Activate a
+registered source with =M-x elot-label-activate-source=, or set
+=elot-active-label-sources= via =.dir-locals.el= for the whole
+project. Once sources appear the display refreshes automatically
+via =elot-active-label-sources-change-hook=; no need to toggle
+the mode.
+
+** "I registered a source but =elot-active-label-sources= is still nil"
+
+Registration and activation are separate. Run
+=elot-label-activate-source= after =elot-label-register-current-buffer=.
+
+** "Labels from my newly activated source do not appear"
+
+If you activated /before/ enabling =elot-global-label-display-mode=,
+the regex was built without the new IDs. Since Step 1.7.2 this
+rebuilds automatically on activation. If you still see it, run:
+
+#+begin_src
+M-x elot-global-label-display-setup
+#+end_src
+
+** "=F5= says 'turned off' but labels remain"
+
+Fixed in Step 1.6.1 / 1.7. Ensure =elot-label-display.el= is current.
+
+** "=.dir-locals.el= was written in a subdirectory, not the repo root"
+
+Fixed in the Stage-3 /project-root dir-locals/ task. =C-u M-x
+elot-label-activate-source= now writes at =project-current= /
+=vc-root-dir= (absolute paths). If you have an older =.dir-locals.el=
+at a subdirectory level, move or delete it.
+
+** "The label I see is wrong / from the wrong source"
+
+Check priority: =elot-active-label-sources= is ordered. Reorder via
+=M-x elot-label-list-active-sources= with =M-<up>= / =M-<down>=.
+
+** "My TTL source has 1000+ entries and labels do not appear"
+
+Two independent causes, both addressed in Step 1.7.3:
+
+1. /Prefix rows missing./ If the TTL file was registered /before/
+   Step 1.7.3 landed, =@prefix= declarations were never harvested,
+   so CURIE tokens like =sea:id...= in the buffer cannot be
+   expanded to the full IRIs stored in the DB. Diagnose:
+
+   #+begin_src elisp
+   (elot-db-list-prefixes "c:/path/to/file.ttl")   ;; nil means not harvested
+   #+end_src
+
+   Fix: force re-ingest (bypasses the mtime check):
+
+   #+begin_src
+   M-x elot-label-refresh-source
+   #+end_src
+
+   Then =M-x elot-global-label-display-setup= to rebuild the regex.
+
+2. /Regex too large./ With thousands of IDs, =regexp-opt= can
+   exceed the regex engine's compiled-NFA limit. The matcher
+   degrades in three tiers automatically:
+
+   - Tier 1: tight union of IRIs + CURIEs (preferred).
+   - Tier 2: CURIEs only (drops full-IRI alternatives; loses
+     verbatim-IRI matching but catches what users actually type).
+   - Tier 3: generic =\_<PREFIX:LOCAL\_>= pattern; all CURIE-shaped
+     tokens are probed via =elot-db-get-label-any=, unknown ones
+     return nil and are skipped harmlessly.
+
+   A =*Messages*= line reports when Tier 3 is used. The hard cap
+   =elot-global-label-display-max-ids= (default 10000, nil to
+   disable) is an additional safety net that disables the matcher
+   entirely rather than letting font-lock hang.
+
+** "Nothing shows up at all in a plain-text buffer"
+
+Diagnose:
+
+#+begin_src elisp
+elot-active-label-sources          ;; non-nil?
+(elot-db-all-active-ids)           ;; returns the ID list?
+(elot-db-all-active-ids nil t)     ;; returns IDs + CURIE contractions?
+elot-global--fontify-regexp        ;; non-nil string after mode enable?
+#+end_src
+
+If =elot-db-all-active-ids= is nil, your active sources point at
+unregistered files. Re-register. If the plain list has entries but
+the =nil t= variant is the same length, no prefix rows are available
+to contract IRIs into CURIEs -- see the TTL troubleshooting entry
+above.
+
+* Limits / non-goals (v1)
+
+- /Literal token match only./ Labels are shown where an identifier
+  appears as a whole symbol (=\_<...\_>=). No capture groups, no
+  substring substitution, no per-source display templates.
+- /Single user, single machine./ The DB is not a shared cache and
+  is not authoritative -- re-derivable from sources at any time.
+- /No cross-source label merging./ For attributes other than labels,
+  =get-all-attrs= returns the first source with any rows.
+- /No default include-mode list for automatic activation./ See
+  Step 1.7.1 in the plan for the opt-in auto-enable design.
+
+* Reference: commands
+
+| Command                              | Purpose                                        |
+|--------------------------------------+------------------------------------------------|
+| =elot-label-register-current-buffer= | register the file the current buffer visits    |
+| =elot-label-register-source=         | register a file by path                        |
+| =elot-label-unregister-source=       | remove a source from the DB (cascades)         |
+| =elot-label-refresh-source=          | force re-ingest of one source                  |
+| =elot-label-refresh-all-sources=     | re-ingest every registered source              |
+| =elot-label-list-sources=            | tabulated buffer of /registered/ sources       |
+| =elot-label-activate-source=         | add to =elot-active-label-sources= (=C-u= to persist) |
+| =elot-label-deactivate-source=       | remove from =elot-active-label-sources= (=C-u= to persist) |
+| =elot-label-set-active-sources=      | bulk setter (Lisp-level)                       |
+| =elot-label-move-source-up=          | raise priority of a source                     |
+| =elot-label-move-source-down=        | lower priority of a source                     |
+| =elot-label-list-active-sources=     | tabulated buffer for ordered /active/ sources  |
+| =elot-global-label-display-mode=     | buffer-local label rendering (non-ELOT)        |
+| =elot-global-label-display-setup=    | force regex rebuild for the global mode        |
+| =elot-toggle-label-display=          | =F5= -- flip rendering on/off                  |
+| =elot-label-lookup=                  | completing-read over labels; insert id at point (works in any buffer with active sources; =C-c C-x r= when =elot-global-label-display-mode= is on) |
+
+* Reference: variables
+
+| Variable                              | Meaning                                            |
+|---------------------------------------+----------------------------------------------------|
+| =elot-db-file=                        | SQLite DB path                                     |
+| =elot-active-label-sources=           | buffer-local ordered list =((SOURCE DATA-SOURCE) ...)= |
+| =elot-source-supported-extensions=    | parser dispatcher alist (=defcustom=, extensible)  |
+| =elot-robot-jar-path=                 | for =.ttl= / =.rq= ingestion                       |
+| =elot-active-label-sources-change-hook= | abnormal hook fired on any mutation              |
+| =elot-global-label-display-max-ids=   | hard cap on matcher size (default 10000, nil disables) |
+
+* See also
+
+- [[file:ELOT-DB-PLAN.org][=ELOT-DB-PLAN.org=]] -- full design, status, and open work.
+- [[file:test/fixtures/][=test/fixtures/=]] -- minimal examples of every supported source format.

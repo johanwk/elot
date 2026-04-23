@@ -1,0 +1,20 @@
+# Step 1.7.3 regression fixture -- trimmed from a reported real-world case.
+#
+# Used by:
+#   - test-smallttl-prefix-harvest   (no ROBOT)
+#   - test-smallttl-regression       (ROBOT-gated end-to-end ingest)
+#
+# Keep stable; tests assert exact ids and labels.
+
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ellsea: <http://data.dnv.com/ontology/ellsea/asset/> .
+@prefix rdl:    <http://data.dnv.com/ontology/aps/rdl/> .
+
+ellsea:id51929cf8-5b83-483d-937a-eeaffbc2a907
+        a           rdl:A100118 ;
+        rdfs:label  "thimble B" .
+
+ellsea:id4f5d6d18-0fa8-4b52-aa2a-1864479a8912
+        a           rdl:A100116 ;
+        rdfs:label  "rope C" .

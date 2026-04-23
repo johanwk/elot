@@ -1,0 +1,22 @@
+# Step 1.7.3 prefix-harvest fixture -- TTL with a variety of prefix
+# declaration shapes (leading whitespace, alignment, empty prefix,
+# and both trailing-dot styles).
+#
+# Used by:
+#   - test-ttl-prefix-harvest-basic
+#   - test-ttl-prefix-harvest-handles-whitespace-and-comments
+
+# A comment preceding a prefix line.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+   @prefix    skos:  <http://www.w3.org/2004/02/skos/core#>    .
+
+# Empty prefix (default) declaration.
+@prefix : <http://example.org/default/> .
+
+# A SPARQL-style declaration (some authors mix them).
+PREFIX ex: <http://example.org/ex/>
+
+# A duplicate should be ignored (first wins).
+@prefix rdfs: <http://SHOULD-NOT-WIN/> .
+
+:thing rdfs:label "thing" .

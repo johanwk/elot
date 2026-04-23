@@ -43,6 +43,8 @@
 ;;; Code:
 
 (require 'elot-tangle)
+(require 'elot-db)
+(require 'elot-sources)
 (require 'elot-label-display)
 (require 'xref)
 (require 'easymenu)
@@ -60,23 +62,11 @@
 ;; Lint is optional -- only loaded when the user invokes it
 (autoload 'elot-org-lint "elot-lint" "Refresh `elot-slurp', then run `org-lint'." t)
 
-;; Flymake backend for in-buffer squiggly-line diagnostics
-(autoload 'elot-flymake-setup    "elot-flymake" "Enable ELOT Flymake backend." t)
-(autoload 'elot-flymake-teardown "elot-flymake" "Disable ELOT Flymake backend.")
-
 (defgroup elot
     nil
     "Customization group for Emacs Literate Ontology Tool (ELOT)."
     :prefix "elot-"
     :group 'org)
-
-  (defcustom elot-flymake-enable t
-    "When non-nil, `elot-mode' enables Flymake for in-buffer diagnostics.
-This gives you squiggly-line underlines (like VS Code) in addition
-to the `org-lint' list view.  Set to nil if you prefer to run
-linting only on demand with \\[elot-org-lint]."
-    :type 'boolean
-    :group 'elot)
 
   (defcustom elot-label-display-size-threshold (* 500 1024)
     "Buffer size (bytes) above which `elot-mode' asks before enabling label-display.
@@ -107,13 +97,22 @@ minus the LaTeX-specific settings."
    org-export-headline-levels 8             ; deep numbering
    org-export-with-section-numbers 8))      ; deep numbering
 
+(defun elot--in-elot-buffer-p ()
+  "Return non-nil when the current buffer is an active ELOT Org buffer.
+Used as an `:enable' guard in the ELOT menu to grey out entries that
+only make sense inside an ELOT Org file (tangle, lint, templates,
+xref navigation, etc.) when the menu is visible via
+`elot-global-label-display-mode' in a non-ELOT buffer."
+  (and (derived-mode-p 'org-mode)
+       (bound-and-true-p elot-mode)))
+
 (defvar elot-mode-syntax-table
-  (let ((st (make-syntax-table org-mode-syntax-table)))
-    (modify-syntax-entry ?: "w" st)
-    (modify-syntax-entry ?_ "w" st)
-    st)
-  "Syntax table for `elot-mode'.
-Treats `:' and `_' as word-constituent characters.")
+    (let ((st (make-syntax-table org-mode-syntax-table)))
+      (modify-syntax-entry ?: "w" st)
+      (modify-syntax-entry ?_ "w" st)
+      st)
+    "Syntax table for `elot-mode'.
+  Treats `:' and `_' as word-constituent characters.")
 
 (tempo-define-template "elot-doc-header"
                        '("#+title: " (p "Document title: " doctitle) > n
@@ -496,6 +495,7 @@ or `xsd:integer' on a column header will be applied to values."
 (defvar elot-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "<f5>")   #'elot-toggle-label-display)
+    (define-key map (kbd "C-c C-x r") #'elot-label-lookup)
     ;; S-F5 -> hydra, but only when hydra is available (loaded via elot.el)
     (when (fboundp 'elot-hydra/body)
       (define-key map (kbd "S-<f5>") #'elot-hydra/body))
@@ -505,35 +505,138 @@ or `xsd:integer' on a column header will be applied to values."
 (easy-menu-define elot-menu elot-mode-map
   "ELOT Ontology Authoring Menu"
   '("ELOT"
-    ["Check for common problems" elot-org-lint :active (fboundp 'elot-org-lint)]
-    ["Toggle in-buffer diagnostics (Flymake)" flymake-mode :active (fboundp 'flymake-mode)]
-    ["Export to OWL (Tangle)" elot-tangle-buffer-to-omn t]
+    ["Check for common problems" elot-org-lint
+     :active (fboundp 'elot-org-lint)
+     :enable (elot--in-elot-buffer-p)]
+    ["Export to OWL (Tangle)" elot-tangle-buffer-to-omn
+     :enable (elot--in-elot-buffer-p)]
     ["Export to HTML" (lambda () (interactive) (browse-url-of-file (expand-file-name (org-html-export-to-html))))
-     :active (fboundp 'org-html-export-to-html)]
-    ["Import OWL ontology" elot-open-owl :active (fboundp 'elot-open-owl)]
+     :active (fboundp 'org-html-export-to-html)
+     :enable (elot--in-elot-buffer-p)]
+    ["Import OWL ontology" elot-open-owl
+     :active (fboundp 'elot-open-owl)
+     :enable (elot--in-elot-buffer-p)]
     "---"
     ["Insert Existing Resource ID" elot-label-lookup :active (fboundp 'elot-label-lookup)]
     ["Insert Class heading" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-class-skos))
-     :active (fboundp 'tempo-template-elot-class-skos)]
+     :active (fboundp 'tempo-template-elot-class-skos)
+     :enable (elot--in-elot-buffer-p)]
     ["Insert Property heading" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-property-skos))
-     :active (fboundp 'tempo-template-elot-property-skos)]
+     :active (fboundp 'tempo-template-elot-property-skos)
+     :enable (elot--in-elot-buffer-p)]
     "---"
-    ["Jump to Resource Headline (M-.)" xref-find-definitions t]
-    ["Find References to Resource (M-?)" xref-find-references t]
-    ["Quick-Describe Resource" elot-describe-curie-at-point t]
+    ["Jump to Resource Headline (M-.)" xref-find-definitions
+     :enable (elot--in-elot-buffer-p)]
+    ["Find References to Resource (M-?)" xref-find-references
+     :enable (elot--in-elot-buffer-p)]
+    ["Quick-Describe Resource" elot-describe-curie-at-point
+     :enable (elot--in-elot-buffer-p)]
     ["Toggle Label-Display (F5)" elot-toggle-label-display :active (fboundp 'elot-toggle-label-display)]
-    ["Refresh Label-Display Index" elot-label-display-setup :active (fboundp 'elot-label-display-setup)]
+    ["Refresh Label-Display Index" elot-label-display-setup
+     :active (fboundp 'elot-label-display-setup)
+     :enable (elot--in-elot-buffer-p)]
     "---"
-    ["Insert Table declaring Resources" tempo-template-elot-table-of-resources :active (fboundp 'tempo-template-elot-table-of-resources)]
-    ["Generate Outline from Table" elot-headings-from-table :active (fboundp 'elot-headings-from-table)]
+    ["Insert Table declaring Resources" tempo-template-elot-table-of-resources
+     :active (fboundp 'tempo-template-elot-table-of-resources)
+     :enable (elot--in-elot-buffer-p)]
+    ["Generate Outline from Table" elot-headings-from-table
+     :active (fboundp 'elot-headings-from-table)
+     :enable (elot--in-elot-buffer-p)]
     "---"
-    ["Insert SPARQL Select Block" tempo-template-elot-block-sparql-select :active (fboundp 'tempo-template-elot-block-sparql-select)]
-    ["Insert SPARQL Construct Block" tempo-template-elot-block-sparql-construct :active (fboundp 'tempo-template-elot-block-sparql-construct)]
-    ["Insert RDFPUML Diagram Block" tempo-template-elot-block-rdfpuml-diagram :active (fboundp 'tempo-template-elot-block-rdfpuml-diagram)]
+    ["Insert SPARQL Select Block" tempo-template-elot-block-sparql-select
+     :active (fboundp 'tempo-template-elot-block-sparql-select)
+     :enable (elot--in-elot-buffer-p)]
+    ["Insert SPARQL Construct Block" tempo-template-elot-block-sparql-construct
+     :active (fboundp 'tempo-template-elot-block-sparql-construct)
+     :enable (elot--in-elot-buffer-p)]
+    ["Insert RDFPUML Diagram Block" tempo-template-elot-block-rdfpuml-diagram
+     :active (fboundp 'tempo-template-elot-block-rdfpuml-diagram)
+     :enable (elot--in-elot-buffer-p)]
     "---"
-    ["Insert New Document Header" tempo-template-elot-doc-header :active (fboundp 'tempo-template-elot-doc-header)]
-    ["Insert New Ontology Skeleton" tempo-template-elot-ont-skeleton :active (fboundp 'tempo-template-elot-ont-skeleton)]
+    ["Insert New Document Header" tempo-template-elot-doc-header
+     :active (fboundp 'tempo-template-elot-doc-header)
+     :enable (elot--in-elot-buffer-p)]
+    ["Insert New Ontology Skeleton" tempo-template-elot-ont-skeleton
+     :active (fboundp 'tempo-template-elot-ont-skeleton)
+     :enable (elot--in-elot-buffer-p)]
+    "---"
+    ("Labels & sources"
+     ("Source registration"
+      ["Register current buffer as label source"
+       elot-label-register-current-buffer
+       :active (fboundp 'elot-label-register-current-buffer)]
+      ["Register label source..."
+       elot-label-register-source
+       :active (fboundp 'elot-label-register-source)]
+      ["Unregister label source..."
+       elot-label-unregister-source
+       :active (fboundp 'elot-label-unregister-source)
+       :enable (and (fboundp 'elot-db-list-sources)
+                    (consp (ignore-errors (elot-db-list-sources))))]
+      ["Refresh label source..."
+       elot-label-refresh-source
+       :active (fboundp 'elot-label-refresh-source)
+       :enable (and (fboundp 'elot-db-list-sources)
+                    (consp (ignore-errors (elot-db-list-sources))))]
+      ["Refresh all label sources"
+       elot-label-refresh-all-sources
+       :active (fboundp 'elot-label-refresh-all-sources)
+       :enable (and (fboundp 'elot-db-list-sources)
+                    (consp (ignore-errors (elot-db-list-sources))))]
+      ["List registered label sources"
+       elot-label-list-sources
+       :active (fboundp 'elot-label-list-sources)])
+     ("Active sources (per buffer / project)"
+      ["Activate label source in buffer..."
+       elot-label-activate-source
+       :active (fboundp 'elot-label-activate-source)]
+      ["Deactivate label source in buffer..."
+       elot-label-deactivate-source
+       :active (fboundp 'elot-label-deactivate-source)
+       :enable (bound-and-true-p elot-active-label-sources)]
+      ["List/reorder active label sources"
+       elot-label-list-active-sources
+       :active (fboundp 'elot-label-list-active-sources)]
+      ["Raise active source priority..."
+       elot-label-move-source-up
+       :active (fboundp 'elot-label-move-source-up)
+       :enable (bound-and-true-p elot-active-label-sources)]
+      ["Lower active source priority..."
+       elot-label-move-source-down
+       :active (fboundp 'elot-label-move-source-down)
+       :enable (bound-and-true-p elot-active-label-sources)])
+     ("Display"
+      ["Toggle global label display (this buffer)"
+       elot-global-label-display-mode
+       :active (fboundp 'elot-global-label-display-mode)
+       :style toggle
+       :selected (bound-and-true-p elot-global-label-display-mode)]
+      ["Rebuild label-display matcher"
+       elot-global-label-display-setup
+       :active (fboundp 'elot-global-label-display-setup)]
+      ["Toggle label display (F5)"
+       elot-toggle-label-display
+       :active (fboundp 'elot-toggle-label-display)
+       :style toggle
+       :selected (and (boundp 'elot-label-display)
+                      (eq elot-label-display 'on))]))
     ))
+
+; Also surface the ELOT menu when `elot-global-label-display-mode'
+;; is active in a non-ELOT buffer.  We bind the same menu into the
+;; global mode's keymap, but mark it `:visible' only when `elot-mode'
+;; is NOT active -- that prevents a duplicate ELOT menu when both
+;; modes are enabled in the same buffer (elot-mode-map already
+;; provides the entry in that case).
+;; `with-eval-after-load' guards the load order: if elot-label-display.el
+;; loads later, the sibling snippet there handles the other direction.
+(with-eval-after-load 'elot-label-display
+  (when (and (boundp 'elot-global-label-display-mode-map)
+             (boundp 'elot-menu))
+    (define-key elot-global-label-display-mode-map
+                [menu-bar ELOT]
+                `(menu-item "ELOT" ,elot-menu
+                            :visible (not (bound-and-true-p elot-mode))))))
 
 (defun elot-mode--add-hooks ()
   "Add buffer-local hooks for an ELOT buffer."
@@ -556,6 +659,13 @@ or `xsd:integer' on a column header will be applied to values."
 
 (defun elot-mode--enable ()
     "Set up ELOT in the current Org buffer."
+    ;; Guard: elot-mode is only meaningful inside Org-mode buffers.
+    ;; Silently refuse when invoked in a non-Org file so that visiting
+    ;; a .ttl (or any non-Org) file does not accidentally spawn a
+    ;; second ELOT menu via this mode's keymap.
+    (unless (derived-mode-p 'org-mode)
+      (elot-mode -1)
+      (user-error "elot-mode is only supported in Org-mode buffers"))
     ;; 1. Buffer-local variables
     (elot-mode--set-buffer-locals)
 
@@ -579,11 +689,7 @@ or `xsd:integer' on a column header will be applied to values."
     ;; 6. Label-display: set up immediately (with size-gated prompt)
     (elot-mode--maybe-setup-labels)
 
-    ;; 7. Flymake: enable in-buffer squiggly-line diagnostics
-    (when elot-flymake-enable
-      (elot-flymake-setup))
-
-    ;; 8. Set initial fold visibility
+    ;; 7. Set initial fold visibility
     (org-cycle-set-startup-visibility))
 
   (defun elot-mode--maybe-setup-labels ()
@@ -610,11 +716,7 @@ In batch mode (`noninteractive'), skip label-display entirely."
       (with-silent-modifications
         (elot-remove-prop-display)))
 
-    ;; 3. Disable Flymake backend
-    (when (fboundp 'elot-flymake-teardown)
-      (elot-flymake-teardown))
-
-    ;; 4. Restore syntax table
+    ;; 3. Restore syntax table
     (set-syntax-table org-mode-syntax-table))
 
 ;;;###autoload

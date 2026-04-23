@@ -1,0 +1,17 @@
+{
+  "ex:Widget": {
+      "label": "Widget (nested)",
+    "definition": "A generic widget used for testing.",
+    "kind": "Class"
+  },
+  "ex:Gadget": {
+    "label": "Gadget",
+    "definition": "A gadget, subclass of widget.",
+    "kind": "Class"
+  },
+  "ex:connectsTo": {
+    "label": "connectsTo",
+    "definition": "Relates one widget to another.",
+    "kind": "ObjectProperty"
+  }
+}
