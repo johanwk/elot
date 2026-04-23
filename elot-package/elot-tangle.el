@@ -894,7 +894,7 @@ ELOT-ATTRIBLIST-HT (hashtables).
 If SQLite support is available (`sqlite-open' and
 `elot-db-update-source' bound) and the buffer is visiting a file,
 also sync the parsed entries into the ELOT label DB under
-`buffer-file-name', so that other buffers / projects can look them
+`buffer-file-name', so other buffers / projects can look them 
 up via `elot-db-get-label' / `elot-db-get-label-any'.  Errors during
 sync are reported but do not break the local HT population."
   (let ((slurp (elot-build-slurp)))

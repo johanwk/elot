@@ -340,8 +340,6 @@ Output to OUT-FILE as an elisp list."
         (insert (elot-attriblist-label-value selected-label "puri"))
         (forward-char 1)))))
 
-
-
 ;;;; -------------------------------------------------------------------
 ;;;; Step 1.7: Activation for non-ELOT buffers
 ;;;; -------------------------------------------------------------------
