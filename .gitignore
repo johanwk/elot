@@ -1,4 +1,5 @@
 *~
+*.elc
 
 ## Core latex/pdflatex auxiliary files:
 *.aux
