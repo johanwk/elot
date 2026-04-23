@@ -389,14 +389,50 @@ Built from `elot-db-all-active-ids' at activation time.")
 (defvar-local elot-global--keywords nil
   "Buffer-local font-lock keywords installed by the global mode.")
 
+(defconst elot-global--fallback-curie-regexp
+  "\\_<\\([-a-z_A-Z0-9]+\\):\\([-a-z_A-Z0-9.]+\\)\\_>"
+  "Generic CURIE-shape regexp used when `regexp-opt' produces a pattern
+too large for the Emacs regex engine.  Matches `prefix:localname'
+tokens; the font-lock keyword body then filters via
+`elot-db-get-label-any', so non-entries are cheap no-ops.")
+
+(defun elot-global--try-compile (regexp)
+  "Return REGEXP if it compiles, nil otherwise.
+Forces eager compilation via `string-match-p' so that
+\"regular expression too big\" is caught here rather than later
+inside font-lock."
+  (and regexp
+       (condition-case _err
+           (progn (string-match-p regexp "") regexp)
+         (error nil))))
+
 (defun elot-global--build-regexp (ids)
   "Return a DB-driven font-lock regexp matching literal IDS.
-IDS is a list of strings (entity identifiers).  The returned
-regexp uses `regexp-opt' with `symbols' boundaries so matches are
-anchored at token boundaries rather than inside longer
-identifiers.  Returns nil when IDS is empty."
+IDS is a list of strings (entity identifiers), typically IRIs and
+their CURIE contractions.  Tries three tiers:
+
+  1. `regexp-opt' over IDS with symbol boundaries (best coverage).
+  2. On compile failure, retry with CURIE-shape entries only
+     (IRIs dropped; usually fits because CURIEs share prefixes).
+  3. On still-too-big, fall back to a generic CURIE pattern
+     (`elot-global--fallback-curie-regexp'); the matcher body
+     filters via `elot-db-get-label-any' so false-positive CURIEs
+     are no-ops.
+
+Returns nil when IDS is empty."
   (when ids
-    (regexp-opt ids 'symbols)))
+    (or (elot-global--try-compile (regexp-opt ids 'symbols))
+        (let ((curies (seq-filter
+                       (lambda (s)
+                         (and (string-match-p ":" s)
+                              (not (string-match-p "://" s))))
+                       ids)))
+          (and curies
+               (elot-global--try-compile (regexp-opt curies 'symbols))))
+        (prog1 elot-global--fallback-curie-regexp
+          (message
+           "elot-global-label-display-mode: %d ids too large for regexp-opt; using generic CURIE fallback"
+           (length ids))))))
 
 (defun elot-global--build-keywords (regexp)
   "Return a font-lock keyword form decorating REGEXP with labels.

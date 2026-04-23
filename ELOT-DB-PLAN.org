@@ -1509,7 +1509,8 @@ with an explicit one. Auto-repersist is gated on the prior
 existence of the dir-locals entry so there is no silent
 filesystem surprise.
 
-*** STARTED Step 1.7.3 - TTL prefix harvest + dual-form matcher for =elot-global-label-display-mode=
+*** DONE Step 1.7.3 - TTL prefix harvest + dual-form matcher for =elot-global-label-display-mode=
+CLOSED: [2026-04-23 tor. 16:56]
 
 *Goal:* Make =elot-global-label-display-mode= decorate identifiers in
 non-Org buffers regardless of whether the buffer uses /CURIE/ form
