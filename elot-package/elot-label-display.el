@@ -954,7 +954,14 @@ provenance marker."
                                    c elot-active-label-sources)))
                               curies))))))
       (when attrs
-        (let* ((label (plist-get attrs "rdfs:label" #'string=))
+        (let* ((label (or (plist-get attrs "rdfs:label" #'string=)
+                          ;; Fallback: labels live in `entities.label',
+                          ;; not in `attributes', unless the ingestor
+                          ;; redundantly emitted `rdfs:label'.
+                          (and (fboundp 'elot-db-get-label)
+                               (ignore-errors
+                                 (elot-db-get-label
+                                  id elot-active-label-sources)))))
                (rdf-type (plist-get attrs "rdf:type" #'string=))
                (definition
                 (or (plist-get attrs "iof-av:naturalLanguageDefinition" #'string=)
