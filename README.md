@@ -28,7 +28,7 @@ Have an existing ontology? The Elot extension can import it directly:
 
 1. Open the Command Palette (`Ctrl+Shift+P`) and run **Elot: Import OWL Ontology**
 2. Choose a local file or paste a URL (e.g. from a published ontology IRI)
-3. The extension downloads `elot-exporter.jar` automatically (requires Java 11+ on PATH) and converts the OWL file into Elot's Org-mode format
+3. The extension downloads `elot-exporter.jar` automatically (requires Java 21+ on PATH) and converts the OWL file into Elot's Org-mode format
 4. You are prompted to save the resulting `.org` file — once saved, all Elot features activate immediately
 
 You can also use the CLI directly:
@@ -97,7 +97,7 @@ The VS Code extension and `elot-cli` are progressively lowering that barrier.
 6. **Press F12** on a CURIE to jump to its definition
 7. **Press Ctrl+Space** to search and insert entities
 
-To import an existing OWL file, use the **Elot: Import OWL Ontology** command — the extension downloads `elot-exporter` automatically. Requires Java 11+.
+To import an existing OWL file, use the **Elot: Import OWL Ontology** command — the extension downloads `elot-exporter` automatically. Requires Java 21+ (see the [Install ELOT auxiliaries](#install-elot-auxiliaries) section for details).
 
 ---
 
