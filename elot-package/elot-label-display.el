@@ -338,14 +338,27 @@ Provides a preview string for LABEL during completing-read."
                        120))))
     (elot-label-lookup--format-annotation label prefix rdf-type definition)))
 
+(defun elot-label-lookup--collect-attriblist ()
+  "Return (COLLECTION . ANNOTATOR) for the buffer-local slurp path.
+COLLECTION is `elot-attriblist-ht' (hashtable, label -> attr-plist).
+ANNOTATOR is the symbol `elot-label-lookup-annotations'.  Returns
+nil when the slurp hash is not populated."
+  (when (and (bound-and-true-p elot-attriblist-ht)
+             (hash-table-p elot-attriblist-ht)
+             (> (hash-table-count elot-attriblist-ht) 0))
+    (cons elot-attriblist-ht 'elot-label-lookup-annotations)))
+
 (defun elot-label-lookup--from-attriblist ()
   "Run interactive label lookup backed by the buffer-local slurp hash tables."
-  (let ((completion-extra-properties
-         (append completion-extra-properties
-                 '(:annotation-function elot-label-lookup-annotations))))
-    (setq elot-label-lookup-tmp-attriblist-ht elot-attriblist-ht)
+  (let* ((pair (elot-label-lookup--collect-attriblist))
+         (coll (car pair))
+         (ann  (cdr pair))
+         (completion-extra-properties
+          (append completion-extra-properties
+                  (list :annotation-function ann))))
+    (setq elot-label-lookup-tmp-attriblist-ht coll)
     (let ((selected-label
-           (completing-read "Label: " elot-attriblist-ht)))
+           (completing-read "Label: " coll)))
       (when selected-label
         (insert " ")     ;; Insert a space to avoid getting stuck under the text property
         (backward-char 1)
@@ -383,12 +396,27 @@ in the DB path stores label->id) and fetches attributes from the DB."
                        120))))
     (elot-label-lookup--format-annotation label prefix rdf-type definition)))
 
+(defun elot-label-lookup--collect-db ()
+  "Return (COLLECTION . ANNOTATOR) for the DB path.
+COLLECTION is a hashtable mapping label -> id over the active sources
+(see `elot-db-all-active-labels').  ANNOTATOR is the symbol
+`elot-label-lookup--db-annotations'.  Returns nil when there are no
+active sources or no labelled entities."
+  (when (and (bound-and-true-p elot-active-label-sources)
+             (fboundp 'elot-db-all-active-labels))
+    (let ((ht (elot-db-all-active-labels elot-active-label-sources)))
+      (when (and (hash-table-p ht) (> (hash-table-count ht) 0))
+        (cons ht 'elot-label-lookup--db-annotations)))))
+
 (defun elot-label-lookup--from-db ()
   "Run interactive label lookup backed by the ELOT DB active sources."
-  (let* ((label->id (elot-db-all-active-labels elot-active-label-sources))
+  (let* ((pair (elot-label-lookup--collect-db))
+         (label->id (or (car pair)
+                        (elot-db-all-active-labels elot-active-label-sources)))
+         (ann (or (cdr pair) 'elot-label-lookup--db-annotations))
          (completion-extra-properties
           (append completion-extra-properties
-                  '(:annotation-function elot-label-lookup--db-annotations))))
+                  (list :annotation-function ann))))
     (setq elot-label-lookup-tmp-attriblist-ht label->id)
     (let ((selected-label
            (completing-read "Label: " label->id)))
@@ -408,25 +436,249 @@ in the DB path stores label->id) and fetches attributes from the DB."
             (insert token)
             (forward-char 1)))))))
 
+;;;; -------------------------------------------------------------------
+;;;; Step 1.13: union path (local + external)
+;;;; -------------------------------------------------------------------
+
+(defcustom elot-label-lookup-scope 'both
+  "Which label sources `elot-label-lookup' consults.
+
+- `local'    : the current buffer's slurp hash (`elot-attriblist-ht').
+- `external' : labels indexed in the ELOT DB over the buffer's
+               `elot-active-label-sources'.
+- `both'     : union of the two, deduplicated by id.  Default.
+
+The scope-aware command `elot-label-lookup' honours this
+defcustom; `\[universal-argument]' overrides to `local' and
+`\[universal-argument] \[universal-argument]' overrides to
+`external' for a single invocation.  The sibling commands
+`elot-label-lookup-local' and `elot-label-lookup-external' pin
+the scope regardless of this value."
+  :type '(choice (const :tag "Local buffer only"   local)
+                 (const :tag "External (DB) only"  external)
+                 (const :tag "Both (union)"        both))
+  :group 'elot)
+
+(defvar elot-label-lookup--tmp-union-ht nil
+  "Temporary DISPLAY -> entry hash used by the union annotator.
+An entry is a plist (:label L :source SYM :id ID :attrs PLIST),
+where SYM is one of `local', `external', `both'.")
+
+(defun elot-label-lookup--curie-suffix-for (entry)
+  "Return a disambiguation suffix string for ENTRY, or empty string.
+For an IRI id, tries `elot-db-contract-uri'; falls back to a short
+tail of the IRI.  For a CURIE id, returns the id itself."
+  (let ((id (plist-get entry :id)))
+    (cond
+     ((null id) "")
+     ((and (fboundp 'elot-db--looks-like-uri-p)
+           (elot-db--looks-like-uri-p id))
+      (or (and (fboundp 'elot-db-contract-uri)
+               (car (elot-db-contract-uri
+                     id elot-active-label-sources)))
+          ;; Fallback: last path/fragment segment.
+          (let ((tail (if (string-match "[#/]\\([^#/]+\\)\\'" id)
+                          (match-string 1 id)
+                        id)))
+            tail)))
+     (t id))))
+
+(defun elot-label-lookup--union-build ()
+  "Build the union DISPLAY -> entry hash.
+Merges local (slurp) and external (DB) collections, dedup'ing by id.
+Returns the hash and also stores it in `elot-label-lookup--tmp-union-ht'."
+  (let ((id->entry (make-hash-table :test 'equal))
+        (label->entries (make-hash-table :test 'equal))
+        (out (make-hash-table :test 'equal)))
+    ;; 1) local entries keyed by id (puri).
+    (when (and (bound-and-true-p elot-attriblist-ht)
+               (hash-table-p elot-attriblist-ht))
+      (maphash
+       (lambda (label attrs)
+         (let* ((id (plist-get attrs "puri" 'string=))
+                (key (or id (format "__local:%s" label))))
+           (puthash key
+                    (list :label label :source 'local
+                          :id id :attrs attrs)
+                    id->entry)))
+       elot-attriblist-ht))
+    ;; 2) external entries keyed by id; if id already present, mark `both'.
+    (let ((ext (and (bound-and-true-p elot-active-label-sources)
+                    (fboundp 'elot-db-all-active-labels)
+                    (elot-db-all-active-labels elot-active-label-sources))))
+      (when (hash-table-p ext)
+        (maphash
+         (lambda (label id)
+           (let* ((key (or id (format "__external:%s" label)))
+                  (existing (gethash key id->entry)))
+             (if existing
+                 ;; Local wins; mark as both so annotator can show it.
+                 (puthash key
+                          (plist-put (copy-sequence existing)
+                                     :source 'both)
+                          id->entry)
+               (puthash key
+                        (list :label label :source 'external
+                              :id id :attrs nil)
+                        id->entry))))
+         ext)))
+    ;; 3) Group entries by label to detect collisions.
+    (maphash
+     (lambda (_id entry)
+       (let* ((lbl (plist-get entry :label))
+              (cur (gethash lbl label->entries)))
+         (puthash lbl (cons entry cur) label->entries)))
+     id->entry)
+    ;; 4) Build DISPLAY -> entry with suffix disambiguation on collision.
+    (maphash
+     (lambda (lbl entries)
+       (if (= 1 (length entries))
+           (puthash lbl (car entries) out)
+         (dolist (e entries)
+           (let* ((suffix (elot-label-lookup--curie-suffix-for e))
+                  (disp   (if (and suffix (> (length suffix) 0))
+                              (format "%s  [%s]" lbl suffix)
+                            ;; Last-resort: source tag so displays stay unique.
+                            (format "%s  [%s]" lbl
+                                    (symbol-name (plist-get e :source))))))
+             (puthash disp e out)))))
+     label->entries)
+    (setq elot-label-lookup--tmp-union-ht out)
+    out))
+
+(defun elot-label-lookup--union-annotations (display)
+  "Annotation function for the union completion collection.
+DISPLAY is a key in `elot-label-lookup--tmp-union-ht'."
+  (let* ((entry (gethash display elot-label-lookup--tmp-union-ht))
+         (source (plist-get entry :source))
+         (label  (or (plist-get entry :label) display))
+         (id     (plist-get entry :id))
+         ;; Attributes: prefer local plist when present, else DB fetch.
+         (attrs  (or (plist-get entry :attrs)
+                     (and id
+                          (fboundp 'elot-db-get-all-attrs)
+                          (elot-db-get-all-attrs id))))
+         (rdf-type (plist-get attrs "rdf:type" 'string=))
+         (prefix
+          (cond
+           ((eq source 'local)
+            (car (split-string (or (plist-get attrs "puri" 'string=) "") ":")))
+           ((and id (fboundp 'elot-db--looks-like-uri-p)
+                 (elot-db--looks-like-uri-p id)
+                 (fboundp 'elot-db-contract-uri))
+            (let ((c (car (elot-db-contract-uri
+                           id elot-active-label-sources))))
+              (when c (car (split-string c ":")))))
+           ((and id (string-match "\\`\\([^:]+\\):" id))
+            (match-string 1 id))))
+         (definition (string-replace
+                      "\n" " "
+                      (string-limit
+                       (or (plist-get attrs "iof-av:naturalLanguageDefinition" 'string=)
+                           (plist-get attrs "skos:definition" 'string=)
+                           (plist-get attrs "dcterms:description" 'string=)
+                           (plist-get attrs "rdfs:comment" 'string=)
+                           "")
+                       120)))
+         (base (elot-label-lookup--format-annotation
+                display prefix rdf-type definition)))
+    (concat base
+            (cond ((eq source 'both)     "  +external")
+                  ((eq source 'external) "  [external]")
+                  (t "")))))
+
+(defun elot-label-lookup--from-union ()
+  "Run interactive label lookup over the union of local and external sources.
+Delegates to `elot-label-lookup--from-attriblist' or
+`elot-label-lookup--from-db' when only one scope has data."
+  (let* ((local-pair    (elot-label-lookup--collect-attriblist))
+         (external-pair (elot-label-lookup--collect-db)))
+    (cond
+     ((and local-pair (not external-pair))
+      (elot-label-lookup--from-attriblist))
+     ((and external-pair (not local-pair))
+      (elot-label-lookup--from-db))
+     ((and local-pair external-pair)
+      (let* ((table (elot-label-lookup--union-build))
+             (completion-extra-properties
+              (append completion-extra-properties
+                      '(:annotation-function
+                        elot-label-lookup--union-annotations))))
+        (let ((selected (completing-read "Label: " table)))
+          (when selected
+            (let* ((entry  (gethash selected table))
+                   (source (plist-get entry :source))
+                   (id     (plist-get entry :id))
+                   (attrs  (plist-get entry :attrs))
+                   (token
+                    (cond
+                     ;; Local / both: prefer the local puri.
+                     ((memq source '(local both))
+                      (or (plist-get attrs "puri" 'string=) id))
+                     ;; External IRI: contract to CURIE if possible.
+                     ((and id (fboundp 'elot-db--looks-like-uri-p)
+                           (elot-db--looks-like-uri-p id)
+                           (fboundp 'elot-db-contract-uri))
+                      (or (car (elot-db-contract-uri
+                                id elot-active-label-sources))
+                          id))
+                     (t id))))
+              (when token
+                (insert " ")
+                (backward-char 1)
+                (insert token)
+                (forward-char 1)))))))
+     (t
+      (user-error
+       "No ELOT labels available: no slurp data and no active DB sources")))))
+
 ;;;###autoload
-(defun elot-label-lookup ()
+(defun elot-label-lookup (&optional arg)
   "Interactive lookup of resource identifier, with completion.
-In an ELOT Org buffer with a populated slurp table, uses the local
-hash tables (richer attributes).  In any other buffer with active
-label sources configured in the ELOT DB, queries the DB directly.
-Signals `user-error' when neither data source is available."
+
+The set of candidates is determined by `elot-label-lookup-scope'
+(default `both', the union of local slurp data and the ELOT DB
+active sources).  A single `\\[universal-argument]' prefix pins
+the scope to `local'; a double `\\[universal-argument]' prefix
+pins it to `external' for this invocation only.
+
+See also `elot-label-lookup-local' and `elot-label-lookup-external',
+which pin the scope regardless of the defcustom."
+  (interactive "P")
+  (let ((elot-label-lookup-scope
+         (cond
+          ((equal arg '(4))  'local)
+          ((equal arg '(16)) 'external)
+          (t                 elot-label-lookup-scope))))
+    (pcase elot-label-lookup-scope
+      ('local
+       (if (elot-label-lookup--collect-attriblist)
+           (elot-label-lookup--from-attriblist)
+         (user-error
+          "Scope `local' but no slurp data in this buffer")))
+      ('external
+       (if (elot-label-lookup--collect-db)
+           (elot-label-lookup--from-db)
+         (user-error
+          "Scope `external' but no active ELOT DB sources")))
+      (_ ; both
+       (elot-label-lookup--from-union)))))
+
+;;;###autoload
+(defun elot-label-lookup-local ()
+  "Run `elot-label-lookup' pinned to scope `local'.
+Offers candidates from the buffer-local slurp hash only."
   (interactive)
-  (cond
-   ((and (bound-and-true-p elot-attriblist-ht)
-         (hash-table-p elot-attriblist-ht)
-         (> (hash-table-count elot-attriblist-ht) 0))
-    (elot-label-lookup--from-attriblist))
-   ((and (bound-and-true-p elot-active-label-sources)
-         (fboundp 'elot-db-all-active-labels))
-    (elot-label-lookup--from-db))
-   (t
-    (user-error
-     "No ELOT labels available: no slurp data and no active DB sources"))))
+  (let ((elot-label-lookup-scope 'local))
+    (call-interactively #'elot-label-lookup)))
+
+;;;###autoload
+(defun elot-label-lookup-external ()
+  "Run `elot-label-lookup' pinned to scope `external'.
+Offers candidates from the ELOT DB active sources only."
+  (interactive)
+  (let ((elot-label-lookup-scope 'external))
+    (call-interactively #'elot-label-lookup)))
 
 ;;;; -------------------------------------------------------------------
 ;;;; Step 1.7: Activation for non-ELOT buffers

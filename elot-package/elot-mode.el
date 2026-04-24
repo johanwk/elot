@@ -518,6 +518,14 @@ or `xsd:integer' on a column header will be applied to values."
      :enable (elot--in-elot-buffer-p)]
     "---"
     ["Insert Existing Resource ID" elot-label-lookup :active (fboundp 'elot-label-lookup)]
+    ["... (local only)" elot-label-lookup-local
+     :active (fboundp 'elot-label-lookup-local)
+     :enable (and (bound-and-true-p elot-attriblist-ht)
+                  (hash-table-p elot-attriblist-ht)
+                  (> (hash-table-count elot-attriblist-ht) 0))]
+    ["... (external only)" elot-label-lookup-external
+     :active (fboundp 'elot-label-lookup-external)
+     :enable (bound-and-true-p elot-active-label-sources)]
     ["Insert Class heading" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-class-skos))
      :active (fboundp 'tempo-template-elot-class-skos)
      :enable (elot--in-elot-buffer-p)]
