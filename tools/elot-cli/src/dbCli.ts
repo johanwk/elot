@@ -211,11 +211,11 @@ export function buildDbCommand(): Command {
 
   db.command("register <file>")
     .description(
-      "Register a source from CSV / TSV / JSON, or a triples-json file (legacy).",
+      "Register a source from CSV / TSV / JSON / TTL / RQ, or a triples-json file (legacy).",
     )
     .option(
       "--type <type>",
-      "Source type: csv | tsv | json | triples-json (auto-detected from extension when omitted)",
+      "Source type: csv | tsv | json | ttl | rq | triples-json (auto-detected from extension when omitted)",
     )
     .option(
       "--source <name>",
@@ -223,7 +223,7 @@ export function buildDbCommand(): Command {
     )
     .option(
       "--data-source <ds>",
-      "Data-source discriminator (defaults to empty string)",
+      "Data-source discriminator; for --type=rq this is the SPARQL data source (local RDF file or http(s) endpoint).",
     )
     .action(async (file: string, opts, cmd) => {
       const gopts = cmd.optsWithGlobals();
@@ -275,17 +275,31 @@ export function buildDbCommand(): Command {
         );
         process.exit(2);
       }
-      if (type !== "csv" && type !== "tsv" && type !== "json") {
+      if (
+        type !== "csv" &&
+        type !== "tsv" &&
+        type !== "json" &&
+        type !== "ttl" &&
+        type !== "rq"
+      ) {
         console.error(
           `register: --type '${type}' is not implemented in this build ` +
-            `(TTL/RQ land in Step 2.2.4, Org in 2.2.5)`,
+            `(Org lands in Step 2.2.5)`,
         );
         process.exit(2);
       }
-      const parsed = parseSource(abs, type);
       const sourceName =
         opts.source ?? basename(abs, extname(abs));
       const ds = opts.dataSource ?? "";
+      let parsed: import("./parsers/index.js").ParsedSource;
+      try {
+        parsed = parseSource(abs, type, {
+          dataSource: type === "rq" ? (opts.dataSource ?? null) : null,
+        });
+      } catch (e) {
+        console.error(`register: ${(e as Error).message}`);
+        process.exit(2);
+      }
       const d = await ElotDb.open(path);
       try {
         const n = d.updateSource(
@@ -328,7 +342,14 @@ export function buildDbCommand(): Command {
       const type =
         ((opts.type as string | undefined)?.toLowerCase() as SourceType) ||
         detectTypeFromExtension(abs);
-      if (!type || (type !== "csv" && type !== "tsv" && type !== "json")) {
+      if (
+        !type ||
+        (type !== "csv" &&
+          type !== "tsv" &&
+          type !== "json" &&
+          type !== "ttl" &&
+          type !== "rq")
+      ) {
         console.error(
           `refresh: unsupported --type '${type ?? "(auto)"}' in this build`,
         );
@@ -340,7 +361,9 @@ export function buildDbCommand(): Command {
       } catch {
         /* ignore */
       }
-      const parsed = parseSource(abs, type);
+      const parsed = parseSource(abs, type, {
+        dataSource: type === "rq" ? (opts.dataSource as string) : null,
+      });
       const d = await ElotDb.open(path);
       try {
         const n = d.updateSource(

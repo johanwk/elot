@@ -3369,6 +3369,38 @@ external-tool work (ROBOT/TTL) is isolated at the end:
   override supported.  Isolated from earlier sub-steps so the
   Java/ROBOT dependency and its fixtures can land independently.
 
+  /Status (DONE):/
+  - New =parsers/prefixes.ts= - port of
+    =elot-source--harvest-prefixes= (Turtle =@prefix= + SPARQL
+    =PREFIX=, first-occurrence-wins, empty prefix supported).
+  - New =parsers/robot.ts= - ROBOT resolver + =spawnSync= wrapper.
+    Resolution order: =$ELOT_ROBOT_JAR= (via =java -jar=) >
+    =$ROBOT= > =robot= on =PATH=.  =robotAvailable()= is the
+    skip-gate used by tests and by =parseTtl= / =parseRq= at
+    invocation time.
+  - New =parsers/ttl.ts= - writes the label SPARQL to a tempfile,
+    runs =robot query=, parses the CSV via =parseSeparatedString=
+    (so the =lang= column produced by =LANG(?label)= is picked up
+    by the Step 1.16.6 convention automatically), harvests
+    prefixes from the TTL.  Per-project override path:
+    =<projectRoot>/.elot/ttl-label-query.rq= (project root via
+    =.git= / =.elot= / =.elot-cache= walk).  Default query is the
+    Step 1.16.7 shape.
+  - New =parsers/rq.ts= - full port of =elot-source-parse-rq=
+    including the =<projectRoot>/.elot-cache/<base>.<hash>.csv=
+    cache policy, mtime-based freshness (HTTP endpoints skip the
+    data-source mtime check), empty-result-preserves-cache
+    semantics, and failure-preserves-stale-cache semantics.
+  - =dbCli.ts= =register= + =refresh= extended to accept
+    =--type ttl= and =--type rq= (with =--data-source= carrying
+    the local RDF path or http endpoint for rq).
+  - Tests: =prefixes.test.ts= (5 cases), =rqCache.test.ts= (6
+    cases, no ROBOT required), =ttlRobot.test.ts= (ROBOT-gated
+    end-to-end against =test/fixtures/labels-multilang.ttl=;
+    skips cleanly when ROBOT is absent).
+  - Wired into =test:db= aggregate; new Makefile targets
+    =test-db-prefixes=, =test-db-rq-cache=, =test-db-ttl-robot=.
+
 - *Step 2.2.5 - Org integration and end-to-end CLI tests.*  Reuse
   the existing =parseOrgWasm= + =buildSlurp= in
   =tools/elot-cli/src/= via a thin =parsers/org.ts= adaptor.
