@@ -2,12 +2,12 @@ EMACS ?= emacs
 
 PACKAGE_DIR := ../elot-package
 
-.PHONY: all test db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-14-test step-1-15-test step-1-16-1-test step-1-16-2-test step-1-16-3-test clean help
+.PHONY: all test db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-14-test step-1-15-test step-1-16-1-test step-1-16-2-test step-1-16-3-test step-1-16-4-test clean help
 
 all: test
 
 # Run the full ELOT ERT test suite.
-test: db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-14-test step-1-15-test step-1-16-1-test step-1-16-2-test step-1-16-3-test
+test: db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-14-test step-1-15-test step-1-16-1-test step-1-16-2-test step-1-16-3-test step-1-16-4-test
 
 # Step 1.1 tests: SQLite DB layer.
 db-test:
@@ -202,6 +202,17 @@ step-1-16-3-test:
 	  -l elot-db-lang-write-test.el \
 	  -f ert-run-tests-batch-and-exit
 
+# Step 1.16.4 tests: read path widened to SELECT lang and collapse
+# via `elot-db--pick-value-by-lang' (which in 1.16.4 is `car', so
+# behaviour is identical to the pre-widening path).
+step-1-16-4-test:
+	$(EMACS) --batch \
+	  -L $(PACKAGE_DIR) \
+	  -L . \
+	  -l ert \
+	  -l elot-db-lang-read-test.el \
+	  -f ert-run-tests-batch-and-exit
+
 # Step 1.10 tests: ELOT menu `Labels & sources' submenu
 # (structure, entry resolution, :enable / :style toggle guards).
 menu-test:
@@ -238,6 +249,7 @@ help:
 	@echo "  step-1-16-1-test run test/elot-lang-prefs-test.el (Step 1.16.1)"
 	@echo "  step-1-16-2-test run test/elot-db-schema-v3-test.el (Step 1.16.2)"
 	@echo "  step-1-16-3-test run test/elot-db-lang-write-test.el (Step 1.16.3)"
+	@echo "  step-1-16-4-test run test/elot-db-lang-read-test.el (Step 1.16.4)"
 	@echo "  clean        remove compiled artifacts"
 	@echo "  help         show this help"
 	@echo ""

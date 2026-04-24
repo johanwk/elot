@@ -741,26 +741,35 @@ Returns nil if ACTIVE-SOURCES is empty or no active source has ID."
                   (list id src ds))
        when row return (caar row)))))
 
+(defun elot-db--pick-value-by-lang (rows &optional _prefs)
+  "Pick one VALUE from ROWS, a list of (VALUE . LANG) cons cells.
+Step 1.16.4 scaffolding: collapses with `car', so observable
+behaviour is identical to the pre-widening read path.  Step 1.16.5
+will swap the body for `elot-db--select-by-language' consulting
+PREFS.  Returns nil when ROWS is empty."
+  (car (car rows)))
+
 (defun elot-db-get-attr (id prop &optional active-sources)
   "Return the value of PROP for ID, priority-resolved over ACTIVE-SOURCES.
 First active source that has a matching attribute row wins.  If a
 given source has multiple attribute rows for the same (ID, PROP),
-the first one SQLite returns is used; multi-valued attribute
-retrieval is the job of `elot-db-get-all-attrs'."
+one is chosen via `elot-db--pick-value-by-lang' (Step 1.16.4: the
+first row SQLite returns; Step 1.16.5: language-preference aware)."
   (let ((sources (elot-db--active-or-default active-sources)))
     (when sources
       (cl-loop
        for entry in sources
        for src = (nth 0 entry)
        for ds  = (elot-db--normalize-ds (nth 1 entry))
-       for row = (sqlite-select
-                  elot-db
-                  "SELECT value FROM attributes
-                    WHERE id = ? AND prop = ?
-                      AND source = ? AND data_source = ?
-                    LIMIT 1"
-                  (list id prop src ds))
-       when row return (caar row)))))
+       for rows = (sqlite-select
+                   elot-db
+                   "SELECT value, lang FROM attributes
+                     WHERE id = ? AND prop = ?
+                       AND source = ? AND data_source = ?"
+                   (list id prop src ds))
+       when rows return
+       (elot-db--pick-value-by-lang
+        (mapcar (lambda (r) (cons (nth 0 r) (nth 1 r))) rows))))))
 
 (defun elot-db-source-entity-count (source &optional data-source)
   "Return the number of `entities' rows for (SOURCE, DATA-SOURCE).
@@ -786,7 +795,16 @@ Step 1.14: the returned plist carries an additional
 \(SOURCE . DATA-SOURCE) identifying the winning source.  Callers
 that look up only string-keyed attributes (using `string=' as
 predicate, as ELOT's formatters do) are unaffected; the extra
-entry is a no-op for them."
+entry is a no-op for them.
+
+Step 1.16.4: the read path is widened to carry `lang' internally.
+For each prop, all rows in the winning source are grouped and
+`elot-db--pick-value-by-lang' collapses them to a single value.
+In 1.16.4 that picker is `car' (first row wins), so observable
+behaviour is identical to the pre-widening path for all existing
+data (no row has a non-empty `lang' until Step 1.16.3 emitters
+actually write one).  Step 1.16.5 will replace the picker body
+with `elot-db--select-by-language'."
   (let ((sources (elot-db--active-or-default active-sources)))
     (when sources
       (cl-loop
@@ -795,14 +813,25 @@ entry is a no-op for them."
        for ds  = (elot-db--normalize-ds (nth 1 entry))
        for rows = (sqlite-select
                    elot-db
-                   "SELECT prop, value FROM attributes
+                   "SELECT prop, value, lang FROM attributes
                      WHERE id = ? AND source = ? AND data_source = ?"
                    (list id src ds))
        when rows return
-       (append
-        (cl-loop for row in rows
-                 append (list (nth 0 row) (nth 1 row)))
-        (list :source-origin (cons src ds)))))))
+       (let ((by-prop nil))
+         ;; Preserve first-seen prop order while grouping.
+         (dolist (row rows)
+           (let* ((p (nth 0 row))
+                  (v (nth 1 row))
+                  (l (nth 2 row))
+                  (cell (assoc p by-prop)))
+             (if cell
+                 (setcdr cell (append (cdr cell) (list (cons v l))))
+               (push (cons p (list (cons v l))) by-prop))))
+         (setq by-prop (nreverse by-prop))
+         (append
+          (cl-loop for (p . vls) in by-prop
+                   append (list p (elot-db--pick-value-by-lang vls)))
+          (list :source-origin (cons src ds))))))))
 
 
 ;;;; -------------------------------------------------------------------

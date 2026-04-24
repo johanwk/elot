@@ -2837,6 +2837,45 @@ write =lang = ''=.  No ingestor emits the cons form yet.
 
 *** Sub-step 1.16.4 - Read path plumbs =lang= without changing behaviour
 
+/Status: DONE./  Landed in =elot-package/elot-db.el=:
+
+- New internal collapser =elot-db--pick-value-by-lang ROWS &optional
+  PREFS= over =(VALUE . LANG)= cons cells.  Body is =(car (car rows))=
+  in 1.16.4; PREFS is ignored.  1.16.5 will swap the body for
+  =elot-db--select-by-language=.
+- =elot-db-get-attr= widened to =SELECT value, lang=, groups rows
+  per (ID, PROP) within the winning source, and feeds them to the
+  picker.  Old =LIMIT 1= removed; picker enforces the single-value
+  contract.
+- =elot-db-get-all-attrs= widened to =SELECT prop, value, lang=.
+  Rows are grouped by prop (first-seen order preserved), then the
+  picker reduces each group to one value.  The =:source-origin=
+  entry is unchanged.
+- =elot-db-get-label= and =elot-db-all-active-labels= untouched in
+  1.16.4 (they read from =entities.label=, not =attributes=); they
+  pick up language handling in 1.16.5 alongside the schema
+  decision for labels.
+
+/Tests:/ new =test/elot-db-lang-read-test.el= (target
+=step-1-16-4-test=), four ERT cases:
+
+- =test-get-all-attrs-invariant-for-untagged= - with all rows
+  carrying =lang=''= (the only shape any existing ingestor
+  produces), output is bit-for-bit identical to pre-widening.
+- =test-get-all-attrs-first-row-wins-for-multi-lang= - when a prop
+  has English + Korean rows (written via the Step 1.16.3 cons
+  form), the car-picker returns the first-inserted row; each prop
+  key still appears exactly once in the flat plist.
+- =test-get-attr-first-row-wins-for-multi-lang= - same invariant
+  for =elot-db-get-attr=.
+- =test-pick-value-by-lang-is-car= - asserts the 1.16.4 body of
+  the picker is pure =car= (will be updated when 1.16.5 lands).
+
+The full pre-existing suite continues to pass, which is the
+primary behavioural-invariance proof per the plan.
+
+*** Sub-step 1.16.4 - Read path plumbs =lang= without changing behaviour (original design)
+
 /Scope:/ Widen the SQL in =elot-db-get-all-attrs= and
 =elot-db-get-label=/=elot-db-all-active-labels= to =SELECT
 prop, value, lang=.  Internally, values are represented as
