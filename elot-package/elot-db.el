@@ -33,6 +33,12 @@
 ;; rather than tangled from an Org document -- see the Decisions Log
 ;; in `ELOT-DB-PLAN.org' for rationale.
 ;;
+;; The canonical schema DDL lives in the sibling file `schema.sql',
+;; shared verbatim with the VS Code / CLI port (Step 2.1 of the
+;; plan).  `elot-db-init' reads it on first use; an embedded copy
+;; (`elot-db--schema-ddl-embedded') is kept as a defensive fallback
+;; and test-pinned byte-for-byte to the on-disk file.
+;;
 ;; Requires Emacs 29+ for built-in `sqlite.el'.
 
 ;;; Code:
@@ -213,7 +219,7 @@ PREFS is the caller-supplied preference list (see
 
 ;;;; Schema
 
-(defconst elot-db--schema-ddl
+(defconst elot-db--schema-ddl-embedded
   "\
 CREATE TABLE IF NOT EXISTS schema_version (
   version INTEGER PRIMARY KEY
@@ -275,17 +281,62 @@ CREATE INDEX IF NOT EXISTS idx_prefixes_expansion
 CREATE INDEX IF NOT EXISTS idx_attrs_prop_lang
   ON attributes(prop, lang);
 "
+  "Canonical DDL (embedded fallback copy) applied by `elot-db-init'
+when the sibling `schema.sql' file cannot be located.  Schema v3.
+The authoritative on-disk copy is `elot-package/schema.sql' and is
+shared verbatim with the VS Code / CLI port (Step 2.1).  The
+embedded copy exists purely as a defensive fallback; a test pins
+the two together byte-for-byte so drift is caught at test time.")
+
+(defun elot-db--schema-sql-path ()
+  "Return the filesystem path to the canonical `schema.sql', or nil.
+Located alongside the `elot-db' library file; returns nil when the
+library itself cannot be located (defensive -- e.g. when running
+from a raw source tree before byte-compilation)."
+  (let ((lib (or (locate-library "elot-db")
+                 ;; When loaded via `load-file' the library is not
+                 ;; yet on `load-path'; fall back to
+                 ;; `load-file-name' / `buffer-file-name' at
+                 ;; compile time.
+                 load-file-name
+                 (and (boundp 'byte-compile-current-file)
+                      byte-compile-current-file))))
+    (when lib
+      (let ((candidate (expand-file-name
+                        "schema.sql"
+                        (file-name-directory lib))))
+        (and (file-readable-p candidate) candidate)))))
+
+(defun elot-db--read-schema-sql ()
+  "Return the contents of the canonical `schema.sql' as a string.
+Falls back to `elot-db--schema-ddl-embedded' if the file is
+missing or unreadable."
+  (let ((path (elot-db--schema-sql-path)))
+    (if path
+        (with-temp-buffer
+          (insert-file-contents path)
+          (buffer-string))
+      elot-db--schema-ddl-embedded)))
+
+(defvar elot-db--schema-ddl nil
   "Canonical DDL applied by `elot-db-init' (schema v3).
-Kept verbatim so it can later be lifted into `schema.sql' (Step 2.1 in
-the plan) without content changes.")
+Resolved lazily on first use by `elot-db--apply-schema': reads
+`schema.sql' from the package directory, or falls back to the
+embedded copy in `elot-db--schema-ddl-embedded'.")
 
 ;;;; Lifecycle
 
 (defun elot-db--apply-schema (db)
-  "Apply `elot-db--schema-ddl' to DB.
-Statements are split on `;' and executed individually because
-`sqlite-execute' accepts only a single statement.  All CREATE statements
-use IF NOT EXISTS so this is idempotent on existing databases."
+  "Apply the canonical schema DDL to DB.
+Reads `schema.sql' (shipped alongside this library) on first
+call, caching in `elot-db--schema-ddl'; falls back to the
+embedded copy in `elot-db--schema-ddl-embedded' when the file is
+missing.  Statements are split on `;' and executed individually
+because `sqlite-execute' accepts only a single statement.  All
+CREATE statements use IF NOT EXISTS so this is idempotent on
+existing databases."
+  (unless elot-db--schema-ddl
+    (setq elot-db--schema-ddl (elot-db--read-schema-sql)))
   (dolist (stmt (split-string elot-db--schema-ddl ";" t "[ \t\n\r]+"))
     (sqlite-execute db stmt)))
 

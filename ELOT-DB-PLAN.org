@@ -3142,6 +3142,28 @@ review:
   data.  An =--emacs= flag (or an =ELOT_DB_PATH= env var) lets a
   power user override to any file; the Emacs side has its own
   =elot-db-file= defcustom and is unaffected.
+- /VS Code opens the DB read-only; only the CLI writes./  This is
+  the key simplification that falls out of the bullets above.  The
+  extension's sql.js handle is loaded from disk and never written
+  back: no =SaveChanges=, no =exec('INSERT ...')=, no schema
+  creation path in TS.  All mutation (register / refresh / remove /
+  prefix / migrate) goes through =elot-cli=, which is the sole
+  writer of the VS Code DB file.  Consequences:
+  - No sql.js full-file rewrite on save inside the extension;
+    the RAM-cost concern from the earlier bullet applies only to
+    the read-side snapshot.
+  - No concurrent-writer problem even in principle: VS Code and
+    the CLI cannot both be writing, because VS Code never writes.
+    If the CLI refreshes while the extension is open, the
+    extension picks up the new file on its next reload
+    (=globalStorageUri= watcher or an explicit "reload DB"
+    command - see Step 2.5).
+  - The TS port only needs =SELECT= paths.  =schema.sql=,
+    migrations, and the loader's INSERT logic stay Elisp-/CLI-only
+    and never need TS equivalents.
+  - Testing surface shrinks accordingly: the extension's DB tests
+    are fixture-driven (open a pre-built =.sqlite=, assert
+    lookups), with no write-path coverage required.
 
 The sub-steps below are ordered so each one leaves the tree in a
 shippable state.  After Step 2.1 the Elisp side is identical to
@@ -3150,10 +3172,24 @@ After Step 2.2 the CLI is usable standalone.  After Step 2.3 the
 VS Code extension shows labels on hover and inline.  After Step 2.4
 label lookup works as an insert command.  Step 2.5 is polish.
 
-*** Step 2.1 - Extract schema v3 DDL into =schema.sql=
+*** DONE Step 2.1 - Extract schema v3 DDL into =schema.sql=
 :PROPERTIES:
-:STATUS: TODO
+:STATUS: DONE
 :END:
+
+/Status:/ Landed.  =elot-package/schema.sql= ships the canonical v3
+DDL (shared verbatim with the VS Code / CLI port).  =elot-db.el=
+reads it lazily via =elot-db--read-schema-sql= (located alongside
+the library through =locate-library= / =load-file-name=), caching
+in =elot-db--schema-ddl=; an embedded fallback string
+=elot-db--schema-ddl-embedded= remains as a defensive copy for
+installations where the recipe's =:files= clause misses the SQL
+file.  Behaviour-invariant: all pre-existing tests still pass
+unchanged.  New test suite =test/elot-db-schema-sql-test.el=
+(Makefile target =step-2-1-test=, included in aggregate =make
+test=): asserts the file exists and is readable, pins file and
+embedded fallback byte-for-byte, and exercises a full fresh-DB
+init via the file path.
 
 *Goal:* Move the CREATE-TABLE / CREATE-INDEX statements out of the
 Elisp string constant =elot-db--schema-ddl= into a sibling file
