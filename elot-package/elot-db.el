@@ -657,7 +657,12 @@ DATA is a list of (ID LABEL PLIST) triples, where PLIST is a flat
 list of \"prop\" \"value\" pairs and may also contain a
 `:kind' keyword whose value ('uri' / 'curie' / 'unknown') is
 written to `entities.kind' (the `:kind' pair is *not* written to
-`attributes').  DATA-SOURCE is nil or the empty-string sentinel
+`attributes').
+
+A PLIST value may also be a two-element list (VALUE LANG) carrying
+an explicit language tag; in that case LANG is written to the new
+`attributes.lang' column (Step 1.16.3).  Bare-string values write
+`lang = '''.  DATA-SOURCE is nil or the empty-string sentinel
 for non-SPARQL sources; a local file path or endpoint URL for
 SPARQL sources.  TYPE is e.g. \"org\", \"csv\", \"tsv\", \"ttl\",
 \"rq\".  FILE-MTIME is stored as `last_modified' (0.0 if nil).
@@ -695,11 +700,13 @@ and DATA is ingested.  Returns the number of entity rows written."
                (list id label source ds kind))
               (cl-loop for (prop val) on plist by #'cddr
                        unless (keywordp prop) do
-                       (sqlite-execute
-                        elot-db
-                        "INSERT INTO attributes (id, source, data_source, prop, value)
-                          VALUES (?, ?, ?, ?, ?)"
-                        (list id source ds prop val)))
+                       (let ((v (if (consp val) (nth 0 val) val))
+                             (lang (if (consp val) (or (nth 1 val) "") "")))
+                         (sqlite-execute
+                          elot-db
+                          "INSERT INTO attributes (id, source, data_source, prop, value, lang)
+                          VALUES (?, ?, ?, ?, ?, ?)"
+                          (list id source ds prop v lang))))
               (cl-incf n)))
           (sqlite-commit elot-db)
           (setq ok t))

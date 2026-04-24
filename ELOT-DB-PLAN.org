@@ -2803,6 +2803,24 @@ yet consults =lang=.
 
 *** Sub-step 1.16.3 - Writer accepts PLIST lang-cons form
 
+/Status: DONE./  Landed in =elot-package/elot-db.el=
+(`elot-db-update-source' body): the inner =cl-loop= now destructures
+cons-form values =(VALUE LANG)= into separate V and LANG bindings and
+writes LANG to the new =attributes.lang= column.  Bare-string values
+and nil / "" LANG both write =''=.  Docstring updated.  No ingestor
+emits the cons form yet.
+
+Tests in =test/elot-db-lang-write-test.el= (target =step-1-16-3-test=):
+- =test-update-source-writes-lang-column=: mixed cons-form entries
+  (rdfs:label@ko, skos:definition@en) plus a bare-string
+  rdf:type; assert all three rows land with correct =lang=.
+- =test-update-source-bare-string-unchanged=: regression guard -
+  bare-string values write =lang = ''=.
+- =test-update-source-empty-lang-normalised=: cons with nil or ""
+  LANG normalises to =''=.
+
+*** Sub-step 1.16.3 - Writer accepts PLIST lang-cons form (original design)
+
 /Scope:/ Widen =elot-db-update-source= to recognise
 ="prop" (list "value" "lang")= entries in the PLIST and write
 =lang= into the new column.  Bare-string values continue to

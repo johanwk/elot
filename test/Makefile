@@ -2,12 +2,12 @@ EMACS ?= emacs
 
 PACKAGE_DIR := ../elot-package
 
-.PHONY: all test db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-14-test step-1-15-test step-1-16-1-test step-1-16-2-test clean help
+.PHONY: all test db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-14-test step-1-15-test step-1-16-1-test step-1-16-2-test step-1-16-3-test clean help
 
 all: test
 
 # Run the full ELOT ERT test suite.
-test: db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-14-test step-1-15-test step-1-16-1-test step-1-16-2-test
+test: db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-14-test step-1-15-test step-1-16-1-test step-1-16-2-test step-1-16-3-test
 
 # Step 1.1 tests: SQLite DB layer.
 db-test:
@@ -191,6 +191,17 @@ step-1-16-2-test:
 	  -l elot-db-schema-v3-test.el \
 	  -f ert-run-tests-batch-and-exit
 
+# Step 1.16.3 tests: writer accepts PLIST cons-form (VALUE LANG)
+# and writes LANG to attributes.lang; bare strings continue to
+# write lang = ''.  No reader consumes lang yet.
+step-1-16-3-test:
+	$(EMACS) --batch \
+	  -L $(PACKAGE_DIR) \
+	  -L . \
+	  -l ert \
+	  -l elot-db-lang-write-test.el \
+	  -f ert-run-tests-batch-and-exit
+
 # Step 1.10 tests: ELOT menu `Labels & sources' submenu
 # (structure, entry resolution, :enable / :style toggle guards).
 menu-test:
@@ -226,6 +237,7 @@ help:
 	@echo "  step-1-15-test run test/elot-label-lookup-stage-test.el (Step 1.15)"
 	@echo "  step-1-16-1-test run test/elot-lang-prefs-test.el (Step 1.16.1)"
 	@echo "  step-1-16-2-test run test/elot-db-schema-v3-test.el (Step 1.16.2)"
+	@echo "  step-1-16-3-test run test/elot-db-lang-write-test.el (Step 1.16.3)"
 	@echo "  clean        remove compiled artifacts"
 	@echo "  help         show this help"
 	@echo ""
