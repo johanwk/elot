@@ -128,6 +128,11 @@ To import an existing OWL file, use the **Elot: Import OWL Ontology** command â€
     -   Turtle output, ontology metrics, and more: install [ROBOT](http://robot.obolibrary.org/)
     -   Ontology diagrams: install [PlantUML](https://plantuml.com/) and [rdfpuml](https://github.com/VladimirAlexiev/rdf2rml)
     -   Open OWL files: Download `elot-exporter` from [releases](https://github.com/johanwk/elot/releases)
+    -   **Java 21 or newer is required for `elot-exporter`.** Many enterprise
+        laptops ship with an older Java (8, 11, or 17); check with
+        `java -version` and upgrade if needed. Running the jar on an
+        older JRE fails with `UnsupportedClassVersionError`. See the
+        [elot-exporter notes](#java-version-for-elot-exporter) below.
 
 
 <a id="org7d49c93"></a>
@@ -211,12 +216,32 @@ Get the tools:
         
             cd ~/bin
             git clone https://github.com/VladimirAlexiev/rdf2rml.git
-4.  The `elot-exporter`  tool converts existing OWL ontologies to ELOT's
-    org-mode format. Once downloaded, you can open an OWL ontology
-    from a local file, or from a URL, with `M-x elot-open-owl`.
+4.  <a id="java-version-for-elot-exporter"></a>The `elot-exporter` tool
+    converts existing OWL ontologies to ELOT's org-mode format. Once
+    downloaded, you can open an OWL ontology from a local file, or
+    from a URL, with `M-x elot-open-owl`.
     -   download the latest Java JAR from [releases](https://github.com/johanwk/elot/releases) and save it as
         `elot-exporter.jar` in your `bin` folder.
     -   the source code is available in [`tools/elot-exporter/`](tools/elot-exporter/) in this repository.
+    -   **Requires Java 21 or newer.** The jar is compiled against
+        Java 21 (see `<release>21</release>` in
+        [`tools/elot-exporter/pom.xml`](tools/elot-exporter/pom.xml)). Many
+        enterprise laptops are provisioned with an older Java (8, 11,
+        or 17); running the jar on those will fail with
+        `UnsupportedClassVersionError: ... class file version 65.0`
+        (65 is the class-file major version emitted by Java 21).
+        -   Check your version: `java -version`.
+        -   If it reports 20 or lower, install a current JDK or JRE â€”
+            for example [Eclipse Temurin 21+](https://adoptium.net/temurin/releases/?version=21),
+            [Microsoft Build of OpenJDK 21](https://learn.microsoft.com/en-us/java/openjdk/download),
+            or [Oracle JDK 21+](https://www.oracle.com/java/technologies/downloads/).
+        -   If your organisation pins an older system Java, you can
+            install a newer JDK alongside it and point ELOT at it via
+            `JAVA_HOME` or by invoking the jar with an explicit path
+            to the Java 21+ launcher.
+        -   ROBOT and PlantUML are less demanding (both run on Java 11+),
+            so upgrading to Java 21 for `elot-exporter` is safe for the
+            other ELOT auxiliaries as well.
 
 
 <a id="org96abf8a"></a>
