@@ -721,7 +721,28 @@ and DATA is ingested.  Returns the number of entity rows written."
               (let* ((cell  (gethash id merged))
                      (label (nth 0 cell))
                      (plist (nth 1 cell))
-                     (kind  (or (plist-get plist :kind) "unknown")))
+                     (kind  (or (plist-get plist :kind) "unknown"))
+                     ;; Step 1.16 fix: when the plist carries
+                     ;; `rdfs:label' rows with language info (emitted
+                     ;; by multi-row-per-id ingestors like the ROBOT
+                     ;; TTL path), derive the denormalised
+                     ;; `entities.label' via the language picker
+                     ;; instead of taking the arbitrary first-seen
+                     ;; row-cell.  This makes `entities.label'
+                     ;; deterministic and honours
+                     ;; `elot-preferred-languages' at ingest time.
+                     (label-variants
+                      (cl-loop for (prop val) on plist by #'cddr
+                               when (and (stringp prop)
+                                         (equal prop "rdfs:label"))
+                               collect (if (consp val)
+                                           (cons (nth 0 val)
+                                                 (or (nth 1 val) ""))
+                                         (cons val ""))))
+                     (picked (and label-variants
+                                  (elot-db--pick-value-by-lang
+                                   label-variants)))
+                     (label (or picked label)))
                 (sqlite-execute
                  elot-db
                  "INSERT OR REPLACE INTO entities (id, label, source, data_source, kind)
