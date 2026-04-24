@@ -3236,6 +3236,56 @@ automatically) or to delete the DB and re-register sources.
 :STATUS: TODO
 :END:
 
+*Scope note (split into shippable sub-steps).* Step 2.2 as originally
+scoped is too large for a single landing.  It is split into five
+sub-steps, each ending on green tests, so that the VS Code read path
+(Step 2.3) can be unblocked as early as possible and the higher-risk
+external-tool work (ROBOT/TTL) is isolated at the end:
+
+- *Step 2.2.1 - =ElotDb= class, read-only surface + pure helpers.*
+  =tools/elot-cli/src/db/sqljs.ts= with =init()= that runs
+  =schema.sql= (from Step 2.1) and asserts =schema_version = 3=, and
+  the full read API: =getLabel=, =getAttr=, =getAllAttrs=,
+  =allActiveLabels=, =idsForLabel=, =labelVariants=, =listSources=,
+  =listPrefixes=, =expandCurie=, =contractUri=, =sourceExistsP=,
+  =sourceNeedsUpdateP=, =sourceEntityCount=.  Pure helpers ported
+  from Elisp with JSON golden vectors reused from the Elisp tests:
+  =selectByLanguage=, =effectiveLanguagePrefs=, =pickValueByLang=,
+  =looksLikeUriP=.  No writer, no CLI entry point yet.  /This alone
+  unblocks Step 2.3/ because the extension only needs read + helpers.
+
+- *Step 2.2.2 - Writer + minimal CLI skeleton.*  =updateSource=,
+  =removeSource=, =addPrefix=, =removePrefix= on =ElotDb=, plus the
+  full-file =export()= / save-on-shutdown machinery.  =commander=
+  wiring in =cli.ts= for =init=, =list=, =lookup=, =attr=, =remove=
+  commands.  A trivial JSON-triples input shape is accepted by
+  =register= purely so the writer can be exercised end-to-end; real
+  parsers land in 2.2.3+.  Round-trip golden tests against the
+  Elisp =elot-db-update-source= output.
+
+- *Step 2.2.3 - CSV / TSV / JSON parsers.*  =parsers/csv.ts=,
+  =tsv.ts=, =json.ts= implementing the Step 1.16.6 conventions
+  (=lang= column, =label@TAG= suffix columns, nested JSON
+  =lang= key).  =register= / =refresh= commands wired for these
+  three types.  Golden round-trip vs. the Elisp parsers on the
+  shared fixture corpus.
+
+- *Step 2.2.4 - TTL / RQ parsers (ROBOT shellout).*  =parsers/ttl.ts=
+  and =parsers/rq.ts=.  Default SPARQL projects =(LANG(?label) AS
+  ?lang)= per Step 1.16.7; per-project =.elot/ttl-label-query.rq=
+  override supported.  Isolated from earlier sub-steps so the
+  Java/ROBOT dependency and its fixtures can land independently.
+
+- *Step 2.2.5 - Org integration and end-to-end CLI tests.*  Reuse
+  the existing =parseOrgWasm= + =buildSlurp= in
+  =tools/elot-cli/src/= via a thin =parsers/org.ts= adaptor.
+  End-to-end =execa= tests that spawn the built CLI against
+  tempfile DBs and assert stdout + resulting DB state.
+
+The remainder of this section is the full Step 2.2 specification.
+Each sub-step above refers back to the corresponding deliverables
+below; collectively they deliver the whole thing.
+
 *Goal:* Bring the CLI binary to feature parity with the Elisp write
 path.  After this step, a VS-Code-only user can register sources,
 refresh them, list them, remove them, add prefixes, and look up
