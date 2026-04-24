@@ -3099,90 +3099,454 @@ to carry no cost.
 
 ** Stage 2: VS Code / CLI Port
 
-*** Step 2.1 - Shared schema artifact
+*Framing (revised 2026-04-24, after Stage 1 complete).* The original
+Stage 2 sketch was drafted when the Elisp surface was Step 1.1 only.
+Stage 1 has since grown to ~20 public functions, schema v3, a
+scope-aware two-stage lookup, attribute-driven hover, and
+language-tag preferences. The rewrite below reflects that reality
+and incorporates explicit user decisions made after the Stage 1
+review:
+
+- /Separate databases./  Emacs and VS Code each own their own SQLite
+  file, in the location that is natural for their platform.  Users
+  overwhelmingly live in one editor or the other; cross-editor
+  sharing is explicitly not a goal.  No concurrent-write handling
+  needed; single-user, single-writer assumed throughout.
+- /VS Code is a reader for content, a switch for activation./  The
+  extension does not implement =registerSource= / =refreshSource= /
+  =removeSource= in its UI.  All DB management (register, refresh,
+  remove, prefix add, migrate) is done by the =elot-cli= Node
+  binary.  The VS Code UI limits itself to: hover, decorations,
+  label lookup (insert id), and activating / deactivating sources
+  that already exist in the DB.
+- /sql.js is acceptable./  In-memory DB + full-file rewrite on save
+  is fine at the corpus sizes we see (tens of MB on disk ->
+  hundreds of MB RAM worst case).  Avoiding native prebuilds
+  across VS Code versions is worth more than the RAM.
+- /Schema v3 only./  No pre-v3 compatibility in the TS port.  The
+  DDL is extracted from Elisp into a shared =schema.sql= snapshot;
+  both the Elisp loader and the TS loader read it verbatim.
+- /Multi-id UX in VS Code./  Flat =QuickPick= with CURIE-suffix
+  disambiguation (Step 1.15's =C-u C-u= flat-presentation path,
+  not the two-stage default).  VS Code's =QuickPick= does not
+  chain naturally; the flat list is the better fit.
+- /ELOT Org buffers in VS Code./  The extension already has an Org
+  parser (=parseOrgWasm.ts= + =buildSlurp.ts=) that builds a local
+  id -> label map for open =.org= files.  The scope-aware union
+  (Step 1.13) ports naturally: in =.org= buffers the VS Code
+  providers union the buffer-slurp with the DB (local wins on id
+  collision); in non-Org buffers only the DB is consulted.
+- /elot-cli writes the VS Code database./  The CLI's default DB
+  location is the extension's =globalStorageUri= path, i.e. the
+  directory VS Code already allocates per-extension for persistent
+  data.  An =--emacs= flag (or an =ELOT_DB_PATH= env var) lets a
+  power user override to any file; the Emacs side has its own
+  =elot-db-file= defcustom and is unaffected.
+
+The sub-steps below are ordered so each one leaves the tree in a
+shippable state.  After Step 2.1 the Elisp side is identical to
+today (DDL read from a sibling file instead of a string constant).
+After Step 2.2 the CLI is usable standalone.  After Step 2.3 the
+VS Code extension shows labels on hover and inline.  After Step 2.4
+label lookup works as an insert command.  Step 2.5 is polish.
+
+*** Step 2.1 - Extract schema v3 DDL into =schema.sql=
 :PROPERTIES:
 :STATUS: TODO
 :END:
 
-*Goal:* Single source of truth for DDL.
+*Goal:* Move the CREATE-TABLE / CREATE-INDEX statements out of the
+Elisp string constant =elot-db--schema-ddl= into a sibling file
+=elot-package/schema.sql=, and teach =elot-db-init= to load that
+file.  After this step there is a single artifact the TS port can
+read verbatim, with zero risk of drift.
+
+*Scope:* schema v3 only.  Migrations (v1->v2, v2->v3) stay in Elisp;
+they are irrelevant to the VS Code / CLI port, which opens only
+fresh or v3 databases.  If a pre-v3 DB is presented, the TS loader
+refuses to open and emits a clear message directing the user to
+open the file in Emacs once (which runs the migration
+automatically) or to delete the DB and re-register sources.
 
 *Deliverables:*
-- Extract all =CREATE TABLE= / =CREATE INDEX= statements from
-  =elot-package/elot-db.el= into =elot-package/schema.sql=
-- Both Emacs and VS Code implementations read/apply this file at init
-- Ensures schema drift between platforms is impossible
-- =schema.sql= is included in the MELPA recipe's =:files= clause so it
-  ships to package users; =elot-db-init= locates it via =locate-library=
+- New file =elot-package/schema.sql= containing the exact DDL
+  currently in =elot-db--schema-ddl= (v3 shape: =sources=,
+  =entities=, =attributes= with =lang=, =prefixes=,
+  =global_prefixes=, =schema_version=, plus the five indexes).
+- =elot-db-init= resolves the file via =locate-library=
+  + =expand-file-name=; falls back to an embedded copy of the
+  same string if the sibling file is missing (defensive; avoids
+  installation breakage when the MELPA recipe's =:files= clause
+  is misconfigured).
+- MELPA recipe / =Makefile= package target updated to ship
+  =schema.sql=.
+- New ERT test =test-schema-sql-matches-embedded-ddl= asserting
+  the on-disk file and the embedded fallback string are
+  byte-identical (pin them together so drift is caught at test
+  time).
+- Aggregate =make test= stays green.
 
-Note: depending on timing, =schema.sql= may already be authored directly
-in =elot-package/= from Step 1.1 (inlined into =elot-db.el= as a string
-constant *and* written out as a sibling file), in which case this step
-reduces to removing any drift and confirming the VS Code port reads the
-same file.
+*Non-goals:*
+- No migration DDL in =schema.sql=.  Those stay as Elisp
+  procedures.
+- No schema changes.  This step is a pure refactor.
+
+*Risk:* Low.  Behaviour-invariant; easily reverted.
 
 ---
 
-*** Step 2.2 - TypeScript DB layer with =sql.js=
+*** Step 2.2 - =elot-cli=: full DB management + parsers in Node/TS
 :PROPERTIES:
 :STATUS: TODO
 :END:
 
-*Deliverables in =vscode-elot/src/db.ts=:*
-- =ElotDb= class mirroring the Elisp API: =init()=, =updateSource()=, =getLabel()=, =getAttr()=, =listSources()=, =removeSource()=
-- Load =.sqlite= file into =Uint8Array= on activation; =db.export()= + =fs.writeFile= on shutdown and after each =updateSource=
-- Debounced writes (e.g., 500ms) to avoid disk churn during batch refreshes
+*Goal:* Bring the CLI binary to feature parity with the Elisp write
+path.  After this step, a VS-Code-only user can register sources,
+refresh them, list them, remove them, add prefixes, and look up
+ids without ever opening Emacs.  The CLI is the reference writer;
+it is also the implementation the VS Code extension will shell
+out to when the user wants to manage the DB (Step 2.4 surfaces a
+=elot-cli= terminal-run action, not an in-process write path).
 
-*Tests (Jest):*
-- Mirror the Elisp test suite one-to-one - same fixtures, same assertions
-- Round-trip test: Emacs writes DB, TypeScript reads it, labels identical
+*Default database location.* The CLI resolves its DB path in this
+order:
+1. =--db <path>= command-line flag.
+2. =$ELOT_DB_PATH= environment variable.
+3. Platform-specific VS Code global storage directory, under a
+   stable subpath computed the same way VS Code does for the
+   publisher =johanwk= / extension =elot=:
+   - Windows: =%APPDATA%/Code/User/globalStorage/johanwk.elot/elot.sqlite=
+   - macOS:   =~/Library/Application Support/Code/User/globalStorage/johanwk.elot/elot.sqlite=
+   - Linux:   =~/.config/Code/User/globalStorage/johanwk.elot/elot.sqlite=
+   The directory is created on first write if absent.
+4. As a last-resort fallback, =~/.elot/elot.sqlite=.
+
+The VS Code extension's =globalStorageUri= (available at
+activation time) can be passed to the CLI explicitly via =--db= so
+both agree even if the user's VS Code install is non-standard
+(portable mode, alternate =user-data-dir=, etc.).
+
+*Deliverables in =tools/elot-cli/src/=*:
+
+/Database layer/ (=db/sqljs.ts=):
+- =ElotDb= class on top of =sql.js=.  Loads =.sqlite= into memory
+  on first call, rewrites the whole file on =close()= / after
+  every mutating command (CLI processes are short-lived; save on
+  shutdown is the natural moment).
+- =init()= runs =schema.sql= (the one from Step 2.1) if the file
+  is new; on an existing file, asserts =schema_version = 3= and
+  refuses to proceed otherwise.
+- Public API mirrors the Elisp side one-to-one:
+  - Reads: =getLabel=, =getAttr=, =getAllAttrs=, =allActiveLabels=
+    (returns =Map<string, string[]>= for the widened 1.15 shape),
+    =idsForLabel=, =labelVariants=, =listSources=, =listPrefixes=,
+    =expandCurie=, =contractUri=, =sourceExistsP=,
+    =sourceNeedsUpdateP=, =sourceEntityCount=.
+  - Writes: =updateSource=, =removeSource=, =addPrefix=,
+    =removePrefix=.
+- Pure helpers ported from Elisp (same names, camelCased):
+  =selectByLanguage=, =effectiveLanguagePrefs=,
+  =pickValueByLang=, =looksLikeUriP=, =contractUri=,
+  =expandCurie=.  These are the most-tested Elisp functions; the
+  TS ports should match their I/O exactly so the existing Elisp
+  test vectors can be reused as JSON golden files.
+
+/Parsers/ (=parsers/=):
+- =csv.ts=, =tsv.ts= (use =papaparse= or equivalent).  Recognise
+  the Step 1.16.6 conventions: =lang= column (from column index 2
+  onward) and =label@TAG= suffix columns.  UTF-8 is pinned.
+- =json.ts=: flat and nested shapes; nested recognises =lang= key
+  at the label level and =label@TAG= sibling keys.
+- =ttl.ts=: shells out to ROBOT (same strategy as Emacs), using
+  the default SPARQL that projects =(LANG(?label) AS ?lang)=
+  (Step 1.16.7).  User can override via a
+  =.elot/ttl-label-query.rq= per-project file if present;
+  mirror-and-simpler of the Emacs defcustom.
+- =rq.ts=: user-owned SPARQL + CSV post-processing, identical
+  contract.
+- =org.ts=: reuses the existing =parseOrgWasm= + =buildSlurp=
+  logic already in =tools/elot-cli/src/=.  The ELOT Org parser is
+  /not/ rewritten -- this is the one area where VS Code already
+  has a working port ahead of Emacs's literate tangle pipeline.
+- Writer path (shared across all parsers): =ElotDb.updateSource=
+  accepts the same =(id, label, plist)= triples as Elisp, with
+  the plist supporting the =[value, lang]= cons-form for tagged
+  values.  Multi-row-per-id coalescing is implemented in the
+  writer (not the parsers), matching the Step 1.16.7 Elisp fix.
+
+/Commands/ (=commands/=, wired up in =cli.ts= via =commander=):
+- =elot-cli init [--db PATH]= -- create a fresh DB.
+- =elot-cli register <file> [--source NAME] [--type csv|tsv|json|ttl|rq|org]= --
+  register / update a source.  Auto-detects type from extension
+  when =--type= is omitted.  Source name defaults to the file's
+  basename without extension.
+- =elot-cli refresh [--source NAME | --all]= -- re-run the
+  parser for one or all sources whose file mtime is newer than
+  =sources.last_modified=.
+- =elot-cli remove <source> [--data-source DS]= -- delete a
+  source and cascade.
+- =elot-cli list [--sources | --prefixes]= -- tabular stdout.
+- =elot-cli lookup <label> [--active SRC,SRC,...]= -- print the
+  resolved id(s) for a label.  Default active set is all
+  registered sources in registration order; =--active= overrides.
+- =elot-cli attr <id> [<prop>] [--lang TAG]= -- get attribute(s);
+  honours language preferences.
+- =elot-cli migrate= -- placeholder that currently only asserts
+  v3; reserved for future migration chains that might need a
+  non-Emacs path.
+
+/Active-source list/: unlike Emacs, the CLI has no buffer-local
+equivalent.  Each command accepts =--active= explicitly, and the
+default (no flag) is "all registered sources, in registration
+order".  The VS Code extension maintains its own per-workspace
+active-source ordering (Step 2.4) and passes it on the command
+line when delegating to the CLI.
+
+*Tests (Jest, in =tools/elot-cli/src/tests/db/=):*
+- One test file per Elisp test module: =crud.test.ts=,
+  =langPicker.test.ts=, =scopeLookup.test.ts=,
+  =multiIdStage.test.ts=, =sourcesLang.test.ts=,
+  =allActiveLabels.test.ts=.
+- Shared fixture corpus under =test/fixtures/= (already partly
+  populated by Stage 1; extend with CSV/TSV/JSON/TTL files that
+  exercise the Step 1.16.6 conventions).
+- Round-trip golden test: each CSV/TSV fixture is ingested by
+  both the Elisp writer and the TS writer; the resulting
+  =entities= + =attributes= rows are dumped to JSON and
+  byte-compared.  Catches any semantic drift in the parsers.
+- End-to-end CLI tests via =execa=: spawn =elot-cli= with a
+  tempfile DB, assert stdout and resulting DB state.
+
+*Non-goals:*
+- No HTTP / server mode.  Each CLI invocation opens, mutates,
+  closes.
+- No interactive prompts.  Scriptable by design.
+- No schema migrations beyond "assert v3".
+
+*Risk:* Medium.  The TTL path relies on ROBOT (same Java 21+
+requirement as Emacs).  The parser coalescing + language
+handling is the subtlest bit; the golden-roundtrip tests are the
+safety net.
 
 ---
 
-*** Step 2.3 - TypeScript source parsers
+*** Step 2.3 - VS Code read path: DB-backed hover + decorations
 :PROPERTIES:
 :STATUS: TODO
 :END:
 
-*Deliverables:*
-- =parsers/org.ts=, =parsers/csv.ts=, =parsers/tsv.ts=, =parsers/ttl.ts=, =parsers/rq.ts=
-- Same =(id, label, plist)= output shape as Elisp side (as TS interface =SlurpEntry=)
-- Org parser: minimum viable - parse headline IDs + =:PROPERTIES:= drawers; can defer full ELOT parsing to a later milestone
-- CSV/TSV: use =papaparse= or equivalent
-- TTL: invoke ROBOT as subprocess (same strategy as Emacs)
+*Goal:* After this step, opening any file in a workspace that has
+registered sources shows labels on identifiers: inline decorations
+like Emacs, hover cards on mouse-over.  No write path yet; if the
+DB is empty or the workspace has no active sources the extension
+is a no-op.
 
-*Tests:* shared fixture files between Elisp and TypeScript test suites.
+*Deliverables in =tools/elot-cli/src/= (extension side):*
 
----
+/DB bridge/ (=db/bridge.ts=):
+- Loads the same =sql.js=-based =ElotDb= used by the CLI, but
+  read-only: the in-memory =Uint8Array= is populated from the
+  file on activation and never written back from the extension.
+- File-watcher on the DB path: if the CLI rewrites the file
+  (external mutation), the extension reloads the in-memory copy
+  and invalidates caches.  Debounced to coalesce batch refreshes.
+- DB path resolution mirrors the CLI's (Step 2.2): setting
+  =elot.dbPath= (new) overrides; otherwise the extension uses
+  =context.globalStorageUri= (which is exactly the default CLI
+  location).  Workspace setting takes precedence over user
+  setting.
 
-*** Step 2.4 - VS Code UI
-:PROPERTIES:
-:STATUS: TODO
-:END:
+/Active-source ordering/ (=activeSources.ts=):
+- New setting =elot.activeLabelSources= (array of =[source,
+  data-source]= pairs or bare source names; =data-source=
+  defaults to empty).  Analogous to Emacs's
+  =elot-active-label-sources=, but workspace-scoped via
+  =.vscode/settings.json= instead of =.dir-locals.el=.
+- New setting =elot.preferredLanguages= (=string[]=, supports the
+  string literal =:untagged= as a sentinel).  Feeds
+  =effectiveLanguagePrefs= and the picker.
+- Helper =getActiveSources(): [string, string][]= consumed by
+  every hover / decoration / lookup provider.
 
-*Deliverables:*
-- Commands: =elot.registerSource=, =elot.refreshAllSources=, =elot.listSources=
-- Decoration provider: uses VS Code =TextEditor.setDecorations= with =before=/=after= content to show labels inline, analogous to Elisp text properties
-- Per-workspace settings: =elot.activeLabelSources= in =.vscode/settings.json=
-- Tree view in sidebar listing registered sources, last-updated, entity count
+/Hover/ (=dbHoverProvider.ts=):
+- New provider registered for the workspace's file types (gated
+  by a =elot.globalLabelDisplay.includeLanguages= setting,
+  =string[]=, default empty -- users opt in per language ID).
+- On hover, identifies the token under the cursor (CURIE, bare
+  IRI, or angle-bracketed IRI) using the same regex family as
+  Emacs's =elot--id-at-point=.
+- Renders a rich =MarkdownString=: id, label (boldface),
+  =rdf:type=, definition, provenance =[src: NAME]=.  VS Code's
+  markdown hover is richer than Emacs's =help-echo=; take
+  advantage.
+- Integrates with the existing =hoverProvider.ts= (which handles
+  =.org= ELOT buffers via =buildSlurp=): the DB provider is
+  registered only for non-Org languages in the include list, so
+  the two providers don't race.
+
+/Decorations/ (=dbDecorations.ts=):
+- Provider registered for the same language set.  Uses
+  =TextEditor.setDecorations= with a =before= or =after= content
+  renderer (consistent with the existing =labelDecorations.ts=
+  for =.org=).
+- Dual-form matcher: for each active source, fetch the full
+  label map via =allActiveLabels=, build a Trie-based regex that
+  matches both CURIE and full-IRI forms.  Cap at
+  =elot.globalLabelDisplay.maxIds= (default 20 000, matching the
+  Emacs cap); over the cap, fall back to a no-decoration mode
+  and show a status-bar warning.
+- Invalidation: rebuild the matcher whenever (a) the DB file
+  changes, (b) =elot.activeLabelSources= changes, (c) the active
+  editor changes to a different workspace.
+
+/Commands/:
+- =elot.toggleGlobalLabelDisplay= -- per-editor toggle, bound to
+  F5 in non-Org languages (=.org= already has its own F5 binding
+  for =elot.toggleLabels=, left alone).
+- =elot.activateSource= -- =QuickPick= of sources in the DB
+  (fetched via the bridge); selection is appended to
+  =elot.activeLabelSources=.  Writes to =.vscode/settings.json=
+  via =workspace.getConfiguration().update(..., ConfigurationTarget.Workspace)=.
+- =elot.deactivateSource= -- mirror.
+- =elot.reorderActiveSources= -- opens a =QuickPick= in multi-
+  step mode for drag-to-reorder (VS Code 1.75+ supports item
+  moves in =QuickPick= via arrow keys).
 
 *Tests:*
-- Extension integration tests via =@vscode/test-electron=
-- Smoke test: open a Turtle file in a configured workspace, assert decorations present
+- =@vscode/test-electron= smoke tests: open a =.ttl= fixture in
+  a workspace with pre-seeded DB and settings; assert hover
+  returns the expected markdown, assert decorations are present
+  at the expected ranges.
+- Unit tests for =dbDecorations='s matcher builder: give it a
+  fixed label map, assert the generated regex matches exactly
+  the expected tokens.
+- Settings migration test: confirm =.vscode/settings.json=
+  updates round-trip through =configuration.update=.
+
+*Non-goals:*
+- No write commands (=register=, =refresh=, =remove=).  Those are
+  CLI-only per the framing decision.  The extension may surface
+  them as "open a terminal and run this" links in an output
+  channel, but does not implement them in-process.
+- No eldoc-equivalent.  VS Code's echo area does not have the
+  same role; the hover card carries the full summary.
+- No auto-enable hook analogous to Step 1.7.1.  Opt-in per
+  language via =elot.globalLabelDisplay.includeLanguages= is
+  enough; VS Code re-evaluates providers on every editor change
+  anyway.
+
+*Risk:* Medium.  The decoration provider is the most
+performance-sensitive path; large DBs on slow disks will stress
+the Trie-regex build.  =sql.js= keeps the whole DB in memory
+after first read, so repeat queries are fast.
 
 ---
 
-*** Step 2.5 - CLI tool (optional but recommended)
+*** Step 2.4 - VS Code label lookup (insert existing id)
 :PROPERTIES:
 :STATUS: TODO
 :END:
 
-*Deliverables:*
-- =elot-db= CLI binary (Node-based, shares =db.ts= and parsers): =elot-db register <file>=, =elot-db refresh=, =elot-db list=, =elot-db lookup <id>=
-- Useful for CI, scripting, and cross-editor users
-- Becomes the reference implementation against which both Emacs and VS Code can be validated
+*Goal:* Port Emacs's =elot-label-lookup= (Steps 1.12 / 1.13 / 1.15)
+to VS Code.  After this step the user can type a label fragment,
+pick from matching ids, and have the CURIE inserted at cursor.
+
+*Deliverables in =tools/elot-cli/src/labelLookup.ts=:*
+
+/Scope selection/:
+- In =.org= ELOT buffers: union of the buffer's =buildSlurp=
+  output (local) + DB (external), id-keyed dedup (local wins).
+  Matches Step 1.13's =both= scope default.
+- In non-Org buffers (=.ttl=, =.py=, =.csv=, etc.): DB only.
+- Setting =elot.labelLookup.scope= (enum =local | external |
+  both=, default =both=) parallels the Elisp defcustom.  In
+  non-Org buffers =local= is empty so =both= and =external=
+  coincide.
+
+/QuickPick flow/:
+- Single =QuickPick= populated with one item per id (Option A
+  from the Stage 2 review).  Labels that have multiple matching
+  ids each contribute one item per id, with the CURIE as a
+  faint =detail= suffix so the user can disambiguate.  No
+  second-stage prompt -- VS Code's =QuickPick= doesn't chain
+  cleanly.
+- Item shape: =label=, =description= (= rdf:type when known),
+  =detail= (= CURIE + optional =@lang= suffix when a within-
+  source label collision is language-only, matching Step
+  1.16.8).
+- Sort: matches are presented via VS Code's built-in fuzzy
+  matcher.  Multi-id groups sort together via a stable
+  secondary key on the label.
+- Accept: inserts the CURIE (or the angle-bracketed IRI if no
+  prefix is known for the winning id) at the current cursor
+  position.
+
+/Commands/:
+- =elot.labelLookup= (= default scope).  Keybinding =ctrl+alt+r=
+  (matches the =C-c C-x r= Emacs binding in spirit; avoids
+  conflicts with common VS Code defaults).
+- =elot.labelLookupLocal= and =elot.labelLookupExternal= for
+  explicit scope override.  No default keybindings; reachable
+  via command palette.
 
 *Tests:*
-- End-to-end CLI tests using =execa= / shell scripts
+- Unit tests for =labelLookup.ts=: given a fixed bridge +
+  slurp, assert the computed item list matches expected
+  (including multi-id disambiguation, language suffix, scope
+  filtering).
+- Integration smoke test: run =elot.labelLookup= in a fixture
+  workspace, script =QuickPick= selection via the test API,
+  assert the right text is inserted.
+
+*Non-goals:*
+- No two-stage picker (Step 1.15's Emacs default).  Rationale
+  documented in the framing block.
+- No completion-at-point integration.  The lookup is an
+  explicit command, not an auto-complete source.  (Can be added
+  later if users ask; the primitives are all in place.)
+
+*Risk:* Low.  Read-only, no DB mutation.  Label maps are already
+loaded by the decoration provider; =labelLookup= reuses that
+cache.
+
+---
+
+*** Step 2.5 - Polish, docs, release
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+*Goal:* Ship.
+
+*Deliverables:*
+- =tools/elot-cli/README.md= extended with a /Database management/
+  section: the full CLI command reference, the default DB path
+  per platform, the =ELOT_DB_PATH= override, and a walkthrough
+  of =register= -> =activate= -> labels-appear.
+- Top-level =README.md= extended with a /Global label-display in
+  VS Code/ section mirroring =README-global-label-display.org=
+  at a high level, pointing at the CLI and extension docs for
+  detail.
+- =CHANGELOG.md= entries for the VS Code extension version bump
+  (2.1.0 -> 2.2.0 given the scope) and the CLI v1.0.0 tag.
+- Release notes drafted for the GitHub release page.
+- VS Code Marketplace publish + CLI npm publish (under the
+  existing =elot= package; =bin.elot-cli= points at
+  =dist/cli.js=).
+
+*Tests:*
+- Manual release-candidate smoke test on a clean VS Code install,
+  per-platform: Windows, macOS, Linux.  Verify the default DB
+  path resolves, =elot-cli register= writes there, the extension
+  reads it on activation, decorations appear.
+- =make test= (Emacs) + =npm test= (CLI + extension) both green.
+
+*Non-goals:*
+- No public API stability guarantees for the CLI yet; call it
+  "0.x compatible" for the first release.  The Elisp side is
+  still the reference.
+
+*Risk:* Low.  Mostly docs + release choreography.
 
 ---
 
