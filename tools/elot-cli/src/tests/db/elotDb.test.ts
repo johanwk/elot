@@ -420,6 +420,83 @@ async function run(): Promise<void> {
     }
   }
 
+  // ── getAttrAny / getAllAttrsAny: CURIE/URI resolution ─────────
+  {
+    const { db, cleanup } = await withFreshDb([
+      ...seedSource("A", "", "ttl"),
+      seedPrefix("A", "", "ex", "http://example.org/"),
+      // Entity stored as full URI (BFO-style).
+      seedEntity("http://example.org/Foo", "Foo", "A", ""),
+      seedAttr(
+        "http://example.org/Foo",
+        "A",
+        "",
+        "rdfs:label",
+        "FooLabel",
+        "en",
+      ),
+      seedAttr(
+        "http://example.org/Foo",
+        "A",
+        "",
+        "skos:definition",
+        "def",
+        "en",
+      ),
+      // Entity stored as CURIE.
+      seedEntity("ex:Bar", "Bar", "A", ""),
+      seedAttr("ex:Bar", "A", "", "rdfs:label", "BarLabel", "en"),
+    ]);
+    try {
+      const act = [{ source: "A" }];
+      // Direct hit (URI).
+      assertEqual(
+        db.getAttrAny("http://example.org/Foo", "rdfs:label", act),
+        "FooLabel",
+        "getAttrAny: direct URI hit",
+      );
+      // CURIE expands to stored URI.
+      assertEqual(
+        db.getAttrAny("ex:Foo", "rdfs:label", act),
+        "FooLabel",
+        "getAttrAny: CURIE expands to URI",
+      );
+      assertEqual(
+        db.getAttrAny("ex:Foo", "skos:definition", act),
+        "def",
+        "getAttrAny: CURIE expands (skos:definition)",
+      );
+      // URI contracts to stored CURIE.
+      assertEqual(
+        db.getAttrAny("http://example.org/Bar", "rdfs:label", act),
+        "BarLabel",
+        "getAttrAny: URI contracts to CURIE",
+      );
+      // Miss.
+      assertEqual(
+        db.getAttrAny("ex:missing", "rdfs:label", act),
+        null,
+        "getAttrAny: miss -> null",
+      );
+      // getAllAttrsAny via CURIE -> URI.
+      const allFoo = db.getAllAttrsAny("ex:Foo", act);
+      assertEqual(allFoo !== null, true, "getAllAttrsAny: CURIE hit");
+      const m = new Map(allFoo!.entries);
+      assertEqual(m.get("rdfs:label"), "FooLabel", "all-attrs CURIE label");
+      assertEqual(m.get("skos:definition"), "def", "all-attrs CURIE def");
+      // getAllAttrsAny via URI -> CURIE.
+      const allBar = db.getAllAttrsAny("http://example.org/Bar", act);
+      assertEqual(allBar !== null, true, "getAllAttrsAny: URI->CURIE hit");
+      assertEqual(
+        new Map(allBar!.entries).get("rdfs:label"),
+        "BarLabel",
+        "all-attrs URI->CURIE label",
+      );
+    } finally {
+      cleanup();
+    }
+  }
+
   // ── multi-source priority: first-source-wins ──────────────────
   {
     const { db, cleanup } = await withFreshDb([

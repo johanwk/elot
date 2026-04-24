@@ -8,6 +8,7 @@ import { parseCsv, parseTsv, ParsedSource } from "./csvTsv.js";
 import { parseJson } from "./json.js";
 import { parseTtl } from "./ttl.js";
 import { parseRq, ParseRqOptions } from "./rq.js";
+import { parseOrgSource } from "./org.js";
 
 export type SourceType =
   | "csv"
@@ -61,16 +62,17 @@ export function parseSource(
       return parseTtl(file);
     case "rq":
       return parseRq(file, opts as ParseRqOptions);
+    case "org":
+      return parseOrgSource(file);
     default:
       throw new Error(
         `parseSource: type '${type}' is not implemented in this build ` +
-          `(Org lands in Step 2.2.5; triples-json uses the dbCli register ` +
-          `legacy path).`,
+          `(triples-json uses the dbCli register legacy path).`,
       );
   }
 }
 
 export type { ParsedSource };
-export { parseCsv, parseTsv, parseJson, parseTtl, parseRq };
+export { parseCsv, parseTsv, parseJson, parseTtl, parseRq, parseOrgSource };
 export { robotAvailable, resolveRobot } from "./robot.js";
 export { harvestPrefixes } from "./prefixes.js";

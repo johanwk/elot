@@ -169,9 +169,9 @@ export function buildDbCommand(): Command {
                 dataSource: s.dataSource,
               }));
         if (prop) {
-          singleValue = d.getAttr(id, prop, activeList);
+          singleValue = d.getAttrAny(id, prop, activeList);
         } else {
-          const a = d.getAllAttrs(id, activeList);
+          const a = d.getAllAttrsAny(id, activeList);
           allValues = a ? a.entries : null;
         }
       } finally {
@@ -215,7 +215,7 @@ export function buildDbCommand(): Command {
     )
     .option(
       "--type <type>",
-      "Source type: csv | tsv | json | ttl | rq | triples-json (auto-detected from extension when omitted)",
+      "Source type: csv | tsv | json | ttl | rq | org | triples-json (auto-detected from extension when omitted)",
     )
     .option(
       "--source <name>",
@@ -271,7 +271,7 @@ export function buildDbCommand(): Command {
       if (!type) {
         console.error(
           `register: cannot detect --type from extension '${extname(abs)}' ` +
-            `(supported: csv, tsv, json, triples-json)`,
+            `(supported: csv, tsv, json, ttl, rq, org, triples-json)`,
         );
         process.exit(2);
       }
@@ -280,11 +280,11 @@ export function buildDbCommand(): Command {
         type !== "tsv" &&
         type !== "json" &&
         type !== "ttl" &&
-        type !== "rq"
+        type !== "rq" &&
+        type !== "org"
       ) {
         console.error(
-          `register: --type '${type}' is not implemented in this build ` +
-            `(Org lands in Step 2.2.5)`,
+          `register: --type '${type}' is not implemented in this build`,
         );
         process.exit(2);
       }
@@ -348,7 +348,8 @@ export function buildDbCommand(): Command {
           type !== "tsv" &&
           type !== "json" &&
           type !== "ttl" &&
-          type !== "rq")
+          type !== "rq" &&
+          type !== "org")
       ) {
         console.error(
           `refresh: unsupported --type '${type ?? "(auto)"}' in this build`,

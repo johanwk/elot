@@ -184,7 +184,8 @@
     "test:db-rq-cache": "tsx src/tests/db/rqCache.test.ts",
     "test:db-ttl-robot": "tsx src/tests/db/ttlRobot.test.ts",
     "test:db-roundtrip": "tsx src/tests/db/registerRoundtrip.test.ts",
-    "test:db": "npm run test:db-lang && npm run test:db-read && npm run test:db-write && npm run test:db-paths && npm run test:db-parsers && npm run test:db-prefixes && npm run test:db-rq-cache && npm run test:db-ttl-robot && npm run test:db-roundtrip",
+    "test:db-org": "tsx src/tests/db/orgParser.test.ts",
+    "test:db": "npm run test:db-lang && npm run test:db-read && npm run test:db-write && npm run test:db-paths && npm run test:db-parsers && npm run test:db-prefixes && npm run test:db-rq-cache && npm run test:db-ttl-robot && npm run test:db-roundtrip && npm run test:db-org",
     "elot": "tsx src/cli.ts"
   },
   "dependencies": {

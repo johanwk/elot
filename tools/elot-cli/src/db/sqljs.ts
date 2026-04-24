@@ -512,6 +512,66 @@ export class ElotDb {
   }
 
   /**
+   * Two-pass attribute lookup, parallel to getLabelAny.  Tries TOKEN
+   * as a literal id, then CURIE-expanded, then URI-contracted.
+   * Not present in Elisp (which uses Emacs-side resolution); added
+   * for CLI / VS Code convenience so `attr` works symmetrically
+   * with `lookup` regardless of whether the DB stores full URIs
+   * or CURIEs for a given entity.
+   */
+  getAttrAny(
+    token: string,
+    prop: string,
+    active: readonly ActiveSource[],
+    prefs?: readonly LangPref[] | null,
+  ): string | null {
+    const direct = this.getAttr(token, prop, active, prefs);
+    if (direct !== null) return direct;
+    if (looksLikeCurieP(token)) {
+      const uri = this.expandCurie(token, active);
+      if (uri) {
+        const hit = this.getAttr(uri, prop, active, prefs);
+        if (hit !== null) return hit;
+      }
+    }
+    if (looksLikeUriP(token)) {
+      for (const curie of this.contractUri(token, active)) {
+        const hit = this.getAttr(curie, prop, active, prefs);
+        if (hit !== null) return hit;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Two-pass all-attrs lookup, parallel to getAttrAny.  Returns the
+   * first non-null EntityAttrs across literal/expanded/contracted
+   * token forms.
+   */
+  getAllAttrsAny(
+    token: string,
+    active: readonly ActiveSource[],
+    prefs?: readonly LangPref[] | null,
+  ): EntityAttrs | null {
+    const direct = this.getAllAttrs(token, active, prefs);
+    if (direct !== null) return direct;
+    if (looksLikeCurieP(token)) {
+      const uri = this.expandCurie(token, active);
+      if (uri) {
+        const hit = this.getAllAttrs(uri, active, prefs);
+        if (hit !== null) return hit;
+      }
+    }
+    if (looksLikeUriP(token)) {
+      for (const curie of this.contractUri(token, active)) {
+        const hit = this.getAllAttrs(curie, active, prefs);
+        if (hit !== null) return hit;
+      }
+    }
+    return null;
+  }
+
+  /**
    * Get all attributes for id from the first source that has any.
    * Mirrors elot-db-get-all-attrs: first-source-wins, preserves
    * first-seen prop order, collapses multi-row props via the picker.

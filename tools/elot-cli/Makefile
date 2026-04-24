@@ -1,7 +1,7 @@
 # Makefile for elot-cli — friendly aliases for npm commands.
 # Run "make help" to see available targets.
 
-.PHONY: help all install bundle build watch test test-syntax test-html test-html-post test-html-integration test-html-all test-db test-db-lang test-db-read test-db-write test-db-paths test-db-parsers test-db-prefixes test-db-rq-cache test-db-ttl-robot test-db-roundtrip clean package cli
+.PHONY: help all install bundle build watch test test-syntax test-html test-html-post test-html-integration test-html-all test-db test-db-lang test-db-read test-db-write test-db-paths test-db-parsers test-db-prefixes test-db-rq-cache test-db-ttl-robot test-db-roundtrip test-db-org clean package cli
 
 all: install bundle test test-html-all package ## Full build from scratch: install → bundle → test → package
 
@@ -68,6 +68,9 @@ test-db-ttl-robot: ## Run TTL-via-ROBOT end-to-end tests (Step 2.2.4; skips with
 
 test-db-roundtrip: ## Run parser -> updateSource round-trip tests (Step 2.2.3)
 	npm run test:db-roundtrip
+
+test-db-org: ## Run Org parser adaptor tests (Step 2.2.5)
+	npm run test:db-org
 
 test-db: ## Run all DB tests (lang + read + write + paths + parsers + prefixes + rq-cache + ttl-robot + roundtrip)
 	npm run test:db

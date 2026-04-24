@@ -3407,6 +3407,48 @@ external-tool work (ROBOT/TTL) is isolated at the end:
   End-to-end =execa= tests that spawn the built CLI against
   tempfile DBs and assert stdout + resulting DB state.
 
+  /Status (PARTIAL - Org adaptor only):/
+  - New =parsers/org.ts= - thin adaptor wrapping the existing
+    =parseOrg= (=parseOrgWasm.ts=) + =buildSlurp= pipeline.
+    Shapes each =SlurpEntry= into an =EntityTriple=:
+    =rdfs:label= first (language-tag-preserving via splitting
+    ="..."@tag= literals), =rdf:type= next (when inferred from
+    =:ID:= suffix), then arbitrary properties in document order
+    with tagged-literal splitting preserved.  Denormalised
+    =entities.label= gets the plain form; the tagged copy lives
+    in =attributes= for the lang picker.  Prefixes harvested
+    from the =:prefixdefs:= block via =getPrefixMap=.
+  - Dispatcher: =parsers/index.ts= wires =org= into
+    =parseSource= and re-exports =parseOrgSource=.  =dbCli= =register=
+    / =refresh= accept =--type org= and auto-detect from =.org=.
+  - New test =src/tests/db/orgParser.test.ts= (6 cases) against
+    =examples/bfo-core.org=: dispatcher recognition, entries
+    non-empty, =obo:BFO_0000001 -> label 'entity'= with @en
+    tagged row, =rdf:type owl:Class= emitted, dispatcher parity,
+    end-to-end =updateSource -> save -> reopen -> getLabel= round-trip
+    under a tempdir DB.
+  - Wired into =test:db= aggregate; new Makefile target
+    =test-db-org=.
+
+  /Follow-up polish (post Org adaptor):/ added two-pass CURIE/URI
+  resolution on the attribute-lookup surface to mirror
+  =getLabelAny=.  New =ElotDb.getAttrAny(token, prop, active, prefs?)=
+  and =ElotDb.getAllAttrsAny(token, active, prefs?)= try the token
+  literally, then CURIE-expanded, then URI-contracted.  =dbCli=
+  =attr <id> [prop]= now uses the *-Any variants so the command
+  works symmetrically regardless of whether the DB stores full
+  URIs (BFO-style Org sources via =parseOrgSource=) or CURIEs
+  (typical CSV/TSV).  No Elisp change required -- Emacs-side
+  callers already pass resolved ids to =elot-db-get-attr=.
+  Added 11 assertions to =elotDb.test.ts= covering URI-stored and
+  CURIE-stored entities via both =getAttrAny= and =getAllAttrsAny=.
+
+  /Deferred within 2.2.5:/ end-to-end =execa= CLI black-box tests
+  spawning the bundled =dbCli=; output polish
+  (=--format=json|tsv|table= for =list= / =lookup= / =attr=);
+  byte-identical golden round-trip vs. the Elisp writer via a
+  shared fixture-dump harness.
+
 The remainder of this section is the full Step 2.2 specification.
 Each sub-step above refers back to the corresponding deliverables
 below; collectively they deliver the whole thing.
