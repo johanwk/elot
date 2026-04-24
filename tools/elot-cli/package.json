@@ -175,13 +175,18 @@
     "test:html-post": "tsx src/tests/exportHtmlPostprocess.test.ts",
     "test:html-integration": "tsx src/tests/exportHtmlIntegration.test.ts",
     "test:html-all": "npm run test:html && npm run test:html-post && npm run test:html-integration",
+    "test:db-lang": "tsx src/tests/db/langPicker.test.ts",
+    "test:db-read": "tsx src/tests/db/elotDb.test.ts",
+    "test:db": "npm run test:db-lang && npm run test:db-read",
     "elot": "tsx src/cli.ts"
   },
   "dependencies": {
-    "commander": "^12.1.0"
+    "commander": "^12.1.0",
+    "sql.js": "^1.10.3"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
+    "@types/sql.js": "^1.4.9",
     "@types/vscode": "^1.75.0",
     "peggy": "^4.2.0",
     "tsx": "^4.0.0",

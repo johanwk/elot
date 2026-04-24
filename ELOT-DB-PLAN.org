@@ -3243,16 +3243,36 @@ sub-steps, each ending on green tests, so that the VS Code read path
 external-tool work (ROBOT/TTL) is isolated at the end:
 
 - *Step 2.2.1 - =ElotDb= class, read-only surface + pure helpers.*
-  =tools/elot-cli/src/db/sqljs.ts= with =init()= that runs
-  =schema.sql= (from Step 2.1) and asserts =schema_version = 3=, and
-  the full read API: =getLabel=, =getAttr=, =getAllAttrs=,
-  =allActiveLabels=, =idsForLabel=, =labelVariants=, =listSources=,
-  =listPrefixes=, =expandCurie=, =contractUri=, =sourceExistsP=,
-  =sourceNeedsUpdateP=, =sourceEntityCount=.  Pure helpers ported
-  from Elisp with JSON golden vectors reused from the Elisp tests:
-  =selectByLanguage=, =effectiveLanguagePrefs=, =pickValueByLang=,
-  =looksLikeUriP=.  No writer, no CLI entry point yet.  /This alone
-  unblocks Step 2.3/ because the extension only needs read + helpers.
+  /Status:/ DONE.  =tools/elot-cli/src/db/langPicker.ts= (pure
+  helpers: =selectByLanguage=, =effectiveLanguagePrefs=,
+  =pickValueByLang=, =looksLikeUriP=, =looksLikeCurieP=, the
+  =UNTAGGED= sentinel).  =tools/elot-cli/src/db/sqljs.ts=
+  (=ElotDb= class over =sql.js=: =open()= locates and applies
+  =elot-package/schema.sql= on fresh DBs, asserts
+  =schema_version = 3= on existing files and refuses pre-v3 with
+  a user-friendly message; read API =listSources=,
+  =sourceExistsP=, =sourceEntityCount=, =sourceNeedsUpdateP=,
+  =listPrefixes=, =expandCurie=, =contractUri=, =getLabel=,
+  =getLabelAny=, =getAttr=, =getAllAttrs=, =allActiveIds=,
+  =allActiveLabels=, =idsForLabel=, =labelVariants=).
+  =sql.js= + =@types/sql.js= added to =tools/elot-cli/package.json=
+  as dependencies.  Two test modules:
+  =src/tests/db/langPicker.test.ts= (ported from
+  =elot-lang-prefs-test.el=, covers the full
+  =selectByLanguage= / =effectiveLanguagePrefs= policy plus
+  =looksLike*= helpers) and =src/tests/db/elotDb.test.ts=
+  (exercises schema load + v3 assertion, =listSources= /
+  =sourceExistsP= / =sourceEntityCount= / =sourceNeedsUpdateP=,
+  =getLabel= with prefs and =rdfs:label= attribute rows,
+  =getAttr= / =getAllAttrs=, =expandCurie= / =contractUri=
+  longest-match ordering, =getLabelAny= two-pass lookup,
+  =allActiveIds= with CURIE augmentation, =allActiveLabels= /
+  =idsForLabel= / =labelVariants=, and multi-source
+  first-source-wins priority).  Wired into =package.json=
+  (=test:db-lang=, =test:db-read=, =test:db=) and =Makefile=
+  (=test-db-lang=, =test-db-read=, =test-db=).  No writer, no
+  CLI entry point yet.  /This alone unblocks Step 2.3/ because
+  the extension only needs read + helpers.
 
 - *Step 2.2.2 - Writer + minimal CLI skeleton.*  =updateSource=,
   =removeSource=, =addPrefix=, =removePrefix= on =ElotDb=, plus the
