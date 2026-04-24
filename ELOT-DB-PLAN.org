@@ -2938,6 +2938,27 @@ behaviour.
 on a real multilingual ontology (Korean + English).
 
 *** Sub-step 1.16.6 - CSV/TSV/JSON lang conventions
+:PROPERTIES:
+:STATUS: DONE
+:END:
+
+/Status (implemented):/ Landed in =elot-package/elot-sources.el=.
+=elot-source--parse-separated= now identifies a `lang' header
+column (row-level BCP-47 tag attached to the primary
+`rdfs:label') and `label@TAG' header suffixes (one extra
+`rdfs:label' row per populated suffix column, LANG=TAG).  The
+special columns are excluded from the plain attribute-plist
+loop.  =elot-source-parse-json= gained the same recognition for
+the nested shape: a `lang' key attaches to the primary label,
+and `label@TAG' keys become extra tagged `rdfs:label' entries.
+Sources without these conventions ingest exactly as before.
+
+Tests in =test/elot-sources-lang-test.el= (target
+=step-1-16-6-test=): CSV lang column, CSV label@TAG suffixes,
+CSV backward-compat (no lang columns), TSV lang column, JSON
+lang key, JSON label@TAG keys.
+
+*** Sub-step 1.16.6 - CSV/TSV/JSON lang conventions (original plan)
 
 /Scope:/ Update =elot-source--parse-separated= to recognise a
 =lang= header column (row-level) and =label@TAG= header

@@ -215,9 +215,24 @@ returned with surrounding quotes stripped."
     (nreverse fields)))
 
 (defun elot-source--parse-separated (file sep)
-  "Common CSV/TSV parser; SEP is a single-character separator string."
+  "Common CSV/TSV parser; SEP is a single-character separator string.
+
+Recognises two language-tag conventions (Step 1.16.6):
+
+- A header named exactly `lang' carries a row-level BCP-47 tag
+  that attaches to the row's primary `rdfs:label' (emitted as a
+  cons entry `(\"rdfs:label\" (list LABEL LANG))').
+- Headers of the form `label@TAG' (for example `label@ko',
+  `label@en-GB') become additional `rdfs:label' attribute rows
+  with LANG=TAG.  The first column remains the id and the
+  second column the denormalised label in `entities.label'.
+
+Columns with neither special name ingest as plain attribute
+entries keyed by header name, as before.  Files with neither
+convention ingest exactly as in earlier versions."
   (let ((result nil)
-        headers)
+        (coding-system-for-read 'utf-8)
+        headers idx-lang label-at-cols)
     (with-temp-buffer
       (insert-file-contents file)
       (goto-char (point-min))
@@ -230,6 +245,17 @@ returned with surrounding quotes stripped."
               (forward-line 1)
             (setq headers (elot-source--split-csv-line line sep))
             (forward-line 1))))
+      ;; Identify special header columns.
+      (cl-loop for h in headers
+               for i from 0
+               do (cond
+                   ((and (>= i 2) (equal h "lang"))
+                    (setq idx-lang i))
+                   ((and (>= i 2)
+                         (stringp h)
+                         (string-match "\\`label@\\(.+\\)\\'" h))
+                    (push (cons i (match-string 1 h)) label-at-cols))))
+      (setq label-at-cols (nreverse label-at-cols))
       (while (not (eobp))
         (let ((line (string-trim-right
                      (buffer-substring-no-properties
@@ -238,11 +264,29 @@ returned with surrounding quotes stripped."
             (let* ((fields (elot-source--split-csv-line line sep))
                    (id     (nth 0 fields))
                    (label  (nth 1 fields))
+                   (row-lang (and idx-lang (nth idx-lang fields)))
                    (plist  nil))
               (cl-loop for h in (nthcdr 2 headers)
                        for v in (nthcdr 2 fields)
-                       when (and v (not (string-empty-p v))) do
+                       for i from 2
+                       when (and v (not (string-empty-p v))
+                                 (not (eql i idx-lang))
+                                 (not (assoc i label-at-cols))) do
                        (setq plist (nconc plist (list h v))))
+              ;; Row-level lang attaches to the primary label.
+              (when (and row-lang (not (string-empty-p row-lang))
+                         label (not (string-empty-p label)))
+                (setq plist (nconc plist
+                                   (list "rdfs:label"
+                                         (list label row-lang)))))
+              ;; label@TAG columns become extra rdfs:label rows.
+              (dolist (cell label-at-cols)
+                (let ((v (nth (car cell) fields))
+                      (tag (cdr cell)))
+                  (when (and v (not (string-empty-p v)))
+                    (setq plist (nconc plist
+                                       (list "rdfs:label"
+                                             (list v tag)))))))
               (when (and id (not (string-empty-p id)))
                 (push (list id (or label "") plist) result)))))
         (forward-line 1)))
@@ -271,7 +315,8 @@ the field separator.  Primary UC3 path."
 Uses `json-parse-buffer' with `:object-type 'alist' so the dict
 shape is a plain alist."
   (with-temp-buffer
-    (insert-file-contents file)
+    (let ((coding-system-for-read 'utf-8))
+      (insert-file-contents file))
     (goto-char (point-min))
     (json-parse-buffer :object-type 'alist :null-object nil :false-object nil)))
 
@@ -299,7 +344,7 @@ JSON."
           (push (list id val nil) result))
          ((or (consp val) (vectorp val))
           ;; Nested dict: alist.
-          (let ((label nil) (plist nil))
+          (let ((label nil) (label-lang nil) (plist nil))
             (dolist (kv val)
               (let* ((k (car kv))
                      (ks (if (symbolp k) (symbol-name k) k))
@@ -308,9 +353,22 @@ JSON."
                                ((numberp v) (number-to-string v))
                                ((null v) "")
                                (t (format "%s" v)))))
-                (if (equal ks "label")
-                    (setq label vs)
-                  (setq plist (nconc plist (list ks vs))))))
+                (cond
+                 ((equal ks "label") (setq label vs))
+                 ((equal ks "lang")  (setq label-lang vs))
+                 ((and (stringp ks)
+                       (string-match "\\`label@\\(.+\\)\\'" ks))
+                  (setq plist (nconc plist
+                                     (list "rdfs:label"
+                                           (list vs (match-string 1 ks))))))
+                 (t
+                  (setq plist (nconc plist (list ks vs)))))))
+            ;; Row-level lang attaches to the primary label.
+            (when (and label-lang (not (string-empty-p label-lang))
+                       label (not (string-empty-p label)))
+              (setq plist (nconc plist
+                                 (list "rdfs:label"
+                                       (list label label-lang)))))
             (push (list id (or label "") plist) result)))
          (t
           ;; Scalar non-string: coerce.

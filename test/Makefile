@@ -2,12 +2,12 @@ EMACS ?= emacs
 
 PACKAGE_DIR := ../elot-package
 
-.PHONY: all test db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-14-test step-1-15-test step-1-16-1-test step-1-16-2-test step-1-16-3-test step-1-16-4-test step-1-16-5-test clean help
+.PHONY: all test db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-14-test step-1-15-test step-1-16-1-test step-1-16-2-test step-1-16-3-test step-1-16-4-test step-1-16-5-test step-1-16-6-test clean help
 
 all: test
 
 # Run the full ELOT ERT test suite.
-test: db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-14-test step-1-15-test step-1-16-1-test step-1-16-2-test step-1-16-3-test step-1-16-4-test step-1-16-5-test
+test: db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-14-test step-1-15-test step-1-16-1-test step-1-16-2-test step-1-16-3-test step-1-16-4-test step-1-16-5-test step-1-16-6-test
 
 # Step 1.1 tests: SQLite DB layer.
 db-test:
@@ -225,6 +225,17 @@ step-1-16-5-test:
 	  -l elot-db-lang-picker-test.el \
 	  -f ert-run-tests-batch-and-exit
 
+# Step 1.16.6 tests: CSV/TSV/JSON language conventions
+# (`lang' header column for row-level tag; `label@TAG' header
+# suffixes for per-column tagged rdfs:label rows).
+step-1-16-6-test:
+	$(EMACS) --batch \
+	  -L $(PACKAGE_DIR) \
+	  -L . \
+	  -l ert \
+	  -l elot-sources-lang-test.el \
+	  -f ert-run-tests-batch-and-exit
+
 # Step 1.10 tests: ELOT menu `Labels & sources' submenu
 # (structure, entry resolution, :enable / :style toggle guards).
 menu-test:
@@ -263,6 +274,7 @@ help:
 	@echo "  step-1-16-3-test run test/elot-db-lang-write-test.el (Step 1.16.3)"
 	@echo "  step-1-16-4-test run test/elot-db-lang-read-test.el (Step 1.16.4)"
 	@echo "  step-1-16-5-test run test/elot-db-lang-picker-test.el (Step 1.16.5)"
+	@echo "  step-1-16-6-test run test/elot-sources-lang-test.el (Step 1.16.6)"
 	@echo "  clean        remove compiled artifacts"
 	@echo "  help         show this help"
 	@echo ""
