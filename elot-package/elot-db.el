@@ -102,6 +102,108 @@ Step 1.2 lookup primitives have a stable default to fall back on.")
                                  (stringp (nth 1 e)))))
                       v))))
 
+;;;; Language preferences (Step 1.16.1)
+
+(defcustom elot-preferred-languages nil
+  "Ordered list of preferred language tags for labels and annotations.
+
+Each element is either a BCP-47 language tag as a string (e.g. \"en\",
+\"ko\", \"nb\"), or the symbol `:untagged' which represents literals
+carrying no language tag at all.
+
+When non-nil, the list specifies the user's priority order: earlier
+entries win over later ones.  If `:untagged' does not appear
+explicitly, it is treated as appended to the tail of the list; to
+pin untagged literals at a specific position, include `:untagged'
+in the list at the desired rank.
+
+When nil (the default), the built-in policy applies:
+ 1. untagged literals win;
+ 2. failing that, \"en\" wins;
+ 3. failing that, the alphabetically first available tag wins.
+
+This is a presentation preference, used uniformly for labels and for
+annotations such as `rdfs:comment' and `skos:definition'.  It is
+intentionally not stored in the SQLite cache.
+
+Typically set via Customize, or per project via a `.dir-locals.el'
+entry for `elot-preferred-languages'."
+  :type '(repeat (choice (const :tag "Untagged literal" :untagged)
+                         (string :tag "Language tag (e.g. \"en\")")))
+  :group 'elot-db)
+
+;;;###autoload
+(put 'elot-preferred-languages 'safe-local-variable
+     (lambda (v)
+       (and (listp v)
+            (cl-every (lambda (e)
+                        (or (eq e :untagged)
+                            (stringp e)))
+                      v))))
+
+(defun elot-db--effective-language-prefs (&optional prefs)
+  "Return the effective language-preference list.
+
+PREFS overrides `elot-preferred-languages' when non-nil.  When the
+resolved list is nil, return the built-in default policy
+\\='(:untagged \"en\") -- callers treat the alphabetical-first
+fallback as implicit.  When the resolved list is non-nil and does
+not contain `:untagged', append `:untagged' at the tail so that
+untagged literals are always considered after the user's
+explicitly-ranked tags (but before the alphabetical fallback)."
+  (let ((lst (or prefs elot-preferred-languages)))
+    (cond
+     ((null lst) '(:untagged "en"))
+     ((memq :untagged lst) lst)
+     (t (append lst (list :untagged))))))
+
+(defun elot-db--select-by-language (rows &optional prefs)
+  "Pick the best row from ROWS according to language preferences.
+
+ROWS is a list of (VALUE . LANG) cons cells, where LANG is either a
+non-empty string language tag or nil/\"\" meaning untagged.  Returns
+the winning (VALUE . LANG) pair, or nil when ROWS is empty.
+
+PREFS is the caller-supplied preference list (see
+`elot-db--effective-language-prefs').  Selection policy:
+
+ 1. Walk the effective preference list in order.  The first entry
+    that matches any row wins (`:untagged' matches rows whose LANG is
+    nil or empty; a string entry matches rows whose LANG equals it,
+    case-insensitively).
+ 2. If nothing in the preference list matches, fall back to the row
+    whose LANG sorts alphabetically first (ties broken by input
+    order; untagged rows are considered only via `:untagged', not
+    here).
+ 3. If ROWS has exactly one element, return it directly."
+  (cond
+   ((null rows) nil)
+   ((null (cdr rows)) (car rows))
+   (t
+    (let* ((effective (elot-db--effective-language-prefs prefs))
+           (norm (lambda (l) (if (or (null l) (equal l "")) nil
+                               (downcase l))))
+           (winner nil))
+      (catch 'found
+        (dolist (pref effective)
+          (dolist (row rows)
+            (let ((rl (funcall norm (cdr row))))
+              (cond
+               ((and (eq pref :untagged) (null rl))
+                (setq winner row) (throw 'found nil))
+               ((and (stringp pref) rl
+                     (string= rl (downcase pref)))
+                (setq winner row) (throw 'found nil)))))))
+      (or winner
+          ;; Alphabetical fallback over tagged rows only.
+          (let* ((tagged (seq-filter (lambda (r)
+                                       (and (cdr r) (not (equal (cdr r) ""))))
+                                     rows))
+                 (sorted (sort (copy-sequence (or tagged rows))
+                               (lambda (a b)
+                                 (string< (or (cdr a) "") (or (cdr b) ""))))))
+            (car sorted)))))))
+
 ;;;; Schema
 
 (defconst elot-db--schema-ddl

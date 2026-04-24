@@ -2707,6 +2707,223 @@ every ingestor, not just read paths.  Specifically:
   and a brief note in the eldoc summary when the mode is newly
   activated (TBD, non-blocking).
 
+*Incremental breakdown (sub-steps 1.16.1 - 1.16.9):*
+
+Each sub-step is a self-contained, committable unit with its
+own tests.  The suite must stay green after every sub-step.
+Sub-steps are ordered so that each one only touches code the
+previous one already put in place, and nothing user-visible
+changes until 1.16.6.
+
+*** Sub-step 1.16.1 - Pure language-picker helper (no DB, no schema)
+:PROPERTIES:
+:STATUS: DONE
+:END:
+
+/Status (implemented):/ Landed in =elot-package/elot-db.el= as a new
+"Language preferences (Step 1.16.1)" section placed immediately after
+the =elot-active-label-sources= defvar and before the Schema section.
+Three surfaces:
+
+- =defcustom elot-preferred-languages= -- ordered list; each element a
+  BCP-47 tag string or the `:untagged' symbol.  Default nil invokes
+  the built-in policy (untagged > "en" > alphabetical first).
+  Carries a `safe-local-variable' predicate so it can live in
+  =.dir-locals.el=.
+- =elot-db--effective-language-prefs &optional PREFS= -- normalises
+  the user list: nil resolves to '(:untagged "en") (default policy);
+  non-nil lists without `:untagged' get `:untagged' appended at the
+  tail; lists that already mention `:untagged' are returned as-is.
+- =elot-db--select-by-language ROWS &optional PREFS= -- pure picker
+  over a list of (VALUE . LANG) cons cells.  Walks the effective
+  prefs in order (case-insensitive string match; `:untagged' matches
+  nil / \"\"); falls back to alphabetical-first over tagged rows.
+
+/Tests:/ =test/elot-lang-prefs-test.el=, Makefile target
+=step-1-16-1-test=, added to =.PHONY=, aggregate =test=, and =help=.
+Seven ERT cases: untagged-wins-by-default, en-is-default-second,
+alphabetical-fallback, user-prefs-win, untagged-sentinel,
+effective-prefs-normalisation, singleton-and-empty,
+safe-local-variable-predicate.  No production call site consumes the
+helper yet; invariance of the full suite is the commit gate for
+1.16.1.
+
+*** Sub-step 1.16.1 - Pure language-picker helper (no DB, no schema) [design]
+
+/Scope:/ Add =elot-db--select-by-language ROWS &optional PREFS=
+and =elot-db--effective-language-prefs= to =elot-db.el=.  Pure
+functions, no callers yet.  Add the =defcustom
+elot-preferred-languages= with its =safe-local-variable=
+predicate.
+
+/Tests (step-1-16-1-test):/ tests 1-5 from the main list
+(untagged-wins, en-second, alpha-fallback, user-prefs-win,
+untagged-sentinel).  All run against the helper in isolation,
+no DB fixture needed.
+
+/Risk:/ essentially zero.  No production path is affected.
+
+/Commit gate:/ existing suite still green; new target green.
+
+*** Sub-step 1.16.2 - Schema v3 migration (additive column, no readers/writers use it yet)
+
+/Scope:/ Bump =elot-db-schema-version= 2 -> 3.  Add
+=elot-db--migrate-v2-to-v3= mirroring the existing v1->v2
+pattern: =ALTER TABLE attributes ADD COLUMN lang TEXT NOT NULL
+DEFAULT ''=, plus the =idx_attrs_prop_lang= index.  Update the
+initial =CREATE TABLE attributes= statement for fresh DBs so
+the column exists on first open.  No read path or ingestor
+yet consults =lang=.
+
+/Tests (step-1-16-2-test):/
+- =test-migrate-v2-to-v3-adds-lang-column=: open a v2 DB
+  (constructed by hand or via the existing v1->v2 harness),
+  call =elot-db-migrate=, assert the column exists and that
+  pre-existing rows carry =lang = ''=.
+- =test-fresh-db-has-lang-column=: =elot-db-init= into a tmp
+  file, assert =PRAGMA table_info(attributes)= includes =lang=.
+- Full existing suite must still pass (proves additivity).
+
+/Risk:/ first real-data migration.  Mitigated by the additive
+=ALTER TABLE= + =DEFAULT ''= pattern.
+
+/Commit gate:/ full aggregate =make test= green.
+
+*** Sub-step 1.16.3 - Writer accepts PLIST lang-cons form
+
+/Scope:/ Widen =elot-db-update-source= to recognise
+="prop" (list "value" "lang")= entries in the PLIST and write
+=lang= into the new column.  Bare-string values continue to
+write =lang = ''=.  No ingestor emits the cons form yet.
+
+/Tests (step-1-16-3-test):/
+- =test-update-source-writes-lang-column=: hand-built parser
+  result with one cons-form entry; assert the attribute row's
+  =lang= column is ='en'=.
+- =test-update-source-bare-string-unchanged=: regression guard
+  - bare string still writes =lang = ''=.
+
+/Risk:/ low; change is local to one =cl-loop= body.
+
+*** Sub-step 1.16.4 - Read path plumbs =lang= without changing behaviour
+
+/Scope:/ Widen the SQL in =elot-db-get-all-attrs= and
+=elot-db-get-label=/=elot-db-all-active-labels= to =SELECT
+prop, value, lang=.  Internally, values are represented as
+=(value . lang)= pairs, then immediately collapsed with =car=
+(i.e. language-blind) before returning to callers.  This lands
+the query-shape change without altering observable behaviour.
+
+/Tests (step-1-16-4-test):/
+- Full existing Step 1.11/1.12/1.14/1.15 suites must remain
+  green unchanged (proves behavioural invariance).
+- =test-get-all-attrs-lang-column-passthrough= (new, internal):
+  call an unexported variant that returns the cons pairs and
+  assert =lang= values flow through intact.
+
+/Risk:/ low; it is the only sub-step whose correctness is
+defined entirely by not regressing existing tests.
+
+*** Sub-step 1.16.5 - Activate the picker on the read path (user-visible change)
+
+/Scope:/ Replace the provisional =car= calls from 1.16.4 with
+=elot-db--select-by-language= calls, parameterised by
+=elot-db--effective-language-prefs=.  All four affected read
+functions now return language-resolved values.  This is the
+first user-visible change in the chain.
+
+/Tests (step-1-16-5-test):/ tests 6-8 from the main list
+(=db-get-label-respects-prefs=, =db-get-all-attrs-respects-prefs=,
+=db-all-active-labels-respects-prefs=).  Fixtures inject
+multi-language rows directly via =elot-db-update-source= using
+the cons form landed in 1.16.3.
+
+/Risk:/ medium.  This is where a label-display regression would
+surface first.  Mitigated by the fact that the ingestors still
+emit only untagged rows, so for existing users no row has a
+non-empty =lang=, the picker degenerates to "pick the only
+row", and behaviour is unchanged.  Users with multi-language
+sources (only achievable via the cons form) see the new
+behaviour.
+
+/Commit gate:/ full =make test= green and a manual sanity check
+on a real multilingual ontology (Korean + English).
+
+*** Sub-step 1.16.6 - CSV/TSV/JSON lang conventions
+
+/Scope:/ Update =elot-source--parse-separated= to recognise a
+=lang= header column (row-level) and =label@TAG= header
+suffixes (column-level).  Both emit
+="rdfs:label" (list "value" "tag")= cons entries.  Sources
+without these conventions ingest exactly as today.
+
+/Tests (step-1-16-6-test):/ =test-csv-lang-column-recognised=
+and =test-csv-label-at-suffix-recognised= from the main list.
+
+/Risk:/ low; pure addition to the header recognition code.
+
+*** Sub-step 1.16.7 - TTL/RQ ingestor preserves language tags
+
+/Scope:/ Change the default =elot-source-ttl-label-query= to
+project =?id ?label (LANG(?label) AS ?lang)=.  The CSV parser
+already recognises the =lang= column from 1.16.6, so TTL and
+=.rq= paths now carry language tags end-to-end.  Docstring
+callout: users who have customised the query keep their
+current (language-less) behaviour until they opt in.
+
+/Tests (step-1-16-7-test, ROBOT-gated):/
+=test-ttl-ingest-preserves-language-tags= - tiny TTL fixture
+with =@en= and =@ko= labels; register; assert both attribute
+rows exist with correct =lang=.
+
+/Risk:/ medium for users with customised queries (flagged in
+docstring); low otherwise.
+
+*** Sub-step 1.16.8 - Completion-display disambiguator (optional, user comfort)
+
+/Scope:/ In =elot-label-lookup= stage-1 annotator, when a label
+collision within a source is only a language difference, show
+the =@lang= suffix in the annotation column so the user
+understands why they see one entry rather than many.
+Non-blocking behaviour; purely cosmetic.
+
+/Tests (step-1-16-8-test):/ one annotator unit test.
+
+/Risk:/ trivial.
+
+*** Sub-step 1.16.9 - Documentation
+
+/Scope:/ =README-global-label-display.org= gets a
+"Language preferences" section with =.dir-locals.el= example.
+Docstrings on the four affected read functions and on
+=elot-preferred-languages= cross-reference each other.  Plan
+document status flipped DONE.
+
+/Tests:/ none (docs-only).
+
+---
+
+/Implementation order rationale:/
+
+- /1 -> 2/: helper before schema lets us unit-test the picker
+  without any DB fixture.
+- /2 -> 3 -> 4/: schema column, then writer, then reader -
+  classic producer-before-consumer ordering.  At the end of
+  1.16.4 the code compiles and runs with zero behavioural
+  change; this is the "safe rollback" checkpoint.
+- /5/: the single user-visible flip.  Isolated into one
+  sub-step so that if a regression appears in the wild we can
+  revert exactly one commit.
+- /6 -> 7/: CSV first (simpler, no ROBOT dependency), then TTL.
+  TTL relies on the CSV-side =lang= column recognition shipped
+  in 1.16.6.
+- /8, 9/: polish and docs, no functional risk.
+
+/Rollback posture:/ sub-steps 1.16.1 through 1.16.4 are all
+side-effect-free with respect to user behaviour.  If 1.16.5
+must be reverted, 1.16.1 - 1.16.4 stay in place and continue
+to carry no cost.
+
 ---
 
 ** Stage 2: VS Code / CLI Port
