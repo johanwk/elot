@@ -1976,8 +1976,32 @@ flip the defcustom or use the wrapper command.
 
 *** TODO Step 1.14 - Attribute-driven hover/eldoc for =elot-global-label-display-mode=
 :PROPERTIES:
-:STATUS: TODO
+:STATUS: IN-PROGRESS (Tier 1 landed)
 :END:
+
+/Status:/ Tier 1 (eldoc backend) implemented.  Tier 2 (popup
+hover) and tests are still TODO.
+
+Tier 1 changes landed:
+
+- =elot-db.el= :: =elot-db-get-all-attrs= augmented with a
+  =:source-origin= plist entry carrying the winning
+  =(source . data-source)= cons.  Backward-compatible: all
+  existing callers use =string=' as the plist predicate and
+  are unaffected by the keyword entry.
+- =elot-label-display.el= (mirrored in =elot-label-display.org=) ::
+  - New defcustoms =elot-global-label-display-eldoc= (boolean,
+    default =t=) and =elot-global-label-display-show-source=
+    (boolean, default =t=).
+  - New helpers =elot--id-at-point=,
+    =elot--format-attribute-summary=,
+    =elot--summary-from-slurp=, =elot--summary-from-db=.
+  - New backend =elot-global--eldoc-function= registered on
+    =eldoc-documentation-functions= by
+    =elot-global-label-display-mode= at activation (and
+    removed at teardown).  ELOT Org buffers see the slurp
+    path win over the DB, matching Step 1.12 dispatcher
+    ordering.  CURIE <-> IRI retry on DB miss.
 
 *Goal:* Show informative, attribute-rich detail about the
 identifier under point in buffers where

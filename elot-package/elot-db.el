@@ -625,7 +625,14 @@ attribute rows are collected in insertion order.  The first source
 that has any attribute row for ID wins and its rows are returned;
 lower-priority sources are not merged (v1 policy: a single source
 owns an entity's attribute view).  Returns nil when no active
-source has rows for ID."
+source has rows for ID.
+
+Step 1.14: the returned plist carries an additional
+`:source-origin' keyword whose value is the cons cell
+\(SOURCE . DATA-SOURCE) identifying the winning source.  Callers
+that look up only string-keyed attributes (using `string=' as
+predicate, as ELOT's formatters do) are unaffected; the extra
+entry is a no-op for them."
   (let ((sources (elot-db--active-or-default active-sources)))
     (when sources
       (cl-loop
@@ -638,8 +645,10 @@ source has rows for ID."
                      WHERE id = ? AND source = ? AND data_source = ?"
                    (list id src ds))
        when rows return
-       (cl-loop for row in rows
-                append (list (nth 0 row) (nth 1 row)))))))
+       (append
+        (cl-loop for row in rows
+                 append (list (nth 0 row) (nth 1 row)))
+        (list :source-origin (cons src ds)))))))
 
 
 ;;;; -------------------------------------------------------------------
