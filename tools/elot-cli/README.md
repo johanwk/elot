@@ -63,8 +63,37 @@ command line needed.
 > If you cancel the save dialog the converted text still opens as an untitled
 > buffer — just save it as `.org` later to enable ELOT.
 
-Requires **Java 21+** (the extension uses the `elot.javaPath` setting, which
-defaults to `java`).
+#### Java runtime requirement
+
+The OWL importer runs `elot-exporter.jar`, which is compiled for **Java 21**
+and requires **Java 21 or newer** on your system. Many enterprise laptops ship
+with older Java versions (8, 11, or 17), so a check before first use is
+recommended:
+
+```bash
+java -version
+```
+
+If the major version is below 21, running the importer will fail with
+
+```
+UnsupportedClassVersionError: ... has been compiled by a more recent version
+of the Java Runtime ... class file version 65.0
+```
+
+Install a current JDK from one of:
+
+- [Eclipse Temurin](https://adoptium.net/) (free, open source)
+- [Microsoft Build of OpenJDK](https://learn.microsoft.com/java/openjdk/)
+- [Oracle JDK](https://www.oracle.com/java/technologies/downloads/)
+
+On managed machines where the system Java cannot be replaced, install a
+newer JDK alongside it and point the extension at it via the
+**`elot.javaPath`** setting (absolute path to the `java` executable in the
+new JDK's `bin/` directory). This avoids touching `JAVA_HOME` or `PATH` and
+leaves other Java tools untouched.
+
+The extension defaults `elot.javaPath` to `java` (first match on `PATH`).
 
 You can also run the exporter from the command line:
 
