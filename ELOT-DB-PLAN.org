@@ -2386,7 +2386,7 @@ the collect/driver split introduced in Step 1.13).  Main risks:
 
 ---
 
-*** TODO Step 1.16 - Language-tag-aware label and annotation selection
+*** DONE Step 1.16 - Language-tag-aware label and annotation selection
 :PROPERTIES:
 :STATUS: TODO
 :END:
@@ -3036,13 +3036,41 @@ Non-blocking behaviour; purely cosmetic.
 
 *** Sub-step 1.16.9 - Documentation
 
+:PROPERTIES:
+:STATUS: DONE
+:END:
+
+/Status:/ DONE.  Landed 2026-04-24.
+
 /Scope:/ =README-global-label-display.org= gets a
 "Language preferences" section with =.dir-locals.el= example.
 Docstrings on the four affected read functions and on
 =elot-preferred-languages= cross-reference each other.  Plan
 document status flipped DONE.
 
+/Landed:/
+- New "Language preferences" top-level section in
+  =README-global-label-display.org= (placed between "Managing
+  active sources" and "Refreshing sources").  Covers: default
+  policy (untagged -> @en -> alphabetical), explicit user
+  preferences, the =:untagged= sentinel semantics, a settings
+  table with worked examples, scope (DB-backed only, slurp path
+  intentionally out of scope), =.dir-locals.el= example with
+  =elot-preferred-languages= alongside =elot-active-label-sources=,
+  CSV/TSV/JSON =lang= column + =label@TAG= suffix conventions
+  (Step 1.16.6), and the TTL query extension point (Step 1.16.7).
+- =elot-preferred-languages= docstring extended with a final
+  paragraph enumerating the consumers
+  (=elot-db-get-attr=, =elot-db-get-all-attrs=, =elot-db-get-label=,
+  =elot-db-all-active-labels=) via the shared picker, and noting
+  that slurp-path readers are intentionally excluded per the
+  Step 1.16 scope decision, with a pointer to the README section.
+
 /Tests:/ none (docs-only).
+
+/Step 1.16 as a whole:/ DONE.  All nine sub-steps landed; the
+full test suite (step-1-16-1 through step-1-16-8) is green and
+part of the aggregate =make test= target.
 
 ---
 
