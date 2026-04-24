@@ -2476,33 +2476,48 @@ list of language tags, e.g. =("ko" "en")=.  Empty list
   =elot-set-buffer-languages= for interactive experimentation.
   Implement only if users ask.
 
-*Data-layer changes:*
+*Data-layer changes (schema v3 - required):*
 
-The SQLite schema already stores =attributes.lang= (the
-language tag, or empty string for untagged).  So no schema
-change.  What changes is the /selection logic/ on read.
+/Correction from an earlier draft of this step:/ the current
+schema does *not* carry language tags.  =attributes= has columns
+=(id, source, data_source, prop, value)= only; =entities= has
+=(id, label, source, data_source, kind)=.  Neither table
+records the =@tag= from an RDF literal.  A schema bump is
+required.
 
-Two approaches, pick during implementation:
+Concretely:
 
-- *(A) Selection in SQL.*  Rewrite =elot-db-get-label= and the
-  relevant slices of =elot-db-get-all-attrs= to use a
-  =CASE lang WHEN 'ko' THEN 1 WHEN '' THEN 2 WHEN 'en' THEN 3
-  ELSE 4 END= ordering computed from the preference list at
-  call time.  More SQL churn; faster at scale.
-- *(B) Selection in Elisp.*  Fetch all rows (all languages) and
-  pick the winner in Elisp using a small helper
-  =elot--pick-by-language VALUES=.  Simpler, keeps SQL boring,
-  a handful of extra rows per query at worst.  Preferred unless
-  profiling shows a problem.
+- =ALTER TABLE attributes ADD COLUMN lang TEXT NOT NULL DEFAULT ''=.
+  Empty string is the untagged sentinel, matching the =data_source=
+  convention elsewhere in the schema.
+- =entities.label= stays (denormalised cache of the default label,
+  preserved for backward compatibility and for sources that
+  contribute exactly one label per id).  Multi-language labels
+  are written as additional rows in =attributes= with
+  =prop = 'rdfs:label'= and populated =lang=.  =elot-db-get-label=
+  queries =attributes= first (language-preference-aware), then
+  falls back to =entities.label=.  This avoids a second label
+  column on =entities= and keeps the schema change minimal.
+- Bump =elot-db-schema-version= from 2 to 3.  Add an
+  =elot-db--migrate-v2-to-v3= function using the same
+  =elot-db--attributes-has-lang-p= pattern as the existing v1->v2
+  path.  Backfill: existing rows acquire =lang = ''= via the
+  column default; no data is lost.
+- Index: =CREATE INDEX idx_attrs_prop_lang ON attributes(prop, lang)=
+  helps the label-by-language read path when a source has many
+  =rdfs:label= rows.
 
-Recommendation: *(B)*.  The attribute table is indexed by
-=(source, entity_id, predicate)=; fetching all rows for a given
-=(id, predicate)= triple is already O(few) in practice.
+*Selection logic on read:*
 
-A single helper =elot-db--select-by-language ROWS= takes a list
-of =(value . lang)= pairs and the current
-=elot-preferred-languages=, and returns the winning value.  All
-four affected functions call through it.
+Fetch-all + pick-in-Elisp via a pure helper
+=elot-db--select-by-language ROWS &optional PREFS=, taking a list
+of =(value . lang)= pairs.  The SQL side stays boring;
+realistic ontologies have O(few) language variants per triple,
+so the row count per query is small.  SQL-side ordering (via a
+=CASE= built from the preference list) is the escape hatch if
+profiling ever surfaces a problem.
+
+All four affected DB read functions route through the helper.
 
 *New helpers:*
 
@@ -2514,37 +2529,104 @@ four affected functions call through it.
   the user's list doesn't mention it and implicit-tail policy
   is in force.
 
-*Affected surfaces (minimal call-site impact):*
+*Affected surfaces (read path):*
 
-- =elot-db-get-label= - widen internal query to return rows
-  with =lang=, then call =elot-db--select-by-language=.
-- =elot-db-get-all-attrs= - for each distinct predicate,
-  collapse multi-language rows via the helper before returning
-  the plist.  Care: rows that are not language-tagged at all
-  (URIs, numeric literals) bypass the picker.
+- =elot-db-get-label= - widen internal query to consult
+  =attributes WHERE prop='rdfs:label'= first (returning
+  =(value, lang)= rows), apply =elot-db--select-by-language=,
+  fall back to =entities.label= on miss.
+- =elot-db-get-all-attrs= - for each distinct =prop=, collapse
+  multi-language rows via the helper before returning the
+  plist.  Rows without a language tag (URIs, numeric literals)
+  bypass the picker by construction (their =lang= is =''=, which
+  slots naturally into the preference chain).
 - =elot-db-all-active-labels= - applies the picker per-id when
   building the =label -> ids= map.  Critical for stage-1
-  completion stability: two entries in different languages
-  must not both reach the completion list.
-- Label-display overlay generation - unchanged structurally;
-  it goes through =elot-db-get-label=, which now returns the
-  language-resolved form.
+  completion stability: two entries in different languages must
+  not both reach the completion list.
+- Label-display overlay generation / eldoc / hover - unchanged
+  structurally; all go through =elot-db-get-label= or
+  =elot-db-get-all-attrs=, which now return the language-resolved
+  form.
+
+*Affected surfaces (write path / ingestors):*
+
+An audit of the ingestion code (Step 1.16 preflight) shows:
+
+- *TTL via ROBOT* (=elot-source-parse-ttl=, =elot-source.el=):
+  the built-in SPARQL query
+  =elot-source-ttl-label-query= projects =?id ?label= only.  When
+  ROBOT exports to CSV, language tags on =?label= are /dropped/ -
+  the CSV carries only the lexical form.  To preserve tags, the
+  default query must change to project =?label= and =LANG(?label)=
+  as separate columns (e.g. =?id ?label ?lang=), and the CSV
+  parser must recognise the =lang= column as the tag for that
+  row.  Users who have customised =elot-source-ttl-label-query=
+  keep working (language-less, as today) until they opt in.
+- *.rq via ROBOT* (=elot-source-parse-rq=): users write their
+  own queries; if they want language-tagged labels they add
+  =LANG(?label)= themselves.  Documented, not enforced.  The
+  CSV parser's lang-column recognition covers both TTL and RQ.
+- *CSV / TSV / JSON* (=elot-source-parse-csv=, =-tsv=, =-json=):
+  plain text sources have no inherent language concept.  Two
+  conventions will be supported:
+  1. A dedicated header column named =lang= (case-insensitive)
+     gives the tag for the row's label.  If the column is
+     absent, all rows are untagged.
+  2. Column-suffix form: a header =label@ko= contributes a
+     =rdfs:label= attribute row with =lang='ko'=.  Multiple
+     such columns per row are allowed and produce one attribute
+     row each.
+  Backward-compatible: sources without =lang= or =label@*=
+  columns ingest exactly as before.
+- *Org / ELOT* (=elot-source-parse-org=): out of scope for 1.16
+  per the scope decision above.  =elot-build-slurp= is
+  untouched.
+
+*Parser contract change (minor, backward-compatible):*
+
+The existing shape is =(ID LABEL PLIST)= (or the extended
+=(:entries ... :prefixes ...)= form from Step 1.7.3).  To carry
+multi-language labels without a second refactor later, the PLIST
+is widened: in addition to existing ="prop" "value"= pairs,
+parsers may emit ="prop" (list "value" "lang")=  entries
+when they know a language tag.  =elot-db-update-source=
+recognises the cons form, unpacks it, and writes =lang= to the
+new column; bare string values continue to write =lang=''=.  The
+same mechanism lets TTL / RQ parsers emit
+="rdfs:label" (list "..." "ko")= for every language-tagged label
+they see, while =entities.label= continues to receive the
+primary (untagged or default-policy-picked) form.
 
 *Deliverables:*
 
-1. =defcustom elot-preferred-languages= + safe-local-variable
+1. Schema v3 migration: =attributes.lang= column + new index;
+   =elot-db--migrate-v2-to-v3=; version constant bump.
+2. =defcustom elot-preferred-languages= + safe-local-variable
    predicate.
-2. =elot-db--select-by-language= + unit-testable policy helper.
-3. Integration in the four affected DB read paths.
-4. Mirror in =elot-db.org= (or wherever the module is
-   literately authored - confirm at implementation time).
-5. Docstring updates flagging language-awareness on the four
-   affected functions.
-6. README / =README-global-label-display.org= section on
-   language preferences and =.dir-locals.el= example.
-7. ERT tests under a new Makefile target =step-1-16-test=.
+3. =elot-db--select-by-language= + =elot-db--effective-language-prefs=
+   pure helpers.
+4. Integration in the four affected DB read paths.
+5. Parser-contract widening (PLIST accepts
+   ="prop" (list "value" "lang")=).
+6. TTL ingestor update: default =elot-source-ttl-label-query=
+   projects =?id ?label ?lang= (via =LANG(?label)=); CSV parser
+   recognises the =lang= column and threads it through as
+   =rdfs:label= attribute rows with populated =lang=.  Entities'
+   =label= column receives the default-policy-picked form at
+   ingest time.
+7. CSV / TSV / JSON: recognise a =lang= header column and
+   =label@TAG= suffix columns; emit language-tagged
+   =rdfs:label= attribute rows accordingly.
+8. =elot-db.el= is authored directly as Elisp (no =.org= mirror).
+   Mirror the label-display changes into =elot-label-display.org=.
+9. Docstring updates flagging language-awareness on the four
+   affected read functions.
+10. README / =README-global-label-display.org= section on
+    language preferences and =.dir-locals.el= example.
+11. ERT tests under a new Makefile target =step-1-16-test=.
 
-*Tests (planned, ~7-8 cases):*
+*Tests (planned, ~12 cases):*
 
 1. =test-select-by-language-untagged-wins-by-default= -
    untagged beats =@en= beats =@ko= when =elot-preferred-languages=
@@ -2569,6 +2651,17 @@ four affected functions call through it.
 8. =test-db-all-active-labels-respects-prefs= - confirms the
    completion key set contains the language-resolved label,
    not a mix.
+9. =test-migrate-v2-to-v3-adds-lang-column= - open a v2 DB,
+   migrate, assert the column exists and pre-existing rows
+   carry =lang=''=.
+10. =test-update-source-writes-lang-column= - ingest a
+    parser result with ="rdfs:label" (list "widget" "en")= in
+    the plist, assert the attribute row's =lang= is ='en'=.
+11. =test-ttl-ingest-preserves-language-tags= (ROBOT-gated) -
+    tiny TTL fixture with =@en= and =@ko= labels; register;
+    assert both attribute rows exist with correct =lang=.
+12. =test-csv-lang-column-recognised= / =test-csv-label-at-suffix-recognised= -
+    CSV fixtures exercising each convention.
 
 *Non-goals:*
 
@@ -2584,13 +2677,25 @@ four affected functions call through it.
   fallback is a follow-up.
 - No change to the slurp path / =elot-attriblist-ht=.  ELOT
   Org files are single-language per convention.
-- No SQL schema change.
 
 /Risk/
 
-Low.  The helper is pure and exhaustively testable; the four
-call-site changes are mechanical.  Main risks:
+Medium.  Unlike earlier steps this one touches the schema and
+every ingestor, not just read paths.  Specifically:
 
+- Schema migration: the v2->v3 path is mechanically identical to
+  the existing v1->v2 path (ADD COLUMN with DEFAULT), but it is
+  the first migration to land after users have real data.
+  Mitigation: the existing =elot-db-migrate= harness is already
+  exercised; the migration is additive (no data rewritten); on
+  failure, =sqlite-open= can be re-pointed at a backup.  Worth
+  adding a one-liner recommending users back up
+  =elot-db-file= before upgrading.
+- ROBOT query change: users who have customised
+  =elot-source-ttl-label-query= will not get language tags until
+  they update their query.  Documented in the docstring and
+  README; no silent breakage (old queries still parse, just
+  ingest language-less labels).
 - Performance: if a source has tens of thousands of
   language-tagged rows per predicate, the "fetch all, pick in
   Elisp" approach could show up in profiles.  Unlikely in
