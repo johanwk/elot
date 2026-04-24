@@ -3282,6 +3282,27 @@ external-tool work (ROBOT/TTL) is isolated at the end:
   =register= purely so the writer can be exercised end-to-end; real
   parsers land in 2.2.3+.  Round-trip golden tests against the
   Elisp =elot-db-update-source= output.
+  /Status: DONE./  Deliverables landed in =tools/elot-cli/=:
+  =src/db/sqljs.ts= extended with =save()=, =addPrefix=,
+  =removePrefix=, =removeSource=, =updateSource= (coalescing by id,
+  language-picked denormalised =entities.label=, single
+  BEGIN/COMMIT/ROLLBACK transaction); new =src/dbPaths.ts= with
+  platform-aware default DB path resolution (Windows / macOS /
+  Linux VS Code =globalStorage=, =$ELOT_DB_PATH= override); new
+  =src/dbCli.ts= wiring =commander= sub-command =elot-cli db
+  <init|list|lookup|attr|remove|register>=, the latter accepting a
+  minimal JSON-triples document so the writer can be exercised
+  end-to-end before Step 2.2.3's real parsers land; =src/cli.ts=
+  gained =.addCommand(buildDbCommand())= and accepts the Org
+  argument optionally so the =db= subtree is reachable.  New
+  tests: =src/tests/db/elotDbWrite.test.ts= (round-trip, replace
+  semantics, kind handling, (source,data_source) independence,
+  cascade on remove, =needs-update-p=, priority-aware label read,
+  multi-row rdfs:label + language pick, addPrefix/removePrefix,
+  save+reopen persistence, rollback on failure) and
+  =src/tests/db/dbPaths.test.ts= (all three platforms +
+  =$ELOT_DB_PATH= override).  =package.json= adds =test:db-write=,
+  =test:db-paths= and expands =test:db=.  =Makefile= mirrors them.
 
 - *Step 2.2.3 - CSV / TSV / JSON parsers.*  =parsers/csv.ts=,
   =tsv.ts=, =json.ts= implementing the Step 1.16.6 conventions

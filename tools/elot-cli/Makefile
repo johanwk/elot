@@ -1,7 +1,7 @@
 # Makefile for elot-cli — friendly aliases for npm commands.
 # Run "make help" to see available targets.
 
-.PHONY: help all install bundle build watch test test-syntax test-html test-html-post test-html-integration test-html-all test-db test-db-lang test-db-read clean package cli
+.PHONY: help all install bundle build watch test test-syntax test-html test-html-post test-html-integration test-html-all test-db test-db-lang test-db-read test-db-write test-db-paths clean package cli
 
 all: install bundle test test-html-all package ## Full build from scratch: install → bundle → test → package
 
@@ -48,7 +48,13 @@ test-db-lang: ## Run pure language-picker tests (Step 2.2.1)
 test-db-read: ## Run ElotDb read-path tests (Step 2.2.1)
 	npm run test:db-read
 
-test-db: ## Run all Step 2.2.1 DB tests (lang + read)
+test-db-write: ## Run ElotDb writer tests (Step 2.2.2)
+	npm run test:db-write
+
+test-db-paths: ## Run DB-path resolver tests (Step 2.2.2)
+	npm run test:db-paths
+
+test-db: ## Run all DB tests (lang + read + write + paths)
 	npm run test:db
 
 cli: ## Run CLI on examples/bfo-core.org (dev mode, no bundling needed)

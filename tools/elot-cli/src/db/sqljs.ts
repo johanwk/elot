@@ -1,15 +1,16 @@
 // src/db/sqljs.ts
 //
-// ElotDb: sql.js-backed read-only port of the elot-db Elisp API.
-// Step 2.2.1 scope: read methods + helpers only.  The writer and
-// full-file save path land in Step 2.2.2.
+// ElotDb: sql.js-backed port of the elot-db Elisp API.
+// Step 2.2.1 added the read surface and helpers.
+// Step 2.2.2 adds the writer (updateSource / removeSource /
+// addPrefix / removePrefix) and the full-file save() path.
 //
 // Mirrors elot-package/elot-db.el function-for-function where sensible.
 // Schema is loaded verbatim from elot-package/schema.sql (Step 2.1);
 // on an existing DB, schema_version is asserted to equal 3.
 
-import { readFileSync, existsSync } from "fs";
-import { resolve } from "path";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
+import { resolve, dirname } from "path";
 import initSqlJs, {
   Database as SqlJsDatabase,
   SqlJsStatic,
@@ -53,6 +54,24 @@ export interface PrefixRow {
   expansion: string;
 }
 
+/**
+ * Tagged or plain attribute value.  A plain string means lang='',
+ * the tagged form carries an explicit language tag (may be empty).
+ */
+export type AttrValue =
+  | string
+  | { value: string; lang?: string | null };
+
+/** Input row for updateSource: (id, label, kind?, attrs). */
+export interface EntityTriple {
+  id: string;
+  label: string | null;
+  /** Written to entities.kind; defaults to 'unknown'. */
+  kind?: string;
+  /** Ordered [prop, value] pairs; values may be tagged (see AttrValue). */
+  attrs?: Array<[string, AttrValue]>;
+}
+
 function normDs(ds: string | null | undefined): string {
   return ds ?? "";
 }
@@ -83,9 +102,8 @@ export function locateSchemaSql(): string {
 }
 
 /**
- * Read-only ElotDb over sql.js.  Load with ElotDb.open(path).  All
- * write methods are deliberately absent in Step 2.2.1; they will be
- * added in Step 2.2.2.
+ * ElotDb over sql.js.  Load with ElotDb.open(path).  Step 2.2.2
+ * added the writer surface; use save() to persist mutations.
  */
 export class ElotDb {
   private constructor(
@@ -163,6 +181,25 @@ export class ElotDb {
   /** Close the underlying sql.js handle.  No file is written. */
   close(): void {
     this.db.close();
+  }
+
+  /**
+   * Write the current in-memory DB to disk at PATH (or the path
+   * passed to open()).  sql.js is in-memory only; the CLI is the
+   * sole writer, so each mutating command follows with a save().
+   * Creates parent directories as needed.
+   */
+  save(path?: string | null): string {
+    const target = path ?? this.path;
+    if (!target) {
+      throw new Error(
+        "ElotDb.save: no path supplied and instance was opened in-memory",
+      );
+    }
+    mkdirSync(dirname(target), { recursive: true });
+    const bytes = this.db.export();
+    writeFileSync(target, Buffer.from(bytes));
+    return target;
   }
 
   /** Raw access -- use sparingly; prefer the typed methods. */
@@ -649,6 +686,196 @@ export class ElotDb {
       }
     }
     return null;
+  }
+
+  // ─── writers ──────────────────────────────────────────────────
+
+  /**
+   * Upsert a prefix row.  Mirrors elot-db-add-prefix.  DATA-SOURCE
+   * may be null; the empty-string sentinel is stored.  PREFIX may
+   * be the empty string (default ':' prefix).
+   */
+  addPrefix(
+    source: string,
+    dataSource: string | null | undefined,
+    prefix: string,
+    expansion: string,
+  ): void {
+    this.db.run(
+      `INSERT OR REPLACE INTO prefixes (source, data_source, prefix, expansion)
+       VALUES (?, ?, ?, ?)`,
+      [source, normDs(dataSource), prefix, expansion],
+    );
+  }
+
+  /**
+   * Delete a prefix row.  Returns true if a row was removed.
+   * Mirrors the implicit semantics of the Emacs UI (no dedicated
+   * remove-prefix entry point in Elisp; done via raw SQL or by
+   * removing the owning source).
+   */
+  removePrefix(
+    source: string,
+    dataSource: string | null | undefined,
+    prefix: string,
+  ): boolean {
+    const ds = normDs(dataSource);
+    const before = this.select(
+      `SELECT 1 FROM prefixes
+        WHERE source = ? AND data_source = ? AND prefix = ? LIMIT 1`,
+      [source, ds, prefix],
+    );
+    if (before.length === 0) return false;
+    this.db.run(
+      `DELETE FROM prefixes
+        WHERE source = ? AND data_source = ? AND prefix = ?`,
+      [source, ds, prefix],
+    );
+    return true;
+  }
+
+  /**
+   * Delete the sources row for (source, dataSource) and cascade
+   * (entities / attributes / prefixes via ON DELETE CASCADE).
+   * Mirrors elot-db-remove-source.  Returns true if a row was
+   * removed, false if the source was unknown.
+   */
+  removeSource(
+    source: string,
+    dataSource?: string | null,
+  ): boolean {
+    const ds = normDs(dataSource);
+    if (!this.sourceExistsP(source, ds)) return false;
+    this.db.run(
+      `DELETE FROM sources WHERE source = ? AND data_source = ?`,
+      [source, ds],
+    );
+    return true;
+  }
+
+  /**
+   * Replace DB records for (source, dataSource) with DATA.  Mirrors
+   * elot-db-update-source one-to-one:
+   *  - Runs inside a single transaction (sql.js supports BEGIN/
+   *    COMMIT/ROLLBACK via db.run).
+   *  - Existing sources row + cascaded children are deleted first.
+   *  - DATA is coalesced by id: first non-empty label wins; attrs
+   *    are concatenated in first-seen order; kind is taken from
+   *    the first occurrence.
+   *  - rdfs:label attribute rows are language-picked to produce a
+   *    deterministic denormalised entities.label (Step 1.16 fix).
+   *  - Tagged values {value, lang} write to attributes.lang;
+   *    bare-string values write lang=''.
+   *  - Returns the number of entity rows written.
+   */
+  updateSource(
+    source: string,
+    dataSource: string | null | undefined,
+    type: string,
+    data: readonly EntityTriple[],
+    fileMtime?: number | null,
+    prefs?: readonly LangPref[] | null,
+  ): number {
+    const ds = normDs(dataSource);
+    const mtime = fileMtime ?? 0.0;
+    const now = Date.now() / 1000;
+
+    this.db.run("BEGIN");
+    try {
+      this.db.run(
+        `DELETE FROM sources WHERE source = ? AND data_source = ?`,
+        [source, ds],
+      );
+      this.db.run(
+        `INSERT INTO sources (source, data_source, type, last_modified, last_updated)
+         VALUES (?, ?, ?, ?, ?)`,
+        [source, ds, type, mtime, now],
+      );
+
+      // Coalesce by id: first label wins (unless empty), attrs concat,
+      // kind from first occurrence.
+      interface Merged {
+        label: string | null;
+        kind: string | undefined;
+        attrs: Array<[string, AttrValue]>;
+      }
+      const merged = new Map<string, Merged>();
+      const order: string[] = [];
+      for (const row of data) {
+        const prev = merged.get(row.id);
+        if (prev) {
+          const useLabel =
+            prev.label == null || prev.label === ""
+              ? row.label
+              : prev.label;
+          prev.label = useLabel;
+          if (prev.kind === undefined && row.kind !== undefined) {
+            prev.kind = row.kind;
+          }
+          if (row.attrs) prev.attrs.push(...row.attrs);
+        } else {
+          order.push(row.id);
+          merged.set(row.id, {
+            label: row.label,
+            kind: row.kind,
+            attrs: row.attrs ? [...row.attrs] : [],
+          });
+        }
+      }
+
+      let n = 0;
+      for (const id of order) {
+        const cell = merged.get(id)!;
+        const kind = cell.kind ?? "unknown";
+        // rdfs:label variants drive the denormalised entities.label.
+        const labelVariants: LangRow[] = [];
+        for (const [prop, val] of cell.attrs) {
+          if (prop === "rdfs:label") {
+            if (typeof val === "string") {
+              labelVariants.push({ value: val, lang: "" });
+            } else {
+              labelVariants.push({
+                value: val.value,
+                lang: val.lang ?? "",
+              });
+            }
+          }
+        }
+        const picked =
+          labelVariants.length > 0
+            ? pickValueByLang(labelVariants, prefs)
+            : null;
+        const label = picked ?? cell.label;
+
+        this.db.run(
+          `INSERT OR REPLACE INTO entities (id, label, source, data_source, kind)
+           VALUES (?, ?, ?, ?, ?)`,
+          [id, label, source, ds, kind],
+        );
+
+        for (const [prop, val] of cell.attrs) {
+          const v = typeof val === "string" ? val : val.value;
+          const lang =
+            typeof val === "string" ? "" : val.lang ?? "";
+          this.db.run(
+            `INSERT INTO attributes (id, source, data_source, prop, value, lang)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [id, source, ds, prop, v, lang],
+          );
+        }
+        n++;
+      }
+
+      this.db.run("COMMIT");
+      return n;
+    } catch (e) {
+      try {
+        this.db.run("ROLLBACK");
+      } catch {
+        /* swallow */
+      }
+      throw e;
+    }
   }
 }
 
