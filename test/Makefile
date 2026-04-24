@@ -2,12 +2,12 @@ EMACS ?= emacs
 
 PACKAGE_DIR := ../elot-package
 
-.PHONY: all test db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test clean help
+.PHONY: all test db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-15-test clean help
 
 all: test
 
 # Run the full ELOT ERT test suite.
-test: db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test
+test: db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-15-test
 
 # Step 1.1 tests: SQLite DB layer.
 db-test:
@@ -145,6 +145,17 @@ step-1-13-test:
 	  -l elot-label-lookup-scope-test.el \
 	  -f ert-run-tests-batch-and-exit
 
+# Step 1.15 tests: disambiguating many ids sharing one label
+# (two-stage selection; `C-u C-u' flat-presentation override;
+# slurp path unchanged).
+step-1-15-test:
+	$(EMACS) --batch \
+	  -L $(PACKAGE_DIR) \
+	  -L . \
+	  -l ert \
+	  -l elot-label-lookup-stage-test.el \
+	  -f ert-run-tests-batch-and-exit
+
 # Step 1.10 tests: ELOT menu `Labels & sources' submenu
 # (structure, entry resolution, :enable / :style toggle guards).
 menu-test:
@@ -176,6 +187,7 @@ help:
 	@echo "  step-1-12-test run test/elot-label-lookup-test.el (Step 1.12 Item A)"
 	@echo "  step-1-12-item-b-test run test/elot-menu-item-b-test.el (Step 1.12 Item B)"
 	@echo "  step-1-13-test run test/elot-label-lookup-scope-test.el (Step 1.13)"
+	@echo "  step-1-15-test run test/elot-label-lookup-stage-test.el (Step 1.15)"
 	@echo "  clean        remove compiled artifacts"
 	@echo "  help         show this help"
 	@echo ""

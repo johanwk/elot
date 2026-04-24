@@ -5,7 +5,9 @@
 ;;
 ;; Covers:
 ;;   1. `elot-db-all-active-labels' with overlapping sources
-;;      (highest-priority id wins per label).
+;;      (highest-priority source wins per label; value is the
+;;      list of ids for that label within the winning source --
+;;      Step 1.15 widened the return shape).
 ;;   2. `elot-db-all-active-labels' with no active sources
 ;;      (returns an empty hash, does not error).
 ;;   3. Dispatch to the slurp/attriblist path when
@@ -77,14 +79,15 @@
     (let* ((active '(("src-high" nil) ("src-low" nil)))
            (ht (elot-db-all-active-labels active)))
       (should (hash-table-p ht))
-      ;; High-priority source wins on collision.
-      (should (equal "ex:foo"       (gethash "SharedLabel" ht)))
-      (should (equal "ex:high-only" (gethash "HighOnly"    ht)))
-      (should (equal "ex:low-only"  (gethash "LowOnly"     ht))))
+      ;; Step 1.15: values are lists of ids per label (within the
+      ;; winning source).  High-priority source wins on collision.
+      (should (equal '("ex:foo")       (gethash "SharedLabel" ht)))
+      (should (equal '("ex:high-only") (gethash "HighOnly"    ht)))
+      (should (equal '("ex:low-only")  (gethash "LowOnly"     ht))))
     ;; Reverse priority: low wins for SharedLabel.
     (let* ((active '(("src-low" nil) ("src-high" nil)))
            (ht (elot-db-all-active-labels active)))
-      (should (equal "ex:bar" (gethash "SharedLabel" ht))))))
+      (should (equal '("ex:bar") (gethash "SharedLabel" ht))))))
 
 (ert-deftest test-elot-db-all-active-labels-empty ()
   "No active sources: returns an empty hashtable, not nil, no error."
@@ -108,7 +111,7 @@
         (cl-letf (((symbol-function 'elot-label-lookup--from-attriblist)
                    (lambda () (cl-incf attriblist-called)))
                   ((symbol-function 'elot-label-lookup--from-db)
-                   (lambda () (cl-incf db-called))))
+                   (lambda (&optional _flat) (cl-incf db-called))))
           (elot-label-lookup))
         (should (= 1 attriblist-called))
         (should (= 0 db-called))))))
@@ -126,7 +129,7 @@
         (cl-letf (((symbol-function 'elot-label-lookup--from-attriblist)
                    (lambda () (cl-incf attriblist-called)))
                   ((symbol-function 'elot-label-lookup--from-db)
-                   (lambda () (cl-incf db-called))))
+                   (lambda (&optional _flat) (cl-incf db-called))))
           (elot-label-lookup))
         (should (= 0 attriblist-called))
         (should (= 1 db-called))))))

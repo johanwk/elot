@@ -2151,8 +2151,12 @@ the feature functional on TTY / minimal setups.
 :STATUS: DONE
 :END:
 
-/Status:/ Elisp implementation landed.  Tests deferred to next
-turn.
+/Status:/ Elisp implementation landed.  Tests landed in
+=test/elot-label-lookup-stage-test.el= (8 cases, Makefile
+target =step-1-15-test=).  Pre-existing Step 1.12 / Step 1.13
+tests were updated for the widened =elot-db-all-active-labels=
+return shape and the revised =C-u= / =C-u C-u= prefix-arg
+contract (=C-u= = scope=local; =C-u C-u= = flat presentation).
 
 Data-layer and driver changes:
 
