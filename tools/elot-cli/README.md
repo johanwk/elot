@@ -288,6 +288,110 @@ this to your `settings.json`:
 
 ---
 
+## Label Database (`elot-cli db`)
+
+ELOT can resolve identifiers (CURIEs and full URIs) to human-readable labels
+across *any* file you open in VS Code — Turtle, SPARQL, CSV, source code, log
+files — by consulting a persistent SQLite index. The index is populated and
+managed exclusively by the `elot-cli db` sub-command; the VS Code extension
+reads from it (read-only, in a future release).
+
+> **Status (2026-04):** the CLI write/query path is shipping now. Live
+> consumption from the VS Code extension is the next milestone (Step 2.3 of
+> the plan); for the moment the database is useful from the command line and
+> from Emacs (`elot-mode` shares the same DB schema and binary file format —
+> see [README-global-label-display.org](https://github.com/johanwk/elot/blob/master/README-global-label-display.org)).
+
+### Database location
+
+By precedence:
+
+1. `--db <path>` flag (highest)
+2. `$ELOT_DB_PATH` environment variable
+3. Per-platform VS Code `globalStorage` directory:
+   - Windows: `%APPDATA%\Code\User\globalStorage\johanwk.elot\elot.sqlite`
+   - macOS: `~/Library/Application Support/Code/User/globalStorage/johanwk.elot/elot.sqlite`
+   - Linux: `~/.config/Code/User/globalStorage/johanwk.elot/elot.sqlite`
+4. Fallback: `~/.elot/elot.sqlite`
+
+The VS Code extension and Emacs each own their own DB by default — they do
+not share state. Use `--db` or `$ELOT_DB_PATH` if you want a shared file.
+
+### Commands
+
+```bash
+# Create / open the DB (idempotent; creates parent dirs)
+elot-cli db init [--db <path>]
+
+# Register a source (replaces any existing rows for the source name)
+elot-cli db register <file> --source <name> [--type csv|tsv|json|ttl|rq|org]
+                            [--data-source <path-or-url>]
+elot-cli db refresh <name>  --file <file>   [--type ...]
+
+# Inspect
+elot-cli db list                       [--prefixes] [--format tsv|json|table]
+elot-cli db lookup <label>             [--active]   [--format tsv|json]
+elot-cli db attr   <id> [<prop>]                    [--format tsv|json]
+
+# Remove a source (cascades to its entities, attributes, prefixes)
+elot-cli db remove <name>
+```
+
+`<id>` accepts a literal stored id, a CURIE (expanded against the DB's
+prefix table), or a full URI (contracted against the same table). All
+read commands honour `$ELOT_PREFERRED_LANGUAGES` (BCP-47 tags,
+comma-separated; the empty tag means "untagged").
+
+### Source types
+
+| Type   | Parser notes |
+|--------|--------------|
+| `csv`  | RFC-4180. First row is the header. Required column: `id`. Optional `label` and `lang`. Other columns become attributes. Header `label@en` is shorthand for a tagged label. |
+| `tsv`  | Same as CSV with tab delimiter. |
+| `json` | Two shapes: flat `[{id, label, lang?, ...attrs}, ...]` and nested `{prefixes?: {pfx: iri}, entities: [{id, label?, kind?, attrs?: {prop: value\|[v..]\|{lang: v}}}]}`. |
+| `ttl`  | Runs ROBOT (`$ELOT_ROBOT_JAR` or `robot` on `PATH`) with a default `SELECT ?id ?label (LANG(?label) AS ?lang)` query. Override per-project: place `<root>/.elot/ttl-label-query.rq` (where `<root>` is the nearest ancestor with `.git`, `.elot`, or `.elot-cache`). Prefixes are harvested from the file's `@prefix` lines. |
+| `rq`   | Executes a SPARQL `SELECT` query against `--data-source <ttl-file-or-http-endpoint>` via ROBOT. Results are cached in `<root>/.elot-cache/<query>.<sha1>.csv`; an empty result preserves any existing cache (defensive). Prefixes are harvested from the query's `PREFIX` lines. |
+| `org`  | Reuses the orgize WASM parser + ELOT slurp builder. Supports the standard `:prefixdefs:` block, ID-suffix CURIE conventions, and language-tagged headings. |
+
+Type is auto-detected from the file extension if `--type` is omitted.
+
+### Worked example
+
+```bash
+# Initialise an empty DB
+elot-cli db init --db /tmp/elot.sqlite
+
+# Ingest a CSV with English and Korean labels
+cat > /tmp/labels.csv <<'EOF'
+id,label,lang
+ex:widget,Widget,en
+ex:widget,위젯,ko
+ex:widget,Dings,de
+EOF
+elot-cli db register /tmp/labels.csv --db /tmp/elot.sqlite --source demo
+
+# Lookup
+elot-cli db lookup Widget   --db /tmp/elot.sqlite          # ex:widget
+elot-cli db attr ex:widget rdfs:label --db /tmp/elot.sqlite  # Widget (en wins)
+
+# Korean prefs
+ELOT_PREFERRED_LANGUAGES=ko \
+  elot-cli db attr ex:widget rdfs:label --db /tmp/elot.sqlite  # 위젯
+
+# List in JSON
+elot-cli db list --db /tmp/elot.sqlite --format json
+```
+
+### Schema
+
+Schema version 3 only. Older databases are refused with a clear message
+directing the user to upgrade via Emacs. The canonical DDL is shipped as
+`elot-package/schema.sql` and consumed verbatim by both the Elisp writer
+and the TS writer; a byte-identical golden round-trip test
+(`test/fixtures/golden/`) keeps the two implementations in lockstep.
+
+---
+
 ## About ELOT
 
 ELOT introduces **literate ontology engineering**: a workflow where a single

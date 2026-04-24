@@ -7,8 +7,9 @@
 // Subcommands shipped in 2.2.2:
 //   init, list, lookup, attr, remove, register (JSON triples only)
 // Full parsers (CSV/TSV/JSON-nested/TTL/RQ/Org) land in 2.2.3+.
+// 2.2.5 polish: --format json|tsv|table on list/lookup/attr.
 
-import { Command } from "commander";
+import { Command, InvalidArgumentError } from "commander";
 import { readFileSync, statSync, existsSync } from "fs";
 import { basename, extname, resolve } from "path";
 import {
@@ -23,6 +24,31 @@ import {
   detectTypeFromExtension,
   parseSource,
 } from "./parsers/index.js";
+
+type OutFormat = "tsv" | "json" | "table";
+
+function parseFormat(value: string): OutFormat {
+  const v = value.toLowerCase();
+  if (v === "tsv" || v === "json" || v === "table") return v;
+  throw new InvalidArgumentError(
+    `--format must be one of: tsv, json, table (got '${value}')`,
+  );
+}
+
+/**
+ * Print a 2-D array of strings as a left-aligned, space-padded table
+ * with a header row.  Used by --format=table.
+ */
+function printTable(headers: string[], rows: string[][]): void {
+  const widths = headers.map((h, i) =>
+    Math.max(h.length, ...rows.map((r) => (r[i] ?? "").length)),
+  );
+  const fmt = (cols: string[]): string =>
+    cols.map((c, i) => (c ?? "").padEnd(widths[i])).join("  ").trimEnd();
+  console.log(fmt(headers));
+  console.log(widths.map((w) => "-".repeat(w)).join("  "));
+  for (const r of rows) console.log(fmt(r));
+}
 
 function parseActiveSpec(spec: string | undefined): ActiveSource[] {
   // "src1,src2|dsA,src3" -- comma-separated source entries,
@@ -93,21 +119,54 @@ export function buildDbCommand(): Command {
   db.command("list")
     .description("List registered sources (or prefixes with --prefixes)")
     .option("--prefixes", "List prefixes instead of sources")
+    .option(
+      "--format <fmt>",
+      "Output format: tsv (default), json, table",
+      parseFormat,
+      "tsv" as OutFormat,
+    )
     .action(async (opts, cmd) => {
       const gopts = cmd.optsWithGlobals();
+      const fmt = (opts.format as OutFormat) ?? "tsv";
       const d = await openDb(gopts);
       try {
         if (opts.prefixes) {
-          for (const p of d.listPrefixes()) {
-            console.log(
-              `${p.source}\t${p.dataSource}\t${p.prefix}\t${p.expansion}`,
+          const rows = d.listPrefixes();
+          if (fmt === "json") {
+            console.log(JSON.stringify(rows, null, 2));
+          } else if (fmt === "table") {
+            printTable(
+              ["source", "data_source", "prefix", "expansion"],
+              rows.map((p) => [p.source, p.dataSource, p.prefix, p.expansion]),
             );
+          } else {
+            for (const p of rows) {
+              console.log(
+                `${p.source}\t${p.dataSource}\t${p.prefix}\t${p.expansion}`,
+              );
+            }
           }
         } else {
-          for (const s of d.listSources()) {
-            console.log(
-              `${s.source}\t${s.dataSource}\t${s.type ?? ""}\t${s.lastModified ?? ""}`,
+          const rows = d.listSources();
+          if (fmt === "json") {
+            console.log(JSON.stringify(rows, null, 2));
+          } else if (fmt === "table") {
+            printTable(
+              ["source", "data_source", "type", "last_modified", "last_updated"],
+              rows.map((s) => [
+                s.source,
+                s.dataSource,
+                s.type ?? "",
+                s.lastModified == null ? "" : String(s.lastModified),
+                s.lastUpdated == null ? "" : String(s.lastUpdated),
+              ]),
             );
+          } else {
+            for (const s of rows) {
+              console.log(
+                `${s.source}\t${s.dataSource}\t${s.type ?? ""}\t${s.lastModified ?? ""}`,
+              );
+            }
           }
         }
       } finally {
@@ -121,8 +180,15 @@ export function buildDbCommand(): Command {
       "--active <spec>",
       "Active sources, comma-separated (src|ds form supported)",
     )
+    .option(
+      "--format <fmt>",
+      "Output format: tsv (default; one id per line), json, table",
+      parseFormat,
+      "tsv" as OutFormat,
+    )
     .action(async (label: string, opts, cmd) => {
       const gopts = cmd.optsWithGlobals();
+      const fmt = (opts.format as OutFormat) ?? "tsv";
       const d = await openDb(gopts);
       let ids: string[] | null = null;
       try {
@@ -139,21 +205,33 @@ export function buildDbCommand(): Command {
       } finally {
         d.close();
       }
-      if (!ids || ids.length === 0) {
-        process.exitCode = 1;
-        return;
+      if (!ids) ids = [];
+      if (fmt === "json") {
+        console.log(JSON.stringify({ label, ids }, null, 2));
+      } else if (fmt === "table") {
+        printTable(["id"], ids.map((id) => [id]));
+      } else {
+        for (const id of ids) console.log(id);
       }
-      for (const id of ids) console.log(id);
+      if (ids.length === 0) process.exitCode = 1;
     });
 
   db.command("attr <id> [prop]")
     .description("Print attribute(s) for ID; honours language prefs")
     .option("--active <spec>", "Active sources (see `lookup`)")
+    .option(
+      "--format <fmt>",
+      "Output format: tsv (default), json, table",
+      parseFormat,
+      "tsv" as OutFormat,
+    )
     .action(async (id: string, prop: string | undefined, opts, cmd) => {
       const gopts = cmd.optsWithGlobals();
+      const fmt = (opts.format as OutFormat) ?? "tsv";
       const d = await openDb(gopts);
       let singleValue: string | null | undefined = undefined;
       let allValues: Array<[string, string]> | null = null;
+      let origin: { source: string; dataSource: string } | null = null;
       try {
         const active =
           parseActiveSpec(opts.active) ??
@@ -173,22 +251,46 @@ export function buildDbCommand(): Command {
         } else {
           const a = d.getAllAttrsAny(id, activeList);
           allValues = a ? a.entries : null;
+          origin = a ? a.sourceOrigin : null;
         }
       } finally {
         d.close();
       }
       if (prop) {
         if (singleValue == null) {
+          if (fmt === "json") console.log(JSON.stringify(null));
           process.exitCode = 1;
           return;
         }
-        console.log(singleValue);
+        if (fmt === "json") {
+          console.log(JSON.stringify({ id, prop, value: singleValue }, null, 2));
+        } else if (fmt === "table") {
+          printTable(["prop", "value"], [[prop, singleValue]]);
+        } else {
+          console.log(singleValue);
+        }
       } else {
         if (!allValues) {
+          if (fmt === "json") console.log(JSON.stringify(null));
           process.exitCode = 1;
           return;
         }
-        for (const [p, v] of allValues) console.log(`${p}\t${v}`);
+        if (fmt === "json") {
+          console.log(
+            JSON.stringify(
+              { id, origin, attrs: allValues.map(([p, v]) => ({ prop: p, value: v })) },
+              null,
+              2,
+            ),
+          );
+        } else if (fmt === "table") {
+          printTable(
+            ["prop", "value"],
+            allValues.map(([p, v]) => [p, v]),
+          );
+        } else {
+          for (const [p, v] of allValues) console.log(`${p}\t${v}`);
+        }
       }
     });
 
@@ -203,7 +305,7 @@ export function buildDbCommand(): Command {
         const ok = d.removeSource(source, opts.dataSource ?? "");
         if (ok) d.save(path);
         console.log(ok ? `removed: ${source}` : `not-found: ${source}`);
-        if (!ok) process.exit(1);
+        if (!ok) process.exitCode = 1;
       } finally {
         d.close();
       }
@@ -211,7 +313,7 @@ export function buildDbCommand(): Command {
 
   db.command("register <file>")
     .description(
-      "Register a source from CSV / TSV / JSON / TTL / RQ, or a triples-json file (legacy).",
+      "Register a source from CSV / TSV / JSON / TTL / RQ / Org, or a triples-json file (legacy).",
     )
     .option(
       "--type <type>",

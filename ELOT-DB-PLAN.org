@@ -3401,13 +3401,20 @@ external-tool work (ROBOT/TTL) is isolated at the end:
   - Wired into =test:db= aggregate; new Makefile targets
     =test-db-prefixes=, =test-db-rq-cache=, =test-db-ttl-robot=.
 
-- *Step 2.2.5 - Org integration and end-to-end CLI tests.*  Reuse
+- *DONE Step 2.2.5 - Org integration and end-to-end CLI tests.*  Reuse
   the existing =parseOrgWasm= + =buildSlurp= in
   =tools/elot-cli/src/= via a thin =parsers/org.ts= adaptor.
   End-to-end =execa= tests that spawn the built CLI against
   tempfile DBs and assert stdout + resulting DB state.
 
-  /Status (PARTIAL - Org adaptor only):/
+  /Status: DONE./  CLI is feature-complete and useful on its own;
+  Stage 2.3 will consume it from VS Code.  Slices delivered: Org
+  adaptor + CURIE/URI two-pass attr resolution; output polish
+  (=--format json|tsv|table=) + e2e CLI tests; golden round-trip
+  vs Elisp writer (CSV + nested JSON byte-identical); README +
+  top-level cross-link.  Detail below.
+
+  /Status (Org adaptor):/
   - New =parsers/org.ts= - thin adaptor wrapping the existing
     =parseOrg= (=parseOrgWasm.ts=) + =buildSlurp= pipeline.
     Shapes each =SlurpEntry= into an =EntityTriple=:
@@ -3448,6 +3455,93 @@ external-tool work (ROBOT/TTL) is isolated at the end:
   (=--format=json|tsv|table= for =list= / =lookup= / =attr=);
   byte-identical golden round-trip vs. the Elisp writer via a
   shared fixture-dump harness.
+
+  /Slice 2 (output polish + e2e CLI tests, DONE):/
+
+  - =src/dbCli.ts= - =list=, =lookup=, =attr= now accept
+    =--format <tsv|json|table>= (default =tsv=, behaviour unchanged
+    from earlier slices).  =json= emits structured objects suitable
+    for VS Code consumption (=lookup= -> ={label, ids}=; =attr= with
+    prop -> ={id, prop, value}=; =attr= without prop ->
+    ={id, origin, attrs:[{prop,value}]}=; =list= and
+    =list --prefixes= -> arrays of row objects).  =table= renders a
+    left-aligned, padded human-readable table with a dash separator.
+    Bogus =--format= values are rejected by commander with exit
+    code != 0.  Misses still set =process.exitCode = 1=; under
+    =--format=json= the body is =null= (or =ids: []=) so callers can
+    distinguish "no result" from "command failed".
+
+  - =src/tests/db/cliE2e.test.ts= - 18 black-box tests that spawn
+    =dbCli.ts= via =node --import tsx= subprocess against a tempdir
+    DB.  Covers the full surface: =init= (create + re-run),
+    =register= (CSV happy path + missing-file exit 2), =list= (tsv,
+    json, table, =--prefixes=), =lookup= (hit/miss in tsv and json),
+    =attr= (single-prop, all-attrs, json origin field, miss),
+    =refresh= (re-reads file after edit, new rows queryable),
+    =remove= (success + unknown-source exit 1), and =--format=
+    validation.  No =execa= dependency added; uses Node's built-in
+    =child_process.spawnSync= with =--import tsx=, which keeps the
+    devDependency surface unchanged.
+
+  - =package.json= - new script =test:db-cli-e2e=; aggregate
+    =test:db= now runs 11 suites.
+
+  - =Makefile= - new =test-db-cli-e2e= target wired into =.PHONY=.
+
+  /Slice 3a (golden round-trip vs Elisp writer) - LANDED:/ shared
+  canonical-JSON dump harness shipped on both sides; goldens
+  checked in under =test/fixtures/golden/=.
+
+  - TS dumper: =tools/elot-cli/src/db/goldenDump.ts= -
+    minified UTF-8 JSON, single line, trailing newline.  Object
+    keys alphabetically sorted at every level; rows ordered via
+    explicit =SELECT ORDER BY=.  Custom string serializer with
+    explicit escape rules (=\"= =\\= =\n= =\r= =\t= =\u00XX= for
+    other ASCII control chars; non-ASCII as raw UTF-8; forward
+    slash NOT escaped) so the bytes are independent of either
+    runtime's default JSON serializer.
+  - TS test: =src/tests/db/golden.test.ts= - ingests fixtures
+    via =parseSource= -> =updateSource=, dumps, compares to the
+    checked-in golden.  =ELOT_GOLDEN_REGEN=1= rewrites goldens.
+    Cases: =labels.csv= and =labels-nested.json= run always; a
+    ROBOT-gated TTL case (=labels-multilang.ttl=) is wired but
+    its golden is still TBD pending writer parity verification.
+  - Elisp dumper: =test/elot-db-golden-gen.el= -
+    =elot-db-golden-dump= produces byte-identical output for the
+    same DB shape (same escape rules, same key ordering, same
+    SELECT ORDER BY).
+  - Elisp test: =test/elot-db-golden-test.el= - runs the same
+    ingest pipeline through =elot-source-parse-csv= /
+    =elot-source-parse-json= + =elot-db-update-source=,
+    asserts byte-identical match against the goldens.
+    =ELOT_GOLDEN_REGEN=1= regen path matches the TS one.
+  - Goldens checked in: =test/fixtures/golden/labels-csv.golden.json=,
+    =test/fixtures/golden/labels-nested-json.golden.json=, plus
+    a README explaining the format.
+  - Make targets: =make -C test golden-test= and
+    =make -C tools/elot-cli test-db-golden=; the new TS suite
+    is also wired into the aggregate =test:db= run (12 suites).
+
+  /Slice 3b (README + cross-link) - LANDED:/
+
+  - =tools/elot-cli/README.md= - new "Label Database
+    (=elot-cli db=)" section above the "About ELOT" footer.
+    Covers DB-path precedence (=--db= > =$ELOT_DB_PATH= > VS Code
+    =globalStorage= per platform > =~/.elot/elot.sqlite=), the
+    seven sub-commands (=init=, =register=, =refresh=, =list=,
+    =lookup=, =attr=, =remove=), the six source types with their
+    parser conventions (csv, tsv, json flat+nested, ttl via
+    ROBOT, rq with =.elot-cache=, org via orgize+slurp), a
+    worked CSV/Korean/JSON example, and a schema-v3-only note
+    pointing at the byte-identical golden round-trip as the
+    parity guard.
+  - Top-level =README.md= - elot-cli bullet under the *Tools*
+    section now mentions the =db= sub-command and links into the
+    new section.
+
+  /Sign-off (Slice 3c) - DONE:/ 2.2.5 flipped from PARTIAL to DONE.
+  The CLI is shippable on its own terms; Stage 2.3 will wire VS
+  Code to consume it.
 
 The remainder of this section is the full Step 2.2 specification.
 Each sub-step above refers back to the corresponding deliverables

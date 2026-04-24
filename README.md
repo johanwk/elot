@@ -444,4 +444,7 @@ Two command-line tools are included under the [`tools/`](tools/) directory:
 
 -   **[elot-cli](tools/elot-cli/README.md)** — A TypeScript CLI and VS Code extension that generates OWL
     Manchester Syntax and HTML documentation from Org-mode files (uses orgize WASM + esbuild + Pandoc).
+    Also provides a `db` sub-command (`elot-cli db init|register|refresh|list|lookup|attr|remove`)
+    that manages the persistent SQLite label index used by the global label-display
+    feature; see [the `Label Database` section in the elot-cli README](tools/elot-cli/README.md#label-database-elot-cli-db).
     **Available on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=johanwk.elot).**
