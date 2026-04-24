@@ -430,12 +430,20 @@ always begins with either nil or a list (a triple)."
 
 (defcustom elot-source-ttl-label-query
   "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-SELECT ?id ?label WHERE {
+SELECT ?id ?label (LANG(?label) AS ?lang) WHERE {
   ?id rdfs:label ?label .
 }"
   "SPARQL query used by `elot-source-parse-ttl' to extract id/label pairs.
 Must project at least ?id and ?label.  Additional projected
-variables become attribute plist entries (column name -> key)."
+variables become attribute plist entries (column name -> key).
+
+The default query projects a third column `?lang' carrying the
+BCP-47 language tag of each label (empty string for untagged
+literals).  The CSV parser recognises the `lang' column (see
+`elot-source--parse-separated', Step 1.16.6) and writes the tag
+into `attributes.lang'.  Users who have customised this defcustom
+keep their previous (language-less) behaviour until they opt in
+by adding `(LANG(?label) AS ?lang)' to their projection."
   :type 'string
   :group 'elot-sources)
 

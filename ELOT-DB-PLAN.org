@@ -2971,22 +2971,30 @@ and =test-csv-label-at-suffix-recognised= from the main list.
 
 /Risk:/ low; pure addition to the header recognition code.
 
-*** Sub-step 1.16.7 - TTL/RQ ingestor preserves language tags
+*** DONE Sub-step 1.16.7 - TTL/RQ ingestor preserves language tags
 
-/Scope:/ Change the default =elot-source-ttl-label-query= to
-project =?id ?label (LANG(?label) AS ?lang)=.  The CSV parser
-already recognises the =lang= column from 1.16.6, so TTL and
-=.rq= paths now carry language tags end-to-end.  Docstring
-callout: users who have customised the query keep their
-current (language-less) behaviour until they opt in.
+/Status:/ Default =elot-source-ttl-label-query= now projects
+=(LANG(?label) AS ?lang)= alongside =?id ?label=.  ROBOT's CSV
+writer emits the =lang= column, which the 1.16.6 CSV parser
+recognises and threads into the cons-form plist entry that
+1.16.3's =elot-db-update-source= writes to =attributes.lang=.
+TTL and =.rq= ingestion paths now carry language tags
+end-to-end; downstream readers (1.16.5 picker) pick among them.
+Docstring calls out the back-compat contract for users with
+customised queries - they keep language-less behaviour until
+they opt in.
 
-/Tests (step-1-16-7-test, ROBOT-gated):/
-=test-ttl-ingest-preserves-language-tags= - tiny TTL fixture
-with =@en= and =@ko= labels; register; assert both attribute
-rows exist with correct =lang=.
-
-/Risk:/ medium for users with customised queries (flagged in
-docstring); low otherwise.
+/Tests:/ =test/elot-sources-ttl-lang-test.el=
+(=step-1-16-7-test= target).  Three cases:
+- =test-default-ttl-query-projects-lang= - pure (no ROBOT).
+- =test-ttl-ingest-preserves-language-tags= - ROBOT-gated,
+  tiny fixture =labels-multilang.ttl= with =@en= / =@ko= /
+  untagged labels; asserts all three rows land in
+  =attributes= with correct =lang= values.
+- =test-ttl-ingest-respects-preferred-language= - ROBOT-gated,
+  end-to-end integration: =elot-db-get-label= returns the
+  preferred variant under three different
+  =elot-preferred-languages= settings.
 
 *** Sub-step 1.16.8 - Completion-display disambiguator (optional, user comfort)
 
