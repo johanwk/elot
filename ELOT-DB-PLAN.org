@@ -2996,7 +2996,33 @@ they opt in.
   preferred variant under three different
   =elot-preferred-languages= settings.
 
-*** Sub-step 1.16.8 - Completion-display disambiguator (optional, user comfort)
+*** DONE Sub-step 1.16.8 - Completion-display disambiguator (optional, user comfort)
+
+/Status:/ DONE.  Stage-1 DB annotator now surfaces `@LANG' when a
+singleton label's id has more than one =rdfs:label= language
+variant in the winning source.  Landed:
+
+- New DB helper =elot-db-label-variants ID &optional ACTIVE-SOURCES=
+  in =elot-package/elot-db.el= returns the list of =(VALUE . LANG)=
+  =rdfs:label= rows for ID in the first active source that has
+  any; shared with any future annotator that wants to inspect
+  language variants.
+- New helper =elot-label-lookup--lang-suffix-for-id LABEL ID= in
+  =elot-package/elot-label-display.el= (mirrored in
+  =elot-label-display.org=): calls =elot-db-label-variants= and,
+  when >1 variant exists, consults =elot-db--select-by-language=
+  against =elot-preferred-languages= and returns =@LANG= when LABEL
+  matches the winning variant's VALUE.  Returns empty string
+  otherwise (single variant, untagged winner, or defensive
+  mismatch).
+- =elot-label-lookup--db-annotations= appends the suffix after the
+  definition column for singleton entries.  Multi-id groups (which
+  already show =N matches=) are untouched.
+- Tests =test/elot-label-lookup-lang-suffix-test.el= (target
+  =step-1-16-8-test=): 5 cases covering the helper in isolation
+  (default prefs winner, prefs override, single-variant/no-variant
+  empty suffix) and the annotator integration (suffix appears /
+  does not appear as expected).
 
 /Scope:/ In =elot-label-lookup= stage-1 annotator, when a label
 collision within a source is only a language difference, show

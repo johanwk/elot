@@ -1005,6 +1005,32 @@ Convenience wrapper around `elot-db-all-active-labels'.  Returns
 nil when LABEL is unknown."
   (gethash label (elot-db-all-active-labels active-sources)))
 
+(defun elot-db-label-variants (id &optional active-sources)
+  "Return the list of (VALUE . LANG) `rdfs:label' rows for ID.
+ACTIVE-SOURCES defaults to the buffer-local
+`elot-active-label-sources'.  The first source (in priority
+order) that has any `rdfs:label' attribute rows for ID wins; all
+of its variants are returned.  Returns nil when ID has no such
+rows in any active source.
+
+Step 1.16.8 helper: used by the completion-display disambiguator
+to surface `@LANG' when a singleton label has multiple language
+variants in the winning source."
+  (let ((sources (elot-db--active-or-default active-sources)))
+    (when sources
+      (cl-loop
+       for entry in sources
+       for src = (nth 0 entry)
+       for ds  = (elot-db--normalize-ds (nth 1 entry))
+       for rows = (sqlite-select
+                   elot-db
+                   "SELECT value, lang FROM attributes
+                     WHERE id = ? AND prop = 'rdfs:label'
+                       AND source = ? AND data_source = ?"
+                   (list id src ds))
+       when rows return
+       (mapcar (lambda (r) (cons (nth 0 r) (nth 1 r))) rows)))))
+
 (provide 'elot-db)
 
 ;;; elot-db.el ends here

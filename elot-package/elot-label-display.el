@@ -305,6 +305,28 @@ Output to OUT-FILE as an elisp list."
 (declare-function elot-db-get-all-attrs     "elot-db" (id &optional active-sources))
 (declare-function elot-db-contract-uri      "elot-db" (uri &optional active-sources))
 (declare-function elot-db--looks-like-uri-p "elot-db" (s))
+(declare-function elot-db-label-variants    "elot-db" (id &optional active-sources))
+(declare-function elot-db--select-by-language "elot-db" (rows &optional prefs))
+
+(defun elot-label-lookup--lang-suffix-for-id (label id)
+  "Return \"@LANG\" when ID has multiple `rdfs:label' language variants.
+Returns the empty string when ID has at most one variant, or when
+the winning variant (per `elot-preferred-languages') carries no
+language tag, or when LABEL does not match the winning variant's
+VALUE (defensive: avoids claiming a language for an unrelated
+label).  Step 1.16.8 cosmetic: makes it visible that a singleton
+stage-1 entry is one of several language variants in the source."
+  (when (and (fboundp 'elot-db-label-variants)
+             (fboundp 'elot-db--select-by-language))
+    (let ((variants (elot-db-label-variants id)))
+      (if (or (null variants) (<= (length variants) 1))
+          ""
+        (let* ((winner (elot-db--select-by-language variants))
+               (wval   (car winner))
+               (wlang  (cdr winner)))
+          (if (and wval (equal wval label) wlang (> (length wlang) 0))
+              (concat "@" wlang)
+            ""))))))
 
 ;; Shared annotation formatter (Item A.3)
 (defun elot-label-lookup--format-annotation (label prefix rdf-type definition)
@@ -387,7 +409,11 @@ nil when the slurp hash is not populated."
   "Annotation function for `elot-label-lookup--from-db' (stage 1).
 Looks up LABEL in `elot-label-lookup-tmp-attriblist-ht' whose
 values are plists (:ids IDS :count N).  For singletons, fetches
-attributes for the sole id; for groups, shows `N matches'."
+attributes for the sole id; for groups, shows `N matches'.
+
+Step 1.16.8: for singletons whose id has multiple `rdfs:label'
+language variants, append an `@LANG' marker after the definition
+so the user can see that one of several variants was picked."
   (let* ((entry (gethash label elot-label-lookup-tmp-attriblist-ht))
          (ids   (plist-get entry :ids))
          (count (or (plist-get entry :count) (length ids))))
@@ -418,8 +444,14 @@ attributes for the sole id; for groups, shows `N matches'."
                                (plist-get attrib-plist "dcterms:description" 'string=)
                                (plist-get attrib-plist "rdfs:comment" 'string=)
                                "")
-                           120))))
-        (elot-label-lookup--format-annotation label prefix rdf-type definition)))))
+                           120)))
+             (lang-suffix (elot-label-lookup--lang-suffix-for-id label id))
+             (definition+lang (if (> (length lang-suffix) 0)
+                                  (if (> (length definition) 0)
+                                      (concat definition "  " lang-suffix)
+                                    lang-suffix)
+                                definition)))
+        (elot-label-lookup--format-annotation label prefix rdf-type definition+lang)))))
 
 (defvar elot-label-lookup--tmp-stage2-ht nil
   "Temporary DISPLAY -> id hash used by the stage-2 annotator.")

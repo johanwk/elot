@@ -535,11 +535,29 @@ we ~let~ a temporary version before calling it.
                   id))
         ""))
 
+  (defun elot-label-lookup--lang-suffix-for-id (label id)
+    "Return \"@LANG\" when ID has multiple `rdfs:label' language variants.
+  Returns the empty string when ID has at most one variant, or when
+  the winning variant carries no language tag, or when LABEL does
+  not match the winning variant's VALUE.  Step 1.16.8 cosmetic."
+    (when (and (fboundp 'elot-db-label-variants)
+               (fboundp 'elot-db--select-by-language))
+      (let ((variants (elot-db-label-variants id)))
+        (if (or (null variants) (<= (length variants) 1))
+            ""
+          (let* ((winner (elot-db--select-by-language variants))
+                 (wval   (car winner))
+                 (wlang  (cdr winner)))
+            (if (and wval (equal wval label) wlang (> (length wlang) 0))
+                (concat "@" wlang)
+              ""))))))
+
   (defun elot-label-lookup--db-annotations (label)
     "Annotation function for `elot-label-lookup--from-db' (stage 1).
   Values in `elot-label-lookup-tmp-attriblist-ht' are plists
   (:ids IDS :count N).  Singletons get full attribute annotations;
-  groups show `N matches'."
+  groups show `N matches'.  Step 1.16.8: singletons whose id has
+  multiple `rdfs:label' language variants get an `@LANG' marker."
     (let* ((entry (gethash label elot-label-lookup-tmp-attriblist-ht))
            (ids   (plist-get entry :ids))
            (count (or (plist-get entry :count) (length ids))))
@@ -570,8 +588,14 @@ we ~let~ a temporary version before calling it.
                                  (plist-get attrib-plist "dcterms:description" 'string=)
                                  (plist-get attrib-plist "rdfs:comment" 'string=)
                                  "")
-                             120))))
-          (elot-label-lookup--format-annotation label prefix rdf-type definition)))))
+                             120)))
+               (lang-suffix (elot-label-lookup--lang-suffix-for-id label id))
+               (definition+lang (if (> (length lang-suffix) 0)
+                                    (if (> (length definition) 0)
+                                        (concat definition "  " lang-suffix)
+                                      lang-suffix)
+                                  definition)))
+          (elot-label-lookup--format-annotation label prefix rdf-type definition+lang)))))
 
   (defvar elot-label-lookup--tmp-stage2-ht nil
     "Temporary DISPLAY -> id hash used by the stage-2 annotator.")
