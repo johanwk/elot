@@ -2146,10 +2146,47 @@ the feature functional on TTY / minimal setups.
 
 ---
 
-*** TODO Step 1.15 - Disambiguating many ids sharing one label (two-stage selection)
+*** DONE Step 1.15 - Disambiguating many ids sharing one label (two-stage selection)
 :PROPERTIES:
-:STATUS: TODO
+:STATUS: DONE
 :END:
+
+/Status:/ Elisp implementation landed.  Tests deferred to next
+turn.
+
+Data-layer and driver changes:
+
+- =elot-db-all-active-labels= widened to return
+  =label -> list-of-ids=.  First-source-wins preserved across
+  sources; within the winning source all labelled ids are kept
+  (ordered by SQL return order).
+- =elot-db-ids-for-label= helper added.
+- =elot-label-lookup--collect-db= now emits plist entries
+  =(:ids IDS :count N)= per unique label.
+- =elot-label-lookup--from-db= reworked as two-stage:
+  =completing-read= over labels; when =count > 1=, stage-2
+  =completing-read= over the ids with attribute-rich annotator
+  (=elot-db-get-all-attrs= per id, showing type / definition /
+  =skos:notation=).  =count = 1= is a fast-path direct insert.
+  =C-g= in stage 2 aborts the whole lookup via standard quit
+  propagation (no re-entry into stage 1).
+- =elot-label-lookup--from-db-flat= added for the flat
+  presentation variant; all multi-id labels flattened into one
+  completing-read with CURIE/IRI-tail suffixes.
+- =elot-label-lookup= prefix-arg contract updated: =C-u= pins
+  scope to `local' (unchanged); =C-u C-u= now forces flat
+  presentation (not scope).  `external' scope must now be
+  obtained via =elot-label-lookup-external= (always was the
+  recommended path; docstring made this explicit).
+- =elot-label-lookup--union-build= updated to handle the
+  widened DB shape - iterates over each id in a multi-id label.
+- Helpers =elot-label-lookup--id-token= and
+  =elot-label-lookup--id-suffix= factored out.
+- Mirrored in =elot-label-display.org=.
+
+/Out of scope as agreed:/ =elot-attriblist-ht= / slurp path
+unchanged.  Duplicate labels within ELOT Org files remain an
+=elot-lint= concern.
 
 *Goal:* Make =elot-label-lookup= correct and usable when a
 single label is borne by many identifiers in an external

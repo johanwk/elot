@@ -695,19 +695,27 @@ behaviour; duplicates are removed with `equal' semantics."
 ;;;; -------------------------------------------------------------------
 
 (defun elot-db-all-active-labels (&optional active-sources)
-  "Return a hashtable mapping label -> id over ACTIVE-SOURCES.
+  "Return a hashtable mapping label -> list-of-ids over ACTIVE-SOURCES.
 ACTIVE-SOURCES defaults to the buffer-local `elot-active-label-sources'.
-Sources are consulted in priority order; when two sources share a
-label, the higher-priority source's id wins and the lower-priority
-one is ignored silently -- first-match-wins, consistent with
+
+Sources are consulted in priority order.  Within a single winning
+source, /all/ ids carrying the label are preserved in the returned
+list (Step 1.15: industrial-asset files routinely have 20+
+identifiers sharing a single label like \"thimble B\").  When two
+sources share a label, the higher-priority source wins - all of
+its ids are kept, and the lower-priority source's ids for that
+label are ignored silently.  First-source-wins, consistent with
 `elot-db-get-label'.  Returns an empty hashtable (never nil) when
 no active sources are set or none have labelled entities.
 
-The returned hashtable is suitable as a `completing-read' COLLECTION
-argument: keys are the human-readable labels, values are the
-corresponding `entities.id' strings."
+Each value is a list of `entities.id' strings, ordered by SQL
+return order within the winning source.  Use `elot-db-ids-for-label'
+for a direct lookup."
   (let ((sources (elot-db--active-or-default active-sources))
-        (ht (make-hash-table :test 'equal)))
+        (ht (make-hash-table :test 'equal))
+        ;; Track which labels have been claimed by a source already,
+        ;; so later (lower-priority) sources don't append to them.
+        (claimed (make-hash-table :test 'equal)))
     (when sources
       (dolist (entry sources)
         (let* ((src  (nth 0 entry))
@@ -717,14 +725,27 @@ corresponding `entities.id' strings."
                       "SELECT DISTINCT id, label FROM entities
                         WHERE source = ? AND data_source = ?
                           AND label IS NOT NULL"
-                      (list src ds))))
+                      (list src ds)))
+               ;; Labels newly seen in this pass are appendable; labels
+               ;; seen in an earlier (higher-priority) pass are frozen.
+               (this-pass (make-hash-table :test 'equal)))
           (dolist (row rows)
             (let ((id    (nth 0 row))
                   (label (nth 1 row)))
-              ;; First source wins: skip if label is already mapped.
-              (unless (gethash label ht)
-                (puthash label id ht)))))))
+              (unless (gethash label claimed)
+                (puthash label
+                         (append (gethash label ht) (list id))
+                         ht)
+                (puthash label t this-pass))))
+          ;; Freeze everything this source claimed.
+          (maphash (lambda (l _) (puthash l t claimed)) this-pass))))
     ht))
+
+(defun elot-db-ids-for-label (label &optional active-sources)
+  "Return the list of ids carrying LABEL in the winning active source.
+Convenience wrapper around `elot-db-all-active-labels'.  Returns
+nil when LABEL is unknown."
+  (gethash label (elot-db-all-active-labels active-sources)))
 
 (provide 'elot-db)
 
