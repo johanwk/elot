@@ -55,6 +55,7 @@ In collaborative standards work, having a single source for ontology and documen
 
 ## What's New in 2026
 
+-   **Global label-display mode** — A new minor mode, `elot-global-label-display-mode`, brings ELOT's readable-label overlays to *any* buffer: Turtle files, SPARQL queries, CSV data, source code, log files. Labels are drawn from a persistent SQLite index (`elot-db`) that is populated automatically and silently as you work in ELOT Org files — every ontology you open or save contributes its id/label mappings to the database, so they are available across sessions and across buffers. A scope-aware `elot-label-lookup` command (`C-c C-x r`) offers completion over both the current buffer's ontology and everything the DB knows about, with two-stage disambiguation when many identifiers share a label (common in industrial asset data). Attribute-driven eldoc and lazy `help-echo` surface rdf:type, definitions, and source provenance on hover. BCP-47 language tags are respected via `elot-preferred-languages` (default: untagged, then `@en`, then alphabetical). See [README-global-label-display.org](README-global-label-display.org) for details.
 -   **VS Code extension on the Marketplace** — Install from [marketplace.visualstudio.com](https://marketplace.visualstudio.com/items?itemName=johanwk.elot). ELOT is now accessible to any developer with VS Code — no Emacs required. Features include label display, headline folding, go-to-definition, org-indent mode, IntelliSense, and bold/fontified headings.
 -   **v2.0 refactoring** — Ontology content is now derived directly from Org headlines and description lists; no more boilerplate `org-babel` source blocks required. Parsing is cleaner, significantly more efficient on large files, and supports multiple ontologies per file.
 -   **elot-exporter** (Java/OWLAPI) — Comprehensive OWL→Org conversion with checksum protection and Manchester Syntax rendering.
@@ -342,6 +343,39 @@ ELOT can display readable labels instead of prefixed identifiers
 and offers quick search across the ontology resources. Hit F5 to toggle.
 
 ![img](documentation/images/elot-label-display1.png)
+
+
+### Global label-display: labels everywhere, automatically
+
+ELOT's label-display is no longer confined to Org buffers. The minor mode
+`elot-global-label-display-mode` lights up readable labels in *any* buffer
+— `.ttl` files, SPARQL queries, CSV exports, even source code and log files
+that mention ontology identifiers. Hit F5 to toggle, just like in Org mode.
+
+The feature that makes this practical in daily work: **id/label mappings are
+collected silently and automatically as you edit ELOT Org files**. Every
+ontology you open, tangle, or save contributes its declarations to a
+persistent SQLite index (`elot-db`) that lives across sessions. The more
+ontologies you touch, the richer the index becomes — with no explicit
+import step, no manual curation, and no rebuild when you come back
+tomorrow. Additional sources (TTL via ROBOT, SPARQL endpoints, CSV/TSV/JSON
+exports) can be registered per-buffer via `.dir-locals.el`.
+
+Beyond the visual overlays, the mode provides:
+
+-   **`elot-label-lookup`** (`C-c C-x r`) — Insert an existing resource
+    identifier by searching on its label. Scope is configurable (current
+    buffer only, external sources only, or a union of both). When many
+    identifiers share a label — common in industrial asset data — a
+    two-stage picker lets you drill down with full attribute context.
+-   **Attribute-driven hover** — Idle the cursor on any identifier to see
+    its `rdf:type`, definition, and source provenance in the echo area.
+-   **Language preferences** — Multi-lingual ontologies (e.g. English +
+    Korean) display the right variant based on `elot-preferred-languages`;
+    the default policy is untagged first, then `@en`, then alphabetical.
+
+See [README-global-label-display.org](README-global-label-display.org) for
+configuration, source registration, and language-preference details.
 
 
 ### Navigating Ontologies with Xref
