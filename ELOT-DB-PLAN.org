@@ -1819,6 +1819,508 @@ demoted.
 
 ---
 
+*** DONE Step 1.13 - Scope choice for =elot-label-lookup= (local / external / both)
+:PROPERTIES:
+:STATUS: DONE
+:END:
+
+*Goal:* In ELOT Org buffers, let the user choose whether
+=elot-label-lookup= offers candidates from the local buffer's
+slurp data, from external sources registered in the DB, or from
+both at once.  Default: both.
+
+*Motivation:* The Step 1.12 Item A dispatcher is strictly
+tiered - slurp wins if =elot-attriblist-ht= is populated, DB is
+never consulted.  Inside an ELOT Org buffer this means the user
+is restricted to resources declared in the current file, even if
+much larger external sources are active.  Conversely, in a
+non-ELOT buffer the DB path is already reachable with good
+performance.  The asymmetry has no principled justification once
+the DB path is reliable; the right answer is a scope choice.
+
+*Design (as agreed):* /Option 1 + Option 2 combined/ from the
+assessment - a =defcustom= for the default plus three separate
+commands that bind the scope via =let=.  Dedup policy (3):
+id-keyed, so same-label-different-id yields two completion
+entries, same-label-same-id yields one.
+
+/Deliverables/
+
+- =defcustom elot-label-lookup-scope= with values =local=,
+  =external=, =both=.  Default =both=.  Documented in the user
+  manual and in the command docstrings.
+- Three interactive commands:
+  - =elot-label-lookup= - scope-aware dispatcher.  Respects the
+    defcustom; =C-u= overrides to =local=, =C-u C-u= overrides to
+    =external= (standard Emacs idiom).
+  - =elot-label-lookup-local= - thin wrapper that binds the
+    scope to =local= for its invocation.
+  - =elot-label-lookup-external= - ditto for =external=.
+- Refactor the existing =--from-attriblist= and =--from-db=
+  helpers to return =(COLLECTION . ANNOTATOR)= pairs instead of
+  calling =completing-read= themselves.  This separates
+  collection/annotation construction from interaction so a
+  union-mode driver can merge the two pairs.
+- New =elot-label-lookup--from-union=:
+  - Collection: hash keyed by /id/ (not label), with value
+    =(:label L :source local|external|both :attrs PLIST)=.
+    Local wins on id collision (richer attributes, user-
+    authored).  When both scopes carry the same id, the entry
+    records =:source both= so the annotator can signal the
+    overlap.
+  - Label-collision handling: two different ids with the same
+    label both survive.  The completion table's display string
+    disambiguates via a suffix - typically the CURIE, falling
+    back to a short IRI tail - so the user can see the
+    difference before selecting.  The =affixation-function= is
+    a natural place to do this without mutating the collection.
+  - Annotator: dispatches on =:source=.  =local= and =external=
+    entries go through their existing formatters
+    (=elot-label-lookup--format-annotation= is the shared
+    contract); =both= entries prefer the local formatter and
+    append a =+external= marker.
+  - Insertion: same token logic as today - =puri= for local
+    entries, =elot-db-contract-uri= for external IRIs, verbatim
+    for external CURIEs.  When the chosen entry is =both= and
+    the local/external ids differ (shouldn't happen post-dedup,
+    but belt-and-braces), prefer the local id.
+- Menu integration (/Insert Existing Resource ID/ stays bound
+  to =elot-label-lookup=):
+  - Add two siblings in the ELOT menu: /... (local only)/ and
+    /... (external only)/, bound to the two wrapper commands.
+  - =:enable= guards:
+    - /local only/: =(and (bound-and-true-p elot-attriblist-ht)
+      (hash-table-p elot-attriblist-ht)
+      (> (hash-table-count elot-attriblist-ht) 0))=.
+    - /external only/: =(bound-and-true-p
+      elot-active-label-sources)=.
+  - Keybinding =C-c C-x r= remains on the scope-aware command;
+    no new bindings for the wrappers (menu is enough).
+
+/Tests (new =test/elot-label-lookup-scope-test.el=, Makefile
+target =step-1-13-test=)/
+
+- =test-scope-defaults-to-both= - defcustom unchanged; in an
+  ELOT Org buffer with slurp and active sources, the completion
+  collection contains ids from both.
+- =test-scope-local-only= - binding =elot-label-lookup-scope= to
+  =local= (or =C-u= prefix): collection matches =--from-attriblist=
+  exactly; no external ids present.
+- =test-scope-external-only= - =C-u C-u= / =external=: collection
+  matches =--from-db= exactly; no local-only ids.
+- =test-scope-union-dedupes-on-id= - same id present in slurp and
+  DB; one entry in the collection, =:source both=.
+- =test-scope-union-keeps-both-on-label-collision= - two different
+  ids with the same label (one local, one external); both appear,
+  display strings disambiguated by CURIE suffix.
+- =test-scope-prefix-arg-overrides-defcustom= - defcustom set to
+  =local=, =C-u C-u= prefix still selects =external=.
+- =test-scope-wrapper-commands= - =elot-label-lookup-local= and
+  =elot-label-lookup-external= behave as scope-pinned versions
+  regardless of the defcustom.
+- =test-scope-insert-prefers-local-id= - =:source both= entry;
+  selected; inserted token matches the local =puri=, not the
+  DB-contracted CURIE.
+
+/Non-goals/
+- No cross-source merge of /attributes/.  The local entry's
+  attributes win; external attributes are not union'd into the
+  annotation.  (Could be revisited if users ask.)
+- No completion-framework-specific features (embark/consult
+  source switching mid-completion).  Scope is picked up front.
+- No scope choice for the DB-only path in non-ELOT buffers.
+  =elot-attriblist-ht= is empty there, so =both= naturally
+  degrades to =external=; the wrapper commands still work.
+- No caching of the union collection across invocations.  If
+  profiling shows it matters, revisit with
+  =completion-table-dynamic=.
+
+/Risk/
+Low.  Refactor of =--from-*= helpers is mechanical; union
+driver is new code but its contract is narrow.  Default =both=
+widens the set of completion candidates for existing ELOT
+workflows - users who prefer the old "local only" behaviour
+flip the defcustom or use the wrapper command.
+
+/Status:/ DONE.  Implementation landed in
+=elot-package/elot-label-display.el= (mirrored in
+=elot-label-display.org=):
+
+- =defcustom elot-label-lookup-scope= (default =both=).
+- =elot-label-lookup--collect-attriblist= and
+  =elot-label-lookup--collect-db= return =(COLLECTION . ANNOTATOR)=
+  pairs; pre-existing =--from-attriblist= / =--from-db= rewired
+  to consume them.
+- =elot-label-lookup--union-build= merges local + external into a
+  DISPLAY -> entry hash (dedup by id; label collisions
+  disambiguated with a CURIE / IRI-tail suffix).
+- =elot-label-lookup--union-annotations= delegates to the shared
+  =--format-annotation= formatter and appends =+external= /
+  =[external]= markers for provenance.
+- =elot-label-lookup--from-union= falls back to the single-source
+  drivers when only one scope has data.
+- =elot-label-lookup= now takes an optional prefix arg: no arg
+  honours the defcustom; =C-u= pins =local=; =C-u C-u= pins
+  =external=.
+- =elot-label-lookup-local= and =elot-label-lookup-external=
+  autoloaded scope-pinned wrappers.
+- ELOT menu: /Insert Existing Resource ID/ sub-entries /... (local
+  only)/ and /... (external only)/ with appropriate =:enable=
+  guards (mirrored in both =elot-mode.el= and =elot-mode.org=).
+- Tests: =test/elot-label-lookup-scope-test.el=, Makefile target
+  =step-1-13-test=, 8 ERT cases (default-scope, local-only,
+  external-only, union dedup on id, label-collision suffix,
+  prefix-arg override, wrapper scope-pinning, insert-prefers-local).
+
+---
+
+*** TODO Step 1.14 - Attribute-driven hover/eldoc for =elot-global-label-display-mode=
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+*Goal:* Show informative, attribute-rich detail about the
+identifier under point in buffers where
+=elot-global-label-display-mode= is active - e.g. =.ttl=, =.py=,
+=.csv= - using the same DB the mode already reads for its label
+overlay.  Parity target: the minibuffer summary that ELOT Org
+buffers already show today (id, label, rdf:type), extended with
+definition/comment and, eventually, a richer popup analogous to
+the VS Code hover.
+
+*Motivation:* The label overlay answers "what does this id
+mean" one word at a time; users frequently need the next level
+of detail (type, definition, source) without leaving the
+buffer.  In ELOT Org buffers this already works via
+=elot-attriblist-ht= and the eldoc-style echo-area message.  In
+non-ELOT buffers the information exists - =elot-db-get-all-attrs=
+returns exactly the needed plist across all active sources -
+but nothing surfaces it to the user.  When three or more sources
+are active (e.g. upper ontology + project ontology + controlled
+vocabulary), a single hover that shows /which source/ the id
+came from is materially more useful than any per-source UI.
+
+*Design:*
+
+- Identifier recognition under point:
+  - Reuse the regex the mode already compiles for font-lock
+    (=elot-global--fontify-regexp= or its equivalent).  Under
+    point, find the matching id (CURIE or IRI form, both
+    handled post Step 1.7.3) via =thing-at-point= semantics -
+    either a new =elot-id= thing registered with
+    =thing-at-point=, or a direct regex scan over the current
+    symbol bounds.
+  - Canonicalise CURIE to stored id using the same two-pass
+    logic as =elot-db-get-label-any=.
+- Attribute fetch: =elot-db-get-all-attrs id active-sources=
+  returns a plist of =(:rdf:type ... :rdfs:label ...
+  :iof-av:naturalLanguageDefinition ... :skos:definition ...
+  :dcterms:description ... :rdfs:comment ... :source-origin
+  ...)=.  (The =:source-origin= key is new - see below.)
+- Presentation: two tiers, decoupled and user-selectable.
+  1. /Eldoc backend/ (always on when the mode is on; zero extra
+     keystrokes).  Register a buffer-local =eldoc-documentation-
+     function= that returns a one-line summary:
+     #+begin_example
+     ex:Widget   [Widget]   (owl:Class)   -- A thimble used in casting.   [src: widgets.ttl]
+     #+end_example
+     Falls through to the next eldoc backend if the id under
+     point has no DB match.  Respects
+     =eldoc-echo-area-use-multiline-p= for long definitions.
+  2. /Popup hover/ (opt-in, =defcustom=-gated).  Full
+     multi-line buffer with heading, type, definition,
+     comment, source provenance, and (if present) labels in
+     additional languages.  Implementation option:
+     - =posframe= when available (graphical Emacs),
+       =display-buffer= fallback otherwise.  Bound to a
+       command =elot-describe-id-at-point= and to a mouse-over
+       event (=mouse-movement=) when the user opts in via
+       =defcustom elot-global-label-display-hover-on-mouse=.
+- New =defcustom elot-global-label-display-eldoc= (boolean,
+  default =t=).  Master switch for tier 1.
+- New =defcustom elot-global-label-display-hover= (choice:
+  =off=, =on-command=, =on-mouse=; default =on-command=).
+  Governs tier 2.
+- New =defcustom elot-global-label-display-show-source= (boolean,
+  default =t=).  Controls whether provenance
+  (=[src: <source>]=) appears in both tiers.  When multiple
+  active sources have the same id, the chosen source is the
+  first in =elot-active-label-sources= (matches
+  =elot-db-get-label-any= priority rule).
+- DB helper addition: =elot-db-get-all-attrs= (already exists
+  from Step 1.4) extended to optionally include a
+  =:source-origin= entry - the =(source . data-source)= pair
+  that supplied the winning row.  Backward-compatible: callers
+  that ignore the key see no change.
+- Shared formatter with Step 1.12 / 1.13:
+  =elot-label-lookup--format-annotation= should be renamed or
+  aliased to =elot--format-attribute-summary= and reused by the
+  hover/eldoc tier.  Same plist shape, same priority order for
+  definition selection (iof-av: > skos: > dcterms: > rdfs:).
+- /In ELOT Org buffers/: the existing ELOT-native
+  label-display eldoc already does the right thing, so the new
+  backend must defer to it when =elot-mode= is active
+  (short-circuit: if =elot-attriblist-ht= answers, use that;
+  otherwise consult the DB).  This matches the Step 1.12 Item A
+  dispatcher ordering and keeps the richer slurp attributes in
+  the picture.
+
+/Deliverables/
+
+- =elot-label-display.el= (tangled from
+  =elot-label-display.org=):
+  - =elot--id-at-point= helper (or =thing-at-point= provider).
+  - =elot-global--eldoc-function= buffer-local eldoc backend,
+    installed by =elot-global-label-display-mode= at activation
+    and removed at teardown.
+  - =elot-describe-id-at-point= command.
+  - Hover wiring (posframe / display-buffer) behind the
+    defcustoms above.
+- =elot-db.el=:
+  - =:source-origin= additions to =elot-db-get-all-attrs= (or a
+    sibling function if backward compatibility argues for it).
+- =elot-mode.el= menu:
+  - New entry /Describe Id at Point/ in /Labels & sources/,
+    bound to =elot-describe-id-at-point=.  No =:enable= guard -
+    the command itself signals =user-error= if nothing is
+    recognised at point.
+
+/Tests (new =test/elot-hover-test.el=, Makefile target
+=step-1-14-test=)/
+
+- =test-id-at-point-recognises-curie= - buffer with
+  =ellsea:id51929cf8= under point; =elot--id-at-point= returns
+  it.
+- =test-id-at-point-recognises-iri= - angle-bracketed and bare
+  IRI forms.
+- =test-eldoc-returns-summary-string= - DB populated with one
+  source; point on an id; eldoc function returns a string
+  containing id, label, and type.
+- =test-eldoc-defers-to-slurp-in-elot-buffer= - ELOT Org buffer
+  with slurp and active DB sources both populated; eldoc path
+  consumes the slurp-backed annotator, not the DB one (parity
+  with Step 1.12 dispatcher).
+- =test-eldoc-multi-source-shows-winning-source= - two active
+  sources both defining the same id; eldoc summary carries the
+  higher-priority source name.
+- =test-describe-id-at-point-opens-detail-buffer= - command
+  produces a buffer/posframe with type, definition, and source
+  fields.
+- =test-hover-respects-defcustoms= - =elot-global-label-display-hover=
+  set to =off= disables command and mouse-hover; =on-command=
+  enables command only; =on-mouse= enables both.
+- =test-no-match-falls-through-eldoc= - point on a non-id
+  token; backend returns nil and the next eldoc backend is
+  consulted.
+
+/Non-goals/
+
+- No modification of font-lock / overlay rendering.  This step
+  is strictly about /secondary/ presentation on demand or via
+  eldoc; the primary label overlay remains as-is.
+- No editing / write-back from the hover.  Read-only surface.
+- No cross-referencing to source files (jump-to-definition).
+  Could be a natural follow-up but is out of scope here; the
+  existing xref integration in ELOT Org buffers is not
+  generalised to non-ELOT buffers in this step.
+- No language-selection UI for multilingual labels.  If the DB
+  carries =elot:labelLang= attributes, the hover may display
+  them as a simple list; no picker.
+- No caching layer.  =elot-db-get-all-attrs= is a point query;
+  per-keystroke cost on eldoc is negligible at plausible DB
+  sizes.  Revisit with a small LRU if profiling shows a problem.
+- No VS Code parity beyond visual resemblance.  The VS Code
+  implementation is a separate Stage-2 concern (its hover
+  provider lives in the TypeScript port).
+
+/Risk/
+
+Low-to-moderate.  Eldoc integration is well-understood.  The
+main risk is identifier-recognition ambiguity when the same
+string could be interpreted as a CURIE or as a language
+keyword (e.g. =list:= in a Python buffer); the mode's
+existing font-lock regex already walks this line, so reusing
+it means we inherit the same trade-offs, no worse.  Posframe
+is an optional dependency; the =display-buffer= fallback keeps
+the feature functional on TTY / minimal setups.
+
+---
+
+*** TODO Step 1.15 - Disambiguating many ids sharing one label (two-stage selection)
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+*Goal:* Make =elot-label-lookup= correct and usable when a
+single label is borne by many identifiers in an external
+source.  The motivating case is industrial-asset =.ttl= files
+where e.g. 20 distinct instances all carry =rdfs:label "thimble
+B"=.  Today, =elot-db-all-active-labels= builds a =label -> id=
+hash that silently drops 19 of the 20 rows; the user can only
+ever insert one id per label and has no way to see the others.
+
+*Scope decision (per user):* We treat the multi-id problem as
+an *external-sources-only* concern.  Duplicate labels /within/
+an ELOT Org file are a data-quality issue that =elot-lint= and
+related checks surface elsewhere; we do not plumb
+disambiguation through =elot-attriblist-ht= /
+=elot-label-lookup--from-attriblist=.  The slurp path continues
+to return a single id per label (first wins, as today).
+
+*Design:*
+
+- Data-layer change.  =elot-db-all-active-labels= is widened to
+  return =label -> list-of-ids= (ordered by source priority,
+  then by id).  All existing single-id callers take =car= of
+  the list.  The SQL is unchanged; only the Elisp return shape
+  widens.  A matching helper =elot-db-ids-for-label LABEL= is
+  added for convenience (returns the list directly).
+- Collection builder (external path).
+  =elot-label-lookup--collect-db= now emits one /stage-1 entry/
+  per unique =(label, source)= pair, carrying =:ids= (the list)
+  and =:count= (its length).  When =count = 1=, the entry
+  retains the full attribute plist for the sole id so its
+  annotation is as rich as today.  When =count > 1=, the
+  stage-1 annotation shows =N matches= alongside the source
+  provenance; attribute fetch is deferred to stage 2.
+- Stage 1 (label picker).  Single =completing-read= over the
+  unique =(label, source)= entries.  Annotator column shows
+  either the usual type/definition (for singletons) or
+  =N matches   [src]= (for groups).  Selection returns the
+  entry.
+- Stage 2 (id picker, conditional).  Fires only when the chosen
+  entry has =count > 1=.  Runs a second =completing-read= over
+  the =:ids= list, sorted lexicographically.  Display string is
+  the CURIE (falling back to the IRI tail); annotator column
+  pulls the full attribute plist via =elot-db-get-all-attrs=
+  for each id - definition, comment, rdf:type, =skos:notation=,
+  etc. - formatted one field per line or tab-aligned.  If the
+  user hits =C-g= in stage 2, the whole lookup aborts cleanly;
+  we do not re-enter stage 1.
+- Single-id fast path.  When =count = 1=, stage 2 is skipped
+  entirely and the id is inserted directly.  This preserves
+  today's one-keystroke behaviour for the common case.
+- Prefix-arg escape hatch.  =C-u C-u= on =elot-label-lookup=
+  forces the /flat/ shape: every id is a stage-1 entry with a
+  disambiguating CURIE/IRI-tail suffix, no stage 2.  This
+  coexists with the existing Step 1.13 prefix-arg contract by
+  being layered on top: scope selection still comes from the
+  defcustom / scope-specific commands; =C-u C-u= adjusts
+  /presentation/, not scope.
+  - Alternative considered: reuse =C-u C-u= for scope=external
+    (as Step 1.13 has it).  Rejected: the two concerns are
+    independent, and =elot-label-lookup-external= already
+    provides the scope override.  We keep =C-u C-u= for the
+    flat-presentation override on the scope-aware command and
+    document it in the docstring.
+- Union driver.  =elot-label-lookup--from-union= dedup stays
+  id-keyed, so a =(label, source-local, id)= entry and a
+  =(label, source-external, same-id)= entry still collapse.
+  When distinct sources both expose the same id under the same
+  label, the collapsed entry carries =:source both= as today.
+
+*Affected call sites:*
+
+- =elot-db-all-active-labels= - return shape widened.
+- =elot-label-lookup--collect-db= - emits stage-1 entries with
+  =:ids= / =:count=.
+- =elot-label-lookup--from-db= - two-stage flow.
+- =elot-label-lookup--from-union= - dedup key unchanged; must
+  handle multi-id entries in the merge.
+- =elot-label-lookup--union-annotations= - stage-1 annotator
+  understands =:count=.
+- Step 1.14 (hover/eldoc) - unaffected; it's a point query on
+  a known id, not a label lookup.
+
+*Deliverables:*
+
+1. Data-layer change to =elot-db-all-active-labels= + new
+   =elot-db-ids-for-label= helper, with single-id callers
+   adjusted.
+2. Refactor of the collect/driver split in
+   =elot-label-display.el= (and mirrored in
+   =elot-label-display.org=) to carry =:ids= / =:count=.
+3. Stage-2 completion with attribute-rich annotator using
+   =elot-db-get-all-attrs=.
+4. =C-u C-u= flat-presentation override on =elot-label-lookup=.
+5. Docstring updates on =elot-label-lookup=,
+   =elot-label-lookup-external=, and
+   =elot-db-all-active-labels=.
+6. ERT tests (target =step-1-15-test=) - see below.
+
+*Tests (planned, ~6 cases):*
+
+1. =test-db-all-active-labels-returns-list= - same label on 3
+   distinct ids in one source yields a 3-element list, ordered.
+2. =test-collect-db-emits-group-entry= - stage-1 entry for a
+   3-id label has =:count 3= and =:ids= of length 3.
+3. =test-from-db-single-id-fast-path= - =count = 1= skips stage
+   2 and inserts immediately (=completing-read= called exactly
+   once).
+4. =test-from-db-two-stage-flow= - =count > 1= triggers stage
+   2; stage-2 collection equals the =:ids= list; chosen id is
+   inserted as CURIE.
+5. =test-from-db-stage-2-quit-aborts= - =C-g= in stage 2 signals
+   =quit= without inserting anything and without re-entering
+   stage 1 (use =condition-case=).
+6. =test-flat-prefix-arg-override= - =C-u C-u= on
+   =elot-label-lookup= produces a flat completion list (all ids
+   visible at stage 1, no stage 2), regardless of scope
+   defcustom.
+7. =test-stage-2-annotator-uses-attrs= - stage-2 annotations
+   include =rdf:type= / definition fields returned by
+   =elot-db-get-all-attrs=.
+8. =test-slurp-path-unchanged= - in an ELOT Org buffer with a
+   populated =elot-attriblist-ht=, =elot-label-lookup= still
+   takes the single-id attriblist path; no stage-2 behaviour,
+   no use of =elot-db-ids-for-label=.
+
+*Non-goals:*
+
+- No change to the slurp path.  Duplicate labels inside ELOT
+  Org files remain an =elot-lint= concern.
+- No embark / consult / posframe integrations at stage 1 or
+  stage 2.  Plain =completing-read= throughout.
+- No search-within-attributes at stage 1.  Users filter on
+  label text (and, in flat mode, on the CURIE suffix).  If
+  stage 2 attribute-search is ever wanted, that's a follow-up.
+- No batch-fetch optimisation for stage-2 annotator.  Per-id
+  =elot-db-get-all-attrs= calls are expected to be fine at
+  plausible group sizes; revisit with =elot-db-get-all-attrs-bulk=
+  only if profiling shows a problem.
+- No change to source-priority rules or to Step 1.13's scope
+  semantics.
+- No change to label-display overlays - this step is purely
+  about the lookup/insert UX.
+
+/Ordering note:/ Step 1.15 and Step 1.14 both benefit from the
+same =elot-db-get-all-attrs= plumbing.  Doing 1.15 first means
+1.14 inherits a stage-2-style attribute formatter it can reuse
+for the hover popup; doing 1.14 first means the eldoc
+integration is available during 1.15 development for sanity
+checks.  Either order works; current preference is 1.15 first,
+since it fixes a correctness bug (silent row drops) whereas
+1.14 is an enhancement.
+
+/Risk/
+
+Low-to-moderate.  The data-layer widening is a mechanical
+change with a small blast radius (all callers funnel through
+the collect/driver split introduced in Step 1.13).  Main risks:
+
+- Stage-2 =C-g= handling needs explicit test coverage; a naive
+  implementation could re-enter stage 1 on quit.
+- The =C-u C-u= overloading (Step 1.13 used it for scope;
+  Step 1.15 uses it for presentation on the scope-aware
+  command) is deliberately different-but-adjacent and must be
+  documented carefully.
+- Per-id attribute fetch at stage-2 display time is O(N) SQL
+  reads; acceptable for N up to a few hundred, but a
+  pathological label with thousands of ids could be sluggish.
+  Not blocking for v1.
+
+---
+
 ** Stage 2: VS Code / CLI Port
 
 *** Step 2.1 - Shared schema artifact
