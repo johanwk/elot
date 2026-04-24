@@ -2386,6 +2386,224 @@ the collect/driver split introduced in Step 1.13).  Main risks:
 
 ---
 
+*** TODO Step 1.16 - Language-tag-aware label and annotation selection
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+*Goal:* When an ontology carries labels (and annotations like
+=skos:definition=, =rdfs:comment=) in multiple languages, ELOT
+must present a /consistent/ language per user preference, not a
+chaotic mix.  The motivating case: a source with both English
+and Korean labels currently yields arbitrary per-row choices in
+label-display overlays, eldoc/hover summaries, and
+completion-read candidates, because =elot-db-get-label= and
+=elot-db-get-all-attrs= have no language-awareness.
+
+*Scope:* All user-facing surfaces that render labels or
+language-tagged annotation values derived from the DB:
+
+- =elot-db-get-label= (primary) - label-display overlays,
+  stage-1 completion candidate display.
+- =elot-db-get-all-attrs= - eldoc / hover summaries, stage-2
+  annotator.
+- =elot-db-all-active-labels= - completion key set in
+  =elot-label-lookup=.
+- =elot-global--eldoc-function= / =elot-global--help-echo= -
+  must pick definition in the preferred language.
+
+The slurp path (=elot-attriblist-ht=) is out of scope: ELOT Org
+files are authored single-language per-file by convention, and
+language tagging there is driven by =elot-default-language=
+elsewhere.  If future demand emerges we revisit.
+
+*Default selection policy (when user has specified no
+preferences):*
+
+For a given =(id, predicate)= in the DB that has multiple
+values differing only in language tag, the winning value is
+chosen by:
+
+1. Untagged value (no language tag at all) - preferred.
+2. Otherwise, =@en= - preferred as least-surprise default.
+3. Otherwise, the value whose language tag sorts first
+   alphabetically.
+
+Rationale: untagged beats tagged because authors who bother to
+omit the tag usually mean "the canonical form".  =@en= as
+default second choice matches the dominant convention in public
+ontologies (BFO, IOF, SKOS cores) and the expectation of most
+English-speaking users; =ko= or =de= users will set a
+preference anyway.
+
+*User-specified policy:*
+
+A new defcustom =elot-preferred-languages= holds an ordered
+list of language tags, e.g. =("ko" "en")=.  Empty list
+(default) triggers the default policy above.  Interpretation:
+
+- Walk the list in order; first language tag that has a value
+  for the =(id, predicate)= wins.
+- *Untagged values are included implicitly at the end of the
+  preference list by default.*  This means a user who sets
+  =("ko")= gets Korean when available, then falls back to
+  untagged, then falls back to any remaining language
+  (alphabetical).  Users who want to /exclude/ untagged from
+  the fallback can use the sentinel symbol =:untagged= anywhere
+  in the list to pin its position explicitly (e.g.
+  =("ko" :untagged "en")= means "prefer Korean, then untagged,
+  then English, then alphabetical").
+- The same preference list applies to *all* language-tagged
+  string attributes, not just =rdfs:label=.  So a user with
+  =("ko")= sees Korean label /and/ Korean definition in eldoc
+  when both are present.
+
+*Configuration surfaces:*
+
+- =defcustom elot-preferred-languages= in =elot-db.el= (or
+  =elot-sources.el= - TBD during implementation; =elot-db.el=
+  is more natural since the selection happens at DB-query
+  time).  Type: =(repeat (choice string (const :untagged)))=.
+  Default: =nil= (use default policy).
+- =.dir-locals.el= support: the variable is marked
+  =safe-local-variable= with a predicate accepting lists of
+  strings and the =:untagged= keyword.  Projects can pin
+  language preferences per project root.
+- Not stored in the SQLite DB.  Rationale: this is a user
+  presentation preference, not ontology metadata; it belongs
+  with other per-user/per-project Emacs configuration.
+- Buffer-local override (optional, low priority): a command
+  =elot-set-buffer-languages= for interactive experimentation.
+  Implement only if users ask.
+
+*Data-layer changes:*
+
+The SQLite schema already stores =attributes.lang= (the
+language tag, or empty string for untagged).  So no schema
+change.  What changes is the /selection logic/ on read.
+
+Two approaches, pick during implementation:
+
+- *(A) Selection in SQL.*  Rewrite =elot-db-get-label= and the
+  relevant slices of =elot-db-get-all-attrs= to use a
+  =CASE lang WHEN 'ko' THEN 1 WHEN '' THEN 2 WHEN 'en' THEN 3
+  ELSE 4 END= ordering computed from the preference list at
+  call time.  More SQL churn; faster at scale.
+- *(B) Selection in Elisp.*  Fetch all rows (all languages) and
+  pick the winner in Elisp using a small helper
+  =elot--pick-by-language VALUES=.  Simpler, keeps SQL boring,
+  a handful of extra rows per query at worst.  Preferred unless
+  profiling shows a problem.
+
+Recommendation: *(B)*.  The attribute table is indexed by
+=(source, entity_id, predicate)=; fetching all rows for a given
+=(id, predicate)= triple is already O(few) in practice.
+
+A single helper =elot-db--select-by-language ROWS= takes a list
+of =(value . lang)= pairs and the current
+=elot-preferred-languages=, and returns the winning value.  All
+four affected functions call through it.
+
+*New helpers:*
+
+- =elot-db--select-by-language ROWS &optional PREFS= - core
+  language picker.  Pure function, no DB access, easy to unit
+  test in isolation.
+- =elot-db--effective-language-prefs= - resolves buffer-local
+  and defcustom into an ordered list, appending =:untagged= if
+  the user's list doesn't mention it and implicit-tail policy
+  is in force.
+
+*Affected surfaces (minimal call-site impact):*
+
+- =elot-db-get-label= - widen internal query to return rows
+  with =lang=, then call =elot-db--select-by-language=.
+- =elot-db-get-all-attrs= - for each distinct predicate,
+  collapse multi-language rows via the helper before returning
+  the plist.  Care: rows that are not language-tagged at all
+  (URIs, numeric literals) bypass the picker.
+- =elot-db-all-active-labels= - applies the picker per-id when
+  building the =label -> ids= map.  Critical for stage-1
+  completion stability: two entries in different languages
+  must not both reach the completion list.
+- Label-display overlay generation - unchanged structurally;
+  it goes through =elot-db-get-label=, which now returns the
+  language-resolved form.
+
+*Deliverables:*
+
+1. =defcustom elot-preferred-languages= + safe-local-variable
+   predicate.
+2. =elot-db--select-by-language= + unit-testable policy helper.
+3. Integration in the four affected DB read paths.
+4. Mirror in =elot-db.org= (or wherever the module is
+   literately authored - confirm at implementation time).
+5. Docstring updates flagging language-awareness on the four
+   affected functions.
+6. README / =README-global-label-display.org= section on
+   language preferences and =.dir-locals.el= example.
+7. ERT tests under a new Makefile target =step-1-16-test=.
+
+*Tests (planned, ~7-8 cases):*
+
+1. =test-select-by-language-untagged-wins-by-default= -
+   untagged beats =@en= beats =@ko= when =elot-preferred-languages=
+   is nil.
+2. =test-select-by-language-en-second= - with no untagged
+   present and =elot-preferred-languages= nil, =@en= beats =@ko=.
+3. =test-select-by-language-alpha-fallback= - with neither
+   untagged nor =@en= and =elot-preferred-languages= nil,
+   alphabetically first language tag wins.
+4. =test-select-by-language-user-prefs-win= - with
+   =elot-preferred-languages= =("ko")=, Korean beats English
+   beats untagged.
+5. =test-select-by-language-untagged-sentinel= - with
+   =(:untagged "en")=, untagged wins over English which wins
+   over Korean.
+6. =test-db-get-label-respects-prefs= - integration: insert
+   two labels differing only by language tag; set
+   =elot-preferred-languages= and confirm =elot-db-get-label=
+   returns the right one.
+7. =test-db-get-all-attrs-respects-prefs= - same for
+   =skos:definition= with two languages.
+8. =test-db-all-active-labels-respects-prefs= - confirms the
+   completion key set contains the language-resolved label,
+   not a mix.
+
+*Non-goals:*
+
+- No UI for editing =elot-preferred-languages= beyond standard
+  =M-x customize-variable=.  =.dir-locals.el= is the intended
+  project-level surface.
+- No per-predicate language overrides (e.g. "labels in Korean,
+  definitions in English").  If users ask, revisit as a
+  follow-up; the helper's signature admits the extension
+  trivially.
+- No fallback chain inference from the =@en-GB= / =@en-US=
+  family.  Exact tag match only at this stage; locale-aware
+  fallback is a follow-up.
+- No change to the slurp path / =elot-attriblist-ht=.  ELOT
+  Org files are single-language per convention.
+- No SQL schema change.
+
+/Risk/
+
+Low.  The helper is pure and exhaustively testable; the four
+call-site changes are mechanical.  Main risks:
+
+- Performance: if a source has tens of thousands of
+  language-tagged rows per predicate, the "fetch all, pick in
+  Elisp" approach could show up in profiles.  Unlikely in
+  practice (realistic ontologies are O(few) tags per triple);
+  fallback to SQL-side ordering is available if needed.
+- Discoverability: users confronted with a Korean label when
+  they expected English need a clear pointer to
+  =elot-preferred-languages=.  Addressed by the README section
+  and a brief note in the eldoc summary when the mode is newly
+  activated (TBD, non-blocking).
+
+---
+
 ** Stage 2: VS Code / CLI Port
 
 *** Step 2.1 - Shared schema artifact
