@@ -1974,7 +1974,7 @@ flip the defcustom or use the wrapper command.
 
 ---
 
-*** TODO Step 1.14 - Attribute-driven hover/eldoc for =elot-global-label-display-mode=
+*** WAITING Step 1.14 - Attribute-driven hover/eldoc for =elot-global-label-display-mode=
 :PROPERTIES:
 :STATUS: IN-PROGRESS (Tier 1 landed)
 :END:
@@ -2748,7 +2748,8 @@ safe-local-variable-predicate.  No production call site consumes the
 helper yet; invariance of the full suite is the commit gate for
 1.16.1.
 
-*** Sub-step 1.16.1 - Pure language-picker helper (no DB, no schema) [design]
+*** DONE Sub-step 1.16.1 - Pure language-picker helper (no DB, no schema) [design]
+CLOSED: [2026-04-24 fre. 13:14]
 
 /Scope:/ Add =elot-db--select-by-language ROWS &optional PREFS=
 and =elot-db--effective-language-prefs= to =elot-db.el=.  Pure
@@ -2765,7 +2766,18 @@ no DB fixture needed.
 
 /Commit gate:/ existing suite still green; new target green.
 
-*** Sub-step 1.16.2 - Schema v3 migration (additive column, no readers/writers use it yet)
+*** DONE Sub-step 1.16.2 - Schema v3 migration (additive column, no readers/writers use it yet)
+CLOSED: [2026-04-24]
+
+/Status:/ Landed.  =elot-db-schema-version= bumped 2 -> 3.
+=elot-db--migrate-v2-to-v3= added alongside =elot-db--migrate-v1-to-v2=,
+with a combined v1 -> v3 path in =elot-db-migrate=.  Fresh
+=elot-db-init= creates =attributes= with the =lang TEXT NOT NULL
+DEFAULT ''= column and the =idx_attrs_prop_lang= index.  No reader
+or writer yet consumes the column (additive).  Tests live in
+=test/elot-db-schema-v3-test.el= (Makefile target =step-1-16-2-test=,
+3/3 passing: fresh-DB shape, v2 -> v3 migration with row preservation,
+idempotent re-open).  Full aggregate suite remains green.
 
 /Scope:/ Bump =elot-db-schema-version= 2 -> 3.  Add
 =elot-db--migrate-v2-to-v3= mirroring the existing v1->v2

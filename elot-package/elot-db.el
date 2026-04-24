@@ -74,7 +74,7 @@ rows are preserved across re-init calls."
   :type '(alist :key-type string :value-type string)
   :group 'elot-db)
 
-(defconst elot-db-schema-version 2
+(defconst elot-db-schema-version 3
   "Code-side schema version.
 Compared against the value stored in the `schema_version' table by
 `elot-db-migrate'.  Bump this constant when the DDL changes and add a
@@ -238,6 +238,7 @@ CREATE TABLE IF NOT EXISTS attributes (
   data_source TEXT NOT NULL DEFAULT '',
   prop        TEXT,
   value       TEXT,
+  lang        TEXT NOT NULL DEFAULT '',
   FOREIGN KEY (id, source, data_source)
     REFERENCES entities(id, source, data_source) ON DELETE CASCADE
 );
@@ -264,8 +265,10 @@ CREATE INDEX IF NOT EXISTS idx_entities_id
   ON entities(id);
 CREATE INDEX IF NOT EXISTS idx_prefixes_expansion
   ON prefixes(expansion);
+CREATE INDEX IF NOT EXISTS idx_attrs_prop_lang
+  ON attributes(prop, lang);
 "
-  "Canonical DDL applied by `elot-db-init' (schema v2).
+  "Canonical DDL applied by `elot-db-init' (schema v3).
 Kept verbatim so it can later be lifted into `schema.sql' (Step 2.1 in
 the plan) without content changes.")
 
@@ -294,6 +297,11 @@ use IF NOT EXISTS so this is idempotent on existing databases."
   (seq-some (lambda (row) (equal (nth 1 row) "kind"))
             (sqlite-select db "PRAGMA table_info(entities)")))
 
+(defun elot-db--attributes-has-lang-p (db)
+  "Return non-nil if the `attributes' table in DB has a `lang' column."
+  (seq-some (lambda (row) (equal (nth 1 row) "lang"))
+            (sqlite-select db "PRAGMA table_info(attributes)")))
+
 (defun elot-db--seed-global-prefixes (db)
   "Insert `elot-db-default-global-prefixes' into DB (INSERT OR IGNORE).
 User edits to existing rows are preserved."
@@ -316,11 +324,29 @@ version."
      "ALTER TABLE entities ADD COLUMN kind TEXT NOT NULL DEFAULT 'unknown'"))
   (sqlite-execute db "UPDATE schema_version SET version = ?" (list 2)))
 
+(defun elot-db--migrate-v2-to-v3 (db)
+  "Apply the v2 -> v3 migration steps to DB.
+Additive: adds the `lang' column to `attributes' (empty-string
+default, so pre-existing rows are left untagged) and creates the
+`idx_attrs_prop_lang' index.  The `CREATE INDEX IF NOT EXISTS' in
+`elot-db--apply-schema' covers the index on fresh opens; we repeat
+it here so that callers holding a v2 DB handle get the index even
+if they skip re-applying the schema.  Bumps the stored version."
+  (unless (elot-db--attributes-has-lang-p db)
+    (sqlite-execute
+     db
+     "ALTER TABLE attributes ADD COLUMN lang TEXT NOT NULL DEFAULT ''"))
+  (sqlite-execute
+   db
+   "CREATE INDEX IF NOT EXISTS idx_attrs_prop_lang ON attributes(prop, lang)")
+  (sqlite-execute db "UPDATE schema_version SET version = ?" (list 3)))
+
 (defun elot-db-migrate (&optional db)
   "Reconcile the stored schema version with `elot-db-schema-version'.
-Handles the v1 -> v2 transition (Step 1.1.1) automatically.  For any
-other mismatch, signal a `user-error' rather than silently rewrite the
-user's cache.  DB defaults to `elot-db'."
+Handles the v1 -> v2 (Step 1.1.1) and v2 -> v3 (Step 1.16.2)
+transitions automatically, including the combined v1 -> v3 path.
+For any other mismatch, signal a `user-error' rather than silently
+rewrite the user's cache.  DB defaults to `elot-db'."
   (let* ((db (or db elot-db))
          (row (sqlite-select db "SELECT version FROM schema_version LIMIT 1"))
          (stored (caar row)))
@@ -330,8 +356,15 @@ user's cache.  DB defaults to `elot-db'."
        "elot-db: schema_version table is empty; database looks corrupt"))
      ((equal stored elot-db-schema-version)
       stored)
+     ((and (equal stored 1) (equal elot-db-schema-version 3))
+      (elot-db--migrate-v1-to-v2 db)
+      (elot-db--migrate-v2-to-v3 db)
+      elot-db-schema-version)
      ((and (equal stored 1) (equal elot-db-schema-version 2))
       (elot-db--migrate-v1-to-v2 db)
+      elot-db-schema-version)
+     ((and (equal stored 2) (equal elot-db-schema-version 3))
+      (elot-db--migrate-v2-to-v3 db)
       elot-db-schema-version)
      (t
       (user-error
@@ -358,10 +391,22 @@ Returns the open connection and stores it in `elot-db'."
           ;; `sqlite-pragma' is the documented way to toggle pragmas;
           ;; going through `sqlite-execute' is unreliable here.
           (sqlite-pragma db "foreign_keys = ON")
-          (elot-db--apply-schema db)
-          (if (elot-db--fresh-p db)
-              (elot-db--seed-version db elot-db-schema-version)
-            (elot-db-migrate db))
+          (if (null (sqlite-select
+                     db
+                     "SELECT 1 FROM sqlite_master \
+WHERE type='table' AND name='schema_version' LIMIT 1"))
+              ;; Fresh DB: create everything, seed version.
+              (progn
+                (elot-db--apply-schema db)
+                (elot-db--seed-version db elot-db-schema-version))
+            ;; Existing DB: migrate first (adds any missing columns
+            ;; that later DDL statements might reference, e.g. the
+            ;; v3 `lang' column referenced by `idx_attrs_prop_lang'),
+            ;; then re-apply schema to pick up any new IF NOT EXISTS
+            ;; tables/indexes introduced since the DB was created.
+            (let ((elot-db db))
+              (elot-db-migrate db))
+            (elot-db--apply-schema db))
           ;; Global-prefix seed is idempotent; safe to run every init.
           (elot-db--seed-global-prefixes db)
           (setq elot-db db

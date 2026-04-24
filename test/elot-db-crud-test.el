@@ -234,7 +234,10 @@ has any attribute rows for ID."
     (let ((pl (elot-db-get-all-attrs "e1" '(("A" nil)))))
       (should (equal "v1" (plist-get pl "p1" #'equal)))
       (should (equal "v2" (plist-get pl "p2" #'equal)))
-      (should (= 4 (length pl))))
+      ;; Step 1.14: plist now carries :source-origin alongside the
+      ;; string-keyed prop/value pairs, so total length is 4 + 2.
+      (should (= 6 (length pl)))
+      (should (equal (cons "A" "") (plist-get pl :source-origin))))
     (should (null (elot-db-get-all-attrs "no-such" '(("A" nil)))))))
 
 (ert-deftest test-elot-db-get-label-respects-buffer-local ()
