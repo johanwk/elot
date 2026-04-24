@@ -2893,6 +2893,25 @@ the query-shape change without altering observable behaviour.
 /Risk:/ low; it is the only sub-step whose correctness is
 defined entirely by not regressing existing tests.
 
+*** DONE Sub-step 1.16.5 - Activate the picker on the read path (user-visible change)
+CLOSED: [2026-04-24]
+
+/Status:/ Landed.  `elot-db--pick-value-by-lang' now delegates to
+`elot-db--select-by-language' (consulting `elot-preferred-languages'
+via `elot-db--effective-language-prefs').  `elot-db-get-label' and
+`elot-db-all-active-labels' additionally consult `rdfs:label'
+attribute rows when present, so ontologies that carry multi-language
+labels surface the user-preferred variant at lookup time; the
+denormalised `entities.label' column remains the fallback for data
+sources that do not emit label attribute rows.  Tests live in
+`test/elot-db-lang-picker-test.el' (Makefile target
+`step-1-16-5-test', 5/5 passing: picker delegation, get-attr,
+get-all-attrs, get-label with and without attribute rows,
+all-active-labels).  `test-pick-value-by-lang-is-car' in the 1.16.4
+suite was narrowed to its language-agnostic assertions (single row,
+empty list) since the picker is now language-aware; multi-row
+cases have moved to the 1.16.5 suite.  Full aggregate suite green.
+
 *** Sub-step 1.16.5 - Activate the picker on the read path (user-visible change)
 
 /Scope:/ Replace the provisional =car= calls from 1.16.4 with

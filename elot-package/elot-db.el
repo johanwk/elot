@@ -726,35 +726,53 @@ and DATA is ingested.  Returns the number of entity rows written."
 (defun elot-db-get-label (id &optional active-sources)
   "Return label for ID, restricted and prioritised by ACTIVE-SOURCES.
 ACTIVE-SOURCES defaults to the buffer-local `elot-active-label-sources'.
-Returns nil if ACTIVE-SOURCES is empty or no active source has ID."
+Returns nil if ACTIVE-SOURCES is empty or no active source has ID.
+
+Step 1.16.5: when the winning source has `rdfs:label' rows in the
+`attributes' table, they are consulted first and resolved via
+`elot-db--pick-value-by-lang' against `elot-preferred-languages'.
+Otherwise the denormalised `entities.label' column is returned
+(the default ingest-time label, which itself reflects the default
+language policy when the ingestor emitted multiple variants)."
   (let ((sources (elot-db--active-or-default active-sources)))
     (when sources
       (cl-loop
        for entry in sources
        for src = (nth 0 entry)
        for ds  = (elot-db--normalize-ds (nth 1 entry))
-       for row = (sqlite-select
-                  elot-db
-                  "SELECT label FROM entities
-                    WHERE id = ? AND source = ? AND data_source = ?
-                    LIMIT 1"
-                  (list id src ds))
-       when row return (caar row)))))
+       for ent-row = (sqlite-select
+                      elot-db
+                      "SELECT label FROM entities
+                        WHERE id = ? AND source = ? AND data_source = ?
+                        LIMIT 1"
+                      (list id src ds))
+       when ent-row return
+       (let ((attr-rows (sqlite-select
+                         elot-db
+                         "SELECT value, lang FROM attributes
+                           WHERE id = ? AND prop = 'rdfs:label'
+                             AND source = ? AND data_source = ?"
+                         (list id src ds))))
+         (if attr-rows
+             (elot-db--pick-value-by-lang
+              (mapcar (lambda (r) (cons (nth 0 r) (nth 1 r))) attr-rows))
+           (caar ent-row)))))))
 
-(defun elot-db--pick-value-by-lang (rows &optional _prefs)
+(defun elot-db--pick-value-by-lang (rows &optional prefs)
   "Pick one VALUE from ROWS, a list of (VALUE . LANG) cons cells.
-Step 1.16.4 scaffolding: collapses with `car', so observable
-behaviour is identical to the pre-widening read path.  Step 1.16.5
-will swap the body for `elot-db--select-by-language' consulting
-PREFS.  Returns nil when ROWS is empty."
-  (car (car rows)))
+Step 1.16.5: delegates to `elot-db--select-by-language', which
+consults PREFS (or, when nil, `elot-preferred-languages' via
+`elot-db--effective-language-prefs').  Returns the VALUE string
+(unwrapped from the (VALUE . LANG) cons) of the winning row, or
+nil when ROWS is empty."
+  (car (elot-db--select-by-language rows prefs)))
 
 (defun elot-db-get-attr (id prop &optional active-sources)
   "Return the value of PROP for ID, priority-resolved over ACTIVE-SOURCES.
 First active source that has a matching attribute row wins.  If a
 given source has multiple attribute rows for the same (ID, PROP),
-one is chosen via `elot-db--pick-value-by-lang' (Step 1.16.4: the
-first row SQLite returns; Step 1.16.5: language-preference aware)."
+one is chosen via `elot-db--pick-value-by-lang', which consults
+`elot-preferred-languages' (Step 1.16.5)."
   (let ((sources (elot-db--active-or-default active-sources)))
     (when sources
       (cl-loop
@@ -797,14 +815,11 @@ that look up only string-keyed attributes (using `string=' as
 predicate, as ELOT's formatters do) are unaffected; the extra
 entry is a no-op for them.
 
-Step 1.16.4: the read path is widened to carry `lang' internally.
-For each prop, all rows in the winning source are grouped and
-`elot-db--pick-value-by-lang' collapses them to a single value.
-In 1.16.4 that picker is `car' (first row wins), so observable
-behaviour is identical to the pre-widening path for all existing
-data (no row has a non-empty `lang' until Step 1.16.3 emitters
-actually write one).  Step 1.16.5 will replace the picker body
-with `elot-db--select-by-language'."
+Step 1.16.5: for each prop, all rows in the winning source are
+grouped and `elot-db--pick-value-by-lang' collapses them to a
+single value by consulting `elot-preferred-languages'.  For data
+with no language-tagged rows, behaviour is identical to the
+pre-widening path (the lone untagged row wins trivially)."
   (let ((sources (elot-db--active-or-default active-sources)))
     (when sources
       (cl-loop
@@ -900,6 +915,11 @@ label are ignored silently.  First-source-wins, consistent with
 `elot-db-get-label'.  Returns an empty hashtable (never nil) when
 no active sources are set or none have labelled entities.
 
+Step 1.16.5: when a source carries `rdfs:label' attribute rows
+for an id, `elot-db--pick-value-by-lang' (against
+`elot-preferred-languages') chooses the label key.  Ids without
+such rows fall back to the denormalised `entities.label' column.
+
 Each value is a list of `entities.id' strings, ordered by SQL
 return order within the winning source.  Use `elot-db-ids-for-label'
 for a direct lookup."
@@ -912,19 +932,36 @@ for a direct lookup."
       (dolist (entry sources)
         (let* ((src  (nth 0 entry))
                (ds   (elot-db--normalize-ds (nth 1 entry)))
-               (rows (sqlite-select
-                      elot-db
-                      "SELECT DISTINCT id, label FROM entities
-                        WHERE source = ? AND data_source = ?
-                          AND label IS NOT NULL"
-                      (list src ds)))
-               ;; Labels newly seen in this pass are appendable; labels
-               ;; seen in an earlier (higher-priority) pass are frozen.
+               (ent-rows (sqlite-select
+                          elot-db
+                          "SELECT DISTINCT id, label FROM entities
+                            WHERE source = ? AND data_source = ?
+                              AND label IS NOT NULL"
+                          (list src ds)))
+               ;; Fetch all rdfs:label rows for this source in one pass;
+               ;; group by id.
+               (lbl-rows (sqlite-select
+                          elot-db
+                          "SELECT id, value, lang FROM attributes
+                            WHERE source = ? AND data_source = ?
+                              AND prop = 'rdfs:label'"
+                          (list src ds)))
+               (by-id (make-hash-table :test 'equal))
                (this-pass (make-hash-table :test 'equal)))
-          (dolist (row rows)
-            (let ((id    (nth 0 row))
-                  (label (nth 1 row)))
-              (unless (gethash label claimed)
+          (dolist (row lbl-rows)
+            (let ((id (nth 0 row)))
+              (puthash id
+                       (append (gethash id by-id)
+                               (list (cons (nth 1 row) (nth 2 row))))
+                       by-id)))
+          (dolist (row ent-rows)
+            (let* ((id    (nth 0 row))
+                   (ent-l (nth 1 row))
+                   (variants (gethash id by-id))
+                   (label (if variants
+                              (elot-db--pick-value-by-lang variants)
+                            ent-l)))
+              (when (and label (not (gethash label claimed)))
                 (puthash label
                          (append (gethash label ht) (list id))
                          ht)
