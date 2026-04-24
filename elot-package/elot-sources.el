@@ -273,12 +273,17 @@ convention ingest exactly as in earlier versions."
                                  (not (eql i idx-lang))
                                  (not (assoc i label-at-cols))) do
                        (setq plist (nconc plist (list h v))))
-              ;; Row-level lang attaches to the primary label.
-              (when (and row-lang (not (string-empty-p row-lang))
+              ;; Row-level lang attaches to the primary label.  When
+              ;; the CSV has a `lang' column (Step 1.16.6), emit an
+              ;; `rdfs:label' attribute row for every non-empty
+              ;; label -- including untagged rows (lang = "") -- so
+              ;; the language-aware picker can see the full set of
+              ;; variants at read time.
+              (when (and idx-lang
                          label (not (string-empty-p label)))
                 (setq plist (nconc plist
                                    (list "rdfs:label"
-                                         (list label row-lang)))))
+                                         (list label (or row-lang ""))))))
               ;; label@TAG columns become extra rdfs:label rows.
               (dolist (cell label-at-cols)
                 (let ((v (nth (car cell) fields))

@@ -688,26 +688,55 @@ and DATA is ingested.  Returns the number of entity rows written."
            "INSERT INTO sources (source, data_source, type, last_modified, last_updated)
              VALUES (?, ?, ?, ?, ?)"
            (list source ds type mtime now))
-          (dolist (row data)
-            (let* ((id    (nth 0 row))
-                   (label (nth 1 row))
-                   (plist (nth 2 row))
-                   (kind  (or (plist-get plist :kind) "unknown")))
-              (sqlite-execute
-               elot-db
-               "INSERT OR REPLACE INTO entities (id, label, source, data_source, kind)
-                 VALUES (?, ?, ?, ?, ?)"
-               (list id label source ds kind))
-              (cl-loop for (prop val) on plist by #'cddr
-                       unless (keywordp prop) do
-                       (let ((v (if (consp val) (nth 0 val) val))
-                             (lang (if (consp val) (or (nth 1 val) "") "")))
-                         (sqlite-execute
-                          elot-db
-                          "INSERT INTO attributes (id, source, data_source, prop, value, lang)
-                          VALUES (?, ?, ?, ?, ?, ?)"
-                          (list id source ds prop v lang))))
-              (cl-incf n)))
+          ;; Coalesce DATA by id so that multiple triples for the
+          ;; same id (e.g. one row per language-tagged rdfs:label
+          ;; coming out of a ROBOT SPARQL projection) don't trigger
+          ;; the `INSERT OR REPLACE INTO entities' cascade that
+          ;; would wipe attribute rows written by earlier
+          ;; iterations.  First-seen label wins; plists are
+          ;; concatenated in order; :kind is taken from the first
+          ;; occurrence.
+          (let ((merged (make-hash-table :test 'equal))
+                (order  nil))
+            (dolist (row data)
+              (let* ((id    (nth 0 row))
+                     (label (nth 1 row))
+                     (plist (nth 2 row))
+                     (prev  (gethash id merged)))
+                (if prev
+                    (let ((prev-label (nth 0 prev))
+                          (prev-plist (nth 1 prev)))
+                      (puthash id
+                               (list (if (and (or (null prev-label)
+                                                  (string-empty-p
+                                                   prev-label))
+                                              label)
+                                         label
+                                       prev-label)
+                                     (append prev-plist plist))
+                               merged))
+                  (push id order)
+                  (puthash id (list label plist) merged))))
+            (dolist (id (nreverse order))
+              (let* ((cell  (gethash id merged))
+                     (label (nth 0 cell))
+                     (plist (nth 1 cell))
+                     (kind  (or (plist-get plist :kind) "unknown")))
+                (sqlite-execute
+                 elot-db
+                 "INSERT OR REPLACE INTO entities (id, label, source, data_source, kind)
+                   VALUES (?, ?, ?, ?, ?)"
+                 (list id label source ds kind))
+                (cl-loop for (prop val) on plist by #'cddr
+                         unless (keywordp prop) do
+                         (let ((v (if (consp val) (nth 0 val) val))
+                               (lang (if (consp val) (or (nth 1 val) "") "")))
+                           (sqlite-execute
+                            elot-db
+                            "INSERT INTO attributes (id, source, data_source, prop, value, lang)
+                            VALUES (?, ?, ?, ?, ?, ?)"
+                            (list id source ds prop v lang))))
+                (cl-incf n))))
           (sqlite-commit elot-db)
           (setq ok t))
       (unless ok
