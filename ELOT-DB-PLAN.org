@@ -3311,6 +3311,59 @@ external-tool work (ROBOT/TTL) is isolated at the end:
   three types.  Golden round-trip vs. the Elisp parsers on the
   shared fixture corpus.
 
+  /Status (implemented):/ DONE.  Landed in =tools/elot-cli/=:
+  - =src/parsers/csvTsv.ts= - RFC 4180 line splitter +
+    =parseSeparatedString= ported one-to-one from
+    =elot-source--parse-separated=.  Exports =parseCsv=, =parseTsv=,
+    =splitCsvLine= (for unit tests).  Step 1.16.6 conventions:
+    a =lang= header column at index >= 2 attaches a row-level
+    BCP-47 tag; every populated primary label becomes an
+    =rdfs:label= attribute row including =lang=""=.  =label@TAG=
+    header suffixes become additional =rdfs:label= rows per
+    populated cell.  Strips UTF-8 BOM and trailing CR; skips
+    blank lines exactly like the Elisp parser.  Returns
+    =ParsedSource = &#123;entries, prefixes?&#125;=.
+  - =src/parsers/json.ts= - =parseJson= for flat and nested
+    shapes.  Nested: =label= is the primary label; =lang=
+    attaches only when both =label= and =lang= are non-empty
+    (Elisp parity - untagged files keep pre-1.16 behaviour);
+    =label@TAG= keys produce tagged =rdfs:label= rows; any
+    other key becomes a plain attribute row.  Values coerced
+    to strings (numbers, booleans, null).
+  - =src/parsers/index.ts= - =detectTypeFromExtension= +
+    =parseSource= dispatcher for =csv= / =tsv= / =json= in
+    2.2.3.  =ttl= / =rq= / =org= throw an explicit "not
+    implemented in Step 2.2.3" error that points at 2.2.4/2.2.5.
+  - =src/dbCli.ts= - =register <file>= extended with =--type
+    {csv|tsv|json|triples-json}= (triples-json preserves the
+    2.2.2 self-describing shape), =--source=, =--data-source=.
+    Auto-detects type from extension.  Prefixes from the parser
+    are inserted via =addPrefix= under the registered source.
+    New =refresh <source> --file <path> [--type T]= command
+    re-parses a known source in place; mtime re-stamps the
+    =sources= row.
+  - Tests: =src/tests/db/parsers.test.ts= (23 cases) covers the
+    RFC 4180 splitter edge cases, the CSV =lang= column + the
+    =label@TAG= suffix, backward-compat for unadorned CSV,
+    TSV parity, all three JSON shapes (flat / nested-lang /
+    nested-label@TAG / non-string coercion / lang-without-label),
+    and the dispatcher.  Mirrors =test/elot-sources-lang-test.el=
+    with the same fixture content.
+    =src/tests/db/registerRoundtrip.test.ts= (3 cases) parses a
+    fixture -> =updateSource= -> =save= -> reopen -> asserts
+    =getLabel= / =getAttr= / =labelVariants= round-trip through
+    the language picker (CSV tagged, JSON nested, TSV baseline).
+  - =package.json= scripts =test:db-parsers=, =test:db-roundtrip=;
+    =test:db= now runs all six suites.  =Makefile= mirrors with
+    =test-db-parsers= / =test-db-roundtrip= targets.
+
+  /Deferred to later sub-steps (per plan):/ TTL / RQ (2.2.4,
+  ROBOT shellout), Org parser adaptor (2.2.5).  A true
+  byte-identical golden round-trip vs. the Elisp writer is
+  still pending a shared fixture-dump harness; the behavioural
+  round-trip tests in =registerRoundtrip.test.ts= cover the
+  semantics that harness would check.
+
 - *Step 2.2.4 - TTL / RQ parsers (ROBOT shellout).*  =parsers/ttl.ts=
   and =parsers/rq.ts=.  Default SPARQL projects =(LANG(?label) AS
   ?lang)= per Step 1.16.7; per-project =.elot/ttl-label-query.rq=

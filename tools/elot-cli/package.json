@@ -179,7 +179,9 @@
     "test:db-read": "tsx src/tests/db/elotDb.test.ts",
     "test:db-write": "tsx src/tests/db/elotDbWrite.test.ts",
     "test:db-paths": "tsx src/tests/db/dbPaths.test.ts",
-    "test:db": "npm run test:db-lang && npm run test:db-read && npm run test:db-write && npm run test:db-paths",
+    "test:db-parsers": "tsx src/tests/db/parsers.test.ts",
+    "test:db-roundtrip": "tsx src/tests/db/registerRoundtrip.test.ts",
+    "test:db": "npm run test:db-lang && npm run test:db-read && npm run test:db-write && npm run test:db-paths && npm run test:db-parsers && npm run test:db-roundtrip",
     "elot": "tsx src/cli.ts"
   },
   "dependencies": {
