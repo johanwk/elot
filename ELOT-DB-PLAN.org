@@ -3231,10 +3231,8 @@ automatically) or to delete the DB and re-register sources.
 
 ---
 
-*** Step 2.2 - =elot-cli=: full DB management + parsers in Node/TS
-:PROPERTIES:
-:STATUS: TODO
-:END:
+*** DONE Step 2.2 - =elot-cli=: full DB management + parsers in Node/TS
+CLOSED: [2026-04-24 fre. 22:25]
 
 *Scope note (split into shippable sub-steps).* Step 2.2 as originally
 scoped is too large for a single landing.  It is split into five
@@ -3274,7 +3272,8 @@ external-tool work (ROBOT/TTL) is isolated at the end:
   CLI entry point yet.  /This alone unblocks Step 2.3/ because
   the extension only needs read + helpers.
 
-- *Step 2.2.2 - Writer + minimal CLI skeleton.*  =updateSource=,
+- *Step 2.2.2 - Writer + minimal CLI skeleton.*  
+  /Status:/ DONE.  =updateSource=,
   =removeSource=, =addPrefix=, =removePrefix= on =ElotDb=, plus the
   full-file =export()= / save-on-shutdown machinery.  =commander=
   wiring in =cli.ts= for =init=, =list=, =lookup=, =attr=, =remove=
