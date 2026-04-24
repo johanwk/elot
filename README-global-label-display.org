@@ -300,6 +300,119 @@ source's label is returned and the lower-priority one is ignored
 with no warning. This is a feature, not a bug -- reorder via
 =M-x elot-label-list-active-sources= to change which source wins.
 
+* Language preferences
+
+Many ontologies carry =rdfs:label=, =skos:definition=, and
+=rdfs:comment= annotations in more than one language -- for
+example an English label =@en=, a Korean label =@ko=, and
+sometimes an untagged literal alongside both. Without guidance
+ELOT has no reason to prefer one over another, so displayed
+labels become a chaotic mix.
+
+The variable =elot-preferred-languages= controls the choice:
+
+#+begin_src emacs-lisp
+(setq elot-preferred-languages '("en" "ko"))
+#+end_src
+
+Each element is either a BCP-47 language tag as a string
+(=\"en\"=, =\"ko\"=, =\"nb\"=, =\"en-GB\"= ...) or the symbol
+=:untagged= which matches literals with no language tag.
+
+/Default behaviour (=elot-preferred-languages= is nil):/
+
+ 1. untagged literals win,
+ 2. else =@en= wins,
+ 3. else the alphabetically first available tag wins.
+
+This gives the least surprise for the common English-plus-other
+case while still picking /something/ deterministic when no English
+variant exists.
+
+/Explicit user preferences:/ the list is walked top-to-bottom; the
+first entry that matches any available variant wins. If the list
+does not contain =:untagged=, it is treated as appended at the
+tail -- so tagged preferences always take priority over untagged
+literals unless you pin =:untagged= explicitly.
+
+Examples:
+
+| Setting                         | Effect                                         |
+|---------------------------------+------------------------------------------------|
+| =nil=                           | default policy (untagged, then =@en=, then alphabetical) |
+| =("ko")=                        | Korean first, then untagged, then alphabetical |
+| =(:untagged "en")=              | untagged first, then English -- the default, written out |
+| =("en-GB" "en")=                | British English, then generic English          |
+| =("nb" "nn" "en")=              | Norwegian variants, then English               |
+
+The same preference list governs labels /and/ definitions /and/
+comments uniformly. Setting =elot-preferred-languages= to =("ko")=
+means you see Korean labels /and/ Korean =skos:definition= /
+=rdfs:comment= in the minibuffer, eldoc, and completion
+annotations -- assuming those variants exist; otherwise the
+fallback rules apply per value.
+
+** Per-project language preference
+
+Language preferences fit naturally in =.dir-locals.el= at the
+project root, exactly like =elot-active-label-sources=:
+
+#+begin_src emacs-lisp
+((nil . ((elot-active-label-sources
+          . (("c:/Projects/example/vocab.ttl" nil)))
+         (elot-preferred-languages . ("ko" "en")))))
+#+end_src
+
+The value is declared =safe-local-variable= (a list of strings
+and/or the =:untagged= symbol) so Emacs accepts it without
+prompting.
+
+** Scope
+
+Language preferences apply to DB-backed sources only
+(=.ttl=, =.rq=, =.csv=, =.tsv=, =.json=). Labels authored in
+ELOT Org buffers are consumed via the literate slurp path and
+are assumed to be single-language per ontology file by design;
+duplicate labels within one ELOT Org buffer are treated as a
+data-quality issue surfaced by =elot-lint=, not by language
+resolution.
+
+** Multi-language in CSV / TSV / JSON sources
+
+Two conventions are recognised (Step 1.16.6):
+
+1. /=lang= header column./ A column literally named =lang=
+   attaches its value as the language tag for the primary
+   =label= on that row. Empty cells mean untagged.
+
+   #+begin_src
+   id,label,lang
+   ex:Widget,Widget,en
+   ex:Widget,위젯,ko
+   ex:Widget,Widget-canonical,
+   #+end_src
+
+2. /=label@TAG= suffix columns./ Each tagged label occupies its
+   own column, so a single row can carry multiple languages:
+
+   #+begin_src
+   id,label,label@ko,label@en-GB
+   ex:Widget,Widget,위젯,Widget
+   #+end_src
+
+Both conventions produce identical DB rows and can be mixed
+across sources. Files with neither convention are ingested as
+untagged (the pre-1.16 behaviour, unchanged).
+
+** Multi-language TTL sources
+
+The default SPARQL query in =elot-source-ttl-label-query= now
+projects =(LANG(?label) AS ?lang)= alongside =?id ?label=, so
+ROBOT preserves language tags through CSV and into the DB
+automatically. Users who have customised =elot-source-ttl-label-query=
+need to re-add the =lang= projection to opt in; otherwise their
+TTL ingestion continues to produce untagged rows as before.
+
 * Refreshing sources
 
 - /Automatic/. Saving an ELOT Org file re-ingests it via

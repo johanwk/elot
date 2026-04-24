@@ -127,7 +127,14 @@ annotations such as `rdfs:comment' and `skos:definition'.  It is
 intentionally not stored in the SQLite cache.
 
 Typically set via Customize, or per project via a `.dir-locals.el'
-entry for `elot-preferred-languages'."
+entry for `elot-preferred-languages'.
+
+Consulted by `elot-db-get-attr', `elot-db-get-all-attrs',
+`elot-db-get-label', and `elot-db-all-active-labels' via
+`elot-db--pick-value-by-lang' / `elot-db--select-by-language'.
+Slurp-path readers in ELOT Org buffers are intentionally not
+affected (Step 1.16 scope decision).  See also
+`README-global-label-display.org' for examples."
   :type '(repeat (choice (const :tag "Untagged literal" :untagged)
                          (string :tag "Language tag (e.g. \"en\")")))
   :group 'elot-db)
