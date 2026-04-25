@@ -1,7 +1,7 @@
 # Makefile for elot-cli — friendly aliases for npm commands.
 # Run "make help" to see available targets.
 
-.PHONY: help all install bundle build watch test test-syntax test-html test-html-post test-html-integration test-html-all test-db test-db-lang test-db-read test-db-write test-db-paths test-db-parsers test-db-prefixes test-db-rq-cache test-db-ttl-robot test-db-roundtrip test-db-org test-db-cli-e2e test-db-golden test-db-bridge test-db-resolve test-settings test-settings-active-sources clean package cli
+.PHONY: help all install bundle build watch test test-syntax test-html test-html-post test-html-integration test-html-all test-db test-db-lang test-db-read test-db-write test-db-paths test-db-parsers test-db-prefixes test-db-rq-cache test-db-ttl-robot test-db-roundtrip test-db-org test-db-cli-e2e test-db-golden test-db-bridge test-db-hover-token test-db-hover-render test-db-resolve test-settings test-settings-active-sources clean package cli
 
 all: install bundle test test-html-all package ## Full build from scratch: install → bundle → test → package
 
@@ -80,6 +80,12 @@ test-db-golden: ## Run byte-identical golden round-trip tests vs Elisp writer (S
 
 test-db-bridge: ## Run ElotDbBridge tests (Step 2.3.1)
 	npm run test:db-bridge
+
+test-db-hover-token: ## Run DB hover token-detection tests (Step 2.3.2)
+	npm run test:db-hover-token
+
+test-db-hover-render: ## Run DB hover Markdown renderer tests (Step 2.3.2)
+	npm run test:db-hover-render
 
 test-settings: ## Run all settings-normaliser tests (Step 2.3.1+)
 	npm run test:settings

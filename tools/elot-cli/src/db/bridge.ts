@@ -82,17 +82,31 @@ export class ElotDbBridge {
       this.db = null;
     }
     this.currentPath = newPath;
-    this.startWatch(newPath);
-    if (!newPath || !existsSync(newPath)) {
+    if (!newPath) {
+      this.stopWatch();
       this.notify();
       return null;
     }
+    // Auto-create an empty v3 DB at the resolved path on first run.
+    // ElotDb.open() handles the missing-file case by initialising a
+    // fresh schema in memory; we then save() it so the file exists
+    // for the file-watcher to track and for the CLI to subsequently
+    // register sources into.
+    const existed = existsSync(newPath);
     try {
       this.db = await ElotDb.open(newPath);
+      if (!existed) {
+        try {
+          this.db.save(newPath);
+        } catch (err) {
+          (this.opts.onError ?? defaultErr)(err);
+        }
+      }
     } catch (err) {
       (this.opts.onError ?? defaultErr)(err);
       this.db = null;
     }
+    this.startWatch(newPath);
     this.notify();
     return this.db;
   }

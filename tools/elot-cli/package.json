@@ -35,7 +35,9 @@
   "engines": {
     "vscode": "^1.75.0"
   },
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "contributes": {
     "commands": [
       {
@@ -64,6 +66,10 @@
       {
         "command": "elot.exportHtml",
         "title": "Elot: Export to HTML"
+      },
+      {
+        "command": "elot.dbInfo",
+        "title": "Elot: Label DB Info"
       }
     ],
     "keybindings": [
@@ -116,6 +122,40 @@
           "type": "string",
           "default": "pandoc",
           "description": "Path to the Pandoc executable (auto-downloaded if not found; required for HTML export)"
+        },
+        "elot.dbPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the ELOT label SQLite database (written by `elot-cli db ...`). Empty = use VS Code globalStorage location. Workspace-level overrides user-level."
+        },
+        "elot.activeLabelSources": {
+          "type": "array",
+          "default": [],
+          "description": "Ordered list of active label sources. Each entry is either a string (source name) or `{\"source\": \"name\", \"dataSource\": \"path\"}`. First match wins on lookup conflicts.",
+          "items": {
+            "type": ["string", "object"]
+          }
+        },
+        "elot.preferredLanguages": {
+          "type": "array",
+          "default": [],
+          "description": "Preferred language tags (BCP-47) for label resolution, in priority order. Empty = use [untagged, en] default.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "elot.globalLabelDisplay.hoverEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show DB-backed hover (label, type, definition, provenance) for CURIEs and IRIs in non-Org files."
+        },
+        "elot.globalLabelDisplay.includeLanguages": {
+          "type": "array",
+          "default": [],
+          "description": "Language IDs in which DB-backed hover/decorations apply. Empty = use built-in default (plaintext, markdown, typescript, javascript, python, json, yaml, xml, turtle, sparql, ...). Org is always excluded.",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
@@ -188,9 +228,11 @@
     "test:db-cli-e2e": "tsx src/tests/db/cliE2e.test.ts",
     "test:db-golden": "tsx src/tests/db/golden.test.ts",
     "test:db-bridge": "tsx src/tests/db/bridge.test.ts",
+    "test:db-hover-token": "tsx src/tests/db/dbHoverToken.test.ts",
+    "test:db-hover-render": "tsx src/tests/db/dbHoverRender.test.ts",
     "test:settings-active-sources": "tsx src/tests/settings/activeSources.test.ts",
     "test:db-resolve": "tsx src/tests/db/dbResolve.test.ts",
-    "test:db": "npm run test:db-lang && npm run test:db-read && npm run test:db-write && npm run test:db-paths && npm run test:db-parsers && npm run test:db-prefixes && npm run test:db-rq-cache && npm run test:db-ttl-robot && npm run test:db-roundtrip && npm run test:db-org && npm run test:db-cli-e2e && npm run test:db-golden && npm run test:db-bridge && npm run test:db-resolve && npm run test:settings",
+    "test:db": "npm run test:db-lang && npm run test:db-read && npm run test:db-write && npm run test:db-paths && npm run test:db-parsers && npm run test:db-prefixes && npm run test:db-rq-cache && npm run test:db-ttl-robot && npm run test:db-roundtrip && npm run test:db-org && npm run test:db-cli-e2e && npm run test:db-golden && npm run test:db-bridge && npm run test:db-hover-token && npm run test:db-hover-render && npm run test:db-resolve && npm run test:settings",
     "test:settings": "npm run test:settings-active-sources",
     "elot": "tsx src/cli.ts"
   },

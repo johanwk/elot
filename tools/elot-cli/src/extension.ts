@@ -14,6 +14,10 @@ import { registerCompletionProvider } from "./completionProvider.js";
 import { registerDiagnosticsProvider } from "./diagnosticsProvider.js";
 import { registerImportOwlCommand, registerDownloadExporterCommand } from "./importOwl.js";
 import { ensurePandoc, exportOrgToHtml } from "./exportHtml.js";
+import { ElotDbBridge } from "./db/bridge.js";
+import { resolveExtensionDbPath } from "./dbResolve.js";
+import { registerDbHoverProvider } from "./dbHoverProvider.js";
+import { registerDbInfoCommand } from "./dbInfo.js";
 
 export function activate(context: vscode.ExtensionContext) {
   const tangle = async (doc: vscode.TextDocument, manual = false) => {
@@ -159,6 +163,36 @@ export function activate(context: vscode.ExtensionContext) {
     } catch (err: any) {
       vscode.window.showErrorMessage(`HTML export failed: ${err.message}`);
     }
+  });
+
+  // ── DB-backed (global) label display ────────────────────────
+  // The CLI is the sole writer; the bridge opens the DB read-only,
+  // watches for changes, and serves hovers for non-Org files.
+  const dbBridge = new ElotDbBridge({
+    resolvePath: () => {
+      const cfg = vscode.workspace.getConfiguration("elot");
+      const wsCfg = cfg.inspect<string>("dbPath");
+      return resolveExtensionDbPath({
+        workspacePath: wsCfg?.workspaceValue ?? null,
+        userPath: wsCfg?.globalValue ?? null,
+        envPath: process.env.ELOT_DB_PATH ?? null,
+        globalStorageDir: context.globalStorageUri.fsPath,
+      });
+    },
+    onError: (err) => console.error("[elot] DB bridge error:", err),
+  });
+  // Reload bridge when path setting changes.
+  const onDbCfg = vscode.workspace.onDidChangeConfiguration((e) => {
+    if (e.affectsConfiguration("elot.dbPath")) {
+      dbBridge.reload().catch((err) =>
+        console.error("[elot] DB reload failed:", err),
+      );
+    }
+  });
+  const dbHover = registerDbHoverProvider(context, dbBridge);
+  const dbInfo = registerDbInfoCommand(dbBridge);
+  context.subscriptions.push(dbHover, dbInfo, onDbCfg, {
+    dispose: () => dbBridge.dispose(),
   });
 
   // Clean up cached slurp maps when documents are closed

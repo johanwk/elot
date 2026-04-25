@@ -10,7 +10,8 @@
 // on an existing DB, schema_version is asserted to equal 3.
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
-import { resolve, dirname } from "path";
+import { resolve, dirname, join } from "path";
+import { createRequire } from "module";
 import initSqlJs, {
   Database as SqlJsDatabase,
   SqlJsStatic,
@@ -119,17 +120,18 @@ export class ElotDb {
    */
   static async open(path: string | null): Promise<ElotDb> {
     const SQL: SqlJsStatic = await initSqlJs({
-      // sql.js ships sql-wasm.wasm in its package root; point at it
-      // explicitly so Node invocations from any cwd can find it.
+      // sql.js ships sql-wasm.wasm in its package root.  At runtime
+      // we prefer a sibling-of-bundle copy (esbuild copies it to
+      // dist/ alongside extension.js / cli.js -- this is the only
+      // path that survives .vsix packaging, where node_modules is
+      // stripped).  In dev / under tsx, fall back to resolving from
+      // node_modules via createRequire, which avoids the
+      // direct-eval pattern esbuild warns about.
       locateFile: (file: string) => {
+        const sibling = join(__dirname, file);
+        if (existsSync(sibling)) return sibling;
         try {
-          // Requires `require` (available under our CJS build / tsx).
-          // eslint-disable-next-line @typescript-eslint/no-require-imports
-          const req: NodeRequire =
-            typeof require !== "undefined"
-              ? require
-              : // eslint-disable-next-line @typescript-eslint/no-var-requires
-                (eval("require") as NodeRequire);
+          const req = createRequire(__filename);
           return req.resolve(`sql.js/dist/${file}`);
         } catch {
           return file;

@@ -14,7 +14,10 @@
 
 import * as esbuild from "esbuild";
 import { copyFileSync, mkdirSync, existsSync, readdirSync, rmSync } from "fs";
-import { join } from "path";
+import { createRequire } from "module";
+import { dirname, join } from "path";
+
+const require = createRequire(import.meta.url);
 
 // Copy .wasm files from src/wasm/ to dist/
 function copyWasmFiles() {
@@ -40,7 +43,32 @@ function copyWasmFiles() {
 
   for (const f of wasmFiles) {
     copyFileSync(join(wasmDir, f), join(distDir, f));
-    console.log(`Copied ${f} → dist/${f}`);
+    console.log(`Copied ${f} -> dist/${f}`);
+  }
+
+  // Copy sql.js's sql-wasm.wasm so ElotDb.locateFile() can find it
+  // sibling-of-bundle at runtime.  Without this, the bundled extension
+  // breaks once node_modules/ is stripped during .vsix packaging.
+  try {
+    const sqlJsEntry = require.resolve("sql.js");
+    // sql.js entry sits in package root or in dist/; walk up to the
+    // package, then dive into dist/.
+    let pkgDir = dirname(sqlJsEntry);
+    while (pkgDir && !existsSync(join(pkgDir, "package.json"))) {
+      const parent = dirname(pkgDir);
+      if (parent === pkgDir) break;
+      pkgDir = parent;
+    }
+    const wasmSrc = join(pkgDir, "dist", "sql-wasm.wasm");
+    if (!existsSync(wasmSrc)) {
+      console.error(`ERROR: could not find sql-wasm.wasm at ${wasmSrc}`);
+      process.exit(1);
+    }
+    copyFileSync(wasmSrc, join(distDir, "sql-wasm.wasm"));
+    console.log(`Copied sql-wasm.wasm -> dist/sql-wasm.wasm`);
+  } catch (err) {
+    console.error(`ERROR: failed to locate/copy sql.js wasm: ${err.message}`);
+    process.exit(1);
   }
 }
 

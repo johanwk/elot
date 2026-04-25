@@ -3752,7 +3752,26 @@ sub-steps, each ending on green tests:
   now invokes =test:settings= as its tail step so coverage is
   unchanged.
 
-- *Step 2.3.2 - Hover provider.*  =dbHoverProvider.ts= +
+  /Follow-up auto-create (post-2.3.2 live test):/  When a user
+  installs the extension and points VS Code at the per-platform
+  default (=context.globalStorageUri/elot.sqlite=) without first
+  running =elot-cli db init=, hovering produced no result and no
+  feedback - the bridge silently returned null for the missing
+  file.  Bridge =doReload()= now /auto-creates an empty v3 DB at
+  the resolved path on first access/, mirroring =elot-cli db init=
+  but driven by the extension activating.  Behaviour:
+  - resolvePath() returns null -> still null (unchanged).
+  - file exists -> open as before.
+  - file missing -> =ElotDb.open(path)= initialises a fresh v3
+    schema in memory; bridge then =save()=s it to the resolved
+    path so the file exists for the watcher to track and for the
+    CLI to subsequently =db register= sources into.
+  Errors during the initial =save()= go to =onError= but do not
+  prevent the in-memory DB from being usable for the session.
+  New test case in =bridge.test.ts= asserts the file is created
+  on disk and that =listSources()= returns =[]= for the fresh DB.
+
+- *DONE Step 2.3.2 - Hover provider.*  =dbHoverProvider.ts= +
   =elot--id-at-point=-equivalent token detector (CURIE / bare IRI
   / angle-bracketed IRI) + rich =MarkdownString= renderer (id,
   bold label, =rdf:type=, definition, provenance =[src: NAME]=).
@@ -3760,6 +3779,109 @@ sub-steps, each ending on green tests:
   provider is gated to non-Org languages in the include list, so
   the two providers never race.  Smallest user-visible feature;
   great for early validation.
+
+  /Status: DONE./
+
+  Landed:
+  - =src/dbHover/token.ts= - pure =detectTokenAtOffset(line, offset)=
+    recognising angle-bracketed IRI (=<http://...>=, brackets stripped),
+    bare http(s) IRI (with sensible trailing-punctuation cutoffs), and
+    CURIE (including the empty-prefix =:Widget= and dotted prefixes
+    like =dc11:=).  Returns =&#123;token, start, end, kind&#125;= with
+    angle-IRI > bare-IRI > CURIE precedence so cursor-on-=<= resolves
+    to the full IRI rather than fall through.
+  - =src/dbHover/render.ts= - pure =renderHoverMarkdown(input)=
+    producing the Markdown body: bold label header (or token if no
+    label), id row (clickable link for http URIs, inline code for
+    CURIEs), featured props block (=rdf:type= comma-joined as code,
+    =skos:definition=/=rdfs:comment= as prose), other props below a
+    =---= rule, and =[src: NAME]= (or =NAME - dataSource=) provenance
+    footer.  =rdfs:label= is hidden in attrs (already in header).
+    Markdown special chars escaped.
+  - =src/dbHoverProvider.ts= - vscode-side wiring.  Reads settings via
+    =vscode.workspace.getConfiguration= each call (no caching across
+    settings edits): =elot.activeLabelSources= -> =normalizeActiveSources=,
+    =elot.preferredLanguages= -> =getEffectiveLanguagePrefs=,
+    =elot.globalLabelDisplay.hoverEnabled=, and
+    =elot.globalLabelDisplay.includeLanguages= (empty -> built-in
+    default list).  Org is *always* excluded from the selector.
+    =registerDbHoverProvider= re-registers the provider when
+    =includeLanguages= changes.  Uses =bridge.get()= +
+    =db.getLabelAny= / =db.getAllAttrsAny= so CURIE/URI two-pass
+    resolution works regardless of how the DB stores ids.
+  - =src/extension.ts= - =activate()= now constructs an =ElotDbBridge=
+    (resolvePath wired through =resolveExtensionDbPath= using
+    =cfg.inspect("dbPath")= for workspace/user split + =$ELOT_DB_PATH=
+    + =context.globalStorageUri.fsPath=); reloads on
+    =elot.dbPath= setting changes; registers =dbHover=; bridge
+    disposed on extension deactivation.
+  - =package.json= - =activationEvents=: =["onStartupFinished"]= so
+    bridge can lazy-open without forcing every workspace to pay the
+    cost.  New settings declared: =elot.dbPath=, =elot.activeLabelSources=,
+    =elot.preferredLanguages=, =elot.globalLabelDisplay.hoverEnabled=,
+    =elot.globalLabelDisplay.includeLanguages=.
+  - =src/tests/db/dbHoverToken.test.ts= - 17 cases covering CURIE
+    (start/middle/end of token, empty-prefix, dotted-prefix,
+    whitespace miss), angle-IRI (cursor on =<= / inside / on =>=),
+    bare-IRI (trailing-comma / paren cutoffs), priority (angle wins
+    over bare), and miss cases.
+  - =src/tests/db/dbHoverRender.test.ts= - 14 cases covering bold
+    header (label / fallback to token), id row (http link vs code),
+    featured props (=rdf:type= single+multi, =skos:definition=
+    prose), provenance footer (with / without dataSource / null),
+    non-featured props below =---= rule, =rdfs:label= hidden in
+    attrs, Markdown escaping.
+  - =Makefile= / =package.json= scripts: =test:db-hover-token=,
+    =test:db-hover-render=; =test:db= aggregate now runs 17 suites.
+
+  Deferred to later 2.3.x slices: decoration provider (2.3.3),
+  toggle command + F5 in non-Org (2.3.4), electron smoke tests
+  (2.3.5).
+
+  /Follow-up packaging fix (in 2.3.2 scope, post-landing):/
+  esbuild flagged a =direct-eval= warning in =db/sqljs.ts=
+  (=eval("require")= used as a paranoid fallback when the bundler
+  cannot see =require= statically).  Two real consequences:
+  (a) the bundled =extension.js= had no static dependency on
+  =sql.js/dist/sql-wasm.wasm=, so it was not copied to =dist/=,
+  meaning the WASM file would be missing once =node_modules/= is
+  stripped from a packaged =.vsix=; (b) =locateFile= would still
+  appear to work in dev (resolving via =node_modules/=) but break
+  at install time.  Fixed by:
+  - =esbuild.mjs= now imports =createRequire(import.meta.url)= and
+    copies =sql.js/dist/sql-wasm.wasm= into =dist/sql-wasm.wasm=
+    alongside the orgize WASM.
+  - =db/sqljs.ts= =locateFile= now prefers =join(__dirname, file)=
+    (the sibling-of-bundle copy that survives packaging) and
+    falls back to =createRequire(__filename).resolve("sql.js/dist/" + file)=
+    for the dev / =tsx= path.  Removed the =eval("require")=.
+  No behavioural change for tests; =bundle= now produces a
+  self-contained =dist/= and the direct-eval warning is gone.
+
+  /Live validation (post-landing):/  End-to-end smoke test on
+  Windows confirmed the full read path: =elot-cli db register
+  examples/org/ro.org --type org --source ro= populated 985
+  entities into the per-platform default DB
+  (=%APPDATA%/Code/User/globalStorage/johanwk.elot/elot.sqlite=);
+  the extension auto-created/opened the same file via the bridge;
+  hover on =obo:RO_HOM0000018= in a =.txt= buffer rendered the
+  expected markdown card (label, type, definition, =[src: ro]=).
+  One real-world snag observed: a user =settings.json= with
+  multiple top-level objects (a JSONC parse failure VS Code only
+  surfaces in the Extension Host log) silently dropped
+  =elot.activeLabelSources=, leaving hover dead with no error.
+  Motivated landing the diagnostic command below.
+
+  /Follow-up diagnostic command =elot.dbInfo= (in 2.3.2 scope):/
+  New file =src/dbInfo.ts= + registration in =extension.ts= +
+  command entry in =package.json= ("Elot: Label DB Info").  Pops
+  an information modal with a one-line summary plus a dedicated
+  output channel showing: resolved DB path, bridge-open state,
+  source count and names from the DB, =activeLabelSources=,
+  =preferredLanguages=, =hoverEnabled=, =includeLanguages=.
+  Empty =activeLabelSources= is annotated explicitly with
+  "(empty - hover will return nothing!)" so the most common
+  first-run pitfall is one click away from diagnosis.
 
 - *Step 2.3.3 - Decoration provider.*  =dbDecorations.ts=:
   Trie/regex matcher build over =allActiveLabels= (dual-form,

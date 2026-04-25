@@ -51,11 +51,24 @@ async function run(): Promise<void> {
   const dbPath = join(dir, "elot.sqlite");
 
   // ── lazy open ─────────────────────────────────────────────
-  await test("get() returns null when path does not exist", async () => {
-    const b = new ElotDbBridge({ resolvePath: () => dbPath });
+  await test("get() returns null when resolvePath returns null", async () => {
+    const b = new ElotDbBridge({ resolvePath: () => null });
     const db = await b.get();
-    eq(db, null, "no file -> null");
+    eq(db, null, "null path -> null");
     eq(b.isOpen, false, "isOpen false");
+    b.dispose();
+  });
+
+  await test("get() auto-creates an empty v3 DB when file does not exist", async () => {
+    const fresh = join(dir, "auto-create.sqlite");
+    const b = new ElotDbBridge({ resolvePath: () => fresh });
+    const db = await b.get();
+    tru(db !== null, "db opened (auto-created)");
+    eq(b.isOpen, true, "isOpen true");
+    eq(db!.listSources().length, 0, "no sources yet");
+    // File should now exist on disk for the CLI to register into.
+    const { existsSync } = await import("fs");
+    tru(existsSync(fresh), "DB file written to disk");
     b.dispose();
   });
 
