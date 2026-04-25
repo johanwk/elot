@@ -261,19 +261,60 @@ async function updateStatusBarItem(): Promise<void> {
     return;
   }
 
-  const totalSources = db.listSources().length;
+  const allSources = db.listSources();
+  const totalSources = allSources.length;
   const activeCount = active.length;
+
+  // Count entities across active sources only -- that is the count
+  // that actually drives hover/decoration lookups.  Falls back to the
+  // grand total when no sources are active so the user still sees
+  // DB magnitude.
+  let activeEntities = 0;
+  for (const a of active) {
+    activeEntities += db.sourceEntityCount(a.source, a.dataSource ?? "");
+  }
+  let totalEntities = 0;
+  for (const s of allSources) {
+    totalEntities += db.sourceEntityCount(s.source, s.dataSource ?? "");
+  }
+
   const labelStateIcon = visible ? "$(tag)" : "$(code)";
   const labelStateText = visible ? "Labels" : "CURIEs";
 
+  // Compact id count (e.g. 985, 1.2k, 12k).
+  const idsText = formatCount(activeCount > 0 ? activeEntities : totalEntities);
+  const srcText =
+    activeCount === totalSources
+      ? `${totalSources} src`
+      : `${activeCount}/${totalSources} src`;
+
   statusBarItem.text =
     `${labelStateIcon} ${labelStateText} ` +
-    `(${activeCount}/${totalSources} src${capReached ? ", capped" : ""})`;
+    `(${srcText}, ${idsText} ids${capReached ? ", capped" : ""})`;
+
+  // Per-source breakdown lines (cap at 10 to keep tooltip tidy).
+  const srcLines: string[] = [];
+  const isActive = (src: string, ds: string): boolean =>
+    active.some((a) => a.source === src && (a.dataSource ?? "") === ds);
+  const shown = allSources.slice(0, 10);
+  for (const s of shown) {
+    const ds = s.dataSource ?? "";
+    const n = db.sourceEntityCount(s.source, ds);
+    const marker = isActive(s.source, ds) ? "*" : " ";
+    srcLines.push(`  ${marker} ${s.source}${ds ? ` <${ds}>` : ""}: ${n}`);
+  }
+  if (allSources.length > shown.length) {
+    srcLines.push(`  ... (+${allSources.length - shown.length} more)`);
+  }
+
   const lines = [
-    `ELOT label DB: ${totalSources} source${totalSources === 1 ? "" : "s"} registered`,
-    `Active sources: ${activeCount}`,
-    `Display: ${visible ? "ON" : "OFF"}` +
-      ` (click or press F5 to toggle in non-Org files)`,
+    `ELOT label DB`,
+    `  ${totalSources} source${totalSources === 1 ? "" : "s"} registered, ${totalEntities} ids total`,
+    `  ${activeCount} active source${activeCount === 1 ? "" : "s"}, ${activeEntities} ids in scope`,
+    `Sources (* = active):`,
+    ...srcLines,
+    ``,
+    `Display: ${visible ? "ON" : "OFF"} (click or F5 to toggle in non-Org files)`,
   ];
   if (capReached) {
     const max = readMaxIds();
@@ -287,6 +328,12 @@ async function updateStatusBarItem(): Promise<void> {
     : visible
       ? new vscode.ThemeColor("statusBarItem.prominentBackground")
       : undefined;
+}
+
+function formatCount(n: number): string {
+  if (n < 1000) return String(n);
+  if (n < 10000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "k";
+  return Math.round(n / 1000) + "k";
 }
 
 function updateStatusBarVisibility(): void {
