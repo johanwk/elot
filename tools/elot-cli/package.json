@@ -1,7 +1,7 @@
 {
   "name": "elot",
   "displayName": "Elot: Org-mode Ontology Editor",
-  "version": "0.3.5",
+  "version": "0.4.0",
   "publisher": "johanwk",
   "description": "Manchester Syntax generation for ontologies written in Org-mode",
   "icon": "images/elot-icon.png",
@@ -107,6 +107,41 @@
       {
         "command": "elot.labelLookupExternal",
         "title": "Elot: Label Lookup (external/DB only)"
+      },
+      {
+        "command": "elot.tree.activateSource",
+        "title": "Activate",
+        "icon": "$(check)"
+      },
+      {
+        "command": "elot.tree.deactivateSource",
+        "title": "Deactivate",
+        "icon": "$(circle-slash)"
+      },
+      {
+        "command": "elot.tree.refreshSource",
+        "title": "Refresh from source file",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "elot.tree.deleteSource",
+        "title": "Delete from database",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "elot.tree.moveUp",
+        "title": "Move up",
+        "icon": "$(arrow-up)"
+      },
+      {
+        "command": "elot.tree.moveDown",
+        "title": "Move down",
+        "icon": "$(arrow-down)"
+      },
+      {
+        "command": "elot.tree.refreshAll",
+        "title": "Reload database",
+        "icon": "$(refresh)"
       }
     ],
     "keybindings": [
@@ -141,6 +176,27 @@
         "when": "editorTextFocus"
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "elot",
+          "title": "ELOT",
+          "icon": "images/elot-sidebar.svg"
+        }
+      ]
+    },
+    "views": {
+      "elot": [
+        {
+          "id": "elot.sourcesView",
+          "name": "Sources in DB"
+        },
+        {
+          "id": "elot.activeSourcesView",
+          "name": "Active Sources"
+        }
+      ]
+    },
     "configuration": {
       "title": "ELOT",
       "properties": {
@@ -178,7 +234,7 @@
         "elot.cliPath": {
           "type": "string",
           "default": "",
-          "description": "Path to the elot-cli executable used by `Elot: Register/Refresh Label Source`. Empty = look up `elot-cli` on PATH."
+          "description": "Path to an external elot-cli executable used by `Elot: Register/Refresh Label Source` and the source TreeView actions. Empty = use the CLI bundled inside this extension (recommended; no separate install needed)."
         },
         "elot.activeLabelSources": {
           "type": "array",
@@ -229,6 +285,91 @@
       }
     },
     "menus": {
+      "commandPalette": [
+        {
+          "command": "elot.tree.activateSource",
+          "when": "false"
+        },
+        {
+          "command": "elot.tree.deactivateSource",
+          "when": "false"
+        },
+        {
+          "command": "elot.tree.refreshSource",
+          "when": "false"
+        },
+        {
+          "command": "elot.tree.deleteSource",
+          "when": "false"
+        },
+        {
+          "command": "elot.tree.moveUp",
+          "when": "false"
+        },
+        {
+          "command": "elot.tree.moveDown",
+          "when": "false"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "elot.registerSource",
+          "when": "view == elot.sourcesView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "elot.tree.refreshAll",
+          "when": "view == elot.sourcesView",
+          "group": "navigation@2"
+        },
+        {
+          "command": "elot.activateSource",
+          "when": "view == elot.activeSourcesView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "elot.reorderActiveSources",
+          "when": "view == elot.activeSourcesView",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "elot.tree.activateSource",
+          "when": "view == elot.sourcesView && viewItem == elotDbSource.inactive",
+          "group": "inline@1"
+        },
+        {
+          "command": "elot.tree.deactivateSource",
+          "when": "view == elot.sourcesView && viewItem == elotDbSource.active",
+          "group": "inline@1"
+        },
+        {
+          "command": "elot.tree.refreshSource",
+          "when": "view == elot.sourcesView",
+          "group": "inline@2"
+        },
+        {
+          "command": "elot.tree.deleteSource",
+          "when": "view == elot.sourcesView",
+          "group": "inline@3"
+        },
+        {
+          "command": "elot.tree.moveUp",
+          "when": "view == elot.activeSourcesView && (viewItem == elotActiveSource.middle || viewItem == elotActiveSource.last)",
+          "group": "inline@1"
+        },
+        {
+          "command": "elot.tree.moveDown",
+          "when": "view == elot.activeSourcesView && (viewItem == elotActiveSource.first || viewItem == elotActiveSource.middle)",
+          "group": "inline@2"
+        },
+        {
+          "command": "elot.tree.deactivateSource",
+          "when": "view == elot.activeSourcesView",
+          "group": "inline@3"
+        }
+      ],
       "editor/title": [
         {
           "command": "elot.toggleLabels",
@@ -305,8 +446,10 @@
     "test:settings-reorder": "tsx src/tests/settings/reorder.test.ts",
     "test:settings-cli-runner": "tsx src/tests/settings/cliRunner.test.ts",
     "test:label-lookup-items": "tsx src/tests/labelLookup/items.test.ts",
+    "test:views-source-items": "tsx src/tests/views/sourceItems.test.ts",
+    "test:views": "npm run test:views-source-items",
     "test:db-resolve": "tsx src/tests/db/dbResolve.test.ts",
-    "test:db": "npm run test:db-lang && npm run test:db-read && npm run test:db-write && npm run test:db-paths && npm run test:db-parsers && npm run test:db-prefixes && npm run test:db-rq-cache && npm run test:db-ttl-robot && npm run test:db-roundtrip && npm run test:db-org && npm run test:db-cli-e2e && npm run test:db-golden && npm run test:db-bridge && npm run test:db-hover-token && npm run test:db-hover-render && npm run test:db-decorations && npm run test:db-resolve && npm run test:settings && npm run test:label-lookup",
+    "test:db": "npm run test:db-lang && npm run test:db-read && npm run test:db-write && npm run test:db-paths && npm run test:db-parsers && npm run test:db-prefixes && npm run test:db-rq-cache && npm run test:db-ttl-robot && npm run test:db-roundtrip && npm run test:db-org && npm run test:db-cli-e2e && npm run test:db-golden && npm run test:db-bridge && npm run test:db-hover-token && npm run test:db-hover-render && npm run test:db-decorations && npm run test:db-resolve && npm run test:settings && npm run test:label-lookup && npm run test:views",
 
     "test:settings": "npm run test:settings-active-sources && npm run test:settings-reorder && npm run test:settings-cli-runner",
     "test:label-lookup": "npm run test:label-lookup-items",
