@@ -4094,18 +4094,53 @@ sub-steps, each ending on green tests:
       from the published =.vsix=.
     - =.gitignore= - same plus =dist-test/= and =.vscode-test/=.
 
-    /What is NOT yet covered (deferred to 2.3.5c):/
-    - Hover-markdown content assertion against the seeded DB
-      (=vscode.executeHoverProvider= -> assert label, IRI link,
-      provenance footer present).
-    - Decoration-range assertion (open =sample.txt=, run F5, wait
-      for =onDidChangeTextEditorDecorations=, assert at least one
-      decoration covers the =ex:Widget= range; toggle off, assert
-      cleared).
-    - Settings round-trip via stubbed =showQuickPick= for
-      =elot.activateSource= / =elot.deactivateSource= /
-      =elot.reorderActiveSources=, asserting
-      =configuration.update()= persists to workspace scope.
+    *Status (2.3.5c -- DONE, GREEN):* 11/11 electron tests pass on
+    Windows against the local VS Code binary (4 smoke + 4 hover +
+    3 commands).  Two new test files alongside
+    =smoke.test.ts= in =src/tests/electron/suite/=:
+
+    - =hover.test.ts= - 4 hover assertions via
+      =vscode.executeHoverProvider= against the seeded fixture:
+      (a) =ex:Widget= CURIE -> rendered Markdown contains
+      =**Widget**=, the =[src: ex]= provenance footer, and the
+      =skos:definition= prose; (b) full IRI =<http://example.org/ex/Widget>=
+      resolves to the same label + provenance; (c) =ex:Gadget=
+      resolves independently; (d) =ex:NotInDB= yields no ELOT
+      hover (provenance-footer presence used as the
+      filter so other extensions' hovers don't false-positive).
+
+    - =commands.test.ts= - 3 cases covering the toggle command
+      and a full settings round-trip:
+      (a) =elot.toggleGlobalLabels= runs twice in succession
+      without throwing; (b) clearing
+      =elot.activeLabelSources= via
+      =workspace.getConfiguration("elot").update(...,
+      ConfigurationTarget.Workspace)= suppresses our hover
+      end-to-end, and restoring =[{source:"ex"}]= re-enables
+      it -- proves the provider re-reads settings on every
+      invocation; (c) =elot.dbInfo= still runs cleanly after
+      the round-trip.  Settings always restored in =finally=
+      so subsequent runs see the pristine fixture state.
+
+    /Decoration-range assertion intentionally omitted:/ VS Code
+    does not expose applied decoration ranges via public API
+    (=setDecorations= is write-only), so a true range assertion
+    would require reaching into =dbDecorations.ts= module state
+    via the bundled extension -- which the test harness does
+    not import.  The toggle-command test in =commands.test.ts=
+    plus the live-validated F5 behaviour from 2.3.3 cover the
+    practical surface; the underlying scanner has 12 dedicated
+    tsx unit tests via =dbDecorationsScan.test.ts=.
+
+    /QuickPick settings round-trip intentionally omitted:/ stubbing
+    =vscode.window.showQuickPick= from inside the test host is
+    fragile (the API is non-injectable without monkey-patching).
+    The pure helpers in =sourceCommands/reorder.ts= already have
+    11 tsx tests covering append / remove / move / inactiveOf;
+    the =configuration.update()= round-trip is now exercised
+    directly in =commands.test.ts= against the same setting key
+    the QuickPick commands write to, so the persistence path is
+    covered without simulating the picker UI.
 
     /Verification on first run (heavy: downloads VS Code stable):/
     #+begin_src bash
