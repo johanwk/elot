@@ -144,4 +144,12 @@ suite("electron commands + settings round-trip", () => {
     this.timeout(10000);
     await vscode.commands.executeCommand("elot.dbInfo");
   });
+
+  test("2.3.6 commands are registered", async function () {
+    this.timeout(5000);
+    const all = await vscode.commands.getCommands(true);
+    for (const id of ["elot.registerSource", "elot.refreshSource"]) {
+      assert.ok(all.includes(id), `command not registered: ${id}`);
+    }
+  });
 });

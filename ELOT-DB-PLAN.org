@@ -4163,7 +4163,7 @@ sub-steps, each ending on green tests:
   code changes; no new test files.  Slice 2.3.5b (electron
   smoke harness) deferred to its own turn.
 
-- *Step 2.3.6 - Source registration + reorder UX polish (added
+- *DONE Step 2.3.6 - Source registration + reorder UX polish (added
   after live 2.3.4 testing).*  Two complementary improvements
   that close the day-1 workflow loop:
 
@@ -4201,6 +4201,62 @@ sub-steps, each ending on green tests:
   (assert command-line construction, output-channel routing,
   reload-after-success).  Live electron coverage of both
   flows folds into 2.3.5.
+
+  *Status (2.3.6 -- DONE):*
+  - New =src/cliRunner.ts= - pure argv builders for
+    =db register= / =db refresh= invocations + display
+    quoting + =defaultSourceNameFromFile= (=elot-cli= path
+    assembly is not vscode-bound, so it's tsx-testable).
+  - New =src/registerSourceCommand.ts= - registers
+    =elot.registerSource= and =elot.refreshSource=.  Spawns
+    via =child_process.spawn= (no shell), streams stdout/stderr
+    to a dedicated =Elot CLI= output channel, shows progress
+    notification, calls =bridge.reload()= on success, then
+    offers "Activate now?" which appends to
+    =elot.activeLabelSources= preserving the existing scope.
+    Refresh path lists registered sources from the live bridge
+    and dispatches =db refresh <source>= with the original
+    =data_source=.
+  - New =src/sourceCommands/reorderUx.ts= -
+    =reorderWithButtons()= using
+    =vscode.window.createQuickPick= +
+    =onDidTriggerItemButton=, with per-row up / up-to-top /
+    down / down-to-bottom buttons (boundary buttons filtered).
+    Single-screen interaction; persists once on accept.
+  - =src/sourceCommands.ts= now delegates the reorder action
+    to =reorderWithButtons=, dropping the old two-step
+    pick-then-move loop.  Imports trimmed accordingly.
+  - =src/extension.ts= wires =registerRegisterSourceCommands=
+    alongside the other DB-side registrations (bridge shared,
+    disposed via =context.subscriptions=).
+  - =package.json= gains commands =elot.registerSource= and
+    =elot.refreshSource=, new setting =elot.cliPath=
+    (default empty -> use =elot-cli= from PATH), and a new
+    =test:settings-cli-runner= script wired into
+    =test:settings=.  Makefile gets a matching
+    =test-settings-cli-runner= target.
+  - New =src/tests/settings/cliRunner.test.ts= - 9 cases
+    covering minimal/full/empty register invocations,
+    refresh argv, display quoting of whitespace, and
+    =defaultSourceNameFromFile= edge cases (posix path,
+    Windows backslash path, dotfile, no-extension).
+
+  Verify with =make test-settings-cli-runner= (and =make
+  test-db= for the full sweep).  The QuickPick-buttons API
+  needs VS Code 1.84+ at runtime; =engines.vscode= is
+  =^1.75.0= so the buttons render as inert on older hosts -
+  acceptable since the entire DB feature set is post-1.84
+  in practice.
+
+  /Follow-up: electron coverage extended./
+  =src/tests/electron/suite/commands.test.ts= now also asserts
+  that =elot.registerSource= and =elot.refreshSource= are
+  registered, so future activation regressions in the new
+  shellout commands surface in the same =npm run test:electron=
+  pass.  No live spawn coverage (would require a bundled
+  =elot-cli= binary in the fixture workspace and
+  QuickPick/InputBox stubbing); registration check is the
+  cheap-but-meaningful end-to-end signal.
 
 *Adjustments after surveying the existing extension code* (recorded
 before starting 2.3.1; refines the per-deliverable spec below):
@@ -4377,6 +4433,31 @@ after first read, so repeat queries are fast.
 *Goal:* Port Emacs's =elot-label-lookup= (Steps 1.12 / 1.13 / 1.15)
 to VS Code.  After this step the user can type a label fragment,
 pick from matching ids, and have the CURIE inserted at cursor.
+
+*Scope note (split into 2 sub-steps, mirroring the 2.3.5 pattern):*
+
+- /2.4.1/ - Pure logic + commands + unit tests.  Item builder
+  (one item per id, multi-id CURIE-suffix disambiguation, language-
+  only collision suffix per Step 1.16.8), scope merge (Org slurp +
+  DB union, local-wins dedup; non-Org = DB only), insert formatter
+  (CURIE preferred, angle-IRI fallback).  Three commands
+  (=elot.labelLookup= / =Local= / =External=), =elot.labelLookup.scope=
+  setting, =ctrl+alt+r= keybinding.  Tsx unit tests for the pure
+  helpers.  Live-validatable end-to-end without electron.
+
+- /2.4.2/ - Electron integration test.  Scripted QuickPick
+  selection (via =showQuickPick= stub or
+  =workbench.action.acceptSelectedQuickOpenItem=), assert correct
+  text is inserted in the active editor; settings round-trip on
+  =elot.labelLookup.scope=.  Reuses the 2.3.5b harness; only test
+  files added.
+
+This split keeps each turn small and reviewable; the QuickPick-
+scripting test in 2.4.2 is the highest-risk piece and benefits from
+isolation.
+
+The full per-deliverable spec below applies to 2.4.1 + 2.4.2
+together; sub-step status notes will be added as each lands.
 
 *Deliverables in =tools/elot-cli/src/labelLookup.ts=:*
 

@@ -87,6 +87,14 @@
       {
         "command": "elot.reorderActiveSources",
         "title": "Elot: Reorder Active Label Sources"
+      },
+      {
+        "command": "elot.registerSource",
+        "title": "Elot: Register Label Source"
+      },
+      {
+        "command": "elot.refreshSource",
+        "title": "Elot: Refresh Label Source"
       }
     ],
     "keybindings": [
@@ -149,6 +157,11 @@
           "type": "string",
           "default": "",
           "description": "Path to the ELOT label SQLite database (written by `elot-cli db ...`). Empty = use VS Code globalStorage location. Workspace-level overrides user-level."
+        },
+        "elot.cliPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the elot-cli executable used by `Elot: Register/Refresh Label Source`. Empty = look up `elot-cli` on PATH."
         },
         "elot.activeLabelSources": {
           "type": "array",
@@ -262,9 +275,10 @@
     "test:db-decorations": "npm run test:db-decorations-scan",
     "test:settings-active-sources": "tsx src/tests/settings/activeSources.test.ts",
     "test:settings-reorder": "tsx src/tests/settings/reorder.test.ts",
+    "test:settings-cli-runner": "tsx src/tests/settings/cliRunner.test.ts",
     "test:db-resolve": "tsx src/tests/db/dbResolve.test.ts",
     "test:db": "npm run test:db-lang && npm run test:db-read && npm run test:db-write && npm run test:db-paths && npm run test:db-parsers && npm run test:db-prefixes && npm run test:db-rq-cache && npm run test:db-ttl-robot && npm run test:db-roundtrip && npm run test:db-org && npm run test:db-cli-e2e && npm run test:db-golden && npm run test:db-bridge && npm run test:db-hover-token && npm run test:db-hover-render && npm run test:db-decorations && npm run test:db-resolve && npm run test:settings",
-    "test:settings": "npm run test:settings-active-sources && npm run test:settings-reorder",
+    "test:settings": "npm run test:settings-active-sources && npm run test:settings-reorder && npm run test:settings-cli-runner",
     "compile:test": "tsc -p tsconfig.test.json",
     "prepare:electron-fixtures": "tsx src/tests/electron/prepareFixtures.ts",
     "pretest:electron": "npm run bundle && npm run compile:test && npm run prepare:electron-fixtures",

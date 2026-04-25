@@ -21,12 +21,8 @@ import {
   appendUnique,
   removeByKeys,
   inactiveOf,
-  indexOfKey,
-  moveUp,
-  moveDown,
-  moveTop,
-  moveBottom,
 } from "./sourceCommands/reorder.js";
+import { reorderWithButtons } from "./sourceCommands/reorderUx.js";
 
 const SETTING_KEY = "activeLabelSources";
 
@@ -163,85 +159,24 @@ async function deactivateSource(): Promise<void> {
 }
 
 // ---- elot.reorderActiveSources ----------------------------------
+//
+// 2.3.6: per-item-button picker.  All moves happen in a single
+// QuickPick; persist once when the user accepts.
 
 async function reorderActiveSources(): Promise<void> {
-  let active = readActive();
+  const active = readActive();
   if (active.length < 2) {
     vscode.window.showInformationMessage(
       "ELOT: need at least 2 active sources to reorder.",
     );
     return;
   }
-
-  // Loop so the user can perform several moves in one session.
-  while (true) {
-    active = readActive();
-    if (active.length < 2) return;
-
-    const items = active.map((s, i) => ({
-      label: `${i + 1}. ${s.source}`,
-      description: s.dataSource ? s.dataSource : undefined,
-      detail: `position ${i + 1} of ${active.length}`,
-      key: s,
-    }));
-    const picked = await vscode.window.showQuickPick(items, {
-      title: "ELOT: Reorder active sources -- pick a source to move",
-      placeHolder: "First match wins; lower index = higher priority",
-      matchOnDescription: true,
-    });
-    if (!picked) return;
-
-    const idx = indexOfKey(active, picked.key);
-    if (idx === -1) return;
-
-    const action = await vscode.window.showQuickPick(
-      [
-        { label: "$(arrow-up) Move up", id: "up", disabled: idx === 0 },
-        {
-          label: "$(arrow-down) Move down",
-          id: "down",
-          disabled: idx === active.length - 1,
-        },
-        {
-          label: "$(arrow-circle-up) Move to top",
-          id: "top",
-          disabled: idx === 0,
-        },
-        {
-          label: "$(arrow-circle-down) Move to bottom",
-          id: "bottom",
-          disabled: idx === active.length - 1,
-        },
-        { label: "$(check) Done", id: "done" },
-      ].filter((o) => !o.disabled),
-      {
-        title: `ELOT: Move "${picked.key.source}" (currently #${idx + 1})`,
-        placeHolder: "Choose an action",
-      },
-    );
-    if (!action) return;
-    if (action.id === "done") return;
-
-    let next: SourceKey[];
-    switch (action.id) {
-      case "up":
-        next = moveUp(active, idx);
-        break;
-      case "down":
-        next = moveDown(active, idx);
-        break;
-      case "top":
-        next = moveTop(active, idx);
-        break;
-      case "bottom":
-        next = moveBottom(active, idx);
-        break;
-      default:
-        return;
-    }
-    await persistActive(next);
-    // Loop back: read fresh and let the user keep moving things.
-  }
+  const next = await reorderWithButtons(active);
+  if (!next) return;
+  const target = await persistActive(next);
+  vscode.window.showInformationMessage(
+    `ELOT: saved new source order (${scopeLabel(target)} settings).`,
+  );
 }
 
 // ---- registration -----------------------------------------------

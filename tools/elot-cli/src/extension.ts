@@ -20,6 +20,7 @@ import { registerDbHoverProvider } from "./dbHoverProvider.js";
 import { registerDbDecorations } from "./dbDecorations.js";
 import { registerDbInfoCommand } from "./dbInfo.js";
 import { registerSourceCommands } from "./sourceCommands.js";
+import { registerRegisterSourceCommands } from "./registerSourceCommand.js";
 
 export function activate(context: vscode.ExtensionContext) {
   const tangle = async (doc: vscode.TextDocument, manual = false) => {
@@ -195,7 +196,8 @@ export function activate(context: vscode.ExtensionContext) {
   const dbDecor = registerDbDecorations(context, dbBridge);
   const dbInfo = registerDbInfoCommand(dbBridge);
   const sourceCmds = registerSourceCommands(dbBridge);
-  context.subscriptions.push(dbHover, dbDecor, dbInfo, sourceCmds, onDbCfg, {
+  const registerCmds = registerRegisterSourceCommands(dbBridge);
+  context.subscriptions.push(dbHover, dbDecor, dbInfo, sourceCmds, registerCmds, onDbCfg, {
     dispose: () => dbBridge.dispose(),
   });
 
