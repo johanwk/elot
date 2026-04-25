@@ -3706,6 +3706,52 @@ sub-steps, each ending on green tests:
   > =context.globalStorageUri=).  Pure unit-testable; no UI yet.
   /This alone unblocks every downstream slice./
 
+  /Status: DONE./  Landed:
+  - =tools/elot-cli/src/db/bridge.ts= - =ElotDbBridge= class:
+    lazy =get()=, explicit =reload()=, debounced file-watcher
+    (default 200ms), =onDidChange()= subscription, dispose
+    hygiene, error tolerance (corrupt files -> =onError= +
+    =get()= returns null, no throw).  No vscode import; the
+    caller supplies =resolvePath()= so the bridge is testable
+    under tsx alone.  CLI is the sole writer; bridge never
+    calls =save()=.
+  - =tools/elot-cli/src/dbResolve.ts= -
+    =resolveExtensionDbPath()= with the documented precedence
+    (workspace > user > =$ELOT_DB_PATH= >
+    =<globalStorageDir>/elot.sqlite=).  Empty strings and
+    null/undefined fall through cleanly at every layer.
+  - =tools/elot-cli/src/activeSources.ts= -
+    =normalizeActiveSources= (string-or-object form),
+    =normalizePreferredLanguages=, =getEffectiveLanguagePrefs=
+    (thin wrapper over the existing
+    =effectiveLanguagePrefs= picker).  Tolerant of malformed
+    settings input; preserves entry order.
+  - Tests: =bridge.test.ts= (8 cases incl. lazy open, missing
+    file, idempotent =get=, path change, listener fire/dispose,
+    debounced watcher reload, corrupt-file =onError=),
+    =activeSources.test.ts= (10 cases), =dbResolve.test.ts= (7
+    cases).  All run via existing =tsx= harness; no
+    =@vscode/test-electron= dependency yet (deferred to 2.3.5).
+  - Wiring: new =test:db-bridge=, =test:settings-active-sources=,
+    =test:db-resolve= scripts; =test:db= aggregate now runs 15
+    suites; matching =make test-db-*= / =make test-settings-*=
+    targets.
+  - No extension-side wiring yet (=extension.ts= unchanged) -
+    that lands in 2.3.2 alongside the hover provider, since
+    activation is meaningless without a consumer.
+
+  /Follow-up rename (post-landing):/  The active-sources test
+  was originally placed under =src/tests/db/activeSources.test.ts=
+  and run via =test:db-active-sources=.  This was misleading:
+  "active sources" is a purely *user-side* concept (a selection
+  + ordering imposed by VS Code / Emacs settings on top of the DB
+  contents); the DB itself has no notion of "active".  Moved to
+  =src/tests/settings/activeSources.test.ts= and renamed to
+  =test:settings-active-sources= (with a parent =test:settings=
+  aggregate for future settings-normaliser tests).  =test:db=
+  now invokes =test:settings= as its tail step so coverage is
+  unchanged.
+
 - *Step 2.3.2 - Hover provider.*  =dbHoverProvider.ts= +
   =elot--id-at-point=-equivalent token detector (CURIE / bare IRI
   / angle-bracketed IRI) + rich =MarkdownString= renderer (id,

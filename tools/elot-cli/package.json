@@ -187,7 +187,11 @@
     "test:db-org": "tsx src/tests/db/orgParser.test.ts",
     "test:db-cli-e2e": "tsx src/tests/db/cliE2e.test.ts",
     "test:db-golden": "tsx src/tests/db/golden.test.ts",
-    "test:db": "npm run test:db-lang && npm run test:db-read && npm run test:db-write && npm run test:db-paths && npm run test:db-parsers && npm run test:db-prefixes && npm run test:db-rq-cache && npm run test:db-ttl-robot && npm run test:db-roundtrip && npm run test:db-org && npm run test:db-cli-e2e && npm run test:db-golden",
+    "test:db-bridge": "tsx src/tests/db/bridge.test.ts",
+    "test:settings-active-sources": "tsx src/tests/settings/activeSources.test.ts",
+    "test:db-resolve": "tsx src/tests/db/dbResolve.test.ts",
+    "test:db": "npm run test:db-lang && npm run test:db-read && npm run test:db-write && npm run test:db-paths && npm run test:db-parsers && npm run test:db-prefixes && npm run test:db-rq-cache && npm run test:db-ttl-robot && npm run test:db-roundtrip && npm run test:db-org && npm run test:db-cli-e2e && npm run test:db-golden && npm run test:db-bridge && npm run test:db-resolve && npm run test:settings",
+    "test:settings": "npm run test:settings-active-sources",
     "elot": "tsx src/cli.ts"
   },
   "dependencies": {

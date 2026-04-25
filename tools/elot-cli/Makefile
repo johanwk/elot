@@ -1,7 +1,7 @@
 # Makefile for elot-cli — friendly aliases for npm commands.
 # Run "make help" to see available targets.
 
-.PHONY: help all install bundle build watch test test-syntax test-html test-html-post test-html-integration test-html-all test-db test-db-lang test-db-read test-db-write test-db-paths test-db-parsers test-db-prefixes test-db-rq-cache test-db-ttl-robot test-db-roundtrip test-db-org test-db-cli-e2e test-db-golden clean package cli
+.PHONY: help all install bundle build watch test test-syntax test-html test-html-post test-html-integration test-html-all test-db test-db-lang test-db-read test-db-write test-db-paths test-db-parsers test-db-prefixes test-db-rq-cache test-db-ttl-robot test-db-roundtrip test-db-org test-db-cli-e2e test-db-golden test-db-bridge test-db-resolve test-settings test-settings-active-sources clean package cli
 
 all: install bundle test test-html-all package ## Full build from scratch: install → bundle → test → package
 
@@ -78,7 +78,19 @@ test-db-cli-e2e: ## Run end-to-end CLI black-box tests (Step 2.2.5)
 test-db-golden: ## Run byte-identical golden round-trip tests vs Elisp writer (Step 2.2.5 slice 3a)
 	npm run test:db-golden
 
-test-db: ## Run all DB tests (lang + read + write + paths + parsers + prefixes + rq-cache + ttl-robot + roundtrip)
+test-db-bridge: ## Run ElotDbBridge tests (Step 2.3.1)
+	npm run test:db-bridge
+
+test-settings: ## Run all settings-normaliser tests (Step 2.3.1+)
+	npm run test:settings
+
+test-settings-active-sources: ## Run activeLabelSources / preferredLanguages normaliser tests (Step 2.3.1)
+	npm run test:settings-active-sources
+
+test-db-resolve: ## Run extension DB-path resolver tests (Step 2.3.1)
+	npm run test:db-resolve
+
+test-db: ## Run all DB tests
 	npm run test:db
 
 cli: ## Run CLI on examples/bfo-core.org (dev mode, no bundling needed)
