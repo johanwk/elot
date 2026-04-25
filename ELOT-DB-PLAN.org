@@ -4483,7 +4483,38 @@ End-to-end electron coverage deferred to 2.4.2.
   =elot.labelLookup.scope=).  Reuses the 2.3.5b harness; only
   test files added.
 
+*** DONE Step 2.4.2 - Electron integration test for label lookup
+    CLOSED: green
+/Status:/ DONE.  Adds =src/tests/electron/suite/labelLookup.test.ts=
+to the existing 2.3.5b harness; no new test infrastructure.
 
+/Coverage (4 cases):/
+- All three commands (=elot.labelLookup=, =elot.labelLookupLocal=,
+  =elot.labelLookupExternal=) are registered with the host.
+- =elot.labelLookupExternal= on the seeded fixture: stubbed
+  =showQuickPick= captures the offered items (asserts both
+  =Widget= and =Gadget= are present), auto-selects =Widget=, and
+  the buffer ends with =ex:Widget= inserted at the cursor (CURIE
+  form via the registered =ex:= prefix).
+- =elot.labelLookup.scope= round-trips through
+  =configuration.update()= + =get()= for all three values
+  (=local= / =external= / =both=); original scope restored in
+  =finally=.
+- With =elot.activeLabelSources= cleared, =labelLookupExternal=
+  shows an information message (stubbed
+  =showInformationMessage= captures it) and does NOT open a
+  QuickPick; buffer is unchanged.
+
+/Stubbing strategy:/ monkey-patch =vscode.window.showQuickPick=
+and =showInformationMessage= for the duration of one test,
+restoring originals in =finally=.  This is the standard pattern
+for scripting QuickPick acceptance from inside the host -- VS
+Code does not expose an API to drive the QuickPick UI directly
+via =executeCommand=.  The pattern is local to this test file;
+no global hooks.
+
+/Wiring:/ none beyond the new test file.  Mocha's =glob= picks
+it up automatically from =dist-test/suite/=.
 
 *Goal:* Port Emacs's =elot-label-lookup= (Steps 1.12 / 1.13 / 1.15)
 to VS Code.  After this step the user can type a label fragment,
