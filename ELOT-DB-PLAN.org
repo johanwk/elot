@@ -3960,7 +3960,55 @@ sub-steps, each ending on green tests:
     Elisp baseline; the Trie matcher is a follow-up if hover
     coverage proves insufficient.
 
-- *Step 2.3.4 - Commands + keybinding.*
+- *DONE Step 2.3.4 - Commands + keybinding.*
+  /Status: DONE./
+
+  Three new VS Code commands wire QuickPicks over =ElotDbBridge=
+  + the =elot.activeLabelSources= setting:
+
+  - =elot.activateSource= - lists DB sources NOT currently active
+    (=inactiveOf=); multi-select QuickPick; appends in pick order
+    (=appendUnique=).  Friendly messages when the DB is empty or
+    every source is already active.
+  - =elot.deactivateSource= - multi-select over the active list;
+    removes by key (=removeByKeys=).
+  - =elot.reorderActiveSources= - looped two-step QuickPick: pick a
+    source, then move up / down / top / bottom / done.  Disabled
+    actions filtered out (e.g. "up" hidden when at index 0).
+    Persists after every move so the user sees the effect live.
+
+  Settings round-trip:
+  - Scope detection via =cfg.inspect()= - preserves an existing
+    workspace-folder / workspace / user scope; defaults to
+    workspace when a folder is open, else user.
+  - Always writes the canonical =&#123;source, dataSource&#125;= shape
+    (not the bare-string shorthand) to keep =settings.json= edits
+    unambiguous.
+
+  F5 keybinding: already shipped in 2.3.3 (=elot.toggleGlobalLabels=,
+  gated =resourceExtname != .org=).  Existing Org F5 untouched.
+
+  /New files (=tools/elot-cli/src/=):/
+  - =sourceCommands/reorder.ts= - pure helpers (=keyEquals=,
+    =indexOfKey=, =moveUp/Down/Top/Bottom=, =appendUnique=,
+    =removeByKeys=, =inactiveOf=).  Immutable; no vscode import.
+  - =sourceCommands.ts= - VS Code command wiring + QuickPicks.
+  - =tests/settings/reorder.test.ts= - 11 cases covering all helpers,
+    boundaries, immutability, dataSource-sensitive keying.
+
+  /Edited:/
+  - =extension.ts= - =registerSourceCommands(dbBridge)= alongside the
+    other DB providers.
+  - =package.json= - three new commands declared (no extra
+    keybindings; F5 split lives in 2.3.3).  New script
+    =test:settings-reorder=; =test:settings= aggregate updated.
+  - =Makefile= - new =test-settings-reorder= target.
+
+  /Deferred to 2.3.5:/
+  - =@vscode/test-electron= host-level coverage (settings round-trip,
+    QuickPick interaction, scope-preservation).
+
+- *Step 2.3.4 - Commands + keybinding (original spec).*
   =elot.toggleGlobalLabelDisplay= (F5 in non-Org languages),
   =elot.activateSource= / =deactivateSource= /
   =reorderActiveSources= QuickPicks with workspace-settings
@@ -3977,6 +4025,45 @@ sub-steps, each ending on green tests:
   have to mock the host.  README updates (extension-side usage:
   =elot.dbPath=, =elot.activeLabelSources=, the four commands,
   the F5 binding) and =CHANGELOG.md= entry.
+
+- *Step 2.3.6 - Source registration + reorder UX polish (added
+  after live 2.3.4 testing).*  Two complementary improvements
+  that close the day-1 workflow loop:
+
+  1. /=elot.registerSource= command/ - thin wrapper that shells
+     out to =elot-cli db register= so users never need to leave
+     VS Code to add a new source.  Flow: QuickPick file (or
+     InputBox URL for =rq=) -> QuickPick type (auto-detected
+     from extension, override available) -> InputBox source
+     name (default = filename stem) -> spawn =elot-cli= via
+     =child_process=, stream stdout/stderr to a dedicated
+     =Elot CLI= output channel -> on success
+     =bridge.reload()= so the new source appears immediately
+     -> offer "Activate now?" to call into
+     =elot.activateSource= for the just-registered name.
+     New setting =elot.cliPath= (default =elot-cli=, override
+     for unusual installs / monorepo dev).  Companion command
+     =elot.refreshSource= for the symmetric =db refresh= call.
+     Read-only-from-VS-Code rule preserved: the CLI still does
+     all writing; the extension just orchestrates.
+
+  2. /Per-item button reorder UX/ - replace the current
+     two-step "pick then move" loop in
+     =elot.reorderActiveSources= with VS Code 1.84+'s
+     QuickPick-item-buttons API.  Each row shows up/down arrow
+     buttons; user clicks to reorder in place; one =Done=
+     action persists.  Single-screen interaction, far easier to
+     scan and adjust than the current per-step loop.  Existing
+     pure helpers (=moveUp/Down/Top/Bottom= in
+     =sourceCommands/reorder.ts=) are reused; only the vscode
+     wrapper changes.  Boundary buttons are filtered (no =up=
+     on row 0, no =down= on last row).
+
+  Tests: pure-helper coverage already exists from 2.3.4;
+  =registerSource= adds a small stubbed-spawn unit test
+  (assert command-line construction, output-channel routing,
+  reload-after-success).  Live electron coverage of both
+  flows folds into 2.3.5.
 
 *Adjustments after surveying the existing extension code* (recorded
 before starting 2.3.1; refines the per-deliverable spec below):

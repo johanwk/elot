@@ -19,6 +19,7 @@ import { resolveExtensionDbPath } from "./dbResolve.js";
 import { registerDbHoverProvider } from "./dbHoverProvider.js";
 import { registerDbDecorations } from "./dbDecorations.js";
 import { registerDbInfoCommand } from "./dbInfo.js";
+import { registerSourceCommands } from "./sourceCommands.js";
 
 export function activate(context: vscode.ExtensionContext) {
   const tangle = async (doc: vscode.TextDocument, manual = false) => {
@@ -193,7 +194,8 @@ export function activate(context: vscode.ExtensionContext) {
   const dbHover = registerDbHoverProvider(context, dbBridge);
   const dbDecor = registerDbDecorations(context, dbBridge);
   const dbInfo = registerDbInfoCommand(dbBridge);
-  context.subscriptions.push(dbHover, dbDecor, dbInfo, onDbCfg, {
+  const sourceCmds = registerSourceCommands(dbBridge);
+  context.subscriptions.push(dbHover, dbDecor, dbInfo, sourceCmds, onDbCfg, {
     dispose: () => dbBridge.dispose(),
   });
 

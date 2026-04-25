@@ -75,6 +75,18 @@
         "command": "elot.toggleGlobalLabels",
         "title": "Elot: Toggle Global Label Display",
         "icon": "$(tag)"
+      },
+      {
+        "command": "elot.activateSource",
+        "title": "Elot: Activate Label Source"
+      },
+      {
+        "command": "elot.deactivateSource",
+        "title": "Elot: Deactivate Label Source"
+      },
+      {
+        "command": "elot.reorderActiveSources",
+        "title": "Elot: Reorder Active Label Sources"
       }
     ],
     "keybindings": [
@@ -249,9 +261,10 @@
     "test:db-decorations-scan": "tsx src/tests/db/dbDecorationsScan.test.ts",
     "test:db-decorations": "npm run test:db-decorations-scan",
     "test:settings-active-sources": "tsx src/tests/settings/activeSources.test.ts",
+    "test:settings-reorder": "tsx src/tests/settings/reorder.test.ts",
     "test:db-resolve": "tsx src/tests/db/dbResolve.test.ts",
     "test:db": "npm run test:db-lang && npm run test:db-read && npm run test:db-write && npm run test:db-paths && npm run test:db-parsers && npm run test:db-prefixes && npm run test:db-rq-cache && npm run test:db-ttl-robot && npm run test:db-roundtrip && npm run test:db-org && npm run test:db-cli-e2e && npm run test:db-golden && npm run test:db-bridge && npm run test:db-hover-token && npm run test:db-hover-render && npm run test:db-decorations && npm run test:db-resolve && npm run test:settings",
-    "test:settings": "npm run test:settings-active-sources",
+    "test:settings": "npm run test:settings-active-sources && npm run test:settings-reorder",
     "elot": "tsx src/cli.ts"
   },
   "dependencies": {
