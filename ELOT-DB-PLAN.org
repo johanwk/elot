@@ -3741,6 +3741,69 @@ sub-steps, each ending on green tests:
   =elot.dbPath=, =elot.activeLabelSources=, the four commands,
   the F5 binding) and =CHANGELOG.md= entry.
 
+*Adjustments after surveying the existing extension code* (recorded
+before starting 2.3.1; refines the per-deliverable spec below):
+
+1. /DB-path resolution inside the extension/ should prefer
+   =context.globalStorageUri.fsPath= over reconstructing the
+   path via the existing =src/dbPaths.ts= (which hardcodes
+   =johanwk.elot/elot.sqlite=).  Both resolve to the same file
+   when the publisher id matches, but =globalStorageUri= is the
+   official API.  Final precedence: workspace =elot.dbPath= >
+   user =elot.dbPath= > =$ELOT_DB_PATH= >
+   =context.globalStorageUri/elot.sqlite=.  The CLI keeps its
+   own =dbPaths.ts= path; both converge on the same default in
+   normal use.
+
+2. /F5 binding/ in =package.json= currently has
+   =when: resourceExtname == .org= for =elot.toggleLabels=.
+   The new =elot.toggleGlobalLabelDisplay= binding (Step 2.3.4)
+   must be a /complementary/ keybinding with
+   =when: resourceExtname != .org && editorTextFocus= so the
+   two F5 commands don't collide.
+
+3. /Settings namespace/.  Existing Org-side settings live under
+   =elot.labelDisplay.*= (=fontStyle=, =hoverEnabled=).  New
+   DB-side settings should live under =elot.globalLabelDisplay.*=
+   (=maxIds=, =includeLanguages=, =hoverEnabled=) plus root-
+   level =elot.dbPath=, =elot.activeLabelSources=,
+   =elot.preferredLanguages=.  Keeping the two namespaces
+   separate avoids confusion with the existing Org toggle.
+
+4. /Activation event/.  =package.json= currently has empty
+   =activationEvents=.  Add =onStartupFinished= so the bridge
+   loads lazily for workspaces that have a non-empty
+   =elot.activeLabelSources=, without paying the cost on every
+   workspace.  Command activations remain implicit via
+   =contributes.commands=.
+
+5. /Provider coexistence/.  The existing =hoverProvider.ts= is
+   registered for both =language: "org"= and
+   =pattern: **/*.org=.  The new =dbHoverProvider.ts=
+   =DocumentSelector= must /explicitly exclude/ the =org=
+   language id (even if a user adds =org= to
+   =elot.globalLabelDisplay.includeLanguages=), so the two
+   providers never both fire on a =.org= file.
+
+6. /Reusable rendering pattern/.  =labelDecorations.ts= already
+   uses =before:=-pseudo with zeroed-font-size CURIE-hiding
+   per-label =TextEditorDecorationType=.
+   =dbDecorations.ts= should reuse the same rendering pattern
+   for visual consistency, just with the matcher built from
+   =allActiveLabels= instead of a per-document slurp map.
+
+7. /Hover cache key/.  Existing =hoverProvider.ts= keys its
+   slurp cache on =document.uri + version=.  =dbHoverProvider=
+   should key its lookup-result cache on =db file mtime=
+   (invalidated by the bridge's debounced reload), not document
+   version - the data source is workspace-wide, not
+   document-local.
+
+8. /Test infrastructure/.  Bridge + =activeSources= are pure TS
+   and can use the existing =tsx= test runner (no electron).
+   =@vscode/test-electron= is added only in Slice 2.3.5 for
+   the genuinely UI-dependent assertions.
+
 The full original spec is retained below as the per-deliverable
 reference.
 
