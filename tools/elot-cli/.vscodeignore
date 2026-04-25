@@ -1,7 +1,12 @@
 # Source files (compiled to dist/)
 src/
 tsconfig.json
+tsconfig.test.json
 esbuild.mjs
+
+# Compiled electron-test outputs and downloaded VS Code
+dist-test/
+.vscode-test/
 
 # Dev files
 node_modules/

@@ -265,6 +265,10 @@
     "test:db-resolve": "tsx src/tests/db/dbResolve.test.ts",
     "test:db": "npm run test:db-lang && npm run test:db-read && npm run test:db-write && npm run test:db-paths && npm run test:db-parsers && npm run test:db-prefixes && npm run test:db-rq-cache && npm run test:db-ttl-robot && npm run test:db-roundtrip && npm run test:db-org && npm run test:db-cli-e2e && npm run test:db-golden && npm run test:db-bridge && npm run test:db-hover-token && npm run test:db-hover-render && npm run test:db-decorations && npm run test:db-resolve && npm run test:settings",
     "test:settings": "npm run test:settings-active-sources && npm run test:settings-reorder",
+    "compile:test": "tsc -p tsconfig.test.json",
+    "prepare:electron-fixtures": "tsx src/tests/electron/prepareFixtures.ts",
+    "pretest:electron": "npm run bundle && npm run compile:test && npm run prepare:electron-fixtures",
+    "test:electron": "node ./dist-test/runTests.js",
     "elot": "tsx src/cli.ts"
   },
   "dependencies": {
@@ -272,11 +276,17 @@
     "sql.js": "^1.10.3"
   },
   "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.6",
     "@types/node": "^25.5.0",
     "@types/sql.js": "^1.4.9",
     "@types/vscode": "^1.75.0",
+    "@vscode/test-electron": "^2.4.1",
+    "esbuild": "^0.25.0",
+    "glob": "^10.3.10",
+    "mocha": "^10.7.0",
     "peggy": "^4.2.0",
     "tsx": "^4.0.0",
-    "esbuild": "^0.25.0"
+    "typescript": "^5.4.0"
   }
 }

@@ -4040,6 +4040,84 @@ sub-steps, each ending on green tests:
     awkwardly across earlier slices that would otherwise have
     to mock the host.
 
+    *Status (2.3.5b - HARNESS LANDED + GREEN, smoke test only):*
+    Verified end-to-end on Windows (MSYS) against a locally
+    installed VS Code 1.117.0: 4/4 smoke assertions pass, host
+    launches and exits cleanly.  Two operational notes
+    surfaced during first-run validation:
+    - /Corporate TLS interception/: the default download path
+      (=update.code.visualstudio.com=) failed cert verification on
+      a managed network.  Workaround landed: =runTests.ts= honours
+      =$ELOT_VSCODE_EXECUTABLE= and reuses an already-installed VS
+      Code binary instead of downloading.  For Windows, point at
+      =Code.exe= (NOT the =bin\code.cmd= shim).  The
+      =NODE_EXTRA_CA_CERTS= path remains the long-term fix for CI
+      and clean-room runs.
+    - /Mocha UI/: switched =suite/index.ts= from =ui:"bdd"= to
+      =ui:"tdd"= so the =suite=/=test= globals match the smoke
+      test file's style.
+    Original status block follows:
+    The full @vscode/test-electron infrastructure is in place:
+    - New devDeps =@vscode/test-electron=, =mocha=, =@types/mocha=,
+      =glob=, =@types/glob=, =typescript= (explicit).
+    - =tsconfig.test.json= - separate compile config rooted at
+      =src/tests/electron/=, emits CommonJS into =dist-test/=.
+      Deliberately excludes the rest of the src tree to avoid
+      coupling extension code to test-only types.
+    - =src/tests/electron/runTests.ts= - VS Code launcher.  Asserts
+      =dist/extension.js= and =dist-test/fixtures/workspace/= both
+      exist before launching; passes =--disable-extensions= and
+      =--disable-gpu= for stability.
+    - =src/tests/electron/prepareFixtures.ts= - tsx-driven fixture
+      builder.  Wipes and rebuilds =dist-test/fixtures/workspace/=
+      with =elot.sqlite= (one source =ex=, two entities Widget +
+      Gadget, =ex:= prefix), =.vscode/settings.json= pinning
+      =elot.dbPath=, =elot.activeLabelSources=,
+      =elot.preferredLanguages=, =elot.globalLabelDisplay.*=, and
+      =sample.txt= with known CURIE / IRI references.  The DB is
+      seeded via the same =ElotDb.updateSource= writer that ships in
+      the extension, so fixture and runtime cannot drift.
+    - =src/tests/electron/suite/index.ts= - Mocha entrypoint loaded
+      by VS Code's test host.  Globs =**/*.test.js= under the
+      compiled suite directory.
+    - =src/tests/electron/suite/smoke.test.ts= - first smoke test:
+      asserts (a) extension =johanwk.elot= is present, (b) it
+      activates without throwing, (c) all five DB-feature commands
+      register, (d) =elot.dbInfo= runs to completion.
+    - =package.json= - new scripts =compile:test=,
+      =prepare:electron-fixtures=, =pretest:electron= (chains
+      bundle + compile:test + prepare-fixtures),
+      =test:electron= (=node ./dist-test/runTests.js=).
+    - =Makefile= - new =compile-test= and =test-electron= targets
+      with =.PHONY= updates.
+    - =.vscodeignore= - excludes =dist-test/= and =.vscode-test/=
+      from the published =.vsix=.
+    - =.gitignore= - same plus =dist-test/= and =.vscode-test/=.
+
+    /What is NOT yet covered (deferred to 2.3.5c):/
+    - Hover-markdown content assertion against the seeded DB
+      (=vscode.executeHoverProvider= -> assert label, IRI link,
+      provenance footer present).
+    - Decoration-range assertion (open =sample.txt=, run F5, wait
+      for =onDidChangeTextEditorDecorations=, assert at least one
+      decoration covers the =ex:Widget= range; toggle off, assert
+      cleared).
+    - Settings round-trip via stubbed =showQuickPick= for
+      =elot.activateSource= / =elot.deactivateSource= /
+      =elot.reorderActiveSources=, asserting
+      =configuration.update()= persists to workspace scope.
+
+    /Verification on first run (heavy: downloads VS Code stable):/
+    #+begin_src bash
+    cd tools/elot-cli
+    npm install            # picks up new devDeps
+    npm run test:electron  # bundles, compiles tests, seeds fixture, launches VS Code
+    #+end_src
+    First invocation downloads the VS Code stable archive into
+    =.vscode-test/= (~150 MB, one-time cost).  Subsequent runs are
+    fast.  CI-equivalent runs need =xvfb-run= on Linux; not added
+    yet (no GitHub Actions per project policy).
+
   *Status (2.3.5a -- DONE):* README extension-side section
   expanded with all DB-feature settings, the F5 split, the four
   management commands, the status-bar indicator, and the

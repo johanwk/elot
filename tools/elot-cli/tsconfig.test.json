@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "outDir": "./dist-test",
+    "rootDir": "./src/tests/electron",
+    "declaration": false,
+    "sourceMap": true,
+    "types": ["node", "mocha"],
+    "noEmit": false
+  },
+  "include": [
+    "src/tests/electron/runTests.ts",
+    "src/tests/electron/suite/**/*.ts"
+  ]
+}

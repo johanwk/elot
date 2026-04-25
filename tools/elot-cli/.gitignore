@@ -1,5 +1,7 @@
 node_modules/
 dist/
+dist-test/
+.vscode-test/
 *.js.map
 *.tsbuildinfo
 

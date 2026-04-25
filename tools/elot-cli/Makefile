@@ -1,7 +1,7 @@
 # Makefile for elot-cli — friendly aliases for npm commands.
 # Run "make help" to see available targets.
 
-.PHONY: help all install bundle build watch test test-syntax test-html test-html-post test-html-integration test-html-all test-db test-db-lang test-db-read test-db-write test-db-paths test-db-parsers test-db-prefixes test-db-rq-cache test-db-ttl-robot test-db-roundtrip test-db-org test-db-cli-e2e test-db-golden test-db-bridge test-db-hover-token test-db-hover-render test-db-decorations test-db-decorations-scan test-db-resolve test-settings test-settings-active-sources test-settings-reorder clean package cli
+.PHONY: help all install bundle build watch test test-syntax test-html test-html-post test-html-integration test-html-all test-db test-db-lang test-db-read test-db-write test-db-paths test-db-parsers test-db-prefixes test-db-rq-cache test-db-ttl-robot test-db-roundtrip test-db-org test-db-cli-e2e test-db-golden test-db-bridge test-db-hover-token test-db-hover-render test-db-decorations test-db-decorations-scan test-db-resolve test-settings test-settings-active-sources test-settings-reorder test-electron compile-test clean package cli
 
 all: install bundle test test-html-all package ## Full build from scratch: install → bundle → test → package
 
@@ -107,6 +107,12 @@ test-db-resolve: ## Run extension DB-path resolver tests (Step 2.3.1)
 
 test-db: ## Run all DB tests
 	npm run test:db
+
+compile-test: ## Compile electron tests under dist-test/ (Step 2.3.5b)
+	npm run compile:test
+
+test-electron: ## Run @vscode/test-electron smoke tests (Step 2.3.5b; downloads VS Code on first run)
+	npm run test:electron
 
 cli: ## Run CLI on examples/bfo-core.org (dev mode, no bundling needed)
 	npm run elot -- examples/bfo-core.org
