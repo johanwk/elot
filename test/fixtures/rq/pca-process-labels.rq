@@ -1,0 +1,24 @@
+# Live SPARQL fixture against the POSC Caesar Fuseki endpoint.
+#
+# Used by the ROBOT-gated, network-gated TS test
+# tools/elot-cli/src/tests/db/rqLive.test.ts.  Default test runs
+# never touch the network -- the test is skipped unless BOTH
+# ROBOT is available AND ELOT_TEST_NETWORK=1 is set.
+#
+# The query uses a SERVICE clause because ROBOT's `query` command
+# executes against a local input graph; we synthesise a dummy TTL
+# and federate out to the real endpoint via SERVICE.  This mirrors
+# what `elot-source-parse-rq` expects for http(s) data sources.
+#
+# Limit is small to keep the live round-trip cheap.
+
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?id ?label WHERE {
+  SERVICE <https://rds.posccaesar.org/ontology/fuseki/ontology/sparql> {
+    GRAPH <http://rds.posccaesar.org/ontology/plm/ont/process> {
+      ?id rdfs:label ?label .
+    }
+  }
+}
+LIMIT 25

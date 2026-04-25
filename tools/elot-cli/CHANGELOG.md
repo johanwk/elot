@@ -8,6 +8,8 @@ reaches 1.0.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-04-25
+
 ### Added
 
 - **DB-backed (global) label display.** Resolve CURIEs and full URIs

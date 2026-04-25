@@ -3401,6 +3401,37 @@ external-tool work (ROBOT/TTL) is isolated at the end:
   - Wired into =test:db= aggregate; new Makefile targets
     =test-db-prefixes=, =test-db-rq-cache=, =test-db-ttl-robot=.
 
+  /Follow-up (post-v0.4.0): live RQ test against a SPARQL endpoint./
+  - New fixture =test/fixtures/rq/pca-process-labels.rq= - federates
+    via =SERVICE= to the POSC Caesar Fuseki endpoint, graph
+    =<http://rds.posccaesar.org/ontology/plm/ont/process>=.
+  - New test =src/tests/db/rqLive.test.ts=, /double-gated/: skipped
+    unless =robotAvailable()= AND =$ELOT_TEST_NETWORK=1=.  Asserts
+    (a) the federated query returns at least one labelled id,
+    (b) a second invocation hits =.elot-cache= (no rewrite of the
+    cache file - mtime unchanged), (c) end-to-end ingest +
+    =getLabel(http://...PCA_100000011)= round-trips a non-empty
+    label (soft-checks ="Pumping"= but tolerates upstream renames).
+  - Wired into =package.json= (=test:db-rq-live=) and =Makefile=
+    (=test-db-rq-live=).  Not added to the =test:db= aggregate so
+    default CI runs stay hermetic; opt in via:
+    #+begin_src bash
+    export ELOT_ROBOT_JAR=/path/to/robot.jar
+    export ELOT_TEST_NETWORK=1
+    make test-db-rq-live
+    #+end_src
+  - /Verified GREEN/ against the live POSC Caesar endpoint
+    (3/3 cases passing).  Bug found and fixed during first run:
+    the test originally asserted on =rdfs:label= attribute rows,
+    but =parseSeparatedString= only emits those when a =lang=
+    column or =label@TAG= header is present (Step 1.16.6
+    convention).  ROBOT's plain =id,label= CSV output puts the
+    label on =entry.label= (denormalised) instead.  Fix: assert
+    on =entry.label= non-empty; the downstream =updateSource ->
+    getLabel= round-trip in case 3 was already correct via the
+    same denormalised path.
+
+
 - *DONE Step 2.2.5 - Org integration and end-to-end CLI tests.*  Reuse
   the existing =parseOrgWasm= + =buildSlurp= in
   =tools/elot-cli/src/= via a thin =parsers/org.ts= adaptor.
@@ -5548,6 +5579,156 @@ save), and =.dir-locals.el= entries that do not match what
 
 *Risk:* Low. Helper is ~10 lines; call-site changes are mechanical;
 tests are deterministic and platform-gated where needed.
+
+** Stage 4: First-class SPARQL endpoint sources
+
+*Status:* TODO. Notes recorded post-v0.4.0; not scheduled.
+
+*Goal:* Make it as easy as a single command, in /both/ the Elisp
+and the VSIX variants, to point at a SPARQL endpoint (with
+optional named graph) and pull an =id -> label= map into the DB
+as a labelled source. SPARQL endpoints are how working
+ontologists most often access shared / authoritative
+vocabularies (PCA / Caesar, OBO Foundry mirrors, EBI OLS,
+DBpedia, Wikidata, in-house Fuseki / GraphDB / Stardog
+instances), and the current =.rq= path - while functionally
+sufficient (cf. live test against
+=https://rds.posccaesar.org/ontology/fuseki/ontology/sparql=
+landed in 2.2.4 follow-up) - requires the user to author and
+manage a =.rq= file with a =SERVICE= clause. That is a
+non-trivial papercut for the most common case ("just give me
+labels from this endpoint").
+
+*Motivation:*
+
+- Authoring a =.rq= per endpoint is friction. The query is
+  almost always the same shape ("ids and rdfs:labels in graph
+  G, optionally language-filtered, limit N"). Users should not
+  have to retype it.
+- =SERVICE= federation works but is awkward to explain and
+  fragile across Fuseki / GraphDB / Stardog SERVICE-policy
+  differences. A direct HTTP POST to the endpoint is more
+  predictable.
+- Users running a Fuseki next to their project want to point
+  ELOT at it without thinking about ROBOT, =SERVICE=, or cache
+  files. "Endpoint URL + named graph + source name" should be
+  enough.
+- Wikidata / DBpedia explorers benefit from a built-in
+  language-filter knob and a sensible row cap (these endpoints
+  refuse unbounded queries).
+
+*Deliverables (cross-cutting, both editors):*
+
+- /Direct HTTP path to endpoints./ A new parser type =sparql=
+  (peer to =rq=) that does *not* go through ROBOT. Issues
+  =POST= to the endpoint with =Accept: text/csv= (or =application/sparql-results+json=
+  parsed to the same =EntityTriple[]= shape), reads ids and
+  labels, optionally requests =LANG(?label)= as a third column
+  for language-tag round-trip. Cache under =.elot-cache/=
+  using the same =<basename>.<hash>.csv= scheme as =rq=, with
+  =hash= over =(endpoint, graph, language-prefs, query-template-version)=.
+  Honours =$HTTP_PROXY= / =$HTTPS_PROXY= and the same
+  corp-CA-bundle env-var conventions used elsewhere
+  (=NODE_EXTRA_CA_CERTS= for TS, =gnutls-trustfiles= for Emacs).
+- /A built-in default query template/ stored alongside the
+  schema (e.g. =elot-package/sparql/default-labels.rq=,
+  shipped to MELPA via =:files=, and read by both editors).
+  Parameters: optional =FROM <graph>=, optional =FILTER(LANG(?label) IN (...))=,
+  =LIMIT=. The user provides only =endpoint=, =graph=,
+  =languages=, =limit=. Per-project override at
+  =<root>/.elot/sparql-default.rq= mirrors the =rq= override
+  pattern.
+- /Elisp side:/ new =elot-source-register-endpoint= command -
+  =completing-read= on a small list of bookmarked endpoints
+  (=defcustom elot-sparql-endpoints=) plus "Other..."; prompts
+  for graph (history-aware), source name (default = endpoint
+  host slug), optional language preference. Persists in the
+  same =sources= row family but with =type = "sparql"= and
+  =data_source = "<endpoint>#<graph>"=. =elot-source-refresh=
+  re-runs the HTTP query.
+- /VSIX side:/ new =elot.registerSparqlEndpoint= command,
+  surfaced from the "Sources in DB" tree view as a secondary
+  option under the =+ Add= title button (or its own button -
+  TBD). InputBoxes for endpoint URL, graph (optional), source
+  name. Reuses the existing =Elot CLI= output channel for the
+  fetch-and-ingest progress. =elot.cliPath= path is
+  unchanged - the bundled CLI handles the HTTP itself, no
+  Java/ROBOT needed.
+- /CLI side:/ =elot db register-endpoint <url>
+  [--graph <iri>] [--source <name>] [--languages en,no] [--limit N]=.
+  Standalone command (not a flag on =register=) because the
+  argument shape diverges materially from the file-based
+  parsers. Re-uses =parseSparql.ts= internally.
+- /Sample bookmarks/ shipped as a defaults table (NOT a
+  default value of =elot-sparql-endpoints= - users opt in by
+  copying entries): PCA Caesar, OBO Foundry SPARQL mirror,
+  Wikidata, DBpedia. Documented in README with one-line
+  examples each.
+
+*Tests (gated on =ELOT_TEST_NETWORK=1=):*
+
+- =test-sparql-register-pca-caesar= - mirrors the
+  rqLive.test.ts coverage (live federated query against PCA
+  Caesar, but via the new direct-HTTP path) - assert label
+  for =http://rds.posccaesar.org/ontology/plm/rdl/PCA_100000011=.
+- =test-sparql-cache-freshness= - second run hits cache;
+  =--refresh= forces re-fetch.
+- =test-sparql-language-filter= - request =languages=en=,
+  assert returned labels carry =@en= or empty tag only.
+- =test-sparql-limit-honoured= - =--limit 5=, assert <=5
+  entities.
+- /Hermetic unit tests:/ stub HTTP responses (CSV + JSON
+  shapes) and assert =EntityTriple[]= shape parity with the
+  =rq= path.
+- /Elisp parity test:/ same endpoint + graph via
+  =elot-source-register-endpoint= and via
+  =elot db register-endpoint=; both must produce
+  byte-identical canonical-JSON dumps under the golden-
+  round-trip harness.
+
+*Non-goals (explicit):*
+
+- /No editing / curating remote endpoint contents./ ELOT
+  remains read-only against endpoints; we never =UPDATE= or
+  =LOAD=.
+- /No SPARQL 1.1 federation orchestration./ One endpoint per
+  source. Users who need federation continue to author a
+  =.rq= file with =SERVICE=.
+- /No authentication beyond Basic auth via URL or Bearer
+  token via env var./ OAuth / mTLS deferred until a user
+  needs them.
+- /No streaming for huge result sets./ Result is fully
+  materialised in memory before the DB write. The =--limit=
+  knob plus the existing =elot-global-label-display-max-ids=
+  cap are the safety net.
+- /No live-tail / push-style updates./ Refresh is on demand;
+  same model as =rq=.
+
+*Risk:* Moderate.
+
+- HTTP-stack + cert-store handling differs across Node
+  (deps on =node:fetch=, possibly an =undici= pin) and
+  Emacs (=url.el= or =request.el=). Both must respect
+  corp-CA-bundle envs. Mitigated by leaning on the platform
+  defaults and adding integration tests gated on
+  =ELOT_TEST_NETWORK=1=.
+- Endpoint behavioural variation (Wikidata's strict
+  rate-limits + UA requirement; GraphDB's case-sensitivity
+  quirks; Stardog's namespace prefix ergonomics) likely
+  needs per-endpoint tuning knobs (custom =Accept= header,
+  =User-Agent=, request-method override). Defcustom /
+  setting plumbing is straightforward but the matrix of
+  edge cases will surface only with real use.
+- Schema impact: none. =sources.type = "sparql"= and the
+  =data_source = "<endpoint>#<graph>"= sentinel both fit the
+  v3 schema unchanged.
+
+*Optional follow-up (Stage 4.1):* a small "endpoint browser"
+in both editors that, given an endpoint, lists named graphs
+(via =SELECT DISTINCT ?g WHERE { GRAPH ?g {} }=) so the user
+can pick rather than paste. Saves a lookup step for users
+exploring a new endpoint. Out of scope for Stage 4 proper;
+recorded here so it does not get re-invented later.
 
 ** Cross-cutting: Test Infrastructure
 

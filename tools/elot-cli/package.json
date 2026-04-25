@@ -462,6 +462,7 @@
     "test:db-prefixes": "tsx src/tests/db/prefixes.test.ts",
     "test:db-rq-cache": "tsx src/tests/db/rqCache.test.ts",
     "test:db-ttl-robot": "tsx src/tests/db/ttlRobot.test.ts",
+    "test:db-rq-live": "tsx src/tests/db/rqLive.test.ts",
     "test:db-roundtrip": "tsx src/tests/db/registerRoundtrip.test.ts",
     "test:db-org": "tsx src/tests/db/orgParser.test.ts",
     "test:db-cli-e2e": "tsx src/tests/db/cliE2e.test.ts",
