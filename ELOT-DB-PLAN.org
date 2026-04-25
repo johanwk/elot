@@ -3688,6 +3688,62 @@ like Emacs, hover cards on mouse-over.  No write path yet; if the
 DB is empty or the workspace has no active sources the extension
 is a no-op.
 
+*Scope note (split into shippable sub-steps).* Mirroring the 2.2.x
+precedent: Step 2.3 spans five distinct concerns (DB bridge,
+settings/active-source layer, hover, decorations, four commands)
+plus three test categories (electron smoke, unit, settings round-
+trip).  Iteration in the VS Code extension host is materially
+slower than the Node CLI, so a single landing would produce an
+unreviewable patch and a long red-bar window.  Split into five
+sub-steps, each ending on green tests:
+
+- *Step 2.3.1 - DB bridge + settings layer.*  =db/bridge.ts=
+  (read-only =ElotDb= load + file-watcher + debounced reload),
+  =activeSources.ts= (=elot.activeLabelSources=,
+  =elot.preferredLanguages=, =getActiveSources()=,
+  =effectiveLanguagePrefs=), new =elot.dbPath= setting with the
+  same precedence as the CLI (workspace > user > =$ELOT_DB_PATH=
+  > =context.globalStorageUri=).  Pure unit-testable; no UI yet.
+  /This alone unblocks every downstream slice./
+
+- *Step 2.3.2 - Hover provider.*  =dbHoverProvider.ts= +
+  =elot--id-at-point=-equivalent token detector (CURIE / bare IRI
+  / angle-bracketed IRI) + rich =MarkdownString= renderer (id,
+  bold label, =rdf:type=, definition, provenance =[src: NAME]=).
+  Coexistence rule with the existing Org =hoverProvider.ts=: DB
+  provider is gated to non-Org languages in the include list, so
+  the two providers never race.  Smallest user-visible feature;
+  great for early validation.
+
+- *Step 2.3.3 - Decoration provider.*  =dbDecorations.ts=:
+  Trie/regex matcher build over =allActiveLabels= (dual-form,
+  CURIE + full-IRI), =elot.globalLabelDisplay.maxIds= cap (default
+  20 000) with status-bar warning fallback, invalidation on (DB
+  change | settings change | editor change).  The performance-
+  sensitive path; isolating it lets us profile alone before
+  layering commands on top.
+
+- *Step 2.3.4 - Commands + keybinding.*
+  =elot.toggleGlobalLabelDisplay= (F5 in non-Org languages),
+  =elot.activateSource= / =deactivateSource= /
+  =reorderActiveSources= QuickPicks with workspace-settings
+  round-trip via =configuration.update(...,
+  ConfigurationTarget.Workspace)=.  Pure UI wiring on top of the
+  bridge; no new data flows.
+
+- *Step 2.3.5 - =@vscode/test-electron= smoke tests + docs
+  polish.*  End-to-end fixture workspace: pre-seeded DB +
+  settings, assert hover markdown, decoration ranges, settings
+  round-trip.  Heaviest test infrastructure - worth its own slice
+  because the first electron-test setup tax is paid once, not
+  amortised awkwardly across earlier slices that would otherwise
+  have to mock the host.  README updates (extension-side usage:
+  =elot.dbPath=, =elot.activeLabelSources=, the four commands,
+  the F5 binding) and =CHANGELOG.md= entry.
+
+The full original spec is retained below as the per-deliverable
+reference.
+
 *Deliverables in =tools/elot-cli/src/= (extension side):*
 
 /DB bridge/ (=db/bridge.ts=):
