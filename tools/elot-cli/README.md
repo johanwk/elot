@@ -16,7 +16,7 @@ required.
 |---|---|
 | **Org→OWL export** | Right-click → *Tangle to Manchester Syntax* |
 | **Import OWL ontology** | Command Palette → *Elot: Import OWL Ontology* |
-| **Label display** (hover + toggle) | **F5** |
+| **Label display** (hover + toggle) | **F5** (`.org` and other files) |
 | **Headline folding** | **Tab** / **Shift+Tab** |
 | **Go to definition** | **F12** / **Ctrl+Click** |
 | **IntelliSense completion** | **Ctrl+Space** |
@@ -270,8 +270,13 @@ Applied automatically — no toggle or configuration needed.
 | Setting | Default | Description |
 |---|---|---|
 | `elot.labelDisplay.fontStyle` | `"italic"` | Font style for labels: `italic`, `normal`, or `oblique` |
-| `elot.labelDisplay.hoverEnabled` | `true` | Show hover cards for CURIEs |
+| `elot.labelDisplay.hoverEnabled` | `true` | Show hover cards for CURIEs in `.org` files |
 | `elot.javaPath` | `"java"` | Path to the Java executable (Java 21+ required for OWL import) |
+
+DB-backed (global) label display has its own settings — see
+[Label Database](#label-database-elot-cli-db) below
+(`elot.dbPath`, `elot.activeLabelSources`, `elot.preferredLanguages`,
+`elot.globalLabelDisplay.*`).
 
 Change in VS Code Settings (search for "elot").
 
@@ -294,25 +299,118 @@ ELOT can resolve identifiers (CURIEs and full URIs) to human-readable labels
 across *any* file you open in VS Code — Turtle, SPARQL, CSV, source code, log
 files — by consulting a persistent SQLite index. The index is populated and
 managed exclusively by the `elot-cli db` sub-command; the VS Code extension
-reads from it (read-only, in a future release).
+reads from it (read-only).
 
-> **Status (2026-04):** the CLI write/query path is shipping now. Live
-> consumption from the VS Code extension is the next milestone (Step 2.3 of
-> the plan); for the moment the database is useful from the command line and
-> from Emacs (`elot-mode` shares the same DB schema and binary file format —
-> see [README-global-label-display.org](https://github.com/johanwk/elot/blob/master/README-global-label-display.org)).
+> **Status (2026-04):** the CLI write/query path and the VS Code read path
+> (hover + visual label replacement + status bar + source management
+> commands) are shipping. End-to-end smoke tests against a real Extension
+> Host are the next milestone (Step 2.3.5b of the plan). Emacs (`elot-mode`)
+> shares the same DB schema and binary file format — see
+> [README-global-label-display.org](https://github.com/johanwk/elot/blob/master/README-global-label-display.org).
+
+### Using the database from VS Code
+
+Once you have populated a database with `elot-cli db register ...` (see
+below), point the extension at it via settings, mark which sources should
+be consulted, and the extension provides:
+
+- **DB-backed hover** for CURIEs and IRIs in *non-Org* files (Turtle,
+  SPARQL, JSON, source code, plain text, …). Shows the label, the
+  resolved id, the `rdf:type`, definitions, comments, and a `[src: NAME]`
+  provenance footer.
+- **Visual label replacement (F5)** for non-Org files. Same idea as the
+  Org-side F5 toggle: the document text is unchanged; CURIEs and IRIs
+  are rendered with their labels via CSS pseudo-elements.
+- **Status bar indicator** showing active-source count and total
+  decoratable ids. Click it to toggle global label display. Hover for
+  a per-source breakdown.
+- **Command palette** access to the source-management surface
+  (Activate / Deactivate / Reorder).
+
+> The Org F5 (`elot.toggleLabels`) and the new global F5
+> (`elot.toggleGlobalLabels`) coexist: F5 routes to the Org-side toggle
+> in `.org` files and to the DB-backed toggle elsewhere.
+
+#### Settings
+
+| Setting | Default | Description |
+|---|---|---|
+| `elot.dbPath` | `""` | Absolute path to the SQLite DB. Empty = use the per-platform VS Code `globalStorage` location. Workspace-level overrides user-level. |
+| `elot.activeLabelSources` | `[]` | Ordered list of active sources. Each entry is either a string (source name) or `{"source": "name", "dataSource": "path"}`. First match wins on lookup conflicts. |
+| `elot.preferredLanguages` | `[]` | Preferred language tags (BCP-47), in priority order. Empty = `["", "en"]` (untagged first, then English). |
+| `elot.globalLabelDisplay.hoverEnabled` | `true` | Show DB-backed hovers in non-Org files. |
+| `elot.globalLabelDisplay.maxIds` | `500` | Per-file cap on how many CURIE/IRI tokens are decorated. Status bar shows a "capped" warning when reached. |
+| `elot.globalLabelDisplay.includeLanguages` | `[]` | VS Code language IDs in which DB-backed hover / decoration apply. Empty = built-in default (`plaintext`, `markdown`, `typescript`, `javascript`, `python`, `json`, `yaml`, `xml`, `turtle`, `sparql`, …). Org is **always** excluded. |
+
+`settings.json` accepts both the shorthand and the canonical form for
+active sources:
+
+```jsonc
+{
+  // Shorthand:
+  "elot.activeLabelSources": ["bfo", "ro"],
+
+  // Canonical (also written by the management commands):
+  "elot.activeLabelSources": [
+    { "source": "bfo", "dataSource": "" },
+    { "source": "ro",  "dataSource": "" }
+  ],
+
+  "elot.preferredLanguages": ["en", ""]
+}
+```
+
+> **Beware JSONC commas.** VS Code's `settings.json` parser is forgiving
+> but a trailing comma after the last key/value can silently invalidate
+> a setting. If a label-related setting "doesn't seem to take effect",
+> open the file and look for a stray comma before the closing brace.
+
+#### Commands (Command Palette)
+
+| Command | Effect |
+|---|---|
+| `Elot: Toggle Global Label Display` (**F5** in non-Org files) | Show/hide DB-backed labels in the current editor. |
+| `Elot: Activate Label Source` | Multi-select QuickPick of inactive sources; appends to `elot.activeLabelSources`. |
+| `Elot: Deactivate Label Source` | Multi-select QuickPick of active sources; removes from `elot.activeLabelSources`. |
+| `Elot: Reorder Active Label Sources` | Two-step QuickPick: pick a source, then move *up* / *down* / *top* / *bottom* / done. (Per-item button reorder lands in 2.3.6.) |
+| `Elot: Label DB Info` | Diagnostic: shows the resolved DB path, bridge state, registered sources with id counts, and current settings. Useful as a first stop when something looks off. |
+
+The settings round-trip preserves the original scope of the key (workspace
+vs. user) and always writes the canonical `{source, dataSource}` shape so
+the resulting `settings.json` is unambiguous after a UI edit.
+
+#### Status bar
+
+Sits in the bottom-right, next to the Org-side label-display indicator.
+Format:
+
+```
+🏷 Labels (3 src, 12k ids)        ← display ON
+</> CURIEs (3 src, 12k ids)        ← display OFF
+🏷 Labels (3/5 src, 12k ids, capped) ← scan cap reached
+$(database) ELOT: no DB            ← bridge has no file open
+```
+
+When active source count differs from total registered sources, the
+format collapses to `(N/M src, K ids)`. Hover the indicator for a full
+breakdown (path, per-source id counts, prefs).
 
 ### Database location
 
-By precedence:
+By precedence (extension):
 
-1. `--db <path>` flag (highest)
-2. `$ELOT_DB_PATH` environment variable
-3. Per-platform VS Code `globalStorage` directory:
+1. Workspace-level `elot.dbPath`
+2. User-level `elot.dbPath`
+3. `$ELOT_DB_PATH` environment variable
+4. `context.globalStorageUri.fsPath` + `/elot.sqlite`:
    - Windows: `%APPDATA%\Code\User\globalStorage\johanwk.elot\elot.sqlite`
    - macOS: `~/Library/Application Support/Code/User/globalStorage/johanwk.elot/elot.sqlite`
    - Linux: `~/.config/Code/User/globalStorage/johanwk.elot/elot.sqlite`
-4. Fallback: `~/.elot/elot.sqlite`
+
+The CLI uses the same logical defaults (its `--db` flag wins, then
+`$ELOT_DB_PATH`, then the same per-platform `globalStorage` location,
+then `~/.elot/elot.sqlite` as a final fallback). When the publisher id
+matches, the extension and the CLI converge on the same file.
 
 The VS Code extension and Emacs each own their own DB by default — they do
 not share state. Use `--db` or `$ELOT_DB_PATH` if you want a shared file.

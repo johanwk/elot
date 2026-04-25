@@ -4017,14 +4017,38 @@ sub-steps, each ending on green tests:
   bridge; no new data flows.
 
 - *Step 2.3.5 - =@vscode/test-electron= smoke tests + docs
-  polish.*  End-to-end fixture workspace: pre-seeded DB +
-  settings, assert hover markdown, decoration ranges, settings
-  round-trip.  Heaviest test infrastructure - worth its own slice
-  because the first electron-test setup tax is paid once, not
-  amortised awkwardly across earlier slices that would otherwise
-  have to mock the host.  README updates (extension-side usage:
-  =elot.dbPath=, =elot.activeLabelSources=, the four commands,
-  the F5 binding) and =CHANGELOG.md= entry.
+  polish.*  Split into two sub-slices to separate user-facing
+  docs (immediate value, no infra) from the test-host harness
+  (new dev dependency, fixture workspace, mocha runner):
+
+  - /2.3.5a - Docs polish/.  =tools/elot-cli/README.md= gains an
+    extension-side section covering =elot.dbPath=,
+    =elot.activeLabelSources=, =elot.preferredLanguages=,
+    =elot.globalLabelDisplay.*=, the F5 binding split (Org vs.
+    non-Org), the four management commands
+    (=Activate/Deactivate/Reorder Source=, =Label DB Info=),
+    and the status-bar indicator.  =CHANGELOG.md= seeded at
+    the repo level with the 0.4.x DB-feature line.  No code
+    changes.
+
+  - /2.3.5b - =@vscode/test-electron= harness + smoke tests/.
+    End-to-end fixture workspace: pre-seeded DB + settings,
+    assert hover markdown, decoration ranges, settings
+    round-trip on activate/deactivate/reorder.  Heaviest test
+    infrastructure - worth its own slice because the first
+    electron-test setup tax is paid once, not amortised
+    awkwardly across earlier slices that would otherwise have
+    to mock the host.
+
+  *Status (2.3.5a -- DONE):* README extension-side section
+  expanded with all DB-feature settings, the F5 split, the four
+  management commands, the status-bar indicator, and the
+  database-location precedence.  The bottom-of-README CLI
+  section still describes raw =elot-cli db ...= usage.  New
+  =tools/elot-cli/CHANGELOG.md= seeded with the 0.4.x DB-feature
+  entry covering both the extension surface and the CLI.  No
+  code changes; no new test files.  Slice 2.3.5b (electron
+  smoke harness) deferred to its own turn.
 
 - *Step 2.3.6 - Source registration + reorder UX polish (added
   after live 2.3.4 testing).*  Two complementary improvements
