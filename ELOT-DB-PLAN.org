@@ -4425,10 +4425,65 @@ after first read, so repeat queries are fast.
 
 ---
 
-*** Step 2.4 - VS Code label lookup (insert existing id)
+*** DONE Step 2.4.1 - Pure logic + commands + unit tests
 :PROPERTIES:
-:STATUS: TODO
+:STATUS: DONE
 :END:
+
+*Status:* DONE.  Item builder + commands + 33 unit tests landed.
+End-to-end electron coverage deferred to 2.4.2.
+
+/Files added (under =tools/elot-cli/src/=):/
+- =labelLookup/items.ts= -- pure helpers, no vscode import.
+  Exports =canonicalId=, =suffixForId=, =langSuffixForSingleton=
+  (Step 1.16.8 port), =insertTokenForId= (CURIE preferred,
+  angle-IRI fallback, with optional buffer-local prefix
+  contracter overriding the DB), and =buildLookupItems=
+  (one item per id, local-wins dedup by canonical id, collision
+  CURIE/tail suffix, lang-only @LANG suffix on singletons,
+  origin marker =[external]= / =+external= in scope=both only).
+- =labelLookupCommand.ts= -- VS Code wiring.  Three commands
+  (=elot.labelLookup= / =elot.labelLookupLocal= /
+  =elot.labelLookupExternal=), reads =elot.labelLookup.scope=
+  (default =both=), normalises active sources + prefs from
+  settings, lazy-loads the bridge, scope-collapse in non-Org
+  buffers (=local= / =both= -> =external=), invokes a single
+  =showQuickPick= populated by =buildLookupItems=, and inserts
+  the resulting CURIE/IRI at the cursor (replacing any
+  selection).  Buffer-local prefix table is harvested from
+  =parseOrg= + =getPrefixMap= so a local =:prefixdefs:= block
+  wins over DB prefixes when picking the insertion CURIE.
+- =tests/labelLookup/items.test.ts= -- 33 cases covering
+  =canonicalId= (CURIE / bracketed URI / bare URI),
+  =suffixForId=, =langSuffixForSingleton= (no variants /
+  singleton / @lang / no tag / label != winner / explicit prefs),
+  =insertTokenForId= (CURIE / DB contract / local-prefix wins /
+  bracketed fallback / brackets stripped first),
+  =buildLookupItems= (scope local / external / both, dedup
+  with bracketed-vs-bare URI, CURIE collision suffix, URI tail
+  fallback, lang-only @LANG, collision-suffix overriding @LANG,
+  origin marker only in scope=both, pure-local in =both= no
+  marker).
+
+/Edits:/
+- =extension.ts= -- registers =registerLabelLookupCommands(dbBridge)=
+  alongside the other DB-side registrations.
+- =package.json= -- three new commands, =elot.labelLookup.scope=
+  setting (enum =local|external|both=, default =both=), new
+  keybinding =ctrl+alt+r= for =elot.labelLookup= (gated to
+  =editorTextFocus=).  New scripts =test:label-lookup-items= and
+  =test:label-lookup=; aggregate =test:db= now ends with
+  =&& npm run test:label-lookup=.
+- =Makefile= -- =test-label-lookup= and =test-label-lookup-items=
+  targets, =.PHONY= updated.
+
+/Deferred to 2.4.2:/
+- =@vscode/test-electron= integration test (scripted QuickPick
+  acceptance + insertion assertion + settings round-trip on
+  =elot.labelLookup.scope=).  Reuses the 2.3.5b harness; only
+  test files added.
+
+
 
 *Goal:* Port Emacs's =elot-label-lookup= (Steps 1.12 / 1.13 / 1.15)
 to VS Code.  After this step the user can type a label fragment,

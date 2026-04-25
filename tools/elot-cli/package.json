@@ -95,6 +95,18 @@
       {
         "command": "elot.refreshSource",
         "title": "Elot: Refresh Label Source"
+      },
+      {
+        "command": "elot.labelLookup",
+        "title": "Elot: Label Lookup (insert CURIE)"
+      },
+      {
+        "command": "elot.labelLookupLocal",
+        "title": "Elot: Label Lookup (local only)"
+      },
+      {
+        "command": "elot.labelLookupExternal",
+        "title": "Elot: Label Lookup (external/DB only)"
       }
     ],
     "keybindings": [
@@ -122,6 +134,11 @@
         "command": "elot.toggleOrgIndent",
         "key": "ctrl+shift+i",
         "when": "editorTextFocus && resourceExtname == .org"
+      },
+      {
+        "command": "elot.labelLookup",
+        "key": "ctrl+alt+r",
+        "when": "editorTextFocus"
       }
     ],
     "configuration": {
@@ -189,6 +206,17 @@
           "default": 500,
           "minimum": 1,
           "description": "Maximum number of CURIE/IRI tokens to decorate per file. When the cap is reached the status bar shows a 'capped' warning."
+        },
+        "elot.labelLookup.scope": {
+          "type": "string",
+          "default": "both",
+          "enum": ["local", "external", "both"],
+          "enumDescriptions": [
+            "Buffer slurp only (Org files).",
+            "DB active sources only.",
+            "Union of buffer slurp and DB active sources (default)."
+          ],
+          "description": "Default scope for `Elot: Label Lookup`. In non-Org buffers, `local` and `both` collapse to `external`."
         },
         "elot.globalLabelDisplay.includeLanguages": {
           "type": "array",
@@ -276,9 +304,12 @@
     "test:settings-active-sources": "tsx src/tests/settings/activeSources.test.ts",
     "test:settings-reorder": "tsx src/tests/settings/reorder.test.ts",
     "test:settings-cli-runner": "tsx src/tests/settings/cliRunner.test.ts",
+    "test:label-lookup-items": "tsx src/tests/labelLookup/items.test.ts",
     "test:db-resolve": "tsx src/tests/db/dbResolve.test.ts",
-    "test:db": "npm run test:db-lang && npm run test:db-read && npm run test:db-write && npm run test:db-paths && npm run test:db-parsers && npm run test:db-prefixes && npm run test:db-rq-cache && npm run test:db-ttl-robot && npm run test:db-roundtrip && npm run test:db-org && npm run test:db-cli-e2e && npm run test:db-golden && npm run test:db-bridge && npm run test:db-hover-token && npm run test:db-hover-render && npm run test:db-decorations && npm run test:db-resolve && npm run test:settings",
+    "test:db": "npm run test:db-lang && npm run test:db-read && npm run test:db-write && npm run test:db-paths && npm run test:db-parsers && npm run test:db-prefixes && npm run test:db-rq-cache && npm run test:db-ttl-robot && npm run test:db-roundtrip && npm run test:db-org && npm run test:db-cli-e2e && npm run test:db-golden && npm run test:db-bridge && npm run test:db-hover-token && npm run test:db-hover-render && npm run test:db-decorations && npm run test:db-resolve && npm run test:settings && npm run test:label-lookup",
+
     "test:settings": "npm run test:settings-active-sources && npm run test:settings-reorder && npm run test:settings-cli-runner",
+    "test:label-lookup": "npm run test:label-lookup-items",
     "compile:test": "tsc -p tsconfig.test.json",
     "prepare:electron-fixtures": "tsx src/tests/electron/prepareFixtures.ts",
     "pretest:electron": "npm run bundle && npm run compile:test && npm run prepare:electron-fixtures",

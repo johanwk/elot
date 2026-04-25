@@ -21,6 +21,7 @@ import { registerDbDecorations } from "./dbDecorations.js";
 import { registerDbInfoCommand } from "./dbInfo.js";
 import { registerSourceCommands } from "./sourceCommands.js";
 import { registerRegisterSourceCommands } from "./registerSourceCommand.js";
+import { registerLabelLookupCommands } from "./labelLookupCommand.js";
 
 export function activate(context: vscode.ExtensionContext) {
   const tangle = async (doc: vscode.TextDocument, manual = false) => {
@@ -197,7 +198,8 @@ export function activate(context: vscode.ExtensionContext) {
   const dbInfo = registerDbInfoCommand(dbBridge);
   const sourceCmds = registerSourceCommands(dbBridge);
   const registerCmds = registerRegisterSourceCommands(dbBridge);
-  context.subscriptions.push(dbHover, dbDecor, dbInfo, sourceCmds, registerCmds, onDbCfg, {
+  const lookupCmds = registerLabelLookupCommands(dbBridge);
+  context.subscriptions.push(dbHover, dbDecor, dbInfo, sourceCmds, registerCmds, lookupCmds, onDbCfg, {
     dispose: () => dbBridge.dispose(),
   });
 
