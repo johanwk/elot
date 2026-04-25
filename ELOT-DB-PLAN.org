@@ -3883,13 +3883,82 @@ sub-steps, each ending on green tests:
   "(empty - hover will return nothing!)" so the most common
   first-run pitfall is one click away from diagnosis.
 
-- *Step 2.3.3 - Decoration provider.*  =dbDecorations.ts=:
+- *DONE Step 2.3.3 - Decoration provider.*  =dbDecorations.ts=:
   Trie/regex matcher build over =allActiveLabels= (dual-form,
   CURIE + full-IRI), =elot.globalLabelDisplay.maxIds= cap (default
   20 000) with status-bar warning fallback, invalidation on (DB
   change | settings change | editor change).  The performance-
   sensitive path; isolating it lets us profile alone before
   layering commands on top.
+
+  /Status: DONE./  Landed:
+  - =src/dbDecorations/scan.ts= - pure single-pass scanner
+    emitting non-overlapping CURIE / angle-IRI / bare-IRI hits,
+    sorted by start offset.  Angle-IRI suppresses the inner bare
+    URI so hover and decoration agree on the matched span.  Cap
+    via =maxHits= short-circuits on pathological inputs.  No
+    vscode import; tested in isolation.
+  - =src/dbDecorations.ts= - VS Code provider.  Per-label
+    =TextEditorDecorationType= pool with the same `before:` +
+    zeroed-font-size pattern as =labelDecorations.ts= (visual
+    parity with the Org-side toggle).  Token resolution via the
+    bridge's =db.getLabelAny= so CURIEs and full IRIs both land.
+    Org files (.org / language-id `org`) are skipped entirely.
+    Eligible-document gate uses
+    =elot.globalLabelDisplay.includeLanguages= (default mirrors
+    the hover provider).  Per-editor 250ms debounce on
+    =onDidChangeTextDocument=; 0ms apply on editor switch /
+    visibility change.  Bridge =onDidChange= and configuration
+    changes (=elot.activeLabelSources=,
+    =elot.preferredLanguages=, =elot.globalLabelDisplay.*=,
+    =elot.labelDisplay.fontStyle=) all trigger reapply.
+    Font-style change recreates the DT pool.
+  - Status-bar item (priority 99, sits left of the Org item):
+    "$(database) ELOT: no DB" when bridge unloaded, otherwise
+    "$(tag/code) Labels|CURIEs (Active/Total src[, capped])"
+    with a multi-line tooltip giving DB state, source counts,
+    display state, and a maxIds note when the cap is reached.
+    Background colour: prominent when ON, warning when capped.
+    Visible whenever the active document is eligible OR the user
+    has registered active sources -- so users always see DB
+    diagnostic state once they've opted in.  (Addresses the
+    user's "minor note" requesting a status-bar indicator with
+    DB / active-sources counts; full tooltip carries entity-pair
+    counts via =listSources= row counts.)
+  - =elot.toggleGlobalLabels= command.  F5 binding in non-Org
+    files (=when: editorTextFocus && resourceExtname != .org=);
+    the pre-existing F5 in =.org= still runs the Org toggle.
+    Inside an Org buffer the new command delegates to
+    =elot.toggleLabels= for parity, so users get a single
+    keystroke either way.
+  - New setting =elot.globalLabelDisplay.maxIds= (number,
+    default 500, min 1) declared in =package.json=.  Reusing
+    =elot.labelDisplay.fontStyle= (the existing Org-side
+    setting) so both decorators look identical.
+  - Wiring: =extension.ts= constructs the decorator alongside the
+    hover provider, sharing the same =ElotDbBridge=.  Both
+    register against =onStartupFinished=.
+
+  /Tests:/
+  - =src/tests/db/dbDecorationsScan.test.ts= - 12 cases:
+    CURIE / angle-IRI / bare-IRI happy paths, angle suppresses
+    inner bare, trailing-punctuation cutoffs, mixed sorted
+    output, empty-prefix CURIE, multi-CURIE, =maxHits= cap,
+    plain-text negatives, port + path URLs, dotted-prefix CURIE,
+    multi-line offsets.  Pure tsx, no vscode runtime.
+  - VS Code-host coverage (DT lifecycle, settings round-trip,
+    F5-in-non-Org) deferred to 2.3.5 alongside the
+    =@vscode/test-electron= smoke suite already planned.
+
+  /Deliberately deferred:/
+  - QuickPick-driven activate/deactivate/reorder commands and
+    settings round-trip (Step 2.3.4).
+  - Trie-based exact-text matcher over =allActiveLabels= (would
+    let users type a label and have the literal text decorated
+    /forward/, not just CURIE -> label).  The current scanner is
+    the right primitive for the common case and matches the
+    Elisp baseline; the Trie matcher is a follow-up if hover
+    coverage proves insufficient.
 
 - *Step 2.3.4 - Commands + keybinding.*
   =elot.toggleGlobalLabelDisplay= (F5 in non-Org languages),

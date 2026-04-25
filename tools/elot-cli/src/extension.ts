@@ -17,6 +17,7 @@ import { ensurePandoc, exportOrgToHtml } from "./exportHtml.js";
 import { ElotDbBridge } from "./db/bridge.js";
 import { resolveExtensionDbPath } from "./dbResolve.js";
 import { registerDbHoverProvider } from "./dbHoverProvider.js";
+import { registerDbDecorations } from "./dbDecorations.js";
 import { registerDbInfoCommand } from "./dbInfo.js";
 
 export function activate(context: vscode.ExtensionContext) {
@@ -190,8 +191,9 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
   const dbHover = registerDbHoverProvider(context, dbBridge);
+  const dbDecor = registerDbDecorations(context, dbBridge);
   const dbInfo = registerDbInfoCommand(dbBridge);
-  context.subscriptions.push(dbHover, dbInfo, onDbCfg, {
+  context.subscriptions.push(dbHover, dbDecor, dbInfo, onDbCfg, {
     dispose: () => dbBridge.dispose(),
   });
 

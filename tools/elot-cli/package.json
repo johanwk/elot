@@ -70,6 +70,11 @@
       {
         "command": "elot.dbInfo",
         "title": "Elot: Label DB Info"
+      },
+      {
+        "command": "elot.toggleGlobalLabels",
+        "title": "Elot: Toggle Global Label Display",
+        "icon": "$(tag)"
       }
     ],
     "keybindings": [
@@ -77,6 +82,11 @@
         "command": "elot.toggleLabels",
         "key": "f5",
         "when": "resourceExtname == .org"
+      },
+      {
+        "command": "elot.toggleGlobalLabels",
+        "key": "f5",
+        "when": "editorTextFocus && resourceExtname != .org"
       },
       {
         "command": "editor.toggleFold",
@@ -148,6 +158,12 @@
           "type": "boolean",
           "default": true,
           "description": "Show DB-backed hover (label, type, definition, provenance) for CURIEs and IRIs in non-Org files."
+        },
+        "elot.globalLabelDisplay.maxIds": {
+          "type": "number",
+          "default": 500,
+          "minimum": 1,
+          "description": "Maximum number of CURIE/IRI tokens to decorate per file. When the cap is reached the status bar shows a 'capped' warning."
         },
         "elot.globalLabelDisplay.includeLanguages": {
           "type": "array",
@@ -230,9 +246,11 @@
     "test:db-bridge": "tsx src/tests/db/bridge.test.ts",
     "test:db-hover-token": "tsx src/tests/db/dbHoverToken.test.ts",
     "test:db-hover-render": "tsx src/tests/db/dbHoverRender.test.ts",
+    "test:db-decorations-scan": "tsx src/tests/db/dbDecorationsScan.test.ts",
+    "test:db-decorations": "npm run test:db-decorations-scan",
     "test:settings-active-sources": "tsx src/tests/settings/activeSources.test.ts",
     "test:db-resolve": "tsx src/tests/db/dbResolve.test.ts",
-    "test:db": "npm run test:db-lang && npm run test:db-read && npm run test:db-write && npm run test:db-paths && npm run test:db-parsers && npm run test:db-prefixes && npm run test:db-rq-cache && npm run test:db-ttl-robot && npm run test:db-roundtrip && npm run test:db-org && npm run test:db-cli-e2e && npm run test:db-golden && npm run test:db-bridge && npm run test:db-hover-token && npm run test:db-hover-render && npm run test:db-resolve && npm run test:settings",
+    "test:db": "npm run test:db-lang && npm run test:db-read && npm run test:db-write && npm run test:db-paths && npm run test:db-parsers && npm run test:db-prefixes && npm run test:db-rq-cache && npm run test:db-ttl-robot && npm run test:db-roundtrip && npm run test:db-org && npm run test:db-cli-e2e && npm run test:db-golden && npm run test:db-bridge && npm run test:db-hover-token && npm run test:db-hover-render && npm run test:db-decorations && npm run test:db-resolve && npm run test:settings",
     "test:settings": "npm run test:settings-active-sources",
     "elot": "tsx src/cli.ts"
   },
