@@ -142,6 +142,21 @@
         "command": "elot.tree.refreshAll",
         "title": "Reload database",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "elot.tree.browseSource",
+        "title": "Browse identifiers...",
+        "icon": "$(list-unordered)"
+      },
+      {
+        "command": "elot.persistActiveSourcesToWorkspace",
+        "title": "Elot: Persist Active Label Sources to Workspace Settings",
+        "icon": "$(save)"
+      },
+      {
+        "command": "elot.persistActiveSourcesToUser",
+        "title": "Elot: Persist Active Label Sources to User Settings",
+        "icon": "$(save-as)"
       }
     ],
     "keybindings": [
@@ -303,6 +318,10 @@
           "when": "false"
         },
         {
+          "command": "elot.tree.browseSource",
+          "when": "false"
+        },
+        {
           "command": "elot.tree.moveUp",
           "when": "false"
         },
@@ -331,6 +350,11 @@
           "command": "elot.reorderActiveSources",
           "when": "view == elot.activeSourcesView",
           "group": "navigation@2"
+        },
+        {
+          "command": "elot.persistActiveSourcesToWorkspace",
+          "when": "view == elot.activeSourcesView",
+          "group": "navigation@3"
         }
       ],
       "view/item/context": [
@@ -353,6 +377,11 @@
           "command": "elot.tree.deleteSource",
           "when": "view == elot.sourcesView",
           "group": "inline@3"
+        },
+        {
+          "command": "elot.tree.browseSource",
+          "when": "view == elot.sourcesView || view == elot.activeSourcesView",
+          "group": "navigation@1"
         },
         {
           "command": "elot.tree.moveUp",
@@ -445,13 +474,14 @@
     "test:settings-active-sources": "tsx src/tests/settings/activeSources.test.ts",
     "test:settings-reorder": "tsx src/tests/settings/reorder.test.ts",
     "test:settings-cli-runner": "tsx src/tests/settings/cliRunner.test.ts",
+    "test:settings-persist": "tsx src/tests/settings/persist.test.ts",
     "test:label-lookup-items": "tsx src/tests/labelLookup/items.test.ts",
     "test:views-source-items": "tsx src/tests/views/sourceItems.test.ts",
     "test:views": "npm run test:views-source-items",
     "test:db-resolve": "tsx src/tests/db/dbResolve.test.ts",
     "test:db": "npm run test:db-lang && npm run test:db-read && npm run test:db-write && npm run test:db-paths && npm run test:db-parsers && npm run test:db-prefixes && npm run test:db-rq-cache && npm run test:db-ttl-robot && npm run test:db-roundtrip && npm run test:db-org && npm run test:db-cli-e2e && npm run test:db-golden && npm run test:db-bridge && npm run test:db-hover-token && npm run test:db-hover-render && npm run test:db-decorations && npm run test:db-resolve && npm run test:settings && npm run test:label-lookup && npm run test:views",
 
-    "test:settings": "npm run test:settings-active-sources && npm run test:settings-reorder && npm run test:settings-cli-runner",
+    "test:settings": "npm run test:settings-active-sources && npm run test:settings-reorder && npm run test:settings-cli-runner && npm run test:settings-persist",
     "test:label-lookup": "npm run test:label-lookup-items",
     "compile:test": "tsc -p tsconfig.test.json",
     "prepare:electron-fixtures": "tsx src/tests/electron/prepareFixtures.ts",

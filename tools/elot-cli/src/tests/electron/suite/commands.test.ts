@@ -152,4 +152,90 @@ suite("electron commands + settings round-trip", () => {
       assert.ok(all.includes(id), `command not registered: ${id}`);
     }
   });
+
+  test("2.3.7a tree commands are registered", async function () {
+    this.timeout(5000);
+    const all = await vscode.commands.getCommands(true);
+    const ids = [
+      "elot.tree.activateSource",
+      "elot.tree.deactivateSource",
+      "elot.tree.refreshSource",
+      "elot.tree.deleteSource",
+      "elot.tree.moveUp",
+      "elot.tree.moveDown",
+      "elot.tree.refreshAll",
+      "elot.tree.browseSource",
+    ];
+    for (const id of ids) {
+      assert.ok(all.includes(id), `command not registered: ${id}`);
+    }
+  });
+
+  test("2.3.7b persist commands are registered", async function () {
+    this.timeout(5000);
+    const all = await vscode.commands.getCommands(true);
+    for (const id of [
+      "elot.persistActiveSourcesToWorkspace",
+      "elot.persistActiveSourcesToUser",
+    ]) {
+      assert.ok(all.includes(id), `command not registered: ${id}`);
+    }
+  });
+
+  test("elot.persistActiveSourcesToWorkspace round-trip: writes effective value to workspace scope", async function () {
+    this.timeout(15000);
+    const cfg0 = vscode.workspace.getConfiguration("elot");
+    const originalWs = cfg0.inspect<unknown>("activeLabelSources")
+      ?.workspaceValue;
+    const originalUser = cfg0.inspect<unknown>("activeLabelSources")
+      ?.globalValue;
+
+    try {
+      // Set a known effective value at workspace scope, then clear
+      // workspace scope and re-persist via the command.  The
+      // command must read the *effective* value at call-time and
+      // write it back to the chosen scope.
+      const known = [
+        { source: "ex", dataSource: "" },
+        { source: "demo", dataSource: "" },
+      ];
+      await vscode.workspace
+        .getConfiguration("elot")
+        .update(
+          "activeLabelSources",
+          known,
+          vscode.ConfigurationTarget.Workspace,
+        );
+      await new Promise((r) => setTimeout(r, 50));
+
+      await vscode.commands.executeCommand(
+        "elot.persistActiveSourcesToWorkspace",
+      );
+      await new Promise((r) => setTimeout(r, 100));
+
+      const after = vscode.workspace
+        .getConfiguration("elot")
+        .inspect<unknown>("activeLabelSources");
+      assert.deepStrictEqual(
+        after?.workspaceValue,
+        known,
+        `workspaceValue mismatch; got ${JSON.stringify(after?.workspaceValue)}`,
+      );
+    } finally {
+      await vscode.workspace
+        .getConfiguration("elot")
+        .update(
+          "activeLabelSources",
+          originalWs,
+          vscode.ConfigurationTarget.Workspace,
+        );
+      await vscode.workspace
+        .getConfiguration("elot")
+        .update(
+          "activeLabelSources",
+          originalUser,
+          vscode.ConfigurationTarget.Global,
+        );
+    }
+  });
 });

@@ -20,7 +20,6 @@
 //   3. On success: bridge.reload(); brief toast.
 
 import * as vscode from "vscode";
-import { spawn } from "child_process";
 import * as path from "path";
 import type { ElotDbBridge } from "./db/bridge.js";
 import {
@@ -28,6 +27,7 @@ import {
   buildRefreshInvocation,
   defaultSourceNameFromFile,
 } from "./cliRunner.js";
+import { runElotCli, describeCliResolution } from "./cliSpawn.js";
 
 const SUPPORTED_TYPES: Array<{ id: string; description: string }> = [
   { id: "csv", description: "Comma-separated; id + label + lang/attrs" },
@@ -44,7 +44,9 @@ function chan(): vscode.OutputChannel {
   return outputChannel;
 }
 
-function getCliPath(): string {
+function getCliPathForArgs(): string {
+  // Used only as the leading element of buildRegisterInvocation's
+  // display rendering -- the actual spawn goes through runElotCli.
   const cfg = vscode.workspace.getConfiguration("elot");
   const v = (cfg.get<string>("cliPath") ?? "").trim();
   return v.length > 0 ? v : "elot-cli";
@@ -52,28 +54,7 @@ function getCliPath(): string {
 
 /** Spawn the CLI; resolve to {code, signal}.  Streams output to the channel. */
 function runCli(args: string[]): Promise<{ code: number | null; signal: NodeJS.Signals | null }> {
-  return new Promise((resolve) => {
-    const cli = getCliPath();
-    const ch = chan();
-    ch.appendLine(`> ${[cli, ...args].join(" ")}`);
-    let proc;
-    try {
-      proc = spawn(cli, args, { shell: false });
-    } catch (err) {
-      ch.appendLine(`spawn failed: ${(err as Error).message}`);
-      resolve({ code: -1, signal: null });
-      return;
-    }
-    proc.stdout.on("data", (b) => ch.append(b.toString()));
-    proc.stderr.on("data", (b) => ch.append(b.toString()));
-    proc.on("error", (err) => {
-      ch.appendLine(`spawn error: ${err.message}`);
-    });
-    proc.on("close", (code, signal) => {
-      ch.appendLine(`(exit ${code ?? "null"}${signal ? `, signal ${signal}` : ""})`);
-      resolve({ code, signal });
-    });
-  });
+  return runElotCli(args, chan());
 }
 
 async function pickType(file: string): Promise<string | undefined> {
@@ -176,7 +157,7 @@ async function registerSource(bridge: ElotDbBridge): Promise<void> {
   }
 
   // 5. Run CLI.
-  const inv = buildRegisterInvocation(getCliPath(), {
+  const inv = buildRegisterInvocation(getCliPathForArgs(), {
     file,
     source: sourceName.trim(),
     type,
@@ -198,7 +179,7 @@ async function registerSource(bridge: ElotDbBridge): Promise<void> {
     await activateAfterRegister(sourceName.trim());
   } else if (res.code === -1) {
     vscode.window.showErrorMessage(
-      `ELOT: could not launch '${getCliPath()}'.  Set 'elot.cliPath' to the elot-cli binary.`,
+      `ELOT: could not launch CLI (${describeCliResolution()}).  Set 'elot.cliPath' to override.`,
     );
   } else {
     vscode.window.showErrorMessage(
@@ -236,7 +217,7 @@ async function refreshSource(bridge: ElotDbBridge): Promise<void> {
   });
   if (!picked) return;
 
-  const inv = buildRefreshInvocation(getCliPath(), {
+  const inv = buildRefreshInvocation(getCliPathForArgs(), {
     source: picked.src.source,
     dataSource: picked.src.dataSource ?? null,
     dbPath: bridge.path ?? null,
@@ -258,7 +239,7 @@ async function refreshSource(bridge: ElotDbBridge): Promise<void> {
     );
   } else if (res.code === -1) {
     vscode.window.showErrorMessage(
-      `ELOT: could not launch '${getCliPath()}'.  Set 'elot.cliPath' to the elot-cli binary.`,
+      `ELOT: could not launch CLI (${describeCliResolution()}).  Set 'elot.cliPath' to override.`,
     );
   } else {
     vscode.window.showErrorMessage(

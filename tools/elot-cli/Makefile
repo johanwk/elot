@@ -1,7 +1,7 @@
 # Makefile for elot-cli — friendly aliases for npm commands.
 # Run "make help" to see available targets.
 
-.PHONY: help all install bundle build watch test test-syntax test-html test-html-post test-html-integration test-html-all test-db test-db-lang test-db-read test-db-write test-db-paths test-db-parsers test-db-prefixes test-db-rq-cache test-db-ttl-robot test-db-roundtrip test-db-org test-db-cli-e2e test-db-golden test-db-bridge test-db-hover-token test-db-hover-render test-db-decorations test-db-decorations-scan test-db-resolve test-settings test-settings-active-sources test-settings-reorder test-settings-cli-runner test-label-lookup test-label-lookup-items test-electron compile-test clean package cli
+.PHONY: help all install bundle build watch test test-syntax test-html test-html-post test-html-integration test-html-all test-db test-db-lang test-db-read test-db-write test-db-paths test-db-parsers test-db-prefixes test-db-rq-cache test-db-ttl-robot test-db-roundtrip test-db-org test-db-cli-e2e test-db-golden test-db-bridge test-db-hover-token test-db-hover-render test-db-decorations test-db-decorations-scan test-db-resolve test-settings test-settings-active-sources test-settings-reorder test-settings-cli-runner test-settings-persist test-label-lookup test-label-lookup-items test-views test-views-source-items test-electron compile-test clean package cli
 
 all: install bundle test test-html-all package ## Full build from scratch: install → bundle → test → package
 
@@ -105,11 +105,20 @@ test-settings-reorder: ## Run reorder/set-arithmetic helper tests (Step 2.3.4)
 test-settings-cli-runner: ## Run cliRunner argv-builder tests (Step 2.3.6)
 	npm run test:settings-cli-runner
 
+test-settings-persist: ## Run persist-plan helper tests (Step 2.3.7b)
+	npm run test:settings-persist
+
 test-label-lookup: ## Run all label-lookup tests (Step 2.4.1)
 	npm run test:label-lookup
 
 test-label-lookup-items: ## Run label-lookup item-builder unit tests (Step 2.4.1)
 	npm run test:label-lookup-items
+
+test-views: ## Run all TreeView builder tests (Step 2.3.7a)
+	npm run test:views
+
+test-views-source-items: ## Run sourceItems builder tests (Step 2.3.7a)
+	npm run test:views-source-items
 
 test-db-resolve: ## Run extension DB-path resolver tests (Step 2.3.1)
 	npm run test:db-resolve

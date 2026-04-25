@@ -22,8 +22,17 @@ import { registerDbInfoCommand } from "./dbInfo.js";
 import { registerSourceCommands } from "./sourceCommands.js";
 import { registerRegisterSourceCommands } from "./registerSourceCommand.js";
 import { registerLabelLookupCommands } from "./labelLookupCommand.js";
+import { registerSourcesTreeView } from "./views/sourcesTreeProvider.js";
+import { registerActiveSourcesTreeView } from "./views/activeSourcesTreeProvider.js";
+import { registerTreeCommands } from "./views/treeCommands.js";
+import { registerPersistCommands } from "./persistCommands.js";
+import { initCliSpawn } from "./cliSpawn.js";
 
 export function activate(context: vscode.ExtensionContext) {
+  // Cache the extension path so cliSpawn can locate the bundled
+  // `dist/cli.js` for `Elot: Register/Refresh Label Source`.
+  initCliSpawn(context);
+
   const tangle = async (doc: vscode.TextDocument, manual = false) => {
     if (doc.languageId !== "org" && !doc.fileName.endsWith(".org")) {
       if (manual) vscode.window.showErrorMessage("Not an Org file");
@@ -199,9 +208,15 @@ export function activate(context: vscode.ExtensionContext) {
   const sourceCmds = registerSourceCommands(dbBridge);
   const registerCmds = registerRegisterSourceCommands(dbBridge);
   const lookupCmds = registerLabelLookupCommands(dbBridge);
-  context.subscriptions.push(dbHover, dbDecor, dbInfo, sourceCmds, registerCmds, lookupCmds, onDbCfg, {
-    dispose: () => dbBridge.dispose(),
-  });
+  const treeCmds = registerTreeCommands(dbBridge);
+  const sourcesTree = registerSourcesTreeView(dbBridge);
+  const activeTree = registerActiveSourcesTreeView(dbBridge);
+  const persistCmds = registerPersistCommands();
+  context.subscriptions.push(
+    dbHover, dbDecor, dbInfo, sourceCmds, registerCmds, lookupCmds,
+    treeCmds, sourcesTree, activeTree, persistCmds, onDbCfg,
+    { dispose: () => dbBridge.dispose() },
+  );
 
   // Clean up cached slurp maps when documents are closed
   const onClose = vscode.workspace.onDidCloseTextDocument((doc) => {

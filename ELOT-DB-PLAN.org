@@ -4258,6 +4258,338 @@ sub-steps, each ending on green tests:
   QuickPick/InputBox stubbing); registration check is the
   cheap-but-meaningful end-to-end signal.
 
+- *TODO Step 2.3.7 - Side-bar TreeView for sources + persist
+  commands (added after live 2.3.6 testing prompted a "GUI-like
+  list" request, mirroring the Elisp =elot-label-list-sources= /
+  =elot-label-list-active-sources= experience).*  Split into
+  =2.3.7a= (TreeView, this turn) and =2.3.7b= (persist commands,
+  next turn).
+
+- *DONE Step 2.3.7a - Side-bar TreeView (LANDED).*
+  /Status:/ implemented behind the new "ELOT" activity-bar
+  container; live-validation pending.
+
+  /New files:/
+
+  - =src/views/sourceItems.ts= - pure builders
+    =buildDbSourceItems= and =buildActiveSourceItems= producing
+    render-ready records (label / description / tooltip /
+    contextValue / canMoveUp / canMoveDown).  No vscode import;
+    tsx-testable.  Compact id-count formatter
+    (=42= / =1.2k= / =12k=) and relative-time helper for
+    tooltips.  Active-vs-inactive distinction encoded in
+    =contextValue= (=elotDbSource.active= / =.inactive=) so menu
+    bindings can show different inline icons per state.
+    First/middle/last/only encoded in
+    =elotActiveSource.{first,middle,last,only}= so boundary rows
+    automatically hide the disallowed move buttons.
+
+  - =src/views/sourcesTreeProvider.ts= - =SourcesTreeProvider=
+    over =bridge.get().listSources()= + =sourceEntityCount()=,
+    refreshes on =bridge.onDidChange= and on
+    =elot.activeLabelSources= setting changes (so
+    activate/deactivate from any path updates both views).
+
+  - =src/views/activeSourcesTreeProvider.ts= - shows the
+    settings-driven active list in priority order, flags any
+    entries missing from the live DB ("(not in DB)") so stale
+    settings entries are easy to spot.
+
+  - =src/views/treeCommands.ts= - per-row + per-view-title
+    commands wired from the TreeView UI.  All adapt to existing
+    logic where possible:
+    - =elot.tree.activateSource= / =deactivateSource= - one-click
+       (no QuickPick) since the row is the selection.
+    - =elot.tree.moveUp= / =moveDown= - one-click reorder via the
+       pure helpers in =sourceCommands/reorder.ts=.
+    - =elot.tree.refreshSource= / =deleteSource= - shells out to
+       =elot-cli db refresh= / =db remove= (with a modal
+       confirm for delete), streams to the existing =Elot CLI=
+       output channel, =bridge.reload()= on success.  Delete
+       also drops the source from =elot.activeLabelSources= if
+       it was active.
+    - =elot.tree.refreshAll= - title-bar reload trigger.
+
+  /=package.json= surface:/
+
+  - New =viewsContainers.activitybar.elot= using
+    =images/elot-icon.png= for the activity-bar entry.
+  - Two views: =elot.sourcesView= ("Sources in DB") and
+    =elot.activeSourcesView= ("Active Sources").
+  - Seven new tree commands declared (titles short - they
+    render in tree row tooltips, not the palette - hidden from
+    palette via =menus.commandPalette= =when: "false"= entries).
+  - =menus.view/title= - register / refresh-all on the DB view;
+    activate / reorder on the active view.
+  - =menus.view/item/context= - inline icons keyed to
+    =contextValue= so the right buttons show on the right rows
+    (activate-on-inactive only; deactivate-on-active only;
+    moveUp filtered out for first/only; moveDown for last/only).
+
+  /=extension.ts=:/ registers =treeCmds=, =sourcesTree=,
+  =activeTree= alongside the existing DB-side wiring; all share
+  the =dbBridge= instance so refreshes are coherent.
+
+  /Tests:/
+
+  - =src/tests/views/sourceItems.test.ts= (15 cases): empty
+    inputs, active vs. inactive contextValues, description
+    components (=type=, count, leading "*" for active),
+    dataSource-sensitive active matching, count formatting
+    boundaries (under 1000 / 4-digit / 5-digit), relative-time
+    tooltips, single-item vs. first/middle/last contextValues,
+    priority numbering, missing-from-DB warnings, dataSource in
+    description.
+
+  - =package.json= scripts: =test:views-source-items=,
+    =test:views=; =test:db= aggregate now ends with
+    =test:views=.
+  - =Makefile= targets: =test-views=, =test-views-source-items=.
+
+  /Electron coverage/: extended
+    =suite/commands.test.ts= with a 5th case asserting all 7
+    =elot.tree.*= commands are registered, mirroring the 2.3.6
+    pattern.  No live TreeView assertion (the TreeView surface
+    isn't introspectable via =vscode.executeCommand=).
+
+  /Caveat (not yet validated end-to-end on Windows)/: package
+  manifest changes to =viewsContainers= / =views= / =menus=
+  require a /full re-package + reinstall/ of the .vsix; a hot
+  reload picks up the JS but not the contributions block.
+
+  /Follow-up patches landed after first user smoke test:/
+
+  - /Inline button click args/: VS Code passes the /element/
+    returned from =getChildren()= (the =DbSourceItem= /
+    =ActiveSourceItem= plain object) to the bound command -
+    *not* the =TreeItem= produced by =getTreeItem()=.  Initial
+    implementation stashed =__elotKey= on the TreeItem; the
+    handlers therefore got =undefined= and silently no-op'd
+    ("buttons that do nothing").  Fixed by reading =arg.key=
+    first (the element's own field), with =__elotKey= retained
+    as a fall-through for direct =vscode.commands.executeCommand=
+    callers.  Files: =views/treeCommands.ts= =getKey()=.
+
+  - /Bundled CLI invocation/: =treeCommands.ts= and
+    =registerSourceCommand.ts= used to spawn a literal
+    =elot-cli= on PATH, which fails for users who installed only
+    the .vsix (no separate npm install).  Refactored to a new
+    shared helper =cliSpawn.ts= that resolves to:
+       1. =elot.cliPath= setting (if non-empty) - external override.
+       2. =process.execPath <extensionPath>/dist/cli.js= - the
+          bundled CLI shipped inside the .vsix.
+       3. literal =elot= on PATH - last-resort fallback.
+    The bundle is the new default, so refresh / register / delete
+    all work out of the box.  =extension.ts= calls =initCliSpawn=
+    in =activate()= to cache the extension path.  =package.json=
+    description for =elot.cliPath= updated accordingly.
+
+  /Deferred to 2.3.7b/: =elot.persistActiveSourcesToWorkspace=
+  and =elot.persistActiveSourcesToUser= commands, plus the
+  =$(save)= title-bar binding on the active view that invokes
+  the workspace variant.
+
+- *DONE Step 2.3.7b - Persist commands (LANDED).*
+  /Status:/ implemented; pure helpers tsx-tested; electron suite
+  extended with registration + workspace round-trip assertions.
+
+  /New files:/
+  - =src/sourceCommands/persist.ts= - pure helpers
+    =buildPersistPlan(effective, scope)= +
+    =describePersistResult(plan)=.  No vscode import; canonicalises
+    string entries to ={source, dataSource:""}=, drops malformed
+    rows, preserves order, formats stable singular/plural toast
+    text.
+  - =src/persistCommands.ts= - VS Code wrapper.  Reads the
+    /effective/ value of =elot.activeLabelSources= via
+    =cfg.get= (so the snapshot honours scope precedence already
+    in effect), feeds it to =buildPersistPlan(_, scope)=, and
+    writes the canonical result via =cfg.update(_, _, target)=.
+    Refuses workspace-scope when no folder is open with a clear
+    error toast; surfaces =cfg.update= rejections as toasts.
+  - =src/tests/settings/persist.test.ts= - 9 tsx cases (empty,
+    undefined, strings, objects, malformed, order, count
+    boundaries for the toast).
+
+  /Edits:/
+  - =src/extension.ts= - registers =registerPersistCommands()=
+    alongside the other DB-side wiring; disposable joins
+    =context.subscriptions=.
+  - =package.json=:
+    - Two new commands (=elot.persistActiveSourcesToWorkspace=
+      with icon =$(save)=; =elot.persistActiveSourcesToUser=
+      with icon =$(save-as)=).
+    - View-title binding: =$(save)= button on
+      =elot.activeSourcesView= toolbar (group =navigation@3=)
+      invoking the workspace variant.  User-scope variant is
+      Command-Palette-only (no toolbar slot needed).
+    - Command-palette gating untouched: both new commands stay
+      visible in the palette (unlike the =elot.tree.*= row-only
+      adapters).
+    - New scripts =test:settings-persist= + aggregated into
+      =test:settings=.
+  - =Makefile= - new =test-settings-persist= target; =.PHONY=
+    updated.
+  - =src/tests/electron/suite/commands.test.ts= - two new cases:
+    (a) registration smoke for both persist commands;
+    (b) workspace round-trip - sets a known
+    =activeLabelSources= at workspace scope, runs
+    =elot.persistActiveSourcesToWorkspace=, asserts the
+    workspace value matches the known shape; restores both
+    workspace and user values in =finally=.
+
+  /Out-of-scope (deferred):/ a "Persist to Folder" variant for
+  multi-root workspaces.  Easy to add (=ConfigurationTarget.WorkspaceFolder=
+  + folder picker) but no user has asked for it yet; the workspace
+  +user split covers the =.dir-locals.el= analog cleanly.
+
+- *DONE Step 2.3.7c - Browse identifiers in a source (LANDED).*
+  /Status:/ implemented; right-clicking on a row in either tree view
+  opens a fuzzy-searchable QuickPick listing every labelled
+  identifier in that source.  Selecting a row inserts the CURIE (or
+  bracketed IRI when no CURIE is available) at the cursor; with no
+  active editor, the token is copied to the clipboard.
+
+  /Triggered from:/ "Browse identifiers..." context-menu entry on
+  rows in =elot.sourcesView= and =elot.activeSourcesView=
+  (=group: "navigation@1"= so it appears in the right-click menu;
+  not an inline button to keep row toolbars uncluttered).
+
+  /Implementation:/ =elot.tree.browseSource= command in
+  =src/views/treeCommands.ts= (=treeBrowseSource=).  Builds a scope
+  containing only the clicked source, calls
+  =db.allActiveLabels(scope, prefs)= to get =label -> ids[]=, then
+  flattens to one item per id with rdf:type as description and a
+  CURIE/id detail line on label collisions.  Token formatting reuses
+  =insertTokenForId= from =labelLookup/items.ts= so insertion
+  semantics match the global label-lookup command.
+
+  /Edits:/
+  - =src/views/treeCommands.ts= - new =treeBrowseSource= action +
+    registration of =elot.tree.browseSource=.
+  - =package.json= - command declaration with =$(list-unordered)=
+    icon, palette gating (=when: false=), and
+    =view/item/context= binding for both views.
+  - =src/tests/electron/suite/commands.test.ts= - registration
+    smoke extended to cover the new id.
+
+  /Deferred:/ no unit-test coverage for the QuickPick assembly
+  itself; it's a thin adaptor over already-tested DB helpers
+  (=allActiveLabels=, =contractUri=, =getAttr=) and
+  =insertTokenForId= (covered by 2.4.1's =items.test.ts=).  An
+  electron round-trip stubbing =showQuickPick= would mirror the
+  2.4.2 labelLookup test if desired.
+
+- *TODO Step 2.3.7 (legacy bullet, replaced by 2.3.7a/b above)
+  - Side-bar TreeView for sources + persist commands (added
+
+  1. /Side-bar TreeView for sources/ - new "ELOT" view
+     container in the activity bar (icon: =$(database)= or
+     =$(tag)=) hosting two views:
+
+     - /Sources in DB/ - one row per source registered in the
+        live DB (=bridge.get().listSources()=).  Row label =
+        source name; description = =type= + entity count
+        (e.g. =csv * 985 ids=); tooltip = full =data_source=
+        path + =last_updated=.  Per-row inline icons (rendered
+        on hover via =menus.view/item/context= with
+        =group: "inline"=): =$(refresh)= refresh,
+        =$(trash)= delete.  View-level toolbar (via
+        =menus.view/title=): =$(add)= register-new (calls
+        existing =elot.registerSource=).  Active sources
+        decorated with a checkmark badge; inactive sources
+        rendered dim.
+
+     - /Active Sources/ - one row per entry in
+        =elot.activeLabelSources=, in priority order.  Row
+        label = source name; description = effective scope
+        (workspace / user) and any non-empty =dataSource=.
+        Per-row inline icons: =$(arrow-up)= move up,
+        =$(arrow-down)= move down, =$(circle-slash)=
+        deactivate.  View-level toolbar: =$(add)= activate
+        (calls existing =elot.activateSource= multi-select
+        QuickPick), =$(save)= persist-to-workspace (see #2).
+
+     Both views refresh automatically on
+     =bridge.onDidChange= (DB rewritten by CLI) and on
+     =workspace.onDidChangeConfiguration("elot.activeLabelSources")=
+     (settings edit from any source).  TreeViews are
+     constructed in new =src/views/sourcesTreeProvider.ts= and
+     =src/views/activeSourcesTreeProvider.ts=, registered in
+     =extension.ts= alongside the existing providers.  All
+     per-row actions delegate to commands shipped in 2.3.4 /
+     2.3.6 - the tree is pure UI.  =package.json= gains a
+     =viewsContainers.activitybar.elot= entry, two =views=
+     entries, and =menus= bindings for the inline + title
+     toolbars.
+
+  2. /=elot.persistActiveSourcesToWorkspace= command/ - Elisp
+     =elot-label-active-sources-persist= parity.  Reads the
+     current effective =elot.activeLabelSources= via
+     =cfg.get()=, writes it to
+     =ConfigurationTarget.Workspace=
+     (i.e. =<root>/.vscode/settings.json=), shows a toast
+     confirming the write and the destination path.  If no
+     workspace folder is open, falls back to a clear error
+     message ("open a workspace folder first") rather than
+     silently writing to user settings.  Useful when the user
+     has tweaked active sources transiently and wants to
+     commit the configuration to the project repo so
+     collaborators get the same defaults on clone.
+
+  3. /=elot.persistActiveSourcesToUser= command/ - same shape
+     as #2 but writes to =ConfigurationTarget.Global= (user
+     =settings.json=).  Convenient for "I want this set of
+     sources active for every project I open".
+
+  Tests:
+
+  - Pure tree-item builders factored into
+    =src/views/sourceItems.ts= (shape an =Iterable<SourceRow>=
+    + the active list into =vscode.TreeItem[]= with the right
+    description / iconPath / contextValue strings).  Unit
+    tests via tsx mirror 2.3.4 / 2.3.6 patterns - 8-12 cases
+    covering active-vs-inactive distinction, boundary-row
+    icon filtering, empty-DB / empty-active edge cases.
+
+  - Persist commands have pure helpers (=buildPersistEdits=)
+    that produce the
+    =&#123; target, key, value &#125;= triple a thin
+    vscode wrapper passes to =cfg.update()=; tested under tsx
+    in =src/tests/settings/persist.test.ts=.
+
+  - Electron coverage: extend
+    =src/tests/electron/suite/commands.test.ts= with
+    registration assertions for the two persist commands +
+    a settings round-trip test that calls
+    =elot.persistActiveSourcesToWorkspace= against a
+    pre-cleared workspace setting and asserts the value
+    landed at workspace scope.  No TreeView assertion in
+    electron (the TreeView surface is not introspectable via
+    =vscode.executeCommand=; pure unit coverage is the right
+    level).
+
+  Out of scope (deferred or rejected):
+
+  - /Drag-to-reorder/ - the TreeView API doesn't support it;
+    a Webview would.  Item-button up/down (already shipped in
+    2.3.6's =reorderWithButtons=) is good enough; the new
+    TreeView's per-row up/down icons give the same affordance
+    in a persistent surface.
+
+  - /Webview env-vars-style dialog/ - higher fidelity to the
+    Windows Control Panel analogy but ~3-5x the code and
+    requires bespoke state sync; the TreeView path is
+    idiomatic and ~80% of the value at 20% of the cost.  Can
+    be revisited as a follow-up if users specifically ask
+    for it.
+
+  Sequencing: 2.3.7 is /additive/ - no existing test or
+  command changes, all new surface.  Lands cleanly before
+  2.4 (label-lookup QuickPick) was the original plan; since
+  2.4 already shipped, 2.3.7 just slots in before 2.5
+  (release polish).
+
 *Adjustments after surveying the existing extension code* (recorded
 before starting 2.3.1; refines the per-deliverable spec below):
 
@@ -4607,10 +4939,42 @@ cache.
 
 *** Step 2.5 - Polish, docs, release
 :PROPERTIES:
-:STATUS: TODO
+:STATUS: PARTIAL
 :END:
 
-*Goal:* Ship.
+*Status note (v0.4.0 release decision):* Cutting v0.4.0 now to put
+the new global-label-display features in front of real users.
+Bug-hunting before exposure has diminishing returns; field use is
+the fastest path to uncovering real issues.
+
+Scope adjustments for v0.4.0:
+- /Per-platform RC smoke test deferred./  Marketplace publish goes
+  ahead with the developer's primary platform (Windows) verified.
+  macOS / Linux smoke tests fold into a v0.4.x patch cycle if
+  issues surface.
+- /CLI npm publish deferred./  The CLI ships /inside/ the .vsix
+  via =dist/cli.js= and the =initCliSpawn= resolver (see 2.3.7a
+  follow-up), so end users do not need =npm install -g elot=.
+  Standalone npm publish can wait for a stable CLI surface.
+- /Docs: README + CHANGELOG already landed in 2.3.5a/.  Top-level
+  README cross-link can be tightened in v0.4.x.
+
+*Remaining v0.4.0 release tasks:*
+- Bump =package.json= version to 0.4.0 (DONE - confirmed by user).
+- =vsce package= + =vsce publish= to the Marketplace.
+- GitHub release notes drafted from the [Unreleased] CHANGELOG
+  block; flip [Unreleased] -> [0.4.0] with date.
+- Tag =v0.4.0= in git.
+
+*Deferred to v0.4.x or v0.5/:*
+- Per-platform RC smoke (macOS, Linux).
+- Standalone CLI npm publish.
+- MELPA recipe =:files= clause update for =schema.sql= (Emacs side
+  unchanged in 2.x, so no urgency).
+
+---
+
+*Original goal (kept for reference):* Ship.
 
 *Deliverables:*
 - =tools/elot-cli/README.md= extended with a /Database management/
