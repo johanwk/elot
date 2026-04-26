@@ -64,6 +64,10 @@
         "title": "Elot: Download/Update elot-exporter"
       },
       {
+        "command": "elot.downloadRobot",
+        "title": "Elot: Download/Update ROBOT (robot.jar)"
+      },
+      {
         "command": "elot.exportHtml",
         "title": "Elot: Export to HTML"
       },
@@ -230,6 +234,11 @@
           "type": "string",
           "default": "java",
           "description": "Path to the Java executable (Java 21+ required for elot-exporter)"
+        },
+        "elot.robotJarPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to a user-managed robot.jar (https://github.com/ontodev/robot). Empty = auto-download into VS Code globalStorage on first use of a .ttl or .rq label source. Exposed to child processes as $ELOT_ROBOT_JAR."
         },
         "elot.lint.enabled": {
           "type": "boolean",

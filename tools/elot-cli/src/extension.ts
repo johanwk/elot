@@ -13,6 +13,7 @@ import { registerDefinitionProvider } from "./definitionProvider.js";
 import { registerCompletionProvider } from "./completionProvider.js";
 import { registerDiagnosticsProvider } from "./diagnosticsProvider.js";
 import { registerImportOwlCommand, registerDownloadExporterCommand } from "./importOwl.js";
+import { applyRobotJarEnv, registerDownloadRobotCommand } from "./robotDownload.js";
 import { ensurePandoc, exportOrgToHtml } from "./exportHtml.js";
 import { ElotDbBridge } from "./db/bridge.js";
 import { resolveExtensionDbPath } from "./dbResolve.js";
@@ -32,6 +33,11 @@ export function activate(context: vscode.ExtensionContext) {
   // Cache the extension path so cliSpawn can locate the bundled
   // `dist/cli.js` for `Elot: Register/Refresh Label Source`.
   initCliSpawn(context);
+
+  // If a robot.jar has been downloaded previously (or pointed at via
+  // elot.robotJarPath), expose it as $ELOT_ROBOT_JAR so the bundled
+  // CLI subprocess can find ROBOT for .ttl / .rq sources.
+  applyRobotJarEnv(context);
 
   const tangle = async (doc: vscode.TextDocument, manual = false) => {
     if (doc.languageId !== "org" && !doc.fileName.endsWith(".org")) {
@@ -125,6 +131,9 @@ export function activate(context: vscode.ExtensionContext) {
   // Explicit download/update of elot-exporter.jar
   const downloadExporter = registerDownloadExporterCommand(context);
 
+  // Explicit download/update of robot.jar (used for .ttl / .rq sources).
+  const downloadRobot = registerDownloadRobotCommand(context);
+
   // Export to HTML via Pandoc
   const exportHtml = vscode.commands.registerCommand("elot.exportHtml", async () => {
     const editor = vscode.window.activeTextEditor;
@@ -206,9 +215,9 @@ export function activate(context: vscode.ExtensionContext) {
   const dbDecor = registerDbDecorations(context, dbBridge);
   const dbInfo = registerDbInfoCommand(dbBridge);
   const sourceCmds = registerSourceCommands(dbBridge);
-  const registerCmds = registerRegisterSourceCommands(dbBridge);
+  const registerCmds = registerRegisterSourceCommands(dbBridge, context);
   const lookupCmds = registerLabelLookupCommands(dbBridge);
-  const treeCmds = registerTreeCommands(dbBridge);
+  const treeCmds = registerTreeCommands(dbBridge, context);
   const sourcesTree = registerSourcesTreeView(dbBridge);
   const activeTree = registerActiveSourcesTreeView(dbBridge);
   const persistCmds = registerPersistCommands();
@@ -223,7 +232,7 @@ export function activate(context: vscode.ExtensionContext) {
     clearSlurpCache(doc.uri.toString());
   });
 
-  context.subscriptions.push(disposable, onSave, hover, folding, definition, completion, importOwl, downloadExporter, exportHtml, onClose);
+  context.subscriptions.push(disposable, onSave, hover, folding, definition, completion, importOwl, downloadExporter, downloadRobot, exportHtml, onClose);
 }
 
 export function deactivate() {}

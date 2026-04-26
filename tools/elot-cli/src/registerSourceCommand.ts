@@ -28,6 +28,8 @@ import {
   defaultSourceNameFromFile,
 } from "./cliRunner.js";
 import { runElotCli, describeCliResolution } from "./cliSpawn.js";
+import { ensureRobotJar } from "./robotDownload.js";
+import { ensureRobotJar } from "./robotDownload.js";
 
 const SUPPORTED_TYPES: Array<{ id: string; description: string }> = [
   { id: "csv", description: "Comma-separated; id + label + lang/attrs" },
@@ -107,7 +109,10 @@ async function activateAfterRegister(source: string): Promise<void> {
 
 // ---- registerSource ---------------------------------------------
 
-async function registerSource(bridge: ElotDbBridge): Promise<void> {
+async function registerSource(
+  bridge: ElotDbBridge,
+  context: vscode.ExtensionContext,
+): Promise<void> {
   // 1. File selection.
   const ws =
     vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0]
@@ -131,6 +136,12 @@ async function registerSource(bridge: ElotDbBridge): Promise<void> {
   // 2. Type.
   const type = await pickType(file);
   if (!type) return;
+
+  // 2a. ROBOT is required for ttl + rq sources.  Auto-download if needed.
+  if (type === "ttl" || type === "rq") {
+    const robot = await ensureRobotJar(context);
+    if (!robot) return;
+  }
 
   // 3. Source name.
   const defaultName = defaultSourceNameFromFile(file);
@@ -190,7 +201,10 @@ async function registerSource(bridge: ElotDbBridge): Promise<void> {
 
 // ---- refreshSource ----------------------------------------------
 
-async function refreshSource(bridge: ElotDbBridge): Promise<void> {
+async function refreshSource(
+  bridge: ElotDbBridge,
+  context: vscode.ExtensionContext,
+): Promise<void> {
   const db = await bridge.get();
   if (!db) {
     vscode.window.showWarningMessage(
@@ -216,6 +230,11 @@ async function refreshSource(bridge: ElotDbBridge): Promise<void> {
     placeHolder: "Re-parse the source from its original file",
   });
   if (!picked) return;
+
+  if (picked.src.type === "ttl" || picked.src.type === "rq") {
+    const robot = await ensureRobotJar(context);
+    if (!robot) return;
+  }
 
   const inv = buildRefreshInvocation(getCliPathForArgs(), {
     source: picked.src.source,
@@ -252,12 +271,13 @@ async function refreshSource(bridge: ElotDbBridge): Promise<void> {
 
 export function registerRegisterSourceCommands(
   bridge: ElotDbBridge,
+  context: vscode.ExtensionContext,
 ): vscode.Disposable {
   const reg = vscode.commands.registerCommand("elot.registerSource", () =>
-    registerSource(bridge),
+    registerSource(bridge, context),
   );
   const ref = vscode.commands.registerCommand("elot.refreshSource", () =>
-    refreshSource(bridge),
+    refreshSource(bridge, context),
   );
   return vscode.Disposable.from(reg, ref);
 }

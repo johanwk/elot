@@ -21,6 +21,7 @@ import {
 } from "../sourceCommands/reorder.js";
 import { buildRefreshInvocation } from "../cliRunner.js";
 import { runElotCli, describeCliResolution } from "../cliSpawn.js";
+import { ensureRobotJar } from "../robotDownload.js";
 import { getEffectiveLanguagePrefs } from "../activeSources.js";
 import { insertTokenForId } from "../labelLookup/items.js";
 import type { DbLookupView } from "../labelLookup/items.js";
@@ -109,10 +110,26 @@ async function treeDeactivate(arg: unknown): Promise<void> {
 
 async function treeRefresh(
   bridge: ElotDbBridge,
+  context: vscode.ExtensionContext,
   arg: unknown,
 ): Promise<void> {
   const key = getKey(arg);
   if (!key) return;
+  // ROBOT auto-download for ttl/rq sources.
+  try {
+    const db = await bridge.get();
+    const src = db?.listSources().find(
+      (s) =>
+        s.source === key.source &&
+        (s.dataSource ?? "") === (key.dataSource ?? ""),
+    );
+    if (src && (src.type === "ttl" || src.type === "rq")) {
+      const robot = await ensureRobotJar(context);
+      if (!robot) return;
+    }
+  } catch {
+    /* ignore — let CLI surface the error */
+  }
   const inv = buildRefreshInvocation(getCliPathForArgs(), {
     source: key.source,
     dataSource: key.dataSource || null,
@@ -316,6 +333,7 @@ async function treeRefreshAll(bridge: ElotDbBridge): Promise<void> {
 
 export function registerTreeCommands(
   bridge: ElotDbBridge,
+  context: vscode.ExtensionContext,
 ): vscode.Disposable {
   const subs: vscode.Disposable[] = [];
   subs.push(
@@ -329,7 +347,7 @@ export function registerTreeCommands(
   );
   subs.push(
     vscode.commands.registerCommand("elot.tree.refreshSource", (a) =>
-      treeRefresh(bridge, a),
+      treeRefresh(bridge, context, a),
     ),
   );
   subs.push(
