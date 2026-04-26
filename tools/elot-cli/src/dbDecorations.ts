@@ -170,7 +170,7 @@ async function applyDecorationsToEditor(
 
   const rangesByLabel = new Map<string, vscode.Range[]>();
   for (const h of hits) {
-    const label = db.getLabelAny(h.token, active, prefs);
+    const label = db.getLabelAny(h.token, active);
     if (label == null) continue;
     if (label === h.token) continue; // no benefit
     const startPos = doc.positionAt(h.start);

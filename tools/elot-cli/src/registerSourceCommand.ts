@@ -29,7 +29,6 @@ import {
 } from "./cliRunner.js";
 import { runElotCli, describeCliResolution } from "./cliSpawn.js";
 import { ensureRobotJar } from "./robotDownload.js";
-import { ensureRobotJar } from "./robotDownload.js";
 
 const SUPPORTED_TYPES: Array<{ id: string; description: string }> = [
   { id: "csv", description: "Comma-separated; id + label + lang/attrs" },

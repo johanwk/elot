@@ -49,6 +49,24 @@ function copyWasmFiles() {
   // Copy sql.js's sql-wasm.wasm so ElotDb.locateFile() can find it
   // sibling-of-bundle at runtime.  Without this, the bundled extension
   // breaks once node_modules/ is stripped during .vsix packaging.
+  // Copy elot-package/schema.sql so ElotDb.locateSchemaSql() can find
+  // it sibling-of-bundle at runtime.  The repo-relative candidates
+  // (../../../../elot-package/schema.sql etc.) don't exist inside the
+  // packaged .vsix because elot-package/ lives outside tools/elot-cli/
+  // and is therefore not included.
+  try {
+    const schemaSrc = join("..", "..", "elot-package", "schema.sql");
+    if (!existsSync(schemaSrc)) {
+      console.error(`ERROR: could not find schema.sql at ${schemaSrc}`);
+      process.exit(1);
+    }
+    copyFileSync(schemaSrc, join(distDir, "schema.sql"));
+    console.log(`Copied schema.sql -> dist/schema.sql`);
+  } catch (err) {
+    console.error(`ERROR: failed to copy schema.sql: ${err.message}`);
+    process.exit(1);
+  }
+
   try {
     const sqlJsEntry = require.resolve("sql.js");
     // sql.js entry sits in package root or in dist/; walk up to the

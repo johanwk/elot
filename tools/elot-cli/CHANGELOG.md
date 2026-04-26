@@ -8,6 +8,16 @@ reaches 1.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Bundle `schema.sql` in the `.vsix`.** `ElotDb.applySchema()` reads
+  `elot-package/schema.sql` at runtime; that path lives outside
+  `tools/elot-cli/` and so wasn't included in the packaged extension,
+  causing `elot db register` (label-source registration) to fail with
+  "ElotDb: could not locate schema.sql". `esbuild.mjs` now copies the
+  schema into `dist/schema.sql` alongside `sql-wasm.wasm`, and
+  `locateSchemaSql()` already probes that sibling location.
+
 ## [0.4.0] - 2026-04-25
 
 ### Added
