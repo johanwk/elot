@@ -248,6 +248,8 @@ Get the tools:
 
 ### Quick start using ELOT
 
+[Video.webm](https://github.com/user-attachments/assets/71a5ac3e-cafa-4180-b2a4-dbbb425b16c3)
+
 
 <a id="orgf808072"></a>
 
