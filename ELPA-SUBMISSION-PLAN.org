@@ -1,0 +1,615 @@
+#+TITLE: ELOT MELPA Submission — Step-by-Step Implementation Plan
+#+AUTHOR: ELOT Contributors
+#+DATE: 2026
+#+STARTUP: overview
+#+PROPERTY: header-args :eval never-export
+
+* Purpose and how to use this document
+
+This document is the working plan for getting ELOT (=elot-package/=)
+into shape for submission to MELPA.  It is structured for incremental
+execution with LLM assistance through Emacs ~gptel~:
+
+- Each *Milestone* is a self-contained unit of work.  Open the
+  milestone heading, narrow to it (=C-x n s=), and send the whole
+  subtree to ~gptel~ as the prompt.
+- Each milestone lists *Files affected* and *Steps* as concrete
+  verbs ("edit X to do Y") — not pseudocode, not snippets — so
+  gptel has unambiguous targets.
+- Each milestone ends with an *Acceptance check*: a short list of
+  shell or Emacs commands whose output proves the milestone is done.
+  After every milestone the package must remain in a *stable status*:
+  byte-compiles cleanly, the existing ERT suite passes, =elot-mode=
+  still loads and enables in an example file.
+- Milestones are ordered to minimise rework.  Cleanup (legacy
+  removal) happens before metadata polish, which happens before CI
+  and the recipe.
+
+Conventions used below:
+- =MAIN FILE= refers to the file declared as the package's
+  top-level descriptor.  By the end of *Milestone 3* this is
+  =elot-package/elot-mode.el=.
+- "Stable status" is the green checkpoint after each milestone:
+  see [[*Stable-status checklist (run after every milestone)][Stable-status checklist]].
+
+* Stable-status checklist (run after every milestone)
+:PROPERTIES:
+:CUSTOM_ID: stable-status
+:END:
+
+After completing any milestone, all of the following must hold.  If
+any item fails, do not start the next milestone.
+
+1. *Byte-compile is clean* — from the repository root:
+   #+begin_src sh
+   cd elot-package
+   emacs --batch -L . \
+     --eval "(setq byte-compile-error-on-warn nil)" \
+     -f batch-byte-compile *.el
+   #+end_src
+   No errors.  Warnings should not increase relative to the previous
+   stable point (record the baseline count once at the start).
+
+2. *Tests pass* — from the repository root:
+   #+begin_src sh
+   make -C test
+   #+end_src
+   All ERT tests green (ROBOT-gated tests may skip; that is
+   acceptable and expected on machines without ROBOT).
+
+3. *Loads in a fresh Emacs* — sanity smoke test:
+   #+begin_src sh
+   emacs --batch -L elot-package \
+     --eval "(require 'elot-mode)" \
+     --eval "(message \"OK: elot-mode loaded\")"
+   #+end_src
+
+4. *Working tree clean* — commit the milestone before moving on:
+   =git status= shows no uncommitted changes after the commit.
+
+* Baseline: capture the starting point
+:PROPERTIES:
+:CUSTOM_ID: baseline
+:END:
+
+Before touching anything, record the current state so regressions
+are obvious.  This milestone produces no code changes.
+
+** TODO Step B.1 — Record byte-compile warning baseline
+- Run the byte-compile command from the [[#stable-status][stable-status checklist]].
+- Save the warning count and a copy of the warnings to
+  =/tmp/elot-baseline-warnings.txt=.
+
+** TODO Step B.2 — Record passing test list
+- Run =make -C test= and save the list of passed tests to
+  =/tmp/elot-baseline-tests.txt=.
+
+** TODO Step B.3 — Record current loaded symbols
+- For each file in =elot-package/*.el=, list the public defuns/
+  defvars/defcustoms.  Save to =/tmp/elot-baseline-symbols.txt=.
+- This becomes the reference for "did I accidentally remove a public
+  API?" checks during *Milestone 1*.
+
+** Acceptance check
+- Three baseline files exist under =/tmp/=.
+- No code changes; =git status= is clean.
+
+* Milestone 1 — Resolve legacy =elot.el= LOB pipeline
+:PROPERTIES:
+:CUSTOM_ID: milestone-1-legacy-cleanup
+:END:
+
+** Background
+
+=elot-package/elot.el= still contains ~20 functions left over from
+the pre-rewrite "Library of Babel" (LOB) pipeline.  They are no
+longer used by =elot-tangle.el= but remain reachable through:
+- =elot-package/elot-lob.org=, which calls
+  =elot-resource-declarations-from-header= and
+  =elot-resource-taxonomy-from-header= from named source blocks; and
+- example files under =examples/= that invoke those source blocks
+  via =<<resource-declarations(...)>>= noweb references.
+
+One legacy function — =elot-prefix-block-from-alist= — is still
+called from production code in =elot-label-display.el= (line ≈173),
+so it must be preserved (relocated, not deleted).
+
+** Decision required before starting
+:PROPERTIES:
+:CUSTOM_ID: m1-decision
+:END:
+
+Pick one of two strategies and apply it consistently:
+
+- *Strategy A — Deprecate-and-keep.*  Leave the LOB functions in
+  place but mark them obsolete so old example files still tangle.
+  Lower migration risk; carries the legacy code into MELPA.
+- *Strategy B — Remove and migrate.*  Delete the LOB functions,
+  rewrite =elot-lob.org= so its named blocks call the new tangle
+  pipeline, and update example files.  Cleanest result; more work.
+
+The rest of *Milestone 1* assumes *Strategy A* (the safer default).
+If you choose *Strategy B*, replace Steps 1.3–1.5 with the
+*Strategy B addendum* below.
+
+** TODO Step 1.1 — Move =elot-prefix-block-from-alist= to =elot-tangle.el=
+- *File*: =elot-package/elot-tangle.el=, =elot-package/elot.el=.
+- Cut the =defun elot-prefix-block-from-alist= block (currently in
+  =elot.el= around line 464) and paste it into =elot-tangle.el=
+  near the other prefix helpers (after =elot-update-link-abbrev=).
+- Remove the corresponding =;; [[file:../elot-defs.org::...]]=
+  noweb tangle markers from =elot.el=; in =elot-tangle.el= no such
+  markers are needed (it is authored directly via =elot-tangling.org=
+  — keep the existing in-file authoring style).
+- Remove the now-unused function from =elot.el=.
+
+** TODO Step 1.2 — Mirror the move in =elot-defs.org=
+- *File*: =elot-defs.org=.
+- Find the named block =src-prefix-blocks= and either:
+  - delete it (if the function now lives only in =elot-tangle.el=
+    via direct authoring), or
+  - retarget its =:tangle= header to
+    =./elot-package/elot-tangle.el=.
+- Verify with: =M-x org-babel-tangle= on =elot-defs.org= produces
+  the same =elot.el= sans the moved function.
+
+** TODO Step 1.3 — Mark legacy LOB functions as obsolete (Strategy A)
+- *File*: =elot-package/elot.el=.
+- For each of the following functions, add a
+  =(make-obsolete 'NAME 'REPLACEMENT "ELOT 2.1")= immediately after
+  its =defun=:
+
+  | Legacy function                            | Suggested replacement (or =nil=)        |
+  |--------------------------------------------+-----------------------------------------|
+  | =elot-org-descriptions-in-section-helper=  | =nil= (internal)                        |
+  | =elot-org-descriptions-in-section=         | =elot--extract-headline-descriptions=   |
+  | =elot-org-subsection-descriptions=         | =elot--extract-headline-descriptions=   |
+  | =elot-org-list-siblings=                   | =elot-parse-headline-hierarchy=         |
+  | =elot-omn-declare=                         | =elot-omn-resource-frame=               |
+  | =elot-annotation-entries=                  | =elot-omn-format-annotations=           |
+  | =elot-restriction-entries=                 | =elot-omn-format-restrictions=          |
+  | =elot-omn-annotate=                        | =elot-omn-resource-frame=               |
+  | =elot-omn-restrict=                        | =elot-omn-resource-frame=               |
+  | =elot-resource-declarations=               | =elot-omn-resource-declarations=        |
+  | =elot-format-misc-axiom-annotations=       | =elot-omn-misc-frames=                  |
+  | =elot-misc-axioms=                         | =elot-omn-misc-frames=                  |
+  | =elot-resource-declarations-from-header=   | =elot-tangle-buffer-to-omn=             |
+  | =elot-class-oneof-from-header=             | =nil=                                   |
+  | =elot-class-disjoint-from-header=          | =nil=                                   |
+  | =elot-org-tags-in-string=                  | =nil=                                   |
+  | =elot-resource-taxonomy-from-l=            | =nil=                                   |
+  | =elot-resource-taxonomy-from-header=       | =elot-tangle-buffer-to-omn=             |
+
+- Update each function's docstring with a one-line preamble:
+  =\"Obsolete: superseded by `REPLACEMENT' in elot-tangle.el.\"=.
+
+** TODO Step 1.4 — Add a top-of-section legacy banner in =elot.el=
+- *File*: =elot-package/elot.el=.
+- Above the first obsolete function, add:
+  : ;;;; Legacy LOB pipeline (deprecated, retained for backward
+  : ;;;; compatibility with example files using the
+  : ;;;; <<resource-declarations(...)>> noweb pattern).  New code
+  : ;;;; should use `elot-tangle-buffer-to-omn' and the helpers in
+  : ;;;; elot-tangle.el.  These functions will be removed in a
+  : ;;;; future major release.
+- This makes the boundary visible to readers of =elot.el=.
+
+** TODO Step 1.5 — Update =REFACTORING.org= Design Decisions
+- *File*: =REFACTORING.org=.
+- Add an entry under "Design Decisions" recording: the LOB pipeline
+  has been retained-and-deprecated rather than removed, with a
+  pointer to this plan and the chosen target removal version.
+
+** Strategy B addendum (only if you chose removal)
+:PROPERTIES:
+:CUSTOM_ID: m1-strategy-b
+:END:
+
+If you picked Strategy B in [[#m1-decision][Decision required before starting]],
+replace Steps 1.3–1.5 with:
+
+- *Step 1.3.B* — Delete the legacy functions from =elot.el= and
+  remove their entries in =elot-defs.org=.
+- *Step 1.4.B* — Rewrite =elot-package/elot-lob.org= so the
+  =resource-declarations= and =resource-taxonomy= named blocks call
+  the new pipeline.  Concretely: change their body to call a thin
+  wrapper that runs =elot-update-headline-hierarchy= and then
+  extracts the relevant subtree's OMN via
+  =elot-omn-resource-declarations=.  The wrapper lives in
+  =elot-tangle.el=.
+- *Step 1.5.B* — Update every =examples/*.org= file that uses
+  =<<resource-declarations(...)>>= /
+  =<<resource-taxonomy(...)>>= to either keep the noweb call
+  (because the LOB blocks now bridge to the new pipeline) or
+  switch entirely to direct =:tangle file.omn= header arguments.
+  Tangle each example and confirm the produced =.omn= file is
+  byte-identical to the version produced before the change.
+
+** Acceptance check
+- =git grep -n "elot-resource-declarations-from-header\|elot-resource-taxonomy-from-header\|elot-org-list-siblings\|elot-org-subsection-descriptions"= shows results only in =elot.el= (or, under Strategy B, no results at all).
+- =git grep -n "elot-prefix-block-from-alist"= shows it defined exactly once, in =elot-tangle.el=, and called from =elot-label-display.el=.
+- Run the [[#stable-status][stable-status checklist]] — *all green*.
+- Tangle =examples/reasoner-example.org= and confirm the resulting
+  =.omn= is byte-identical to a copy you saved before the change
+  (=diff -u before.omn after.omn=).
+
+* Milestone 2 — Remove load-time global side effects
+:PROPERTIES:
+:CUSTOM_ID: milestone-2-side-effects
+:END:
+
+** Background
+
+ELPA/MELPA strongly discourage packages that mutate global state
+during =require=.  ELOT currently does this in four places in
+=elot.el= and three in =elot-mode.el=.  The fix is to move each
+side effect into the =elot-mode= enable/disable lifecycle so it
+only takes effect for buffers that have opted in.
+
+** TODO Step 2.1 — Replace bare =setq= for =elot-missing-dependencies=
+- *File*: =elot-package/elot.el= (≈ line 60).
+- Remove =(setq elot-missing-dependencies nil)=.  The =defvar= on
+  the previous line already initialises it to =nil=.  The
+  immediately-following =dolist= that populates the list can stay
+  at top level (it does not mutate any external symbol).
+
+** TODO Step 2.2 — Move LaTeX export filter registration into mode lifecycle
+- *Files*: =elot-package/elot.el=, =elot-package/elot-mode.el=.
+- Remove the top-level
+  =(add-to-list 'org-export-filter-item-functions 'elot-latex-filter-omn-item)=
+  call (≈ line 159 of =elot.el=).
+- In =elot-mode.el=, inside =elot-mode--enable=, add the same
+  =add-to-list= call.  Inside =elot-mode--disable=, add the
+  matching =(setq org-export-filter-item-functions (delq 'elot-latex-filter-omn-item org-export-filter-item-functions))=.
+- Use =add-to-list= so re-enabling does not duplicate.
+
+** TODO Step 2.3 — Move SPARQL execute advice into mode lifecycle
+- *Files*: =elot-package/elot.el=, =elot-package/elot-mode.el=.
+- Remove the top-level
+  =(advice-add 'org-babel-execute:sparql :around #'elot--custom-org-babel-execute-sparql)=
+  call (≈ line 545 of =elot.el=).
+- Inside =elot-mode--enable=, add the same =advice-add=.
+- Inside =elot-mode--disable=, add a matching =advice-remove=.
+- Important: the existing advice body already guards on
+  =(elot--is-elot-buffer)=, so installing it once globally is
+  harmless once mode is enabled in *any* buffer.  Use a
+  module-level boolean =elot--sparql-advice-installed-p= to make
+  add/remove idempotent across multiple buffers.
+
+** TODO Step 2.4 — Move export hook into mode lifecycle
+- *Files*: =elot-package/elot.el=, =elot-package/elot-mode.el=.
+- Remove the top-level
+  =(add-hook 'org-export-before-processing-functions #'elot--prepare-export-buffer)=
+  call (≈ line 793 of =elot.el=).
+- Inside =elot-mode--enable=, add the same =add-hook=.
+- Inside =elot-mode--disable=, add =(remove-hook ...)=.
+
+** TODO Step 2.5 — Same treatment for top-level hooks in =elot-mode.el=
+- *File*: =elot-package/elot-mode.el=.
+- The three top-level statements at lines ≈843, ≈852, ≈870
+  (=advice-add 'xref-find-references...=,
+  =add-hook 'xref-after-update-hook ...= twice) install global
+  state at =require= time.  Move these into =elot-mode--enable=
+  and pair them with =advice-remove= / =remove-hook= in
+  =elot-mode--disable=.
+
+** TODO Step 2.6 — Mirror the changes in =elot-defs.org= and =elot-mode.org=
+- For every function/hook moved above, find the corresponding
+  =#+begin_src= block in =elot-defs.org= or =elot-mode.org= and
+  edit it so that re-tangling regenerates the same hand-edited
+  =.el= contents.  Tangle and =git diff= must show no further
+  changes.
+
+** Acceptance check
+- =grep -nE "^\(add-(hook|to-list)|^\(advice-add|^\(setq " elot-package/elot.el elot-package/elot-mode.el= shows only =setq= forms inside =defun=/=let= blocks (none at top level).
+- In a fresh Emacs, =(require 'elot-mode)= followed by
+  =(advice--p (advice--symbol-function 'org-babel-execute:sparql))=
+  returns =nil= (no advice installed).  After =M-x elot-mode= in
+  an org buffer, the same expression returns non-nil.  After =M-x
+  elot-mode= a second time (disable), it returns =nil= again.
+- Run the [[#stable-status][stable-status checklist]].
+
+* Milestone 3 — Pick a single =MAIN FILE= and fix =Package-Requires=
+:PROPERTIES:
+:CUSTOM_ID: milestone-3-package-requires
+:END:
+
+** Background
+
+A multi-file MELPA package needs exactly one file that carries the
+authoritative =Package-Requires= header.  That same file is what
+the recipe's =:files= clause considers the "main" library.  ELOT
+currently has three files declaring =Package-Requires= (=elot.el=,
+=elot-mode.el=, =elot-flymake.el=), and =elot.el= lists =ht= which
+is no longer used.
+
+** Decision: =elot-mode.el= becomes the MAIN FILE
+- =elot-mode= is the user-visible entry point (autoloaded,
+  defines the minor mode).
+- =elot.el= becomes a feature-loaded extension (SPARQL, LaTeX
+  export, hydra, OWL import).  It remains required by
+  =elot-mode.el= via =(require 'elot nil t)=.
+
+** TODO Step 3.1 — Move the canonical =Package-Requires= to =elot-mode.el=
+- *File*: =elot-package/elot-mode.el=.
+- Replace its current header line:
+  : ;; Package-Requires: ((emacs "29.1"))
+  with the union of all transitive runtime dependencies — minus
+  =ht= (unused) and minus packages that are loaded with
+  =(require ... nil t)= (i.e., truly optional):
+  : ;; Package-Requires: ((emacs "29.1"))
+  Note: after auditing (Step 3.2) the actual list is expected to
+  remain =((emacs "29.1"))= because every external package is in
+  fact optional.  Confirm or revise as audit dictates.
+
+** TODO Step 3.2 — Audit each external package and decide hard vs optional
+For each of =htmlize=, =omn-mode=, =hydra=, =sparql-mode=,
+=ob-sparql=, =ob-plantuml=, =ht=:
+
+1. =git grep -n "(require '<pkg>"= and =git grep -n "<pkg>-"=
+   inside =elot-package/=.
+2. Classify:
+   - *Hard* — code paths that always run on mode enable will
+     fail without the package.
+   - *Optional* — only used inside =(when (fboundp ...))= or
+     =(require ... nil t)= guards.
+3. *Hard* packages go into =Package-Requires=; *optional* ones
+   are documented in =elot.el='s commentary instead.
+
+Expected outcome (from current code reading): all seven are
+optional except =ht=, which is unused and must be removed.
+
+** TODO Step 3.3 — Remove =Package-Requires= from sub-files
+- *Files*: =elot-package/elot.el=, =elot-package/elot-flymake.el=.
+- Delete the =;; Package-Requires:= line from each.  The MAIN FILE
+  now owns this.
+
+** TODO Step 3.4 — Drop the unused =ht= dependency in =elot.el=
+- *File*: =elot-package/elot.el=.
+- Remove =ht= from the =dolist= at ≈ line 62.
+- Remove =ht= from any leftover docstrings or commentary.
+- Confirm with =git grep -n "(require 'ht\\b\\|ht-"
+  elot-package/= that nothing references it.
+
+** TODO Step 3.5 — Update =elot-defs.org=
+- *File*: =elot-defs.org=.
+- Sync the =Package-Requires= block in the literate source with
+  the changes above so re-tangling does not undo them.
+
+** Acceptance check
+- =grep -n "^;; Package-Requires:" elot-package/*.el= shows
+  exactly one match (=elot-mode.el=).
+- =git grep -n "\\bht\\b" elot-package/= returns no Elisp matches
+  (string literals in fixtures are fine).
+- Run the [[#stable-status][stable-status checklist]].
+
+* Milestone 4 — Standardise file headers and licenses
+:PROPERTIES:
+:CUSTOM_ID: milestone-4-headers
+:END:
+
+** Background
+
+MELPA enforces standard file headers via =package-lint=.  Three
+files do not meet the bar: =elot-owl-grammar.el= has no copyright
+or license at all; =elot-db.el= and =elot-sources.el= use MIT
+without GPL boilerplate and miss =Version:=/=URL:= headers.
+
+** TODO Step 4.1 — Add a full GPL-3 header to =elot-owl-grammar.el=
+- *File*: =elot-package/elot-owl-grammar.el=.
+- Insert immediately after the =;;; ... -*- lexical-binding: t; -*-=
+  line: copyright, author, URL, Keywords, GPL-3 license boilerplate,
+  =Commentary:=, =Code:= — modelled on the header of
+  =elot-mode.el=.  Keep the existing "Generated by …" comment
+  inside =;;; Commentary:=.
+
+** TODO Step 4.2 — Standardise =elot-db.el= and =elot-sources.el= on GPL-3
+- *Files*: =elot-package/elot-db.el=, =elot-package/elot-sources.el=.
+- Replace the =SPDX-License-Identifier: MIT= line with the full
+  GPL-3 boilerplate used by =elot-mode.el= (also covered by the
+  repo's =LICENSE= file).
+- Add =Version: 2.0.0= and =URL: https://github.com/johanwk/elot=
+  to match the rest of the package.
+- Update the =Copyright= line to =2024, 2025, 2026 The ELOT authors=
+  for consistency.
+
+** TODO Step 4.3 — Add =:group= to every =defcustom= and =defgroup= where missing
+- =defgroup elot-tangle= and =defgroup elot-label-display= do not
+  exist; their =defcustom= entries are not assigned a group, which
+  =checkdoc= flags.
+- For each file, ensure either an existing =defgroup= covers all
+  its =defcustom= s, or add a sub-group:
+  - =elot-tangle.el= → add =(defgroup elot-tangle nil ... :group 'elot)=.
+  - =elot-label-display.el= → add =(defgroup elot-label-display nil ... :group 'elot)=.
+  - =elot-mode.el= → confirm all use =:group 'elot=.
+- Add =:group= to every =defcustom= in those files.
+
+** TODO Step 4.4 — Re-evaluate the =no-native-compile= flag in =elot.el=
+- *File*: =elot-package/elot.el=.
+- After Milestone 1 the function that needed
+  =org-link-abbrev-alist-local= access at native-compile time
+  may have moved to =elot-tangle.el=.  Try removing the
+  =no-native-compile: t;= cookie and run:
+  #+begin_src sh
+  emacs --batch -L elot-package \
+    --eval '(setq native-comp-async-report-warnings-errors nil)' \
+    -f batch-native-compile elot-package/elot.el
+  #+end_src
+- If native compilation succeeds and =elot-mode= still works in
+  an example file, drop the cookie.  Otherwise leave it and add a
+  one-line comment naming the function that requires it.
+
+** Acceptance check
+- =package-lint= via:
+  #+begin_src sh
+  emacs --batch \
+    --eval "(require 'package)" \
+    --eval "(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\") t)" \
+    --eval "(package-initialize)" \
+    --eval "(unless (package-installed-p 'package-lint) (package-refresh-contents) (package-install 'package-lint))" \
+    --eval "(setq package-lint-main-file \"elot-package/elot-mode.el\")" \
+    -L elot-package -f package-lint-batch-and-exit elot-package/*.el
+  #+end_src
+  Returns no errors.  Warnings noted for follow-up but do not block.
+- =checkdoc= via =M-x checkdoc-file= on each =elot-package/*.el=
+  reports no new warnings vs the baseline (Step B.1).
+- Run the [[#stable-status][stable-status checklist]].
+
+* Milestone 5 — CI workflow for tests and lint
+:PROPERTIES:
+:CUSTOM_ID: milestone-5-ci
+:END:
+
+** Background
+
+The repository currently has only one GitHub Actions workflow
+(README auto-update).  MELPA's own CI runs =package-build= and
+=package-lint=, so if those fail the submission is blocked.  A
+local CI workflow that runs both, plus the ERT suite, catches
+problems before submission.
+
+** TODO Step 5.1 — Add =.github/workflows/test.yml=
+- *File*: =.github/workflows/test.yml= (new).
+- Trigger on =push= to =main= and on =pull_request=.
+- Matrix on Emacs versions: =29.1=, =29.4=, =30.1= (snapshot if
+  available), Linux only.
+- Steps:
+  1. =purcell/setup-emacs= action.
+  2. =actions/checkout= action.
+  3. =make -C test=.
+  4. Byte-compile =elot-package/*.el= with =-Werror=.
+
+** TODO Step 5.2 — Add =.github/workflows/lint.yml=
+- *File*: =.github/workflows/lint.yml= (new).
+- Same trigger conditions.
+- Run =package-lint= against =elot-package/elot-mode.el= as the
+  MAIN FILE (=package-lint= follows =require= s and lints the
+  whole package transitively from the main file).
+- Run =checkdoc-file= against every =elot-package/*.el=.
+- Both jobs must be /required status checks/ (configure once
+  the workflow is green).
+
+** TODO Step 5.3 — Mark ROBOT-gated tests skipped on CI
+- Confirm that tests requiring ROBOT call =skip-unless= or the
+  equivalent so they pass-skip on Linux runners without ROBOT.
+- The =test/Makefile= comments suggest this is already in place
+  for some tests; verify all relevant ones.
+
+** Acceptance check
+- =git push= triggers both workflows and they go green on the
+  feature branch.
+- Run the [[#stable-status][stable-status checklist]] locally.
+
+* Milestone 6 — MELPA recipe and submission
+:PROPERTIES:
+:CUSTOM_ID: milestone-6-recipe
+:END:
+
+** Background
+
+A MELPA recipe is a single Elisp form in the =melpa/melpa=
+repository under =recipes/elot=.  A draft is sketched in
+=ELOT-DB-PLAN.org= but has not been finalised.
+
+** TODO Step 6.1 — Finalise the recipe form
+- Working file (this repo): create =elot-package/MELPA-RECIPE=.
+- Contents (verify each path glob actually matches files in
+  =elot-package/=):
+  #+begin_src emacs-lisp
+  (elot
+   :fetcher github
+   :repo "johanwk/elot"
+   :files ("elot-package/*.el"
+           "elot-package/schema.sql"
+           "elot-package/elot-lob.org"
+           "elot-package/*.css"
+           "elot-package/*.js"
+           "elot-package/*.setup"))
+  #+end_src
+- Confirm the MAIN FILE is correctly =elot-mode.el= (Milestone 3)
+  — MELPA infers it as the file matching the recipe name unless
+  one of the listed files matches =<recipe>.el= exactly.  Since
+  the recipe is named =elot=, MELPA will pick =elot.el=, not
+  =elot-mode.el=.  Two options:
+  - rename the recipe to =elot-mode= (impacts user install
+    command); or
+  - move the canonical =Package-Requires= back to =elot.el= and
+    let it be the MAIN FILE.
+  Decide and apply.  Document the decision under "Design
+  Decisions" in =REFACTORING.org=.
+
+** TODO Step 6.2 — Local recipe build smoke test
+- Use =package-build= locally:
+  #+begin_src sh
+  git clone https://github.com/melpa/melpa.git /tmp/melpa
+  cp elot-package/MELPA-RECIPE /tmp/melpa/recipes/elot
+  cd /tmp/melpa && make recipes/elot
+  #+end_src
+- =make recipes/elot= produces a =.tar= under =/tmp/melpa/packages/=.
+- Install that tarball into a clean Emacs profile:
+  =M-x package-install-file=, then =M-x elot-mode= in an example
+  =.org=.  Confirm it activates.
+
+** TODO Step 6.3 — Update README installation section
+- *Files*: =README.org=, =README.md= (auto-generated).
+- Add a "Install from MELPA" subsection ahead of the existing
+  "clone from Git" instructions.  Mark "from Git" as the
+  development-track option.
+
+** TODO Step 6.4 — Open the MELPA pull request
+- Fork =melpa/melpa= on GitHub.
+- Add =recipes/elot= with the contents from Step 6.1.
+- Open the PR.  Address reviewer feedback in this repo (not in
+  the recipe PR) by pushing fixes to =main= and asking the
+  reviewer to re-test.
+- Track the PR number in =REFACTORING.org=.
+
+** Acceptance check
+- =/tmp/melpa/packages/elot-*.tar= installs cleanly in a fresh
+  Emacs profile and =elot-mode= works.
+- The MELPA PR is open and CI on it is green.
+
+* Post-submission backlog (out of scope until MELPA accepts)
+
+These are tracked in =REFACTORING.org= already and only listed
+here as a reminder:
+
+- Phase 2: ERT regression tests for every function in the tangle
+  pipeline (REFACTORING.org).
+- Phase 3: improved docstrings and narrative prose in the literate
+  =.org= sources.
+- Eventual removal (next major version) of the deprecated LOB
+  functions from Milestone 1.
+
+* Working with this plan in =gptel=
+
+Practical tips for executing this plan with =gptel=:
+
+- *Narrow before sending.*  Place point on a milestone heading and
+  =C-x n s= before invoking =gptel-send=; this scopes the prompt
+  to the milestone only.
+- *Mark steps as you go.*  Each =TODO Step N.M= heading can be
+  cycled to =DONE= with =C-c C-t=.  The cumulative count of DONE
+  vs TODO under a milestone is your progress indicator
+  (=org-columns= can render this as a percentage).
+- *Capture command output back into the document.*  After the
+  acceptance check for a milestone, dump the relevant =sh= output
+  into a =#+begin_example= block under that heading.  This makes
+  the file the durable record of "milestone N was green at
+  commit SHA X".
+- *Commit per step, not per milestone.*  Even though stability is
+  defined per milestone, the working tree should be committable
+  after each =TODO Step= so a botched LLM edit can be reset
+  without losing earlier good work.
+- *Refresh the baseline if you stop and resume.*  If many days
+  pass between milestones, redo Step B.1 / B.2 to make sure the
+  warning/test baseline still reflects =main=.
+
+* Decisions log
+
+| Date       | Decision                                          | Rationale                                  |
+|------------+---------------------------------------------------+--------------------------------------------|
+| YYYY-MM-DD | Strategy A vs B for legacy LOB pipeline           | (fill in when chosen — see Milestone 1)    |
+| YYYY-MM-DD | =elot-mode.el= vs =elot.el= as MAIN FILE          | (fill in — see Milestones 3 and 6)         |
+| YYYY-MM-DD | Drop =no-native-compile= in =elot.el=             | (fill in — see Milestone 4 Step 4.4)       |
+| YYYY-MM-DD | Recipe filename                                    | (fill in — see Milestone 6 Step 6.1)       |
