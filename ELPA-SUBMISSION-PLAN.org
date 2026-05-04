@@ -139,7 +139,8 @@ should make it obvious to a future reader why the branch exists.
   that, at this point).
 - =git status= is clean.
 
-* TODO Baseline: capture the starting point
+* DONE Baseline: capture the starting point
+CLOSED: [2026-05-04 man. 11:39]
 :PROPERTIES:
 :CUSTOM_ID: baseline
 :END:
@@ -158,18 +159,21 @@ This is equivalent to running =make baseline-warnings=,
 default, files are written under =/tmp/=; override with
 =make baseline BASELINE_DIR=/some/where=.
 
-** TODO Step B.1 — Record byte-compile warning baseline
+** DONE Step B.1 — Record byte-compile warning baseline
+CLOSED: [2026-05-04 man. 11:38]
 - =make baseline-warnings= (or run the byte-compile command from
   the [[#stable-status][stable-status checklist]] manually).
 - Saves the warning count and the full warning text to
   =/tmp/elot-baseline-warnings.txt=.
 
-** TODO Step B.2 — Record passing test list
+** DONE Step B.2 — Record passing test list
+CLOSED: [2026-05-04 man. 11:38]
 - =make baseline-tests= (equivalent to =make -C test= with output
   captured).
 - Saves the list of passed tests to =/tmp/elot-baseline-tests.txt=.
 
-** TODO Step B.3 — Record current loaded symbols
+** DONE Step B.3 — Record current loaded symbols
+CLOSED: [2026-05-04 man. 11:38]
 - =make baseline-symbols=.
 - For each file in =elot-package/*.el=, lists the public defuns/
   defvars/defcustoms.  Saved to =/tmp/elot-baseline-symbols.txt=.
@@ -181,6 +185,21 @@ default, files are written under =/tmp/=; override with
 - No code changes; =git status= shows only the new top-level
   =Makefile= (committed as part of this baseline step) — nothing
   else.
+
+Result:
+#+begin_example
+$ make baseline
+==> Capturing byte-compile baseline -> /tmp/elot-baseline-warnings.txt
+    warnings: 50  errors: 1
+==> Capturing test baseline -> /tmp/elot-baseline-tests.txt
+    passed: 0  failed: 0
+==> Capturing symbol baseline -> /tmp/elot-baseline-symbols.txt
+    public symbols (approx): 308
+Baseline written:
+  /tmp/elot-baseline-warnings.txt
+  /tmp/elot-baseline-tests.txt
+  /tmp/elot-baseline-symbols.txt
+#+end_example
 
 * Milestone 1 — Resolve legacy =elot.el= LOB pipeline
 :PROPERTIES:
