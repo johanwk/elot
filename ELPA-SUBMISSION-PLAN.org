@@ -31,6 +31,11 @@ Conventions used below:
   =elot-package/elot.el=* and the MELPA package name is =elot=.
   This matches MELPA's convention that, for a recipe named
   =elot=, the file =elot.el= is treated as the main library.
+  In addition to carrying the canonical headers, =elot.el= is the
+  single load entry point: it ~require~s the other =elot-*.el=
+  modules so that a user only needs =(require 'elot)= (or
+  ~load-library~ "elot") to make =elot-mode=, =elot-tangle= and the
+  rest available.
 - "Stable status" is the green checkpoint after each milestone:
   see [[*Stable-status checklist (run after every milestone)][Stable-status checklist]].
 
@@ -79,6 +84,13 @@ below when iterating on a single check.
      --eval "(require 'elot-mode)" \
      --eval "(message \"OK: elot-mode loaded\")"
    #+end_src
+   Note: until [[#milestone-3-package-requires][Milestone 3]] wires =elot.el= up as the canonical
+   load entry point, the smoke test requires =elot-mode= directly.
+   From Milestone 3 onwards (specifically Step 3.6), the smoke test
+   switches to =(require 'elot)= and additionally asserts that
+   =elot-mode= is bound (autoloaded) as a side effect.  The
+   =make smoke= target in the top-level =Makefile= is updated at
+   that point.
 
 4. *Working tree clean* — commit the milestone before moving on:
    =git status= shows no uncommitted changes after the commit.
@@ -436,10 +448,10 @@ is no longer used.
   name, so =elot.el= must carry the canonical headers.
 - =elot.el= keeps the authoritative =Package-Requires=,
   =Version:=, =URL:=, and =Commentary:= headers.
-- =elot-mode.el= remains the user-visible entry point (autoloaded,
-  defines the minor mode) and is loaded from =elot.el= (or
-  autoloaded directly).  It does *not* carry its own
-  =Package-Requires=.
+- =elot-mode.el= remains the user-visible *minor mode* (it defines
+  =elot-mode= and its keymap) but it is no longer the load entry
+  point: it is ~require~d from =elot.el=.  It does *not* carry its
+  own =Package-Requires=.
 
 ** TODO Step 3.1 — Make =elot.el= carry the canonical =Package-Requires=
 - *File*: =elot-package/elot.el=.
@@ -489,11 +501,37 @@ optional except =ht=, which is unused and must be removed.
 - Sync the =Package-Requires= block in the literate source with
   the changes above so re-tangling does not undo them.
 
+** TODO Step 3.6 — Make =elot.el= the canonical load entry point
+- *File*: =elot-package/elot.el= (and =elot-defs.org= mirror).
+- Near the bottom of =elot.el= (just before =(provide 'elot)=),
+  add ~require~ forms for every sibling module that should be
+  available after =(require 'elot)=:
+  : (require 'elot-mode)
+  : (require 'elot-tangle)
+  : (require 'elot-label-display)
+  : (require 'elot-flymake)
+  : (require 'elot-owl-grammar)
+  Modules that are themselves optional (e.g. =elot-db=,
+  =elot-sources=) should be loaded with =(require 'elot-db nil t)=
+  so a missing optional module does not break the main load.
+- Confirm with a fresh Emacs:
+  #+begin_src sh
+  emacs --batch -L elot-package \
+    --eval "(require 'elot)" \
+    --eval "(message \"elot-mode bound: %s\" (fboundp 'elot-mode))"
+  #+end_src
+  Output must include =elot-mode bound: t=.
+- Update =make smoke= in the top-level =Makefile= so the
+  stable-check now exercises =(require 'elot)= instead of
+  =(require 'elot-mode)=.
+
 ** Acceptance check
 - =grep -n "^;; Package-Requires:" elot-package/*.el= shows
   exactly one match (=elot.el=).
 - =git grep -n "\\bht\\b" elot-package/= returns no Elisp matches
   (string literals in fixtures are fine).
+- =(require 'elot)= in a fresh Emacs makes =elot-mode= available
+  without any further =require= calls.
 - Run the [[#stable-status][stable-status checklist]].
 
 * Milestone 4 — Standardise file headers and licenses
@@ -718,7 +756,7 @@ Practical tips for executing this plan with =gptel=:
 
 | Date       | Decision                                          | Rationale                                  |
 |------------+---------------------------------------------------+--------------------------------------------|
-| YYYY-MM-DD | Strategy A vs B for legacy LOB pipeline           | (fill in when chosen — see Milestone 1)    |
+| 2026-05-04 | Strategy A (deprecate-and-keep) for legacy LOB pipeline | Lower migration risk; keeps existing example files and =elot-lob.org= noweb references working unchanged.  Legacy functions marked obsolete in ELOT 2.1, scheduled for removal in the next major release.  See Milestone 1. |
 | YYYY-MM-DD | =elot.el= chosen as MAIN FILE; package name =elot= | Matches MELPA recipe-name → main-file convention; avoids renaming the user-facing package; =elot-mode.el= remains the autoloaded entry point loaded from =elot.el=. See Milestones 3 and 6. |
 | YYYY-MM-DD | Drop =no-native-compile= in =elot.el=             | (fill in — see Milestone 4 Step 4.4)       |
 | YYYY-MM-DD | Recipe filename =recipes/elot=                    | Package name is =elot=; MAIN FILE is =elot.el=. See Milestone 6 Step 6.1. |
