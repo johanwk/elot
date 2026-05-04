@@ -1,6 +1,9 @@
 *~
 *.elc
 
+## ELOT housekeeping (top-level Makefile, stable-check target)
+tmp/stable-check/
+
 ## Core latex/pdflatex auxiliary files:
 *.aux
 *.lof

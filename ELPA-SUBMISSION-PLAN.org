@@ -27,8 +27,10 @@ execution with LLM assistance through Emacs ~gptel~:
 
 Conventions used below:
 - =MAIN FILE= refers to the file declared as the package's
-  top-level descriptor.  By the end of *Milestone 3* this is
-  =elot-package/elot-mode.el=.
+  top-level descriptor.  *The MAIN FILE is
+  =elot-package/elot.el=* and the MELPA package name is =elot=.
+  This matches MELPA's convention that, for a recipe named
+  =elot=, the file =elot.el= is treated as the main library.
 - "Stable status" is the green checkpoint after each milestone:
   see [[*Stable-status checklist (run after every milestone)][Stable-status checklist]].
 
@@ -40,7 +42,20 @@ Conventions used below:
 After completing any milestone, all of the following must hold.  If
 any item fails, do not start the next milestone.
 
-1. *Byte-compile is clean* — from the repository root:
+All three checks below are wired into the top-level =Makefile=.
+The one-shot command is:
+
+#+begin_src sh
+make stable-check
+#+end_src
+
+This runs byte-compile, the ERT suite, and the load smoke test in
+sequence, writes per-step logs under =tmp/stable-check/=, and prints
+a one-line =PASS= / =FAIL= summary.  Use the individual targets
+below when iterating on a single check.
+
+1. *Byte-compile is clean* — =make byte-compile= (or, equivalently,
+   from the repository root):
    #+begin_src sh
    cd elot-package
    emacs --batch -L . \
@@ -48,16 +63,17 @@ any item fails, do not start the next milestone.
      -f batch-byte-compile *.el
    #+end_src
    No errors.  Warnings should not increase relative to the previous
-   stable point (record the baseline count once at the start).
+   stable point (record the baseline count once at the start; see
+   Step B.1 / =make baseline-warnings=).
 
-2. *Tests pass* — from the repository root:
+2. *Tests pass* — =make test= (which delegates to =make -C test=):
    #+begin_src sh
    make -C test
    #+end_src
    All ERT tests green (ROBOT-gated tests may skip; that is
    acceptable and expected on machines without ROBOT).
 
-3. *Loads in a fresh Emacs* — sanity smoke test:
+3. *Loads in a fresh Emacs* — =make smoke=:
    #+begin_src sh
    emacs --batch -L elot-package \
      --eval "(require 'elot-mode)" \
@@ -67,7 +83,62 @@ any item fails, do not start the next milestone.
 4. *Working tree clean* — commit the milestone before moving on:
    =git status= shows no uncommitted changes after the commit.
 
-* Baseline: capture the starting point
+* TODO Step 0 — Create a working branch for ELPA submission prep
+:PROPERTIES:
+:CUSTOM_ID: working-branch
+:END:
+
+All work in this plan — including the top-level =Makefile= introduced
+in the [[#baseline][Baseline]] milestone — should land on a dedicated branch
+rather than directly on =main=.  This keeps the submission-prep work
+isolated, easy to review, and trivial to abandon or rebase if MELPA
+review prompts a redesign.
+
+** Recommended branch name
+
+=elpa-submission= (or, equivalently, =melpa-submission=).  The name
+should make it obvious to a future reader why the branch exists.
+
+** Steps
+
+1. Confirm the working tree is clean and you are on =main= (or
+   whatever branch you want to fork from):
+   #+begin_src sh
+   git status
+   git switch main
+   git pull --ff-only
+   #+end_src
+
+2. Create and switch to the new branch:
+   #+begin_src sh
+   git switch -c elpa-submission
+   #+end_src
+
+3. Verify:
+   #+begin_src sh
+   git branch --show-current   # → elpa-submission
+   #+end_src
+
+4. Now make the first commit on this branch — the top-level
+   =Makefile= introduced in the Baseline milestone:
+   #+begin_src sh
+   git add Makefile
+   git commit -m "Add top-level Makefile for ELPA submission prep"
+   #+end_src
+
+5. (Optional) Push the branch and set upstream so subsequent
+   =git push= calls have somewhere to go:
+   #+begin_src sh
+   git push -u origin elpa-submission
+   #+end_src
+
+** Acceptance check
+- =git branch --show-current= prints =elpa-submission=.
+- =git log --oneline main..HEAD= shows the Makefile commit (and only
+  that, at this point).
+- =git status= is clean.
+
+* TODO Baseline: capture the starting point
 :PROPERTIES:
 :CUSTOM_ID: baseline
 :END:
@@ -75,24 +146,40 @@ any item fails, do not start the next milestone.
 Before touching anything, record the current state so regressions
 are obvious.  This milestone produces no code changes.
 
+All three steps are automated by the top-level =Makefile=:
+
+#+begin_src sh
+make baseline
+#+end_src
+
+This is equivalent to running =make baseline-warnings=,
+=make baseline-tests= and =make baseline-symbols= in sequence.  By
+default, files are written under =/tmp/=; override with
+=make baseline BASELINE_DIR=/some/where=.
+
 ** TODO Step B.1 — Record byte-compile warning baseline
-- Run the byte-compile command from the [[#stable-status][stable-status checklist]].
-- Save the warning count and a copy of the warnings to
+- =make baseline-warnings= (or run the byte-compile command from
+  the [[#stable-status][stable-status checklist]] manually).
+- Saves the warning count and the full warning text to
   =/tmp/elot-baseline-warnings.txt=.
 
 ** TODO Step B.2 — Record passing test list
-- Run =make -C test= and save the list of passed tests to
-  =/tmp/elot-baseline-tests.txt=.
+- =make baseline-tests= (equivalent to =make -C test= with output
+  captured).
+- Saves the list of passed tests to =/tmp/elot-baseline-tests.txt=.
 
 ** TODO Step B.3 — Record current loaded symbols
-- For each file in =elot-package/*.el=, list the public defuns/
-  defvars/defcustoms.  Save to =/tmp/elot-baseline-symbols.txt=.
+- =make baseline-symbols=.
+- For each file in =elot-package/*.el=, lists the public defuns/
+  defvars/defcustoms.  Saved to =/tmp/elot-baseline-symbols.txt=.
 - This becomes the reference for "did I accidentally remove a public
   API?" checks during *Milestone 1*.
 
 ** Acceptance check
-- Three baseline files exist under =/tmp/=.
-- No code changes; =git status= is clean.
+- Three baseline files exist under =/tmp/= (or under =BASELINE_DIR=).
+- No code changes; =git status= shows only the new top-level
+  =Makefile= (committed as part of this baseline step) — nothing
+  else.
 
 * Milestone 1 — Resolve legacy =elot.el= LOB pipeline
 :PROPERTIES:
@@ -323,24 +410,30 @@ currently has three files declaring =Package-Requires= (=elot.el=,
 =elot-mode.el=, =elot-flymake.el=), and =elot.el= lists =ht= which
 is no longer used.
 
-** Decision: =elot-mode.el= becomes the MAIN FILE
-- =elot-mode= is the user-visible entry point (autoloaded,
-  defines the minor mode).
-- =elot.el= becomes a feature-loaded extension (SPARQL, LaTeX
-  export, hydra, OWL import).  It remains required by
-  =elot-mode.el= via =(require 'elot nil t)=.
+** Decision: =elot.el= is the MAIN FILE
+- The MELPA package is named =elot= and the recipe will be
+  =recipes/elot=.  MELPA infers the main library from the recipe
+  name, so =elot.el= must carry the canonical headers.
+- =elot.el= keeps the authoritative =Package-Requires=,
+  =Version:=, =URL:=, and =Commentary:= headers.
+- =elot-mode.el= remains the user-visible entry point (autoloaded,
+  defines the minor mode) and is loaded from =elot.el= (or
+  autoloaded directly).  It does *not* carry its own
+  =Package-Requires=.
 
-** TODO Step 3.1 — Move the canonical =Package-Requires= to =elot-mode.el=
-- *File*: =elot-package/elot-mode.el=.
-- Replace its current header line:
+** TODO Step 3.1 — Make =elot.el= carry the canonical =Package-Requires=
+- *File*: =elot-package/elot.el=.
+- Ensure the header block contains, in this order:
+  : ;; Version: 2.0.0
+  : ;; URL: https://github.com/johanwk/elot
   : ;; Package-Requires: ((emacs "29.1"))
-  with the union of all transitive runtime dependencies — minus
-  =ht= (unused) and minus packages that are loaded with
-  =(require ... nil t)= (i.e., truly optional):
-  : ;; Package-Requires: ((emacs "29.1"))
-  Note: after auditing (Step 3.2) the actual list is expected to
-  remain =((emacs "29.1"))= because every external package is in
-  fact optional.  Confirm or revise as audit dictates.
+- The =Package-Requires= value is the union of all transitive
+  runtime dependencies — minus =ht= (unused) and minus packages
+  that are loaded with =(require ... nil t)= (i.e., truly
+  optional).  After auditing (Step 3.2) the actual list is
+  expected to remain =((emacs "29.1"))= because every external
+  package is in fact optional.  Confirm or revise as audit
+  dictates.
 
 ** TODO Step 3.2 — Audit each external package and decide hard vs optional
 For each of =htmlize=, =omn-mode=, =hydra=, =sparql-mode=,
@@ -360,9 +453,9 @@ Expected outcome (from current code reading): all seven are
 optional except =ht=, which is unused and must be removed.
 
 ** TODO Step 3.3 — Remove =Package-Requires= from sub-files
-- *Files*: =elot-package/elot.el=, =elot-package/elot-flymake.el=.
+- *Files*: =elot-package/elot-mode.el=, =elot-package/elot-flymake.el=.
 - Delete the =;; Package-Requires:= line from each.  The MAIN FILE
-  now owns this.
+  (=elot.el=) now owns this.
 
 ** TODO Step 3.4 — Drop the unused =ht= dependency in =elot.el=
 - *File*: =elot-package/elot.el=.
@@ -378,7 +471,7 @@ optional except =ht=, which is unused and must be removed.
 
 ** Acceptance check
 - =grep -n "^;; Package-Requires:" elot-package/*.el= shows
-  exactly one match (=elot-mode.el=).
+  exactly one match (=elot.el=).
 - =git grep -n "\\bht\\b" elot-package/= returns no Elisp matches
   (string literals in fixtures are fine).
 - Run the [[#stable-status][stable-status checklist]].
@@ -447,7 +540,7 @@ without GPL boilerplate and miss =Version:=/=URL:= headers.
     --eval "(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\") t)" \
     --eval "(package-initialize)" \
     --eval "(unless (package-installed-p 'package-lint) (package-refresh-contents) (package-install 'package-lint))" \
-    --eval "(setq package-lint-main-file \"elot-package/elot-mode.el\")" \
+    --eval "(setq package-lint-main-file \"elot-package/elot.el\")" \
     -L elot-package -f package-lint-batch-and-exit elot-package/*.el
   #+end_src
   Returns no errors.  Warnings noted for follow-up but do not block.
@@ -482,7 +575,7 @@ problems before submission.
 ** TODO Step 5.2 — Add =.github/workflows/lint.yml=
 - *File*: =.github/workflows/lint.yml= (new).
 - Same trigger conditions.
-- Run =package-lint= against =elot-package/elot-mode.el= as the
+- Run =package-lint= against =elot-package/elot.el= as the
   MAIN FILE (=package-lint= follows =require= s and lints the
   whole package transitively from the main file).
 - Run =checkdoc-file= against every =elot-package/*.el=.
@@ -526,17 +619,13 @@ repository under =recipes/elot=.  A draft is sketched in
            "elot-package/*.js"
            "elot-package/*.setup"))
   #+end_src
-- Confirm the MAIN FILE is correctly =elot-mode.el= (Milestone 3)
-  — MELPA infers it as the file matching the recipe name unless
-  one of the listed files matches =<recipe>.el= exactly.  Since
-  the recipe is named =elot=, MELPA will pick =elot.el=, not
-  =elot-mode.el=.  Two options:
-  - rename the recipe to =elot-mode= (impacts user install
-    command); or
-  - move the canonical =Package-Requires= back to =elot.el= and
-    let it be the MAIN FILE.
-  Decide and apply.  Document the decision under "Design
-  Decisions" in =REFACTORING.org=.
+- Confirm the MAIN FILE is =elot.el= (Milestone 3).  Since the
+  recipe is named =elot=, MELPA picks =elot.el= as the main
+  library by matching =<recipe>.el= — which is exactly what we
+  want.  No rename is needed.  The decision (=elot.el= as MAIN
+  FILE, package name =elot=) is recorded in the Decisions log
+  below and should also be noted under "Design Decisions" in
+  =REFACTORING.org=.
 
 ** TODO Step 6.2 — Local recipe build smoke test
 - Use =package-build= locally:
@@ -610,6 +699,6 @@ Practical tips for executing this plan with =gptel=:
 | Date       | Decision                                          | Rationale                                  |
 |------------+---------------------------------------------------+--------------------------------------------|
 | YYYY-MM-DD | Strategy A vs B for legacy LOB pipeline           | (fill in when chosen — see Milestone 1)    |
-| YYYY-MM-DD | =elot-mode.el= vs =elot.el= as MAIN FILE          | (fill in — see Milestones 3 and 6)         |
+| YYYY-MM-DD | =elot.el= chosen as MAIN FILE; package name =elot= | Matches MELPA recipe-name → main-file convention; avoids renaming the user-facing package; =elot-mode.el= remains the autoloaded entry point loaded from =elot.el=. See Milestones 3 and 6. |
 | YYYY-MM-DD | Drop =no-native-compile= in =elot.el=             | (fill in — see Milestone 4 Step 4.4)       |
-| YYYY-MM-DD | Recipe filename                                    | (fill in — see Milestone 6 Step 6.1)       |
+| YYYY-MM-DD | Recipe filename =recipes/elot=                    | Package name is =elot=; MAIN FILE is =elot.el=. See Milestone 6 Step 6.1. |
