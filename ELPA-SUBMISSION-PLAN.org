@@ -83,7 +83,8 @@ below when iterating on a single check.
 4. *Working tree clean* — commit the milestone before moving on:
    =git status= shows no uncommitted changes after the commit.
 
-* TODO Step 0 — Create a working branch for ELPA submission prep
+* DONE Step 0 — Create a working branch for ELPA submission prep
+CLOSED: [2026-05-04 man. 11:32]
 :PROPERTIES:
 :CUSTOM_ID: working-branch
 :END:
