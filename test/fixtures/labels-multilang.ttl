@@ -1,0 +1,5 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ex: <http://example.org/ex/> .
+
+ex:Widget rdfs:label "Widget"@en , "위젯"@ko , "Widget-untagged" .
+ex:Gadget rdfs:label "Gadget"@en .
