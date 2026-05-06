@@ -302,13 +302,15 @@ identifiers using ~regexp-opt~.
           (elot-robot-execute-query empty-construct-qry uri 'ttl))
         (mapcar
          (lambda (x)
-           (string-match "^\\([^ ]*:\\).*<\\([^>]+\\)>" x)
+           ;; Match "pfx:  <iri>"; tolerate both @prefix and PREFIX styles.
+           (string-match "^\\([^ \t]*:\\)[ \t]*<\\([^>]+\\)>" x)
            (cons (match-string 2 x) (match-string 1 x)))
-             (cl-remove ""
-                    (split-string
-                        (buffer-string)
-                        "@prefix +")
-                    :test #'equal)))))
+         (cl-remove-if
+          (lambda (s) (or (equal s "") (not (string-match-p ":" s))))
+          (split-string
+           (buffer-string)
+           ;; Either "@prefix " or "PREFIX " (case-insensitive), at line start.
+           "^\\(?:@prefix\\|[Pp][Rr][Ee][Ff][Ii][Xx]\\)[ \t]+"))))))
 #+end_src
 
 examples.
