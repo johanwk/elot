@@ -505,6 +505,114 @@ Result FORMAT is tabular `csv', or Turtle RDF `ttl'."
     (insert-file-contents result-file)))
 ;; src-robot-query ends here
 
+;; [[file:../elot-defs.org::src-sparql-merge-prefixes][src-sparql-merge-prefixes]]
+(defconst elot--sparql-prefix-line-re
+  "\\`[ \t]*PREFIX[ \t]+\\([^[:space:]:]+\\):[ \t]*<\\([^>]*\\)>[ \t]*\\'"
+  "Regexp matching a single SPARQL 1.1 PREFIX declaration line.
+The keyword match is intended to be used with `case-fold-search'
+bound to t.  Submatch 1 is the prefix label (without the colon);
+submatch 2 is the IRI (without the angle brackets).")
+
+(defun elot--sparql-normalise-label (s)
+  "Strip a single trailing colon from prefix label S, if present."
+  (if (and (stringp s) (string-suffix-p ":" s))
+      (substring s 0 -1)
+    s))
+
+(defun elot--sparql-alist-pairs (alist)
+  "Normalise a prefix ALIST to a list of (LABEL . URI) string pairs.
+ALIST is in the shape of `org-link-abbrev-alist-local': each entry
+is a cons whose car is a label (with or without a trailing colon)
+and whose cdr is either a URI string or a one-element list
+containing a URI string (the latter shape comes from Org tables).
+A leading header row equal to (\"prefix\" . \"uri\") is skipped."
+  (let ((rows (if (equal (car alist) '("prefix" . "uri"))
+                  (cdr alist)
+                alist)))
+    (mapcar (lambda (row)
+              (cons (elot--sparql-normalise-label (car row))
+                    (if (listp (cdr row)) (cadr row) (cdr row))))
+            rows)))
+
+(defun elot--sparql-strip-inline-prefixes (body)
+  "Parse and strip top-of-body PREFIX lines from BODY.
+Return a cons (PAIRS . REST) where PAIRS is a list of (LABEL . URI)
+string pairs in source order and REST is BODY with those lines
+removed.  Parsing stops at the first non-blank, non-PREFIX line:
+PREFIX declarations buried below the SELECT/CONSTRUCT keyword are
+left untouched."
+  (let ((case-fold-search t)
+        (pairs nil)
+        (lines (split-string (or body "") "\n"))
+        (consumed 0)
+        (stop nil))
+    (while (and lines (not stop))
+      (let ((line (car lines)))
+        (cond
+         ((string-match-p "\\`[ \t]*\\'" line)
+          (cl-incf consumed)
+          (setq lines (cdr lines)))
+         ((string-match elot--sparql-prefix-line-re line)
+          (push (cons (match-string 1 line) (match-string 2 line)) pairs)
+          (cl-incf consumed)
+          (setq lines (cdr lines)))
+         (t
+          (setq stop t)))))
+    (cons (nreverse pairs)
+          (mapconcat #'identity
+                     (nthcdr consumed (split-string (or body "") "\n"))
+                     "\n"))))
+
+(defun elot--sparql-merge-prefixes (alist body)
+  "Merge prefix declarations from ALIST and inline PREFIX lines in BODY.
+ALIST is shaped like `org-link-abbrev-alist-local'.  Inline PREFIX
+lines at the top of BODY (SPARQL 1.1 syntax, case-insensitive) are
+recognised and stripped.
+
+Return a cons (PREFIX-BLOCK . BODY-WITHOUT-PREFIX-LINES) where
+PREFIX-BLOCK is a string containing one `PREFIX label: <uri>'
+declaration per line, with each label appearing exactly once and
+in source order (injected first, then inline-only labels in the
+order they appeared in BODY).  Inline declarations override the
+alist: when the same label appears in both with different URIs, a
+single `display-warning' is emitted under category `elot-sparql'
+and the inline URI wins.  Identical re-declarations (same label,
+same URI) are silently de-duplicated.  When no declarations apply,
+PREFIX-BLOCK is the empty string."
+  (let* ((injected (elot--sparql-alist-pairs alist))
+         (parsed   (elot--sparql-strip-inline-prefixes body))
+         (inline   (car parsed))
+         (rest     (cdr parsed))
+         (merged   (append injected inline))
+         (table    (make-hash-table :test 'equal))
+         (order    nil))
+    (dolist (pair merged)
+      (let* ((label (car pair))
+             (uri   (cdr pair))
+             (prev  (gethash label table)))
+        (cond
+         ((null prev)
+          (puthash label uri table)
+          (push label order))
+         ((string= prev uri)
+          nil) ;; silent dedup
+         (t
+          (display-warning
+           'elot-sparql
+           (format "Conflicting PREFIX %s: <%s> vs <%s> -- using last (<%s>)"
+                   label prev uri uri)
+           :warning)
+          (puthash label uri table)))))
+    (let ((block
+           (mapconcat (lambda (label)
+                        (format "PREFIX %-5s <%s>"
+                                (concat label ":")
+                                (gethash label table)))
+                      (nreverse order)
+                      "\n")))
+      (cons block rest))))
+;; src-sparql-merge-prefixes ends here
+
 ;; [[file:../elot-defs.org::src-sparql-exec-patch][src-sparql-exec-patch]]
 (defun elot--is-elot-buffer ()
   "Check if the current buffer is an ELOT buffer."
@@ -526,11 +634,17 @@ ELOT buffer."
                (query (org-babel-expand-body:sparql body params))
                (org-babel-sparql--current-curies
                 (append org-link-abbrev-alist-local org-link-abbrev-alist))
+               (merged (elot--sparql-merge-prefixes
+                        org-link-abbrev-alist-local query))
+               (prefix-block (car merged))
+               (query-body (cdr merged))
                (elot-prefixed-query
-                (concat (elot-prefix-block-from-alist org-link-abbrev-alist-local 'sparql) "\n" query))
-               (format-symbol (if (string-match-p "\\(turtle\\|ttl\\)" format) 'ttl 'csv)))
+                (if (or (null prefix-block) (string-empty-p prefix-block))
+                    query-body
+                  (concat prefix-block "\n" query-body)))
+               (format-symbol (if (string-match-p "\\(turtle\\|ttl\\)" (or format "")) 'ttl 'csv)))
           (with-temp-buffer
-            (if (string-match-p "^http" url)
+            (if (string-match-p "^http" (or url ""))
                 (sparql-execute-query elot-prefixed-query url format t) ;; Query an endpoint
               (elot-robot-execute-query elot-prefixed-query url format-symbol)) ;; Query local file
             (org-babel-result-cond

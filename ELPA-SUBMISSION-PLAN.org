@@ -394,7 +394,8 @@ moves into =elot-mode--enable= / =elot-mode--disable=.
    labels query") — pre-existing limitation, noted but out of
    scope for Milestone 1.
 
-** TODO Step 1.2 — De-duplicate prefix declarations
+** DONE Step 1.2 — De-duplicate prefix declarations
+CLOSED: [2026-05-06 ons. 23:15]
 - *File*: =elot-package/elot.el=.
 - Context: =elot--custom-org-babel-execute-sparql= already
   unconditionally prepends the prefix block built from
@@ -450,17 +451,32 @@ moves into =elot-mode--enable= / =elot-mode--disable=.
   query through the advice should be gated with =skip-unless=
   on ROBOT availability.
 
-** TODO Step 1.3 — Update tempo templates
-- *File*: =elot-package/elot-mode.el=.
-- Modify =elot-block-sparql-select= and
-  =elot-block-sparql-construct= so the inserted scaffolding does
-  *not* contain any noweb reference to =resource-declarations=,
-  and does *not* hand-roll any inline =PREFIX= boilerplate.  The
-  user gets a clean query body; ELOT injects prefixes at execution
-  time.
-- Update any documentation snippets in =elot-mode.org= and the
-  =examples/= directory that show the expected shape of an ELOT
-  SPARQL block.
+** DONE Step 1.3 — Update tempo templates
+CLOSED: [2026-05-06 ons. 23:15]
+
+Verification only: a re-read of =elot-package/elot-mode.el=
+confirmed that =elot-block-sparql-select= and
+=elot-block-sparql-construct= already insert clean query bodies
+— no =<<resource-declarations(...)>>= noweb reference, no
+hand-rolled =PREFIX= boilerplate.  The Step 1.1 inventory had
+already noted this; Step 1.3 therefore requires no code change.
+
+One item flagged for follow-up, *out of scope for Milestone 1*:
+=elot-block-sparql-construct= carries
+: :post kill-prefixes(data=*this*)
+This is a deliberate convenience — =kill-prefixes= strips =@prefix=
+declarations from the CONSTRUCT result for readability — and it
+stays.  However, =kill-prefixes= is currently implemented as a
+Library-of-Babel block in =elot-package/elot-lob.org= (see
+[[file:elot-package/elot-lob.org::kill-prefixes][kill-prefixes]]),
+which is the very pipeline being retired in [[#milestone-2-legacy-cleanup][Milestone 2]].  Before
+=elot-lob.org= is deleted (or even just left inert), =kill-prefixes=
+must be reimplemented as a regular Elisp function so the
+=:post= hook keeps working.  Tracked under Milestone 2 Step 2.5.
+
+No documentation snippets in =elot-mode.org= or =examples/=
+reference the old (prefix-laden, noweb-injected) tempo template
+shape, so nothing to update there.
 
 ** TODO Step 1.4 — Harden =elot--custom-org-babel-execute-sparql=
 - *File*: =elot-package/elot.el=.
@@ -637,6 +653,16 @@ We delete the legacy LOB functions.  Rationale:
   further changes.
 
 ** TODO Step 2.5 — Leave =elot-package/elot-lob.org= and old example files alone
+- *Prerequisite*: reimplement =kill-prefixes= as a regular Elisp
+  function (e.g. in =elot-tangle.el= or a small new
+  =elot-sparql-post.el=) before doing anything else in this step.
+  =kill-prefixes= is currently a Library-of-Babel block in
+  =elot-lob.org= and is referenced from
+  =elot-block-sparql-construct= as =:post kill-prefixes(data=*this*)=
+  (see Milestone 1 Step 1.3).  As long as the implementation
+  lives in =elot-lob.org=, that file cannot be safely retired.
+  Update the tempo template's =:post= hook to call the new Elisp
+  function, then proceed with the rest of this step.
 - =elot-lob.org= is no longer wired into anything: its named
   blocks may be left in place (they are inert) or deleted.
   Recommendation: leave them, with a top-of-file comment noting
