@@ -394,21 +394,61 @@ moves into =elot-mode--enable= / =elot-mode--disable=.
    labels query") — pre-existing limitation, noted but out of
    scope for Milestone 1.
 
-** TODO Step 1.2 — Make prefix injection self-contained
+** TODO Step 1.2 — De-duplicate prefix declarations
 - *File*: =elot-package/elot.el=.
-- In =elot--custom-org-babel-execute-sparql=, change the prefix
-  handling so the prefix block produced from
-  =org-link-abbrev-alist-local= is prepended to the query
-  unconditionally, *even when the query body already contains
-  =PREFIX= lines*.  De-duplicate by prefix label: if a label
-  appears both in =org-link-abbrev-alist-local= and inline in the
-  query, the inline declaration wins (user override).
-- Goal: a query block containing only the user-written =SELECT= /
-  =CONSTRUCT= body — no PREFIX boilerplate, no noweb call —
-  executes correctly.
-- Verify on a small example file with the legacy prefix block
-  removed.  Add an ERT test under =test/= that exercises this path
-  if ROBOT is available (gate with =skip-unless=).
+- Context: =elot--custom-org-babel-execute-sparql= already
+  unconditionally prepends the prefix block built from
+  =org-link-abbrev-alist-local= to the query body, regardless of
+  whether the body contains its own inline =PREFIX= lines.  The
+  earlier note in this plan (claiming the prefix block was only
+  prepended when no inline =PREFIX= lines were present) was
+  incorrect — confirmed by reading =elot.el= ≈ lines 522–530.
+  Concatenation today therefore yields *duplicate* =PREFIX=
+  declarations when the body already declares the same label,
+  which most SPARQL engines tolerate but ROBOT and some endpoints
+  reject (or warn about) when the URIs disagree.
+- Change the prefix handling so the merged query has *exactly one*
+  declaration per prefix label, with the following semantics:
+  1. Build the merged sequence of declarations as
+     =(injected-from-alist ++ inline-from-body)=, preserving
+     source order within each part.  "Inline" means a top-of-body
+     =PREFIX foo: <uri>= line as recognised by SPARQL 1.1 syntax
+     (case-insensitive keyword, optional surrounding whitespace).
+  2. Walk the merged sequence and collapse by prefix label such
+     that *the last declaration wins*.  Because the alist-derived
+     declarations come first, this means an inline declaration in
+     the user's body always overrides one injected from
+     =org-link-abbrev-alist-local= — i.e. the user can override
+     ELOT's project-wide prefix mapping by writing =PREFIX foo:
+     <other-uri>= at the top of the block.
+  3. If two declarations share a label but disagree on the URI,
+     emit a single =display-warning= (category =elot-sparql=,
+     level =:warning=) naming the label, both URIs, and which
+     one wins ("last").  Identical re-declarations (same label
+     and same URI) are silently de-duplicated.
+  4. Strip the now-redundant inline =PREFIX= lines from the body
+     before re-assembling the query, so the final string contains
+     each prefix exactly once at the top.
+- Factor the merge/dedup logic into a pure helper, e.g.
+  =elot--sparql-merge-prefixes (alist body) → (prefix-block
+  . body-without-prefix-lines)=, so it can be unit-tested without
+  invoking ROBOT or any endpoint.
+- Goal (unchanged): a query block containing only the
+  user-written =SELECT= / =CONSTRUCT= body — no =PREFIX=
+  boilerplate, no noweb call — executes correctly.  *Additional*
+  goal from this step: a query block that *does* carry inline
+  =PREFIX= lines (legacy or override) executes without producing
+  duplicate declarations, and conflicting overrides are surfaced
+  as warnings rather than silently shadowed.
+- Add ERT tests under =test/= for the helper covering: empty
+  body; body with no inline prefixes; body with inline prefixes
+  fully covered by the alist (identical URIs → silent dedup);
+  body with inline prefixes that override the alist (different
+  URIs → warning, last wins); body with inline-only prefixes not
+  in the alist (preserved verbatim).  These tests do not require
+  ROBOT.  A separate end-to-end test that actually executes a
+  query through the advice should be gated with =skip-unless=
+  on ROBOT availability.
 
 ** TODO Step 1.3 — Update tempo templates
 - *File*: =elot-package/elot-mode.el=.
