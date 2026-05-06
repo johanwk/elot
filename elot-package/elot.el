@@ -489,20 +489,60 @@ FORMAT is a symbol, either `omn', `sparql', or `ttl'."
 ;; [[file:../elot-defs.org::src-robot-query][src-robot-query]]
 (defun elot-robot-execute-query (query inputfile format)
   "Execute SPARQL query QUERY with ROBOT on ontology file INPUTFILE.
-Result FORMAT is tabular `csv', or Turtle RDF `ttl'."
-  (let* ((query-file
-          (concat (org-babel-temp-directory) "/"
-                  (file-name-base inputfile)
-                  ".sparql"))
-         (result-file
-          (concat (file-name-sans-extension inputfile) (symbol-name format))))
-    (with-temp-file query-file (insert query))
-    (elot-robot-command
-     (concat "query --input " inputfile
-             " --format " (symbol-name format)
-             " --query " query-file
-             " " result-file))
-    (insert-file-contents result-file)))
+Result FORMAT is the symbol `csv' or `ttl'.  Insert the result into
+the current buffer.
+
+Signals a `user-error' when ROBOT is not configured
+\(see `elot-robot-jar-path'\) or when INPUTFILE does not exist.
+Signals an `error' carrying ROBOT's stderr when the process exits
+non-zero.  Query and result I/O are forced to UTF-8 end-to-end."
+  (when (or (string= elot-robot-jar-path "")
+            (not (file-exists-p elot-robot-jar-path)))
+    (user-error
+     "ELOT SPARQL: ROBOT not found.  Set `elot-robot-jar-path' with M-x customize-variable"))
+  (let* ((abs-input (expand-file-name inputfile)))
+    (unless (file-exists-p abs-input)
+      (user-error
+       "ELOT SPARQL: input ontology file does not exist: %s (default-directory: %s)"
+       abs-input default-directory))
+    (let* ((coding-system-for-read  'utf-8)
+           (coding-system-for-write 'utf-8)
+           (query-file
+            (concat (org-babel-temp-directory) "/"
+                    (file-name-base abs-input)
+                    ".sparql"))
+           (result-file
+            (concat (file-name-sans-extension abs-input)
+                    "." (symbol-name format)))
+           (stderr-file (make-temp-file "elot-robot-stderr-"))
+           (exit-code nil))
+      (with-temp-file query-file
+        (set-buffer-file-coding-system 'utf-8)
+        (insert query))
+      (unwind-protect
+          (progn
+            (setq exit-code
+                  (call-process "java" nil (list nil stderr-file) nil
+                                "-Dfile.encoding=UTF-8"
+                                "-jar" elot-robot-jar-path
+                                "query"
+                                "--input"  abs-input
+                                "--format" (symbol-name format)
+                                "--query"  query-file
+                                result-file))
+            (unless (and (integerp exit-code) (zerop exit-code))
+              (let ((stderr (with-temp-buffer
+                              (when (file-exists-p stderr-file)
+                                (insert-file-contents stderr-file))
+                              (string-trim (buffer-string)))))
+                (error "ELOT SPARQL: ROBOT query failed (exit %s)%s"
+                       exit-code
+                       (if (string-empty-p stderr)
+                           ""
+                         (concat ":\n" stderr)))))
+            (insert-file-contents result-file))
+        (when (file-exists-p stderr-file)
+          (ignore-errors (delete-file stderr-file)))))))
 ;; src-robot-query ends here
 
 ;; [[file:../elot-defs.org::src-sparql-merge-prefixes][src-sparql-merge-prefixes]]
@@ -618,43 +658,130 @@ PREFIX-BLOCK is the empty string."
   "Check if the current buffer is an ELOT buffer."
   (bound-and-true-p elot-mode))
 
+(defconst elot--sparql-empty-result-sentinel
+  "[empty result set]"
+  "Sentinel returned by the ELOT SPARQL advice when a CSV result has
+no rows.  Used in place of an empty CSV body so that
+`org-babel-sparql-convert-to-table' is not invoked on input it
+cannot parse.")
+
+(defun elot--sparql-resolve-format (raw)
+  "Classify the :format header value RAW as the symbol `ttl' or `csv'.
+A nil or empty RAW maps to `csv'.  An unrecognised non-empty RAW
+also maps to `csv', but emits a single `display-warning' under
+category `elot-sparql' so that the silent fallback is at least
+visible."
+  (cond
+   ((or (null raw) (and (stringp raw) (string-empty-p raw))) 'csv)
+   ((not (stringp raw))
+    (display-warning
+     'elot-sparql
+     (format "Non-string :format %S; defaulting to csv" raw)
+     :warning)
+    'csv)
+   ((string-match-p "\\(turtle\\|ttl\\)" raw) 'ttl)
+   ((string-match-p "\\(csv\\|text/csv\\)" raw) 'csv)
+   (t (display-warning
+       'elot-sparql
+       (format "Unrecognised :format %S; defaulting to csv" raw)
+       :warning)
+      'csv)))
+
+(defun elot--sparql-classify-url (url)
+  "Classify URL as the symbol `endpoint' or `local-file'.
+URL is the value of the :url header argument.  Signals a
+`user-error' when URL is nil/empty, or when it is non-HTTP and
+points to a local file that does not exist; the message in the
+latter case names the resolved absolute path and the current
+`default-directory'."
+  (cond
+   ((or (null url) (and (stringp url) (string-empty-p url)))
+    (user-error
+     "ELOT SPARQL: missing :url header argument (set :url to an HTTP endpoint or a local ontology file)"))
+   ((not (stringp url))
+    (user-error "ELOT SPARQL: :url must be a string, got %S" url))
+   ((string-match-p "\\`https?:" url) 'endpoint)
+   (t
+    (let ((abs (expand-file-name url)))
+      (unless (file-exists-p abs)
+        (user-error
+         "ELOT SPARQL: local :url file does not exist: %s (default-directory: %s)"
+         abs default-directory))
+      'local-file))))
+
+(defun elot--sparql-result-empty-p (format-symbol)
+  "Return non-nil if the current buffer holds an empty SPARQL result.
+FORMAT-SYMBOL is `csv' or `ttl' as returned by
+`elot--sparql-resolve-format'.  An empty result is a buffer that is
+either completely empty, contains only whitespace, or — for csv —
+contains only a header row."
+  (save-excursion
+    (goto-char (point-min))
+    (or (= (point-min) (point-max))
+        (looking-at-p "\\`[ \t\n\r]*\\'")
+        (and (eq format-symbol 'csv)
+             (save-excursion
+               (forward-line 1)
+               (looking-at-p "[ \t\n\r]*\\'"))))))
+
 (defun elot--custom-org-babel-execute-sparql (orig-fun &rest args)
   "ELOT-specific SPARQL execution with support for ROBOT.
-This function is used to provide `advice' around
-`org-babel-execute:sparql'.  ORIG-FUN and ARGS serve to invoke the
-unchanged function, defined in `ob-sparql.el', when not called from an
-ELOT buffer."
-  (if (elot--is-elot-buffer)
-      (progn
-        (message "Executing a SPARQL query block with ELOT version of org-babel-execute:sparql.")
-        (let* ((body (nth 0 args))
-               (params (nth 1 args))
-               (url (cdr (assoc :url params)))
-               (format (cdr (assoc :format params)))
-               (query (org-babel-expand-body:sparql body params))
-               (org-babel-sparql--current-curies
-                (append org-link-abbrev-alist-local org-link-abbrev-alist))
-               (merged (elot--sparql-merge-prefixes
-                        org-link-abbrev-alist-local query))
-               (prefix-block (car merged))
-               (query-body (cdr merged))
-               (elot-prefixed-query
-                (if (or (null prefix-block) (string-empty-p prefix-block))
-                    query-body
-                  (concat prefix-block "\n" query-body)))
-               (format-symbol (if (string-match-p "\\(turtle\\|ttl\\)" (or format "")) 'ttl 'csv)))
-          (with-temp-buffer
-            (if (string-match-p "^http" (or url ""))
-                (sparql-execute-query elot-prefixed-query url format t) ;; Query an endpoint
-              (elot-robot-execute-query elot-prefixed-query url format-symbol)) ;; Query local file
-            (org-babel-result-cond
-                (cdr (assoc :result-params params))
-              (buffer-string)
-              (if (string-equal "text/csv" format)
-                  (org-babel-sparql-convert-to-table)
-                (buffer-string))))))
-    ;; Default behavior for non-ELOT buffers
-    (apply orig-fun args)))
+This function provides advice :around `org-babel-execute:sparql'.
+ORIG-FUN and ARGS are the original function and its arguments,
+invoked unchanged when not called from an ELOT buffer.
+
+In an ELOT buffer the advice:
+
+- requires :url and verifies that local files actually exist
+  \(via `elot--sparql-classify-url'\);
+- normalises :format to one of the symbols `csv' or `ttl'
+  \(via `elot--sparql-resolve-format'\);
+- merges and de-duplicates prefix declarations from
+  `org-link-abbrev-alist-local' and the query body
+  \(via `elot--sparql-merge-prefixes'\);
+- forces UTF-8 for query and result I/O so non-ASCII content
+  round-trips cleanly;
+- returns `elot--sparql-empty-result-sentinel' instead of throwing
+  when a CSV result is empty;
+- propagates ROBOT's stderr when the local-file branch fails."
+  (if (not (elot--is-elot-buffer))
+      (apply orig-fun args)
+    (let* ((body          (nth 0 args))
+           (params        (nth 1 args))
+           (raw-url       (cdr (assoc :url params)))
+           (raw-format    (cdr (assoc :format params)))
+           (kind          (elot--sparql-classify-url raw-url))
+           (format-symbol (elot--sparql-resolve-format raw-format))
+           (expanded      (org-babel-expand-body:sparql body params))
+           (org-babel-sparql--current-curies
+            (append org-link-abbrev-alist-local org-link-abbrev-alist))
+           (merged        (elot--sparql-merge-prefixes
+                           org-link-abbrev-alist-local expanded))
+           (prefix-block  (car merged))
+           (query-body    (cdr merged))
+           (final-query
+            (if (or (null prefix-block) (string-empty-p prefix-block))
+                query-body
+              (concat prefix-block "\n" query-body)))
+           (coding-system-for-read  'utf-8)
+           (coding-system-for-write 'utf-8))
+      (message "ELOT SPARQL: %s, format=%s" kind format-symbol)
+      (with-temp-buffer
+        (set-buffer-file-coding-system 'utf-8)
+        (pcase kind
+          ('endpoint
+           (sparql-execute-query final-query raw-url raw-format t))
+          ('local-file
+           (elot-robot-execute-query final-query raw-url format-symbol)))
+        (org-babel-result-cond
+            (cdr (assoc :result-params params))
+          (buffer-string)
+          (cond
+           ((eq format-symbol 'csv)
+            (if (elot--sparql-result-empty-p 'csv)
+                elot--sparql-empty-result-sentinel
+              (org-babel-sparql-convert-to-table)))
+           (t (buffer-string))))))))
 
 (advice-add 'org-babel-execute:sparql :around #'elot--custom-org-babel-execute-sparql)
 ;; src-sparql-exec-patch ends here

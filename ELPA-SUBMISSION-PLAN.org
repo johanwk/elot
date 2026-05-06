@@ -478,22 +478,92 @@ No documentation snippets in =elot-mode.org= or =examples/=
 reference the old (prefix-laden, noweb-injected) tempo template
 shape, so nothing to update there.
 
-** TODO Step 1.4 — Harden =elot--custom-org-babel-execute-sparql=
-- *File*: =elot-package/elot.el=.
-- Add explicit error handling for:
-  - =:url= not provided → =user-error= naming the missing param;
-  - =:url= pointing at a non-existent local file → =user-error=
-    that prints the resolved absolute path and the current
-    =default-directory=;
-  - ROBOT process exit non-zero → capture stderr and surface it in
-    the result (don't swallow);
-  - empty result set → return a meaningful sentinel rather than
-    letting =org-babel-sparql-convert-to-table= throw;
-  - non-ASCII / multibyte content → ensure the query is sent UTF-8
-    encoded end-to-end.
-- Where reasonable, factor the body into named helpers so each
-  failure mode can be exercised by a unit test without standing up
-  ROBOT.
+** DONE Step 1.4 — Harden =elot--custom-org-babel-execute-sparql=
+- *File*: =elot-package/elot.el= (mirrored in =elot-defs.org=
+  blocks =src-robot-query= and =src-sparql-exec-patch=; see
+  Step 1.7 for the formal tangle round-trip check).
+
+The advice body and =elot-robot-execute-query= were factored into
+named helpers so each failure mode is exercised by a unit test
+without standing up ROBOT.  The new helpers, all in =elot.el=:
+
+| Helper                              | Responsibility                                                                                              |
+|-------------------------------------+-------------------------------------------------------------------------------------------------------------|
+| =elot--sparql-classify-url=         | Validates =:url=.  Returns the symbol =endpoint= or =local-file=, or signals a =user-error=.                |
+| =elot--sparql-resolve-format=       | Normalises =:format= to the symbol =csv= or =ttl=.  Warns (=display-warning= category =elot-sparql=) on unrecognised non-empty values; nil/empty silently default to =csv=. |
+| =elot--sparql-result-empty-p=       | Detects an empty result buffer (totally empty, whitespace-only, or — for =csv= — header-row-only).          |
+| =elot--sparql-empty-result-sentinel= | Constant string returned in place of an empty CSV body so =org-babel-sparql-convert-to-table= is not invoked on input it cannot parse. |
+
+Failure modes addressed (one-to-one with the original checklist):
+
+1. *=:url= not provided.*  =elot--sparql-classify-url= signals a
+   =user-error= naming the missing parameter and explaining what
+   to set it to.  Also catches non-string =:url= values.
+2. *Non-existent local file.*  The same helper resolves =:url=
+   via =expand-file-name= and signals a =user-error= that names
+   both the resolved absolute path and the current
+   =default-directory=.  =elot-robot-execute-query= performs the
+   same check defensively as a second line of defence, and
+   additionally errors out if =elot-robot-jar-path= is unset or
+   missing.
+3. *ROBOT non-zero exit.*  =elot-robot-execute-query= no longer
+   shells out via =elot-robot-command= (which uses
+   =shell-command= and discards stderr).  It now uses
+   =call-process= directly with stderr captured to a temp file,
+   and on non-zero exit raises =error= whose message includes the
+   exit code and ROBOT's trimmed stderr.  The temp file is
+   cleaned up via =unwind-protect=.
+4. *Empty result set.*  The advice now consults
+   =elot--sparql-result-empty-p= before calling
+   =org-babel-sparql-convert-to-table=.  An empty CSV result
+   yields =elot--sparql-empty-result-sentinel= ("[empty result
+   set]") instead of a backtrace.
+5. *Non-ASCII / multibyte content.*  Both the advice body and
+   =elot-robot-execute-query= bind =coding-system-for-read= and
+   =coding-system-for-write= to =utf-8= around their
+   =with-temp-buffer= / =with-temp-file= forms.  The Java
+   sub-process additionally receives =-Dfile.encoding=UTF-8= so
+   its parsing of the query file and writing of the result file
+   match.  The query temp file's buffer-file-coding-system is
+   pinned to =utf-8= explicitly.
+
+Other shape changes worth noting:
+
+- The advice now branches on =elot--sparql-classify-url='s
+  return value via =pcase= rather than re-doing a
+  =string-match-p "^http"= check, so the endpoint vs. local-file
+  distinction is made exactly once.
+- Both branches now receive the same fully-prefixed query
+  (asymmetry resolved in Step 1.2; preserved here).
+- The diagnostic =message= at entry now reports the classified
+  =kind= and resolved =format-symbol= rather than the bare
+  "Executing a SPARQL query block …" line — useful when
+  diagnosing why ROBOT was (or was not) invoked.
+
+*** Tests added
+
+New file: =test/elot-sparql-exec-helpers-test.el= — pure-helper
+ERT suite for the three new helpers.  Coverage:
+
+- =elot--sparql-resolve-format=: nil / empty default silently to
+  =csv=; =ttl=, =turtle=, =text/turtle= → =ttl=; =csv=, =text/csv=
+  → =csv=; unknown non-empty values warn and default to =csv=.
+- =elot--sparql-classify-url=: nil, empty, and non-string =:url=
+  raise =user-error=; =http://= and =https://= → =endpoint=;
+  existing local file → =local-file=; missing local file raises
+  =user-error= mentioning the resolved absolute path.
+- =elot--sparql-result-empty-p=: empty buffer, whitespace-only,
+  CSV header-row-only, CSV with rows, TTL with content — all
+  classified correctly under both =csv= and =ttl= modes.
+
+The tests do not require ROBOT and do not stand up an HTTP
+endpoint.  Wired into =test/Makefile= as the
+=sparql-exec-helpers-test= target and added to the default =test=
+target.
+
+A separate end-to-end test that actually executes a query
+through the advice is left for Step 1.6 (regression on a real
+example file) and remains gated on ROBOT availability.
 
 ** TODO Step 1.5 — Localise the advice to ELOT buffers
 - *Files*: =elot-package/elot.el=, =elot-package/elot-mode.el=.
