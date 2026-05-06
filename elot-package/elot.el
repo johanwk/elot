@@ -531,7 +531,7 @@ ELOT buffer."
                (format-symbol (if (string-match-p "\\(turtle\\|ttl\\)" format) 'ttl 'csv)))
           (with-temp-buffer
             (if (string-match-p "^http" url)
-                (sparql-execute-query query url format t) ;; Query an endpoint
+                (sparql-execute-query elot-prefixed-query url format t) ;; Query an endpoint
               (elot-robot-execute-query elot-prefixed-query url format-symbol)) ;; Query local file
             (org-babel-result-cond
                 (cdr (assoc :result-params params))
