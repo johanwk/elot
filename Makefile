@@ -10,6 +10,9 @@
 #                   print a one-line PASS/FAIL summary at the end.
 #   byte-compile  - byte-compile elot-package/*.el; warnings allowed,
 #                   errors fail the target.
+#   native-compile - native-compile elot-package/*.el (requires an
+#                   Emacs built --with-native-compilation).  Honours
+#                   the no-native-compile file-local cookie.
 #   test          - delegate to test/Makefile (full ERT suite).
 #   smoke         - load elot-mode in a fresh batch Emacs.
 #   baseline      - capture the Baseline files described in
@@ -35,7 +38,7 @@ BC_LOG          := $(STABLE_LOG_DIR)/byte-compile.log
 TEST_LOG        := $(STABLE_LOG_DIR)/test.log
 SMOKE_LOG       := $(STABLE_LOG_DIR)/smoke.log
 
-.PHONY: all stable-check byte-compile test smoke baseline \
+.PHONY: all stable-check byte-compile native-compile test smoke baseline \
         baseline-warnings baseline-tests baseline-symbols \
         clean help
 
@@ -85,6 +88,20 @@ byte-compile:
 	cd $(PACKAGE_DIR) && $(EMACS) --batch -L . \
 	  --eval "(setq byte-compile-error-on-warn nil)" \
 	  -f batch-byte-compile $(notdir $(EL_FILES))
+
+# Native-compile every .el under elot-package/ from a fresh Emacs.
+# Requires an Emacs built --with-native-compilation; bails out with a
+# clear message otherwise.  Files carrying the `no-native-compile: t'
+# cookie are skipped automatically by `native-compile-async' /
+# `batch-native-compile'.  Async compilation is forced synchronous so
+# the target's exit status reflects compile success/failure.
+native-compile:
+	@$(EMACS) --batch --eval "(unless (and (fboundp 'native-comp-available-p) (native-comp-available-p)) (message \"ERROR: this Emacs has no native compilation support\") (kill-emacs 2))"
+	@mkdir -p $(STABLE_LOG_DIR)
+	cd $(PACKAGE_DIR) && $(EMACS) --batch -L . \
+	  --eval "(setq native-comp-async-report-warnings-errors 'silent)" \
+	  --eval "(setq native-comp-speed 2)" \
+	  -f batch-native-compile $(notdir $(EL_FILES))
 
 # Delegate to the existing per-test Makefile in test/.
 test:
@@ -150,6 +167,7 @@ baseline-symbols:
 
 clean:
 	rm -f $(PACKAGE_DIR)/*.elc
+	rm -rf $(PACKAGE_DIR)/eln-cache
 
 help:
 	@echo "ELOT housekeeping targets (top-level Makefile):"
@@ -157,6 +175,8 @@ help:
 	@echo "  make stable-check   run byte-compile + tests + load smoke,"
 	@echo "                      print PASS/FAIL summary, logs in $(STABLE_LOG_DIR)/"
 	@echo "  make byte-compile   byte-compile $(PACKAGE_DIR)/*.el"
+	@echo "  make native-compile native-compile $(PACKAGE_DIR)/*.el"
+	@echo "                      (requires Emacs --with-native-compilation)"
 	@echo "  make test           full ERT suite (delegates to test/Makefile)"
 	@echo "  make smoke          (require 'elot-mode) in a fresh batch Emacs"
 	@echo "  make baseline       capture Step B.1-B.3 baselines under /tmp/"
