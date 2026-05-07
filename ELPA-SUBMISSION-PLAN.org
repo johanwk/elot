@@ -970,7 +970,7 @@ CLOSED: [2026-05-07 tor. 18:31]
   passes (Step 1.7 verification).
 - Run the [[#stable-status][stable-status checklist]].
 
-* TODO Interlude - Retire the ELOT hydra
+* DONE Interlude - Retire the ELOT hydra
 :PROPERTIES:
 :CUSTOM_ID: interlude-retire-hydra
 :END:
@@ -1089,16 +1089,23 @@ CLOSED: [2026-05-07]
 - =elot-init.el= no longer installs =hydra= via =package-install=.
 - =git grep -nE "\\bhydra\\b" elot-package/= returns no matches.
 
-** TODO Step H.4 - Update plan and docs
-- *Files*: this plan, =README.org= (and regenerate =README.md=),
-  optionally =CHANGELOG=.
-- Strike Sub-steps 4.2.1, 4.2.2, 4.2.3 from Milestone 4 (replace
-  with a one-line back-reference to this Interlude).
-- Drop =hydra= from the audit list in Step 4.2.
-- Add a one-line user-facing note that =S-<f5>= no longer
-  summons a menu; the easymenu remains.
-- Add a Decisions-log entry (template at the bottom of this
-  plan).
+** DONE Step H.4 - Update plan and docs
+CLOSED: [2026-05-07]
+- Sub-steps 4.2.1, 4.2.2, 4.2.3 in Milestone 4 already carry
+  the "Superseded" note pointing at this Interlude (done as
+  part of Step H.1/H.2).
+- =hydra= already removed from the Step 4.2 audit list (the
+  parenthetical now reads "=hydra= retired in the Hydra
+  retirement Interlude and is no longer audited here").
+- =README.org= contains no reference to =S-<f5>=, hydra, or the
+  retired menu - nothing to rephrase or strike.  No
+  =CHANGELOG= file exists in the repository, so the optional
+  CHANGELOG entry is not applicable.  The user-visible
+  behaviour change (=S-<f5>= no longer bound) is recorded in
+  the Decisions log below and in the Interlude prose; it can
+  be surfaced in release notes when ELOT 2.0.0 ships.
+- Decisions-log entry recording Option B (retire outright) was
+  added at the bottom of this plan on 2026-05-07.
 
 ** Acceptance check
 - =git grep -nE "defhydra|elot-hydra|hydra--" elot-package/=
