@@ -342,7 +342,8 @@ are the annotation fields.  All arguments are strings (possibly empty)."
    (or definition "")))
 
 (defun elot-label-lookup-annotations (label)
-  "Annotation function for `elot-label-lookup' using `elot-label-lookup-tmp-attriblist-ht'.
+  "Annotation function for `elot-label-lookup' 
+using `elot-label-lookup-tmp-attriblist-ht'.
 Provides a preview string for LABEL during completing-read."
   (let* ((attrib-plist (gethash label elot-label-lookup-tmp-attriblist-ht))
          (rdf-type   (plist-get attrib-plist "rdf:type" 'string=))
