@@ -1258,6 +1258,117 @@ For each of =htmlize=, =omn-mode=, =hydra=, =sparql-mode=,
 Expected outcome (from current code reading): all seven are
 optional except =ht=, which is unused and must be removed.
 
+*** Sub-step 4.2.1 — Harden the optional =hydra= dependency (Option A)
+
+- *Files*: =elot-package/elot.el=, =elot-defs.org=.
+- Problem: =elot.el= currently wraps the hydra menu definition in
+  a runtime guard:
+  #+begin_src emacs-lisp
+  (when (fboundp 'defhydra)
+    (defhydra elot-hydra (:color blue :hint nil) ...))
+  #+end_src
+  =defhydra= is a *macro*, so the byte-compiler expands the body
+  whenever hydra happens to be on =load-path= at compile time.
+  The expansion bakes in references to hydra-internal functions
+  (e.g. =hydra--call-interactively-remap-maybe=).  If the
+  resulting =.elc= is then loaded in an Emacs *without* hydra on
+  =load-path=, =(require 'elot)= fails — the runtime
+  =(when (fboundp 'defhydra) ...)= guard does not protect against
+  references injected by macro-expansion.
+- This is exactly what surfaced when the new
+  =sparql-advice-test= was added: the test's batch Emacs picks
+  up hydra (probably via a leaking user package directory or a
+  transitive dep), the helper module gets compiled with
+  hydra-aware expansion, and a load in a clean environment
+  blows up.
+- *Fix (Option A): defer macro expansion to runtime.*  Replace
+  the =(when (fboundp 'defhydra) (defhydra elot-hydra ...))=
+  form with =(with-eval-after-load 'hydra (eval '(defhydra
+  elot-hydra ...) t))=.  Concretely:
+
+  #+begin_src emacs-lisp
+  ;; The defhydra macro reference must NOT be expanded at
+  ;; byte-compile time, because hydra is an optional dependency
+  ;; (see Package-Requires).  Defer expansion until hydra is
+  ;; actually loaded at runtime.
+  (with-eval-after-load 'hydra
+    (eval
+     '(defhydra elot-hydra (:color blue :hint nil)
+        "..."
+        ...)
+     t))
+  #+end_src
+
+  Notes on the construction:
+  - =with-eval-after-load 'hydra= ensures the form runs only
+    once hydra is genuinely available.
+  - =(eval 'FORM t)= (lexical) prevents the byte-compiler from
+    looking inside =FORM= and demanding =defhydra= at compile
+    time.  Without the quoted-and-=eval='d wrapper the compiler
+    would still try to expand the macro because the surrounding
+    =with-eval-after-load= form is itself byte-compiled.
+- The S-F5 keybinding in =elot-mode.el= already guards on
+  =(fboundp 'elot-hydra/body)= (line ≈500), so the keymap
+  installation continues to work whether or not hydra ever
+  loads.  No change needed there.
+- =elot-setup-org-keybindings= in =elot.el= (≈ line 1257)
+  unconditionally calls =(local-set-key elot-key-open-hydra
+  #'elot-hydra/body)=.  Wrap that single call in
+  =(when (fboundp 'elot-hydra/body) ...)= for symmetry — without
+  hydra loaded, =elot-hydra/body= is not defined and the
+  keybinding would otherwise resolve to nothing useful.
+- Add =(declare-function elot-hydra/body "ext:hydra")= near the
+  top of =elot.el= (alongside the other forward declarations) to
+  silence the byte-compile warning that would otherwise appear
+  for the unconditional reference inside
+  =elot-setup-org-keybindings=.
+- Mirror the change in =elot-defs.org= (named block
+  =src-hydra-menu=) so a re-tangle is a no-op.
+
+*** Sub-step 4.2.2 — ERT regression test for optional-hydra load
+
+- *File*: =test/elot-optional-deps-test.el= (new).
+- The test uses =call-process= to spawn a child Emacs in batch
+  mode and asserts that =(require 'elot)= succeeds in two
+  configurations:
+  1. =hydra= present on =load-path= (the normal developer setup).
+  2. =hydra= explicitly *absent* from =load-path=, simulated by
+     spawning Emacs with =-Q= and a sanitised =load-path= that
+     contains only =elot-package/= plus the directories needed
+     for ELOT's other (truly optional) deps that are loaded with
+     =(require ... nil t)=.  The test programmatically locates
+     hydra via =locate-library= in the parent process and, if
+     found, removes its directory from the child's
+     =load-path=.
+- Each child invocation runs:
+  #+begin_src sh
+  emacs -Q --batch -L elot-package \
+    --eval "(require 'elot)" \
+    --eval "(unless (fboundp 'elot-mode) (kill-emacs 1))" \
+    --eval "(kill-emacs 0)"
+  #+end_src
+  The test asserts =(zerop exit-code)= for both runs.
+- Additionally, in the without-hydra run the test greps the
+  child's stderr for any =hydra--= or =defhydra= reference and
+  asserts there are none — defence against a future regression
+  that re-introduces a compile-time hydra reference.
+- The test is *not* gated on ROBOT and *not* gated on hydra
+  being installed: if hydra cannot be found at all, the
+  with-hydra arm =ert-skip='s with a clear message and the
+  without-hydra arm still runs.
+- Wire into =test/Makefile= as the =optional-deps-test= target
+  and add to the default =test= goal.
+
+*** Sub-step 4.2.3 — Acceptance for sub-steps 4.2.1 and 4.2.2
+
+- =make -C test optional-deps-test= passes locally (both arms,
+  or with-hydra arm skipped if hydra is not installed).
+- =git grep -n "defhydra\\|hydra--" elot-package/*.elc= run
+  against freshly compiled =.elc= files in a hydra-free
+  environment shows no hydra-internal symbols baked in.
+- The [[#stable-status][stable-status checklist]] still passes in
+  both a hydra-equipped and a hydra-stripped Emacs.
+
 ** TODO Step 4.3 — Remove =Package-Requires= from sub-files
 - *Files*: =elot-package/elot-mode.el=, =elot-package/elot-flymake.el=.
 - Delete the =;; Package-Requires:= line from each.  The MAIN FILE
