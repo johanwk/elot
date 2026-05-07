@@ -317,7 +317,7 @@ the field separator.  Primary UC3 path."
 
 (defun elot-source--json-read (file)
   "Read FILE as JSON and return it with string keys and list values.
-Uses `json-parse-buffer' with `:object-type 'alist' so the dict
+Uses `json-parse-buffer' with `:object-type `alist' so the dict
 shape is a plain alist."
   (with-temp-buffer
     (let ((coding-system-for-read 'utf-8))
