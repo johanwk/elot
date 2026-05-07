@@ -353,7 +353,7 @@ unchanged (so numbers stay numbers, symbols stay symbols, etc.)."
           value
         (format "\"%s\"%s" (format "%s" value) dtype))))
 
-   (t value)))                                        ; no decoration → untouched
+   (t value)))                                        ; no decoration -> untouched
 
 (defun elot--strip-decoration (header)
   "Return HEADER without trailing @lang or ^^dtype part."
@@ -365,9 +365,9 @@ unchanged (so numbers stay numbers, symbols stay symbols, etc.)."
 
 (defun elot--table->forest (mini-table)
   "Convert MINI-TABLE (Org-babel list) to a forest of plists.
-- Header suffixes “@lang” / “^^datatype” decorate the cell value
-  but are **removed** from the stored key.
-- Warns if a row’s SUPER value never appears as an ID.
+- Header suffixes `@lang' / `^^datatype' decorate the cell value
+  but are removed from the stored key.
+- Warns if a row's SUPER value never appears as an ID.
 - Skips `hline` markers that `org-table-to-lisp` inserts."
   (let* ((headers (car mini-table))
          (rows    (cdr mini-table))
@@ -376,7 +376,7 @@ unchanged (so numbers stay numbers, symbols stay symbols, etc.)."
          (id->obj (make-hash-table :test 'equal))
          triples)
 
-    ;; ── pass 1: build node plists and register them ───────────────
+    ;; -- pass 1: build node plists and register them ---------------
     (dolist (row rows)
       (when (listp row)                         ; skip `hline`
         (let* ((id  (nth id-col  row))
@@ -395,7 +395,7 @@ unchanged (so numbers stay numbers, symbols stay symbols, etc.)."
 
     (setq triples (nreverse triples))
 
-    ;; ── pass 2: link children to parents, warn on missing parents ─
+    ;; -- pass 2: link children to parents, warn on missing parents -
     (dolist (tr triples)
       (cl-destructuring-bind (id sup child) tr
         (unless (string= sup "")
@@ -403,11 +403,11 @@ unchanged (so numbers stay numbers, symbols stay symbols, etc.)."
             (if parent
                 (setf (plist-get parent :subs)
                       (append (plist-get parent :subs) (list child)))
-              (message "elot--table->forest: WARNING – parent id \"%s\" referenced by \"%s\" not found"
+              (message "elot--table->forest: WARNING -- parent id \"%s\" referenced by \"%s\" not found"
                        sup id)
               (setf (nth 1 tr) ""))))))         ; promote to root
 
-    ;; ── pass 3: collect root nodes in original order ──────────────
+    ;; -- pass 3: collect root nodes in original order --------------
     (let (forest)
       (dolist (tr triples)
         (cl-destructuring-bind (_id sup pl) tr
@@ -415,7 +415,7 @@ unchanged (so numbers stay numbers, symbols stay symbols, etc.)."
       (nreverse forest))))
 
 (defun elot--prop (plist key)
-  "Return KEY’s value in PLIST, comparing keys with `string=`."
+  "Return KEY's value in PLIST, comparing keys with `string=`."
   (cl-loop for (k v) on plist by #'cddr
            when (and (stringp k) (string= k key))
            return v))
@@ -468,7 +468,7 @@ or `xsd:integer' on a column header will be applied to values."
          (headers     (car mini-table)))
     ;; 2. must contain \"id\"
     (unless (member "id" headers)
-      (user-error "Table lacks required \"id\" column – cannot create headings"))
+      (user-error "Table lacks required \"id\" column -- cannot create headings"))
 
     ;; 3. outline depth = one deeper than containing headline
     (let ((target-level (save-excursion
@@ -486,7 +486,7 @@ or `xsd:integer' on a column header will be applied to values."
                  (forward-line 1))
                (point))))
 
-        ;; 5. build forest → org text and insert
+        ;; 5. build forest -> org text and insert
         (let* ((forest   (elot--table->forest mini-table))
                (org-text (elot-forest->org forest target-level)))
           (goto-char insert-pos)
@@ -962,7 +962,7 @@ buffer exactly like they are in the *xref* buffer."
 		    (elot--describe--insert-xref-button xref 4)
 		    (setq count (1+ count))))
 		(when (> (length refs) max-ref)
-		  (princ (format "  …and %d more\n"
+		  (princ (format "  ...and %d more\n"
 				 (- (length refs) max-ref)))))
 	    (princ "  (none)\n"))
 	  (princ
@@ -985,7 +985,7 @@ buffer exactly like they are in the *xref* buffer."
 	 (line    (with-current-buffer buf
 		    (line-number-at-pos marker))))
     ;; bullet + file prefix
-    (insert (make-string indent ?\s) "• "
+    (insert (make-string indent ?\s) "- "
 	    (propertize (concat short ": ") 'face 'font-lock-keyword-face))
     ;; clickable summary
     (insert-text-button
