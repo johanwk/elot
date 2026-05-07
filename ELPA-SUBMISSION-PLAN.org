@@ -1001,19 +1001,35 @@ called from production code in =elot-label-display.el= (line ≈173)
 and (after Milestone 1) from the rewritten SPARQL advice.  It must
 be preserved (relocated, not deleted).
 
-** Decision: Strategy B (remove and migrate)
+** Decision: Strategy B with selective LOB retention
 
-We delete the legacy LOB functions.  Rationale:
+We delete the legacy LOB *pipeline* functions (the
+=resource-declarations= / =resource-taxonomy= family) but *retain
+=elot-lob.org= as a supported, user-facing part of ELOT* for
+=#+call:=-style helpers — most importantly =rdfpuml-block=, which
+authors invoke from prose to render TTL diagrams with caption and
+results integration.
 
-- After Milestone 1, no production code path depends on them.
-- Old example files that still contain LOB noweb calls continue
-  to export to OWL correctly via the new tangle pipeline (those
-  calls are silently ignored).
+Rationale:
+
+- After Milestone 1, no production code path depends on the
+  legacy pipeline LOB blocks.
+- Old example files that still contain =<<resource-declarations(...)>>=
+  noweb calls continue to export to OWL correctly via the new
+  tangle pipeline (those calls are silently ignored).
 - Only one example, =examples/reasoner-example.org=, contains the
   old SPARQL prefix boilerplate.  It is a special-case file and
   is acceptable to leave as-is — it does not gate the milestone.
-- This avoids carrying ~20 dead functions plus a deprecation
-  schedule into the MELPA submission.
+- =rdfpuml-block= and similar =#+call:=-style helpers are a
+  *different category*: they are idiomatic Org (named,
+  parameterised, caption-bearing, results-integrated, and they
+  consume another named block as input via =org-babel-ref-resolve=).
+  No Elisp-only equivalent is as compact for the author.  These
+  stay, are documented as ELOT API, and =elot-lob.org= is
+  auto-ingested when =elot-mode= enables.
+- This avoids carrying ~20 dead pipeline functions plus a
+  deprecation schedule into the MELPA submission, while
+  preserving an ergonomic authoring affordance users rely on.
 
 ** TODO Step 2.1 — Move =elot-prefix-block-from-alist= to =elot-tangle.el=
 - *Files*: =elot-package/elot-tangle.el=, =elot-package/elot.el=.
@@ -1075,30 +1091,73 @@ We delete the legacy LOB functions.  Rationale:
 - Re-tangle and verify =git diff elot-package/elot.el= shows no
   further changes.
 
-** TODO Step 2.5 — Leave =elot-package/elot-lob.org= and old example files alone
-- *Prerequisite*: reimplement =kill-prefixes= as a regular Elisp
-  function (e.g. in =elot-tangle.el= or a small new
-  =elot-sparql-post.el=) before doing anything else in this step.
-  =kill-prefixes= is currently a Library-of-Babel block in
-  =elot-lob.org= and is referenced from
-  =elot-block-sparql-construct= as =:post kill-prefixes(data=*this*)=
-  (see Milestone 1 Step 1.3).  As long as the implementation
-  lives in =elot-lob.org=, that file cannot be safely retired.
-  Update the tempo template's =:post= hook to call the new Elisp
-  function, then proceed with the rest of this step.
-- =elot-lob.org= is no longer wired into anything: its named
-  blocks may be left in place (they are inert) or deleted.
-  Recommendation: leave them, with a top-of-file comment noting
-  that the file is retained only so old example files can still
-  be opened without =org-babel-tangle= raising "named block not
-  found" errors.  If you do delete it, also remove the entry from
-  the MELPA recipe =:files= list (Milestone 7 Step 7.1).
-- =examples/reasoner-example.org= contains the old SPARQL prefix
-  boilerplate.  It is a special-case file; leave it as-is.  If a
-  user runs its SPARQL blocks they will simply get the embedded
-  PREFIX lines plus the ELOT-injected ones (de-duplication from
-  Milestone 1 Step 1.2 covers this cleanly).
-- Other =examples/*.org= files that contain
+** TODO Step 2.5 — Split =elot-lob.org= into retired vs supported halves
+
+The file =elot-package/elot-lob.org= is *retained* and remains
+part of the MELPA recipe's =:files= list (Milestone 7 Step 7.1).
+It contains two conceptually different sets of named blocks; this
+step makes that split explicit and wires up the supported half.
+
+*** Sub-step 2.5.1 — Reimplement =kill-prefixes= as Elisp (prerequisite)
+
+- =kill-prefixes= is referenced from =elot-block-sparql-construct=
+  as =:post kill-prefixes(data=*this*)=.  =:post= hooks have a
+  different evaluation model from =#+call:= and a real Elisp
+  function is cleaner there.
+- *File*: add =elot-kill-prefixes (data)= as a regular defun in
+  =elot-tangle.el= (or a small new module if cleaner).  Behaviour:
+  strip leading =@prefix= / =PREFIX= declarations from a TTL
+  string.
+- Update the =elot-block-sparql-construct= tempo template's
+  =:post= hook in =elot-mode.el= to call the new function
+  (=:post elot-kill-prefixes(data=*this*)=).  Mirror in
+  =elot-mode.org=.
+- Add an ERT test confirming the function strips both Turtle
+  =@prefix= and SPARQL =PREFIX= declarations and leaves the
+  remaining body untouched.
+
+*** Sub-step 2.5.2 — Annotate the retired blocks in =elot-lob.org=
+
+- *File*: =elot-package/elot-lob.org=.
+- Add a top-of-file comment explaining the file is retained and
+  is part of ELOT's supported API for =#+call:=-style helpers.
+- Mark the legacy pipeline blocks (=resource-declarations=,
+  =resource-taxonomy=, and any other blocks tied to the retired
+  LOB pipeline) with a clear "RETIRED — kept inert so that old
+  example files still open without =org-babel-tangle= errors.
+  Do not invoke from new code." note.  Do *not* delete them.
+- Identify and label the *supported* blocks (=rdfpuml-block=,
+  any other =#+call:=-style helpers worth keeping).  Promote
+  these to ELOT's documented API.
+
+*** Sub-step 2.5.3 — Auto-ingest supported LOB on =elot-mode= enable
+
+- *Files*: =elot-package/elot-mode.el=, =elot-mode.org=.
+- Add a step in =elot-mode--enable= that calls
+  =org-babel-lob-ingest= on =elot-package/elot-lob.org= once,
+  guarded by a module-level variable
+  =elot--lob-ingested-p= so re-enabling =elot-mode= in another
+  buffer does not re-ingest.  Locate the file relative to the
+  loaded =elot-mode.el= via =locate-library= or a similar
+  mechanism so it works both from a Git checkout and from an
+  installed MELPA package.
+- No corresponding action in =elot-mode--disable=: ingested LOB
+  blocks are harmless and there is no per-buffer state to undo.
+- This means =#+call: rdfpuml-block(ttlblock="…")= just works in
+  any ELOT buffer with no =M-x org-babel-lob-ingest= step.
+
+*** Sub-step 2.5.4 — Document supported LOB blocks
+
+- Update README and/or the manual to describe the supported
+  =#+call:= helpers (=rdfpuml-block= at minimum) as part of
+  ELOT's user-facing API, with a short example modelled on
+  =examples/pets.org=.
+
+*** Sub-step 2.5.5 — Old example files: leave alone
+
+- =examples/reasoner-example.org= contains the old SPARQL
+  prefix boilerplate.  Special-case file; leave as-is.
+- Other =examples/*.org= files containing
   =<<resource-declarations(...)>>= or
   =<<resource-taxonomy(...)>>= noweb calls: leave them.  The new
   tangle pipeline silently ignores those calls and produces the
@@ -1107,6 +1166,16 @@ We delete the legacy LOB functions.  Rationale:
   confirming the output is byte-identical to a copy saved before
   the change (=diff -u before.omn after.omn=).
 
+*** Acceptance for Step 2.5
+
+- =M-x org-babel-tangle= on =examples/pets.org= still produces a
+  working diagram via the =rdfpuml:my-construct= block in a
+  fresh Emacs (no manual =org-babel-lob-ingest= needed once
+  =elot-mode= is enabled).
+- =elot-kill-prefixes= ERT test passes.
+- =elot-lob.org= is still listed in the MELPA recipe =:files=
+  (Milestone 7 Step 7.1) — confirm the recipe text contains it
+  with the explanatory comment.
 ** TODO Step 2.6 — Update =REFACTORING.org= Design Decisions
 - *File*: =REFACTORING.org=.
 - Add an entry under "Design Decisions" recording: Strategy B
@@ -1644,11 +1713,12 @@ Practical tips for executing this plan with =gptel=:
 
 * Decisions log
 
-| Date       | Decision                                          | Rationale                                  |
-|------------+---------------------------------------------------+--------------------------------------------|
-| 2026-05-04 | Strategy B (remove and migrate) for legacy LOB pipeline | After the SPARQL rewrite (Milestone 1) no production code path depends on the LOB functions.  Old example files still tangle correctly because the new pipeline silently ignores LOB noweb calls.  The single example with old SPARQL prefix boilerplate (=examples/reasoner-example.org=) is treated as a special case and left untouched.  See Milestone 2. |
-| 2026-05-04 | Rewrite SPARQL support before other ELPA tasks    | Subsequent milestones (legacy removal, mode lifecycle, header polish) all touch the SPARQL code; rewriting it first avoids rework.  The rewrite also removes the last production dependency on the legacy LOB prefix block, enabling Strategy B above.  See Milestone 1. |
-| 2026-05-?? | Inline =PREFIX= declarations participate in result-IRI shortening | The SPARQL advice now let-binds =org-babel-sparql--current-curies= to the *merged* (alist + inline, with inline overrides) prefix pairs returned by =elot--sparql-compute-merged-prefixes=, not just =org-link-abbrev-alist-local=.  This removes a user-visible inconsistency where inline-declared prefixes were honoured during query execution but ignored when ob-sparql shortened IRIs in the result table.  See Milestone 1 Sub-step 1.6.1, Block 7. |
-| YYYY-MM-DD | =elot.el= chosen as MAIN FILE; package name =elot= | Matches MELPA recipe-name → main-file convention; avoids renaming the user-facing package; =elot-mode.el= remains the autoloaded entry point loaded from =elot.el=. See Milestones 4 and 7. |
-| YYYY-MM-DD | Drop =no-native-compile= in =elot.el=             | (fill in — see Milestone 5 Step 5.4)       |
-| YYYY-MM-DD | Recipe filename =recipes/elot=                    | Package name is =elot=; MAIN FILE is =elot.el=. See Milestone 7 Step 7.1. |
+|       Date | Decision                                                                                                                                                                      | Rationale                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+|------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 2026-05-04 | Strategy B (remove and migrate) for legacy LOB pipeline                                                                                                                       | After the SPARQL rewrite (Milestone 1) no production code path depends on the LOB functions.  Old example files still tangle correctly because the new pipeline silently ignores LOB noweb calls.  The single example with old SPARQL prefix boilerplate (=examples/reasoner-example.org=) is treated as a special case and left untouched.  See Milestone 2.                                                                                         |
+| 2026-05-04 | Rewrite SPARQL support before other ELPA tasks                                                                                                                                | Subsequent milestones (legacy removal, mode lifecycle, header polish) all touch the SPARQL code; rewriting it first avoids rework.  The rewrite also removes the last production dependency on the legacy LOB prefix block, enabling Strategy B above.  See Milestone 1.                                                                                                                                                                            |
+| 2026-05-07 | Inline =PREFIX= declarations participate in result-IRI shortening                                                                                                               | The SPARQL advice now let-binds =org-babel-sparql--current-curies= to the *merged* (alist + inline, with inline overrides) prefix pairs returned by =elot--sparql-compute-merged-prefixes=, not just =org-link-abbrev-alist-local=.  This removes a user-visible inconsistency where inline-declared prefixes were honoured during query execution but ignored when ob-sparql shortened IRIs in the result table.  See Milestone 1 Sub-step 1.6.1, Block 7. |
+| 2026-05-07 | Retain =elot-lob.org= selectively: =rdfpuml-block= and similar =#+call:=-style helpers are supported user-facing API; legacy pipeline LOB blocks are marked RETIRED but kept inert. | =#+call:= is the idiomatic Org way to invoke a parameterised, named, caption-bearing helper that consumes another named block as input.  No Elisp equivalent is as compact for the author.  Cost of shipping =elot-lob.org= is one file in the recipe =:files= list. =elot-mode= now auto-ingests it on enable so users don't need =M-x org-babel-lob-ingest=.  See Milestone 2 Step 2.5.                                                                     |
+| YYYY-MM-DD | =elot.el= chosen as MAIN FILE; package name =elot=                                                                                                                                | Matches MELPA recipe-name → main-file convention; avoids renaming the user-facing package; =elot-mode.el= remains the autoloaded entry point loaded from =elot.el=. See Milestones 4 and 7.                                                                                                                                                                                                                                                            |
+| YYYY-MM-DD | Drop =no-native-compile= in =elot.el=                                                                                                                                             | (fill in — see Milestone 5 Step 5.4)                                                                                                                                                                                                                                                                                                                                                                                                                |
+| YYYY-MM-DD | Recipe filename =recipes/elot=                                                                                                                                                  | Package name is =elot=; MAIN FILE is =elot.el=. See Milestone 7 Step 7.1.                                                                                                                                                                                                                                                                                                                                                                               |
