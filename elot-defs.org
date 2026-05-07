@@ -60,35 +60,35 @@ in SPARQL select results.
 *** Require packages
 #+name: src-require
 #+begin_src emacs-lisp
-	(require 'elot-tangle) ; AST parsing, OMN generation, ROBOT post-processing
-	(require 'ob-lob) ; Library of Babel
-	(require 'ox) ; export functions
-	(require 'ol) ; link functions
-	(require 'xref) ; jump around
-	(require 'hydra nil t) ; hydra menu (optional; see missing-deps check below)
-	(require 'button) ; for text‑buttons
-	(require 'help-mode) ; nice keymap & look
-	(require 'url) ; for opening online ontologies
-	(require 'url-http) ; for opening online ontologies
+  (require 'elot-tangle) ; AST parsing, OMN generation, ROBOT post-processing
+  (require 'ob-lob) ; Library of Babel
+  (require 'ox) ; export functions
+  (require 'ol) ; link functions
+  (require 'xref) ; jump around
+  (require 'hydra nil t) ; hydra menu (optional; see missing-deps check below)
+  (require 'button) ; for text‑buttons
+  (require 'help-mode) ; nice keymap & look
+  (require 'url) ; for opening online ontologies
+  (require 'url-http) ; for opening online ontologies
 
-	;; Try to load optional external dependencies
-	(defvar elot-missing-dependencies nil
-	  "List of missing external dependencies for legacy ELOT features.")
-	(setq elot-missing-dependencies nil)
+  ;; Try to load optional external dependencies
+  (defvar elot-missing-dependencies nil
+    "List of missing external dependencies for legacy ELOT features.")
+  (setq elot-missing-dependencies nil)
 
-	(dolist (pkg '(htmlize omn-mode sparql-mode ob-sparql ob-plantuml hydra))
-	  (unless (require pkg nil t)
-	    (push pkg elot-missing-dependencies)))
+  (dolist (pkg '(htmlize omn-mode sparql-mode ob-sparql ob-plantuml hydra))
+    (unless (require pkg nil t)
+      (push pkg elot-missing-dependencies)))
 
-	(when elot-missing-dependencies
-	  (message "ELOT: Optional dependencies missing: %s. Some features will be disabled."
-		   (mapconcat #'symbol-name elot-missing-dependencies ", ")))
+  (when elot-missing-dependencies
+    (message "ELOT: Optional dependencies missing: %s. Some features will be disabled."
+             (mapconcat #'symbol-name elot-missing-dependencies ", ")))
 #+end_src
 
 *** Declare ~org-link-abbrev-alist-local~ to allow native compile
 #+name: src-defvar
 #+begin_src emacs-lisp
-(defvar org-link-abbrev-alist-local)
+  (defvar org-link-abbrev-alist-local)
 #+end_src
 
 *** Setting for post-processing with ROBOT, rdfpuml; import OWL with elot-exporter
@@ -662,11 +662,13 @@ Semantics, formally:
 #+name: src-sparql-merge-prefixes
 #+begin_src emacs-lisp
   (defconst elot--sparql-prefix-line-re
-    "\\`[ \t]*PREFIX[ \t]+\\([^[:space:]:]+\\):[ \t]*<\\([^>]*\\)>[ \t]*\\'"
+    "\\`[ \t]*PREFIX[ \t]+\\([^[:space:]:]+\\):[ \t]*<\\([^>]*\\)>[ \t]*\\(?:#.*\\)?\\'"
     "Regexp matching a single SPARQL 1.1 PREFIX declaration line.
   The keyword match is intended to be used with `case-fold-search'
   bound to t.  Submatch 1 is the prefix label (without the colon);
-  submatch 2 is the IRI (without the angle brackets).")
+  submatch 2 is the IRI (without the angle brackets).  An optional
+  trailing SPARQL line-comment (\"# ...\" to end of line) after the
+  closing `>' is tolerated and ignored.")
 
   (defun elot--sparql-normalise-label (s)
     "Strip a single trailing colon from prefix label S, if present."
@@ -938,7 +940,7 @@ Semantics, formally:
              (t (buffer-string))))))))
 
   ;; The advice is installed and removed by `elot-mode--enable' /
-  ;; `elot-mode--disable' (see elot-mode.org).  Installing it here at
+  ;; `elot-mode--disable' (see elot-mode.el).  Installing it here at
   ;; load time would mutate global state for every Emacs session that
   ;; merely loads ELOT, contrary to MELPA guidance.
 #+end_src

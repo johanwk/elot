@@ -65,7 +65,7 @@
 
 (when elot-missing-dependencies
   (message "ELOT: Optional dependencies missing: %s. Some features will be disabled."
-	   (mapconcat #'symbol-name elot-missing-dependencies ", ")))
+           (mapconcat #'symbol-name elot-missing-dependencies ", ")))
 ;; src-require ends here
 
 ;; [[file:../elot-defs.org::src-defvar][src-defvar]]
