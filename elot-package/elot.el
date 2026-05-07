@@ -70,6 +70,14 @@
 
 ;; [[file:../elot-defs.org::src-defvar][src-defvar]]
 (defvar org-link-abbrev-alist-local)
+;; Declared special so the `let' binding in
+;; `elot--custom-org-babel-execute-sparql' is dynamic, reaching
+;; ob-sparql's IRI-shortening helpers (which read this variable
+;; via dynamic scope).  Without this `defvar', `lexical-binding'
+;; turns the binding into a lexical one — the byte-compiler then
+;; flags it as unused, AND the merged prefix pairs never reach
+;; ob-sparql.  See Decisions log entry 2026-05-07.
+(defvar org-babel-sparql--current-curies)
 ;; src-defvar ends here
 
 ;; [[file:../elot-defs.org::src-settings-externals][src-settings-externals]]

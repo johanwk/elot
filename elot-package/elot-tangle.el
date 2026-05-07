@@ -32,6 +32,12 @@
 
 (require 'cl-lib)
 
+;; `elot-mode-syntax-table' is defined by `elot-mode.el', which itself
+;; requires this file.  Forward-declare to avoid a load cycle and to
+;; silence a byte-compile "free variable" warning in
+;; `elot-tangle-buffer-to-omn'.
+(defvar elot-mode-syntax-table)
+
 (defvar elot-omn-property-keywords
   '(
     "EquivalentTo"
@@ -1153,10 +1159,9 @@ Uses PARENT-URI to automatically emit taxonomy axioms."
               (unless (bolp) (insert "\n\n#\n# Tangle blocks\n#\n"))
               ;; Slurp the contents that `org-babel-tangle` just wrote to disk
               (when (file-exists-p target-full)
-                (let ((start (point)))
-                  (insert-file-contents target-full)
-                  ;; insert-file-contents leaves point at `start`, so we move to the end
-                  (goto-char (point-max))))))
+                (insert-file-contents target-full)
+                ;; insert-file-contents leaves point unchanged, so move to end
+                (goto-char (point-max)))))
           ;; If the .omn file is already open in a buffer, silently revert it
           ;; so Emacs won't prompt "file changed on disk; really edit the buffer?"
           (let ((buf (find-buffer-visiting target-full)))

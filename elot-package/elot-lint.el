@@ -181,7 +181,6 @@ Add warnings or errors to ISSUES at POINT."
                    (string= (elot-context-type) "ontology"))
           (let* ((id (org-entry-get nil "ID"))
                  (localname (elot-context-localname))
-                 (prefix (elot-default-prefix))
                  (omn-args (org-entry-get nil "header-args:omn")))
             (when (or (null id) (string= id ""))
               (push (list (point)

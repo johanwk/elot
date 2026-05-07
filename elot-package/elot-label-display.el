@@ -38,6 +38,24 @@
 (require 'elot-tangle)
 
 (defvar org-link-abbrev-alist-local)
+;; Forward declarations for vars defined in sibling ELOT modules.
+;; These are referenced by helpers in this file but the modules that
+;; own them (`elot-db', `elot-sources') are loaded lazily / optionally,
+;; so we avoid a hard `require' here.  Declaring them silences
+;; byte-compile "reference to free variable" warnings without
+;; affecting runtime behaviour.
+(defvar elot-active-label-sources)
+(defvar elot-db)
+
+;; Forward declarations for functions defined elsewhere.  `json-read-from-string'
+;; lives in the built-in `json' library (loaded on demand).  The SPARQL
+;; helpers come from `elot.el' and the optional `sparql-mode' package.
+;; `elot-prefix-block-from-alist' currently lives in `elot.el' (it will
+;; relocate to `elot-tangle.el' in Milestone 2 Step 2.1).
+(declare-function json-read-from-string "json" (string))
+(declare-function elot-robot-execute-query "elot" (query url format))
+(declare-function sparql-execute-query "ext:sparql-mode")
+(declare-function elot-prefix-block-from-alist "elot" (prefixes format))
 
 (defun elot-org-link-search (&rest strings)
   "Search for an :ID: heading in current buffer.
