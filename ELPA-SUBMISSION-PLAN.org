@@ -920,7 +920,8 @@ unused), and the round-trip test goes green.
   =elot-package/elot-mode.el= are therefore no longer ahead of
   their literate origins; the two sides are back in sync.
 
-*** Verification
+*** DONE Verification
+CLOSED: [2026-05-07 tor. 18:31]
 - =org-babel-tangle= run on =elot-defs.org= and =elot-mode.org=
   produces no =git diff= against =elot-package/elot.el= or
   =elot-package/elot-mode.el=.
@@ -932,20 +933,35 @@ unused), and the round-trip test goes green.
   added to the default =test= goal.  This guards against future
   drift between the literate source and the tangled file.
 
-** Acceptance check
+** DONE Acceptance check
+CLOSED: [2026-05-07 tor. 18:31]
 - An =examples/*.org= file with a SPARQL block containing *no*
   =PREFIX= declarations and *no* =resource-declarations= noweb
   reference executes successfully against a local =.omn= via
   ROBOT and against a remote endpoint.
 - In a fresh Emacs, =(require 'elot)= followed by
-  =(advice--p (advice--symbol-function 'org-babel-execute:sparql))=
-  returns =nil=.  After =M-x elot-mode= in an ELOT org buffer it
-  returns non-nil.  After disabling =elot-mode= in the last
-  remaining ELOT buffer it returns =nil= again.  An ERT test
-  =elot-sparql-advice-lifecycle= under
-  =test/elot-sparql-advice-test.el= encodes this as an automated
-  check: it inspects the advice list before and after toggling
-  =elot-mode= in a temp Org buffer.
+  =(advice-member-p 'elot--custom-org-babel-execute-sparql
+  'org-babel-execute:sparql)= returns =nil=.  After =M-x elot-mode=
+  in an ELOT org buffer it returns non-nil.  After disabling
+  =elot-mode= in the last remaining ELOT buffer it returns =nil=
+  again.  Encoded as automated checks in
+  =test/elot-sparql-advice-test.el=:
+  - =elot-sparql-advice-not-installed-at-load= — asserts the
+    advice is absent right after =(require 'elot)= /
+    =(require 'elot-mode)= top-of-module loads.
+  - =elot-sparql-advice-lifecycle= — toggles =elot-mode= in a
+    temp Org buffer and inspects the advice list before, during,
+    and after.
+  - =elot-sparql-advice-refcount-multi-buffer= — opens two ELOT
+    buffers and confirms the advice survives disabling =elot-mode=
+    in the first one and is only removed when the *last* ELOT
+    buffer toggles off.
+  - =elot-sparql-advice-install-is-idempotent= — defence in depth
+    for the install helper's =elot--sparql-advice-installed-p=
+    guard (a double =advice-add= would chain the =:around=
+    advice twice).
+  Wired into =test/Makefile= as the =sparql-advice-test= target
+  and added to the default =test= goal.  No ROBOT required.
 - =org-babel-execute:sparql= invoked from a non-ELOT org buffer
   behaves identically to upstream =ob-sparql= (no ELOT-specific
   prefix injection, no ROBOT path).
