@@ -1235,7 +1235,7 @@ Rationale:
   deprecation schedule into the MELPA submission, while
   preserving an ergonomic authoring affordance users rely on.
 
-** TODO Step 2.1 - Move =elot-prefix-block-from-alist= to =elot-tangle.el=
+** DONE Step 2.1 - Move =elot-prefix-block-from-alist= to =elot-tangle.el=
 - *Literate sources*: both =.el= files involved here are tangled
   from Org sources and must be edited there, not in the tangled
   output:

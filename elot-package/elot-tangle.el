@@ -741,6 +741,30 @@ Scans the hierarchy for nodes with `:prefixdefs \"yes\"' and adds their
         (setq stack (append children stack))))
     (setq-local org-link-abbrev-alist-local (nreverse new-abbrevs))))
 
+(defun elot-prefix-block-from-alist (prefixes format)
+  "Return a prefix block from PREFIXES for use with filetype FORMAT.
+PREFIXES is an alist of prefixes, from an Org table or
+the standard ORG-LINK-ABBREV-ALIST or ORG-LINK-ABBREV-ALIST-LOCAL.
+FORMAT is a symbol, either `omn', `sparql', or `ttl'."
+  (let ((format-str
+         (cond
+          ((eq format 'omn) "Prefix: %-5s <%s>")
+          ((eq format 'ttl) "@prefix %-5s <%s> .")
+          ((eq format 'sparql) "PREFIX %-5s <%s>"))))
+    (mapconcat (lambda (row)
+                 (let ((prefix-str
+                        (if (string-match-p ":$" (car row))
+                            (car row) (concat (car row) ":")))
+                       (uri-str
+                        (if (listp (cdr row))
+                            (cadr row) ;; comes from org table
+                          (cdr row))))
+                       (format format-str prefix-str uri-str)))
+               (if (equal (car prefixes) '("prefix" . "uri"))
+                   (cdr prefixes)
+                 prefixes)
+                 "\n")))
+
 (defun elot-sanity-check-prefixes ()
   "Ensure level 1 `Prefixes' headings have the required property drawer.
 Silently adds :prefixdefs: yes if missing."

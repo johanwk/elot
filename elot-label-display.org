@@ -72,12 +72,13 @@ This is a safeguard, unclear whether it matters.
 ;; Forward declarations for functions defined elsewhere.  `json-read-from-string'
 ;; lives in the built-in `json' library (loaded on demand).  The SPARQL
 ;; helpers come from `elot.el' and the optional `sparql-mode' package.
-;; `elot-prefix-block-from-alist' currently lives in `elot.el' (it will
-;; relocate to `elot-tangle.el' in Milestone 2 Step 2.1).
+;; `elot-prefix-block-from-alist' is provided by `elot-tangle' (required
+;; above); the declare-function below documents its signature for the
+;; byte-compiler.
 (declare-function json-read-from-string "json" (string))
 (declare-function elot-robot-execute-query "elot" (query url format))
 (declare-function sparql-execute-query "ext:sparql-mode")
-(declare-function elot-prefix-block-from-alist "elot" (prefixes format))
+(declare-function elot-prefix-block-from-alist "elot-tangle" (prefixes format))
 #+end_src
 
 ** Function to be replaced
