@@ -866,17 +866,17 @@ buffer fully uninstalls it.  The advice body itself still guards on
 #+begin_src emacs-lisp
   (defvar elot--sparql-advice-installed-p nil
     "Non-nil when ELOT's around-advice on `org-babel-execute:sparql' is active.
-Managed by `elot-mode--install-sparql-advice' and
-`elot-mode--uninstall-sparql-advice'.")
+  Managed by `elot-mode--install-sparql-advice' and
+  `elot-mode--uninstall-sparql-advice'.")
 
   (defvar elot--sparql-advice-buffer-count 0
     "Number of live buffers in which `elot-mode' is currently enabled.
-When this drops to zero, `elot-mode--uninstall-sparql-advice' removes
-the global advice on `org-babel-execute:sparql'.")
+  When this drops to zero, `elot-mode--uninstall-sparql-advice' removes
+  the global advice on `org-babel-execute:sparql'.")
 
   (defun elot-mode--install-sparql-advice ()
     "Install ELOT's around-advice on `org-babel-execute:sparql'.
-Idempotent: safe to call from every `elot-mode--enable'."
+  Idempotent: safe to call from every `elot-mode--enable'."
     (cl-incf elot--sparql-advice-buffer-count)
     (unless elot--sparql-advice-installed-p
       (when (fboundp 'elot--custom-org-babel-execute-sparql)
@@ -886,7 +886,7 @@ Idempotent: safe to call from every `elot-mode--enable'."
 
   (defun elot-mode--uninstall-sparql-advice ()
     "Remove ELOT's around-advice on `org-babel-execute:sparql' when no
-ELOT buffer is left.  Idempotent."
+  ELOT buffer is left.  Idempotent."
     (when (> elot--sparql-advice-buffer-count 0)
       (cl-decf elot--sparql-advice-buffer-count))
     (when (and elot--sparql-advice-installed-p
