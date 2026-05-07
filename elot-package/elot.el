@@ -1221,18 +1221,12 @@ conducted."
 ;; src-tempo-fwd-declare ends here
 
 ;; [[file:../elot-defs.org::src-hydra-keybinding][src-hydra-keybinding]]
-(defcustom elot-key-open-hydra (kbd "S-<f5>")
-  "Keybinding to open the ELOT hydra."
-  :type 'key-sequence
-  :group 'elot)
-
 (defcustom elot-key-toggle-labels (kbd "<f5>")
   "Keybinding to toggle label display in ELOT buffers."
   :type 'key-sequence
   :group 'elot)
 
 (defun elot-setup-org-keybindings ()
-  (local-set-key elot-key-open-hydra #'elot-hydra/body)
   (local-set-key elot-key-toggle-labels #'elot-toggle-label-display))
 ;; src-hydra-keybinding ends here
 

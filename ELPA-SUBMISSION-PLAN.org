@@ -1040,17 +1040,23 @@ CLOSED: [2026-05-07]
   =elot-key-open-hydra= (the defcustom and the keybinding) are
   removed in Step H.2.
 
-** TODO Step H.2 - Remove the =elot-key-open-hydra= defcustom and binding
+** DONE Step H.2 - Remove the =elot-key-open-hydra= defcustom and binding
 - *Files*: =elot-package/elot.el= (and =elot-defs.org= mirror),
   =elot-package/elot-mode.el= (and =elot-mode.org= mirror).
-- Delete the =defcustom elot-key-open-hydra= form (around line 42877
-  of the byte-compiled file; locate the source via grep).
-- In =elot-setup-org-keybindings= (=elot.el= around line 1257),
-  delete the =(local-set-key elot-key-open-hydra
-  #'elot-hydra/body)= line.
-- In =elot-mode.el=, delete the =S-<f5>= keymap entry that calls
-  =elot-hydra/body= (around line 500, guarded with =fboundp=).
-- *Retain* =elot-key-toggle-labels= and the =F5= keybinding.
+- The =defcustom elot-key-open-hydra= form has been deleted from
+  both =elot-defs.org= (named block =src-hydra-keybinding=) and
+  the tangled =elot.el=.  =elot-key-toggle-labels= and the
+  =elot-setup-org-keybindings= defun are retained, with the
+  latter reduced to a single =local-set-key= for the F5 toggle.
+- In =elot-mode.el= and its literate source =elot-mode.org=
+  (named block =src-mode-keymap=), the conditional =S-<f5>=
+  =define-key= entry that called =elot-hydra/body= has been
+  removed; an inline comment now records that the binding was
+  retired with the hydra.
+- =F5= -> =elot-toggle-label-display= is preserved.
+- =git grep -nE "elot-key-open-hydra|elot-hydra/body"
+  elot-package/= and the same against the literate =.org=
+  sources both return no matches.
 
 ** TODO Step H.3 - Remove hydra from optional-deps machinery
 - *File*: =elot-package/elot.el=.
