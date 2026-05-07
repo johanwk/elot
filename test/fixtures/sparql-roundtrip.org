@@ -85,9 +85,9 @@ We declare ~ex:~ with a different URI, and expect to see it ignored!
 #+end_src
 
 #+RESULTS:
-| OP        | domain | range  |
-|-----------+--------+--------|
-| ex:chases | ex:dog | ex:cat |
+| OP                        | domain                 | range                  |
+|---------------------------+------------------------+------------------------|
+| http://example.org/chases | http://example.org/dog | http://example.org/cat |
 
 
 *** Block 5: CONSTRUCT with ~:format ttl~ and ~kill-prefixes~ in ~:post~ hook
