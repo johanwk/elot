@@ -842,10 +842,10 @@ include the error message for each failing source."
   (setq tabulated-list-sort-key (cons "Source" nil))
   (tabulated-list-init-header))
 
-(defun elot-label--format-time (t)
-  "Format a float-time T for display in the source list."
-  (if (and t (numberp t) (> t 0))
-      (format-time-string "%Y-%m-%d %H:%M" (seconds-to-time t))
+(defun elot-label--format-time (time)
+  "Format a float-time TIME for display in the source list."
+  (if (and time (numberp time) (> time 0))
+      (format-time-string "%Y-%m-%d %H:%M" (seconds-to-time time))
     "-"))
 
 (defun elot-label--build-entries ()

@@ -899,7 +899,10 @@ Semantics, formally:
                 (org-babel-sparql-convert-to-table)))
              (t (buffer-string))))))))
 
-  (advice-add 'org-babel-execute:sparql :around #'elot--custom-org-babel-execute-sparql)
+  ;; The advice is installed and removed by `elot-mode--enable' /
+  ;; `elot-mode--disable' (see elot-mode.org).  Installing it here at
+  ;; load time would mutate global state for every Emacs session that
+  ;; merely loads ELOT, contrary to MELPA guidance.
 #+end_src
 *** Passthrough execute for ttl blocks
 To get the ttl block to process correctly, for rdfpuml use.

@@ -783,7 +783,10 @@ In an ELOT buffer the advice:
               (org-babel-sparql-convert-to-table)))
            (t (buffer-string))))))))
 
-(advice-add 'org-babel-execute:sparql :around #'elot--custom-org-babel-execute-sparql)
+;; The advice is installed and removed by `elot-mode--enable' /
+;; `elot-mode--disable' (see elot-mode.el).  Installing it here at
+;; load time would mutate global state for every Emacs session that
+;; merely loads ELOT, contrary to MELPA guidance.
 ;; src-sparql-exec-patch ends here
 
 ;; [[file:../elot-defs.org::src-babel-passthrough][src-babel-passthrough]]

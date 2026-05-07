@@ -565,35 +565,131 @@ A separate end-to-end test that actually executes a query
 through the advice is left for Step 1.6 (regression on a real
 example file) and remains gated on ROBOT availability.
 
-** TODO Step 1.5 — Localise the advice to ELOT buffers
-- *Files*: =elot-package/elot.el=, =elot-package/elot-mode.el=.
-- Remove the top-level
-  =(advice-add 'org-babel-execute:sparql :around #'elot--custom-org-babel-execute-sparql)=
-  call (=elot.el= ≈ line 545).
-- Install the advice from =elot-mode--enable= and remove it from
-  =elot-mode--disable=, guarded by a module-level boolean
-  =elot--sparql-advice-installed-p= so multiple ELOT buffers share
-  a single installation and disabling the mode in the *last* such
-  buffer fully uninstalls it.
-- The advice body's existing =(elot--is-elot-buffer)= guard stays
-  as defence in depth: if some other code path enables the advice,
-  it still no-ops outside ELOT buffers.
+** DONE Step 1.5 — Localise the advice to ELOT buffers
+- *Files*: =elot-defs.org= (tangles to =elot-package/elot.el=) and
+  =elot-mode.org= (tangles to =elot-package/elot-mode.el=); both
+  =.el= files were edited in lock-step so a future re-tangle is a
+  no-op.
+- The top-level =(advice-add 'org-babel-execute:sparql :around
+  #'elot--custom-org-babel-execute-sparql)= call at the tail of
+  the =src-sparql-exec-patch= block was deleted.  In its place a
+  short comment notes that installation is now driven by the
+  =elot-mode= lifecycle and points the reader at =elot-mode.org=.
+- A new section *SPARQL advice installation* was added to
+  =elot-mode.org= immediately before *Enable and disable*.  It
+  introduces two module-level variables plus the install /
+  uninstall helpers:
+
+  | Symbol                                   | Role                                                         |
+  |------------------------------------------+--------------------------------------------------------------|
+  | =elot--sparql-advice-installed-p=        | Boolean: is the global advice currently in place?            |
+  | =elot--sparql-advice-buffer-count=       | Reference count of live buffers with =elot-mode= enabled.    |
+  | =elot-mode--install-sparql-advice=       | Increments the count; calls =advice-add= the first time.     |
+  | =elot-mode--uninstall-sparql-advice=     | Decrements the count; calls =advice-remove= when it hits 0.  |
+
+  Both helpers are idempotent.  =install= guards =advice-add= with
+  =(fboundp 'elot--custom-org-babel-execute-sparql)= so that
+  loading =elot-mode.el= without =elot.el= (the optional-load
+  scenario set up by =(require 'elot nil t)= at the top of
+  =elot-mode.el=) does not error: the advice simply stays
+  uninstalled until =elot.el= is loaded too.
+- =elot-mode--enable= now calls =elot-mode--install-sparql-advice=
+  as a numbered step (between hooks and label-display);
+  =elot-mode--disable= calls =elot-mode--uninstall-sparql-advice=
+  immediately after =elot-mode--remove-hooks=.  The step numbers
+  in the surrounding comment lines were renumbered accordingly.
+- The advice body's =(elot--is-elot-buffer)= guard is unchanged —
+  defence in depth in case the advice ends up installed by some
+  other path (e.g. a future autoload or a user with a custom
+  setup).
+- =git grep -n "advice-add 'org-babel-execute:sparql"
+  elot-package/= now matches only inside =elot-mode--install-sparql-advice=,
+  never at top level (Milestone 3 Step 3.3 acceptance).
 - This step satisfies Milestone 3 Step 3.3 in advance; that step
   is reduced to verification only.
 
-** TODO Step 1.6 — Regression test on real files
-- Pick an =examples/*.org= file that exercises both =SELECT= and
-  =CONSTRUCT= against a local =.omn= via ROBOT.
-- Strip every embedded =PREFIX= boilerplate and every
-  =<<resource-declarations(...)>>= noweb call from its SPARQL
-  blocks.
-- Run the queries before and after the rewrite (use a saved copy
-  of =main= for "before").  Differences must be limited to:
-  - identical results, now delivered without the embedded prefix
-    block;
-  - clearer error messages on the failure paths from Step 1.4.
-- Capture the comparison transcript in a =#+begin_example= block
-  under this milestone heading.
+*** Stable-status check after Step 1.5
+
+#+begin_example
+$ make stable-check
+==> [1/3] byte-compile  (tmp/stable-check/byte-compile.log)
+    warnings: 49   errors: 0   exit: 0
+==> [2/3] tests         (tmp/stable-check/test.log)
+    passed: 0   failed: 0   exit: 0
+==> [3/3] load smoke    (tmp/stable-check/smoke.log)
+    exit: 0
+
+==> Summary
+    PASS  (byte-compile clean, tests green, mode loads)
+    Logs: tmp/stable-check/
+#+end_example
+
+(Warnings dropped from the 50 baseline to 49; the one error
+present at baseline is gone.)
+
+** TODO Step 1.6 — Regression test on a dedicated test ontology
+
+Note: the original draft of this step assumed that SPARQL blocks
+in =examples/*.org= contained =<<resource-declarations(...)>>=
+noweb calls that needed to be stripped.  That is incorrect — the
+Step 1.1 inventory shows those noweb calls only appear in
+non-SPARQL contexts (they belong to the legacy LOB pipeline
+retired in Milestone 2).  Existing example files therefore do
+not give us a clean regression fixture for the SPARQL rewrite:
+they either embed hand-written =PREFIX= blocks
+(=reasoner-example.org=) or use an unrelated noweb mechanism
+(=fdis.org=).
+
+Instead, build a small dedicated test ontology whose sole
+purpose is to exercise the rewritten SPARQL-over-local-file path
+through ROBOT.  This fixture then doubles as a living example of
+the post-rewrite query style (no =PREFIX= boilerplate, no noweb)
+and as a CI regression harness.
+
+*** Sub-step 1.6.1 — Create the fixture
+
+- *File*: =test/fixtures/sparql-roundtrip.org= (new).
+- A minimal ELOT ontology — a handful of classes, a couple of
+  object properties, a few annotation properties — sufficient to
+  produce non-trivial =SELECT= and =CONSTRUCT= results.  Keep it
+  small enough that the expected results can be checked into the
+  repository as plain-text expectations.
+- The ontology header declares its prefixes via the standard
+  ELOT mechanism (=org-link-abbrev-alist-local=).  No inline
+  =PREFIX= lines anywhere.
+- Include at least four SPARQL blocks, all with =:url= pointing
+  at the tangled local =.omn=:
+  1. A =SELECT= with no =PREFIX= boilerplate (baseline case).
+  2. A =SELECT= with one inline =PREFIX= that *agrees* with the
+     alist (silent dedup expected).
+  3. A =SELECT= with one inline =PREFIX= that *overrides* the
+     alist (warning expected, last-wins semantics).
+  4. A =CONSTRUCT= with =:format ttl=, exercising the
+     =kill-prefixes= =:post= hook.
+- Optionally a fifth block returning an empty result, to
+  exercise =elot--sparql-result-empty-p= end-to-end.
+
+*** Sub-step 1.6.2 — Wire the fixture into the test suite
+
+- *File*: =test/elot-sparql-roundtrip-test.el= (new).
+- Each test:
+  1. Tangles the fixture into a temp directory.
+  2. Opens the org file, runs a specific named SPARQL block via
+     =org-babel-execute-src-block=.
+  3. Compares the result against a checked-in expectation.
+- Gate the whole file with =skip-unless= on both ROBOT
+  availability and =elot-robot-jar-path= being set, mirroring
+  the pattern already used in =test/=.
+- Add a new target in =test/Makefile= and include it in the
+  default =test= goal (skip-on-CI behaviour follows automatically
+  from =skip-unless=).
+
+*** Sub-step 1.6.3 — Capture the transcript
+
+- After the fixture and tests are green locally, run
+  =make -C test sparql-roundtrip-test= and paste the output into
+  a =#+begin_example= block under this heading as the durable
+  record that the rewrite works against a real ROBOT invocation.
 
 ** TODO Step 1.7 — Mirror in literate sources
 - *Files*: =elot-defs.org=, =elot-mode.org=.

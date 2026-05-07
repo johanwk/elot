@@ -665,6 +665,38 @@ or `xsd:integer' on a column header will be applied to values."
   (remove-hook 'after-save-hook #'elot-slurp-to-vars t)
   (remove-hook 'xref-backend-functions #'elot-xref-backend t))
 
+(defvar elot--sparql-advice-installed-p nil
+  "Non-nil when ELOT's around-advice on `org-babel-execute:sparql' is active.
+Managed by `elot-mode--install-sparql-advice' and
+`elot-mode--uninstall-sparql-advice'.")
+
+(defvar elot--sparql-advice-buffer-count 0
+  "Number of live buffers in which `elot-mode' is currently enabled.
+When this drops to zero, `elot-mode--uninstall-sparql-advice' removes
+the global advice on `org-babel-execute:sparql'.")
+
+(defun elot-mode--install-sparql-advice ()
+  "Install ELOT's around-advice on `org-babel-execute:sparql'.
+Idempotent: safe to call from every `elot-mode--enable'."
+  (cl-incf elot--sparql-advice-buffer-count)
+  (unless elot--sparql-advice-installed-p
+    (when (fboundp 'elot--custom-org-babel-execute-sparql)
+      (advice-add 'org-babel-execute:sparql :around
+                  #'elot--custom-org-babel-execute-sparql)
+      (setq elot--sparql-advice-installed-p t))))
+
+(defun elot-mode--uninstall-sparql-advice ()
+  "Remove ELOT's around-advice on `org-babel-execute:sparql' when no
+ELOT buffer is left.  Idempotent."
+  (when (> elot--sparql-advice-buffer-count 0)
+    (cl-decf elot--sparql-advice-buffer-count))
+  (when (and elot--sparql-advice-installed-p
+             (<= elot--sparql-advice-buffer-count 0))
+    (advice-remove 'org-babel-execute:sparql
+                   #'elot--custom-org-babel-execute-sparql)
+    (setq elot--sparql-advice-installed-p nil
+          elot--sparql-advice-buffer-count 0)))
+
 (defun elot-mode--enable ()
     "Set up ELOT in the current Org buffer."
     ;; Guard: elot-mode is only meaningful inside Org-mode buffers.
@@ -694,10 +726,13 @@ or `xsd:integer' on a column header will be applied to values."
     ;; 5. Hooks
     (elot-mode--add-hooks)
 
-    ;; 6. Label-display: set up immediately (with size-gated prompt)
+    ;; 6. SPARQL advice (global, but reference-counted across ELOT buffers)
+    (elot-mode--install-sparql-advice)
+
+    ;; 7. Label-display: set up immediately (with size-gated prompt)
     (elot-mode--maybe-setup-labels)
 
-    ;; 7. Set initial fold visibility
+    ;; 8. Set initial fold visibility
     (org-cycle-set-startup-visibility))
 
   (defun elot-mode--maybe-setup-labels ()
@@ -719,12 +754,15 @@ In batch mode (`noninteractive'), skip label-display entirely."
     ;; 1. Remove hooks
     (elot-mode--remove-hooks)
 
-    ;; 2. Remove label-display overlays
+    ;; 2. SPARQL advice (uninstall when this is the last ELOT buffer)
+    (elot-mode--uninstall-sparql-advice)
+
+    ;; 3. Remove label-display overlays
     (when (fboundp 'elot-remove-prop-display)
       (with-silent-modifications
         (elot-remove-prop-display)))
 
-    ;; 3. Restore syntax table
+    ;; 4. Restore syntax table
     (set-syntax-table org-mode-syntax-table))
 
 ;;;###autoload
