@@ -713,14 +713,14 @@ registered).  DATA-SOURCE defaults to the empty-string sentinel."
   "Replace DB records for (SOURCE, DATA-SOURCE) with DATA.
 DATA is a list of (ID LABEL PLIST) triples, where PLIST is a flat
 list of \"prop\" \"value\" pairs and may also contain a
-`:kind' keyword whose value ('uri' / 'curie' / 'unknown') is
+`:kind' keyword whose value (\"uri\" / \"curie\" / \"unknown\") is
 written to `entities.kind' (the `:kind' pair is *not* written to
 `attributes').
 
 A PLIST value may also be a two-element list (VALUE LANG) carrying
 an explicit language tag; in that case LANG is written to the new
 `attributes.lang' column (Step 1.16.3).  Bare-string values write
-`lang = '''.  DATA-SOURCE is nil or the empty-string sentinel
+`lang = \='\='''.  DATA-SOURCE is nil or the empty-string sentinel
 for non-SPARQL sources; a local file path or endpoint URL for
 SPARQL sources.  TYPE is e.g. \"org\", \"csv\", \"tsv\", \"ttl\",
 \"rq\".  FILE-MTIME is stored as `last_modified' (0.0 if nil).
