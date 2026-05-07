@@ -1124,6 +1124,61 @@ CLOSED: [2026-05-07]
 :CUSTOM_ID: milestone-2-legacy-cleanup
 :END:
 
+** Difficulty review (2026-05-07, before starting)
+
+Pre-flight grep over =elot-package/= and =examples/= confirmed:
+
+1. *Every* legacy function listed in Step 2.3 is unreferenced
+   anywhere in the package (no call sites in =elot-package/=,
+   none in =examples/*.org=).  Their only remaining "callers" are
+   the named blocks =resource-declarations= and
+   =resource-taxonomy= in =elot-lob.org=, which are themselves
+   not invoked by any file in the repo (no =#+call:
+   resource-declarations=, no =<<resource-declarations(...)>>=
+   noweb references in any =examples/*.org=).  Deletion in
+   Step 2.3 is therefore mechanical and safe.
+
+2. Both call sites of =elot-prefix-block-from-alist=
+   (=elot-label-display.el= line 173 and the rewritten SPARQL
+   advice in =elot.el=) already =(require 'elot-tangle)=
+   transitively.  Step 2.1's "verify with byte-compile" caveat
+   about new requires is moot - no new =require= is needed.
+
+3. =kill-prefixes= in =elot-lob.org= is pure Elisp string
+   substitution.  It does *not* reference any function being
+   deleted in Step 2.3.  With Step 2.5.3's auto-ingest of
+   =elot-lob.org= on =elot-mode= enable, =kill-prefixes=
+   continues to work without any reimplementation.  The original
+   framing of Sub-step 2.5.1 as a *prerequisite* was incorrect;
+   it is at most a nice-to-have follow-up and can be dropped
+   from this milestone.
+
+4. Because the retired LOB blocks =resource-declarations= /
+   =resource-taxonomy= (a) are not referenced anywhere and
+   (b) would signal =void-function= immediately if invoked
+   (their helper defuns are gone after Step 2.3), the "keep
+   them inert" stance in the original Sub-step 2.5.2 buys
+   nothing.  Cleaner to *delete* those two named blocks from
+   =elot-lob.org= outright.  The rest of =elot-lob.org=
+   (=rdfpuml-block=, =kill-prefixes=, theme/setupfile helpers,
+   etc.) stays exactly as it is.
+
+Net effect on the plan:
+
+- Step 2.1 stays as written (it is in fact trivial).
+- Step 2.3 stays as written (verified safe).
+- Sub-step 2.5.1 is *demoted* from "prerequisite" to "optional
+  follow-up, out of scope for the MELPA submission" - the tempo
+  template is left calling the LOB =kill-prefixes= name so
+  existing user files keep working unchanged.
+- Sub-step 2.5.2 is *narrowed*: instead of marking the two
+  legacy pipeline blocks RETIRED-but-inert, simply *delete*
+  them from =elot-lob.org=.  The "supported half" labelling
+  exercise still applies to the rest of the file.
+
+The edits below in Steps 2.5.1 and 2.5.2 reflect this; the
+acceptance check is unchanged.
+
 ** Background
 
 =elot-package/elot.el= still contains ~20 functions left over from
@@ -1264,37 +1319,37 @@ part of the MELPA recipe's =:files= list (Milestone 7 Step 7.1).
 It contains two conceptually different sets of named blocks; this
 step makes that split explicit and wires up the supported half.
 
-*** Sub-step 2.5.1 - Reimplement =kill-prefixes= as Elisp (prerequisite)
+*** Sub-step 2.5.1 - (Optional follow-up, deferred) Reimplement =kill-prefixes= as Elisp
 
-- =kill-prefixes= is referenced from =elot-block-sparql-construct=
-  as =:post kill-prefixes(data=*this*)=.  =:post= hooks have a
-  different evaluation model from =#+call:= and a real Elisp
-  function is cleaner there.
-- *File*: add =elot-kill-prefixes (data)= as a regular defun in
-  =elot-tangle.el= (or a small new module if cleaner).  Behaviour:
-  strip leading =@prefix= / =PREFIX= declarations from a TTL
-  string.
-- Update the =elot-block-sparql-construct= tempo template's
-  =:post= hook in =elot-mode.el= to call the new function
-  (=:post elot-kill-prefixes(data=*this*)=).  Mirror in
-  =elot-mode.org=.
-- Add an ERT test confirming the function strips both Turtle
-  =@prefix= and SPARQL =PREFIX= declarations and leaves the
-  remaining body untouched.
+Deferred out of Milestone 2 by the difficulty review above.
+=kill-prefixes= as it stands is a one-line Elisp =:var data=...=
+LOB block; with Sub-step 2.5.3 auto-ingesting =elot-lob.org= on
+=elot-mode= enable, it continues to work without any change.
+Reimplementing it as =elot-kill-prefixes= and rewriting the
+=:post= hook in =elot-block-sparql-construct= remains a
+desirable cleanup (it would let the tempo template work even in
+buffers where LOB ingestion has not happened) but is *not* a
+blocker for the MELPA submission and not a prerequisite for
+deleting the legacy pipeline functions.  Tracked as a
+post-submission item.
 
-*** Sub-step 2.5.2 - Annotate the retired blocks in =elot-lob.org=
+*** Sub-step 2.5.2 - Delete the two legacy pipeline blocks from =elot-lob.org=
 
 - *File*: =elot-package/elot-lob.org=.
-- Add a top-of-file comment explaining the file is retained and
-  is part of ELOT's supported API for =#+call:=-style helpers.
-- Mark the legacy pipeline blocks (=resource-declarations=,
-  =resource-taxonomy=, and any other blocks tied to the retired
-  LOB pipeline) with a clear "RETIRED - kept inert so that old
-  example files still open without =org-babel-tangle= errors.
-  Do not invoke from new code." note.  Do *not* delete them.
-- Identify and label the *supported* blocks (=rdfpuml-block=,
-  any other =#+call:=-style helpers worth keeping).  Promote
-  these to ELOT's documented API.
+- Delete the two named blocks tied to the retired pipeline:
+  =resource-declarations= (around line 5) and =resource-taxonomy=
+  (around line 10).  Their bodies call functions that Step 2.3
+  is removing, so leaving them in place would produce
+  =void-function= the moment anyone invoked them.  They have no
+  callers in the repository (verified by grep over
+  =examples/*.org= and =elot-package/=), so deletion is safe.
+- Add a top-of-file comment explaining that =elot-lob.org= is
+  retained and is part of ELOT's supported API for
+  =#+call:=-style helpers (=rdfpuml-block=, =kill-prefixes=,
+  theme/setupfile helpers, =robot-metrics=, etc.).
+- No "RETIRED but kept inert" annotation is needed: with the
+  two pipeline blocks gone, every remaining named block in
+  =elot-lob.org= is supported.
 
 *** Sub-step 2.5.3 - Auto-ingest supported LOB on =elot-mode= enable
 
@@ -1338,7 +1393,10 @@ step makes that split explicit and wires up the supported half.
   working diagram via the =rdfpuml:my-construct= block in a
   fresh Emacs (no manual =org-babel-lob-ingest= needed once
   =elot-mode= is enabled).
-- =elot-kill-prefixes= ERT test passes.
+- A =:post kill-prefixes(data=*this*)= hook in a CONSTRUCT block
+  still strips =@prefix= declarations from the result (covered
+  by Block 5 of the SPARQL round-trip fixture in Milestone 1
+  Sub-step 1.6.2; re-run that test to confirm).
 - =elot-lob.org= is still listed in the MELPA recipe =:files=
   (Milestone 7 Step 7.1) - confirm the recipe text contains it
   with the explanatory comment.
