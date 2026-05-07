@@ -908,12 +908,29 @@ unused), and the round-trip test goes green.
 - Re-run =make -C test sparql-roundtrip-test= and replace the
   partial transcript above with the full clean run.
 
-** TODO Step 1.7 — Mirror in literate sources
+** DONE Step 1.7 — Mirror in literate sources
 - *Files*: =elot-defs.org=, =elot-mode.org=.
-- Update the source blocks for every function/template/advice
-  touched above so that =org-babel-tangle= reproduces the new
-  =.el= contents exactly.  =git diff= after a clean tangle must
-  show no further changes.
+- The source blocks for every function/template/advice touched
+  in Steps 1.2–1.5 (the prefix-merge helpers, the hardened
+  advice and =elot-robot-execute-query=, the SPARQL-advice
+  install/uninstall lifecycle, and the regexp fix from Sub-step
+  1.6.3) were updated *manually* in the literate sources so that
+  re-tangling now produces the existing =.el= files byte-for-byte.
+- The hand-edits in =elot-package/elot.el= and
+  =elot-package/elot-mode.el= are therefore no longer ahead of
+  their literate origins; the two sides are back in sync.
+
+*** Verification
+- =org-babel-tangle= run on =elot-defs.org= and =elot-mode.org=
+  produces no =git diff= against =elot-package/elot.el= or
+  =elot-package/elot-mode.el=.
+- A new ERT test =elot-defs-tangle-roundtrip= under
+  =test/elot-tangle-roundtrip-test.el= asserts this
+  automatically: it tangles each =.org= file in a temp directory
+  and =diff='s the output against the checked-in =.el=.  Wired
+  into =test/Makefile= as the =tangle-roundtrip-test= target and
+  added to the default =test= goal.  This guards against future
+  drift between the literate source and the tangled file.
 
 ** Acceptance check
 - An =examples/*.org= file with a SPARQL block containing *no*
@@ -924,10 +941,16 @@ unused), and the round-trip test goes green.
   =(advice--p (advice--symbol-function 'org-babel-execute:sparql))=
   returns =nil=.  After =M-x elot-mode= in an ELOT org buffer it
   returns non-nil.  After disabling =elot-mode= in the last
-  remaining ELOT buffer it returns =nil= again.
+  remaining ELOT buffer it returns =nil= again.  An ERT test
+  =elot-sparql-advice-lifecycle= under
+  =test/elot-sparql-advice-test.el= encodes this as an automated
+  check: it inspects the advice list before and after toggling
+  =elot-mode= in a temp Org buffer.
 - =org-babel-execute:sparql= invoked from a non-ELOT org buffer
   behaves identically to upstream =ob-sparql= (no ELOT-specific
   prefix injection, no ROBOT path).
+- Tangle round-trip is clean: =make -C test tangle-roundtrip-test=
+  passes (Step 1.7 verification).
 - Run the [[#stable-status][stable-status checklist]].
 
 * Milestone 2 — Resolve legacy =elot.el= LOB pipeline
