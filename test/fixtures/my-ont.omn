@@ -1,0 +1,129 @@
+## Prefixes
+Prefix: owl:  <http://www.w3.org/2002/07/owl#>
+Prefix: rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+Prefix: xml:  <http://www.w3.org/XML/1998/namespace>
+Prefix: xsd:  <http://www.w3.org/2001/XMLSchema#>
+Prefix: rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+Prefix: skos: <http://www.w3.org/2004/02/skos/core#>
+Prefix: pav:  <http://purl.org/pav/>
+Prefix: foaf: <http://xmlns.com/foaf/0.1/>
+Prefix: dc:   <http://purl.org/dc/elements/1.1/>
+Prefix: dcterms: <http://purl.org/dc/terms/>
+Prefix: prov: <http://www.w3.org/ns/prov#>
+Prefix: iof-av: <https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/>
+Prefix: ex:   <http://example.org/>
+Prefix: exo:  <http://example.org/ont/>
+
+Ontology: exo:my-ont exo:my-ont/0.0
+    Annotations: 
+        rdfs:label "my-ont ontology",
+        owl:versionInfo "0.0 start of my-ont",
+        dcterms:title "my-ont ontology"@en,
+        owl:versionInfo "0.0 start of my-ont",
+        pav:lastUpdateOn "2026-05-07T13:18:55Z"^^xsd:dateTime,
+        dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/>,
+        dcterms:creator "John Doe",
+        dcterms:modified "2026-05-07"^^xsd:date,
+        dcterms:publisher <https://example.org/thepublisher>,
+        dc:rights "Copyright info here",
+        dcterms:description "The my-ont ontology is ...",
+        rdfs:comment "The my-ont ontology is ..."
+
+Class: ex:animal
+    Annotations: 
+        rdfs:label "Animal",
+        iof-av:naturalLanguageDefinition "A living organism",
+        iof-av:isPrimitive "true"^^xsd:boolean,
+        iof-av:primitiveRationale "It's so basic",
+        skos:example "mouse, elephant"
+
+Class: ex:dog
+    Annotations: 
+        rdfs:label "Dog",
+        iof-av:naturalLanguageDefinition "A domesticated carnivorous mammal",
+        iof-av:isPrimitive "true"^^xsd:boolean,
+        iof-av:primitiveRationale "",
+        skos:example ""
+    SubClassOf: ex:animal
+
+Class: ex:cat
+    Annotations: 
+        rdfs:label "Cat",
+        iof-av:naturalLanguageDefinition "",
+        iof-av:isPrimitive "true"^^xsd:boolean,
+        iof-av:primitiveRationale "",
+        skos:example ""
+    SubClassOf: ex:animal
+
+Class: ex:snake
+    Annotations: 
+        rdfs:label "Snake",
+        iof-av:naturalLanguageDefinition "",
+        iof-av:isPrimitive "true"^^xsd:boolean,
+        iof-av:primitiveRationale "",
+        skos:example ""
+    SubClassOf: ex:animal
+
+ObjectProperty: ex:chases
+    Annotations: 
+        rdfs:label "chases",
+        iof-av:naturalLanguageDefinition "x chases y iff ...",
+        skos:example "Fido chases Max"
+    Domain: ex:dog
+    Range: ex:cat
+
+AnnotationProperty: owl:versionInfo
+
+AnnotationProperty: dcterms:title
+    Annotations: 
+        rdfs:isDefinedBy <http://purl.org/dc/terms/>
+
+AnnotationProperty: dcterms:license
+    Annotations: 
+        rdfs:isDefinedBy <http://purl.org/dc/terms/>
+
+AnnotationProperty: dcterms:creator
+    Annotations: 
+        rdfs:isDefinedBy <http://purl.org/dc/terms/>
+
+AnnotationProperty: dcterms:modified
+    Annotations: 
+        rdfs:isDefinedBy <http://purl.org/dc/terms/>
+
+AnnotationProperty: dcterms:publisher
+    Annotations: 
+        rdfs:isDefinedBy <http://purl.org/dc/terms/>
+
+AnnotationProperty: dcterms:description
+    Annotations: 
+        rdfs:isDefinedBy <http://purl.org/dc/terms/>
+
+AnnotationProperty: dc:rights
+    Annotations: 
+        rdfs:isDefinedBy <http://purl.org/dc/elements/1.1/>
+
+AnnotationProperty: skos:example
+    Annotations: 
+        rdfs:isDefinedBy <http://www.w3.org/2004/02/skos/core>
+
+AnnotationProperty: pav:lastUpdateOn
+    Annotations: 
+        rdfs:isDefinedBy <http://purl.org/pav/>
+
+AnnotationProperty: iof-av:isPrimitive
+    Annotations: 
+        rdfs:isDefinedBy <https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary>
+
+AnnotationProperty: skos:definition
+    Annotations: 
+        rdfs:isDefinedBy <http://www.w3.org/2004/02/skos/core>
+
+AnnotationProperty: iof-av:naturalLanguageDefinition
+    Annotations: 
+        rdfs:isDefinedBy <https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/>
+    SubPropertyOf: skos:definition
+
+AnnotationProperty: iof-av:primitiveRationale
+    Annotations: 
+        rdfs:isDefinedBy <https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/>
+    SubPropertyOf: skos:definition
