@@ -547,11 +547,13 @@ non-zero.  Query and result I/O are forced to UTF-8 end-to-end."
 
 ;; [[file:../elot-defs.org::src-sparql-merge-prefixes][src-sparql-merge-prefixes]]
 (defconst elot--sparql-prefix-line-re
-  "\\`[ \t]*PREFIX[ \t]+\\([^[:space:]:]+\\):[ \t]*<\\([^>]*\\)>[ \t]*\\'"
+  "\\`[ \t]*PREFIX[ \t]+\\([^[:space:]:]+\\):[ \t]*<\\([^>]*\\)>[ \t]*\\(?:#.*\\)?\\'"
   "Regexp matching a single SPARQL 1.1 PREFIX declaration line.
 The keyword match is intended to be used with `case-fold-search'
 bound to t.  Submatch 1 is the prefix label (without the colon);
-submatch 2 is the IRI (without the angle brackets).")
+submatch 2 is the IRI (without the angle brackets).  An optional
+trailing SPARQL line-comment (\"# ...\" to end of line) after the
+closing `>' is tolerated and ignored.")
 
 (defun elot--sparql-normalise-label (s)
   "Strip a single trailing colon from prefix label S, if present."

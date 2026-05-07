@@ -2,12 +2,12 @@ EMACS ?= emacs
 
 PACKAGE_DIR := ../elot-package
 
-.PHONY: all test db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-14-test step-1-15-test step-1-16-1-test step-1-16-2-test step-1-16-3-test step-1-16-4-test step-1-16-5-test step-1-16-6-test step-1-16-7-test step-1-16-8-test step-2-1-test sparql-merge-prefixes-test sparql-exec-helpers-test golden-test clean help
+.PHONY: all test db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-14-test step-1-15-test step-1-16-1-test step-1-16-2-test step-1-16-3-test step-1-16-4-test step-1-16-5-test step-1-16-6-test step-1-16-7-test step-1-16-8-test step-2-1-test sparql-merge-prefixes-test sparql-exec-helpers-test sparql-roundtrip-test golden-test clean help
 
 all: test
 
 # Run the full ELOT ERT test suite.
-test: db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-14-test step-1-15-test step-1-16-1-test step-1-16-2-test step-1-16-3-test step-1-16-4-test step-1-16-5-test step-1-16-6-test step-1-16-7-test step-1-16-8-test step-2-1-test sparql-merge-prefixes-test sparql-exec-helpers-test golden-test
+test: db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-14-test step-1-15-test step-1-16-1-test step-1-16-2-test step-1-16-3-test step-1-16-4-test step-1-16-5-test step-1-16-6-test step-1-16-7-test step-1-16-8-test step-2-1-test sparql-merge-prefixes-test sparql-exec-helpers-test sparql-roundtrip-test golden-test
 
 # Step 1.1 tests: SQLite DB layer.
 db-test:
@@ -309,6 +309,18 @@ sparql-exec-helpers-test:
 	  -l elot-sparql-exec-helpers-test.el \
 	  -f ert-run-tests-batch-and-exit
 
+# ELPA-SUBMISSION-PLAN.org Milestone 1, Sub-step 1.6.2: end-to-end
+# regression for the rewritten SPARQL advice against a real ROBOT
+# invocation, driven by test/fixtures/sparql-roundtrip.org.
+# ROBOT-gated: tests skip cleanly when ROBOT is absent.
+sparql-roundtrip-test:
+	$(EMACS) --batch \
+	  -L $(PACKAGE_DIR) \
+	  -L . \
+	  -l ert \
+	  -l elot-sparql-roundtrip-test.el \
+	  -f ert-run-tests-batch-and-exit
+
 clean:
 	rm -f *.elc
 
@@ -345,6 +357,7 @@ help:
 	@echo "               (set ELOT_GOLDEN_REGEN=1 to regenerate the goldens)"
 	@echo "  sparql-merge-prefixes-test run test/elot-sparql-merge-prefixes-test.el (Milestone 1 Step 1.2)"
 	@echo "  sparql-exec-helpers-test run test/elot-sparql-exec-helpers-test.el (Milestone 1 Step 1.4)"
+	@echo "  sparql-roundtrip-test run test/elot-sparql-roundtrip-test.el (Milestone 1 Sub-step 1.6.2)"
 	@echo "  clean        remove compiled artifacts"
 	@echo "  help         show this help"
 	@echo ""
