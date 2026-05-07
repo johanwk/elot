@@ -215,7 +215,7 @@ Baseline written:
   /tmp/elot-baseline-symbols.txt
 #+end_example
 
-* Milestone 1 — Rewrite SPARQL support
+* DONE Milestone 1 — Rewrite SPARQL support
 :PROPERTIES:
 :CUSTOM_ID: milestone-1-sparql
 :END:
@@ -627,7 +627,8 @@ $ make stable-check
 (Warnings dropped from the 50 baseline to 49; the one error
 present at baseline is gone.)
 
-** TODO Step 1.6 — Regression test on a dedicated test ontology
+** DONE Step 1.6 — Regression test on a dedicated test ontology
+CLOSED: [2026-05-07 tor. 18:48]
 
 Note: the original draft of this step assumed that SPARQL blocks
 in =examples/*.org= contained =<<resource-declarations(...)>>=
