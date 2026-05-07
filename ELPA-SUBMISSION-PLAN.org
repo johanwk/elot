@@ -646,43 +646,98 @@ through ROBOT.  This fixture then doubles as a living example of
 the post-rewrite query style (no =PREFIX= boilerplate, no noweb)
 and as a CI regression harness.
 
-*** Sub-step 1.6.1 — Create the fixture
+*** DONE Sub-step 1.6.1 — Create the fixture
 
 - *File*: =test/fixtures/sparql-roundtrip.org= (new).
-- A minimal ELOT ontology — a handful of classes, a couple of
-  object properties, a few annotation properties — sufficient to
-  produce non-trivial =SELECT= and =CONSTRUCT= results.  Keep it
-  small enough that the expected results can be checked into the
-  repository as plain-text expectations.
-- The ontology header declares its prefixes via the standard
-  ELOT mechanism (=org-link-abbrev-alist-local=).  No inline
-  =PREFIX= lines anywhere.
-- Include at least four SPARQL blocks, all with =:url= pointing
-  at the tangled local =.omn=:
-  1. A =SELECT= with no =PREFIX= boilerplate (baseline case).
-  2. A =SELECT= with one inline =PREFIX= that *agrees* with the
-     alist (silent dedup expected).
-  3. A =SELECT= with one inline =PREFIX= that *overrides* the
-     alist (warning expected, last-wins semantics).
-  4. A =CONSTRUCT= with =:format ttl=, exercising the
-     =kill-prefixes= =:post= hook.
-- Optionally a fifth block returning an empty result, to
-  exercise =elot--sparql-result-empty-p= end-to-end.
+- The fixture is a minimal ELOT ontology (=my-ont=) declaring
+  four classes (=ex:animal= and three subclasses =ex:dog=,
+  =ex:cat=, =ex:snake=), one object property (=ex:chases=) with
+  domain/range, and the usual ELOT annotation-property scaffold.
+  Prefixes are declared via the standard =prefix-table=
+  (=org-link-abbrev-alist-local=); no inline =PREFIX= lines in
+  the ontology body.
+- The fixture contains *seven* SPARQL blocks (the original plan
+  asked for four-plus-optional-fifth; the extra two cover
+  override-without-use and brand-new-namespace cases), each with
+  =:url "my-ont.omn"= pointing at the tangled local file.  Each
+  block has an inline =#+RESULTS= block that records the
+  expected output and serves as the checked-in expectation for
+  Sub-step 1.6.2:
 
-*** Sub-step 1.6.2 — Wire the fixture into the test suite
+  1. *Block 1* — bare =SELECT=, no =PREFIX= boilerplate
+     (baseline case).
+  2. *Block 2* — =SELECT= with one inline =PREFIX rdfs:= that
+     *agrees* with the alist (silent dedup expected; same result
+     as Block 1).
+  3. *Block 3* — =SELECT= with one inline =PREFIX rdfs:= that
+     *overrides* the alist with a different URI (warning
+     expected, last-wins semantics: domain/range come back
+     unbound).
+  4. *Block 4* — =SELECT= with one inline =PREFIX ex:= that
+     redeclares an existing prefix the body does not actually
+     use (override is effectively ignored; same result as Block
+     1).
+  5. *Block 5* — =CONSTRUCT= with =:format ttl :wrap "src ttl"
+     :cache yes :post kill-prefixes(data=*this*)=, exercising
+     both the TTL path and the =kill-prefixes= post-hook.
+  6. *Block 6* — =SELECT= with an empty result set (querying
+     for =owl:DatatypeProperty=, of which there are none),
+     exercising =elot--sparql-result-empty-p=.
+  7. *Block 7* — =SELECT= introducing a genuinely new namespace
+     via inline =PREFIX new:= not present in the alist
+     (preserved verbatim).
+
+     *Resolution.*  Option (b) was implemented.  The advice
+     now factors the merge into a pure helper
+     =elot--sparql-compute-merged-prefixes= that returns the
+     effective (LABEL . URI) pairs, and the wrapper
+     =elot--sparql-merge-prefixes= just formats those pairs as
+     a SPARQL prefix block.  The advice body let-binds
+     =org-babel-sparql--current-curies= to those *merged* pairs
+     (with inline overrides applied) instead of bare
+     =org-link-abbrev-alist-local=, so inline-declared prefixes
+     now participate in IRI shortening too.  Block 7's recorded
+     =#+RESULTS= (=new:A= / =new:B=) reflects this fixed
+     behaviour; no expected-fail marker is needed.
+
+*** TODO Sub-step 1.6.2 — Wire the fixture into the test suite
 
 - *File*: =test/elot-sparql-roundtrip-test.el= (new).
-- Each test:
-  1. Tangles the fixture into a temp directory.
-  2. Opens the org file, runs a specific named SPARQL block via
-     =org-babel-execute-src-block=.
-  3. Compares the result against a checked-in expectation.
-- Gate the whole file with =skip-unless= on both ROBOT
-  availability and =elot-robot-jar-path= being set, mirroring
-  the pattern already used in =test/=.
-- Add a new target in =test/Makefile= and include it in the
-  default =test= goal (skip-on-CI behaviour follows automatically
-  from =skip-unless=).
+- Test setup (once per test file, e.g. via an =ert-deftest=
+  fixture or a helper that memoises):
+  1. Copy =test/fixtures/sparql-roundtrip.org= into a temp
+     directory (so tangling does not pollute the source tree).
+  2. Open it, run =org-babel-tangle= to produce =my-ont.omn=
+     alongside it.
+  3. Enable =elot-mode= in the buffer so the SPARQL advice is
+     installed (per Milestone 1 Step 1.5 the advice is no longer
+     global).
+- One =ert-deftest= per block (Block 1 through Block 7).  Each
+  test:
+  1. Locates its block by name or by position.
+  2. Captures the existing =#+RESULTS= contents as the expected
+     value *before* re-execution.
+  3. Calls =org-babel-execute-src-block= to refresh the result.
+  4. Compares the new =#+RESULTS= contents against the captured
+     expectation (string-equal after whitespace normalisation;
+     for Block 5, compare the contents of the =#+begin_src ttl=
+     wrap).
+  5. For Block 3, additionally asserts that a =display-warning=
+     with category =elot-sparql= was emitted (capture via
+     =cl-letf= around =display-warning= or by binding
+     =warning-minimum-log-level= and inspecting =*Warnings*=).
+  6. For Block 6, additionally asserts the result is the
+     =[empty result set]= sentinel.
+- Gate the whole file with =skip-unless= on:
+  - =(executable-find "java")= and a non-nil =elot-robot-jar-path=
+    pointing at an existing file, mirroring the pattern already
+    used elsewhere in =test/=.
+- Add a =sparql-roundtrip-test= target in =test/Makefile= and
+  include it in the default =test= goal.  The =skip-unless=
+  guards make this safe on CI runners without ROBOT.
+- Out of scope for this sub-step: endpoint-mode coverage (no
+  HTTP fixture stood up).  ROBOT is the production path for
+  ELOT users and the only one exercised here.
 
 *** Sub-step 1.6.3 — Capture the transcript
 
@@ -1280,6 +1335,7 @@ Practical tips for executing this plan with =gptel=:
 |------------+---------------------------------------------------+--------------------------------------------|
 | 2026-05-04 | Strategy B (remove and migrate) for legacy LOB pipeline | After the SPARQL rewrite (Milestone 1) no production code path depends on the LOB functions.  Old example files still tangle correctly because the new pipeline silently ignores LOB noweb calls.  The single example with old SPARQL prefix boilerplate (=examples/reasoner-example.org=) is treated as a special case and left untouched.  See Milestone 2. |
 | 2026-05-04 | Rewrite SPARQL support before other ELPA tasks    | Subsequent milestones (legacy removal, mode lifecycle, header polish) all touch the SPARQL code; rewriting it first avoids rework.  The rewrite also removes the last production dependency on the legacy LOB prefix block, enabling Strategy B above.  See Milestone 1. |
+| 2026-05-?? | Inline =PREFIX= declarations participate in result-IRI shortening | The SPARQL advice now let-binds =org-babel-sparql--current-curies= to the *merged* (alist + inline, with inline overrides) prefix pairs returned by =elot--sparql-compute-merged-prefixes=, not just =org-link-abbrev-alist-local=.  This removes a user-visible inconsistency where inline-declared prefixes were honoured during query execution but ignored when ob-sparql shortened IRIs in the result table.  See Milestone 1 Sub-step 1.6.1, Block 7. |
 | YYYY-MM-DD | =elot.el= chosen as MAIN FILE; package name =elot= | Matches MELPA recipe-name → main-file convention; avoids renaming the user-facing package; =elot-mode.el= remains the autoloaded entry point loaded from =elot.el=. See Milestones 4 and 7. |
 | YYYY-MM-DD | Drop =no-native-compile= in =elot.el=             | (fill in — see Milestone 5 Step 5.4)       |
 | YYYY-MM-DD | Recipe filename =recipes/elot=                    | Package name is =elot=; MAIN FILE is =elot.el=. See Milestone 7 Step 7.1. |

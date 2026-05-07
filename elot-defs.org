@@ -718,22 +718,21 @@ Semantics, formally:
                        (nthcdr consumed (split-string (or body "") "\n"))
                        "\n"))))
 
-  (defun elot--sparql-merge-prefixes (alist body)
-    "Merge prefix declarations from ALIST and inline PREFIX lines in BODY.
+  (defun elot--sparql-compute-merged-prefixes (alist body)
+    "Compute merged prefix declarations and the body with PREFIX lines stripped.
   ALIST is shaped like `org-link-abbrev-alist-local'.  Inline PREFIX
   lines at the top of BODY (SPARQL 1.1 syntax, case-insensitive) are
   recognised and stripped.
 
-  Return a cons (PREFIX-BLOCK . BODY-WITHOUT-PREFIX-LINES) where
-  PREFIX-BLOCK is a string containing one `PREFIX label: <uri>'
-  declaration per line, with each label appearing exactly once and
-  in source order (injected first, then inline-only labels in the
-  order they appeared in BODY).  Inline declarations override the
-  alist: when the same label appears in both with different URIs, a
-  single `display-warning' is emitted under category `elot-sparql'
-  and the inline URI wins.  Identical re-declarations (same label,
-  same URI) are silently de-duplicated.  When no declarations apply,
-  PREFIX-BLOCK is the empty string."
+  Return a cons (PAIRS . BODY-WITHOUT-PREFIX-LINES) where PAIRS is
+  an alist of (LABEL . URI) string pairs in canonical order (alist-
+  derived labels first, then inline-only labels in source order),
+  with each label appearing exactly once.  Inline declarations
+  override the alist: when the same label appears in both with
+  different URIs, a single `display-warning' is emitted under
+  category `elot-sparql' and the inline URI wins.  Identical
+  re-declarations (same label, same URI) are silently
+  de-duplicated."
     (let* ((injected (elot--sparql-alist-pairs alist))
            (parsed   (elot--sparql-strip-inline-prefixes body))
            (inline   (car parsed))
@@ -758,14 +757,48 @@ Semantics, formally:
                      label prev uri uri)
              :warning)
             (puthash label uri table)))))
-      (let ((block
-             (mapconcat (lambda (label)
-                          (format "PREFIX %-5s <%s>"
-                                  (concat label ":")
-                                  (gethash label table)))
-                        (nreverse order)
-                        "\n")))
-        (cons block rest))))
+      (cons (mapcar (lambda (label) (cons label (gethash label table)))
+                    (nreverse order))
+            rest)))
+
+  (defun elot--sparql-format-prefix-block (pairs)
+    "Format an alist PAIRS of (LABEL . URI) as a SPARQL prefix block.
+  Return a string containing one `PREFIX label: <uri>' declaration
+  per line, in the order of PAIRS.  Returns the empty string when
+  PAIRS is nil."
+    (mapconcat (lambda (p)
+                 (format "PREFIX %-5s <%s>"
+                         (concat (car p) ":")
+                         (cdr p)))
+               pairs
+               "\n"))
+
+  (defun elot--sparql-merge-prefixes (alist body)
+    "Merge prefix declarations from ALIST and inline PREFIX lines in BODY.
+  ALIST is shaped like `org-link-abbrev-alist-local'.  Inline PREFIX
+  lines at the top of BODY (SPARQL 1.1 syntax, case-insensitive) are
+  recognised and stripped.
+
+  Return a cons (PREFIX-BLOCK . BODY-WITHOUT-PREFIX-LINES) where
+  PREFIX-BLOCK is a string containing one `PREFIX label: <uri>'
+  declaration per line, with each label appearing exactly once and
+  in source order (injected first, then inline-only labels in the
+  order they appeared in BODY).  Inline declarations override the
+  alist: when the same label appears in both with different URIs, a
+  single `display-warning' is emitted under category `elot-sparql'
+  and the inline URI wins.  Identical re-declarations (same label,
+  same URI) are silently de-duplicated.  When no declarations apply,
+  PREFIX-BLOCK is the empty string.
+
+  This is a thin wrapper over `elot--sparql-compute-merged-prefixes'
+  plus `elot--sparql-format-prefix-block'; callers that also need
+  the merged (LABEL . URI) pairs for downstream consumers (such as
+  `org-babel-sparql--current-curies' for result-IRI shortening)
+  should call `elot--sparql-compute-merged-prefixes' directly."
+    (let* ((computed (elot--sparql-compute-merged-prefixes alist body))
+           (pairs    (car computed))
+           (rest     (cdr computed)))
+      (cons (elot--sparql-format-prefix-block pairs) rest)))
 #+end_src
 
 #+name: src-sparql-exec-patch
@@ -869,12 +902,17 @@ Semantics, formally:
              (kind          (elot--sparql-classify-url raw-url))
              (format-symbol (elot--sparql-resolve-format raw-format))
              (expanded      (org-babel-expand-body:sparql body params))
-             (org-babel-sparql--current-curies
-              (append org-link-abbrev-alist-local org-link-abbrev-alist))
-             (merged        (elot--sparql-merge-prefixes
+             (computed      (elot--sparql-compute-merged-prefixes
                              org-link-abbrev-alist-local expanded))
-             (prefix-block  (car merged))
-             (query-body    (cdr merged))
+             (merged-pairs  (car computed))
+             (query-body    (cdr computed))
+             (prefix-block  (elot--sparql-format-prefix-block merged-pairs))
+             ;; Make inline-declared prefixes participate in result-IRI
+             ;; shortening too: feed the *merged* pairs (alist + inline,
+             ;; with inline overrides applied) to ob-sparql's curie
+             ;; abbreviator instead of just `org-link-abbrev-alist-local'.
+             (org-babel-sparql--current-curies
+              (append merged-pairs org-link-abbrev-alist))
              (final-query
               (if (or (null prefix-block) (string-empty-p prefix-block))
                   query-body
