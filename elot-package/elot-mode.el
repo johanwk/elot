@@ -33,7 +33,6 @@
 ;;  - Syntax table tweaks (`:' and `_' as word-constituent)
 ;;  - Buffer-local hooks for tangling, saving, and display
 ;;  - Label-display overlays (toggled with F5)
-;;  - A hydra menu (S-F5) with templates and export commands
 ;;  - Org babel Library-of-Babel ingestion
 ;;
 ;; Disabling the mode cleanly tears down all of the above.
@@ -52,7 +51,7 @@
 (require 'org-tempo)
 (require 'ob-lob)
 
-;; Load the full ELOT package (SPARQL, hydra, LaTeX export, OWL
+;; Load the full ELOT package (SPARQL, LaTeX export, OWL
 ;; import, etc.) when available.  The `nil t' arguments mean "don't
 ;; signal an error if elot.el is not on `load-path'", so users who
 ;; only have the zero-dependency core still get a working `elot-mode'.
@@ -496,8 +495,9 @@ or `xsd:integer' on a column header will be applied to values."
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "<f5>")   #'elot-toggle-label-display)
     (define-key map (kbd "C-c C-x r") #'elot-label-lookup)
-    ;; S-<f5> previously bound to `elot-hydra/body'; the hydra has been
-    ;; retired (see ELPA-SUBMISSION-PLAN.org, Hydra retirement Interlude).
+    ;; S-<f5> previously bound to a Shift-F5 menu; that menu has
+    ;; been retired in favour of the ELOT easymenu ("ELOT" in the
+    ;; menu bar).
     map)
   "Keymap active when `elot-mode' is enabled.")
 
@@ -771,7 +771,6 @@ In batch mode (`noninteractive'), skip label-display entirely."
 When enabled, sets up:
 - Tangling hooks for OMN export and ROBOT conversion
 - Label-display overlays (toggle with \\[elot-toggle-label-display])
-- Hydra menu (\\[elot-hydra/body]) with templates and export commands
 - Syntax table tweaks for CURIE navigation
 - Library of Babel ingestion
 

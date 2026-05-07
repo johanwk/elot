@@ -1058,12 +1058,36 @@ CLOSED: [2026-05-07]
   elot-package/= and the same against the literate =.org=
   sources both return no matches.
 
-** TODO Step H.3 - Remove hydra from optional-deps machinery
-- *File*: =elot-package/elot.el=.
-- Remove =hydra= from the =dolist= populating
-  =elot-missing-dependencies= (around line 62).
-- Confirm =git grep -nE "\\bhydra\\b" elot-package/= returns no
-  Elisp matches.
+** DONE Step H.3 - Remove hydra from optional-deps machinery
+- *Files*: =elot-package/elot.el= (and =elot-defs.org= mirror),
+  =elot-package/elot-mode.el= (and =elot-mode.org= mirror),
+  =elot-init.el=.
+- =hydra= removed from the =dolist= populating
+  =elot-missing-dependencies= in =elot-defs.org= (named block
+  =src-require=) and the tangled =elot.el=.
+- The =(require 'hydra nil t)= line that preceded the =dolist=
+  was also dropped from both the literate source and the
+  tangled file (it was the only remaining =require= of hydra).
+- =Package-Requires:= header in =elot.el= and =elot-defs.org=
+  no longer lists =(hydra "0.15.0")=.  (Milestone 4 will revisit
+  the full list; this just removes the now-dangling entry.)
+- The =;; Shift-<F5> will open a "hydra" menu...= prose in the
+  =Commentary:= header was replaced with a one-line note
+  pointing at the ELOT easymenu.  Mirrored in =elot-defs.org=
+  named block =src-package-header=.
+- Stale references in =elot-mode.el= / =elot-mode.org=
+  docstrings and comments (=A hydra menu (S-F5)...=, =Hydra menu
+  (\\[elot-hydra/body])...=, =SPARQL, hydra, LaTeX export...=,
+  =Hydra menus, LaTeX export...=, =S-<f5> previously bound to
+  `elot-hydra/body'...=) were either removed or rephrased to
+  refer to the easymenu.
+- =elot-defs.org= section heading "Hydra interface to tempo
+  templates (RETIRED)" renamed to "(RETIRED) former Shift-F5
+  menu" and its surrounding prose de-hydra-fied; named block
+  =src-hydra-keybinding= renamed to =src-keybinding= (and the
+  matching tangle markers in =elot.el= updated).
+- =elot-init.el= no longer installs =hydra= via =package-install=.
+- =git grep -nE "\\bhydra\\b" elot-package/= returns no matches.
 
 ** TODO Step H.4 - Update plan and docs
 - *Files*: this plan, =README.org= (and regenerate =README.md=),

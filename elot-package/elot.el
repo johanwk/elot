@@ -5,7 +5,7 @@
 ;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
 ;; URL: https://github.com/johanwk/elot
 ;; Version: 2.0.0
-;; Package-Requires: ((emacs "29.1") (htmlize "1.58") (ht "2.3") (omn-mode "1.3") (hydra "0.15.0") (sparql-mode "4.0.2"))
+;; Package-Requires: ((emacs "29.1") (htmlize "1.58") (ht "2.3") (omn-mode "1.3") (sparql-mode "4.0.2"))
 ;; Keywords: languages outlines tools org ontology
 
 ;; This file is not part of GNU Emacs.
@@ -34,8 +34,8 @@
 ;;  - insert `<ods' and hit <Tab> to insert headers for the ontology,
 ;;    classes, properties, and individuals.
 
-;; Shift-<F5> will open a "hydra" menu with more templates and
-;; functions for exporting to an ontology file or HTML.
+;; The ELOT easymenu ("ELOT" in the menu bar when `elot-mode' is
+;; active) gives access to templates and export commands.
 
 ;; Please consult the package Github site for more information:
 ;;        <https://github.com/johanwk/elot>
@@ -48,7 +48,6 @@
 (require 'ox) ; export functions
 (require 'ol) ; link functions
 (require 'xref) ; jump around
-(require 'hydra nil t) ; hydra menu (optional; see missing-deps check below)
 (require 'button) ; for text-buttons
 (require 'help-mode) ; nice keymap & look
 (require 'url) ; for opening online ontologies
@@ -59,7 +58,7 @@
   "List of missing external dependencies for legacy ELOT features.")
 (setq elot-missing-dependencies nil)
 
-(dolist (pkg '(htmlize omn-mode sparql-mode ob-sparql ob-plantuml hydra))
+(dolist (pkg '(htmlize omn-mode sparql-mode ob-sparql ob-plantuml))
   (unless (require pkg nil t)
     (push pkg elot-missing-dependencies)))
 
@@ -1213,14 +1212,13 @@ conducted."
 ;; src-latex-export-replacenames ends here
 
 ;; [[file:../elot-defs.org::src-tempo-fwd-declare][src-tempo-fwd-declare]]
-;; The ELOT hydra has been retired (see ELPA-SUBMISSION-PLAN.org,
-;; "Interlude -- Retire the ELOT hydra").  The easymenu defined in
-;; elot-mode.el covers the same functionality.  The =F5= binding for
-;; `elot-key-toggle-labels' is retained; the former =S-<f5>= hydra
-;; entry point is gone.
+;; The former Shift-F5 menu has been retired in favour of the
+;; easymenu defined in elot-mode.el, which covers the same
+;; functionality.  The =F5= binding for `elot-key-toggle-labels'
+;; is retained.
 ;; src-tempo-fwd-declare ends here
 
-;; [[file:../elot-defs.org::src-hydra-keybinding][src-hydra-keybinding]]
+;; [[file:../elot-defs.org::src-keybinding][src-keybinding]]
 (defcustom elot-key-toggle-labels (kbd "<f5>")
   "Keybinding to toggle label display in ELOT buffers."
   :type 'key-sequence
@@ -1228,7 +1226,7 @@ conducted."
 
 (defun elot-setup-org-keybindings ()
   (local-set-key elot-key-toggle-labels #'elot-toggle-label-display))
-;; src-hydra-keybinding ends here
+;; src-keybinding ends here
 
 ;; [[file:../elot-defs.org::src-tsv-table][src-tsv-table]]
 (defun elot-tsv-to-table (filename)

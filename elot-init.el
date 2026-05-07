@@ -32,7 +32,6 @@
                    omn-mode
                    sparql-mode
                    plantuml-mode
-                   hydra
                    org-ql
                    ht
                    ;; the following are for a modern Emacs interface (optional)
