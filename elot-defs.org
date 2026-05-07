@@ -66,7 +66,7 @@ in SPARQL select results.
   (require 'ol) ; link functions
   (require 'xref) ; jump around
   (require 'hydra nil t) ; hydra menu (optional; see missing-deps check below)
-  (require 'button) ; for text‑buttons
+  (require 'button) ; for text-buttons
   (require 'help-mode) ; nice keymap & look
   (require 'url) ; for opening online ontologies
   (require 'url-http) ; for opening online ontologies
@@ -93,7 +93,7 @@ in SPARQL select results.
   ;; `elot--custom-org-babel-execute-sparql' is dynamic, reaching
   ;; ob-sparql's IRI-shortening helpers (which read this variable
   ;; via dynamic scope).  Without this `defvar', `lexical-binding'
-  ;; turns the binding into a lexical one — the byte-compiler then
+  ;; turns the binding into a lexical one -- the byte-compiler then
   ;; flags it as unused, AND the merged prefix pairs never reach
   ;; ob-sparql.  See Decisions log entry 2026-05-07.
   (defvar org-babel-sparql--current-curies)
@@ -163,10 +163,10 @@ UPDATE: Robot commands moved to new file ~elot-tangling.org~.
       (pop-to-buffer output-buffer)))
 #+end_src
 *** OWL built-in resources
-Moved to =elot-tangling.org= → =elot-tangle.el=.
+Moved to =elot-tangling.org= -> =elot-tangle.el=.
 The variable =elot-owl-builtin-resources= is now provided by =(require 'elot-tangle)=.
 *** OMN keywords
-Moved to =elot-tangling.org= → =elot-tangle.el=.
+Moved to =elot-tangling.org= -> =elot-tangle.el=.
 The variables =elot-omn-property-keywords=, =elot-omn-misc-keywords=,
 and =elot-omn-all-keywords= are now provided by =(require 'elot-tangle)=.
 
@@ -202,7 +202,7 @@ We add a filter to make OMN in description lists =\ttfamily=. See the Org [[http
                'elot-latex-filter-omn-item)
 #+end_src
 *** Context identification
-Moved to =elot-tangling.org= → =elot-tangle.el=.
+Moved to =elot-tangling.org= -> =elot-tangle.el=.
 The functions =elot-context-type=, =elot-context-localname=,
 =elot-default-prefix=, =elot-governing-hierarchy=, =elot-at-ontology-heading=,
 =elot-in-class-tree=, and =elot-in-property-tree= are now provided by
@@ -210,7 +210,7 @@ The functions =elot-context-type=, =elot-context-localname=,
 *** Get description lists into lisp lists
 The core description-list functions (=elot-org-elt-exists=, =elot-org-elt-item-tag-str=,
 =elot-meta-annotation-tag-p=, =elot-org-elt-item-pars-str=, =elot-org-elt-item-str=)
-have moved to =elot-tangling.org= → =elot-tangle.el= and are provided by
+have moved to =elot-tangling.org= -> =elot-tangle.el= and are provided by
 =(require 'elot-tangle)=.
 
 The remaining functions below are part of the old OMN pipeline and are
@@ -268,7 +268,7 @@ still used by =elot-lob.org= noweb blocks.
       (save-excursion
         (unless (org-at-heading-p) (org-previous-visible-heading 1))
         (org-narrow-to-subtree)
-        ;; ── single parse for the whole subtree ──────────────────────────
+        ;; single parse for the whole subtree 
         (let ((parsed (org-element-parse-buffer)))
           (if (or (elot-at-ontology-heading)
                   (outline-next-heading))
@@ -317,7 +317,7 @@ still used by =elot-lob.org= noweb blocks.
 
 *** puri expansion
 The core CURIE/URI functions (=elot-puri-re=, =elot-unprefix-uri=,
-=elot-annotation-string-or-uri=) have moved to =elot-tangling.org= →
+=elot-annotation-string-or-uri=) have moved to =elot-tangling.org= ->
 =elot-tangle.el= and are provided by =(require 'elot-tangle)=.
 
 The helper =elot-omn-restriction-string= below is still used by the
@@ -364,7 +364,7 @@ annotations in a future improved version, from sub-items.
       (nreverse ret)))
 #+end_src
 
-The function =elot-entity-from-header= has moved to =elot-tangling.org= →
+The function =elot-entity-from-header= has moved to =elot-tangling.org= ->
 =elot-tangle.el= and is provided by =(require 'elot-tangle)=.
 #+begin_src emacs-lisp :tangle no
 ;; elot-entity-from-header is now in elot-tangle.el
@@ -540,7 +540,7 @@ The function =elot-entity-from-header= has moved to =elot-tangling.org= →
           (format "## (no %s - hierarchy heading '%s' not found)" owl-type header-id)))))
 #+END_SRC
 *** Update link alist from prefix-table
-The function =elot-update-link-abbrev= has moved to =elot-tangling.org= →
+The function =elot-update-link-abbrev= has moved to =elot-tangling.org= ->
 =elot-tangle.el= and is provided by =(require 'elot-tangle)=.
 The new version scans =elot-headline-hierarchy= instead of resolving a
 named Org table.
@@ -872,7 +872,7 @@ Semantics, formally:
     "Return non-nil if the current buffer holds an empty SPARQL result.
   FORMAT-SYMBOL is `csv' or `ttl' as returned by
   `elot--sparql-resolve-format'.  An empty result is a buffer that is
-  either completely empty, contains only whitespace, or — for csv —
+  either completely empty, contains only whitespace, or -- for csv --
   contains only a header row."
     (save-excursion
       (goto-char (point-min))
@@ -1234,7 +1234,7 @@ The following will replace uses of defined resources with links that have labels
                (let ((m (copy-marker (org-element-property :begin hl))))
                  (unless (org-entry-get m "CUSTOM_ID")
                    (push (cons m id) pending)))))))
-       ;; Insert from bottom to top so earlier insertions don’t shift markers
+       ;; Insert from bottom to top so earlier insertions don't shift markers
        (dolist (cell (nreverse pending))
          (org-with-point-at (car cell)
            (org-entry-put (car cell) "CUSTOM_ID" (cdr cell))))))
@@ -1248,8 +1248,6 @@ The following will replace uses of defined resources with links that have labels
 *** Headings in LaTeX export
 We format headings with indentation to match the subtype level in the
 ontology: for each level down we add a full stop and a space.
-
-# Consider using a different symbol, for instance the unicode ↳, in elot-latex-filter-headline-dots
 
 #+name: src-latex-section-export
 #+begin_src emacs-lisp
@@ -1414,7 +1412,7 @@ See https://emacs.stackexchange.com/questions/55231/org-mode-export-html-add-nam
                      ("rdfs:comment" . "comment")
                      ("rdfs:isDefinedBy" . "defined by")
                      ("iof-av:firstOrderLogicDefinition" . "first-order logic definition")
-                     ("iof‑av:semiFormalNaturalLanguageDefinition" . "semi-formal definition")
+                     ("iof-av:semiFormalNaturalLanguageDefinition" . "semi-formal definition")
                      ("iof-av:semiFormalNaturalLanguageAxiom" . "semi-formal axiom")
                      ("iof-av:adaptedFrom" . "adapted from")
                      ("iof-av:synonym" . "synonym"))))))
@@ -1428,52 +1426,29 @@ See https://emacs.stackexchange.com/questions/55231/org-mode-export-html-add-nam
 *** Menu
 **** Regular menu with ~easy-menu~
 Moved to elot-mode.org.
-**** Hydra interface to tempo templates (shortcut S-F5)
-First "forward declare" the functions referenced in the Hydra, to
-avoid byte compiler warnings.
+**** Hydra interface to tempo templates (RETIRED)
+The ELOT hydra has been retired in favour of the easymenu defined
+in =elot-mode.el=; see =ELPA-SUBMISSION-PLAN.org=, "Interlude --
+Retire the ELOT hydra".  The =F5= binding for label toggling is
+retained (see =src-hydra-keybinding= below -- the =defcustom
+elot-key-toggle-labels= survives; =elot-key-open-hydra= is removed
+in Step H.2).
+
+The former forward-declarations and =defhydra= block are gone.
+The =src-tempo-fwd-declare= and =src-hydra-menu= named blocks
+have been removed; a re-tangle no longer emits a hydra body.
+
+The placeholder block below replaces the former =src-tempo-fwd-declare=
+named block so that =elot.el='s tangle output keeps the comment
+explaining what happened.
 #+name: src-tempo-fwd-declare
 #+begin_src emacs-lisp
-(declare-function tempo-template-elot-block-robot-metrics "tempo")
-(declare-function tempo-template-elot-block-sparql-select "tempo")
-(declare-function tempo-template-elot-block-sparql-construct "tempo")
-(declare-function tempo-template-elot-block-rdfpuml-diagram "tempo")
-(declare-function tempo-template-elot-doc-header "tempo")
-(declare-function tempo-template-elot-ont-skeleton "tempo")
+;; The ELOT hydra has been retired (see ELPA-SUBMISSION-PLAN.org,
+;; "Interlude -- Retire the ELOT hydra").  The easymenu defined in
+;; elot-mode.el covers the same functionality.  The =F5= binding for
+;; `elot-key-toggle-labels' is retained; the former =S-<f5>= hydra
+;; entry point is gone.
 #+end_src
-
-#+name: src-hydra-menu
-#+begin_src emacs-lisp
-  (when (fboundp 'defhydra)
-  (defhydra elot-hydra (:color blue :hint nil)
-    "
-   --- ELOT helpdesk --- press F5 to toggle labels ---
-
-   Output:  [_t_] ontology    [_h_] HTML
-
-   Insert                    Code block             Document
-  --------------------------------------------------------------
-   [_r_] resource id        <_obm_ metrics             <_odh_ header
-  <_ocp_ primitive class    <_obs_ sparql select       <_ods_ ontology
-  <_ocd_ defined class      <_obc_ sparql construct    <_otr_ resource table
-   <_op_ property           <_obd_ rdfpuml diagram
-  "
-    ("r" (elot-label-lookup))
-    ("ocp" (progn (outline-next-heading) (tempo-template-elot-class-iof-primitive)))
-    ("ocd" (progn (outline-next-heading) (tempo-template-elot-class-iof-defined)))
-    ("op" (progn (outline-next-heading) (tempo-template-elot-property-iof)))
-    ("t" (elot-tangle-buffer-to-omn))
-    ("h" (browse-url-of-file (expand-file-name (org-html-export-to-html))))
-    ("obm" (tempo-template-elot-block-robot-metrics))
-    ("obs" (tempo-template-elot-block-sparql-select))
-    ("obc" (tempo-template-elot-block-sparql-construct))
-    ("obd" (tempo-template-elot-block-rdfpuml-diagram))
-    ("odh" (tempo-template-elot-doc-header))
-    ("ods" (tempo-template-elot-ont-skeleton))
-    ("otr" (tempo-template-elot-table-of-resources))))
-#+end_src
-
-#+RESULTS:
-: elot-hydra/body
 
 Keybinding, customizable.
 #+name: src-hydra-keybinding

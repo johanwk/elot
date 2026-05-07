@@ -49,7 +49,7 @@
 (require 'ol) ; link functions
 (require 'xref) ; jump around
 (require 'hydra nil t) ; hydra menu (optional; see missing-deps check below)
-(require 'button) ; for text‑buttons
+(require 'button) ; for text-buttons
 (require 'help-mode) ; nice keymap & look
 (require 'url) ; for opening online ontologies
 (require 'url-http) ; for opening online ontologies
@@ -74,7 +74,7 @@
 ;; `elot--custom-org-babel-execute-sparql' is dynamic, reaching
 ;; ob-sparql's IRI-shortening helpers (which read this variable
 ;; via dynamic scope).  Without this `defvar', `lexical-binding'
-;; turns the binding into a lexical one — the byte-compiler then
+;; turns the binding into a lexical one -- the byte-compiler then
 ;; flags it as unused, AND the merged prefix pairs never reach
 ;; ob-sparql.  See Decisions log entry 2026-05-07.
 (defvar org-babel-sparql--current-curies)
@@ -220,7 +220,7 @@ repeated calls to `org-element-parse-buffer'."
     (save-excursion
       (unless (org-at-heading-p) (org-previous-visible-heading 1))
       (org-narrow-to-subtree)
-      ;; ── single parse for the whole subtree ──────────────────────────
+      ;; single parse for the whole subtree 
       (let ((parsed (org-element-parse-buffer)))
         (if (or (elot-at-ontology-heading)
                 (outline-next-heading))
@@ -756,7 +756,7 @@ latter case names the resolved absolute path and the current
   "Return non-nil if the current buffer holds an empty SPARQL result.
 FORMAT-SYMBOL is `csv' or `ttl' as returned by
 `elot--sparql-resolve-format'.  An empty result is a buffer that is
-either completely empty, contains only whitespace, or — for csv —
+either completely empty, contains only whitespace, or -- for csv --
 contains only a header row."
   (save-excursion
     (goto-char (point-min))
@@ -1073,7 +1073,7 @@ The link description is obtained using `(elot-codelist-id-label MATCH)`."
              (let ((m (copy-marker (org-element-property :begin hl))))
                (unless (org-entry-get m "CUSTOM_ID")
                  (push (cons m id) pending)))))))
-     ;; Insert from bottom to top so earlier insertions don’t shift markers
+     ;; Insert from bottom to top so earlier insertions don't shift markers
      (dolist (cell (nreverse pending))
        (org-with-point-at (car cell)
          (org-entry-put (car cell) "CUSTOM_ID" (cdr cell))))))
@@ -1201,7 +1201,7 @@ conducted."
                    ("rdfs:comment" . "comment")
                    ("rdfs:isDefinedBy" . "defined by")
                    ("iof-av:firstOrderLogicDefinition" . "first-order logic definition")
-                   ("iof‑av:semiFormalNaturalLanguageDefinition" . "semi-formal definition")
+                   ("iof-av:semiFormalNaturalLanguageDefinition" . "semi-formal definition")
                    ("iof-av:semiFormalNaturalLanguageAxiom" . "semi-formal axiom")
                    ("iof-av:adaptedFrom" . "adapted from")
                    ("iof-av:synonym" . "synonym"))))))
@@ -1213,43 +1213,12 @@ conducted."
 ;; src-latex-export-replacenames ends here
 
 ;; [[file:../elot-defs.org::src-tempo-fwd-declare][src-tempo-fwd-declare]]
-(declare-function tempo-template-elot-block-robot-metrics "tempo")
-(declare-function tempo-template-elot-block-sparql-select "tempo")
-(declare-function tempo-template-elot-block-sparql-construct "tempo")
-(declare-function tempo-template-elot-block-rdfpuml-diagram "tempo")
-(declare-function tempo-template-elot-doc-header "tempo")
-(declare-function tempo-template-elot-ont-skeleton "tempo")
+;; The ELOT hydra has been retired (see ELPA-SUBMISSION-PLAN.org,
+;; "Interlude -- Retire the ELOT hydra").  The easymenu defined in
+;; elot-mode.el covers the same functionality.  The =F5= binding for
+;; `elot-key-toggle-labels' is retained; the former =S-<f5>= hydra
+;; entry point is gone.
 ;; src-tempo-fwd-declare ends here
-
-;; [[file:../elot-defs.org::src-hydra-menu][src-hydra-menu]]
-(when (fboundp 'defhydra)
-(defhydra elot-hydra (:color blue :hint nil)
-  "
- --- ELOT helpdesk --- press F5 to toggle labels ---
-
- Output:  [_t_] ontology    [_h_] HTML
-
- Insert                    Code block             Document
---------------------------------------------------------------
- [_r_] resource id        <_obm_ metrics             <_odh_ header
-<_ocp_ primitive class    <_obs_ sparql select       <_ods_ ontology
-<_ocd_ defined class      <_obc_ sparql construct    <_otr_ resource table
- <_op_ property           <_obd_ rdfpuml diagram
-"
-  ("r" (elot-label-lookup))
-  ("ocp" (progn (outline-next-heading) (tempo-template-elot-class-iof-primitive)))
-  ("ocd" (progn (outline-next-heading) (tempo-template-elot-class-iof-defined)))
-  ("op" (progn (outline-next-heading) (tempo-template-elot-property-iof)))
-  ("t" (elot-tangle-buffer-to-omn))
-  ("h" (browse-url-of-file (expand-file-name (org-html-export-to-html))))
-  ("obm" (tempo-template-elot-block-robot-metrics))
-  ("obs" (tempo-template-elot-block-sparql-select))
-  ("obc" (tempo-template-elot-block-sparql-construct))
-  ("obd" (tempo-template-elot-block-rdfpuml-diagram))
-  ("odh" (tempo-template-elot-doc-header))
-  ("ods" (tempo-template-elot-ont-skeleton))
-  ("otr" (tempo-template-elot-table-of-resources))))
-;; src-hydra-menu ends here
 
 ;; [[file:../elot-defs.org::src-hydra-keybinding][src-hydra-keybinding]]
 (defcustom elot-key-open-hydra (kbd "S-<f5>")
