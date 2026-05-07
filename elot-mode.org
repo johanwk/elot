@@ -1,4 +1,4 @@
-#+TITLE: ELOT Mode — Minor Mode for Ontology Authoring
+#+TITLE: ELOT Mode -- Minor Mode for Ontology Authoring
 #+AUTHOR: Johan W. Klüwer
 #+DESCRIPTION: Literate programming file for the ELOT minor mode
 
@@ -30,10 +30,10 @@ functions.
 ** Architecture
 
 #+begin_example
-elot-mode.org          → elot-mode.el          (this file: minor mode definition)
-elot-tangling.org      → elot-tangle.el        (AST parsing, OMN generation)
-elot-label-display.org → elot-label-display.el  (fontification, overlays, lookup)
-elot-defs.org          → elot.el                (legacy: gradually being emptied)
+elot-mode.org          -> elot-mode.el          (this file: minor mode definition)
+elot-tangling.org      -> elot-tangle.el        (AST parsing, OMN generation)
+elot-label-display.org -> elot-label-display.el  (fontification, overlays, lookup)
+elot-defs.org          -> elot.el                (legacy: gradually being emptied)
 #+end_example
 
 =elot-mode.el= is thin orchestration glue.  It =require='s the modules,
@@ -504,7 +504,7 @@ ELOT includes utility functions to generate an outline from an Org table.
             value
           (format "\"%s\"%s" (format "%s" value) dtype))))
 
-     (t value)))                                        ; no decoration → untouched
+     (t value)))                                        ; no decoration -> untouched
 
   (defun elot--strip-decoration (header)
     "Return HEADER without trailing @lang or ^^dtype part."
@@ -516,9 +516,9 @@ ELOT includes utility functions to generate an outline from an Org table.
 
   (defun elot--table->forest (mini-table)
     "Convert MINI-TABLE (Org-babel list) to a forest of plists.
-  - Header suffixes “@lang” / “^^datatype” decorate the cell value
-    but are **removed** from the stored key.
-  - Warns if a row’s SUPER value never appears as an ID.
+  - Header suffixes `@lang' / `^^datatype' decorate the cell value
+    but are removed from the stored key.
+  - Warns if a row's SUPER value never appears as an ID.
   - Skips `hline` markers that `org-table-to-lisp` inserts."
     (let* ((headers (car mini-table))
            (rows    (cdr mini-table))
@@ -527,7 +527,7 @@ ELOT includes utility functions to generate an outline from an Org table.
            (id->obj (make-hash-table :test 'equal))
            triples)
 
-      ;; ── pass 1: build node plists and register them ───────────────
+      ;; -- pass 1: build node plists and register them ---------------
       (dolist (row rows)
         (when (listp row)                         ; skip `hline`
           (let* ((id  (nth id-col  row))
@@ -546,7 +546,7 @@ ELOT includes utility functions to generate an outline from an Org table.
 
       (setq triples (nreverse triples))
 
-      ;; ── pass 2: link children to parents, warn on missing parents ─
+      ;; -- pass 2: link children to parents, warn on missing parents -
       (dolist (tr triples)
         (cl-destructuring-bind (id sup child) tr
           (unless (string= sup "")
@@ -554,11 +554,11 @@ ELOT includes utility functions to generate an outline from an Org table.
               (if parent
                   (setf (plist-get parent :subs)
                         (append (plist-get parent :subs) (list child)))
-                (message "elot--table->forest: WARNING – parent id \"%s\" referenced by \"%s\" not found"
+                (message "elot--table->forest: WARNING -- parent id \"%s\" referenced by \"%s\" not found"
                          sup id)
                 (setf (nth 1 tr) ""))))))         ; promote to root
 
-      ;; ── pass 3: collect root nodes in original order ──────────────
+      ;; -- pass 3: collect root nodes in original order --------------
       (let (forest)
         (dolist (tr triples)
           (cl-destructuring-bind (_id sup pl) tr
@@ -566,7 +566,7 @@ ELOT includes utility functions to generate an outline from an Org table.
         (nreverse forest))))
 
   (defun elot--prop (plist key)
-    "Return KEY’s value in PLIST, comparing keys with `string=`."
+    "Return KEY's value in PLIST, comparing keys with `string=`."
     (cl-loop for (k v) on plist by #'cddr
              when (and (stringp k) (string= k key))
              return v))
@@ -619,7 +619,7 @@ ELOT includes utility functions to generate an outline from an Org table.
            (headers     (car mini-table)))
       ;; 2. must contain \"id\"
       (unless (member "id" headers)
-        (user-error "Table lacks required \"id\" column – cannot create headings"))
+        (user-error "Table lacks required \"id\" column -- cannot create headings"))
 
       ;; 3. outline depth = one deeper than containing headline
       (let ((target-level (save-excursion
@@ -637,7 +637,7 @@ ELOT includes utility functions to generate an outline from an Org table.
                    (forward-line 1))
                  (point))))
 
-          ;; 5. build forest → org text and insert
+          ;; 5. build forest -> org text and insert
           (let* ((forest   (elot--table->forest mini-table))
                  (org-text (elot-forest->org forest target-level)))
             (goto-char insert-pos)
@@ -851,7 +851,7 @@ hooks and never removed them.
 
 The ELOT-specific around-advice on =org-babel-execute:sparql= (defined
 in =elot-defs.org= block =src-sparql-exec-patch=) is *not* installed at
-=require= time — that would mutate global state for every Emacs session
+=require= time -- that would mutate global state for every Emacs session
 that merely loads ELOT, which MELPA discourages.  Instead it is
 installed by =elot-mode--enable= and removed by =elot-mode--disable=.
 
@@ -1020,7 +1020,7 @@ the need for any file-local variable at all.
 
 The detection function is added to =org-mode-hook=.  It searches for the
 ELOT marker property in the first few thousand characters of the
-buffer — fast enough for interactive use.
+buffer -- fast enough for interactive use.
 
 #+name: src-mode-auto-detect
 #+begin_src emacs-lisp
@@ -1054,8 +1054,8 @@ their preceding Org heading, and shown in the ~*xref*~ buffer. Multi-line
 entries are flattened to improve readability.
 
 Definitions are resolved by searching open buffers for headings that contain
-the identifier. This allows users to press ~M-.~ on any CURIE—even inside the
-~*xref*~ buffer—to jump to its defining section.
+the identifier. This allows users to press ~M-.~ on any CURIE--even inside the
+~*xref*~ buffer--to jump to its defining section.
 
 Label overlays are automatically enabled in the ~*xref*~ buffer, using context
 from the originating ELOT buffer. Hooks and advice ensure the xref backend is
@@ -1222,7 +1222,7 @@ registered and the correct context is preserved across jumps.
   		    (elot--describe--insert-xref-button xref 4)
   		    (setq count (1+ count))))
   		(when (> (length refs) max-ref)
-  		  (princ (format "  …and %d more\n"
+  		  (princ (format "  ...and %d more\n"
   				 (- (length refs) max-ref)))))
   	    (princ "  (none)\n"))
   	  (princ
@@ -1245,7 +1245,7 @@ registered and the correct context is preserved across jumps.
   	 (line    (with-current-buffer buf
   		    (line-number-at-pos marker))))
       ;; bullet + file prefix
-      (insert (make-string indent ?\s) "• "
+      (insert (make-string indent ?\s) "- "
   	    (propertize (concat short ": ") 'face 'font-lock-keyword-face))
       ;; clickable summary
       (insert-text-button
