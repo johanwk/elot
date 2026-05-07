@@ -1032,18 +1032,35 @@ Rationale:
   preserving an ergonomic authoring affordance users rely on.
 
 ** TODO Step 2.1 — Move =elot-prefix-block-from-alist= to =elot-tangle.el=
-- *Files*: =elot-package/elot-tangle.el=, =elot-package/elot.el=.
-- Cut the =defun elot-prefix-block-from-alist= block (currently in
-  =elot.el= around line 464) and paste it into =elot-tangle.el=
-  near the other prefix helpers (after =elot-update-link-abbrev=).
-- =elot-tangle.el= is authored directly (no noweb tangle markers
-  needed).  Keep that style.
-- Remove the function from =elot.el=.
+- *Literate sources*: both =.el= files involved here are tangled
+  from Org sources and must be edited there, not in the tangled
+  output:
+  - =elot-package/elot.el= ⇐ =elot-defs.org=
+  - =elot-package/elot-tangle.el= ⇐ =elot-tangling.org=
+  Even though =elot-defs.org= will be much smaller once this
+  milestone lands, it is not being retired in this submission
+  prep.  Likewise =elot-tangling.org= remains the literate source
+  for =elot-tangle.el= — a future restructuring of the literate
+  =.org= sources is out of scope here.
+- *Files edited*: =elot-tangling.org=, =elot-defs.org=
+  (Step 2.2 covers the =elot-defs.org= side of the move; this
+  step focuses on the destination).
+- In =elot-tangling.org=, add a new named source block defining
+  =elot-prefix-block-from-alist= near the other prefix helpers
+  (after the block that produces =elot-update-link-abbrev=).
+  Tangle target: =./elot-package/elot-tangle.el=.  Copy the
+  current function body verbatim from =elot.el= ≈ line 464.
+- Tangle =elot-tangling.org= and confirm =elot-tangle.el= now
+  contains the function.
 - Update the call sites in =elot-label-display.el= and the
   rewritten SPARQL advice (=elot.el= itself, post-Milestone 1) so
   they pick up the relocated definition — both files already
   ~require~ =elot-tangle= transitively, so no new =require= is
-  needed; verify with byte-compile.
+  needed; verify with byte-compile.  Mirror any required edits in
+  the corresponding literate sources (=elot-label-display.org=,
+  =elot-defs.org=) so re-tangling is a no-op.
+- The deletion of the function from =elot.el= / =elot-defs.org=
+  is handled in Step 2.2.
 
 ** TODO Step 2.2 — Mirror the move in =elot-defs.org=
 - *File*: =elot-defs.org=.
