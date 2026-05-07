@@ -1,4 +1,4 @@
-#+TITLE: ELOT MELPA Submission — Step-by-Step Implementation Plan
+#+TITLE: ELOT MELPA Submission - Step-by-Step Implementation Plan
 #+AUTHOR: ELOT Contributors
 #+DATE: 2026
 #+STARTUP: overview
@@ -14,7 +14,7 @@ execution with LLM assistance through Emacs ~gptel~:
   milestone heading, narrow to it (=C-x n s=), and send the whole
   subtree to ~gptel~ as the prompt.
 - Each milestone lists *Files affected* and *Steps* as concrete
-  verbs ("edit X to do Y") — not pseudocode, not snippets — so
+  verbs ("edit X to do Y") - not pseudocode, not snippets - so
   gptel has unambiguous targets.
 - Each milestone ends with an *Acceptance check*: a short list of
   shell or Emacs commands whose output proves the milestone is done.
@@ -60,7 +60,7 @@ sequence, writes per-step logs under =tmp/stable-check/=, and prints
 a one-line =PASS= / =FAIL= summary.  Use the individual targets
 below when iterating on a single check.
 
-1. *Byte-compile is clean* — =make byte-compile= (or, equivalently,
+1. *Byte-compile is clean* - =make byte-compile= (or, equivalently,
    from the repository root):
    #+begin_src sh
    cd elot-package
@@ -72,14 +72,14 @@ below when iterating on a single check.
    stable point (record the baseline count once at the start; see
    Step B.1 / =make baseline-warnings=).
 
-2. *Tests pass* — =make test= (which delegates to =make -C test=):
+2. *Tests pass* - =make test= (which delegates to =make -C test=):
    #+begin_src sh
    make -C test
    #+end_src
    All ERT tests green (ROBOT-gated tests may skip; that is
    acceptable and expected on machines without ROBOT).
 
-3. *Loads in a fresh Emacs* — =make smoke=:
+3. *Loads in a fresh Emacs* - =make smoke=:
    #+begin_src sh
    emacs --batch -L elot-package \
      --eval "(require 'elot-mode)" \
@@ -93,17 +93,17 @@ below when iterating on a single check.
    =make smoke= target in the top-level =Makefile= is updated at
    that point.
 
-4. *Working tree clean* — commit the milestone before moving on:
+4. *Working tree clean* - commit the milestone before moving on:
    =git status= shows no uncommitted changes after the commit.
 
-* DONE Step 0 — Create a working branch for ELPA submission prep
+* DONE Step 0 - Create a working branch for ELPA submission prep
 CLOSED: [2026-05-04 man. 11:32]
 :PROPERTIES:
 :CUSTOM_ID: working-branch
 :END:
 
-All work in this plan — including the top-level =Makefile= introduced
-in the [[#baseline][Baseline]] milestone — should land on a dedicated branch
+All work in this plan - including the top-level =Makefile= introduced
+in the [[#baseline][Baseline]] milestone - should land on a dedicated branch
 rather than directly on =main=.  This keeps the submission-prep work
 isolated, easy to review, and trivial to abandon or rebase if MELPA
 review prompts a redesign.
@@ -130,10 +130,10 @@ should make it obvious to a future reader why the branch exists.
 
 3. Verify:
    #+begin_src sh
-   git branch --show-current   # → elpa-submission
+   git branch --show-current   # -> elpa-submission
    #+end_src
 
-4. Now make the first commit on this branch — the top-level
+4. Now make the first commit on this branch - the top-level
    =Makefile= introduced in the Baseline milestone:
    #+begin_src sh
    git add Makefile
@@ -172,32 +172,32 @@ This is equivalent to running =make baseline-warnings=,
 default, files are written under =/tmp/=; override with
 =make baseline BASELINE_DIR=/some/where=.
 
-** DONE Step B.1 — Record byte-compile warning baseline
+** DONE Step B.1 - Record byte-compile warning baseline
 CLOSED: [2026-05-04 man. 11:38]
 - =make baseline-warnings= (or run the byte-compile command from
   the [[#stable-status][stable-status checklist]] manually).
 - Saves the warning count and the full warning text to
   =/tmp/elot-baseline-warnings.txt=.
 
-** DONE Step B.2 — Record passing test list
+** DONE Step B.2 - Record passing test list
 CLOSED: [2026-05-04 man. 11:38]
 - =make baseline-tests= (equivalent to =make -C test= with output
   captured).
 - Saves the list of passed tests to =/tmp/elot-baseline-tests.txt=.
 
-** DONE Step B.3 — Record current loaded symbols
+** DONE Step B.3 - Record current loaded symbols
 CLOSED: [2026-05-04 man. 11:38]
 - =make baseline-symbols=.
 - For each file in =elot-package/*.el=, lists the public defuns/
   defvars/defcustoms.  Saved to =/tmp/elot-baseline-symbols.txt=.
 - This becomes the reference for "did I accidentally remove a public
-  API?" checks during *Milestone 2* (the legacy LOB removal — that
+  API?" checks during *Milestone 2* (the legacy LOB removal - that
   is where most public symbols disappear).
 
 ** Acceptance check
 - Three baseline files exist under =/tmp/= (or under =BASELINE_DIR=).
 - No code changes; =git status= shows only the new top-level
-  =Makefile= (committed as part of this baseline step) — nothing
+  =Makefile= (committed as part of this baseline step) - nothing
   else.
 
 Result:
@@ -215,7 +215,7 @@ Baseline written:
   /tmp/elot-baseline-symbols.txt
 #+end_example
 
-* DONE Milestone 1 — Rewrite SPARQL support
+* DONE Milestone 1 - Rewrite SPARQL support
 :PROPERTIES:
 :CUSTOM_ID: milestone-1-sparql
 :END:
@@ -223,11 +223,11 @@ Baseline written:
 ** Background
 
 ELOT customises Org's ~org-babel-execute:sparql~ (defined in
-=elot.el= ≈ line 513, installed by =advice-add= ≈ line 545) to:
+=elot.el= around line 513, installed by =advice-add= around line 545) to:
 
 - inject prefix declarations from =org-link-abbrev-alist-local=
   into every query, and
-- support querying local RDF/OWL files via ROBOT — which is the
+- support querying local RDF/OWL files via ROBOT - which is the
   most common ELOT workflow: querying the ontology you are
   currently editing.
 
@@ -238,7 +238,7 @@ polish) all touch this code:
 
 1. The ELOT advice builds the prefix block from
    =org-link-abbrev-alist-local= via =elot-prefix-block-from-alist=
-   (=elot.el= ≈ line 530). A query body without any PREFIX boilerplate
+   (=elot.el= around line 530). A query body without any PREFIX boilerplate
    must execute correctly. (This does seem to work OK already.)
 
 2. *Robustness gaps.*  The advice does not gracefully handle:
@@ -253,20 +253,20 @@ polish) all touch this code:
    that has loaded ELOT, even in non-ELOT buffers.  The advice body
    does guard on =(elot--is-elot-buffer)=, but MELPA still
    discourages global advice installed at =require= time.  This
-   item overlaps with [[#milestone-3-side-effects][Milestone 3]] Step 3.3 — the advice-move work
+   item overlaps with [[#milestone-3-side-effects][Milestone 3]] Step 3.3 - the advice-move work
    is done *here* (Step 1.5) and Milestone 3 only needs to confirm
    it.
 
 The relevant code is concentrated in:
-- =elot-package/elot.el= (≈ lines 460–546): prefix-block builder
+- =elot-package/elot.el= (around lines 460--546): prefix-block builder
   =elot-prefix-block-from-alist= and the advice
   =elot--custom-org-babel-execute-sparql=.
-- =elot-package/elot-label-display.el= (≈ lines 170–250): label
+- =elot-package/elot-label-display.el= (around lines 170--250): label
   retrieval helpers that build SPARQL queries directly.
-- =elot-package/elot-mode.el= (≈ lines 280–300): tempo templates
+- =elot-package/elot-mode.el= (around lines 280--300): tempo templates
   =elot-block-sparql-select= and =elot-block-sparql-construct=.
 
-** DONE Step 1.1 — Inventory current SPARQL code paths
+** DONE Step 1.1 - Inventory current SPARQL code paths
 - *Files*: =elot-package/elot.el=, =elot-package/elot-label-display.el=,
   =elot-package/elot-mode.el=.
 - Produce a short note (commit it as a comment block in this plan) listing:
@@ -292,8 +292,8 @@ No other production files read =org-link-abbrev-alist-local=.
 
 **** Call sites of =elot-prefix-block-from-alist=
 
-Definition: =elot-package/elot.el= ≈ line 464 (tangled from
-=elot-defs.org= named block =src-prefix-blocks=, ≈ line 540).
+Definition: =elot-package/elot.el= around line 464 (tangled from
+=elot-defs.org= named block =src-prefix-blocks=, around line 540).
 Signature: =(elot-prefix-block-from-alist PREFIXES FORMAT)= where
 =FORMAT= is one of =omn=, =sparql=, =ttl=.
 
@@ -302,7 +302,7 @@ Signature: =(elot-prefix-block-from-alist PREFIXES FORMAT)= where
 | =elot-package/elot.el=                  |  530 | =elot--custom-org-babel-execute-sparql= | =sparql=   | Built into =elot-prefixed-query= and used on both branches: the ROBOT branch (local file =:url=) and the endpoint branch (=http(s)= =:url=) now both receive the prefix-injected query. |
 | =elot-package/elot-label-display.el=    |  173 | =elot-label-attribs-query=              | =sparql=   | Concatenated ahead of a hand-written PREFIX block (rdf, rdfs, owl, skos, dcterms, iof-av) and the =SELECT= body. |
 | =examples/fdis.org=                     | 1649 | named block =sparql-prefixes=           | =sparql=   | Wrapped as a noweb call =<<sparql-prefixes()>>= and inlined into queries at lines 1848 and 1896. |
-| =examples/fdis.org=                     | 1735 | inline emacs-lisp call (header-args :var) | =sparql= | Passed as =:var prefixes=… into a query block. |
+| =examples/fdis.org=                     | 1735 | inline emacs-lisp call (header-args :var) | =sparql= | Passed as =:var prefixes=... into a query block. |
 | =examples/reasoner-example.org=         |  413 | named block =sparql-prefixes=           | =sparql=   | Same noweb shape as fdis.org; not actually expanded into any query block in this file (the file's blocks rely on =:noweb yes= header default but no =<<sparql-prefixes()>>= reference appears). |
 
 No production code calls =elot-prefix-block-from-alist= with
@@ -312,42 +312,42 @@ in the live code paths.
 **** Places that assemble a SPARQL query string
 
 In =elot-package/elot.el=:
-- =elot-robot-execute-query= (≈ line 490) — writes a query string
+- =elot-robot-execute-query= (around line 490) - writes a query string
   to a temp =.sparql= file and shells out to ROBOT.  Does *not*
   itself prepend prefixes; relies on caller to have done so.
-- =elot--custom-org-babel-execute-sparql= (≈ line 513) — assembles
+- =elot--custom-org-babel-execute-sparql= (around line 513) - assembles
   =elot-prefixed-query= from the prefix block + the
-  =org-babel-expand-body:sparql=–expanded body, and sends that
+  =org-babel-expand-body:sparql=--expanded body, and sends that
   prefixed string to both backends: =elot-robot-execute-query= on
   the ROBOT branch (local file =:url=) and =sparql-execute-query=
   on the endpoint branch (=http(s)= =:url=).  Prefix injection is
   now symmetric across the two branches.
 
 In =elot-package/elot-label-display.el=:
-- =elot-label-attribs-query= (≈ line 169) — concatenates
+- =elot-label-attribs-query= (around line 169) - concatenates
   =elot-prefix-block-from-alist= output with a hard-coded PREFIX
   block (rdf, rdfs, owl, skos, dcterms, iof-av) and a =SELECT=
   body that pulls id / label / attribute plist; supports optional
   filter and limit fragments.
-- =elot-retrieve-prefixes= (≈ line 199) — uses a fixed string
+- =elot-retrieve-prefixes= (around line 199) - uses a fixed string
   =construct where {?x ?y ?z} limit 0= to harvest =@prefix=
   declarations from a TTL response.
-- =elot-retrieve-labels-plist= (≈ line 228) — calls
+- =elot-retrieve-labels-plist= (around line 228) - calls
   =elot-label-attribs-query= and dispatches to
   =sparql-execute-query= (endpoints only; raises =error= for
   local-file URLs).
 
 In =elot-package/elot-mode.el=:
-- =tempo-define-template "elot-block-sparql-select"= (≈ line 280)
-  — inserts a =#+begin_src sparql :url "<context>.omn" ...= block
+- =tempo-define-template "elot-block-sparql-select"= (around line 280)
+  - inserts a =#+begin_src sparql :url "<context>.omn" ...= block
   with a bare =select { }= body (no inline PREFIX, no noweb call).
 - =tempo-define-template "elot-block-sparql-construct"=
-  (≈ line 295) — inserts a =#+begin_src sparql :url
+  (around line 295) - inserts a =#+begin_src sparql :url
   "<context>.omn" :format ttl :wrap "src ttl" :cache yes :post
   kill-prefixes(data=*this*) ...= block with a bare =construct {
   } { }= body (also no inline PREFIX, no noweb call).
 
-The tempo templates are *already* clean — Step 1.3 will only
+The tempo templates are *already* clean - Step 1.3 will only
 need to verify them and update the surrounding documentation.
 
 **** Example files containing =#+begin_src sparql= (org-babel source blocks)
@@ -355,7 +355,7 @@ need to verify them and update the surrounding documentation.
 | File                          | Blocks | Inline =PREFIX= boilerplate? | Noweb prefix injection?                                                                                                  |
 |-------------------------------+--------+----------------------------+--------------------------------------------------------------------------------------------------------------------------|
 | =examples/reasoner-example.org= |      6 | Yes (in some blocks)       | Defines named block =sparql-prefixes= but no expansion is wired in via =<<...>>= references in the SPARQL blocks themselves. |
-| =examples/fdis.org=             |      4 | No                         | Yes — =<<sparql-prefixes()>>= at lines 1848 and 1896, plus a =:var prefixes=…= header-args mechanism at line 1735.           |
+| =examples/fdis.org=             |      4 | No                         | Yes - =<<sparql-prefixes()>>= at lines 1848 and 1896, plus a =:var prefixes=...= header-args mechanism at line 1735.           |
 
 No other =examples/*.org= file contains =#+begin_src sparql=.
 
@@ -366,7 +366,7 @@ No other =examples/*.org= file contains =#+begin_src sparql=.
 
 : (advice-add 'org-babel-execute:sparql :around #'elot--custom-org-babel-execute-sparql)
 
-Tangled from =elot-defs.org= ≈ line 638.  This is what Step 1.5
+Tangled from =elot-defs.org= around line 638.  This is what Step 1.5
 moves into =elot-mode--enable= / =elot-mode--disable=.
 
 **** Asymmetries surfaced by the inventory (input to Step 1.2 / 1.4)
@@ -388,13 +388,13 @@ moves into =elot-mode--enable= / =elot-mode--disable=.
 3. The =:format= header arg drives =format-symbol= in the ROBOT
    branch via a string match on =turtle\|ttl=; anything else
    becomes =csv=.  An empty/absent =:format= silently becomes
-   =csv= — Step 1.4 should make this explicit.
+   =csv= - Step 1.4 should make this explicit.
 4. =elot-retrieve-labels-plist= raises =error= for local-file
    URLs ("ROBOT ontology-file query not implemented yet for elot
-   labels query") — pre-existing limitation, noted but out of
+   labels query") - pre-existing limitation, noted but out of
    scope for Milestone 1.
 
-** DONE Step 1.2 — De-duplicate prefix declarations
+** DONE Step 1.2 - De-duplicate prefix declarations
 CLOSED: [2026-05-06 ons. 23:15]
 - *File*: =elot-package/elot.el=.
 - Context: =elot--custom-org-babel-execute-sparql= already
@@ -403,7 +403,7 @@ CLOSED: [2026-05-06 ons. 23:15]
   whether the body contains its own inline =PREFIX= lines.  The
   earlier note in this plan (claiming the prefix block was only
   prepended when no inline =PREFIX= lines were present) was
-  incorrect — confirmed by reading =elot.el= ≈ lines 522–530.
+  incorrect - confirmed by reading =elot.el= around lines 522--530.
   Concatenation today therefore yields *duplicate* =PREFIX=
   declarations when the body already declares the same label,
   which most SPARQL engines tolerate but ROBOT and some endpoints
@@ -419,7 +419,7 @@ CLOSED: [2026-05-06 ons. 23:15]
      that *the last declaration wins*.  Because the alist-derived
      declarations come first, this means an inline declaration in
      the user's body always overrides one injected from
-     =org-link-abbrev-alist-local= — i.e. the user can override
+     =org-link-abbrev-alist-local= - i.e. the user can override
      ELOT's project-wide prefix mapping by writing =PREFIX foo:
      <other-uri>= at the top of the block.
   3. If two declarations share a label but disagree on the URI,
@@ -431,41 +431,41 @@ CLOSED: [2026-05-06 ons. 23:15]
      before re-assembling the query, so the final string contains
      each prefix exactly once at the top.
 - Factor the merge/dedup logic into a pure helper, e.g.
-  =elot--sparql-merge-prefixes (alist body) → (prefix-block
+  =elot--sparql-merge-prefixes (alist body) -> (prefix-block
   . body-without-prefix-lines)=, so it can be unit-tested without
   invoking ROBOT or any endpoint.
 - Goal (unchanged): a query block containing only the
-  user-written =SELECT= / =CONSTRUCT= body — no =PREFIX=
-  boilerplate, no noweb call — executes correctly.  *Additional*
+  user-written =SELECT= / =CONSTRUCT= body - no =PREFIX=
+  boilerplate, no noweb call - executes correctly.  *Additional*
   goal from this step: a query block that *does* carry inline
   =PREFIX= lines (legacy or override) executes without producing
   duplicate declarations, and conflicting overrides are surfaced
   as warnings rather than silently shadowed.
 - Add ERT tests under =test/= for the helper covering: empty
   body; body with no inline prefixes; body with inline prefixes
-  fully covered by the alist (identical URIs → silent dedup);
+  fully covered by the alist (identical URIs -> silent dedup);
   body with inline prefixes that override the alist (different
-  URIs → warning, last wins); body with inline-only prefixes not
+  URIs -> warning, last wins); body with inline-only prefixes not
   in the alist (preserved verbatim).  These tests do not require
   ROBOT.  A separate end-to-end test that actually executes a
   query through the advice should be gated with =skip-unless=
   on ROBOT availability.
 
-** DONE Step 1.3 — Update tempo templates
+** DONE Step 1.3 - Update tempo templates
 CLOSED: [2026-05-06 ons. 23:15]
 
 Verification only: a re-read of =elot-package/elot-mode.el=
 confirmed that =elot-block-sparql-select= and
 =elot-block-sparql-construct= already insert clean query bodies
-— no =<<resource-declarations(...)>>= noweb reference, no
+- no =<<resource-declarations(...)>>= noweb reference, no
 hand-rolled =PREFIX= boilerplate.  The Step 1.1 inventory had
 already noted this; Step 1.3 therefore requires no code change.
 
 One item flagged for follow-up, *out of scope for Milestone 1*:
 =elot-block-sparql-construct= carries
 : :post kill-prefixes(data=*this*)
-This is a deliberate convenience — =kill-prefixes= strips =@prefix=
-declarations from the CONSTRUCT result for readability — and it
+This is a deliberate convenience - =kill-prefixes= strips =@prefix=
+declarations from the CONSTRUCT result for readability - and it
 stays.  However, =kill-prefixes= is currently implemented as a
 Library-of-Babel block in =elot-package/elot-lob.org= (see
 [[file:elot-package/elot-lob.org::kill-prefixes][kill-prefixes]]),
@@ -478,7 +478,7 @@ No documentation snippets in =elot-mode.org= or =examples/=
 reference the old (prefix-laden, noweb-injected) tempo template
 shape, so nothing to update there.
 
-** DONE Step 1.4 — Harden =elot--custom-org-babel-execute-sparql=
+** DONE Step 1.4 - Harden =elot--custom-org-babel-execute-sparql=
 - *File*: =elot-package/elot.el= (mirrored in =elot-defs.org=
   blocks =src-robot-query= and =src-sparql-exec-patch=; see
   Step 1.7 for the formal tangle round-trip check).
@@ -491,7 +491,7 @@ without standing up ROBOT.  The new helpers, all in =elot.el=:
 |-------------------------------------+-------------------------------------------------------------------------------------------------------------|
 | =elot--sparql-classify-url=         | Validates =:url=.  Returns the symbol =endpoint= or =local-file=, or signals a =user-error=.                |
 | =elot--sparql-resolve-format=       | Normalises =:format= to the symbol =csv= or =ttl=.  Warns (=display-warning= category =elot-sparql=) on unrecognised non-empty values; nil/empty silently default to =csv=. |
-| =elot--sparql-result-empty-p=       | Detects an empty result buffer (totally empty, whitespace-only, or — for =csv= — header-row-only).          |
+| =elot--sparql-result-empty-p=       | Detects an empty result buffer (totally empty, whitespace-only, or - for =csv= - header-row-only).          |
 | =elot--sparql-empty-result-sentinel= | Constant string returned in place of an empty CSV body so =org-babel-sparql-convert-to-table= is not invoked on input it cannot parse. |
 
 Failure modes addressed (one-to-one with the original checklist):
@@ -537,23 +537,23 @@ Other shape changes worth noting:
   (asymmetry resolved in Step 1.2; preserved here).
 - The diagnostic =message= at entry now reports the classified
   =kind= and resolved =format-symbol= rather than the bare
-  "Executing a SPARQL query block …" line — useful when
+  "Executing a SPARQL query block ..." line - useful when
   diagnosing why ROBOT was (or was not) invoked.
 
 *** Tests added
 
-New file: =test/elot-sparql-exec-helpers-test.el= — pure-helper
+New file: =test/elot-sparql-exec-helpers-test.el= - pure-helper
 ERT suite for the three new helpers.  Coverage:
 
 - =elot--sparql-resolve-format=: nil / empty default silently to
-  =csv=; =ttl=, =turtle=, =text/turtle= → =ttl=; =csv=, =text/csv=
-  → =csv=; unknown non-empty values warn and default to =csv=.
+  =csv=; =ttl=, =turtle=, =text/turtle= -> =ttl=; =csv=, =text/csv=
+  -> =csv=; unknown non-empty values warn and default to =csv=.
 - =elot--sparql-classify-url=: nil, empty, and non-string =:url=
-  raise =user-error=; =http://= and =https://= → =endpoint=;
-  existing local file → =local-file=; missing local file raises
+  raise =user-error=; =http://= and =https://= -> =endpoint=;
+  existing local file -> =local-file=; missing local file raises
   =user-error= mentioning the resolved absolute path.
 - =elot--sparql-result-empty-p=: empty buffer, whitespace-only,
-  CSV header-row-only, CSV with rows, TTL with content — all
+  CSV header-row-only, CSV with rows, TTL with content - all
   classified correctly under both =csv= and =ttl= modes.
 
 The tests do not require ROBOT and do not stand up an HTTP
@@ -565,7 +565,7 @@ A separate end-to-end test that actually executes a query
 through the advice is left for Step 1.6 (regression on a real
 example file) and remains gated on ROBOT availability.
 
-** DONE Step 1.5 — Localise the advice to ELOT buffers
+** DONE Step 1.5 - Localise the advice to ELOT buffers
 - *Files*: =elot-defs.org= (tangles to =elot-package/elot.el=) and
   =elot-mode.org= (tangles to =elot-package/elot-mode.el=); both
   =.el= files were edited in lock-step so a future re-tangle is a
@@ -598,7 +598,7 @@ example file) and remains gated on ROBOT availability.
   =elot-mode--disable= calls =elot-mode--uninstall-sparql-advice=
   immediately after =elot-mode--remove-hooks=.  The step numbers
   in the surrounding comment lines were renumbered accordingly.
-- The advice body's =(elot--is-elot-buffer)= guard is unchanged —
+- The advice body's =(elot--is-elot-buffer)= guard is unchanged -
   defence in depth in case the advice ends up installed by some
   other path (e.g. a future autoload or a user with a custom
   setup).
@@ -627,12 +627,12 @@ $ make stable-check
 (Warnings dropped from the 50 baseline to 49; the one error
 present at baseline is gone.)
 
-** DONE Step 1.6 — Regression test on a dedicated test ontology
+** DONE Step 1.6 - Regression test on a dedicated test ontology
 CLOSED: [2026-05-07 tor. 18:48]
 
 Note: the original draft of this step assumed that SPARQL blocks
 in =examples/*.org= contained =<<resource-declarations(...)>>=
-noweb calls that needed to be stripped.  That is incorrect — the
+noweb calls that needed to be stripped.  That is incorrect - the
 Step 1.1 inventory shows those noweb calls only appear in
 non-SPARQL contexts (they belong to the legacy LOB pipeline
 retired in Milestone 2).  Existing example files therefore do
@@ -647,7 +647,7 @@ through ROBOT.  This fixture then doubles as a living example of
 the post-rewrite query style (no =PREFIX= boilerplate, no noweb)
 and as a CI regression harness.
 
-*** DONE Sub-step 1.6.1 — Create the fixture
+*** DONE Sub-step 1.6.1 - Create the fixture
 
 - *File*: =test/fixtures/sparql-roundtrip.org= (new).
 - The fixture is a minimal ELOT ontology (=my-ont=) declaring
@@ -665,26 +665,26 @@ and as a CI regression harness.
   expected output and serves as the checked-in expectation for
   Sub-step 1.6.2:
 
-  1. *Block 1* — bare =SELECT=, no =PREFIX= boilerplate
+  1. *Block 1* - bare =SELECT=, no =PREFIX= boilerplate
      (baseline case).
-  2. *Block 2* — =SELECT= with one inline =PREFIX rdfs:= that
+  2. *Block 2* - =SELECT= with one inline =PREFIX rdfs:= that
      *agrees* with the alist (silent dedup expected; same result
      as Block 1).
-  3. *Block 3* — =SELECT= with one inline =PREFIX rdfs:= that
+  3. *Block 3* - =SELECT= with one inline =PREFIX rdfs:= that
      *overrides* the alist with a different URI (warning
      expected, last-wins semantics: domain/range come back
      unbound).
-  4. *Block 4* — =SELECT= with one inline =PREFIX ex:= that
+  4. *Block 4* - =SELECT= with one inline =PREFIX ex:= that
      redeclares an existing prefix the body does not actually
      use (override is effectively ignored; same result as Block
      1).
-  5. *Block 5* — =CONSTRUCT= with =:format ttl :wrap "src ttl"
+  5. *Block 5* - =CONSTRUCT= with =:format ttl :wrap "src ttl"
      :cache yes :post kill-prefixes(data=*this*)=, exercising
      both the TTL path and the =kill-prefixes= post-hook.
-  6. *Block 6* — =SELECT= with an empty result set (querying
+  6. *Block 6* - =SELECT= with an empty result set (querying
      for =owl:DatatypeProperty=, of which there are none),
      exercising =elot--sparql-result-empty-p=.
-  7. *Block 7* — =SELECT= introducing a genuinely new namespace
+  7. *Block 7* - =SELECT= introducing a genuinely new namespace
      via inline =PREFIX new:= not present in the alist
      (preserved verbatim).
 
@@ -701,7 +701,7 @@ and as a CI regression harness.
      =#+RESULTS= (=new:A= / =new:B=) reflects this fixed
      behaviour; no expected-fail marker is needed.
 
-*** DONE Sub-step 1.6.2 — Wire the fixture into the test suite
+*** DONE Sub-step 1.6.2 - Wire the fixture into the test suite
 
 - *File*: =test/elot-sparql-roundtrip-test.el= (new).
 - *Makefile*: =test/Makefile= grows a =sparql-roundtrip-test=
@@ -761,7 +761,7 @@ and as a CI regression harness.
   HTTP fixture stood up).  ROBOT is the production path for
   ELOT users and the only one exercised here.
 
-*** Sub-step 1.6.3 — Capture the transcript
+*** Sub-step 1.6.3 - Capture the transcript
 
 - After the fixture and tests are green locally, run
   =make -C test sparql-roundtrip-test= and paste the output into
@@ -769,7 +769,7 @@ and as a CI regression harness.
   record that the rewrite works against a real ROBOT invocation.
 
 First run (2026-05-07): *6 of 7 tests pass*.  The transcript
-(elided for brevity — the long "Org version mismatch" preamble
+(elided for brevity - the long "Org version mismatch" preamble
 that fires before the suite starts and again before the first
 test runs is harmless and is suppressed below):
 
@@ -790,7 +790,7 @@ Ran 7 tests, 6 results as expected, 1 unexpected (44.67 sec)
 #+end_example
 
 The "Org version mismatch" warning that floods the early part of
-the transcript is unrelated to the SPARQL rewrite — it comes
+the transcript is unrelated to the SPARQL rewrite - it comes
 from Emacs loading the built-in =org= before =package-initialize=
 makes the ELPA-installed newer =org= visible.  It is safe to
 ignore as long as the tests themselves run; if it ever becomes
@@ -836,7 +836,7 @@ Likely root causes, to investigate in this order:
 1. *Off-by-one in the URI capture.*  The inline-PREFIX regexp
    is probably picking up only the prefix label (=rdfs=) and
    dropping the URI, or capturing an empty string for the URI,
-   so the conflict comparison is between =""= and =""= — equal,
+   so the conflict comparison is between =""= and =""= - equal,
    silently de-duped.  Sanity-check by =M-:
    (elot--sparql-compute-merged-prefixes
    org-link-abbrev-alist-local "PREFIX rdfs: <http://example.com/>\nselect * { ?s ?p ?o }")=
@@ -856,7 +856,7 @@ Likely root causes, to investigate in this order:
    trims a trailing =#= or =/= before comparing URIs (or
    case-folds), then =http://www.w3.org/2000/01/rdf-schema#=
    and =http://example.com/= still differ, so this is unlikely
-   — but worth ruling out by reading the comparison.
+   - but worth ruling out by reading the comparison.
 
 ***** Root cause and fix (2026-05-??)
 
@@ -869,7 +869,7 @@ carrying a trailing SPARQL line-comment failed to match.
 
 Inspection of =test/fixtures/sparql-roundtrip.org= shows that
 Blocks 2, 3 and 4 all have trailing =# ...= comments on their
-inline PREFIX lines (Block 7 — which passes — does not).  When
+inline PREFIX lines (Block 7 - which passes - does not).  When
 the line failed to match:
 
 - =elot--sparql-strip-inline-prefixes= returned an empty inline
@@ -878,7 +878,7 @@ the line failed to match:
 - =elot--sparql-compute-merged-prefixes= therefore saw no
   conflict between the alist's =rdfs:= and the body's =rdfs:=,
   and emitted no warning;
-- the body — re-prepended with the alist's prefix block —
+- the body - re-prepended with the alist's prefix block -
   still parsed at ROBOT because SPARQL allows a second =PREFIX
   rdfs:= declaration to shadow the first, so domain/range came
   back unbound.  This is exactly the symptom observed for
@@ -909,10 +909,10 @@ unused), and the round-trip test goes green.
 - Re-run =make -C test sparql-roundtrip-test= and replace the
   partial transcript above with the full clean run.
 
-** DONE Step 1.7 — Mirror in literate sources
+** DONE Step 1.7 - Mirror in literate sources
 - *Files*: =elot-defs.org=, =elot-mode.org=.
 - The source blocks for every function/template/advice touched
-  in Steps 1.2–1.5 (the prefix-merge helpers, the hardened
+  in Steps 1.2--1.5 (the prefix-merge helpers, the hardened
   advice and =elot-robot-execute-query=, the SPARQL-advice
   install/uninstall lifecycle, and the regexp fix from Sub-step
   1.6.3) were updated *manually* in the literate sources so that
@@ -947,17 +947,17 @@ CLOSED: [2026-05-07 tor. 18:31]
   =elot-mode= in the last remaining ELOT buffer it returns =nil=
   again.  Encoded as automated checks in
   =test/elot-sparql-advice-test.el=:
-  - =elot-sparql-advice-not-installed-at-load= — asserts the
+  - =elot-sparql-advice-not-installed-at-load= - asserts the
     advice is absent right after =(require 'elot)= /
     =(require 'elot-mode)= top-of-module loads.
-  - =elot-sparql-advice-lifecycle= — toggles =elot-mode= in a
+  - =elot-sparql-advice-lifecycle= - toggles =elot-mode= in a
     temp Org buffer and inspects the advice list before, during,
     and after.
-  - =elot-sparql-advice-refcount-multi-buffer= — opens two ELOT
+  - =elot-sparql-advice-refcount-multi-buffer= - opens two ELOT
     buffers and confirms the advice survives disabling =elot-mode=
     in the first one and is only removed when the *last* ELOT
     buffer toggles off.
-  - =elot-sparql-advice-install-is-idempotent= — defence in depth
+  - =elot-sparql-advice-install-is-idempotent= - defence in depth
     for the install helper's =elot--sparql-advice-installed-p=
     guard (a double =advice-add= would chain the =:around=
     advice twice).
@@ -970,7 +970,119 @@ CLOSED: [2026-05-07 tor. 18:31]
   passes (Step 1.7 verification).
 - Run the [[#stable-status][stable-status checklist]].
 
-* Milestone 2 — Resolve legacy =elot.el= LOB pipeline
+* TODO Interlude - Retire the ELOT hydra
+:PROPERTIES:
+:CUSTOM_ID: interlude-retire-hydra
+:END:
+
+** Background
+
+The ELOT hydra (=elot-hydra=, summoned by =S-<f5>= via
+=elot-key-open-hydra=) duplicates functionality already provided
+by the easymenu defined in [[file:elot-mode.org::*Menu with ~easy-menu~][Menu with ~easy-menu~]].  The hydra is
+therefore redundant for users and, more importantly, an active
+liability for ELPA submission:
+
+- =defhydra= is a *macro*.  Even though =elot.el= guards the call
+  with =(when (fboundp 'defhydra) ...)=, the byte-compiler
+  expands the macro whenever hydra happens to be on =load-path=
+  at compile time.  The expansion bakes hydra-internal symbols
+  (=elot-hydra=, =:color=, =blue=, anonymous lambdas referencing
+  =hydra--call-interactively-remap-maybe=, etc.) into =elot.elc=.
+- When that =.elc= is later loaded in an Emacs *without* hydra,
+  =(require 'elot)= fails with =void-variable elot-hydra= - the
+  runtime =fboundp= guard cannot protect against references
+  injected at macro-expansion time.
+- This is exactly the failure observed in =make stable-check=
+  after the warning-cleanup commit: =sparql-advice-test= aborted
+  the test step (exit=2, 0 passed / 0 failed) with =void-variable
+  elot-hydra=.
+
+The original Milestone 4 Sub-step 4.2.1 proposed *Option A*:
+defer macro expansion to runtime via =with-eval-after-load= and a
+quoted =eval=.  We instead choose *Option B*: retire the hydra
+outright.
+
+** Decision: Option B - retire the hydra
+
+Reasons:
+
+- The easymenu already covers the same ground (and is loaded
+  unconditionally - no optional-dep risk).
+- Removing the hydra eliminates one optional dependency
+  permanently, reduces the surface of Milestone 4, and lets us
+  drop Sub-steps 4.2.1, 4.2.2, 4.2.3 (the =with-eval-after-load=
+  rewrite plus the optional-hydra ERT test) entirely.
+- =elot-key-toggle-labels= (=F5=) is *retained* - that binding is
+  familiar to existing users ("hit F5 to toggle labels") and is
+  independent of the hydra.
+
+User-visible behaviour change: =S-<f5>= no longer summons a menu.
+The easymenu remains the discoverable entry point for the same
+commands.  Mention in README/CHANGELOG.
+
+** DONE Step H.1 - Remove the hydra definition
+CLOSED: [2026-05-07]
+- *Files*: =elot-package/elot.el=, =elot-defs.org= (named blocks
+  =src-tempo-fwd-declare= and =src-hydra-menu=).
+- The =defhydra elot-hydra= form and its =(when (fboundp
+  'defhydra) ...)= guard have been removed from both the
+  literate source and the tangled =.el=.
+- The former =src-tempo-fwd-declare= named block (forward
+  declarations of =tempo-template-...= functions referenced only
+  by the hydra) is no longer needed and has been replaced with a
+  short placeholder comment in =elot-defs.org=, mirrored in
+  =elot.el=, explaining that the hydra has been retired.  The
+  =src-hydra-menu= named block is gone entirely (its prose
+  surroundings in =elot-defs.org= now read "RETIRED").
+- =git grep -nE "defhydra|elot-hydra/body" elot-package/=
+  returns no matches.  Lingering references to
+  =elot-key-open-hydra= (the defcustom and the keybinding) are
+  removed in Step H.2.
+
+** TODO Step H.2 - Remove the =elot-key-open-hydra= defcustom and binding
+- *Files*: =elot-package/elot.el= (and =elot-defs.org= mirror),
+  =elot-package/elot-mode.el= (and =elot-mode.org= mirror).
+- Delete the =defcustom elot-key-open-hydra= form (around line 42877
+  of the byte-compiled file; locate the source via grep).
+- In =elot-setup-org-keybindings= (=elot.el= around line 1257),
+  delete the =(local-set-key elot-key-open-hydra
+  #'elot-hydra/body)= line.
+- In =elot-mode.el=, delete the =S-<f5>= keymap entry that calls
+  =elot-hydra/body= (around line 500, guarded with =fboundp=).
+- *Retain* =elot-key-toggle-labels= and the =F5= keybinding.
+
+** TODO Step H.3 - Remove hydra from optional-deps machinery
+- *File*: =elot-package/elot.el=.
+- Remove =hydra= from the =dolist= populating
+  =elot-missing-dependencies= (around line 62).
+- Confirm =git grep -nE "\\bhydra\\b" elot-package/= returns no
+  Elisp matches.
+
+** TODO Step H.4 - Update plan and docs
+- *Files*: this plan, =README.org= (and regenerate =README.md=),
+  optionally =CHANGELOG=.
+- Strike Sub-steps 4.2.1, 4.2.2, 4.2.3 from Milestone 4 (replace
+  with a one-line back-reference to this Interlude).
+- Drop =hydra= from the audit list in Step 4.2.
+- Add a one-line user-facing note that =S-<f5>= no longer
+  summons a menu; the easymenu remains.
+- Add a Decisions-log entry (template at the bottom of this
+  plan).
+
+** Acceptance check
+- =git grep -nE "defhydra|elot-hydra|hydra--" elot-package/=
+  returns no matches.
+- =make stable-check= passes (the test step in particular -
+  =sparql-advice-test= no longer aborts on =void-variable
+  elot-hydra=).
+- =make native-compile= shows no remaining =Malformed function
+  ="r"= / =reference to free variable elot-hydra= warnings.
+- =M-x elot-mode= in an Org buffer activates without error;
+  =F5= still toggles labels; =S-<f5>= is unbound (or rebound to
+  nothing ELOT-specific).
+
+* Milestone 2 - Resolve legacy =elot.el= LOB pipeline
 :PROPERTIES:
 :CUSTOM_ID: milestone-2-legacy-cleanup
 :END:
@@ -996,8 +1108,8 @@ to OWL because the new pipeline does not look at those noweb
 calls.  This means the LOB functions can be deleted outright
 without breaking existing ontology sources.
 
-One legacy function — =elot-prefix-block-from-alist= — is still
-called from production code in =elot-label-display.el= (line ≈173)
+One legacy function - =elot-prefix-block-from-alist= - is still
+called from production code in =elot-label-display.el= (line around173)
 and (after Milestone 1) from the rewritten SPARQL advice.  It must
 be preserved (relocated, not deleted).
 
@@ -1006,7 +1118,7 @@ be preserved (relocated, not deleted).
 We delete the legacy LOB *pipeline* functions (the
 =resource-declarations= / =resource-taxonomy= family) but *retain
 =elot-lob.org= as a supported, user-facing part of ELOT* for
-=#+call:=-style helpers — most importantly =rdfpuml-block=, which
+=#+call:=-style helpers - most importantly =rdfpuml-block=, which
 authors invoke from prose to render TTL diagrams with caption and
 results integration.
 
@@ -1019,7 +1131,7 @@ Rationale:
   tangle pipeline (those calls are silently ignored).
 - Only one example, =examples/reasoner-example.org=, contains the
   old SPARQL prefix boilerplate.  It is a special-case file and
-  is acceptable to leave as-is — it does not gate the milestone.
+  is acceptable to leave as-is - it does not gate the milestone.
 - =rdfpuml-block= and similar =#+call:=-style helpers are a
   *different category*: they are idiomatic Org (named,
   parameterised, caption-bearing, results-integrated, and they
@@ -1031,16 +1143,16 @@ Rationale:
   deprecation schedule into the MELPA submission, while
   preserving an ergonomic authoring affordance users rely on.
 
-** TODO Step 2.1 — Move =elot-prefix-block-from-alist= to =elot-tangle.el=
+** TODO Step 2.1 - Move =elot-prefix-block-from-alist= to =elot-tangle.el=
 - *Literate sources*: both =.el= files involved here are tangled
   from Org sources and must be edited there, not in the tangled
   output:
-  - =elot-package/elot.el= ⇐ =elot-defs.org=
-  - =elot-package/elot-tangle.el= ⇐ =elot-tangling.org=
+  - =elot-package/elot.el= <= =elot-defs.org=
+  - =elot-package/elot-tangle.el= <= =elot-tangling.org=
   Even though =elot-defs.org= will be much smaller once this
   milestone lands, it is not being retired in this submission
   prep.  Likewise =elot-tangling.org= remains the literate source
-  for =elot-tangle.el= — a future restructuring of the literate
+  for =elot-tangle.el= - a future restructuring of the literate
   =.org= sources is out of scope here.
 - *Files edited*: =elot-tangling.org=, =elot-defs.org=
   (Step 2.2 covers the =elot-defs.org= side of the move; this
@@ -1049,12 +1161,12 @@ Rationale:
   =elot-prefix-block-from-alist= near the other prefix helpers
   (after the block that produces =elot-update-link-abbrev=).
   Tangle target: =./elot-package/elot-tangle.el=.  Copy the
-  current function body verbatim from =elot.el= ≈ line 464.
+  current function body verbatim from =elot.el= around line 464.
 - Tangle =elot-tangling.org= and confirm =elot-tangle.el= now
   contains the function.
 - Update the call sites in =elot-label-display.el= and the
   rewritten SPARQL advice (=elot.el= itself, post-Milestone 1) so
-  they pick up the relocated definition — both files already
+  they pick up the relocated definition - both files already
   ~require~ =elot-tangle= transitively, so no new =require= is
   needed; verify with byte-compile.  Mirror any required edits in
   the corresponding literate sources (=elot-label-display.org=,
@@ -1062,18 +1174,18 @@ Rationale:
 - The deletion of the function from =elot.el= / =elot-defs.org=
   is handled in Step 2.2.
 
-** TODO Step 2.2 — Mirror the move in =elot-defs.org=
+** TODO Step 2.2 - Mirror the move in =elot-defs.org=
 - *File*: =elot-defs.org=.
 - Find the named block =src-prefix-blocks= and either:
   - delete it (if the function now lives only in =elot-tangle.el=
-    via direct authoring — preferred), or
+    via direct authoring - preferred), or
   - retarget its =:tangle= header to
     =./elot-package/elot-tangle.el=.
 - Verify with =M-x org-babel-tangle= on =elot-defs.org=: the
   produced =elot.el= no longer contains the function; =git diff=
   shows no further changes.
 
-** TODO Step 2.3 — Delete the legacy LOB functions from =elot.el=
+** TODO Step 2.3 - Delete the legacy LOB functions from =elot.el=
 - *File*: =elot-package/elot.el=.
 - Delete each of the following function definitions outright:
 
@@ -1101,21 +1213,21 @@ Rationale:
 - Confirm with =git grep= that no production code references any
   of the deleted symbols.
 
-** TODO Step 2.4 — Remove corresponding entries from =elot-defs.org=
+** TODO Step 2.4 - Remove corresponding entries from =elot-defs.org=
 - *File*: =elot-defs.org=.
 - Delete every named source block that tangled into the now-
   removed functions in =elot.el=.
 - Re-tangle and verify =git diff elot-package/elot.el= shows no
   further changes.
 
-** TODO Step 2.5 — Split =elot-lob.org= into retired vs supported halves
+** TODO Step 2.5 - Split =elot-lob.org= into retired vs supported halves
 
 The file =elot-package/elot-lob.org= is *retained* and remains
 part of the MELPA recipe's =:files= list (Milestone 7 Step 7.1).
 It contains two conceptually different sets of named blocks; this
 step makes that split explicit and wires up the supported half.
 
-*** Sub-step 2.5.1 — Reimplement =kill-prefixes= as Elisp (prerequisite)
+*** Sub-step 2.5.1 - Reimplement =kill-prefixes= as Elisp (prerequisite)
 
 - =kill-prefixes= is referenced from =elot-block-sparql-construct=
   as =:post kill-prefixes(data=*this*)=.  =:post= hooks have a
@@ -1133,21 +1245,21 @@ step makes that split explicit and wires up the supported half.
   =@prefix= and SPARQL =PREFIX= declarations and leaves the
   remaining body untouched.
 
-*** Sub-step 2.5.2 — Annotate the retired blocks in =elot-lob.org=
+*** Sub-step 2.5.2 - Annotate the retired blocks in =elot-lob.org=
 
 - *File*: =elot-package/elot-lob.org=.
 - Add a top-of-file comment explaining the file is retained and
   is part of ELOT's supported API for =#+call:=-style helpers.
 - Mark the legacy pipeline blocks (=resource-declarations=,
   =resource-taxonomy=, and any other blocks tied to the retired
-  LOB pipeline) with a clear "RETIRED — kept inert so that old
+  LOB pipeline) with a clear "RETIRED - kept inert so that old
   example files still open without =org-babel-tangle= errors.
   Do not invoke from new code." note.  Do *not* delete them.
 - Identify and label the *supported* blocks (=rdfpuml-block=,
   any other =#+call:=-style helpers worth keeping).  Promote
   these to ELOT's documented API.
 
-*** Sub-step 2.5.3 — Auto-ingest supported LOB on =elot-mode= enable
+*** Sub-step 2.5.3 - Auto-ingest supported LOB on =elot-mode= enable
 
 - *Files*: =elot-package/elot-mode.el=, =elot-mode.org=.
 - Add a step in =elot-mode--enable= that calls
@@ -1160,17 +1272,17 @@ step makes that split explicit and wires up the supported half.
   installed MELPA package.
 - No corresponding action in =elot-mode--disable=: ingested LOB
   blocks are harmless and there is no per-buffer state to undo.
-- This means =#+call: rdfpuml-block(ttlblock="…")= just works in
+- This means =#+call: rdfpuml-block(ttlblock="...")= just works in
   any ELOT buffer with no =M-x org-babel-lob-ingest= step.
 
-*** Sub-step 2.5.4 — Document supported LOB blocks
+*** Sub-step 2.5.4 - Document supported LOB blocks
 
 - Update README and/or the manual to describe the supported
   =#+call:= helpers (=rdfpuml-block= at minimum) as part of
   ELOT's user-facing API, with a short example modelled on
   =examples/pets.org=.
 
-*** Sub-step 2.5.5 — Old example files: leave alone
+*** Sub-step 2.5.5 - Old example files: leave alone
 
 - =examples/reasoner-example.org= contains the old SPARQL
   prefix boilerplate.  Special-case file; leave as-is.
@@ -1191,12 +1303,12 @@ step makes that split explicit and wires up the supported half.
   =elot-mode= is enabled).
 - =elot-kill-prefixes= ERT test passes.
 - =elot-lob.org= is still listed in the MELPA recipe =:files=
-  (Milestone 7 Step 7.1) — confirm the recipe text contains it
+  (Milestone 7 Step 7.1) - confirm the recipe text contains it
   with the explanatory comment.
-** TODO Step 2.6 — Update =REFACTORING.org= Design Decisions
+** TODO Step 2.6 - Update =REFACTORING.org= Design Decisions
 - *File*: =REFACTORING.org=.
 - Add an entry under "Design Decisions" recording: Strategy B
-  was chosen — the LOB pipeline functions were removed outright
+  was chosen - the LOB pipeline functions were removed outright
   rather than deprecated, because the SPARQL rewrite (Milestone
   1) eliminated the last production dependency on them and old
   example files continue to tangle correctly.
@@ -1208,9 +1320,9 @@ step makes that split explicit and wires up the supported half.
   =elot-label-display.el= and the rewritten SPARQL advice.
 - Tangle a current =examples/*.org= and confirm the resulting
   =.omn= is byte-identical to a copy saved before the change.
-- Run the [[#stable-status][stable-status checklist]] — *all green*.
+- Run the [[#stable-status][stable-status checklist]] - *all green*.
 
-* Milestone 3 — Remove load-time global side effects
+* Milestone 3 - Remove load-time global side effects
 :PROPERTIES:
 :CUSTOM_ID: milestone-3-side-effects
 :END:
@@ -1226,24 +1338,24 @@ only takes effect for buffers that have opted in.
 The SPARQL =advice-add= is already handled in [[#milestone-1-sparql][Milestone 1]] Step
 1.5; this milestone only needs to verify it.
 
-** TODO Step 3.1 — Replace bare =setq= for =elot-missing-dependencies=
-- *File*: =elot-package/elot.el= (≈ line 60).
+** TODO Step 3.1 - Replace bare =setq= for =elot-missing-dependencies=
+- *File*: =elot-package/elot.el= (around line 60).
 - Remove =(setq elot-missing-dependencies nil)=.  The =defvar= on
   the previous line already initialises it to =nil=.  The
   immediately-following =dolist= that populates the list can stay
   at top level (it does not mutate any external symbol).
 
-** TODO Step 3.2 — Move LaTeX export filter registration into mode lifecycle
+** TODO Step 3.2 - Move LaTeX export filter registration into mode lifecycle
 - *Files*: =elot-package/elot.el=, =elot-package/elot-mode.el=.
 - Remove the top-level
   =(add-to-list 'org-export-filter-item-functions 'elot-latex-filter-omn-item)=
-  call (≈ line 159 of =elot.el=).
+  call (around line 159 of =elot.el=).
 - In =elot-mode.el=, inside =elot-mode--enable=, add the same
   =add-to-list= call.  Inside =elot-mode--disable=, add the
   matching =(setq org-export-filter-item-functions (delq 'elot-latex-filter-omn-item org-export-filter-item-functions))=.
 - Use =add-to-list= so re-enabling does not duplicate.
 
-** TODO Step 3.3 — Verify SPARQL advice lifecycle (done in Milestone 1)
+** TODO Step 3.3 - Verify SPARQL advice lifecycle (done in Milestone 1)
 - Milestone 1 Step 1.5 already moved
   =(advice-add 'org-babel-execute:sparql ...)= out of top-level
   scope and into =elot-mode--enable= /
@@ -1256,24 +1368,24 @@ The SPARQL =advice-add= is already handled in [[#milestone-1-sparql][Milestone 1
   - the advice fixture from Milestone 1's acceptance check still
     passes.
 
-** TODO Step 3.4 — Move export hook into mode lifecycle
+** TODO Step 3.4 - Move export hook into mode lifecycle
 - *Files*: =elot-package/elot.el=, =elot-package/elot-mode.el=.
 - Remove the top-level
   =(add-hook 'org-export-before-processing-functions #'elot--prepare-export-buffer)=
-  call (≈ line 793 of =elot.el=).
+  call (around line 793 of =elot.el=).
 - Inside =elot-mode--enable=, add the same =add-hook=.
 - Inside =elot-mode--disable=, add =(remove-hook ...)=.
 
-** TODO Step 3.5 — Same treatment for top-level hooks in =elot-mode.el=
+** TODO Step 3.5 - Same treatment for top-level hooks in =elot-mode.el=
 - *File*: =elot-package/elot-mode.el=.
-- The three top-level statements at lines ≈843, ≈852, ≈870
+- The three top-level statements at lines around843, around852, around870
   (=advice-add 'xref-find-references...=,
   =add-hook 'xref-after-update-hook ...= twice) install global
   state at =require= time.  Move these into =elot-mode--enable=
   and pair them with =advice-remove= / =remove-hook= in
   =elot-mode--disable=.
 
-** TODO Step 3.6 — Mirror the changes in =elot-defs.org= and =elot-mode.org=
+** TODO Step 3.6 - Mirror the changes in =elot-defs.org= and =elot-mode.org=
 - For every function/hook moved above, find the corresponding
   =#+begin_src= block in =elot-defs.org= or =elot-mode.org= and
   edit it so that re-tangling regenerates the same hand-edited
@@ -1289,7 +1401,7 @@ The SPARQL =advice-add= is already handled in [[#milestone-1-sparql][Milestone 1
   elot-mode= a second time (disable), it returns =nil= again.
 - Run the [[#stable-status][stable-status checklist]].
 
-* Milestone 4 — Pick a single =MAIN FILE= and fix =Package-Requires=
+* Milestone 4 - Pick a single =MAIN FILE= and fix =Package-Requires=
 :PROPERTIES:
 :CUSTOM_ID: milestone-4-package-requires
 :END:
@@ -1314,166 +1426,62 @@ is no longer used.
   point: it is ~require~d from =elot.el=.  It does *not* carry its
   own =Package-Requires=.
 
-** TODO Step 4.1 — Make =elot.el= carry the canonical =Package-Requires=
+** TODO Step 4.1 - Make =elot.el= carry the canonical =Package-Requires=
 - *File*: =elot-package/elot.el=.
 - Ensure the header block contains, in this order:
   : ;; Version: 2.0.0
   : ;; URL: https://github.com/johanwk/elot
   : ;; Package-Requires: ((emacs "29.1"))
 - The =Package-Requires= value is the union of all transitive
-  runtime dependencies — minus =ht= (unused) and minus packages
+  runtime dependencies - minus =ht= (unused) and minus packages
   that are loaded with =(require ... nil t)= (i.e., truly
   optional).  After auditing (Step 4.2) the actual list is
   expected to remain =((emacs "29.1"))= because every external
   package is in fact optional.  Confirm or revise as audit
   dictates.
 
-** TODO Step 4.2 — Audit each external package and decide hard vs optional
-For each of =htmlize=, =omn-mode=, =hydra=, =sparql-mode=,
-=ob-sparql=, =ob-plantuml=, =ht=:
+** TODO Step 4.2 - Audit each external package and decide hard vs optional
+For each of =htmlize=, =omn-mode=, =sparql-mode=, =ob-sparql=,
+=ob-plantuml=, =ht= (=hydra= retired in the [[#interlude-retire-hydra][Hydra retirement
+Interlude]] and is no longer audited here):
 
 1. =git grep -n "(require '<pkg>"= and =git grep -n "<pkg>-"=
    inside =elot-package/=.
 2. Classify:
-   - *Hard* — code paths that always run on mode enable will
+   - *Hard* - code paths that always run on mode enable will
      fail without the package.
-   - *Optional* — only used inside =(when (fboundp ...))= or
+   - *Optional* - only used inside =(when (fboundp ...))= or
      =(require ... nil t)= guards.
 3. *Hard* packages go into =Package-Requires=; *optional* ones
    are documented in =elot.el='s commentary instead.
 
-Expected outcome (from current code reading): all seven are
+Expected outcome (from current code reading): all six are
 optional except =ht=, which is unused and must be removed.
 
-*** Sub-step 4.2.1 — Harden the optional =hydra= dependency (Option A)
+*** Sub-steps 4.2.1 / 4.2.2 / 4.2.3 - Superseded
+Hydra has been retired outright (see [[#interlude-retire-hydra][Hydra
+retirement Interlude]]); the original Option A rewrite, the
+optional-hydra ERT test, and their joint acceptance step are no
+longer needed.
 
-- *Files*: =elot-package/elot.el=, =elot-defs.org=.
-- Problem: =elot.el= currently wraps the hydra menu definition in
-  a runtime guard:
-  #+begin_src emacs-lisp
-  (when (fboundp 'defhydra)
-    (defhydra elot-hydra (:color blue :hint nil) ...))
-  #+end_src
-  =defhydra= is a *macro*, so the byte-compiler expands the body
-  whenever hydra happens to be on =load-path= at compile time.
-  The expansion bakes in references to hydra-internal functions
-  (e.g. =hydra--call-interactively-remap-maybe=).  If the
-  resulting =.elc= is then loaded in an Emacs *without* hydra on
-  =load-path=, =(require 'elot)= fails — the runtime
-  =(when (fboundp 'defhydra) ...)= guard does not protect against
-  references injected by macro-expansion.
-- This is exactly what surfaced when the new
-  =sparql-advice-test= was added: the test's batch Emacs picks
-  up hydra (probably via a leaking user package directory or a
-  transitive dep), the helper module gets compiled with
-  hydra-aware expansion, and a load in a clean environment
-  blows up.
-- *Fix (Option A): defer macro expansion to runtime.*  Replace
-  the =(when (fboundp 'defhydra) (defhydra elot-hydra ...))=
-  form with =(with-eval-after-load 'hydra (eval '(defhydra
-  elot-hydra ...) t))=.  Concretely:
-
-  #+begin_src emacs-lisp
-  ;; The defhydra macro reference must NOT be expanded at
-  ;; byte-compile time, because hydra is an optional dependency
-  ;; (see Package-Requires).  Defer expansion until hydra is
-  ;; actually loaded at runtime.
-  (with-eval-after-load 'hydra
-    (eval
-     '(defhydra elot-hydra (:color blue :hint nil)
-        "..."
-        ...)
-     t))
-  #+end_src
-
-  Notes on the construction:
-  - =with-eval-after-load 'hydra= ensures the form runs only
-    once hydra is genuinely available.
-  - =(eval 'FORM t)= (lexical) prevents the byte-compiler from
-    looking inside =FORM= and demanding =defhydra= at compile
-    time.  Without the quoted-and-=eval='d wrapper the compiler
-    would still try to expand the macro because the surrounding
-    =with-eval-after-load= form is itself byte-compiled.
-- The S-F5 keybinding in =elot-mode.el= already guards on
-  =(fboundp 'elot-hydra/body)= (line ≈500), so the keymap
-  installation continues to work whether or not hydra ever
-  loads.  No change needed there.
-- =elot-setup-org-keybindings= in =elot.el= (≈ line 1257)
-  unconditionally calls =(local-set-key elot-key-open-hydra
-  #'elot-hydra/body)=.  Wrap that single call in
-  =(when (fboundp 'elot-hydra/body) ...)= for symmetry — without
-  hydra loaded, =elot-hydra/body= is not defined and the
-  keybinding would otherwise resolve to nothing useful.
-- Add =(declare-function elot-hydra/body "ext:hydra")= near the
-  top of =elot.el= (alongside the other forward declarations) to
-  silence the byte-compile warning that would otherwise appear
-  for the unconditional reference inside
-  =elot-setup-org-keybindings=.
-- Mirror the change in =elot-defs.org= (named block
-  =src-hydra-menu=) so a re-tangle is a no-op.
-
-*** Sub-step 4.2.2 — ERT regression test for optional-hydra load
-
-- *File*: =test/elot-optional-deps-test.el= (new).
-- The test uses =call-process= to spawn a child Emacs in batch
-  mode and asserts that =(require 'elot)= succeeds in two
-  configurations:
-  1. =hydra= present on =load-path= (the normal developer setup).
-  2. =hydra= explicitly *absent* from =load-path=, simulated by
-     spawning Emacs with =-Q= and a sanitised =load-path= that
-     contains only =elot-package/= plus the directories needed
-     for ELOT's other (truly optional) deps that are loaded with
-     =(require ... nil t)=.  The test programmatically locates
-     hydra via =locate-library= in the parent process and, if
-     found, removes its directory from the child's
-     =load-path=.
-- Each child invocation runs:
-  #+begin_src sh
-  emacs -Q --batch -L elot-package \
-    --eval "(require 'elot)" \
-    --eval "(unless (fboundp 'elot-mode) (kill-emacs 1))" \
-    --eval "(kill-emacs 0)"
-  #+end_src
-  The test asserts =(zerop exit-code)= for both runs.
-- Additionally, in the without-hydra run the test greps the
-  child's stderr for any =hydra--= or =defhydra= reference and
-  asserts there are none — defence against a future regression
-  that re-introduces a compile-time hydra reference.
-- The test is *not* gated on ROBOT and *not* gated on hydra
-  being installed: if hydra cannot be found at all, the
-  with-hydra arm =ert-skip='s with a clear message and the
-  without-hydra arm still runs.
-- Wire into =test/Makefile= as the =optional-deps-test= target
-  and add to the default =test= goal.
-
-*** Sub-step 4.2.3 — Acceptance for sub-steps 4.2.1 and 4.2.2
-
-- =make -C test optional-deps-test= passes locally (both arms,
-  or with-hydra arm skipped if hydra is not installed).
-- =git grep -n "defhydra\\|hydra--" elot-package/*.elc= run
-  against freshly compiled =.elc= files in a hydra-free
-  environment shows no hydra-internal symbols baked in.
-- The [[#stable-status][stable-status checklist]] still passes in
-  both a hydra-equipped and a hydra-stripped Emacs.
-
-** TODO Step 4.3 — Remove =Package-Requires= from sub-files
+** TODO Step 4.3 - Remove =Package-Requires= from sub-files
 - *Files*: =elot-package/elot-mode.el=, =elot-package/elot-flymake.el=.
 - Delete the =;; Package-Requires:= line from each.  The MAIN FILE
   (=elot.el=) now owns this.
 
-** TODO Step 4.4 — Drop the unused =ht= dependency in =elot.el=
+** TODO Step 4.4 - Drop the unused =ht= dependency in =elot.el=
 - *File*: =elot-package/elot.el=.
-- Remove =ht= from the =dolist= at ≈ line 62.
+- Remove =ht= from the =dolist= at around line 62.
 - Remove =ht= from any leftover docstrings or commentary.
 - Confirm with =git grep -n "(require 'ht\\b\\|ht-"
   elot-package/= that nothing references it.
 
-** TODO Step 4.5 — Update =elot-defs.org=
+** TODO Step 4.5 - Update =elot-defs.org=
 - *File*: =elot-defs.org=.
 - Sync the =Package-Requires= block in the literate source with
   the changes above so re-tangling does not undo them.
 
-** TODO Step 4.6 — Make =elot.el= the canonical load entry point
+** TODO Step 4.6 - Make =elot.el= the canonical load entry point
 - *File*: =elot-package/elot.el= (and =elot-defs.org= mirror).
 - Near the bottom of =elot.el= (just before =(provide 'elot)=),
   add ~require~ forms for every sibling module that should be
@@ -1506,7 +1514,7 @@ optional except =ht=, which is unused and must be removed.
   without any further =require= calls.
 - Run the [[#stable-status][stable-status checklist]].
 
-* Milestone 5 — Standardise file headers and licenses
+* Milestone 5 - Standardise file headers and licenses
 :PROPERTIES:
 :CUSTOM_ID: milestone-5-headers
 :END:
@@ -1518,15 +1526,15 @@ files do not meet the bar: =elot-owl-grammar.el= has no copyright
 or license at all; =elot-db.el= and =elot-sources.el= use MIT
 without GPL boilerplate and miss =Version:=/=URL:= headers.
 
-** TODO Step 5.1 — Add a full GPL-3 header to =elot-owl-grammar.el=
+** TODO Step 5.1 - Add a full GPL-3 header to =elot-owl-grammar.el=
 - *File*: =elot-package/elot-owl-grammar.el=.
 - Insert immediately after the =;;; ... -*- lexical-binding: t; -*-=
   line: copyright, author, URL, Keywords, GPL-3 license boilerplate,
-  =Commentary:=, =Code:= — modelled on the header of
-  =elot-mode.el=.  Keep the existing "Generated by …" comment
+  =Commentary:=, =Code:= - modelled on the header of
+  =elot-mode.el=.  Keep the existing "Generated by ..." comment
   inside =;;; Commentary:=.
 
-** TODO Step 5.2 — Standardise =elot-db.el= and =elot-sources.el= on GPL-3
+** TODO Step 5.2 - Standardise =elot-db.el= and =elot-sources.el= on GPL-3
 - *Files*: =elot-package/elot-db.el=, =elot-package/elot-sources.el=.
 - Replace the =SPDX-License-Identifier: MIT= line with the full
   GPL-3 boilerplate used by =elot-mode.el= (also covered by the
@@ -1536,18 +1544,18 @@ without GPL boilerplate and miss =Version:=/=URL:= headers.
 - Update the =Copyright= line to =2024, 2025, 2026 The ELOT authors=
   for consistency.
 
-** TODO Step 5.3 — Add =:group= to every =defcustom= and =defgroup= where missing
+** TODO Step 5.3 - Add =:group= to every =defcustom= and =defgroup= where missing
 - =defgroup elot-tangle= and =defgroup elot-label-display= do not
   exist; their =defcustom= entries are not assigned a group, which
   =checkdoc= flags.
 - For each file, ensure either an existing =defgroup= covers all
   its =defcustom= s, or add a sub-group:
-  - =elot-tangle.el= → add =(defgroup elot-tangle nil ... :group 'elot)=.
-  - =elot-label-display.el= → add =(defgroup elot-label-display nil ... :group 'elot)=.
-  - =elot-mode.el= → confirm all use =:group 'elot=.
+  - =elot-tangle.el= -> add =(defgroup elot-tangle nil ... :group 'elot)=.
+  - =elot-label-display.el= -> add =(defgroup elot-label-display nil ... :group 'elot)=.
+  - =elot-mode.el= -> confirm all use =:group 'elot=.
 - Add =:group= to every =defcustom= in those files.
 
-** TODO Step 5.4 — Re-evaluate the =no-native-compile= flag in =elot.el=
+** TODO Step 5.4 - Re-evaluate the =no-native-compile= flag in =elot.el=
 - *File*: =elot-package/elot.el=.
 - After Milestone 2 the function that needed
   =org-link-abbrev-alist-local= access at native-compile time
@@ -1578,7 +1586,7 @@ without GPL boilerplate and miss =Version:=/=URL:= headers.
   reports no new warnings vs the baseline (Step B.1).
 - Run the [[#stable-status][stable-status checklist]].
 
-* Milestone 6 — CI workflow for tests and lint
+* Milestone 6 - CI workflow for tests and lint
 :PROPERTIES:
 :CUSTOM_ID: milestone-6-ci
 :END:
@@ -1591,7 +1599,7 @@ The repository currently has only one GitHub Actions workflow
 local CI workflow that runs both, plus the ERT suite, catches
 problems before submission.
 
-** TODO Step 6.1 — Add =.github/workflows/test.yml=
+** TODO Step 6.1 - Add =.github/workflows/test.yml=
 - *File*: =.github/workflows/test.yml= (new).
 - Trigger on =push= to =main= and on =pull_request=.
 - Matrix on Emacs versions: =29.1=, =29.4=, =30.1= (snapshot if
@@ -1602,7 +1610,7 @@ problems before submission.
   3. =make -C test=.
   4. Byte-compile =elot-package/*.el= with =-Werror=.
 
-** TODO Step 6.2 — Add =.github/workflows/lint.yml=
+** TODO Step 6.2 - Add =.github/workflows/lint.yml=
 - *File*: =.github/workflows/lint.yml= (new).
 - Same trigger conditions.
 - Run =package-lint= against =elot-package/elot.el= as the
@@ -1612,11 +1620,11 @@ problems before submission.
 - Both jobs must be /required status checks/ (configure once
   the workflow is green).
 
-** TODO Step 6.3 — Mark ROBOT-gated tests skipped on CI
+** TODO Step 6.3 - Mark ROBOT-gated tests skipped on CI
 - Confirm that tests requiring ROBOT call =skip-unless= or the
   equivalent so they pass-skip on Linux runners without ROBOT.
 - The =test/Makefile= comments suggest this is already in place
-  for some tests; verify all relevant ones — including any new
+  for some tests; verify all relevant ones - including any new
   SPARQL tests added in Milestone 1.
 
 ** Acceptance check
@@ -1624,7 +1632,7 @@ problems before submission.
   feature branch.
 - Run the [[#stable-status][stable-status checklist]] locally.
 
-* Milestone 7 — MELPA recipe and submission
+* Milestone 7 - MELPA recipe and submission
 :PROPERTIES:
 :CUSTOM_ID: milestone-7-recipe
 :END:
@@ -1635,7 +1643,7 @@ A MELPA recipe is a single Elisp form in the =melpa/melpa=
 repository under =recipes/elot=.  A draft is sketched in
 =ELOT-DB-PLAN.org= but has not been finalised.
 
-** TODO Step 7.1 — Finalise the recipe form
+** TODO Step 7.1 - Finalise the recipe form
 - Working file (this repo): create =elot-package/MELPA-RECIPE=.
 - Contents (verify each path glob actually matches files in
   =elot-package/=):
@@ -1654,13 +1662,13 @@ repository under =recipes/elot=.  A draft is sketched in
   than retaining it inert, drop that line from =:files=.
 - Confirm the MAIN FILE is =elot.el= (Milestone 4).  Since the
   recipe is named =elot=, MELPA picks =elot.el= as the main
-  library by matching =<recipe>.el= — which is exactly what we
+  library by matching =<recipe>.el= - which is exactly what we
   want.  No rename is needed.  The decision (=elot.el= as MAIN
   FILE, package name =elot=) is recorded in the Decisions log
   below and should also be noted under "Design Decisions" in
   =REFACTORING.org=.
 
-** TODO Step 7.2 — Local recipe build smoke test
+** TODO Step 7.2 - Local recipe build smoke test
 - Use =package-build= locally:
   #+begin_src sh
   git clone https://github.com/melpa/melpa.git /tmp/melpa
@@ -1672,13 +1680,13 @@ repository under =recipes/elot=.  A draft is sketched in
   =M-x package-install-file=, then =M-x elot-mode= in an example
   =.org=.  Confirm it activates.
 
-** TODO Step 7.3 — Update README installation section
+** TODO Step 7.3 - Update README installation section
 - *Files*: =README.org=, =README.md= (auto-generated).
 - Add a "Install from MELPA" subsection ahead of the existing
   "clone from Git" instructions.  Mark "from Git" as the
   development-track option.
 
-** TODO Step 7.4 — Open the MELPA pull request
+** TODO Step 7.4 - Open the MELPA pull request
 - Fork =melpa/melpa= on GitHub.
 - Add =recipes/elot= with the contents from Step 7.1.
 - Open the PR.  Address reviewer feedback in this repo (not in
@@ -1736,6 +1744,7 @@ Practical tips for executing this plan with =gptel=:
 | 2026-05-04 | Rewrite SPARQL support before other ELPA tasks                                                                                                                                | Subsequent milestones (legacy removal, mode lifecycle, header polish) all touch the SPARQL code; rewriting it first avoids rework.  The rewrite also removes the last production dependency on the legacy LOB prefix block, enabling Strategy B above.  See Milestone 1.                                                                                                                                                                            |
 | 2026-05-07 | Inline =PREFIX= declarations participate in result-IRI shortening                                                                                                               | The SPARQL advice now let-binds =org-babel-sparql--current-curies= to the *merged* (alist + inline, with inline overrides) prefix pairs returned by =elot--sparql-compute-merged-prefixes=, not just =org-link-abbrev-alist-local=.  This removes a user-visible inconsistency where inline-declared prefixes were honoured during query execution but ignored when ob-sparql shortened IRIs in the result table.  See Milestone 1 Sub-step 1.6.1, Block 7. |
 | 2026-05-07 | Retain =elot-lob.org= selectively: =rdfpuml-block= and similar =#+call:=-style helpers are supported user-facing API; legacy pipeline LOB blocks are marked RETIRED but kept inert. | =#+call:= is the idiomatic Org way to invoke a parameterised, named, caption-bearing helper that consumes another named block as input.  No Elisp equivalent is as compact for the author.  Cost of shipping =elot-lob.org= is one file in the recipe =:files= list. =elot-mode= now auto-ingests it on enable so users don't need =M-x org-babel-lob-ingest=.  See Milestone 2 Step 2.5.                                                                     |
-| YYYY-MM-DD | =elot.el= chosen as MAIN FILE; package name =elot=                                                                                                                                | Matches MELPA recipe-name → main-file convention; avoids renaming the user-facing package; =elot-mode.el= remains the autoloaded entry point loaded from =elot.el=. See Milestones 4 and 7.                                                                                                                                                                                                                                                            |
-| YYYY-MM-DD | Drop =no-native-compile= in =elot.el=                                                                                                                                             | (fill in — see Milestone 5 Step 5.4)                                                                                                                                                                                                                                                                                                                                                                                                                |
+| 2026-05-07 | Retire the ELOT hydra outright (Option B), instead of hardening it as an optional dep (Option A). | The easymenu already provides equivalent discoverability; =defhydra= is a macro whose compile-time expansion bakes hydra-internal symbols into =elot.elc= regardless of the runtime =fboundp= guard, breaking =(require 'elot)= in hydra-free Emacsen (observed as =void-variable elot-hydra= aborting =sparql-advice-test=).  Removing the hydra eliminates an optional dep, shrinks Milestone 4, and is a one-time cost vs. ongoing Option-A complexity.  =elot-key-toggle-labels= (F5) is retained.  See [[#interlude-retire-hydra][Hydra retirement Interlude]]. |
+| YYYY-MM-DD | =elot.el= chosen as MAIN FILE; package name =elot=                                                                                                                                | Matches MELPA recipe-name -> main-file convention; avoids renaming the user-facing package; =elot-mode.el= remains the autoloaded entry point loaded from =elot.el=. See Milestones 4 and 7.                                                                                                                                                                                                                                                            |
+| YYYY-MM-DD | Drop =no-native-compile= in =elot.el=                                                                                                                                             | (fill in - see Milestone 5 Step 5.4)                                                                                                                                                                                                                                                                                                                                                                                                                |
 | YYYY-MM-DD | Recipe filename =recipes/elot=                                                                                                                                                  | Package name is =elot=; MAIN FILE is =elot.el=. See Milestone 7 Step 7.1.                                                                                                                                                                                                                                                                                                                                                                               |
