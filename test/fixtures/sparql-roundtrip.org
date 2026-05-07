@@ -70,11 +70,11 @@ We declare ~rdfs:~ with a different URI, so the query doesn't return any result 
 |-----------+--------+-------|
 | ex:chases |        |       |
 
-*** Block 4: SELECT with one inline ~PREFIX~ that introduces a new prefix to replace an existing one
-We declare ~foo:~ with an existing URI, and want to see that replacing ~ex:~ in the output.
+*** Block 4: SELECT with one inline ~PREFIX~ redeclaring an existing prefix that the body doesn't use
+We declare ~ex:~ with a different URI, and expect to see it ignored!
 
 #+begin_src sparql :url "my-ont.omn" :eval never-export :exports both
-  PREFIX foo: <http://example.org/>    # existing prefix, different uri
+  PREFIX ex: <http://anotherdomain.org/>    # existing prefix, different uri
 
   select *
   {
@@ -92,7 +92,7 @@ We declare ~foo:~ with an existing URI, and want to see that replacing ~ex:~ in 
 
 *** Block 5: CONSTRUCT with ~:format ttl~ and ~kill-prefixes~ in ~:post~ hook
 #+name: my-construct
-#+begin_src sparql :url "my-ont.omn" :eval never-export :format ttl :wrap "src ttl" :cache yes :post kill-prefixes(data=*this*) :eval never-export :exports results
+#+begin_src sparql :url "my-ont.omn" :eval never-export :format ttl :wrap "src ttl" :cache yes :post kill-prefixes(data=*this*) 
   construct {
     ?class a owl:Class .
     ?subclass rdfs:subClassOf ?class .
@@ -136,6 +136,24 @@ ex:chases  a         owl:ObjectProperty ;
 : [empty result set]
 
 
+*** Block 7: genuinely new namespace
+#+begin_src sparql :url "my-ont.omn" :eval never-export :exports both
+  PREFIX new: <http://it-is-new.com/>
+
+  select *
+  {
+    values ?it { new:A new:B }
+    ?OP a owl:ObjectProperty .
+  } 
+#+end_src
+
+#+RESULTS:
+| it    | OP        |
+|-------+-----------|
+| new:A | ex:chases |
+| new:B | ex:chases |
+
+
 ** Prefixes
 :PROPERTIES:
 :prefixdefs: yes
@@ -158,7 +176,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 | dcterms: | http://purl.org/dc/terms/                                                      |
 | prov:    | http://www.w3.org/ns/prov#                                                     |
 | iof-av:  | https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/ |
-| ex:      | http://exdample.org/                                                           |
+| ex:      | http://example.org/                                                            |
 | exo:     | http://example.org/ont/                                                        |
 
 ** my-ont ontology (exo:my-ont exo:my-ont/0.0)
