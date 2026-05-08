@@ -33,7 +33,6 @@
                    sparql-mode
                    plantuml-mode
                    org-ql
-                   ht
                    ;; the following are for a modern Emacs interface (optional)
                    modus-themes
                    general

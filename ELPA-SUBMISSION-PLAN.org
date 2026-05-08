@@ -1682,21 +1682,22 @@ is no longer used.
   point: it is ~require~d from =elot.el=.  It does *not* carry its
   own =Package-Requires=.
 
-** TODO Step 4.1 - Make =elot.el= carry the canonical =Package-Requires=
-- *File*: =elot-package/elot.el=.
-- Ensure the header block contains, in this order:
+** DONE Step 4.1 - Make =elot.el= carry the canonical =Package-Requires=
+- *File*: =elot-package/elot.el= (and =elot-defs.org= mirror,
+  named block =src-package-header=).
+- The header block now reads, in order:
   : ;; Version: 2.0.0
   : ;; URL: https://github.com/johanwk/elot
   : ;; Package-Requires: ((emacs "29.1"))
-- The =Package-Requires= value is the union of all transitive
-  runtime dependencies - minus =ht= (unused) and minus packages
-  that are loaded with =(require ... nil t)= (i.e., truly
-  optional).  After auditing (Step 4.2) the actual list is
-  expected to remain =((emacs "29.1"))= because every external
-  package is in fact optional.  Confirm or revise as audit
-  dictates.
+- =htmlize=, =ht=, =omn-mode= and =sparql-mode= were removed from
+  =Package-Requires=.  They are all loaded via =(require ... nil
+  t)= inside the optional-deps =dolist= (=ht= is unused entirely
+  and is dropped from that =dolist= in Step 4.4).  =hydra= was
+  already gone after the [[#interlude-retire-hydra][Hydra retirement Interlude]].
+- The provisional value =((emacs "29.1"))= will be confirmed or
+  revised by the per-package audit in Step 4.2.
 
-** TODO Step 4.2 - Audit each external package and decide hard vs optional
+** DONE Step 4.2 - Audit each external package and decide hard vs optional
 For each of =htmlize=, =omn-mode=, =sparql-mode=, =ob-sparql=,
 =ob-plantuml=, =ht= (=hydra= retired in the [[#interlude-retire-hydra][Hydra retirement
 Interlude]] and is no longer audited here):
@@ -1711,8 +1712,67 @@ Interlude]] and is no longer audited here):
 3. *Hard* packages go into =Package-Requires=; *optional* ones
    are documented in =elot.el='s commentary instead.
 
-Expected outcome (from current code reading): all six are
-optional except =ht=, which is unused and must be removed.
+*** Audit results (2026-05-08)
+
+Grep over =elot-package/*.el= produced the following classification:
+
+| Package      | Elisp references in =elot-package/=                                                                                                                                            | Classification | Notes                                                                                                                  |
+|--------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------+------------------------------------------------------------------------------------------------------------------------|
+| =htmlize=    | none in Elisp; only a CSS-URL reference in =theme-readtheorg.setup=                                                                                                            | *Optional*     | Used by Org HTML export for source-block fontification.  ELOT loads/works without it.                                  |
+| =omn-mode=   | none                                                                                                                                                                           | *Optional*     | Provides a major mode for =.omn= files.  ELOT does not call into it; users edit OMN with it if installed.              |
+| =sparql-mode= | only =declare-function sparql-execute-query "ext:sparql-mode"= in =elot-label-display.el=; calls guarded by branch logic that errors only on local-file URLs                  | *Optional*     | Provides query-block fontification and the =sparql-execute-query= entry point used for HTTP endpoints.                 |
+| =ob-sparql=  | not =require='d at top level; only consulted by Org when a =#+begin_src sparql= block is executed                                                                              | *Optional*     | The ELOT advice on =org-babel-execute:sparql= is installed by =elot-mode--install-sparql-advice= only if the function exists. |
+| =ob-plantuml= | none in Elisp                                                                                                                                                                  | *Optional*     | Loaded by Org on demand when a PlantUML source block runs (e.g. inside =rdfpuml-block=).                                |
+| =ht=         | *zero* references anywhere in =elot-package/= (no =ht-*= calls, no =require=)                                                                                                  | *Unused*       | Drop entirely.  Handled in Step 4.4.                                                                                   |
+
+*Conclusion*: every package in the optional-deps =dolist= is
+optional in the strict sense - none of them is referenced by
+code that runs at =require= time or unconditionally on
+=elot-mode= enable.  =ht= has no remaining call sites and is
+removed by Step 4.4.
+
+*Decision*: =Package-Requires= stays at =((emacs "29.1"))=.  No
+additional hard dependency is added.  The optional packages
+are documented in =elot.el='s =Commentary:= header so users
+know which features need which packages.
+
+*** Sub-step 4.2.A - Document optional packages in the Commentary
+:PROPERTIES:
+:CLOSED: 2026-05-08
+:END:
+- *Files*: =elot-package/elot.el=, =elot-defs.org= (named block
+  =src-package-header=).
+- A new paragraph was added to the =Commentary:= header listing
+  the optional packages and which feature each unlocks:
+  =sparql-mode= / =ob-sparql= for SPARQL block fontification
+  and execution; =ob-plantuml= for PlantUML diagram rendering
+  (consumed by =rdfpuml-block=); =htmlize= for HTML export
+  source-block fontification; =omn-mode= for editing tangled
+  =.omn= files.  The paragraph also notes that ELOT loads and
+  =elot-mode= activates cleanly without any of them - only the
+  features that need them degrade to "not available".
+- Mirrored in =elot-defs.org= so a re-tangle is a no-op.
+
+*** Sub-step 4.2.B - ERT test: ELOT loads without optional SPARQL deps
+:PROPERTIES:
+:CLOSED: 2026-05-08
+:END:
+- *File*: =test/elot-load-without-sparql-test.el= (new).
+- The test spawns a child =emacs --batch -Q= and shadows
+  =require= so that calls for any of =htmlize=, =omn-mode=,
+  =sparql-mode=, =ob-sparql=, =ob-plantuml= and =ht= return =nil=
+  (with =noerror=) or raise =file-missing= (without).  The child
+  then evaluates =(require 'elot)= and prints a status line
+  including =elot-mode= boundness and the recorded
+  =elot-missing-dependencies= list.
+  The test asserts:
+  1. The child Emacs exits with status 0.
+  2. The output contains =elot-mode=t= (i.e. =elot-mode= is
+     bound after =(require 'elot)=).
+  3. =elot-missing-dependencies= records every blocked package.
+- Wired into =test/Makefile= as the
+  =load-without-sparql-test= target and added to the default
+  =test= goal.  No external network or ROBOT required.
 
 *** Sub-steps 4.2.1 / 4.2.2 / 4.2.3 - Superseded
 Hydra has been retired outright (see [[#interlude-retire-hydra][Hydra
@@ -1720,17 +1780,38 @@ retirement Interlude]]); the original Option A rewrite, the
 optional-hydra ERT test, and their joint acceptance step are no
 longer needed.
 
-** TODO Step 4.3 - Remove =Package-Requires= from sub-files
-- *Files*: =elot-package/elot-mode.el=, =elot-package/elot-flymake.el=.
-- Delete the =;; Package-Requires:= line from each.  The MAIN FILE
-  (=elot.el=) now owns this.
+*** Sub-steps 4.2.1 / 4.2.2 / 4.2.3 - Superseded
+Hydra has been retired outright (see [[#interlude-retire-hydra][Hydra
+retirement Interlude]]); the original Option A rewrite, the
+optional-hydra ERT test, and their joint acceptance step are no
+longer needed.
 
-** TODO Step 4.4 - Drop the unused =ht= dependency in =elot.el=
-- *File*: =elot-package/elot.el=.
-- Remove =ht= from the =dolist= at around line 62.
-- Remove =ht= from any leftover docstrings or commentary.
-- Confirm with =git grep -n "(require 'ht\\b\\|ht-"
-  elot-package/= that nothing references it.
+** DONE Step 4.3 - Remove =Package-Requires= from sub-files
+- *Files edited*: =elot-package/elot-mode.el=, =elot-package/elot-flymake.el=,
+  and the literate source =elot-mode.org= (named block =src-mode-header=).
+- Removed the =;; Package-Requires: ((emacs "29.1"))= line from
+  each.  The MAIN FILE (=elot.el=) now owns this header.
+- =elot-flymake.el= has no literate source - edited directly.
+- Verification: =grep -n "^;; Package-Requires:" elot-package/*.el=
+  returns exactly one match, in =elot.el=.
+
+** DONE Step 4.4 - Drop the unused =ht= dependency in =elot.el=
+- *File*: =elot-package/elot.el=, =elot-defs.org=, =elot-init.el=.
+- Verification on entry: =ht= was already absent from the
+  optional-deps =dolist= in both =elot.el= (line 72) and its
+  literate mirror =elot-defs.org= (named block =src-require=),
+  having been removed in an earlier pass.  No docstrings or
+  commentary in =elot-package/= mentioned the =ht= package.
+- =git grep -nE "\(require 'ht\b|\bht-" elot-package/= returns no
+  matches: the only =ht= occurrences in =elot-package/= are local
+  identifier names (=ht=, =flat-ht=, =elot-codelist-ht=,
+  =elot-attriblist-ht=, =elot--ht-from-plist=,
+  =elot--ht-from-alist=) that build/use plain Emacs hash tables
+  via =make-hash-table= / =gethash= / =puthash= - no dependency
+  on the external =ht= package.
+- Removed =ht= from the =package-install= =dolist= in =elot-init.el=
+  so a fresh-Emacs test session no longer installs the unused
+  package.
 
 ** TODO Step 4.5 - Update =elot-defs.org=
 - *File*: =elot-defs.org=.

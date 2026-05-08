@@ -5,7 +5,7 @@
 ;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
 ;; URL: https://github.com/johanwk/elot
 ;; Version: 2.0.0
-;; Package-Requires: ((emacs "29.1") (htmlize "1.58") (ht "2.3") (omn-mode "1.3") (sparql-mode "4.0.2"))
+;; Package-Requires: ((emacs "29.1"))
 ;; Keywords: languages outlines tools org ontology
 
 ;; This file is not part of GNU Emacs.
@@ -36,6 +36,18 @@
 
 ;; The ELOT easymenu ("ELOT" in the menu bar when `elot-mode' is
 ;; active) gives access to templates and export commands.
+
+;; Optional external packages.  ELOT loads and `elot-mode' activates
+;; cleanly without any of these; the features that depend on them
+;; degrade to "not available" rather than erroring at load time:
+;;
+;;  - `sparql-mode'  -- query-block fontification
+;;  - `ob-sparql'    -- execution of `#+begin_src sparql' blocks
+;;                      (the ELOT prefix-injection / ROBOT advice is
+;;                      installed only when this is present)
+;;  - `ob-plantuml'  -- PlantUML rendering used by `rdfpuml-block'
+;;  - `htmlize'      -- source-block fontification on HTML export
+;;  - `omn-mode'     -- major mode for tangled `.omn' files
 
 ;; Please consult the package Github site for more information:
 ;;        <https://github.com/johanwk/elot>
