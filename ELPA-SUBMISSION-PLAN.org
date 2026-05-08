@@ -2413,6 +2413,55 @@ elot-mode.el:649:1: warning: `with-eval-after-load' is for use in configurations
 0 errors, 2 (intentional) warnings.
 - Run the [[#stable-status][stable-status checklist]].
 
+* Known issue - label display broken in =*xref*= buffers
+:PROPERTIES:
+:CUSTOM_ID: known-issue-xref-label-display
+:END:
+
+** Symptom
+
+After the Milestone 1-5 changes, label display no longer works in
+=*xref*= buffers opened via =M-?= (=xref-find-references=):
+
+- =M-x elot-toggle-label-display= in the =*xref*= buffer has no
+  visible effect (no overlays appear, identifiers stay raw).
+- =M-x elot-global-label-display-mode= in the same buffer also
+  fails to display labels.
+- =elot-slurp-global= /is/ populated (the cross-buffer staging
+  variable retained per the Step 5.5 follow-up), so the data is
+  reaching the buffer; the failure is downstream, in the
+  overlay/setup pipeline.
+
+This used to work before the milestone work began.  Something in
+the cumulative refactoring (lifecycle-ization of advice/hooks in
+Milestone 3, the keybinding redesign in Milestone 5 Step 5.7,
+or the un-deprecation of =elot-slurp-global=) has broken the
+=*xref*= label-display path.
+
+** Suspected areas to investigate
+
+- =elot--xref-label-overlay-setup= and the
+  =xref-after-update-hook= installation moved into
+  =elot-mode--install-xref-globals= (Milestone 3 Step 3.5).
+  Verify the hook is actually firing in =*xref*= buffers and
+  that the overlay setup function is called with the slurp data
+  available.
+- =elot-global-label-display-mode= itself: confirm it still
+  reads from =elot-slurp-global= (or whichever source) the way
+  =*xref*= buffers expect.
+- The keybinding changes in Step 5.7 should be unrelated, but
+  the four foreign-buffer =local-set-key= sites were edited in
+  the same pass; double-check no overlay-setup code was
+  accidentally removed alongside the keybinding.
+
+** Disposition
+
+Deferred - to be fixed after Milestone 7 (MELPA submission).
+The MELPA recipe and acceptance check do not exercise this code
+path; users who rely on label display in =*xref*= buffers will
+need to wait for a follow-up release.  Tracked here so it is
+not forgotten.
+
 * Milestone 6 - CI workflow for tests and lint
 :PROPERTIES:
 :CUSTOM_ID: milestone-6-ci
