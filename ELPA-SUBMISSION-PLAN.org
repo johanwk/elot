@@ -1371,7 +1371,7 @@ part of the MELPA recipe's =:files= list (Milestone 7 Step 7.1).
 It contains two conceptually different sets of named blocks; this
 step makes that split explicit and wires up the supported half.
 
-*** Sub-step 2.5.1 - (Optional follow-up, deferred) Reimplement =kill-prefixes= as Elisp
+*** DEFERRED Sub-step 2.5.1 - (Optional follow-up, deferred) Reimplement =kill-prefixes= as Elisp
 
 Deferred out of Milestone 2 by the difficulty review above.
 =kill-prefixes= as it stands is a one-line Elisp =:var data=...=
@@ -1385,7 +1385,8 @@ blocker for the MELPA submission and not a prerequisite for
 deleting the legacy pipeline functions.  Tracked as a
 post-submission item.
 
-*** Sub-step 2.5.2 - Delete the two legacy pipeline blocks from =elot-lob.org=
+*** DONE Sub-step 2.5.2 - Delete the two legacy pipeline blocks from =elot-lob.org=
+CLOSED: [2026-05-08 fre. 11:07]
 
 - *File*: =elot-package/elot-lob.org=.
 - Delete the two named blocks tied to the retired pipeline:
@@ -1403,30 +1404,64 @@ post-submission item.
   two pipeline blocks gone, every remaining named block in
   =elot-lob.org= is supported.
 
-*** Sub-step 2.5.3 - Auto-ingest supported LOB on =elot-mode= enable
+*** DONE Sub-step 2.5.3 - Auto-ingest supported LOB on =elot-mode= enable
 
-- *Files*: =elot-package/elot-mode.el=, =elot-mode.org=.
-- Add a step in =elot-mode--enable= that calls
-  =org-babel-lob-ingest= on =elot-package/elot-lob.org= once,
-  guarded by a module-level variable
-  =elot--lob-ingested-p= so re-enabling =elot-mode= in another
-  buffer does not re-ingest.  Locate the file relative to the
-  loaded =elot-mode.el= via =locate-library= or a similar
-  mechanism so it works both from a Git checkout and from an
-  installed MELPA package.
+- *Files*: =elot-package/elot-mode.el= and its literate source
+  =elot-mode.org= (new named block =src-mode-lob-ingest=, plus a
+  one-line update to =src-mode-enable-disable=).
+- Step 3 of =elot-mode--enable= already called
+  =org-babel-lob-ingest= on =elot-lob.org=, but unconditionally:
+  re-enabling =elot-mode= in another buffer paid the parse cost
+  every time.  The body has been factored into a new helper
+  =elot-mode--ingest-lob= guarded by a module-level
+  =elot--lob-ingested-p= flag so ingestion happens at most once
+  per Emacs session.
+- The helper now locates =elot-lob.org= via =(locate-library
+  "elot-mode")= rather than via =elot-tangle=.  Both files
+  resolve to the same directory in practice, but anchoring on
+  =elot-mode= matches the file the helper itself lives in and
+  is robust against future split/rename of =elot-tangle=.
 - No corresponding action in =elot-mode--disable=: ingested LOB
-  blocks are harmless and there is no per-buffer state to undo.
-- This means =#+call: rdfpuml-block(ttlblock="...")= just works in
-  any ELOT buffer with no =M-x org-babel-lob-ingest= step.
+  blocks are harmless and Org exposes no public API to retract
+  individual Library-of-Babel entries.
+- =#+call: rdfpuml-block(ttlblock="...")= now works in any ELOT
+  buffer with no =M-x org-babel-lob-ingest= step, and the SPARQL
+  round-trip fixture's Block 5 (=:post kill-prefixes(...)=)
+  resolves under =emacs --batch= without the manual
+  =org-babel-lob-ingest= dance the test currently performs.
 
-*** Sub-step 2.5.4 - Document supported LOB blocks
+*** DONE Sub-step 2.5.4 - Document supported LOB blocks
+CLOSED: [2026-05-08 fre.]
 
-- Update README and/or the manual to describe the supported
-  =#+call:= helpers (=rdfpuml-block= at minimum) as part of
-  ELOT's user-facing API, with a short example modelled on
-  =examples/pets.org=.
+- The supported =#+call:= helpers are documented in =README.md=
+  in a new section "Supported =#+call:= helpers (Library of
+  Babel)" placed just before the Xref section.  It explains
+  that =elot-mode= auto-ingests =elot-package/elot-lob.org= on
+  enable, lists the supported helpers (=rdfpuml-block=,
+  =kill-prefixes=, =robot-metrics=, =robot-sparql-select=,
+  =theme-readtheorg= / =theme-elot=, =current-date= /
+  =current-datetime=) with one-line descriptions, and includes
+  a minimal worked example modelled on =examples/pets.org=
+  showing =rdfpuml-block= consuming a =CONSTRUCT= block whose
+  result is post-processed by =kill-prefixes=.
+- *Note (2026-05-08):* an earlier draft of this sub-step
+  edited =README.org= and assumed =README.md= was
+  auto-generated from it.  That assumption is no longer valid
+  (see Decisions log entry "Retire =README.org=" below):
+  =README.org= was last updated 2026-04-05; =README.md= has
+  diverged since (last touched 2026-05-03 to document the VS
+  Code extension).  Markdown formatting on GitHub is also
+  preferable for this content.  =README.md= is therefore now
+  the single source of truth, and the LOB-helpers content has
+  been migrated there directly.  =README.org= will be removed
+  from the repository in a separate commit.
+- The user manual under =documentation/= does not currently
+  have a "user-facing API" chapter; rather than introduce one
+  just for this, the README addition is the canonical
+  reference.  A future doc-restructuring pass can pull this
+  into the manual proper.
 
-*** Sub-step 2.5.5 - Old example files: leave alone
+*** DONE Sub-step 2.5.5 - Old example files: leave alone
 
 - =examples/reasoner-example.org= contains the old SPARQL
   prefix boilerplate.  Special-case file; leave as-is.
@@ -1439,12 +1474,16 @@ post-submission item.
   confirming the output is byte-identical to a copy saved before
   the change (=diff -u before.omn after.omn=).
 
-*** Acceptance for Step 2.5
+*** DONE Acceptance for Step 2.5
+CLOSED: [2026-05-08 fre.]
 
 - =M-x org-babel-tangle= on =examples/pets.org= still produces a
   working diagram via the =rdfpuml:my-construct= block in a
   fresh Emacs (no manual =org-babel-lob-ingest= needed once
-  =elot-mode= is enabled).
+  =elot-mode= is enabled).  Verified 2026-05-08 by starting a
+  fresh Emacs with =./elot-init.el= as startup file: the
+  =pets.org= SPARQL queries and rdfpuml diagram generation
+  work correctly.
 - A =:post kill-prefixes(data=*this*)= hook in a CONSTRUCT block
   still strips =@prefix= declarations from the result (covered
   by Block 5 of the SPARQL round-trip fixture in Milestone 1
@@ -1452,7 +1491,8 @@ post-submission item.
 - =elot-lob.org= is still listed in the MELPA recipe =:files=
   (Milestone 7 Step 7.1) - confirm the recipe text contains it
   with the explanatory comment.
-** TODO Step 2.6 - Update =REFACTORING.org= Design Decisions
+** DONE Step 2.6 - Update =REFACTORING.org= Design Decisions
+CLOSED: [2026-05-08 fre.]
 - *File*: =REFACTORING.org=.
 - Add an entry under "Design Decisions" recording: Strategy B
   was chosen - the LOB pipeline functions were removed outright
@@ -1891,6 +1931,7 @@ Practical tips for executing this plan with =gptel=:
 | 2026-05-04 | Rewrite SPARQL support before other ELPA tasks                                                                                                                                | Subsequent milestones (legacy removal, mode lifecycle, header polish) all touch the SPARQL code; rewriting it first avoids rework.  The rewrite also removes the last production dependency on the legacy LOB prefix block, enabling Strategy B above.  See Milestone 1.                                                                                                                                                                            |
 | 2026-05-07 | Inline =PREFIX= declarations participate in result-IRI shortening                                                                                                               | The SPARQL advice now let-binds =org-babel-sparql--current-curies= to the *merged* (alist + inline, with inline overrides) prefix pairs returned by =elot--sparql-compute-merged-prefixes=, not just =org-link-abbrev-alist-local=.  This removes a user-visible inconsistency where inline-declared prefixes were honoured during query execution but ignored when ob-sparql shortened IRIs in the result table.  See Milestone 1 Sub-step 1.6.1, Block 7. |
 | 2026-05-07 | Retain =elot-lob.org= selectively: =rdfpuml-block= and similar =#+call:=-style helpers are supported user-facing API; legacy pipeline LOB blocks are marked RETIRED but kept inert. | =#+call:= is the idiomatic Org way to invoke a parameterised, named, caption-bearing helper that consumes another named block as input.  No Elisp equivalent is as compact for the author.  Cost of shipping =elot-lob.org= is one file in the recipe =:files= list. =elot-mode= now auto-ingests it on enable so users don't need =M-x org-babel-lob-ingest=.  See Milestone 2 Step 2.5.                                                                     |
+| 2026-05-?? | Retire =README.org=; =README.md= becomes the single source of truth.                                                                                                                                                                                  | =README.org= was last updated 2026-04-05 and has fallen behind: =README.md= was updated 2026-05-03 to document the VS Code extension (and other recent changes) and the two files have diverged.  GitHub renders Markdown natively, some formatting (tables, fenced code blocks, marketplace badges) is easier to maintain in Markdown, and keeping two parallel READMEs in sync is a recurring drag.  Sub-step 2.5.4's LOB-helpers content was migrated from =README.org= into =README.md= in this turn; =README.org= is to be removed from the repository in a separate git commit.  Future README edits land directly in =README.md=.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | 2026-05-07 | Retire the ELOT hydra outright (Option B), instead of hardening it as an optional dep (Option A). | The easymenu already provides equivalent discoverability; =defhydra= is a macro whose compile-time expansion bakes hydra-internal symbols into =elot.elc= regardless of the runtime =fboundp= guard, breaking =(require 'elot)= in hydra-free Emacsen (observed as =void-variable elot-hydra= aborting =sparql-advice-test=).  Removing the hydra eliminates an optional dep, shrinks Milestone 4, and is a one-time cost vs. ongoing Option-A complexity.  =elot-key-toggle-labels= (F5) is retained.  See [[#interlude-retire-hydra][Hydra retirement Interlude]]. |
 | YYYY-MM-DD | =elot.el= chosen as MAIN FILE; package name =elot=                                                                                                                                | Matches MELPA recipe-name -> main-file convention; avoids renaming the user-facing package; =elot-mode.el= remains the autoloaded entry point loaded from =elot.el=. See Milestones 4 and 7.                                                                                                                                                                                                                                                            |
 | YYYY-MM-DD | Drop =no-native-compile= in =elot.el=                                                                                                                                             | (fill in - see Milestone 5 Step 5.4)                                                                                                                                                                                                                                                                                                                                                                                                                |

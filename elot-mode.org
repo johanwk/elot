@@ -896,6 +896,57 @@ buffer fully uninstalls it.  The advice body itself still guards on
             elot--sparql-advice-buffer-count 0)))
 #+end_src
 
+** Library-of-Babel ingestion
+:PROPERTIES:
+:CUSTOM_ID: lob-ingest
+:END:
+
+=elot-package/elot-lob.org= contains supported, user-facing
+=#+call:=-style helpers (=rdfpuml-block=, =kill-prefixes=,
+theme/setupfile helpers, =robot-metrics=, =robot-sparql-select=, the
+date helpers, etc.).  These named blocks are made available to every
+ELOT Org buffer by ingesting the file via =org-babel-lob-ingest=.
+
+Ingestion is a global, idempotent side effect on Org's Library of
+Babel: once any ELOT buffer has ingested =elot-lob.org=, every other
+Org buffer in the same Emacs session can resolve =#+call:
+rdfpuml-block(...)= and friends.  The =elot--lob-ingested-p= flag
+ensures we ingest only once per Emacs session, so re-enabling
+=elot-mode= in another buffer (or in the same buffer after a toggle)
+does not pay the parse cost again.
+
+=locate-library "elot-mode"= resolves to the directory of the loaded
+=elot-mode.el=, which sits next to =elot-lob.org= in both a Git
+checkout and an installed MELPA package; that gives us a portable
+way to find the file without baking in any path.
+
+There is no corresponding teardown in =elot-mode--disable=: ingested
+LOB blocks are harmless in non-ELOT buffers, and Org provides no
+public API to remove individual entries from the Library of Babel.
+
+#+name: src-mode-lob-ingest
+#+begin_src emacs-lisp
+  (defvar elot--lob-ingested-p nil
+    "Non-nil once ELOT's `elot-lob.org' has been ingested in this Emacs.
+  Guards `elot-mode--ingest-lob' against redundant re-ingestion when
+  `elot-mode' is enabled in additional buffers.")
+
+  (defun elot-mode--ingest-lob ()
+    "Ingest ELOT's `elot-lob.org' into Org's Library of Babel.
+  No-op after the first successful call in an Emacs session.  Locates
+  `elot-lob.org' relative to the loaded `elot-mode.el' so it works
+  both from a Git checkout and from an installed MELPA package."
+    (unless elot--lob-ingested-p
+      (let* ((mode-lib (locate-library "elot-mode"))
+             (lob-file (and mode-lib
+                            (expand-file-name
+                             "elot-lob.org"
+                             (file-name-directory mode-lib)))))
+        (when (and lob-file (file-readable-p lob-file))
+          (org-babel-lob-ingest lob-file)
+          (setq elot--lob-ingested-p t)))))
+#+end_src
+
 ** Enable and disable
 :PROPERTIES:
 :CUSTOM_ID: enable-disable
@@ -926,12 +977,8 @@ the user is prompted first.  The user can always run
     ;; 2. Syntax table
     (set-syntax-table elot-mode-syntax-table)
 
-    ;; 3. Ingest the Library of Babel
-    (let ((lob-file (concat (file-name-directory
-                             (locate-library "elot-tangle"))
-                            "elot-lob.org")))
-      (when (file-exists-p lob-file)
-        (org-babel-lob-ingest lob-file)))
+    ;; 3. Ingest the Library of Babel (once per Emacs session)
+    (elot-mode--ingest-lob)
 
     ;; 4. Parse the headline hierarchy (populates elot-headline-hierarchy,
     ;;    which is needed by link-abbrev refresh and label-display)

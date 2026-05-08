@@ -696,6 +696,26 @@ ELOT buffer is left.  Idempotent."
     (setq elot--sparql-advice-installed-p nil
           elot--sparql-advice-buffer-count 0)))
 
+(defvar elot--lob-ingested-p nil
+  "Non-nil once ELOT's `elot-lob.org' has been ingested in this Emacs.
+Guards `elot-mode--ingest-lob' against redundant re-ingestion when
+`elot-mode' is enabled in additional buffers.")
+
+(defun elot-mode--ingest-lob ()
+  "Ingest ELOT's `elot-lob.org' into Org's Library of Babel.
+No-op after the first successful call in an Emacs session.  Locates
+`elot-lob.org' relative to the loaded `elot-mode.el' so it works
+both from a Git checkout and from an installed MELPA package."
+  (unless elot--lob-ingested-p
+    (let* ((mode-lib (locate-library "elot-mode"))
+           (lob-file (and mode-lib
+                          (expand-file-name
+                           "elot-lob.org"
+                           (file-name-directory mode-lib)))))
+      (when (and lob-file (file-readable-p lob-file))
+        (org-babel-lob-ingest lob-file)
+        (setq elot--lob-ingested-p t)))))
+
 (defun elot-mode--enable ()
     "Set up ELOT in the current Org buffer."
     ;; Guard: elot-mode is only meaningful inside Org-mode buffers.
@@ -711,12 +731,8 @@ ELOT buffer is left.  Idempotent."
     ;; 2. Syntax table
     (set-syntax-table elot-mode-syntax-table)
 
-    ;; 3. Ingest the Library of Babel
-    (let ((lob-file (concat (file-name-directory
-                             (locate-library "elot-tangle"))
-                            "elot-lob.org")))
-      (when (file-exists-p lob-file)
-        (org-babel-lob-ingest lob-file)))
+    ;; 3. Ingest the Library of Babel (once per Emacs session)
+    (elot-mode--ingest-lob)
 
     ;; 4. Parse the headline hierarchy (populates elot-headline-hierarchy,
     ;;    which is needed by link-abbrev refresh and label-display)
