@@ -1371,7 +1371,7 @@ with active label sources).
   `elot-label-activate-source'.  Adding a source afterwards triggers
   an automatic refresh via `elot-active-label-sources-change-hook'.
 
-  Toggle with \\[elot-toggle-label-display] (F5) once enabled.  Use
+  Toggle with \\[elot-toggle-label-display] once enabled.  Use
   \\[elot-global-label-display-setup] for a one-shot refresh after
   registering or activating new sources."
     :lighter " ELOT-L"
