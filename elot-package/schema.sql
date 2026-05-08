@@ -1,3 +1,13 @@
+-- schema.sql --- SQLite schema for ELOT's source/label cache
+--
+-- Copyright (C) 2024, 2025, 2026 Johan W. Klüwer
+-- Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
+-- URL: https://github.com/johanwk/elot
+--
+-- This file is part of ELOT and is distributed under the terms of
+-- the GNU General Public License version 3 or later.  See the file
+-- LICENSE in the repository root, or <http://www.gnu.org/licenses/>.
+
 CREATE TABLE IF NOT EXISTS schema_version (
   version INTEGER PRIMARY KEY
 );

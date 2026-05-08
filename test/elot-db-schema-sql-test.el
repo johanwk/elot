@@ -26,13 +26,30 @@
     (should path)
     (should (file-readable-p path))))
 
+(defun elot-db-schema-sql-test--strip-header (s)
+  "Strip leading SQL `--' comment lines and blank lines from S.
+The on-disk `schema.sql' carries a file-level license/provenance
+header (added in Milestone 5 Step 5.2.1).  The embedded fallback
+constant deliberately contains only DDL, so the byte-for-byte
+pinning is performed on the DDL portion only."
+  (with-temp-buffer
+    (insert s)
+    (goto-char (point-min))
+    (while (looking-at-p "\\(?:--.*\\)?[ \t]*$")
+      (forward-line 1))
+    (buffer-substring-no-properties (point) (point-max))))
+
 (ert-deftest test-elot-db-schema-sql-matches-embedded-ddl ()
-  "On-disk `schema.sql' and the embedded fallback must match byte-for-byte."
+  "On-disk `schema.sql' DDL and the embedded fallback must match byte-for-byte.
+The on-disk file's leading SQL-comment header (license/provenance)
+is stripped before comparison; the embedded constant has no such
+header by design."
   (let* ((path (elot-db--schema-sql-path))
          (on-disk (with-temp-buffer
                     (insert-file-contents path)
-                    (buffer-string))))
-    (should (equal on-disk elot-db--schema-ddl-embedded))))
+                    (buffer-string)))
+         (on-disk-ddl (elot-db-schema-sql-test--strip-header on-disk)))
+    (should (equal on-disk-ddl elot-db--schema-ddl-embedded))))
 
 (ert-deftest test-elot-db-init-uses-schema-sql ()
   "A fresh DB init via the file path produces the v3 shape."
