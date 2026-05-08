@@ -706,7 +706,7 @@ replaces the ad-hoc =local-set-key= calls in =elot-setup-org-keybindings=.
        :enable (elot--in-elot-buffer-p)]
       ["Quick-Describe Resource" elot-describe-curie-at-point
        :enable (elot--in-elot-buffer-p)]
-      ["Toggle Label-Display (F5)" elot-toggle-label-display :active (fboundp 'elot-toggle-label-display)]
+      ["Toggle Label-Display" elot-toggle-label-display :active (fboundp 'elot-toggle-label-display)]
       ["Refresh Label-Display Index" elot-label-display-setup
        :active (fboundp 'elot-label-display-setup)
        :enable (elot--in-elot-buffer-p)]
@@ -789,7 +789,7 @@ replaces the ad-hoc =local-set-key= calls in =elot-setup-org-keybindings=.
         ["Rebuild label-display matcher"
          elot-global-label-display-setup
          :active (fboundp 'elot-global-label-display-setup)]
-        ["Toggle label display (F5)"
+        ["Toggle label display"
          elot-toggle-label-display
          :active (fboundp 'elot-toggle-label-display)
          :style toggle
