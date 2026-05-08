@@ -696,6 +696,46 @@ ELOT buffer is left.  Idempotent."
     (setq elot--sparql-advice-installed-p nil
           elot--sparql-advice-buffer-count 0)))
 
+(defvar elot--xref-globals-installed-p nil
+  "Non-nil when ELOT's global xref advice and hooks are installed.
+Managed by `elot-mode--install-xref-globals' and
+`elot-mode--uninstall-xref-globals'.")
+
+(defvar elot--xref-globals-buffer-count 0
+  "Reference count of live buffers with `elot-mode' enabled, for the
+purpose of managing ELOT's global xref advice and hooks.  When this
+drops to zero, `elot-mode--uninstall-xref-globals' removes the
+global advice on `xref-find-references' and the entries on
+`xref-after-update-hook'.")
+
+(defun elot-mode--install-xref-globals ()
+  "Install ELOT's global xref advice and `xref-after-update-hook' entries.
+Idempotent: safe to call from every `elot-mode--enable'.  The
+backing helpers are defined later in this file, so each install
+is guarded with `fboundp' so that loading order does not matter."
+  (cl-incf elot--xref-globals-buffer-count)
+  (unless elot--xref-globals-installed-p
+    (when (fboundp 'elot--capture-slurp)
+      (advice-add 'xref-find-references :before #'elot--capture-slurp))
+    (when (fboundp 'elot--xref-label-overlay-setup)
+      (add-hook 'xref-after-update-hook #'elot--xref-label-overlay-setup))
+    (when (fboundp 'elot--xref-buffer-enable-backend)
+      (add-hook 'xref-after-update-hook #'elot--xref-buffer-enable-backend))
+    (setq elot--xref-globals-installed-p t)))
+
+(defun elot-mode--uninstall-xref-globals ()
+  "Remove ELOT's global xref advice and hooks when no ELOT buffer is
+left.  Idempotent."
+  (when (> elot--xref-globals-buffer-count 0)
+    (cl-decf elot--xref-globals-buffer-count))
+  (when (and elot--xref-globals-installed-p
+             (<= elot--xref-globals-buffer-count 0))
+    (advice-remove 'xref-find-references #'elot--capture-slurp)
+    (remove-hook 'xref-after-update-hook #'elot--xref-label-overlay-setup)
+    (remove-hook 'xref-after-update-hook #'elot--xref-buffer-enable-backend)
+    (setq elot--xref-globals-installed-p nil
+          elot--xref-globals-buffer-count 0)))
+
 (defvar elot--lob-ingested-p nil
   "Non-nil once ELOT's `elot-lob.org' has been ingested in this Emacs.
 Guards `elot-mode--ingest-lob' against redundant re-ingestion when
@@ -744,20 +784,24 @@ both from a Git checkout and from an installed MELPA package."
     ;; 6. SPARQL advice (global, but reference-counted across ELOT buffers)
     (elot-mode--install-sparql-advice)
 
-    ;; 7. LaTeX export filter for OMN in description lists
+    ;; 7. Xref globals (advice on `xref-find-references' and entries on
+    ;;    `xref-after-update-hook'; reference-counted across ELOT buffers)
+    (elot-mode--install-xref-globals)
+
+    ;; 8. LaTeX export filter for OMN in description lists
     (when (fboundp 'elot-latex-filter-omn-item)
       (add-to-list 'org-export-filter-item-functions
                    'elot-latex-filter-omn-item))
 
-    ;; 8. Export pre-processing hook (linkify, CUSTOM_IDs, prefix resolution)
+    ;; 9. Export pre-processing hook (linkify, CUSTOM_IDs, prefix resolution)
     (when (fboundp 'elot--prepare-export-buffer)
       (add-hook 'org-export-before-processing-functions
                 #'elot--prepare-export-buffer))
 
-    ;; 9. Label-display: set up immediately (with size-gated prompt)
+    ;; 10. Label-display: set up immediately (with size-gated prompt)
     (elot-mode--maybe-setup-labels)
 
-    ;; 10. Set initial fold visibility
+    ;; 11. Set initial fold visibility
     (org-cycle-set-startup-visibility))
 
   (defun elot-mode--maybe-setup-labels ()
@@ -782,21 +826,24 @@ In batch mode (`noninteractive'), skip label-display entirely."
     ;; 2. SPARQL advice (uninstall when this is the last ELOT buffer)
     (elot-mode--uninstall-sparql-advice)
 
-    ;; 3. LaTeX export filter
+    ;; 3. Xref globals (uninstall when this is the last ELOT buffer)
+    (elot-mode--uninstall-xref-globals)
+
+    ;; 4. LaTeX export filter
     (setq org-export-filter-item-functions
           (delq 'elot-latex-filter-omn-item
                 org-export-filter-item-functions))
 
-    ;; 4. Export pre-processing hook
+    ;; 5. Export pre-processing hook
     (remove-hook 'org-export-before-processing-functions
                  #'elot--prepare-export-buffer)
 
-    ;; 5. Remove label-display overlays
+    ;; 6. Remove label-display overlays
     (when (fboundp 'elot-remove-prop-display)
       (with-silent-modifications
         (elot-remove-prop-display)))
 
-    ;; 6. Restore syntax table
+    ;; 7. Restore syntax table
     (set-syntax-table org-mode-syntax-table))
 
 ;;;###autoload
@@ -911,7 +958,10 @@ otherwise return every reference."
   (when (boundp 'elot-slurp)
     (setq elot-slurp-global elot-slurp)))
 
-(advice-add 'xref-find-references :before #'elot--capture-slurp)
+;; The advice on `xref-find-references' that runs `elot--capture-slurp'
+;; before xref is installed by `elot-mode--install-xref-globals' and
+;; removed by `elot-mode--uninstall-xref-globals'; see Milestone 3
+;; Step 3.5 of ELPA-SUBMISSION-PLAN.org.
 
 (defun elot--xref-label-overlay-setup ()
   "Setup label overlays in the xref buffer using `elot-slurp-global'."
@@ -920,7 +970,7 @@ otherwise return every reference."
     (local-set-key (kbd "<f5>") #'elot-toggle-label-display)
     (elot-label-display-setup)))
 
-(add-hook 'xref-after-update-hook #'elot--xref-label-overlay-setup)
+;; Installed/removed via `elot-mode--{install,uninstall}-xref-globals'.
 
 (cl-defmethod xref-backend-definitions ((_backend (eql elot)) identifier)
   "Return Org headlines that *define* IDENTIFIER."
@@ -938,7 +988,7 @@ This ensures `xref-find-definitions` works on CURIEs inside the xref buffer."
       (make-local-variable 'xref-backend-functions)
       (add-hook 'xref-backend-functions #'elot-xref-backend nil t))))
 
-(add-hook 'xref-after-update-hook #'elot--xref-buffer-enable-backend)
+;; Installed/removed via `elot-mode--{install,uninstall}-xref-globals'.
 
 (cl-defun elot-describe-curie-at-point (&optional curie)
   "Pop up a *Help* buffer describing CURIE at point (or prompt).
