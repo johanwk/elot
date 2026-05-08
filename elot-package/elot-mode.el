@@ -540,7 +540,7 @@ or `xsd:integer' on a column header will be applied to values."
      :enable (elot--in-elot-buffer-p)]
     ["Quick-Describe Resource" elot-describe-curie-at-point
      :enable (elot--in-elot-buffer-p)]
-    ["Toggle Label-Display (F5)" elot-toggle-label-display :active (fboundp 'elot-toggle-label-display)]
+    ["Toggle Label-Display" elot-toggle-label-display :active (fboundp 'elot-toggle-label-display)]
     ["Refresh Label-Display Index" elot-label-display-setup
      :active (fboundp 'elot-label-display-setup)
      :enable (elot--in-elot-buffer-p)]
@@ -623,7 +623,7 @@ or `xsd:integer' on a column header will be applied to values."
       ["Rebuild label-display matcher"
        elot-global-label-display-setup
        :active (fboundp 'elot-global-label-display-setup)]
-      ["Toggle label display (F5)"
+      ["Toggle label display"
        elot-toggle-label-display
        :active (fboundp 'elot-toggle-label-display)
        :style toggle
@@ -1088,7 +1088,7 @@ buffer exactly like they are in the *xref* buffer."
 	  (princ
 	   "\n----\n`q' to quit, `RET' to visit location.\n")
 	  ;; ------------------------------------
-	  ;; 3c. Bind F5 (opt-in) and paint label overlays
+	  ;; 3c. Bind opt-in toggle key (if customized) and paint label overlays
 	  ;; ------------------------------------
 	  (let ((key (and (fboundp 'elot--toggle-labels-key)
                           (elot--toggle-labels-key))))
