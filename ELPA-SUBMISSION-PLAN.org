@@ -1266,18 +1266,29 @@ Rationale:
 - The deletion of the function from =elot.el= / =elot-defs.org=
   is handled in Step 2.2.
 
-** TODO Step 2.2 - Mirror the move in =elot-defs.org=
-- *File*: =elot-defs.org=.
-- Find the named block =src-prefix-blocks= and either:
-  - delete it (if the function now lives only in =elot-tangle.el=
-    via direct authoring - preferred), or
-  - retarget its =:tangle= header to
-    =./elot-package/elot-tangle.el=.
-- Verify with =M-x org-babel-tangle= on =elot-defs.org=: the
-  produced =elot.el= no longer contains the function; =git diff=
-  shows no further changes.
+** DONE Step 2.2 - Mirror the move in =elot-defs.org=
+- *Files*: =elot-defs.org=, =elot-package/elot.el=.
+- The named block =src-prefix-blocks= (and its surrounding
+  =;; [[file:...]] ... ends here= tangle markers in =elot.el=)
+  has been deleted outright from =elot-defs.org=.  In its place
+  a short prose paragraph under the "Make prefix blocks for omn,
+  sparql, ttl" subsection points the reader at
+  =elot-tangling.org= -> =elot-tangle.el= as the new home of the
+  function (relocated under Step 2.1).
+- The corresponding region in =elot-package/elot.el= was
+  replaced with a matching comment, so the tangle round-trip
+  test (=test/elot-tangle-roundtrip-test.el=, added in Milestone
+  1 Step 1.7) keeps the literate source and the tangled file in
+  sync.
+- Verification: =git grep -n "elot-prefix-block-from-alist"
+  elot-package/= now shows the definition only in
+  =elot-tangle.el= (one =defun=, plus the existing
+  =declare-function= and call site in
+  =elot-label-display.el=, the call site in =elot-lob.org=, and
+  no remaining occurrence in =elot.el=).  The
+  =elot-defs-tangle-roundtrip= ERT test continues to pass.
 
-** TODO Step 2.3 - Delete the legacy LOB functions from =elot.el=
+** DONE Step 2.3 - Delete the legacy LOB functions from =elot.el=
 - *File*: =elot-package/elot.el=.
 - Delete each of the following function definitions outright:
 
@@ -1305,12 +1316,53 @@ Rationale:
 - Confirm with =git grep= that no production code references any
   of the deleted symbols.
 
-** TODO Step 2.4 - Remove corresponding entries from =elot-defs.org=
+*** Verification
+
+#+begin_example
+$ git grep -nE "\\b(elot-org-descriptions-in-section|elot-org-list-siblings|elot-omn-declare|elot-resource-declarations(-from-header)?|elot-resource-taxonomy-from-(l|header)|elot-class-(oneof|disjoint)-from-header|elot-org-tags-in-string|elot-misc-axioms|elot-omn-(annotate|restrict)|elot-annotation-entries|elot-restriction-entries|elot-format-misc-axiom-annotations|elot-org-subsection-descriptions)\\b" elot-package/
+elot-package/elot-lob.org:7:(elot-resource-declarations-from-header hierarchy owl-type)
+elot-package/elot-lob.org:12:(elot-resource-taxonomy-from-header hierarchy owl-type owl-relation)
+#+end_example
+
+The remaining two references are inside the named blocks
+=resource-declarations= and =resource-taxonomy= in
+=elot-lob.org=, which Sub-step 2.5.2 deletes outright.
+
+** DONE Step 2.4 - Remove corresponding entries from =elot-defs.org=
 - *File*: =elot-defs.org=.
-- Delete every named source block that tangled into the now-
-  removed functions in =elot.el=.
-- Re-tangle and verify =git diff elot-package/elot.el= shows no
-  further changes.
+- All eighteen named source blocks that tangled into the legacy
+  pipeline functions listed in Step 2.3 were removed from
+  =elot-defs.org=.  Concretely: =src-desc-lists= (three defuns),
+  =src-heading-to-list= (=elot-org-list-siblings=),
+  =src-resource-declare= (nine defuns from =elot-omn-declare=
+  through =elot-resource-declarations-from-header=),
+  =src-write-class= (two defuns), and =src-write-taxonomy=
+  (three defuns).  Each removed block is replaced with a brief
+  prose marker recording the retirement and pointing at this
+  plan.
+- The two surviving section neighbours - =src-puri-expand=
+  (=elot-omn-restriction-string=) and the prose under "Use
+  section headings as ontology resources" - are kept; they are
+  still tangled and still referenced from production code.
+- Search confirms: =git grep -nE
+  "elot-org-descriptions-in-section|elot-org-list-siblings|elot-omn-declare|elot-resource-declarations|elot-resource-taxonomy|elot-class-oneof|elot-class-disjoint|elot-org-tags-in-string|elot-misc-axioms|elot-omn-annotate|elot-omn-restrict|elot-annotation-entries|elot-restriction-entries|elot-format-misc-axiom-annotations|elot-org-subsection-descriptions"
+  elot-defs.org= returns no remaining /definitions/ in the
+  literate source (only the retirement-notice prose).
+
+*** DONE Note for Step 2.3 (dependency resolved)
+A grep over =elot-package/elot.el= had revealed that the surviving
+function =elot-org-find-description-value= (around line 722) called
+=elot-org-descriptions-in-section=, which is on Step 2.3's deletion
+list.  Option 1 has been applied: =elot-org-find-description-value=
+now walks the current section directly via
+=org-element-parse-buffer= on a region narrowed to the body of the
+headline at point (from =org-back-to-heading= to the next
+=outline-next-heading=), and collects description-list items via
+=elot-org-elt-item-str= (already provided by =elot-tangle.el=, which
+=elot.el= requires).  Mirrored in =elot-defs.org= named block
+=src-org-find-description-value= so a re-tangle is a no-op.  The
+last in-tree caller of =elot-org-descriptions-in-section= and its
+helper is therefore gone; Step 2.3 can proceed as written.
 
 ** TODO Step 2.5 - Split =elot-lob.org= into retired vs supported halves
 

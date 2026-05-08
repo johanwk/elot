@@ -674,8 +674,10 @@ Creates a dummy root at level 0 to handle multiple top-level ontologies."
 
 (defun elot--extract-headline-descriptions (hl)
   "Extract description list items immediately under headline HL.
-Does not recurse into child headlines, matching the output format of
-`elot-org-subsection-descriptions` for meta-annotations with sublists."
+Does not recurse into child headlines.  Returns a list of
+description-list items (tag . value pairs) suitable for use as
+meta-annotations, including any nested sublist items whose tags are
+recognised meta-annotation tags."
   (org-element-map (org-element-contents hl) 'item
     (lambda (y)
       (when (org-element-property :tag y)

@@ -167,331 +167,11 @@ The context INFO is ignored."
              'elot-latex-filter-omn-item)
 ;; src-omn-latex-tt ends here
 
-;; [[file:../elot-defs.org::src-desc-lists][src-desc-lists]]
-(defun elot-org-descriptions-in-section-helper ()
-  "Return all description list items as pairs in a list.
-This function is called from `elot-org-descriptions-in-section' after
-narrowing to a description list under a heading.
-Parses the buffer once and walks the result."
-  (let ((parsed (org-element-parse-buffer)))
-    (org-element-map parsed 'item
-      (lambda (y)
-        (if (org-element-property :tag y)
-            (append (elot-org-elt-item-str y)
-                    (if (elot-org-elt-exists (cdr y) 'item)
-                        (org-element-map (cdr y) 'item
-                          (lambda (z)
-                            (if (elot-meta-annotation-tag-p (elot-org-elt-item-tag-str z))
-                                (elot-org-elt-item-str z)))
-                          nil nil 'item)))))
-      nil nil 'item)))
-
-(defun elot-org-descriptions-in-section ()
-  "Return any description list items in current section as a list of strings."
-  (interactive)
-  ;; narrow our area of interest to the current section, before any subsection
-  (let ((section-begin) (section-end))
-    (save-restriction
-      (save-excursion
-        (unless (org-at-heading-p) (org-previous-visible-heading 1))
-        (setq section-begin (org-element-property :contents-begin (org-element-at-point)))
-        (outline-next-heading)
-        (setq section-end (point))
-        (if (or (null section-begin) (<= section-end section-begin))
-            nil ; maybe this outline section is empty
-          (progn
-            (narrow-to-region section-begin section-end)
-            ;; return all paragraphs--description items as pairs in a list
-            (elot-org-descriptions-in-section-helper)))))))
-
-(defun elot-org-subsection-descriptions ()
-  "Return a plist mapping subsection headlines to description lists.
-This function collects headlines in the current subtree and associates
-each with a plist of description-list items and values.  Sections with
-the tag `nodeclare' or with headings starting with `COMMENT' are excluded.
-The function does not include the section that has the target property ID,
-unless it is an ontology section.
-
-Parses the entire subtree once into an org-element tree, then
-dispatches per-heading lookups into that cached tree, avoiding
-repeated calls to `org-element-parse-buffer'."
-  (save-restriction
-    (save-excursion
-      (unless (org-at-heading-p) (org-previous-visible-heading 1))
-      (org-narrow-to-subtree)
-      ;; single parse for the whole subtree 
-      (let ((parsed (org-element-parse-buffer)))
-        (if (or (elot-at-ontology-heading)
-                (outline-next-heading))
-            (let (ret)
-              (while
-                  (let* ((heading (substring-no-properties
-                                   (org-get-heading nil t)))
-                         (section-begin
-                          (org-element-property
-                           :contents-begin (org-element-at-point)))
-                         (section-end
-                          (save-excursion (outline-next-heading) (point)))
-                         ;; Walk the already-parsed tree, restricted to
-                         ;; [section-begin, section-end), instead of
-                         ;; re-parsing the narrowed buffer.
-                         (descriptions
-                          (when (and section-begin
-                                     (< section-begin section-end))
-                            (org-element-map parsed 'item
-                              (lambda (y)
-                                (let ((begin (org-element-property :begin y)))
-                                  (when (and begin
-                                             (>= begin section-begin)
-                                             (<  begin section-end)
-                                             (org-element-property :tag y))
-                                    (append
-                                     (elot-org-elt-item-str y)
-                                     (when (elot-org-elt-exists (cdr y) 'item)
-                                       (org-element-map (cdr y) 'item
-                                         (lambda (z)
-                                           (when (elot-meta-annotation-tag-p (elot-org-elt-item-tag-str z))
-                                             (elot-org-elt-item-str z)))
-                                         nil nil 'item))))))
-                              nil nil 'item))))
-                    (unless (or (string-match-p "^COMMENT" heading)
-                                (member "nodeclare"
-                                        (org-get-tags (point) t)))
-                      (setq ret
-                            (cons (if descriptions
-                                      (list heading descriptions)
-                                    (list heading))
-                                  ret)))
-                    (outline-next-heading)))
-              (nreverse ret)))))))
-;; src-desc-lists ends here
-
 ;; [[file:../elot-defs.org::src-puri-expand][src-puri-expand]]
 (defun elot-omn-restriction-string (str)
  "STR is wanted as an OMN value.  Strip any meta-annotations, or return unchanged."
  str)
 ;; src-puri-expand ends here
-
-;; [[file:../elot-defs.org::src-heading-to-list][src-heading-to-list]]
-; http://stackoverflow.com/questions/17179911/emacs-org-mode-tree-to-list
-(defun elot-org-list-siblings ()
-  "List siblings in current buffer starting at point.
-Note, you can always (goto-char (point-min)) to collect all siblings."
-  (interactive)
-  (let (ret)
-    (unless (org-at-heading-p)
-      (org-forward-heading-same-level nil t))
-    (while (progn
-             (unless (looking-at "[*]* *COMMENT")
-               (setq ret
-                     (if (member "nodeclare" (org-get-tags (point) t)) ; tagged to be skipped, proceed down
-                         (append (save-excursion
-                                         (when (org-goto-first-child)
-                                           (elot-org-list-siblings))) ret)
-                       (cons (append (list
-                                        ; the nil t arguments for tags yes, todos no, todos no, priorities no
-                                        (substring-no-properties (org-get-heading nil t t t)))
-                                       (save-excursion
-                                         (when (org-goto-first-child)
-                                           (elot-org-list-siblings))))
-                               ret))))
-             (org-goto-sibling)))
-    (nreverse ret)))
-;; src-heading-to-list ends here
-
-;; [[file:../elot-defs.org::src-resource-declare][src-resource-declare]]
-(defun elot-omn-declare (str owl-type)
-  "Declare entity from header content STR as an OWL-TYPE, in Manchester Syntax.
-Add rdfs:label annotation.  If the identifier is inside parentheses, use
-that as resource id."
-  ;; check whether we have a label and a resource in parentheses
-  (let* ((suri (elot-entity-from-header str)))
-    (concat owl-type ": " suri)))
-
-(defun elot-annotation-entries (l &optional sep)
-  "Return a list of puri--string pairs, with optional meta-annotations.
-L is a list of puri--string pairs, each perhaps with a trailing list of
-similar, meta-annotation pairs.  SEP is a number used to build a string
-of spaces for line indentation.  Ensures consistent spacing in formatted
-output."
-  (let ((indent (make-string (if sep (* 2 sep) 6) ?\ ))
-        ;; l-uri-entries is the description list after purging any
-        ;; items that have a prefix that isn't included as a LINK
-        ;; entry, which goes into org-link-abbrev-alist-local. Note
-        ;; that expanded URIs in brackets <...> are let through.
-        (l-uri-entries
-         (cl-remove-if (lambda (x) (string-equal (car x)
-                                                 (elot-unprefix-uri (car x) org-link-abbrev-alist-local)))
-                       l)))
-    (if (atom l-uri-entries) ""
-      (concat "\n" indent "Annotations: "
-              (mapconcat (lambda (y)
-                           (concat
-                            (if (consp (caddr y)) ; we have meta-annotations
-                                (concat (elot-annotation-entries (cddr y) 4) "\n " indent))
-                            (car y)
-                            (elot-annotation-string-or-uri (cadr y))))
-                         l-uri-entries
-                         (concat ",\n " indent))))))
-
-(defun elot-restriction-entries (l)
-  "Write Manchester Syntax restrictions.  L is a list of puri--string pairs.
-Add annotations on the restriction axioms if present.
-Special treatment for `Import' on an ontology resource."
-  (let ((indent (make-string 2 ?\ ))
-        (l-omn-entries
-         (cl-remove-if-not (lambda (x) (member (car x)
-                                               elot-omn-property-keywords))
-                           l)))
-    (if (atom l) "\n"
-      (concat "\n" indent
-              (mapconcat (lambda (y)
-                           (concat
-                            (car y) ": "
-                            (if (consp (caddr y)) ; we have meta-annotations
-                                (concat (elot-annotation-entries (cddr y) 4) "\n " indent))
-                            (if (string-equal (car y) "Import") ; ontology import special case
-                                (elot-annotation-string-or-uri (cadr y))
-                              (elot-omn-restriction-string (cadr y)))))
-                         l-omn-entries
-                         (concat "\n" indent))))))
-
-(defun elot-omn-annotate (l)
-  "Add annotations to the first element of L, which is an org heading string.
-This is a helper function for `elot-resource-declarations'."
-  (let* ((str (car l))
-         (suri (elot-entity-from-header str))
-         (prefix (if (and (not (string-match "^http" suri))
-                          (string-match "\\(.*\\):\\(.*\\)" suri))
-                    (match-string 1 suri) ""))
-         (localname (match-string 2 suri))
-         (label (if (string-match "\\(.+\\) (.*)" str)
-                    (match-string 1 str) nil))
-         (resource-annotations
-          (if label 
-              (cons (list "rdfs:label" label) (cadr l)) 
-            (cadr l))))
-    (elot-annotation-entries resource-annotations)))
-
-(defun elot-omn-restrict (l)
-  "Retrieve restriction axioms from the second element of L.
-This is a helper function for `elot-resource-declarations'."
-  (elot-restriction-entries (cadr l)))
-
-(defun elot-resource-declarations (l owl-type)
-  "For list L of identifiers with annotations, declare to be of OWL-TYPE."
-  (mapconcat
-   (lambda (x)
-     (concat
-      (elot-omn-declare (car x) owl-type)
-      ;; if annotations, add to the annotation block that has been started with rdfs:label
-      (elot-omn-annotate x)
-      (elot-omn-restrict x)))
-   l "\n"))
-
-(defun elot-format-misc-axiom-annotations (keyword input)
-  "Format a string with annotations inline using ELOT-style annotation block."
-  (let* ((main-part (car (split-string input " - "))) ; get the part before any annotations
-         (annotations (cdr (split-string input " - ")))
-         (pairs (mapcar (lambda (ann)
-                          (when (string-match "\\`\\(.+\\)::\\(.*\\)\\'" (string-trim ann))
-                            (cons (string-trim (match-string 1 ann))
-                                  (string-trim (match-string 2 ann)))))
-                        annotations))
-         (valid-pairs (delq nil pairs)))
-    (concat
-     (when valid-pairs
-       (if (string= keyword "Rule")
-           (message "# WARNING: Rule annotations are not supported in Manchester Syntax\n    ")
-         (concat " Annotations: "
-                 (mapconcat (lambda (pair)
-                              (format "%s \"%s\"" (car pair) (cdr pair)))
-                            valid-pairs
-                            ",\n       ")
-                 "\n  ")))
-         main-part)))
-
-(defun elot-misc-axioms ()
-  "Output OMN axioms for `elot-omn-misc-keywords' in buffer.
-These are axioms not tied to a single resource.
-If no axioms are found, return nil."
-  (save-restriction
-    (org-narrow-to-subtree)
-    (let ((misc-axioms
-           (mapconcat
-            (lambda (l)
-              (concat (car l) ": "
-                      (elot-format-misc-axiom-annotations
-                       (car l)
-                       (cadr l))))
-            (org-element-map (org-element-parse-buffer) 'item
-              (lambda (item)
-                (let* ((pair (elot-org-elt-item-str item))
-                       (tag (car pair)))
-                  (if (member tag elot-omn-misc-keywords)
-                      pair)))
-              nil nil)
-            "\n")))
-      (unless (string-empty-p misc-axioms)
-        misc-axioms))))
-
-(defun elot-resource-declarations-from-header (header-id owl-type)
-  "Output OMN declarations for Class, Property, or Individual Org trees.
-This function is called from the `org-babel' block in file
-`elot-lob.org' named `resource-declarations'.
-
-This function does not output subclass or subproperty axioms, as these
-are handled by function `elot-resource-taxonomy-from-header'.
-
-HEADER-ID is an org location id, OWL-TYPE is `Class', `ObjectProperty',
-`DataProperty', `AnnotationProperty', `Individual', or `Datatype'.
-
-The org location id, embedded in the `PROPERTIES' drawer for each OWL
-resource type, is `<ontology>-class-hierarchy' for the Class outline,
-and accordingly for `object-property', `data-property', and
-`annotation-property'; for individuals, `<ontology>-individuals'."
-  (save-excursion
-    (if (elot-org-link-search header-id)
-        (let ((entity-l (elot-org-subsection-descriptions))
-              (misc-axioms (elot-misc-axioms)))
-          (if (or entity-l misc-axioms (string= owl-type "Ontology"))
-              (string-join
-               (list
-                (elot-resource-declarations entity-l owl-type)
-                (if misc-axioms
-                    (concat "\n\n#### Miscellaneous axioms under " owl-type " declarations\n"))
-                misc-axioms))
-            "## (none)"))
-      (progn
-        (message "ELOT: Warning - %s heading '%s' not found, skipping declarations" owl-type header-id)
-        (format "## (no %s - hierarchy heading '%s' not found)" owl-type header-id)))))
-;; src-resource-declare ends here
-
-;; [[file:../elot-defs.org::src-prefix-blocks][src-prefix-blocks]]
-(defun elot-prefix-block-from-alist (prefixes format)
-  "Return a prefix block from PREFIXES for use with filetype FORMAT.
-PREFIXES is an alist of prefixes, from an Org table or
-the standard ORG-LINK-ABBREV-ALIST or ORG-LINK-ABBREV-ALIST-LOCAL.
-FORMAT is a symbol, either `omn', `sparql', or `ttl'."
-  (let ((format-str
-         (cond
-          ((eq format 'omn) "Prefix: %-5s <%s>")
-          ((eq format 'ttl) "@prefix %-5s <%s> .")
-          ((eq format 'sparql) "PREFIX %-5s <%s>"))))
-    (mapconcat (lambda (row)
-                 (let ((prefix-str
-                        (if (string-match-p ":$" (car row))
-                            (car row) (concat (car row) ":")))
-                       (uri-str
-                        (if (listp (cdr row))
-                            (cadr row) ;; comes from org table
-                          (cdr row))))
-                       (format format-str prefix-str uri-str)))
-               (if (equal (car prefixes) '("prefix" . "uri"))
-                   (cdr prefixes)
-                 prefixes)
-                 "\n")))
-;; src-prefix-blocks ends here
 
 ;; [[file:../elot-defs.org::src-robot-query][src-robot-query]]
 (defun elot-robot-execute-query (query inputfile format)
@@ -910,81 +590,6 @@ Return output file name."
     output-file))
 ;; src-plantuml-execute ends here
 
-;; [[file:../elot-defs.org::src-write-class][src-write-class]]
-(defun elot-class-oneof-from-header (l)
-  "L a list of class resources like ((super (((sub) (sub) ... (sub))))).
-This is a helper function for `elot-resource-taxonomy-from-l'."
-  (let ((owl-type "Class") (owl-subclause "SubClassOf"))
-    (concat "\n" owl-type ": " (elot-entity-from-header (car l))
-            "\n    " owl-subclause ": "
-            (mapconcat (lambda (x)
-                         (elot-entity-from-header (car x)))
-                       (cdr l) " or "))))
-
-(defun elot-class-disjoint-from-header (l)
-  "L a list of class resources like ((super (((sub) (sub) ... (sub))))).
-This is a helper function for `elot-resource-taxonomy-from-l'."
-    (concat "\nDisjointClasses: "
-            "\n    "
-            (mapconcat (lambda (x)
-                         (elot-entity-from-header (car x)))
-                       (cdr l) ", ")))
-;; src-write-class ends here
-
-;; [[file:../elot-defs.org::src-write-taxonomy][src-write-taxonomy]]
-(defun elot-org-tags-in-string (str)
-  "Return list of any tags from Org heading contents STR."
-  (if (string-match ".*\\W+:\\(.*\\):" str)
-      (split-string (match-string 1 str) ":")))
-
-(defun elot-resource-taxonomy-from-l (l owl-type owl-subclause)
-  "Helper function for `elot-resource-taxonomy-from-header'.
-Recursively go through the list L, outputting subtype axioms for OWL
-entity type OWL-TYPE and subrelation OWL-SUBCLAUSE.
-
-Process any `oneof' and `disjont' Org tags on each header, calling
-`elot-class-oneof-from-header' or `elot-class-disjoint-from-header'."
-  (if (listp (car l))
-      (mapconcat (lambda (x) (elot-resource-taxonomy-from-l x owl-type owl-subclause)) l "")
-    (if (and (stringp (car l)) (stringp (caadr l)))
-        (concat
-          ;simple subclass clauses
-          (mapconcat (lambda (x)
-                      (concat "\n" owl-type ": "
-                              (elot-entity-from-header (car x))
-                              "\n    " owl-subclause ": "
-                              (elot-entity-from-header (car l))))
-                    (cdr l) "")
-          ;one-of pattern
-          (if (member "oneof" (elot-org-tags-in-string (car l))) (elot-class-oneof-from-header l))
-          ;disjoint pattern
-          (if (member "disjoint" (elot-org-tags-in-string (car l))) (elot-class-disjoint-from-header l))
-          (elot-resource-taxonomy-from-l (cdr l) owl-type owl-subclause)))))
-
-(defun elot-resource-taxonomy-from-header (header-id owl-type owl-relation)
-  "Output OMN subtype axioms for Class or Property Org trees.
-This function is called from the `org-babel' block in file
-`elot-lob.org' named `resource-taxonomy'.
-
-HEADER-ID is an org location id, OWL-TYPE is `Class', `ObjectProperty',
-`DataProperty', `AnnotationProperty', or `Individual'.  OWL-RELATION is
-`SubClassOf' or `SubPropertyOf'.
-
-The org location id, embedded in the `PROPERTIES' drawer for each OWL
-resource type, is `<ontology>-class-hierarchy' for the Class outline,
-and accordingly for `object-property', `data-property', and
-`annotation-property'."
-  (save-excursion
-    (if (elot-org-link-search header-id)
-        (if (org-goto-first-child)
-            (let ((hierarchy-l (elot-org-list-siblings)))
-              (elot-resource-taxonomy-from-l hierarchy-l owl-type owl-relation))
-          (concat "## no " owl-type " taxonomy"))
-      (progn
-        (message "ELOT: Warning - %s hierarchy heading '%s' not found, skipping taxonomy" owl-type header-id)
-        (format "## (no %s taxonomy - hierarchy heading '%s' not found)" owl-type header-id)))))
-;; src-write-taxonomy ends here
-
 ;; [[file:../elot-defs.org::src-resolve-prefixes-on-export][src-resolve-prefixes-on-export]]
 (defun elot--resolve-prefixes-in-description-list ()
   "Resolve RDF-style prefixes in description list values.
@@ -1115,29 +720,45 @@ are passed on to `org-get-heading'."
 
 ;; [[file:../elot-defs.org::src-org-find-description-value][src-org-find-description-value]]
 (defun elot-org-find-description-value (term-regex &optional value-regex)
-  "Find value for TERM-REGEX from `elot-org-descriptions-in-section`.
-If multiple matches, prefer the first where the value matches VALUE-REGEX.
-Return the matched value string, or nil if not found.
+  "Find a description-list value for TERM-REGEX in the current Org section.
+
+Walks the description list(s) in the body of the Org headline at point
+(excluding descendant subsections) and returns the value of the first
+item whose tag matches TERM-REGEX.  If several tags match, prefer the
+first whose value matches VALUE-REGEX; otherwise fall back to the first
+match.  Return nil if no tag matches.
 
 VALUE-REGEX is optional; defaults to match anything."
   (setq value-regex (or value-regex ""))
-  (let* ((descriptions (elot-org-descriptions-in-section))
-         (matches (seq-filter (lambda (pair)
-                                (string-match-p term-regex (car pair)))
-                              descriptions))
-         (result
-          (or (seq-some (lambda (pair)
-                          (let ((value (cadr pair)))
-                            (when (and value
-                                       (stringp value)
-                                       (string-match-p value-regex value))
-                              value)))
-                        matches)
-              (when matches
-                (cadr (car matches))))))
-    (if (stringp result)
-        result
-      nil)))
+  (save-excursion
+    (save-restriction
+      (widen)
+      (org-back-to-heading t)
+      (let* ((beg (point))
+             (end (save-excursion (outline-next-heading) (point))))
+        (narrow-to-region beg end)
+        (let* ((tree (org-element-parse-buffer))
+               (descriptions
+                (org-element-map tree 'item
+                  (lambda (it)
+                    (when (org-element-property :tag it)
+                      (elot-org-elt-item-str it)))))
+               (matches (seq-filter
+                         (lambda (pair)
+                           (and (car pair)
+                                (stringp (car pair))
+                                (string-match-p term-regex (car pair))))
+                         descriptions))
+               (result
+                (or (seq-some (lambda (pair)
+                                (let ((value (cadr pair)))
+                                  (when (and value
+                                             (stringp value)
+                                             (string-match-p value-regex value))
+                                    value)))
+                              matches)
+                    (when matches (cadr (car matches))))))
+          (and (stringp result) result))))))
 ;; src-org-find-description-value ends here
 
 ;; [[file:../elot-defs.org::src-get-description-entry :tangle no][src-get-description-entry :tangle no]]
