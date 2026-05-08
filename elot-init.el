@@ -52,7 +52,7 @@
 (setq tempo-interactive t)
 
 ;; location of the elot package -- edit path to fit
-(push (expand-file-name "~/elisp/elot/elot-package/") load-path)
+(push (expand-file-name "c:/Data/elot/elot-package/") load-path)
 (require 'elot-mode)
 
 ;; ELOT mode will now automatically activate for ontology files.
@@ -69,7 +69,7 @@
 ;; - elot-robot-jar-path    (for ROBOT query and more)
 ;; - org-plantuml-jar-path  (for PlantUML)
 ;; - elot-rdfpuml-path      (for RDF diagrams)
-
+(setq org-plantuml-jar-path (expand-file-name "~/bin/plantuml/plantuml.jar"))
 
 
 
