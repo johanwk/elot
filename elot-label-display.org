@@ -79,6 +79,11 @@ This is a safeguard, unclear whether it matters.
 (declare-function elot-robot-execute-query "elot" (query url format))
 (declare-function sparql-execute-query "ext:sparql-mode")
 (declare-function elot-prefix-block-from-alist "elot-tangle" (prefixes format))
+
+(defgroup elot-label-display nil
+  "Label display overlays and lookup for ELOT."
+  :group 'elot
+  :prefix "elot-")
 #+end_src
 
 ** Function to be replaced
@@ -221,12 +226,12 @@ identifiers using ~regexp-opt~.
   (defface elot-label-face
     '((t :inherit italic))
     "Default face used to fontify labels in ELOT overlays."
-    :group 'elot)
+    :group 'elot-label-display)
 
   (defcustom elot-label-display-face 'elot-label-face
     "Customizable face used for ELOT label fontification.
   You can choose any face (e.g. `italic', `shadow', `underline')"
-    :group 'elot
+    :group 'elot-label-display
     :version "29.2"
     :type 'face)
 
@@ -756,7 +761,7 @@ to the single-source drivers when only one side has data.
     :type '(choice (const :tag "Local buffer only"   local)
                    (const :tag "External (DB) only"  external)
                    (const :tag "Both (union)"        both))
-    :group 'elot)
+    :group 'elot-label-display)
 
   (defvar elot-label-lookup--tmp-union-ht nil
     "Temporary DISPLAY -> entry hash for the union annotator.")
@@ -991,7 +996,7 @@ with active label sources).
   summarises the identifier under point using slurp data or the
   ELOT DB.  Set to nil before enabling the mode to opt out."
     :type 'boolean
-    :group 'elot)
+    :group 'elot-label-display)
 
   (defcustom elot-global-label-display-show-source t
     "Whether the eldoc/hover summary carries a provenance marker.
@@ -999,7 +1004,7 @@ with active label sources).
   `elot-global--eldoc-function' ends with `[src: <source>]' when
   the winning row's source is known.  Set to nil to suppress."
     :type 'boolean
-    :group 'elot)
+    :group 'elot-label-display)
 
   (defun elot--id-at-point ()
     "Return the identifier under point as a string, or nil.
@@ -1168,7 +1173,7 @@ with active label sources).
   the toggle UX remains consistent.  Set to nil to disable the cap."
     :type '(choice (integer :tag "Maximum id count")
                    (const :tag "No cap" nil))
-    :group 'elot)
+    :group 'elot-label-display)
 
   (defvar-local elot-global--fontify-regexp nil
     "Buffer-local regexp used by `elot-global-label-display-mode'.

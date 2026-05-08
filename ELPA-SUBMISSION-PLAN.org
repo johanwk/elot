@@ -1946,16 +1946,17 @@ without GPL boilerplate and miss =Version:=/=URL:= headers.
   =<http://www.gnu.org/licenses/>=.  No full GPL boilerplate -
   the LICENSE file in the repo root is the canonical text.
 
-** TODO Step 5.3 - Add =:group= to every =defcustom= and =defgroup= where missing
-- =defgroup elot-tangle= and =defgroup elot-label-display= do not
-  exist; their =defcustom= entries are not assigned a group, which
-  =checkdoc= flags.
-- For each file, ensure either an existing =defgroup= covers all
-  its =defcustom= s, or add a sub-group:
-  - =elot-tangle.el= -> add =(defgroup elot-tangle nil ... :group 'elot)=.
-  - =elot-label-display.el= -> add =(defgroup elot-label-display nil ... :group 'elot)=.
-  - =elot-mode.el= -> confirm all use =:group 'elot=.
-- Add =:group= to every =defcustom= in those files.
+** DONE Step 5.3 - Add =:group= to every =defcustom= and =defgroup= where missing
+- =defgroup elot-tangle= and =defgroup elot-label-display= did not
+  exist; their =defcustom= entries were assigned =:group 'elot=,
+  which =checkdoc= flags.
+- Audit results (post-edit):
+  - =elot-package/elot-tangle.el= -- added =(defgroup elot-tangle nil ... :group 'elot)=; the two existing =defcustom= s (=elot-robot-jar-path=, =elot-exporter-jar-path=) now use =:group 'elot-tangle=.  Mirrored in =elot-tangling.org=.
+  - =elot-package/elot-label-display.el= -- added =(defgroup elot-label-display nil ... :group 'elot)=; all five =defcustom= s and the =defface= now use =:group 'elot-label-display= (=elot-label-display-face=, =elot-label-lookup-scope=, =elot-global-label-display-eldoc=, =elot-global-label-display-show-source=, =elot-global-label-display-max-ids=, plus the =elot-label-face= defface).  Mirrored in =elot-label-display.org=.
+  - =elot-package/elot-mode.el= -- confirmed: =defgroup elot= plus both =defcustom= s (=elot-label-display-size-threshold=, =elot-mode-auto-detect=) already carry =:group 'elot=.
+  - =elot-package/elot.el= -- all five =defcustom= s already carry =:group 'elot=.
+  - =elot-package/elot-db.el=, =elot-package/elot-sources.el=, =elot-package/elot-flymake.el= -- already in good shape (each has its own =defgroup= or uses =:group 'elot=).
+- Every =defcustom= in =elot-package/= now carries an explicit =:group=, and every group is rooted at =elot=.
 
 ** TODO Step 5.4 - Re-evaluate the =no-native-compile= flag in =elot.el=
 - *File*: =elot-package/elot.el=.

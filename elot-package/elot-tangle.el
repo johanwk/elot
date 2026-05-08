@@ -38,6 +38,11 @@
 ;; `elot-tangle-buffer-to-omn'.
 (defvar elot-mode-syntax-table)
 
+(defgroup elot-tangle nil
+  "Tangling and OMN generation for ELOT."
+  :group 'elot
+  :prefix "elot-")
+
 (defvar elot-omn-property-keywords
   '(
     "EquivalentTo"
@@ -342,14 +347,14 @@ non-nil, return NIL.  Otherwise raise an error."
 
 (defcustom elot-robot-jar-path (expand-file-name "~/bin/robot.jar")
   "Path to the robot.jar file."
-  :group 'elot
+  :group 'elot-tangle
   :version "29.2"
   :type 'string)
 (defvar elot-robot-command-str
   (concat "java -jar " elot-robot-jar-path))
 (defcustom elot-exporter-jar-path (expand-file-name "~/bin/elot-exporter.jar")
   "Path to the elot-exporter.jar file."
-  :group 'elot
+  :group 'elot-tangle
   :version "29.2"
   :type 'string)
 (defvar elot-exporter-command-str
