@@ -369,11 +369,15 @@ ELOT can display readable labels instead of prefixed identifiers
 (which are unreadable if the identifiers are not informative), 
 and offers quick search across the ontology resources.  Toggle
 from the *ELOT* menu or with `M-x elot-toggle-label-display`.
-On first activation of `elot-mode`, ELOT asks once whether to
-bind `<f5>` to the toggle (it is reserved for users by
-convention, so the binding is opt-in); the answer is saved via
-Customize.  Set `elot-bind-f5-toggle-labels` directly via
-`M-x customize-variable` to skip the prompt.
+
+ELOT does not claim a default keystroke for the toggle (single
+function keys F5–F9 and `C-c <letter>` are reserved for the
+user).  To get a quick keybinding, customize
+`elot-toggle-labels-key` (`M-x customize-variable RET
+elot-toggle-labels-key`) to a `kbd`-notation string of your
+choice — for example `<f5>`, `<f9>`, or `C-c t l`.  When set,
+ELOT installs the binding in `elot-mode-map` and in the
+ELOT-managed `*xref*` / `*ELOT Describe*` buffers.
 
 ![img](documentation/images/elot-label-display1.png)
 
@@ -384,8 +388,8 @@ ELOT's label-display is no longer confined to Org buffers. The minor mode
 `elot-global-label-display-mode` lights up readable labels in *any* buffer
 — `.ttl` files, SPARQL queries, CSV exports, even source code and log files
 that mention ontology identifiers. Toggle from the *ELOT* menu or via
-`M-x elot-toggle-label-display` (or `<f5>` if you opted in — see
-`elot-bind-f5-toggle-labels`).
+`M-x elot-toggle-label-display` (or your chosen keystroke if you
+set one — see `elot-toggle-labels-key`).
 
 The feature that makes this practical in daily work: **id/label mappings are
 collected silently and automatically as you edit ELOT Org files**. Every

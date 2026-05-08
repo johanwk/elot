@@ -863,34 +863,59 @@ conducted."
 ;; src-tempo-fwd-declare ends here
 
 ;; [[file:../elot-defs.org::src-keybinding][src-keybinding]]
-(defcustom elot-bind-f5-toggle-labels 'ask
-  "Whether ELOT should bind <f5> to `elot-toggle-label-display'.
-F5 is reserved for the user (see Key Binding Conventions in the
-Emacs Lisp manual), so ELOT does not claim it by default.
+(defcustom elot-toggle-labels-key nil
+  "Key sequence bound to `elot-toggle-label-display' in ELOT-relevant buffers.
+ELOT ships with no default keystroke for the labels toggle.
+Single function keys (F5-F9) and `C-c <letter>' are reserved
+for the user, so ELOT does not claim any of them.  Set this
+variable (via \\[customize-variable]) to a string in `kbd'
+notation -- for example \"<f5>\", \"<f9>\", or \"C-c t l\" --
+to install a binding for `elot-toggle-label-display' in
+`elot-mode-map' and in the ELOT-managed `*xref*' / `*ELOT
+Describe*' buffers.
 
-Possible values:
-  - t   : bind <f5> in ELOT-relevant buffers (the user has agreed).
-  - nil : never bind <f5>; use the ELOT easymenu, M-x, or your
-          own keystroke (e.g. via `define-key elot-mode-map').
-  - ask : prompt once on first `elot-mode' activation, then save
-          the answer via `customize-save-variable'."
-  :type '(choice (const :tag "Bind <f5>"      t)
-                 (const :tag "Do not bind"    nil)
-                 (const :tag "Ask first use"  ask))
+Leave at nil (the default) to use the ELOT easymenu or
+`M-x elot-toggle-label-display' instead.  The first
+`elot-mode' activation in a session will emit a single
+informational message pointing at this variable; subsequent
+activations are silent."
+  :type '(choice (const  :tag "No binding (use menu / M-x)" nil)
+                 (string :tag "Key sequence (kbd notation)"))
+  :set (lambda (sym val)
+         (set-default sym val)
+         ;; Rebind live in `elot-mode-map' so customize-driven
+         ;; changes take effect immediately, without requiring the
+         ;; user to toggle `elot-mode' off and on.  The helper is
+         ;; defined in elot-mode.el; guard with `fboundp' for the
+         ;; case where elot-mode.el has not yet loaded.
+         (when (fboundp 'elot-mode--apply-toggle-key)
+           (elot-mode--apply-toggle-key)))
   :group 'elot)
 
-(defun elot--maybe-prompt-for-f5-binding ()
-  "Return effective value of `elot-bind-f5-toggle-labels'.
-If the value is `ask', prompt the user once and persist the
-answer via `customize-save-variable'.  Returns t or nil."
-  (when (eq elot-bind-f5-toggle-labels 'ask)
-    (let ((answer (and (not noninteractive)
-                       (y-or-n-p
-                        "ELOT: Bind <f5> to toggle label display? \
-(F5 is reserved for users; decline to keep it free.) "))))
-      (customize-save-variable 'elot-bind-f5-toggle-labels
-                               (if answer t nil))))
-  elot-bind-f5-toggle-labels)
+(defvar elot--toggle-labels-key-notice-shown nil
+  "Non-nil once the one-time `elot-toggle-labels-key' notice has been emitted.
+Reset on Emacs restart.  Used by `elot--toggle-labels-key' to
+emit a hint at most once per session when no binding is set.")
+
+(defun elot--toggle-labels-key ()
+  "Return the key sequence string for `elot-toggle-label-display', or nil.
+If `elot-toggle-labels-key' is a non-empty string, return it
+(callers pass the result through `kbd').  Otherwise return nil
+and, the first time this happens in an interactive session,
+emit a one-line message pointing the user at the customize
+variable so they can set a binding if they want one."
+  (cond
+   ((and (stringp elot-toggle-labels-key)
+         (not (string-empty-p elot-toggle-labels-key)))
+    elot-toggle-labels-key)
+   (t
+    (unless (or noninteractive elot--toggle-labels-key-notice-shown)
+      (setq elot--toggle-labels-key-notice-shown t)
+      (message
+       "ELOT: no key bound to `elot-toggle-label-display'.  \
+Use the ELOT menu, M-x, or `M-x customize-variable RET \
+elot-toggle-labels-key' to set one."))
+    nil)))
 ;; src-keybinding ends here
 
 ;; [[file:../elot-defs.org::src-tsv-table][src-tsv-table]]

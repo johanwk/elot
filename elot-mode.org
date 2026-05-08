@@ -653,13 +653,11 @@ replaces the ad-hoc =local-set-key= calls in =elot-setup-org-keybindings=.
 #+begin_src emacs-lisp
   (defvar elot-mode-map
     (let ((map (make-sparse-keymap)))
-      ;; <f5> is reserved for the user (Key Binding Conventions in
-      ;; the Emacs Lisp manual).  ELOT does not bind it by default;
-      ;; users may opt in via `elot-bind-f5-toggle-labels'.  See the
-      ;; defcustom in elot.el for the prompt-once-and-persist mechanism.
-      (when (and (boundp 'elot-bind-f5-toggle-labels)
-                 (eq (elot--maybe-prompt-for-f5-binding) t))
-        (define-key map (kbd "<f5>") #'elot-toggle-label-display))
+      ;; The optional binding for `elot-toggle-label-display' is
+      ;; installed at mode-enable time (see `elot-mode--apply-toggle-key'
+      ;; called from `elot-mode--enable'), not here, because the
+      ;; user's customized value of `elot-toggle-labels-key' is not
+      ;; necessarily available when this `defvar' runs at load time.
       (define-key map (kbd "C-c C-x r") #'elot-label-lookup)
       ;; S-<f5> previously bound to a Shift-F5 menu; that menu has
       ;; been retired in favour of the ELOT easymenu ("ELOT" in the
@@ -1025,6 +1023,47 @@ public API to remove individual entries from the Library of Babel.
           (setq elot--lob-ingested-p t)))))
 #+end_src
 
+** Apply user's toggle-labels keybinding
+
+The =defvar elot-mode-map= above runs at /load time/, before the
+user's =custom-file= has been read.  Reading
+=elot-toggle-labels-key= there would always see the default =nil=
+and never install the user's preferred binding.  Instead the
+binding is applied (and refreshed) at every =elot-mode--enable=
+via the helper below.
+
+A small state variable =elot-mode--applied-toggle-key= tracks the
+last key we installed so we can unbind it cleanly if the user
+later changes =elot-toggle-labels-key= via Customize.
+
+#+name: src-mode-apply-toggle-key
+#+begin_src emacs-lisp
+  (defvar elot-mode--applied-toggle-key nil
+    "Key currently bound to `elot-toggle-label-display' in `elot-mode-map'.
+  Tracked so `elot-mode--apply-toggle-key' can rebind cleanly when
+  the user changes `elot-toggle-labels-key' between activations.")
+
+  (defun elot-mode--apply-toggle-key ()
+    "Install the user's `elot-toggle-labels-key' binding in `elot-mode-map'.
+  Reads the current value via `elot--toggle-labels-key' (which also
+  emits the one-time hint when no value is set), unbinds any
+  previously-installed key, and binds the new one if any.  Safe to
+  call from every `elot-mode--enable'."
+    (when (boundp 'elot-mode-map)
+      ;; Unbind the previously-applied key, if any, so customize-driven
+      ;; changes between activations don't leave stale bindings behind.
+      (when elot-mode--applied-toggle-key
+        (define-key elot-mode-map
+                    (kbd elot-mode--applied-toggle-key) nil)
+        (setq elot-mode--applied-toggle-key nil))
+      (let ((key (and (fboundp 'elot--toggle-labels-key)
+                      (elot--toggle-labels-key))))
+        (when key
+          (define-key elot-mode-map (kbd key)
+                      #'elot-toggle-label-display)
+          (setq elot-mode--applied-toggle-key key)))))
+#+end_src
+
 ** Enable and disable
 :PROPERTIES:
 :CUSTOM_ID: enable-disable
@@ -1057,6 +1096,10 @@ the user is prompted first.  The user can always run
 
     ;; 3. Ingest the Library of Babel (once per Emacs session)
     (elot-mode--ingest-lob)
+
+    ;; 3b. Apply the user's toggle-labels keybinding (if any) into
+    ;;     `elot-mode-map' now that customize has had a chance to load.
+    (elot-mode--apply-toggle-key)
 
     ;; 4. Parse the headline hierarchy (populates elot-headline-hierarchy,
     ;;    which is needed by link-abbrev refresh and label-display)
@@ -1296,9 +1339,10 @@ registered and the correct context is preserved across jumps.
     "Setup label overlays in the xref buffer using `elot-slurp-global'."
     (when (and (equal (buffer-name) "*xref*")
   	     (fboundp 'elot-label-display-setup))
-      (when (and (boundp 'elot-bind-f5-toggle-labels)
-                 (eq (elot--maybe-prompt-for-f5-binding) t))
-        (local-set-key (kbd "<f5>") #'elot-toggle-label-display))
+      (let ((key (and (fboundp 'elot--toggle-labels-key)
+                      (elot--toggle-labels-key))))
+        (when key
+          (local-set-key (kbd key) #'elot-toggle-label-display)))
       (elot-label-display-setup)))
 
   ;; Installed/removed via `elot-mode--{install,uninstall}-xref-globals'.
@@ -1382,11 +1426,12 @@ registered and the correct context is preserved across jumps.
   	  (princ
   	   "\n----\n`q' to quit, `RET' to visit location.\n")
   	  ;; ------------------------------------
-  	  ;; 3c. Bind F5 (opt-in) and paint label overlays
+  	  ;; 3c. Bind opt-in toggle key (if customized) and paint label overlays
   	  ;; ------------------------------------
-  	  (when (and (boundp 'elot-bind-f5-toggle-labels)
-                       (eq (elot--maybe-prompt-for-f5-binding) t))
-              (local-set-key (kbd "<f5>") #'elot-toggle-label-display))
+  	  (let ((key (and (fboundp 'elot--toggle-labels-key)
+                            (elot--toggle-labels-key))))
+              (when key
+                (local-set-key (kbd key) #'elot-toggle-label-display)))
   	  (when (fboundp 'elot-label-display-setup)
   	    (elot-label-display-setup)))))))
 

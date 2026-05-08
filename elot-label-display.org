@@ -1381,9 +1381,10 @@ with active label sources).
           (elot-global--install)
           (make-local-variable 'elot-label-display)
           (setq elot-label-display 'on)
-          (when (and (boundp 'elot-bind-f5-toggle-labels)
-                     (eq (elot--maybe-prompt-for-f5-binding) t))
-            (local-set-key (kbd "<f5>") #'elot-toggle-label-display))
+          (let ((key (and (fboundp 'elot--toggle-labels-key)
+                          (elot--toggle-labels-key))))
+            (when key
+              (local-set-key (kbd key) #'elot-toggle-label-display)))
           (local-set-key (kbd "C-c C-x r") #'elot-label-lookup)
           (when elot-global-label-display-eldoc
             (add-hook 'eldoc-documentation-functions

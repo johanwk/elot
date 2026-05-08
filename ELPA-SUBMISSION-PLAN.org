@@ -2028,6 +2028,20 @@ addresses.
 
 ** CANCELLED Step 5.5 - Remove =elot-slurp-global= mentions if non-disruptive
 CLOSED: [2026-05-08 fre. 19:04]
+
+*** Follow-up (2026-05-08): un-deprecate =elot-slurp-global=
+
+Since the removal is deferred (Step 5.5 cancelled) and the
+variable is part of the supported cross-buffer staging
+mechanism for label overlays in =*xref*= / =*ELOT Describe*=
+buffers, the =make-obsolete-variable= call was producing four
+spurious native-compile warnings on every build for code that
+is intentionally retained.  The =make-obsolete-variable= form
+has been removed from =elot-tangle.el= (and =elot-tangling.org=)
+and the docstring rewritten to describe the variable as part
+of the supported internal API, with a forward pointer to the
+DB-migration plan in =ELOT-DB-PLAN.org=.  Re-deprecation will
+happen as part of that future migration, not before.
 :PROPERTIES:
 :CUSTOM_ID: milestone-5-step-5.5
 :END:
@@ -2126,6 +2140,126 @@ CLOSED: [2026-05-08]
 :PROPERTIES:
 :CUSTOM_ID: milestone-5-step-5.7
 :END:
+
+*** Final revision 4 (2026-05-08): live rebind via defcustom =:set= handler
+
+A small UX wart remained after revision 3: customizing
+=elot-toggle-labels-key= in a live session did not affect
+already-active ELOT buffers; the user had to toggle =elot-mode=
+off and back on for the new key to take effect.  Fixed by
+adding a =:set= function to the defcustom that calls
+=elot-mode--apply-toggle-key= (guarded with =fboundp= for the
+load-order case where =elot-mode.el= has not yet loaded).
+Customize now rebinds =elot-mode-map= immediately on save, no
+mode toggle required.  Mirrored in =elot-defs.org=.
+
+*** Final revision 3 (2026-05-08): apply binding at mode-enable, not at load time
+
+Testing in a fresh Emacs revealed a residual bug in revision 2:
+=elot-toggle-labels-key= was customized to ="<f5>"= and saved to
+=custom-file=, but pressing F5 in an ELOT buffer reported
+"<f5> is undefined".  Root cause: =elot-mode-map= is built by a
+=defvar=, which runs the moment =elot.el= is /loaded/, well
+before =package-initialize= reads the user's =custom-file=.  The
+keymap closure therefore captured =elot-toggle-labels-key= at
+its default =nil= and never picked up the user's later value.
+
+Fix: don't read =elot-toggle-labels-key= from inside the
+=defvar=.  Move that logic into a small helper
+=elot-mode--apply-toggle-key= called from =elot-mode--enable=
+(step 3b, just after LOB ingestion).  At that point the user's
+custom-file has been loaded and the variable holds the
+intended value.  A companion state variable
+=elot-mode--applied-toggle-key= tracks the last-installed key
+so toggling =elot-mode= off and back on after a customize
+change rebinds cleanly (unbind old, bind new).
+
+The four bind sites are unchanged for the foreign-buffer
+helpers (=*xref/=, =*ELOT Describe/=, and
+=elot-global-label-display-mode='s on-branch); each of those
+runs at activation time anyway, so reading the customize
+variable there has always worked.
+
+Mirrored in =elot-defs.org=/=elot-mode.org= so a re-tangle is a
+no-op.
+
+*** Final revision 2 (2026-05-08): no prompt at all -- pure customize variable
+
+Manual testing of the =read-string= prompt revealed a bad UX:
+the prompt appears /before/ =elot-mode= activation has finished
+binding the keymap, so a user who types =<f5>= at the prompt
+sees the answer accepted but pressing =<f5>= immediately
+afterwards reports =[<f5> is undefined]= -- the binding is
+installed in =elot-mode-map=, but the keymap construction
+already raced past the binding step in the buffer where the
+user was testing.  Additionally, the modal prompt interrupts
+the natural flow of opening a file.
+
+Replaced the prompt mechanism with a plain customize variable
+plus a one-time informational =message=:
+
+| Before                                           | After                                              |
+|--------------------------------------------------+----------------------------------------------------|
+| =elot-toggle-labels-key= (=nil= / =ask= / STRING) | =elot-toggle-labels-key= (=nil= / STRING)            |
+| Helper =elot--maybe-prompt-for-toggle-labels-key= | Helper =elot--toggle-labels-key=                    |
+| Modal =read-string= on first =elot-mode= activation | One-line =message= on first =elot-mode= activation when no binding is set |
+| Persists answer via =customize-save-variable=    | User customizes via =M-x customize-variable= ahead of time |
+
+The new contract:
+
+- Default value is =nil= -- no binding.  The first time
+  =elot-mode= activates in a session and finds no binding set,
+  =elot--toggle-labels-key= emits a single =message= pointing
+  the user at =M-x customize-variable RET elot-toggle-labels-key=.
+  Subsequent activations are silent (gated by
+  =elot--toggle-labels-key-notice-shown=).
+- Users who want a binding set =elot-toggle-labels-key= once
+  via Customize (saved to their =custom-file=) and never see
+  the notice.  The string is passed through =kbd= at the four
+  bind sites.
+
+This also resolves the timing issue in the original prompt:
+because the value is read at keymap construction time from a
+variable that's already set (or not), the binding is in place
+the moment =elot-mode-map= is built.  No race.
+
+Mirrored in =elot-defs.org= (block =src-keybinding=),
+=elot-mode.org= (=src-mode-keymap= and foreign-buffer sites),
+=elot-label-display.org=, =README.md=, and =elot-package/=
+tangled mirrors.
+
+*** Final revision (2026-05-08): no F5 proposal at all
+
+After the Step 5.7 implementation below, =package-lint= still
+flagged the literal =(kbd "<f5>")= inside the =defconst
+elot--f5-key= form in =elot.el= (it scans the source statically;
+the runtime opt-in guard does not help).  The prompt itself was
+also judged too "insistent" -- proposing F5 by name to every new
+user was the wrong default.
+
+The defcustom was therefore renamed and generalised:
+
+| Before                              | After                            |
+|-------------------------------------+----------------------------------|
+| =elot-bind-f5-toggle-labels= (tri-state =t/nil/ask=) | =elot-toggle-labels-key= (=nil= / =ask= / STRING) |
+| Helper =elot--maybe-prompt-for-f5-binding= | Helper =elot--maybe-prompt-for-toggle-labels-key= |
+| Constant =elot--f5-key= (held =(kbd "<f5>")=) | (deleted -- no literal in code) |
+| Prompt: =y-or-n-p= "Bind <f5>?"     | =read-string= "key for elot-toggle-label-display (e.g. C-c t l, <f9>; RET to skip)" |
+
+The new prompt names *no* default key; the user types whatever
+they want in =kbd= notation, or =RET= to skip.  The answer is
+saved via =customize-save-variable= (a string, or =nil= if the
+user pressed =RET=).  The four bind sites use =(kbd
+elot-toggle-labels-key)= at runtime, so no literal reserved-key
+string appears in the source.
+
+This eliminates the last reserved-key error from =package-lint=
+without giving up the first-use-prompt UX, and avoids
+prejudicing the user toward F5 specifically.
+
+Mirrored in =elot-defs.org= (block =src-keybinding=),
+=elot-mode.org= (=src-mode-keymap= and the two foreign-buffer
+sites), =elot-label-display.org=, and =README.md=.
 
 *** Background
 
@@ -2250,7 +2384,8 @@ In addition:
   =M-x elot-toggle-label-display= and the easymenu still work.
 - Stable-status checklist green.
 
-** Acceptance check
+** DONE Acceptance check
+CLOSED: [2026-05-08 fre.]
 - =package-lint= via:
   #+begin_src sh
   emacs --batch \
@@ -2261,9 +2396,21 @@ In addition:
     --eval "(setq package-lint-main-file \"elot-package/elot.el\")" \
     -L elot-package -f package-lint-batch-and-exit elot-package/*.el
   #+end_src
-  Returns no errors.  Warnings noted for follow-up but do not block.
+  Returns no errors.  Two warnings remain, both intentional and
+  documented at the source (=elot-label-display.el:1262= and
+  =elot-mode.el:649= -- =with-eval-after-load= used as a
+  cross-module load-order bridge between ELOT's own modules,
+  not as user-config injection).  These do not block MELPA.
 - =checkdoc= via =M-x checkdoc-file= on each =elot-package/*.el=
   reports no new warnings vs the baseline (Step B.1).
+
+Result transcript:
+#+begin_example
+$ emacs --batch ... -L elot-package -f package-lint-batch-and-exit elot-package/*.el
+elot-label-display.el:1262:1: warning: `with-eval-after-load' is for use in configurations, and should rarely be used in packages.
+elot-mode.el:649:1: warning: `with-eval-after-load' is for use in configurations, and should rarely be used in packages.
+#+end_example
+0 errors, 2 (intentional) warnings.
 - Run the [[#stable-status][stable-status checklist]].
 
 * Milestone 6 - CI workflow for tests and lint

@@ -896,12 +896,14 @@ Returns a list of lists: (URI label (plist of attributes))."
 Each member is a list of curie, label, and plist of attributes.")
 (defvar elot-slurp-global nil
   "List of resources retrieved from SPARQL endpoints.
+Used as a cross-buffer staging variable so that label overlays
+set up in *xref* / *ELOT Describe* buffers can read the slurp
+data captured from the originating ELOT buffer.
 
-Obsolete: this global list is retained only as a transitional no-op.
-Use the ELOT label DB (`elot-db-*' / `elot-label-register-source') instead.")
-(make-obsolete-variable 'elot-slurp-global
-  "use the ELOT label DB (`elot-db-*') via `elot-label-register-source' instead."
-  "ELOT 2.1")
+A future migration to the ELOT label DB (`elot-db-*' /
+`elot-label-register-source') is tracked in ELOT-DB-PLAN.org;
+until that lands, this variable is part of the supported
+internal API.")
 (defvar-local elot-codelist-ht nil
   "Hashtable holding pairs of curie and label for ELOT label-display.")
 (defvar-local elot-attriblist-ht nil
