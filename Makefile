@@ -107,12 +107,16 @@ native-compile:
 test:
 	$(MAKE) -C test EMACS=$(EMACS)
 
-# Load elot-mode in a fresh batch Emacs - catches missing requires
-# or top-level errors that byte-compile would not surface.
+# Load elot in a fresh batch Emacs - catches missing requires or
+# top-level errors that byte-compile would not surface.  Since
+# Milestone 4 Step 4.6, `elot.el' is the canonical load entry point
+# and pulls in `elot-mode' (and the rest) transitively; the smoke
+# test asserts `elot-mode' is bound as a side effect.
 smoke:
 	$(EMACS) --batch -L $(PACKAGE_DIR) \
-	  --eval "(require 'elot-mode)" \
-	  --eval "(message \"OK: elot-mode loaded\")"
+	  --eval "(require 'elot)" \
+	  --eval "(unless (fboundp 'elot-mode) (error \"elot-mode not bound after (require 'elot)\"))" \
+	  --eval "(message \"OK: elot loaded; elot-mode bound\")"
 
 ## ---------------------------------------------------------------------------
 ## Baseline capture (run once, before Milestone 1; see Step B.1-B.3).
@@ -178,7 +182,8 @@ help:
 	@echo "  make native-compile native-compile $(PACKAGE_DIR)/*.el"
 	@echo "                      (requires Emacs --with-native-compilation)"
 	@echo "  make test           full ERT suite (delegates to test/Makefile)"
-	@echo "  make smoke          (require 'elot-mode) in a fresh batch Emacs"
+	@echo "  make smoke          (require 'elot) in a fresh batch Emacs;"
+	@echo "                      asserts elot-mode is bound as a side effect"
 	@echo "  make baseline       capture Step B.1-B.3 baselines under /tmp/"
 	@echo "                      (override with BASELINE_DIR=...)"
 	@echo "  make clean          remove .elc files in $(PACKAGE_DIR)"

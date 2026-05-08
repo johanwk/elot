@@ -1813,43 +1813,81 @@ longer needed.
   so a fresh-Emacs test session no longer installs the unused
   package.
 
-** TODO Step 4.5 - Update =elot-defs.org=
+** DONE Step 4.5 - Update =elot-defs.org=
 - *File*: =elot-defs.org=.
-- Sync the =Package-Requires= block in the literate source with
-  the changes above so re-tangling does not undo them.
+- Verified in sync: =elot-defs.org= named block =src-package-header=
+  already carries =;; Package-Requires: ((emacs "29.1"))= (line 22),
+  matching =elot-package/elot.el= (line 8).  All earlier Milestone 4
+  steps (4.1, 4.2.A, 4.3, 4.4) edited the literate source and the
+  tangled file in lock-step, so a re-tangle is a no-op.
+- =make -C test tangle-roundtrip-test= continues to pass; no diff
+  is produced against the checked-in =.el= files.
+- No code changes required for this step.
 
-** TODO Step 4.6 - Make =elot.el= the canonical load entry point
-- *File*: =elot-package/elot.el= (and =elot-defs.org= mirror).
-- Near the bottom of =elot.el= (just before =(provide 'elot)=),
-  add ~require~ forms for every sibling module that should be
-  available after =(require 'elot)=:
-  : (require 'elot-mode)
-  : (require 'elot-tangle)
-  : (require 'elot-label-display)
-  : (require 'elot-flymake)
-  : (require 'elot-owl-grammar)
-  Modules that are themselves optional (e.g. =elot-db=,
-  =elot-sources=) should be loaded with =(require 'elot-db nil t)=
-  so a missing optional module does not break the main load.
-- Confirm with a fresh Emacs:
-  #+begin_src sh
-  emacs --batch -L elot-package \
-    --eval "(require 'elot)" \
-    --eval "(message \"elot-mode bound: %s\" (fboundp 'elot-mode))"
-  #+end_src
-  Output must include =elot-mode bound: t=.
-- Update =make smoke= in the top-level =Makefile= so the
-  stable-check now exercises =(require 'elot)= instead of
-  =(require 'elot-mode)=.
+** DONE Step 4.6 - Make =elot.el= the canonical load entry point
+- *Files*: =elot-package/elot.el= (and =elot-defs.org= mirror, new
+  named block =src-load-entry-point=); top-level =Makefile=.
+- A new section *Canonical load entry point* was added to
+  =elot-defs.org= immediately before the =provide= block, with a
+  matching =;; [[file:...::src-load-entry-point]]= region inserted
+  in =elot.el= just before =(provide 'elot)=.  It pulls in:
+  : (require 'elot-mode)            ; minor mode, keymap, easymenu, lifecycle
+  : (require 'elot-label-display)   ; label display overlays
+  : (require 'elot-flymake)         ; flymake backend
+  : (require 'elot-owl-grammar)     ; OMN PEG grammar
+  : (require 'elot-db nil t)
+  : (require 'elot-sources nil t)
+  =elot-tangle= is unchanged - it is already required at the top
+  of =elot.el= via =src-require=.  =elot-db= and =elot-sources=
+  use the soft =(require ... nil t)= form so a build without
+  sqlite support still loads cleanly.
+- =elot-mode.el= already does =(require 'elot nil t)= at its top,
+  but the load order is now: user does =(require 'elot)= ->
+  =elot.el= top-level requires =elot-tangle= -> body of
+  =elot.el= runs (defcustoms, defuns, advice helpers) ->
+  trailing requires pull in =elot-mode= et al.  =elot-mode='s
+  =(require 'elot nil t)= is a no-op at that point because =elot=
+  is already =provide='d.
+- =Makefile=: =make smoke= now exercises =(require 'elot)=
+  instead of =(require 'elot-mode)=, and asserts
+  =(fboundp 'elot-mode)= as a side effect.  The =help= text was
+  updated to match.
 
-** Acceptance check
+*** Verification (CLI)
+Run from the repository root:
+#+begin_src sh
+emacs --batch -L elot-package \
+  --eval "(require 'elot)" \
+  --eval "(message \"elot-mode bound: %s\" (fboundp 'elot-mode))"
+#+end_src
+Output must include =elot-mode bound: t=.
+
+Then:
+#+begin_src sh
+make smoke
+make stable-check
+make -C test tangle-roundtrip-test
+#+end_src
+
+** DONE Acceptance check
+CLOSED: [2026-05-08 fre.]
 - =grep -n "^;; Package-Requires:" elot-package/*.el= shows
-  exactly one match (=elot.el=).
-- =git grep -n "\\bht\\b" elot-package/= returns no Elisp matches
-  (string literals in fixtures are fine).
-- =(require 'elot)= in a fresh Emacs makes =elot-mode= available
-  without any further =require= calls.
-- Run the [[#stable-status][stable-status checklist]].
+  exactly one match, in =elot.el=.
+- =git grep -nE "\(require 'ht\b|\bht-[a-z]" elot-package/= shows
+  only four matches, all in =elot-package/elot-tangle.el=
+  (=elot--ht-from-plist=, =elot--ht-from-alist= and their two
+  call sites).  These are local helpers that build plain Emacs
+  hash tables via =make-hash-table= / =gethash= / =puthash=; they
+  have no relation to the external =ht= package.  No remaining
+  reference to the =ht= package itself.
+- =(require 'elot)= in a fresh Emacs (=emacs --batch -L
+  elot-package=) prints the optional-deps notice exactly once
+  and reports =elot-mode bound: t=, confirming =elot.el= is the
+  canonical load entry point and =elot-mode= is autoloaded as a
+  side effect.
+- Stable-status checklist green: =make stable-check= passes,
+  =make smoke= passes, =make -C test tangle-roundtrip-test
+  load-without-sparql-test sparql-advice-test= all pass.
 
 * Milestone 5 - Standardise file headers and licenses
 :PROPERTIES:

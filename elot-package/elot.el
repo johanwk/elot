@@ -877,5 +877,17 @@ conducted."
     (cons header (cons 'hline body))))
 ;; src-tsv-table ends here
 
+;; [[file:../elot-defs.org::src-load-entry-point][src-load-entry-point]]
 (provide 'elot)
+
+(require 'elot-mode)            ; minor mode, keymap, easymenu, lifecycle
+(require 'elot-label-display)   ; label display overlays
+(require 'elot-flymake)         ; flymake backend
+(require 'elot-owl-grammar)     ; OMN PEG grammar
+;; Optional sub-modules: do not break the main load if they are absent
+;; (e.g. when sqlite support is unavailable).
+(require 'elot-db nil t)
+(require 'elot-sources nil t)
+;; src-load-entry-point ends here
+
 ;;; elot.el ends here

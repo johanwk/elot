@@ -1129,10 +1129,40 @@ This function is currently not in use.
                   (butlast (cdr lines)))))  ;; check this is ok
       (cons header (cons 'hline body))))
 #+end_src
+*** Canonical load entry point
+
+Make =(require 'elot)= the single load entry point for the package:
+pull in every sibling module that should be available after loading
+this file.  =elot-tangle= is already required at the top of the file
+(see =src-require=).  Optional sub-modules use =(require ... nil t)=
+so that a missing optional module (for instance, =elot-db= on a build
+without sqlite support) does not break the main load.
+
+Note: =(provide 'elot)= must run *before* the trailing requires.
+=elot-mode.el= (and potentially other sub-modules) starts with
+=(require 'elot nil t)= as a soft back-reference.  If we provided
+=elot= only after loading =elot-mode=, that soft require would
+retrigger loading of this file and Emacs would signal "Recursive
+=require= for feature =elot=".  With =provide= first, the
+back-reference becomes a no-op.
+
+#+name: src-load-entry-point
+#+begin_src emacs-lisp
+  (provide 'elot)
+
+  (require 'elot-mode)            ; minor mode, keymap, easymenu, lifecycle
+  (require 'elot-label-display)   ; label display overlays
+  (require 'elot-flymake)         ; flymake backend
+  (require 'elot-owl-grammar)     ; OMN PEG grammar
+  ;; Optional sub-modules: do not break the main load if they are absent
+  ;; (e.g. when sqlite support is unavailable).
+  (require 'elot-db nil t)
+  (require 'elot-sources nil t)
+#+end_src
+
 *** End with "provides"
 #+name: src-provide-library
 #+begin_src emacs-lisp :comments none
-(provide 'elot)
 ;;; elot.el ends here
 #+end_src
 
