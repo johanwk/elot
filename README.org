@@ -193,6 +193,62 @@ ELOT can display readable labels instead of prefixed identifiers
 and offers quick search across the ontology resources. Hit F5 to toggle.
 
 [[file:documentation/images/elot-label-display1.png]]
+* Supported =#+call:= helpers (Library of Babel)
+
+ELOT ships a small Library of Babel file
+([[file:elot-package/elot-lob.org][=elot-package/elot-lob.org=]])
+that defines a handful of named source blocks intended to be invoked
+from your ontology Org files via Org's =#+call:= syntax.  When
+=elot-mode= is enabled in a buffer, ELOT automatically ingests the
+file (via =org-babel-lob-ingest=) so the helpers below are available
+without any manual setup -- no =M-x org-babel-lob-ingest= step
+required.
+
+The supported helpers are:
+
+- =rdfpuml-block= -- render a Turtle (or SPARQL =CONSTRUCT=) source
+  block as an rdfpuml/PlantUML diagram.  Takes the *name* of another
+  named block as its =ttlblock= argument, plus optional =config=,
+  =add-options=, =epilogue= and =format= arguments.  Produces an
+  image file referenced from the surrounding caption.
+- =kill-prefixes= -- strip leading =@prefix= / =PREFIX= declarations
+  from a Turtle string.  Most commonly used as a =:post= hook on a
+  SPARQL =CONSTRUCT= block to keep the visible result compact.
+- =robot-metrics= -- run =robot measure= on an OMN file and return
+  the resulting table.
+- =robot-sparql-select= -- run a named SPARQL query through ROBOT
+  against a local OMN file and return the result as an Org table.
+- =theme-readtheorg= / =theme-elot= -- expand to the right
+  =#+SETUPFILE:= line for the bundled HTML themes.
+- =current-date= / =current-datetime= -- format the current
+  date/time, useful in =pav:lastUpdateOn= annotations.
+
+A minimal example, taken from
+[[file:examples/pets.org][=examples/pets.org=]], showing
+=rdfpuml-block= consuming a CONSTRUCT block whose result is also
+post-processed by =kill-prefixes=:
+
+#+begin_src org
+,#+name: my-construct
+,#+begin_src sparql :url "my-ont.omn" :format ttl :wrap "src ttl" \
+,                  :cache yes :post kill-prefixes(data=*this*)
+  construct {
+    ?class a owl:Class .
+    ?subclass rdfs:subClassOf ?class .
+  } {
+    ?class a owl:Class .
+    optional { ?subclass rdfs:subClassOf ?class }
+  }
+,#+end_src
+
+,#+name: rdfpuml:my-construct
+,#+call: rdfpuml-block(ttlblock="my-construct")
+,#+caption: Animal diagram
+#+end_src
+
+Place point on the =#+call:= line and hit =C-c C-c= to render the
+diagram.  See =examples/pets.org= for the complete working file.
+
 * Navigating Ontologies with Xref
 
 ELOT supports cross-referencing and navigation using Emacs’s built-in
