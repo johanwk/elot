@@ -1958,20 +1958,297 @@ without GPL boilerplate and miss =Version:=/=URL:= headers.
   - =elot-package/elot-db.el=, =elot-package/elot-sources.el=, =elot-package/elot-flymake.el= -- already in good shape (each has its own =defgroup= or uses =:group 'elot=).
 - Every =defcustom= in =elot-package/= now carries an explicit =:group=, and every group is rooted at =elot=.
 
-** TODO Step 5.4 - Re-evaluate the =no-native-compile= flag in =elot.el=
-- *File*: =elot-package/elot.el=.
-- After Milestone 2 the function that needed
-  =org-link-abbrev-alist-local= access at native-compile time
-  has moved to =elot-tangle.el=.  Try removing the
-  =no-native-compile: t;= cookie and run:
-  #+begin_src sh
-  emacs --batch -L elot-package \
-    --eval '(setq native-comp-async-report-warnings-errors nil)' \
-    -f batch-native-compile elot-package/elot.el
-  #+end_src
-- If native compilation succeeds and =elot-mode= still works in
-  an example file, drop the cookie.  Otherwise leave it and add a
-  one-line comment naming the function that requires it.
+** DONE Step 5.4 - Re-evaluate the =no-native-compile= flag
+CLOSED: [2026-05-08 fre.]
+- Audit findings: =git grep "no-native-compile" elot-package/=
+  showed the cookie was already absent from =elot.el= and
+  =elot-label-display.el= (removed in an earlier pass).  Stale
+  prose in =elot-defs.org= (line 9) and =elot-label-display.org=
+  (line 9) still claimed the cookie was set; both were corrected
+  in this step to match reality.
+- =elot-package/elot-defaults.el= - the backward-compat shim
+  (=(load-library "elot")=) - was the last file carrying the
+  cookie.  Dropped here for consistency.
+- Verification: =make clean && make native-compile= completes
+  with no errors.  Only warnings are emitted, all pre-existing
+  and unrelated to native compilation per se:
+  - Four =elot-slurp-global is obsolete= warnings (deprecation
+    notices in =elot-label-display.el= and =elot-mode.el=).
+  - One =font-lock-fontify-buffer is for interactive use only=
+    in =elot--prepare-export-buffer=.
+  - Three "function not known to be defined" warnings for the
+    optional SPARQL entry points (=org-babel-sparql-convert-to-table=,
+    =sparql-execute-query=, =org-babel-expand-body:sparql=).
+    These are correct given Milestone 4 Step 4.2's classification
+    of =sparql-mode= / =ob-sparql= as optional dependencies.
+- =git grep "no-native-compile" elot-package/= now returns no
+  matches.
+
+*** Follow-up: cleared remaining native-compile warnings
+- =elot--prepare-export-buffer= now calls =font-lock-ensure=
+  instead of =font-lock-fontify-buffer= (the latter is flagged
+  as for interactive use only).  Mirrored in =elot-defs.org=.
+- Added =declare-function= forms in =elot.el= (and the
+  =src-defvar= block in =elot-defs.org=) for the three optional
+  SPARQL entry points: =org-babel-expand-body:sparql=,
+  =org-babel-sparql-convert-to-table=, and
+  =sparql-execute-query=.  These match the optional-dependency
+  classification from Step 4.2 and silence the "function not
+  known to be defined" warnings without adding any hard
+  requirement.
+- The four =elot-slurp-global is obsolete= warnings remain;
+  they are intentional deprecation notices for the migration to
+  the label DB.  They are addressed in Step 5.5 below if the
+  removal can be done without disruption.
+
+*** Follow-up round 2 (2026-05-08)
+
+A second =make native-compile= surfaced two warnings that the
+first pass had not actually fixed in the tangled =elot.el=
+(only in the literate source / declare-function list):
+
+- =elot.el:686: font-lock-fontify-buffer is for interactive use
+  only= - the swap to =font-lock-ensure= had landed in
+  =elot-defs.org= but not in the tangled =elot.el=.  Fixed here
+  by editing =elot.el= directly so it matches the literate
+  source.
+- =elot.el:521: sparql-execute-query called with 4 arguments,
+  but accepts only 1-3= - the =declare-function= advertised an
+  arity of =(query &optional url synchronous)= (3 args) while
+  the advice calls it with =(final-query raw-url raw-format t)=
+  (4 args).  The actual =sparql-mode= function does take 4
+  optional arguments =(query &optional url format synchronous)=;
+  the declare-function arity was simply wrong.  Updated the
+  =declare-function= in both =elot.el= and =elot-defs.org= to
+  match.
+
+After this round, =make native-compile= produces only the four
+=elot-slurp-global= deprecation warnings, which Step 5.5 below
+addresses.
+
+** CANCELLED Step 5.5 - Remove =elot-slurp-global= mentions if non-disruptive
+CLOSED: [2026-05-08 fre. 19:04]
+:PROPERTIES:
+:CUSTOM_ID: milestone-5-step-5.5
+:END:
+
+The four remaining native-compile warnings all point at code
+that still references the obsolete variable =elot-slurp-global=
+(deprecated as of ELOT 2.1 in favour of the label DB).  Call
+sites:
+
+- =elot-package/elot-label-display.el= around line 291, in
+  =elot-read-slurp-global=.
+- =elot-package/elot-mode.el= around lines 958, 1009, 1025, in
+  =elot--capture-slurp= and =elot-describe-curie-at-point=.
+
+*** Procedure
+1. Audit each call site.  For each, determine whether the
+   surrounding feature (slurp capture, CURIE describe, slurp
+   re-read) still has any user-visible value, or whether the
+   label DB / =elot-label-register-source= already covers it.
+2. If a feature is fully superseded by the DB, delete the
+   function and its call sites; remove any keybinding,
+   easymenu entry, autoload, defcustom, and tempo / xref hook
+   that targets the removed function.  Mirror in the literate
+   sources (=elot-defs.org=, =elot-mode.org=,
+   =elot-label-display.org=).
+3. If a feature is /not/ fully superseded, port it to the DB
+   API (=elot-db-*=) and delete only the obsolete-variable
+   reference, not the function itself.
+4. Once no live code references =elot-slurp-global=, delete the
+   =defvar=/=make-obsolete-variable= pair too.
+5. Run =make native-compile= and confirm the four warnings are
+   gone.  Run =make stable-check= and =make -C test
+   tangle-roundtrip-test= to confirm no regression.
+
+*** Stop conditions (do not proceed if any holds)
+- A call site implements a feature that is /not/ trivially
+  reproducible against the DB and would require nontrivial
+  redesign.  In that case, leave the deprecation warnings in
+  place, mark Step 5.5 as =CANCELLED= with a note, and revisit
+  post-submission.
+- Removing a function would break an end-user-visible binding
+  (menu entry, keybinding, command name) that is documented in
+  =README.md= or the user manual.  Same disposition: cancel and
+  defer.
+
+The intent here is /tidiness, not refactoring/: only remove what
+can be removed cleanly.
+
+** DONE Step 5.6 - Address =package-lint= findings (non-keybinding)
+CLOSED: [2026-05-08 fre.]
+
+A first run of =package-lint= against the whole package revealed
+four classes of issue.  Three of them (the =peg= dependency, the
+=with-eval-after-load= warnings, and the closing-paren style
+warnings) were addressed here.  The fifth-class issue - reserved
+F5 keybindings - is handled separately in Step 5.7 because it is
+user-visible.
+
+*** =peg= now requires Emacs 30.1
+- =peg.el= is a built-in library only from Emacs 30.1 onwards.
+  =elot-lint.el= and =elot-owl-grammar.el= use =with-peg-rules=,
+  =peg-run=, =peg= and =define-peg-ruleset= (24 errors and 2
+  errors respectively).
+- *Decision*: bump =Package-Requires= from =((emacs "29.1"))= to
+  =((emacs "30.1"))=.  Cleanest fix; collapses 26 errors into one
+  header change.  Emacs 29 was released about a year ago; users
+  on it would need to either upgrade or install =peg= from GNU
+  ELPA.  CI matrix already includes 30.1.
+- Edited =elot-package/elot.el= and =elot-defs.org= (named block
+  =src-package-header=) in lock-step.
+
+*** =with-eval-after-load= warnings retained as intentional
+- Two sites: =elot-label-display.el= (around line 1255) and
+  =elot-mode.el= (around line 639).  Both bridge load order
+  between two modules of /the same package/ - they are not
+  user-config injection.
+- =package-lint='s warning is informational, targeting the more
+  common abuse where packages run user-config code at load time.
+  MELPA accepts packages with this warning.
+- Added a five-line =NOTE: package-lint warns ...= comment at
+  each site explaining the intent, mirrored in
+  =elot-mode.org= and =elot-label-display.org=.
+
+*** Closing-paren style warnings fixed
+- =elot-mode.el:390= (and =elot-mode.org=): collapsed
+  =(list :subs nil)))\n               )= to
+  =(list :subs nil))))= and tightened the next line.
+- =elot-mode.el:629= (and =elot-mode.org=): collapsed
+  =:selected ...)]))\n    ))= to =:selected ...)]))))=.
+- =elot-owl-grammar.el:90=: changed the trailing =)= on its own
+  line to be attached to the preceding rule body.  This file has
+  no literate source; direct edit only.
+
+** DONE Step 5.7 - Move F5 binding behind an opt-in defcustom
+CLOSED: [2026-05-08]
+:PROPERTIES:
+:CUSTOM_ID: milestone-5-step-5.7
+:END:
+
+*** Background
+
+=package-lint= flagged five errors of the form "this key sequence
+is reserved (see Key Binding Conventions in the Emacs Lisp
+manual)":
+
+| Site                                              | Binding                                                |
+|---------------------------------------------------+--------------------------------------------------------|
+| =elot-mode.el:495= (in =elot-mode-map=)           | =(define-key map (kbd "<f5>") #'elot-toggle-label-display)= |
+| =elot-mode.el:969= (xref overlay setup)           | =(local-set-key (kbd "<f5>") ...)=                     |
+| =elot-mode.el:1055= (=*ELOT Describe*= buffer)    | =(local-set-key (kbd "<f5>") ...)=                     |
+| =elot-label-display.el:1213=                      | =(local-set-key (kbd "<f5>") #'elot-toggle-label-display)= |
+| =elot.el:866= (=elot-key-toggle-labels= defcustom) | default value =(kbd "<f5>")=                          |
+
+Per the Emacs Lisp manual, F5--F9 (without modifiers) are
+*reserved for the user*.  ELOT's "F5 toggles labels" muscle
+memory hits this rule directly.
+
+*** Design (user requested 2026-05-08, revised)
+
+ELOT ships with /no/ default keybinding for
+=elot-toggle-label-display=.  =C-c C-l= is unsuitable because
+=org-mode= already binds it to =org-insert-link=, which the
+maintainer (and presumably most ELOT users) uses frequently.
+Other =C-c <letter>= bindings are reserved for users.  Picking
+another mode-prefix binding without a strong reason just risks
+shadowing something a given user cares about.
+
+Discoverability of the command is preserved through:
+- the ELOT easymenu (always present when =elot-mode= is on);
+- =M-x elot-toggle-label-display=;
+- the existing =elot-key-toggle-labels= defcustom, which a user
+  can set to /any/ keystroke they like (default: =nil= = no
+  binding).
+
+For F5 specifically - which has long-standing muscle memory from
+pre-1.0 ELOT - we offer a /first-use opt-in/ via a tri-state
+defcustom, persisted via =customize-save-variable=:
+
+#+begin_src emacs-lisp
+(defcustom elot-bind-f5-toggle-labels 'ask
+  "Whether ELOT should bind <f5> to `elot-toggle-label-display'.
+F5 is reserved for the user (see Key Binding Conventions in the
+Emacs Lisp manual), so ELOT does not claim it by default.
+
+Possible values:
+  - t   : bind <f5> in ELOT-relevant buffers (the user has agreed).
+  - nil : never bind <f5>; use the ELOT easymenu, M-x, or a
+          keystroke of your choice via `elot-key-toggle-labels'.
+  - ask : prompt once, then save the answer via
+          `customize-save-variable'."
+  :type '(choice (const :tag "Bind <f5>"      t)
+                 (const :tag "Do not bind"    nil)
+                 (const :tag "Ask first use"  ask))
+  :group 'elot)
+#+end_src
+
+A helper =elot--maybe-prompt-for-f5-binding= runs the prompt on
+first use and persists the answer.  All five F5-binding sites
+become guarded:
+
+#+begin_src emacs-lisp
+(when (eq (elot--maybe-prompt-for-f5-binding) t)
+  (define-key map (kbd "<f5>") #'elot-toggle-label-display))
+#+end_src
+
+The defcustom's default =ask= becomes a one-time prompt the
+first time =elot-mode= activates.  A user who answers /yes/ ends
+up with =elot-bind-f5-toggle-labels= set to =t= in their
+=custom-set-variables=; /no/ saves =nil=.  Either way no prompt
+appears again.
+
+In addition:
+
+- =elot-mode-map= no longer binds =<f5>= unconditionally; the
+  binding is conditional on the opt-in predicate.  No other
+  default binding is added in its place.
+- =elot-key-toggle-labels= (the defcustom holding a user-chosen
+  keystroke) is retained but its default changes from
+  =(kbd "<f5>")= to =nil= (no binding).  Users who want a
+  binding set this to whatever keystroke they like; users who
+  also want F5 set =elot-bind-f5-toggle-labels= to =t= (or
+  accept the prompt).
+- The four foreign-buffer =local-set-key= calls (in =*xref*= and
+  =*ELOT Describe*= buffers) become guarded by the same F5
+  opt-in predicate.  Users who declined F5 can still call
+  =M-x elot-toggle-label-display= or use the easymenu.
+
+*** Steps
+
+1. Add =elot-bind-f5-toggle-labels= and the prompting helper to
+   =elot.el= (and =elot-defs.org= mirror).
+2. Change the default of =elot-key-toggle-labels= from
+   =(kbd "<f5>")= to =nil=.  Update its docstring to explain
+   that ELOT no longer ships with a default keystroke and that
+   users can set this to any keystroke; mention that =<f5>=
+   specifically can be opted into via
+   =elot-bind-f5-toggle-labels=.
+3. In =elot-mode-map=, remove the unconditional =<f5>= binding.
+   Bind =<f5>= conditionally on the opt-in predicate.  If
+   =elot-key-toggle-labels= is non-nil, also bind that
+   keystroke.
+4. In the four foreign-buffer =local-set-key= sites, wrap the
+   call with =(when (eq (elot--maybe-prompt-for-f5-binding) t) ...)=.
+5. Update README.md: remove "F5 toggles labels" framing.
+   Replace with "Toggle label display via the ELOT menu, =M-x
+   elot-toggle-label-display=, or a keystroke of your choice
+   (see =elot-key-toggle-labels=); F5 can be opted into via
+   =elot-bind-f5-toggle-labels=."
+6. Re-run =package-lint=; the five reserved-key errors must be
+   gone.
+
+*** Acceptance
+- =package-lint= produces no /errors/ on
+  =elot-package/*.el=.  Warnings tracked but do not block.
+- A fresh-Emacs run of =M-x elot-mode= in an Org buffer triggers
+  a single y-or-n prompt about F5; the answer is persisted via
+  =customize-save-variable= and no further prompts appear.
+- With the default =elot-key-toggle-labels= (=nil=), no
+  ELOT-specific keystroke is bound beyond the (opt-in) F5.
+  =M-x elot-toggle-label-display= and the easymenu still work.
+- Stable-status checklist green.
 
 ** Acceptance check
 - =package-lint= via:

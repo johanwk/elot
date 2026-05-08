@@ -5,7 +5,7 @@
 ;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
 ;; URL: https://github.com/johanwk/elot
 ;; Version: 2.0.0
-;; Package-Requires: ((emacs "29.1"))
+;; Package-Requires: ((emacs "30.1"))
 ;; Keywords: languages outlines tools org ontology
 
 ;; This file is not part of GNU Emacs.
@@ -88,6 +88,14 @@
 ;; flags it as unused, AND the merged prefix pairs never reach
 ;; ob-sparql.  See Decisions log entry 2026-05-07.
 (defvar org-babel-sparql--current-curies)
+
+;; Optional SPARQL externals.  These come from `ob-sparql' /
+;; `sparql-mode' which are listed as optional in the package
+;; commentary; declare them so the byte-compiler / native-compiler
+;; do not warn when they are not loaded at compile time.
+(declare-function org-babel-expand-body:sparql "ob-sparql" (body params))
+(declare-function org-babel-sparql-convert-to-table "ob-sparql" ())
+(declare-function sparql-execute-query "ext:sparql-mode" (query &optional url format synchronous))
 ;; src-defvar ends here
 
 ;; [[file:../elot-defs.org::src-settings-externals][src-settings-externals]]
@@ -675,7 +683,7 @@ The link description is obtained using `(elot-codelist-id-label MATCH)`."
   ;; ------------------------------------------------------------
   (org-fold-show-all)
   (elot-label-display-setup)
-  (font-lock-fontify-buffer) ;; because "linkify" reads properties
+  (font-lock-ensure) ;; because "linkify" reads properties
   (elot--linkify-codelist-items-in-buffer)
   ;; ------------------------------------------------------------
   ;; 2  Ensure CUSTOM_ID drawers
@@ -855,13 +863,34 @@ conducted."
 ;; src-tempo-fwd-declare ends here
 
 ;; [[file:../elot-defs.org::src-keybinding][src-keybinding]]
-(defcustom elot-key-toggle-labels (kbd "<f5>")
-  "Keybinding to toggle label display in ELOT buffers."
-  :type 'key-sequence
+(defcustom elot-bind-f5-toggle-labels 'ask
+  "Whether ELOT should bind <f5> to `elot-toggle-label-display'.
+F5 is reserved for the user (see Key Binding Conventions in the
+Emacs Lisp manual), so ELOT does not claim it by default.
+
+Possible values:
+  - t   : bind <f5> in ELOT-relevant buffers (the user has agreed).
+  - nil : never bind <f5>; use the ELOT easymenu, M-x, or your
+          own keystroke (e.g. via `define-key elot-mode-map').
+  - ask : prompt once on first `elot-mode' activation, then save
+          the answer via `customize-save-variable'."
+  :type '(choice (const :tag "Bind <f5>"      t)
+                 (const :tag "Do not bind"    nil)
+                 (const :tag "Ask first use"  ask))
   :group 'elot)
 
-(defun elot-setup-org-keybindings ()
-  (local-set-key elot-key-toggle-labels #'elot-toggle-label-display))
+(defun elot--maybe-prompt-for-f5-binding ()
+  "Return effective value of `elot-bind-f5-toggle-labels'.
+If the value is `ask', prompt the user once and persist the
+answer via `customize-save-variable'.  Returns t or nil."
+  (when (eq elot-bind-f5-toggle-labels 'ask)
+    (let ((answer (and (not noninteractive)
+                       (y-or-n-p
+                        "ELOT: Bind <f5> to toggle label display? \
+(F5 is reserved for users; decline to keep it free.) "))))
+      (customize-save-variable 'elot-bind-f5-toggle-labels
+                               (if answer t nil))))
+  elot-bind-f5-toggle-labels)
 ;; src-keybinding ends here
 
 ;; [[file:../elot-defs.org::src-tsv-table][src-tsv-table]]

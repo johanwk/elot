@@ -1210,7 +1210,9 @@ registering or activating new sources."
         (elot-global--install)
         (make-local-variable 'elot-label-display)
         (setq elot-label-display 'on)
-        (local-set-key (kbd "<f5>") #'elot-toggle-label-display)
+        (when (and (boundp 'elot-bind-f5-toggle-labels)
+                   (eq (elot--maybe-prompt-for-f5-binding) t))
+          (local-set-key (kbd "<f5>") #'elot-toggle-label-display))
         (local-set-key (kbd "C-c C-x r") #'elot-label-lookup)
         (when elot-global-label-display-eldoc
           (add-hook 'eldoc-documentation-functions
@@ -1252,6 +1254,10 @@ decorations without toggling the minor mode off and on."
 ;; disappears once elot-mode activates and adds its own copy via
 ;; elot-mode-map -- preventing duplicate ELOT menu entries.
 ;; The sibling snippet in elot-mode.el covers the opposite load order.
+;; NOTE: `package-lint' warns about `with-eval-after-load' in packages.
+;; The warning is informational (configuration code belongs in user
+;; init); here it is intentional -- a cross-module load-order bridge
+;; between two modules of the same package, not user-config injection.
 (with-eval-after-load 'elot-mode
   (when (and (boundp 'elot-global-label-display-mode-map)
              (boundp 'elot-menu))

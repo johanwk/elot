@@ -86,8 +86,7 @@
   (digits () (+ (range ?0 ?9)))
   (integer () (+ (range ?0 ?9)))
   (ws () (+ (or " " "\t" "\n" "\r")))
-  (ows () (* (or " " "\t" "\n" "\r")))
-)
+  (ows () (* (or " " "\t" "\n" "\r"))))
 
 (provide 'elot-owl-grammar)
 

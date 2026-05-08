@@ -386,8 +386,7 @@ unchanged (so numbers stay numbers, symbols stay symbols, etc.)."
                                          (list (elot--strip-decoration hdr)
                                                (elot--coerce-literal hdr val)))
                                        headers row))
-                     (list :subs nil)))
-               )
+                     (list :subs nil))))
           (push (list id sup pl) triples)
           (puthash id pl id->obj))))
 
@@ -492,7 +491,13 @@ or `xsd:integer' on a column header will be applied to values."
 
 (defvar elot-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "<f5>")   #'elot-toggle-label-display)
+    ;; <f5> is reserved for the user (Key Binding Conventions in
+    ;; the Emacs Lisp manual).  ELOT does not bind it by default;
+    ;; users may opt in via `elot-bind-f5-toggle-labels'.  See the
+    ;; defcustom in elot.el for the prompt-once-and-persist mechanism.
+    (when (and (boundp 'elot-bind-f5-toggle-labels)
+               (eq (elot--maybe-prompt-for-f5-binding) t))
+      (define-key map (kbd "<f5>") #'elot-toggle-label-display))
     (define-key map (kbd "C-c C-x r") #'elot-label-lookup)
     ;; S-<f5> previously bound to a Shift-F5 menu; that menu has
     ;; been retired in favour of the ELOT easymenu ("ELOT" in the
@@ -625,8 +630,7 @@ or `xsd:integer' on a column header will be applied to values."
        :active (fboundp 'elot-toggle-label-display)
        :style toggle
        :selected (and (boundp 'elot-label-display)
-                      (eq elot-label-display 'on))]))
-    ))
+                      (eq elot-label-display 'on))]))))
 
 ; Also surface the ELOT menu when `elot-global-label-display-mode'
 ;; is active in a non-ELOT buffer.  We bind the same menu into the
@@ -636,6 +640,10 @@ or `xsd:integer' on a column header will be applied to values."
 ;; provides the entry in that case).
 ;; `with-eval-after-load' guards the load order: if elot-label-display.el
 ;; loads later, the sibling snippet there handles the other direction.
+;; NOTE: `package-lint' warns about `with-eval-after-load' in packages.
+;; The warning is informational (configuration code belongs in user
+;; init); here it is intentional -- a cross-module load-order bridge
+;; between two modules of the same package, not user-config injection.
 (with-eval-after-load 'elot-label-display
   (when (and (boundp 'elot-global-label-display-mode-map)
              (boundp 'elot-menu))
@@ -966,7 +974,9 @@ otherwise return every reference."
   "Setup label overlays in the xref buffer using `elot-slurp-global'."
   (when (and (equal (buffer-name) "*xref*")
 	     (fboundp 'elot-label-display-setup))
-    (local-set-key (kbd "<f5>") #'elot-toggle-label-display)
+    (when (and (boundp 'elot-bind-f5-toggle-labels)
+               (eq (elot--maybe-prompt-for-f5-binding) t))
+      (local-set-key (kbd "<f5>") #'elot-toggle-label-display))
     (elot-label-display-setup)))
 
 ;; Installed/removed via `elot-mode--{install,uninstall}-xref-globals'.
@@ -1050,9 +1060,11 @@ buffer exactly like they are in the *xref* buffer."
 	  (princ
 	   "\n----\n`q' to quit, `RET' to visit location.\n")
 	  ;; ------------------------------------
-	  ;; 3c. Bind F5 and paint label overlays
+	  ;; 3c. Bind F5 (opt-in) and paint label overlays
 	  ;; ------------------------------------
-	  (local-set-key (kbd "<f5>") #'elot-toggle-label-display)
+	  (when (and (boundp 'elot-bind-f5-toggle-labels)
+                     (eq (elot--maybe-prompt-for-f5-binding) t))
+            (local-set-key (kbd "<f5>") #'elot-toggle-label-display))
 	  (when (fboundp 'elot-label-display-setup)
 	    (elot-label-display-setup)))))))
 

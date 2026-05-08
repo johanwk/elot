@@ -77,7 +77,7 @@ The VS Code extension and `elot-cli` are progressively lowering that barrier.
 |---|---|---|
 | **Install** | [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=johanwk.elot) | Clone repo + `(require 'elot-mode)` |
 | **Org→OWL** | ✅ Built-in (WASM) | ✅ Built-in (Elisp) |
-| **Label display** | ✅ F5 toggle | ✅ F5 toggle |
+| **Label display** | ✅ F5 toggle | ✅ Menu / opt-in F5 |
 | **Folding** | ✅ Tab / gutter | ✅ Native Org cycling |
 | **Go to definition** | ✅ F12 / Ctrl+Click | ✅ M-. (xref) |
 | **IntelliSense** | ✅ Ctrl+Space | ✅ `completing-read` |
@@ -367,7 +367,13 @@ In this screenshot, two annotations are added to the "transitive" characteristic
 
 ELOT can display readable labels instead of prefixed identifiers
 (which are unreadable if the identifiers are not informative), 
-and offers quick search across the ontology resources. Hit F5 to toggle.
+and offers quick search across the ontology resources.  Toggle
+from the *ELOT* menu or with `M-x elot-toggle-label-display`.
+On first activation of `elot-mode`, ELOT asks once whether to
+bind `<f5>` to the toggle (it is reserved for users by
+convention, so the binding is opt-in); the answer is saved via
+Customize.  Set `elot-bind-f5-toggle-labels` directly via
+`M-x customize-variable` to skip the prompt.
 
 ![img](documentation/images/elot-label-display1.png)
 
@@ -377,7 +383,9 @@ and offers quick search across the ontology resources. Hit F5 to toggle.
 ELOT's label-display is no longer confined to Org buffers. The minor mode
 `elot-global-label-display-mode` lights up readable labels in *any* buffer
 — `.ttl` files, SPARQL queries, CSV exports, even source code and log files
-that mention ontology identifiers. Hit F5 to toggle, just like in Org mode.
+that mention ontology identifiers. Toggle from the *ELOT* menu or via
+`M-x elot-toggle-label-display` (or `<f5>` if you opted in — see
+`elot-bind-f5-toggle-labels`).
 
 The feature that makes this practical in daily work: **id/label mappings are
 collected silently and automatically as you edit ELOT Org files**. Every
