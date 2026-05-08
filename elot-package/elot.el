@@ -687,7 +687,9 @@ The link description is obtained using `(elot-codelist-id-label MATCH)`."
   ;; ------------------------------------------------------------
   (elot--resolve-prefixes-in-description-list))
 
-(add-hook 'org-export-before-processing-functions #'elot--prepare-export-buffer)
+;; The export hook is installed and removed by `elot-mode--enable' /
+;; `elot-mode--disable' (see `elot-mode.el'); it is not added at
+;; load time so that `(require 'elot)' has no global side effect.
 ;; src-stable-links-export ends here
 
 ;; [[file:../elot-defs.org::src-latex-section-export][src-latex-section-export]]

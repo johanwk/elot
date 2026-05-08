@@ -1576,13 +1576,25 @@ CLOSED: [2026-05-08 fre. 13:08]
     stable-status run; no additional change is required at
     Milestone 3.
 
-** TODO Step 3.4 - Move export hook into mode lifecycle
-- *Files*: =elot-package/elot.el=, =elot-package/elot-mode.el=.
-- Remove the top-level
-  =(add-hook 'org-export-before-processing-functions #'elot--prepare-export-buffer)=
-  call (around line 793 of =elot.el=).
-- Inside =elot-mode--enable=, add the same =add-hook=.
-- Inside =elot-mode--disable=, add =(remove-hook ...)=.
+** DONE Step 3.4 - Move export hook into mode lifecycle
+- *Files*: =elot-package/elot.el= (and =elot-defs.org= mirror),
+  =elot-package/elot-mode.el= (and =elot-mode.org= mirror).
+- The top-level =(add-hook 'org-export-before-processing-functions
+  #'elot--prepare-export-buffer)= at the end of the
+  =src-stable-links-export= block has been removed and replaced
+  with a short comment in both the literate source and the
+  tangled =.el=, pointing the reader at the =elot-mode= lifecycle.
+- =elot-mode--enable= now installs the hook as a new numbered
+  step 8 (between the LaTeX export filter and label-display
+  setup), guarded with =(fboundp 'elot--prepare-export-buffer)=
+  so loading =elot-mode.el= without =elot.el= does not error.
+  Subsequent steps were renumbered (label-display -> 9,
+  fold-visibility -> 10).
+- =elot-mode--disable= removes the hook as new step 4, with
+  later steps renumbered accordingly.
+- =git grep -n "org-export-before-processing-functions"
+  elot-package/= now matches only inside =elot-mode--enable= /
+  =elot-mode--disable=, never at top level.
 
 ** TODO Step 3.5 - Same treatment for top-level hooks in =elot-mode.el=
 - *File*: =elot-package/elot-mode.el=.

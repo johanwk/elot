@@ -857,7 +857,9 @@ The following will replace uses of defined resources with links that have labels
     ;; ------------------------------------------------------------
     (elot--resolve-prefixes-in-description-list))
 
-  (add-hook 'org-export-before-processing-functions #'elot--prepare-export-buffer)
+  ;; The export hook is installed and removed by `elot-mode--enable' /
+  ;; `elot-mode--disable' (see `elot-mode.el'); it is not added at
+  ;; load time so that `(require 'elot)' has no global side effect.
 #+end_src
 *** Headings in LaTeX export
 We format headings with indentation to match the subtype level in the

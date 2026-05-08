@@ -749,10 +749,15 @@ both from a Git checkout and from an installed MELPA package."
       (add-to-list 'org-export-filter-item-functions
                    'elot-latex-filter-omn-item))
 
-    ;; 8. Label-display: set up immediately (with size-gated prompt)
+    ;; 8. Export pre-processing hook (linkify, CUSTOM_IDs, prefix resolution)
+    (when (fboundp 'elot--prepare-export-buffer)
+      (add-hook 'org-export-before-processing-functions
+                #'elot--prepare-export-buffer))
+
+    ;; 9. Label-display: set up immediately (with size-gated prompt)
     (elot-mode--maybe-setup-labels)
 
-    ;; 9. Set initial fold visibility
+    ;; 10. Set initial fold visibility
     (org-cycle-set-startup-visibility))
 
   (defun elot-mode--maybe-setup-labels ()
@@ -782,12 +787,16 @@ In batch mode (`noninteractive'), skip label-display entirely."
           (delq 'elot-latex-filter-omn-item
                 org-export-filter-item-functions))
 
-    ;; 4. Remove label-display overlays
+    ;; 4. Export pre-processing hook
+    (remove-hook 'org-export-before-processing-functions
+                 #'elot--prepare-export-buffer)
+
+    ;; 5. Remove label-display overlays
     (when (fboundp 'elot-remove-prop-display)
       (with-silent-modifications
         (elot-remove-prop-display)))
 
-    ;; 5. Restore syntax table
+    ;; 6. Restore syntax table
     (set-syntax-table org-mode-syntax-table))
 
 ;;;###autoload
