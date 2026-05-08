@@ -73,7 +73,6 @@ in SPARQL select results.
   ;; Try to load optional external dependencies
   (defvar elot-missing-dependencies nil
     "List of missing external dependencies for legacy ELOT features.")
-  (setq elot-missing-dependencies nil)
 
   (dolist (pkg '(htmlize omn-mode sparql-mode ob-sparql ob-plantuml))
     (unless (require pkg nil t)
@@ -196,9 +195,11 @@ We add a filter to make OMN in description lists =\ttfamily=. See the Org [[http
                text)
             text)))))
 
-
-  (add-to-list 'org-export-filter-item-functions
-               'elot-latex-filter-omn-item)
+  ;; The registration of `elot-latex-filter-omn-item' on
+  ;; `org-export-filter-item-functions' is no longer done at
+  ;; load time.  Installation is driven by the `elot-mode'
+  ;; lifecycle (`elot-mode--enable' / `elot-mode--disable');
+  ;; see `elot-mode.org'.
 #+end_src
 *** Context identification
 Moved to =elot-tangling.org= -> =elot-tangle.el=.

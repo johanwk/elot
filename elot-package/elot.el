@@ -56,7 +56,6 @@
 ;; Try to load optional external dependencies
 (defvar elot-missing-dependencies nil
   "List of missing external dependencies for legacy ELOT features.")
-(setq elot-missing-dependencies nil)
 
 (dolist (pkg '(htmlize omn-mode sparql-mode ob-sparql ob-plantuml))
   (unless (require pkg nil t)
@@ -162,9 +161,11 @@ The context INFO is ignored."
              text)
           text)))))
 
-
-(add-to-list 'org-export-filter-item-functions
-             'elot-latex-filter-omn-item)
+;; The registration of `elot-latex-filter-omn-item' on
+;; `org-export-filter-item-functions' is no longer done at
+;; load time.  Installation is driven by the `elot-mode'
+;; lifecycle (`elot-mode--enable' / `elot-mode--disable');
+;; see `elot-mode.org'.
 ;; src-omn-latex-tt ends here
 
 ;; [[file:../elot-defs.org::src-puri-expand][src-puri-expand]]

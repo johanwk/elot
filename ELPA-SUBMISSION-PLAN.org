@@ -1119,7 +1119,8 @@ CLOSED: [2026-05-07]
   =F5= still toggles labels; =S-<f5>= is unbound (or rebound to
   nothing ELOT-specific).
 
-* Milestone 2 - Resolve legacy =elot.el= LOB pipeline
+* DONE Milestone 2 - Resolve legacy =elot.el= LOB pipeline
+CLOSED: [2026-05-08 fre. 13:07]
 :PROPERTIES:
 :CUSTOM_ID: milestone-2-legacy-cleanup
 :END:
@@ -1364,14 +1365,16 @@ headline at point (from =org-back-to-heading= to the next
 last in-tree caller of =elot-org-descriptions-in-section= and its
 helper is therefore gone; Step 2.3 can proceed as written.
 
-** TODO Step 2.5 - Split =elot-lob.org= into retired vs supported halves
+** DONE Step 2.5 - Split =elot-lob.org= into retired vs supported halves
+CLOSED: [2026-05-08 fre. 13:07]
 
 The file =elot-package/elot-lob.org= is *retained* and remains
 part of the MELPA recipe's =:files= list (Milestone 7 Step 7.1).
 It contains two conceptually different sets of named blocks; this
 step makes that split explicit and wires up the supported half.
 
-*** DEFERRED Sub-step 2.5.1 - (Optional follow-up, deferred) Reimplement =kill-prefixes= as Elisp
+*** CANCELLED Sub-step 2.5.1 - (Optional follow-up, deferred) Reimplement =kill-prefixes= as Elisp
+CLOSED: [2026-05-08 fre. 13:07]
 
 Deferred out of Milestone 2 by the difficulty review above.
 =kill-prefixes= as it stands is a one-line Elisp =:var data=...=
@@ -1500,7 +1503,8 @@ CLOSED: [2026-05-08 fre.]
   1) eliminated the last production dependency on them and old
   example files continue to tangle correctly.
 
-** Acceptance check
+** DONE Acceptance check
+CLOSED: [2026-05-08 fre. 13:04]
 - =git grep -n "elot-resource-declarations-from-header\|elot-resource-taxonomy-from-header\|elot-org-list-siblings\|elot-org-subsection-descriptions"= returns no results inside =elot-package/=.
 - =git grep -n "elot-prefix-block-from-alist" elot-package/= shows
   it defined exactly once, in =elot-tangle.el=, and called from
@@ -1509,7 +1513,7 @@ CLOSED: [2026-05-08 fre.]
   =.omn= is byte-identical to a copy saved before the change.
 - Run the [[#stable-status][stable-status checklist]] - *all green*.
 
-* Milestone 3 - Remove load-time global side effects
+* STARTED Milestone 3 - Remove load-time global side effects
 :PROPERTIES:
 :CUSTOM_ID: milestone-3-side-effects
 :END:
@@ -1525,14 +1529,15 @@ only takes effect for buffers that have opted in.
 The SPARQL =advice-add= is already handled in [[#milestone-1-sparql][Milestone 1]] Step
 1.5; this milestone only needs to verify it.
 
-** TODO Step 3.1 - Replace bare =setq= for =elot-missing-dependencies=
+** DONE Step 3.1 - Replace bare =setq= for =elot-missing-dependencies=
+CLOSED: [2026-05-08 fre. 13:08]
 - *File*: =elot-package/elot.el= (around line 60).
 - Remove =(setq elot-missing-dependencies nil)=.  The =defvar= on
   the previous line already initialises it to =nil=.  The
   immediately-following =dolist= that populates the list can stay
   at top level (it does not mutate any external symbol).
 
-** TODO Step 3.2 - Move LaTeX export filter registration into mode lifecycle
+** DONE Step 3.2 - Move LaTeX export filter registration into mode lifecycle
 - *Files*: =elot-package/elot.el=, =elot-package/elot-mode.el=.
 - Remove the top-level
   =(add-to-list 'org-export-filter-item-functions 'elot-latex-filter-omn-item)=
@@ -1542,18 +1547,34 @@ The SPARQL =advice-add= is already handled in [[#milestone-1-sparql][Milestone 1
   matching =(setq org-export-filter-item-functions (delq 'elot-latex-filter-omn-item org-export-filter-item-functions))=.
 - Use =add-to-list= so re-enabling does not duplicate.
 
-** TODO Step 3.3 - Verify SPARQL advice lifecycle (done in Milestone 1)
+** DONE Step 3.3 - Verify SPARQL advice lifecycle (done in Milestone 1)
 - Milestone 1 Step 1.5 already moved
   =(advice-add 'org-babel-execute:sparql ...)= out of top-level
   scope and into =elot-mode--enable= /
   =elot-mode--disable=, with the
   =elot--sparql-advice-installed-p= idempotency guard.
-- This step is verification only:
-  - =grep -n "advice-add 'org-babel-execute:sparql" elot-package/*.el=
-    shows the call only inside =elot-mode--enable=, never at top
-    level;
-  - the advice fixture from Milestone 1's acceptance check still
-    passes.
+- This step is verification only.  Both checks hold:
+  - =git grep -n "advice-add 'org-babel-execute:sparql"
+    elot-package/= returns exactly one hit, at
+    =elot-package/elot-mode.el:683=, inside
+    =elot-mode--install-sparql-advice= (which is called from
+    =elot-mode--enable= as Step 3 of the lifecycle).  No
+    top-level installation remains.
+  - The advice fixture from Milestone 1's acceptance check is
+    in place at =test/elot-sparql-advice-test.el= and is wired
+    into the default =test= goal in =test/Makefile= via the
+    =sparql-advice-test= target.  It encodes the four ERT
+    checks named in Milestone 1's acceptance section:
+    =elot-sparql-advice-not-installed-at-load=,
+    =elot-sparql-advice-lifecycle=,
+    =elot-sparql-advice-refcount-multi-buffer=,
+    =elot-sparql-advice-install-is-idempotent=.  The fixture
+    uses a clean-state macro that saves and restores the
+    install flag, the buffer count and the actual advice, so
+    test ordering and per-test failures do not leak global
+    state.  Last seen green as part of Milestone 1's
+    stable-status run; no additional change is required at
+    Milestone 3.
 
 ** TODO Step 3.4 - Move export hook into mode lifecycle
 - *Files*: =elot-package/elot.el=, =elot-package/elot-mode.el=.
