@@ -77,7 +77,7 @@ The VS Code extension and `elot-cli` are progressively lowering that barrier.
 |---|---|---|
 | **Install** | [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=johanwk.elot) | Clone repo + `(require 'elot-mode)` |
 | **Org→OWL** | ✅ Built-in (WASM) | ✅ Built-in (Elisp) |
-| **Label display** | ✅ F5 toggle | ✅ F5 toggle |
+| **Label display** | ✅ F5 toggle | ✅ Menu / opt-in F5 |
 | **Folding** | ✅ Tab / gutter | ✅ Native Org cycling |
 | **Go to definition** | ✅ F12 / Ctrl+Click | ✅ M-. (xref) |
 | **IntelliSense** | ✅ Ctrl+Space | ✅ `completing-read` |
@@ -367,7 +367,17 @@ In this screenshot, two annotations are added to the "transitive" characteristic
 
 ELOT can display readable labels instead of prefixed identifiers
 (which are unreadable if the identifiers are not informative), 
-and offers quick search across the ontology resources. Hit F5 to toggle.
+and offers quick search across the ontology resources.  Toggle
+from the *ELOT* menu or with `M-x elot-toggle-label-display`.
+
+ELOT does not claim a default keystroke for the toggle (single
+function keys F5–F9 and `C-c <letter>` are reserved for the
+user).  To get a quick keybinding, customize
+`elot-toggle-labels-key` (`M-x customize-variable RET
+elot-toggle-labels-key`) to a `kbd`-notation string of your
+choice — for example `<f5>`, `<f9>`, or `C-c t l`.  When set,
+ELOT installs the binding in `elot-mode-map` and in the
+ELOT-managed `*xref*` / `*ELOT Describe*` buffers.
 
 ![img](documentation/images/elot-label-display1.png)
 
@@ -377,7 +387,9 @@ and offers quick search across the ontology resources. Hit F5 to toggle.
 ELOT's label-display is no longer confined to Org buffers. The minor mode
 `elot-global-label-display-mode` lights up readable labels in *any* buffer
 — `.ttl` files, SPARQL queries, CSV exports, even source code and log files
-that mention ontology identifiers. Hit F5 to toggle, just like in Org mode.
+that mention ontology identifiers. Toggle from the *ELOT* menu or via
+`M-x elot-toggle-label-display` (or your chosen keystroke if you
+set one — see `elot-toggle-labels-key`).
 
 The feature that makes this practical in daily work: **id/label mappings are
 collected silently and automatically as you edit ELOT Org files**. Every
@@ -403,6 +415,63 @@ Beyond the visual overlays, the mode provides:
 
 See [README-global-label-display.org](README-global-label-display.org) for
 configuration, source registration, and language-preference details.
+
+
+### Supported `#+call:` helpers (Library of Babel)
+
+ELOT ships a small Library of Babel file
+([`elot-package/elot-lob.org`](elot-package/elot-lob.org))
+that defines a handful of named source blocks intended to be invoked
+from your ontology Org files via Org's `#+call:` syntax. When
+`elot-mode` is enabled in a buffer, ELOT automatically ingests the
+file (via `org-babel-lob-ingest`) so the helpers below are available
+without any manual setup — no `M-x org-babel-lob-ingest` step
+required.
+
+The supported helpers are:
+
+- **`rdfpuml-block`** — render a Turtle (or SPARQL `CONSTRUCT`) source
+  block as an rdfpuml/PlantUML diagram. Takes the *name* of another
+  named block as its `ttlblock` argument, plus optional `config`,
+  `add-options`, `epilogue` and `format` arguments. Produces an
+  image file referenced from the surrounding caption.
+- **`kill-prefixes`** — strip leading `@prefix` / `PREFIX` declarations
+  from a Turtle string. Most commonly used as a `:post` hook on a
+  SPARQL `CONSTRUCT` block to keep the visible result compact.
+- **`robot-metrics`** — run `robot measure` on an OMN file and return
+  the resulting table.
+- **`robot-sparql-select`** — run a named SPARQL query through ROBOT
+  against a local OMN file and return the result as an Org table.
+- **`theme-readtheorg` / `theme-elot`** — expand to the right
+  `#+SETUPFILE:` line for the bundled HTML themes.
+- **`current-date` / `current-datetime`** — format the current
+  date/time, useful in `pav:lastUpdateOn` annotations.
+
+A minimal example, taken from
+[`examples/pets.org`](examples/pets.org), showing
+`rdfpuml-block` consuming a CONSTRUCT block whose result is also
+post-processed by `kill-prefixes`:
+
+```org
+#+name: my-construct
+#+begin_src sparql :url "my-ont.omn" :format ttl :wrap "src ttl" \
+                  :cache yes :post kill-prefixes(data=*this*)
+  construct {
+    ?class a owl:Class .
+    ?subclass rdfs:subClassOf ?class .
+  } {
+    ?class a owl:Class .
+    optional { ?subclass rdfs:subClassOf ?class }
+  }
+#+end_src
+
+#+name: rdfpuml:my-construct
+#+call: rdfpuml-block(ttlblock="my-construct")
+#+caption: Animal diagram
+```
+
+Place point on the `#+call:` line and hit `C-c C-c` to render the
+diagram. See `examples/pets.org` for the complete working file.
 
 
 ### Navigating Ontologies with Xref

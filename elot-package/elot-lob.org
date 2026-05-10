@@ -1,16 +1,21 @@
 #+title: ELOT library of babel
 
+# This file is part of ELOT's supported, user-facing API.  It
+# collects =#+call:=-style helpers (most notably =rdfpuml-block=,
+# =kill-prefixes=, the theme/setupfile helpers, =robot-metrics=,
+# =robot-sparql-select=, and the date helpers) that ELOT users
+# invoke from their ontology Org files.  =elot-mode= auto-ingests
+# this file via =org-babel-lob-ingest= when it is enabled, so the
+# named blocks below are available without any manual setup.
+#
+# The two named blocks =resource-declarations= and
+# =resource-taxonomy= that previously lived under "export" have
+# been retired together with the legacy LOB pipeline functions in
+# =elot.el= (see ELPA-SUBMISSION-PLAN.org Milestone 2).  The new
+# tangle pipeline in =elot-tangle.el= produces OMN directly from
+# the Org outline and does not need those blocks.
+
 * export
-** Resource declarations (exctracted from outlines)
-#+name: resource-declarations
-#+BEGIN_SRC emacs-lisp :var hierarchy="ELOT-class-hierarchy" :var owl-type="Class" :wrap "SRC omn" 
-(elot-resource-declarations-from-header hierarchy owl-type)
-#+END_SRC
-** Resource taxonomies (exctracted from outlines)
-#+name: resource-taxonomy
-#+BEGIN_SRC emacs-lisp :var hierarchy="ELOT-class-hierarchy" :var owl-type="Class" :var owl-relation="SubClassOf" :wrap "SRC omn" 
-(elot-resource-taxonomy-from-header hierarchy owl-type owl-relation)
-#+END_SRC
 ** readtheorg HTML setup file
 #+name: theme-readtheorg
 #+begin_src emacs-lisp :results drawer
@@ -141,7 +146,7 @@ SVGs. Conversion is described in
 *** rdfpuml-block will read a ttl block and output a diagram
 #+name: rdfpuml-block
 #+header: :var ttlblock="example-ttl"
-#+header: :var prefixes=ttl-prefixes
+#+header: :var prefixes=(elot-prefix-block-from-alist org-link-abbrev-alist-local 'ttl)
 #+header: :var config=rdfpuml-config
 #+header: :var add-options="left to right direction"
 #+header: :var epilogue='()

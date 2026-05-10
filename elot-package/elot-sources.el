@@ -1,10 +1,26 @@
 ;;; elot-sources.el --- Source parsers for the ELOT label cache  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2025 The ELOT authors
-;; SPDX-License-Identifier: MIT
+;; Copyright (C) 2024, 2025, 2026 Johan W. Klüwer
 
-;; Author: ELOT contributors
+;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
+;; URL: https://github.com/johanwk/elot
+;; Version: 2.0.0
 ;; Keywords: tools, hypermedia, data
+
+;; This file is not part of GNU Emacs.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 
@@ -317,7 +333,7 @@ the field separator.  Primary UC3 path."
 
 (defun elot-source--json-read (file)
   "Read FILE as JSON and return it with string keys and list values.
-Uses `json-parse-buffer' with `:object-type 'alist' so the dict
+Uses `json-parse-buffer' with `:object-type `alist' so the dict
 shape is a plain alist."
   (with-temp-buffer
     (let ((coding-system-for-read 'utf-8))
@@ -842,10 +858,10 @@ include the error message for each failing source."
   (setq tabulated-list-sort-key (cons "Source" nil))
   (tabulated-list-init-header))
 
-(defun elot-label--format-time (t)
-  "Format a float-time T for display in the source list."
-  (if (and t (numberp t) (> t 0))
-      (format-time-string "%Y-%m-%d %H:%M" (seconds-to-time t))
+(defun elot-label--format-time (time)
+  "Format a float-time TIME for display in the source list."
+  (if (and time (numberp time) (> time 0))
+      (format-time-string "%Y-%m-%d %H:%M" (seconds-to-time time))
     "-"))
 
 (defun elot-label--build-entries ()

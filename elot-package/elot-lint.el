@@ -1,8 +1,8 @@
 ;;; elot-lint.el --- ELOT lint checks for ontology buffers  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2024, 2025, 2026 Johan W. Kluewer
+;; Copyright (C) 2024, 2025, 2026 Johan W. Klüwer
 
-;; Author: Johan W. Kluewer <johan.w.kluwer@gmail.com>
+;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
 ;; URL: https://github.com/johanwk/elot
 ;; Version: 2.0.0
 ;; Keywords: languages tools org ontology
@@ -181,7 +181,6 @@ Add warnings or errors to ISSUES at POINT."
                    (string= (elot-context-type) "ontology"))
           (let* ((id (org-entry-get nil "ID"))
                  (localname (elot-context-localname))
-                 (prefix (elot-default-prefix))
                  (omn-args (org-entry-get nil "header-args:omn")))
             (when (or (null id) (string= id ""))
               (push (list (point)

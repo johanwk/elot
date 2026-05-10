@@ -60,6 +60,30 @@ This is a safeguard, unclear whether it matters.
 #+name: src-defvar
 #+begin_src emacs-lisp
 (defvar org-link-abbrev-alist-local)
+;; Forward declarations for vars defined in sibling ELOT modules.
+;; These are referenced by helpers in this file but the modules that
+;; own them (`elot-db', `elot-sources') are loaded lazily / optionally,
+;; so we avoid a hard `require' here.  Declaring them silences
+;; byte-compile "reference to free variable" warnings without
+;; affecting runtime behaviour.
+(defvar elot-active-label-sources)
+(defvar elot-db)
+
+;; Forward declarations for functions defined elsewhere.  `json-read-from-string'
+;; lives in the built-in `json' library (loaded on demand).  The SPARQL
+;; helpers come from `elot.el' and the optional `sparql-mode' package.
+;; `elot-prefix-block-from-alist' is provided by `elot-tangle' (required
+;; above); the declare-function below documents its signature for the
+;; byte-compiler.
+(declare-function json-read-from-string "json" (string))
+(declare-function elot-robot-execute-query "elot" (query url format))
+(declare-function sparql-execute-query "ext:sparql-mode")
+(declare-function elot-prefix-block-from-alist "elot-tangle" (prefixes format))
+
+(defgroup elot-label-display nil
+  "Label display overlays and lookup for ELOT."
+  :group 'elot
+  :prefix "elot-")
 #+end_src
 
 ** Function to be replaced
@@ -202,12 +226,12 @@ identifiers using ~regexp-opt~.
   (defface elot-label-face
     '((t :inherit italic))
     "Default face used to fontify labels in ELOT overlays."
-    :group 'elot)
+    :group 'elot-label-display)
 
   (defcustom elot-label-display-face 'elot-label-face
     "Customizable face used for ELOT label fontification.
   You can choose any face (e.g. `italic', `shadow', `underline')"
-    :group 'elot
+    :group 'elot-label-display
     :version "29.2"
     :type 'face)
 
@@ -302,13 +326,15 @@ identifiers using ~regexp-opt~.
           (elot-robot-execute-query empty-construct-qry uri 'ttl))
         (mapcar
          (lambda (x)
-           (string-match "^\\([^ ]*:\\).*<\\([^>]+\\)>" x)
+           ;; Match "pfx:  <iri>"; tolerate both @prefix and PREFIX styles.
+           (string-match "^\\([^ \t]*:\\)[ \t]*<\\([^>]+\\)>" x)
            (cons (match-string 2 x) (match-string 1 x)))
-             (cl-remove ""
-                    (split-string
-                        (buffer-string)
-                        "@prefix +")
-                    :test #'equal)))))
+         (cl-remove-if
+          (lambda (s) (or (equal s "") (not (string-match-p ":" s))))
+          (split-string
+           (buffer-string)
+           ;; Either "@prefix " or "PREFIX " (case-insensitive), at line start.
+           "^\\(?:@prefix\\|[Pp][Rr][Ee][Ff][Ii][Xx]\\)[ \t]+"))))))
 #+end_src
 
 examples.
@@ -476,7 +502,8 @@ we ~let~ a temporary version before calling it.
      (or definition "")))
 
   (defun elot-label-lookup-annotations (label)
-    "Annotation function for `elot-label-lookup' using `elot-label-lookup-tmp-attriblist-ht'.
+    "Annotation function for `elot-label-lookup' 
+  using `elot-label-lookup-tmp-attriblist-ht'.
   Provides a preview string for LABEL during completing-read."
     (let* ((attrib-plist (gethash label elot-label-lookup-tmp-attriblist-ht))
            (rdf-type   (plist-get attrib-plist "rdf:type" 'string=))
@@ -734,7 +761,7 @@ to the single-source drivers when only one side has data.
     :type '(choice (const :tag "Local buffer only"   local)
                    (const :tag "External (DB) only"  external)
                    (const :tag "Both (union)"        both))
-    :group 'elot)
+    :group 'elot-label-display)
 
   (defvar elot-label-lookup--tmp-union-ht nil
     "Temporary DISPLAY -> entry hash for the union annotator.")
@@ -969,7 +996,7 @@ with active label sources).
   summarises the identifier under point using slurp data or the
   ELOT DB.  Set to nil before enabling the mode to opt out."
     :type 'boolean
-    :group 'elot)
+    :group 'elot-label-display)
 
   (defcustom elot-global-label-display-show-source t
     "Whether the eldoc/hover summary carries a provenance marker.
@@ -977,7 +1004,7 @@ with active label sources).
   `elot-global--eldoc-function' ends with `[src: <source>]' when
   the winning row's source is known.  Set to nil to suppress."
     :type 'boolean
-    :group 'elot)
+    :group 'elot-label-display)
 
   (defun elot--id-at-point ()
     "Return the identifier under point as a string, or nil.
@@ -1146,7 +1173,7 @@ with active label sources).
   the toggle UX remains consistent.  Set to nil to disable the cap."
     :type '(choice (integer :tag "Maximum id count")
                    (const :tag "No cap" nil))
-    :group 'elot)
+    :group 'elot-label-display)
 
   (defvar-local elot-global--fontify-regexp nil
     "Buffer-local regexp used by `elot-global-label-display-mode'.
@@ -1344,7 +1371,7 @@ with active label sources).
   `elot-label-activate-source'.  Adding a source afterwards triggers
   an automatic refresh via `elot-active-label-sources-change-hook'.
 
-  Toggle with \\[elot-toggle-label-display] (F5) once enabled.  Use
+  Toggle with \\[elot-toggle-label-display] once enabled.  Use
   \\[elot-global-label-display-setup] for a one-shot refresh after
   registering or activating new sources."
     :lighter " ELOT-L"
@@ -1354,7 +1381,10 @@ with active label sources).
           (elot-global--install)
           (make-local-variable 'elot-label-display)
           (setq elot-label-display 'on)
-          (local-set-key (kbd "<f5>") #'elot-toggle-label-display)
+          (let ((key (and (fboundp 'elot--toggle-labels-key)
+                          (elot--toggle-labels-key))))
+            (when key
+              (local-set-key (kbd key) #'elot-toggle-label-display)))
           (local-set-key (kbd "C-c C-x r") #'elot-label-lookup)
           (when elot-global-label-display-eldoc
             (add-hook 'eldoc-documentation-functions
@@ -1396,6 +1426,10 @@ with active label sources).
   ;; disappears once elot-mode activates and adds its own copy via
   ;; elot-mode-map -- preventing duplicate ELOT menu entries.
   ;; The sibling snippet in elot-mode.el covers the opposite load order.
+  ;; NOTE: `package-lint' warns about `with-eval-after-load' in packages.
+  ;; The warning is informational (configuration code belongs in user
+  ;; init); here it is intentional -- a cross-module load-order bridge
+  ;; between two modules of the same package, not user-config injection.
   (with-eval-after-load 'elot-mode
     (when (and (boundp 'elot-global-label-display-mode-map)
                (boundp 'elot-menu))

@@ -1,4 +1,4 @@
-#+TITLE: ELOT Mode — Minor Mode for Ontology Authoring
+#+TITLE: ELOT Mode -- Minor Mode for Ontology Authoring
 #+AUTHOR: Johan W. Klüwer
 #+DESCRIPTION: Literate programming file for the ELOT minor mode
 
@@ -30,10 +30,10 @@ functions.
 ** Architecture
 
 #+begin_example
-elot-mode.org          → elot-mode.el          (this file: minor mode definition)
-elot-tangling.org      → elot-tangle.el        (AST parsing, OMN generation)
-elot-label-display.org → elot-label-display.el  (fontification, overlays, lookup)
-elot-defs.org          → elot.el                (legacy: gradually being emptied)
+elot-mode.org          -> elot-mode.el          (this file: minor mode definition)
+elot-tangling.org      -> elot-tangle.el        (AST parsing, OMN generation)
+elot-label-display.org -> elot-label-display.el  (fontification, overlays, lookup)
+elot-defs.org          -> elot.el                (legacy: gradually being emptied)
 #+end_example
 
 =elot-mode.el= is thin orchestration glue.  It =require='s the modules,
@@ -66,7 +66,6 @@ Users can activate =elot-mode= in several ways:
   ;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
   ;; URL: https://github.com/johanwk/elot
   ;; Version: 2.0.0
-  ;; Package-Requires: ((emacs "29.1"))
   ;; Keywords: languages outlines tools org ontology
 
   ;; This file is not part of GNU Emacs.
@@ -94,7 +93,6 @@ Users can activate =elot-mode= in several ways:
   ;;  - Syntax table tweaks (`:' and `_' as word-constituent)
   ;;  - Buffer-local hooks for tangling, saving, and display
   ;;  - Label-display overlays (toggled with F5)
-  ;;  - A hydra menu (S-F5) with templates and export commands
   ;;  - Org babel Library-of-Babel ingestion
   ;;
   ;; Disabling the mode cleanly tears down all of the above.
@@ -108,7 +106,7 @@ Users can activate =elot-mode= in several ways:
 
 Load the core ELOT modules (zero external dependencies).  Then
 attempt to load the full =elot= package, which brings in SPARQL
-execution, Hydra menus, LaTeX export filters, OWL import, etc.
+execution, LaTeX export filters, OWL import, etc.
 The =(require 'elot nil t)= call is /soft/: if =elot.el= (or any of
 its external dependencies) is not installed, it silently falls back
 to the core.  Every menu item that depends on the full package is
@@ -130,7 +128,7 @@ explicitly calls =elot-org-lint=.
   (require 'org-tempo)
   (require 'ob-lob)
 
-  ;; Load the full ELOT package (SPARQL, hydra, LaTeX export, OWL
+  ;; Load the full ELOT package (SPARQL, LaTeX export, OWL
   ;; import, etc.) when available.  The `nil t' arguments mean "don't
   ;; signal an error if elot.el is not on `load-path'", so users who
   ;; only have the zero-dependency core still get a working `elot-mode'.
@@ -504,7 +502,7 @@ ELOT includes utility functions to generate an outline from an Org table.
             value
           (format "\"%s\"%s" (format "%s" value) dtype))))
 
-     (t value)))                                        ; no decoration → untouched
+     (t value)))                                        ; no decoration -> untouched
 
   (defun elot--strip-decoration (header)
     "Return HEADER without trailing @lang or ^^dtype part."
@@ -516,9 +514,9 @@ ELOT includes utility functions to generate an outline from an Org table.
 
   (defun elot--table->forest (mini-table)
     "Convert MINI-TABLE (Org-babel list) to a forest of plists.
-  - Header suffixes “@lang” / “^^datatype” decorate the cell value
-    but are **removed** from the stored key.
-  - Warns if a row’s SUPER value never appears as an ID.
+  - Header suffixes `@lang' / `^^datatype' decorate the cell value
+    but are removed from the stored key.
+  - Warns if a row's SUPER value never appears as an ID.
   - Skips `hline` markers that `org-table-to-lisp` inserts."
     (let* ((headers (car mini-table))
            (rows    (cdr mini-table))
@@ -527,7 +525,7 @@ ELOT includes utility functions to generate an outline from an Org table.
            (id->obj (make-hash-table :test 'equal))
            triples)
 
-      ;; ── pass 1: build node plists and register them ───────────────
+      ;; -- pass 1: build node plists and register them ---------------
       (dolist (row rows)
         (when (listp row)                         ; skip `hline`
           (let* ((id  (nth id-col  row))
@@ -539,14 +537,13 @@ ELOT includes utility functions to generate an outline from an Org table.
                                            (list (elot--strip-decoration hdr)
                                                  (elot--coerce-literal hdr val)))
                                          headers row))
-                       (list :subs nil)))
-                 )
+                       (list :subs nil))))
             (push (list id sup pl) triples)
             (puthash id pl id->obj))))
 
       (setq triples (nreverse triples))
 
-      ;; ── pass 2: link children to parents, warn on missing parents ─
+      ;; -- pass 2: link children to parents, warn on missing parents -
       (dolist (tr triples)
         (cl-destructuring-bind (id sup child) tr
           (unless (string= sup "")
@@ -554,11 +551,11 @@ ELOT includes utility functions to generate an outline from an Org table.
               (if parent
                   (setf (plist-get parent :subs)
                         (append (plist-get parent :subs) (list child)))
-                (message "elot--table->forest: WARNING – parent id \"%s\" referenced by \"%s\" not found"
+                (message "elot--table->forest: WARNING -- parent id \"%s\" referenced by \"%s\" not found"
                          sup id)
                 (setf (nth 1 tr) ""))))))         ; promote to root
 
-      ;; ── pass 3: collect root nodes in original order ──────────────
+      ;; -- pass 3: collect root nodes in original order --------------
       (let (forest)
         (dolist (tr triples)
           (cl-destructuring-bind (_id sup pl) tr
@@ -566,7 +563,7 @@ ELOT includes utility functions to generate an outline from an Org table.
         (nreverse forest))))
 
   (defun elot--prop (plist key)
-    "Return KEY’s value in PLIST, comparing keys with `string=`."
+    "Return KEY's value in PLIST, comparing keys with `string=`."
     (cl-loop for (k v) on plist by #'cddr
              when (and (stringp k) (string= k key))
              return v))
@@ -619,7 +616,7 @@ ELOT includes utility functions to generate an outline from an Org table.
            (headers     (car mini-table)))
       ;; 2. must contain \"id\"
       (unless (member "id" headers)
-        (user-error "Table lacks required \"id\" column – cannot create headings"))
+        (user-error "Table lacks required \"id\" column -- cannot create headings"))
 
       ;; 3. outline depth = one deeper than containing headline
       (let ((target-level (save-excursion
@@ -637,7 +634,7 @@ ELOT includes utility functions to generate an outline from an Org table.
                    (forward-line 1))
                  (point))))
 
-          ;; 5. build forest → org text and insert
+          ;; 5. build forest -> org text and insert
           (let* ((forest   (elot--table->forest mini-table))
                  (org-text (elot-forest->org forest target-level)))
             (goto-char insert-pos)
@@ -656,11 +653,15 @@ replaces the ad-hoc =local-set-key= calls in =elot-setup-org-keybindings=.
 #+begin_src emacs-lisp
   (defvar elot-mode-map
     (let ((map (make-sparse-keymap)))
-      (define-key map (kbd "<f5>")   #'elot-toggle-label-display)
+      ;; The optional binding for `elot-toggle-label-display' is
+      ;; installed at mode-enable time (see `elot-mode--apply-toggle-key'
+      ;; called from `elot-mode--enable'), not here, because the
+      ;; user's customized value of `elot-toggle-labels-key' is not
+      ;; necessarily available when this `defvar' runs at load time.
       (define-key map (kbd "C-c C-x r") #'elot-label-lookup)
-      ;; S-F5 -> hydra, but only when hydra is available (loaded via elot.el)
-      (when (fboundp 'elot-hydra/body)
-        (define-key map (kbd "S-<f5>") #'elot-hydra/body))
+      ;; S-<f5> previously bound to a Shift-F5 menu; that menu has
+      ;; been retired in favour of the ELOT easymenu ("ELOT" in the
+      ;; menu bar).
       map)
     "Keymap active when `elot-mode' is enabled.")
 #+end_src
@@ -705,7 +706,7 @@ replaces the ad-hoc =local-set-key= calls in =elot-setup-org-keybindings=.
        :enable (elot--in-elot-buffer-p)]
       ["Quick-Describe Resource" elot-describe-curie-at-point
        :enable (elot--in-elot-buffer-p)]
-      ["Toggle Label-Display (F5)" elot-toggle-label-display :active (fboundp 'elot-toggle-label-display)]
+      ["Toggle Label-Display" elot-toggle-label-display :active (fboundp 'elot-toggle-label-display)]
       ["Refresh Label-Display Index" elot-label-display-setup
        :active (fboundp 'elot-label-display-setup)
        :enable (elot--in-elot-buffer-p)]
@@ -788,13 +789,12 @@ replaces the ad-hoc =local-set-key= calls in =elot-setup-org-keybindings=.
         ["Rebuild label-display matcher"
          elot-global-label-display-setup
          :active (fboundp 'elot-global-label-display-setup)]
-        ["Toggle label display (F5)"
+        ["Toggle label display"
          elot-toggle-label-display
          :active (fboundp 'elot-toggle-label-display)
          :style toggle
          :selected (and (boundp 'elot-label-display)
-                        (eq elot-label-display 'on))]))
-      ))
+                        (eq elot-label-display 'on))]))))
 
   ; Also surface the ELOT menu when `elot-global-label-display-mode'
   ;; is active in a non-ELOT buffer.  We bind the same menu into the
@@ -804,6 +804,10 @@ replaces the ad-hoc =local-set-key= calls in =elot-setup-org-keybindings=.
   ;; provides the entry in that case).
   ;; `with-eval-after-load' guards the load order: if elot-label-display.el
   ;; loads later, the sibling snippet there handles the other direction.
+  ;; NOTE: `package-lint' warns about `with-eval-after-load' in packages.
+  ;; The warning is informational (configuration code belongs in user
+  ;; init); here it is intentional -- a cross-module load-order bridge
+  ;; between two modules of the same package, not user-config injection.
   (with-eval-after-load 'elot-label-display
     (when (and (boundp 'elot-global-label-display-mode-map)
                (boundp 'elot-menu))
@@ -844,6 +848,222 @@ hooks and never removed them.
     (remove-hook 'xref-backend-functions #'elot-xref-backend t))
 #+end_src
 
+** SPARQL advice installation
+:PROPERTIES:
+:CUSTOM_ID: sparql-advice-install
+:END:
+
+The ELOT-specific around-advice on =org-babel-execute:sparql= (defined
+in =elot-defs.org= block =src-sparql-exec-patch=) is *not* installed at
+=require= time -- that would mutate global state for every Emacs session
+that merely loads ELOT, which MELPA discourages.  Instead it is
+installed by =elot-mode--enable= and removed by =elot-mode--disable=.
+
+A single boolean, =elot--sparql-advice-installed-p=, tracks whether
+the advice is currently in place so that multiple ELOT buffers share
+a single installation: enabling =elot-mode= in additional buffers is a
+no-op for the advice, and disabling =elot-mode= in the *last* such
+buffer fully uninstalls it.  The advice body itself still guards on
+=elot--is-elot-buffer= as defence in depth.
+
+#+name: src-mode-sparql-advice
+#+begin_src emacs-lisp
+  (defvar elot--sparql-advice-installed-p nil
+    "Non-nil when ELOT's around-advice on `org-babel-execute:sparql' is active.
+  Managed by `elot-mode--install-sparql-advice' and
+  `elot-mode--uninstall-sparql-advice'.")
+
+  (defvar elot--sparql-advice-buffer-count 0
+    "Number of live buffers in which `elot-mode' is currently enabled.
+  When this drops to zero, `elot-mode--uninstall-sparql-advice' removes
+  the global advice on `org-babel-execute:sparql'.")
+
+  (defun elot-mode--install-sparql-advice ()
+    "Install ELOT's around-advice on `org-babel-execute:sparql'.
+  Idempotent: safe to call from every `elot-mode--enable'."
+    (cl-incf elot--sparql-advice-buffer-count)
+    (unless elot--sparql-advice-installed-p
+      (when (fboundp 'elot--custom-org-babel-execute-sparql)
+        (advice-add 'org-babel-execute:sparql :around
+                    #'elot--custom-org-babel-execute-sparql)
+        (setq elot--sparql-advice-installed-p t))))
+
+  (defun elot-mode--uninstall-sparql-advice ()
+    "Remove ELOT's around-advice on `org-babel-execute:sparql' when no
+  ELOT buffer is left.  Idempotent."
+    (when (> elot--sparql-advice-buffer-count 0)
+      (cl-decf elot--sparql-advice-buffer-count))
+    (when (and elot--sparql-advice-installed-p
+               (<= elot--sparql-advice-buffer-count 0))
+      (advice-remove 'org-babel-execute:sparql
+                     #'elot--custom-org-babel-execute-sparql)
+      (setq elot--sparql-advice-installed-p nil
+            elot--sparql-advice-buffer-count 0)))
+#+end_src
+
+** Xref globals installation
+:PROPERTIES:
+:CUSTOM_ID: xref-globals-install
+:END:
+
+In addition to the SPARQL advice handled above, =elot-mode.el= also
+installs a small set of *global* xref customisations: an =:before=
+advice on =xref-find-references= (=elot--capture-slurp=, which copies
+the current buffer's =elot-slurp= into =elot-slurp-global= so the
+=*xref*= buffer can render label overlays), and two entries on
+=xref-after-update-hook= (=elot--xref-label-overlay-setup= and
+=elot--xref-buffer-enable-backend=).
+
+These were originally installed at top level when =elot-mode.el=
+loaded, which mutated global state for every Emacs session that
+merely required ELOT.  Following the same pattern as the SPARQL
+advice, installation is now driven by the =elot-mode= lifecycle and
+reference-counted across ELOT buffers: the first =elot-mode--enable=
+installs; subsequent calls only bump the count; =elot-mode--disable=
+in the last ELOT buffer fully uninstalls.
+
+The install helper guards each =advice-add= / =add-hook= with
+=fboundp= because the backing functions are defined further down in
+the file (after the xref backend), so during =require= time the
+helpers exist before their targets do.  Installation runs from
+=elot-mode--enable= which executes after the file is fully loaded,
+so the guards are belt-and-braces rather than strictly required.
+
+#+name: src-mode-xref-globals
+#+begin_src emacs-lisp
+  (defvar elot--xref-globals-installed-p nil
+    "Non-nil when ELOT's global xref advice and hooks are installed.
+  Managed by `elot-mode--install-xref-globals' and
+  `elot-mode--uninstall-xref-globals'.")
+
+  (defvar elot--xref-globals-buffer-count 0
+    "Reference count of live buffers with `elot-mode' enabled, for the
+  purpose of managing ELOT's global xref advice and hooks.  When this
+  drops to zero, `elot-mode--uninstall-xref-globals' removes the
+  global advice on `xref-find-references' and the entries on
+  `xref-after-update-hook'.")
+
+  (defun elot-mode--install-xref-globals ()
+    "Install ELOT's global xref advice and `xref-after-update-hook' entries.
+  Idempotent: safe to call from every `elot-mode--enable'.  The
+  backing helpers are defined later in this file, so each install
+  is guarded with `fboundp' so that loading order does not matter."
+    (cl-incf elot--xref-globals-buffer-count)
+    (unless elot--xref-globals-installed-p
+      (when (fboundp 'elot--capture-slurp)
+        (advice-add 'xref-find-references :before #'elot--capture-slurp))
+      (when (fboundp 'elot--xref-label-overlay-setup)
+        (add-hook 'xref-after-update-hook #'elot--xref-label-overlay-setup))
+      (when (fboundp 'elot--xref-buffer-enable-backend)
+        (add-hook 'xref-after-update-hook #'elot--xref-buffer-enable-backend))
+      (setq elot--xref-globals-installed-p t)))
+
+  (defun elot-mode--uninstall-xref-globals ()
+    "Remove ELOT's global xref advice and hooks when no ELOT buffer is
+  left.  Idempotent."
+    (when (> elot--xref-globals-buffer-count 0)
+      (cl-decf elot--xref-globals-buffer-count))
+    (when (and elot--xref-globals-installed-p
+               (<= elot--xref-globals-buffer-count 0))
+      (advice-remove 'xref-find-references #'elot--capture-slurp)
+      (remove-hook 'xref-after-update-hook #'elot--xref-label-overlay-setup)
+      (remove-hook 'xref-after-update-hook #'elot--xref-buffer-enable-backend)
+      (setq elot--xref-globals-installed-p nil
+            elot--xref-globals-buffer-count 0)))
+#+end_src
+
+** Library-of-Babel ingestion
+:PROPERTIES:
+:CUSTOM_ID: lob-ingest
+:END:
+
+=elot-package/elot-lob.org= contains supported, user-facing
+=#+call:=-style helpers (=rdfpuml-block=, =kill-prefixes=,
+theme/setupfile helpers, =robot-metrics=, =robot-sparql-select=, the
+date helpers, etc.).  These named blocks are made available to every
+ELOT Org buffer by ingesting the file via =org-babel-lob-ingest=.
+
+Ingestion is a global, idempotent side effect on Org's Library of
+Babel: once any ELOT buffer has ingested =elot-lob.org=, every other
+Org buffer in the same Emacs session can resolve =#+call:
+rdfpuml-block(...)= and friends.  The =elot--lob-ingested-p= flag
+ensures we ingest only once per Emacs session, so re-enabling
+=elot-mode= in another buffer (or in the same buffer after a toggle)
+does not pay the parse cost again.
+
+=locate-library "elot-mode"= resolves to the directory of the loaded
+=elot-mode.el=, which sits next to =elot-lob.org= in both a Git
+checkout and an installed MELPA package; that gives us a portable
+way to find the file without baking in any path.
+
+There is no corresponding teardown in =elot-mode--disable=: ingested
+LOB blocks are harmless in non-ELOT buffers, and Org provides no
+public API to remove individual entries from the Library of Babel.
+
+#+name: src-mode-lob-ingest
+#+begin_src emacs-lisp
+  (defvar elot--lob-ingested-p nil
+    "Non-nil once ELOT's `elot-lob.org' has been ingested in this Emacs.
+  Guards `elot-mode--ingest-lob' against redundant re-ingestion when
+  `elot-mode' is enabled in additional buffers.")
+
+  (defun elot-mode--ingest-lob ()
+    "Ingest ELOT's `elot-lob.org' into Org's Library of Babel.
+  No-op after the first successful call in an Emacs session.  Locates
+  `elot-lob.org' relative to the loaded `elot-mode.el' so it works
+  both from a Git checkout and from an installed MELPA package."
+    (unless elot--lob-ingested-p
+      (let* ((mode-lib (locate-library "elot-mode"))
+             (lob-file (and mode-lib
+                            (expand-file-name
+                             "elot-lob.org"
+                             (file-name-directory mode-lib)))))
+        (when (and lob-file (file-readable-p lob-file))
+          (org-babel-lob-ingest lob-file)
+          (setq elot--lob-ingested-p t)))))
+#+end_src
+
+** Apply user's toggle-labels keybinding
+
+The =defvar elot-mode-map= above runs at /load time/, before the
+user's =custom-file= has been read.  Reading
+=elot-toggle-labels-key= there would always see the default =nil=
+and never install the user's preferred binding.  Instead the
+binding is applied (and refreshed) at every =elot-mode--enable=
+via the helper below.
+
+A small state variable =elot-mode--applied-toggle-key= tracks the
+last key we installed so we can unbind it cleanly if the user
+later changes =elot-toggle-labels-key= via Customize.
+
+#+name: src-mode-apply-toggle-key
+#+begin_src emacs-lisp
+  (defvar elot-mode--applied-toggle-key nil
+    "Key currently bound to `elot-toggle-label-display' in `elot-mode-map'.
+  Tracked so `elot-mode--apply-toggle-key' can rebind cleanly when
+  the user changes `elot-toggle-labels-key' between activations.")
+
+  (defun elot-mode--apply-toggle-key ()
+    "Install the user's `elot-toggle-labels-key' binding in `elot-mode-map'.
+  Reads the current value via `elot--toggle-labels-key' (which also
+  emits the one-time hint when no value is set), unbinds any
+  previously-installed key, and binds the new one if any.  Safe to
+  call from every `elot-mode--enable'."
+    (when (boundp 'elot-mode-map)
+      ;; Unbind the previously-applied key, if any, so customize-driven
+      ;; changes between activations don't leave stale bindings behind.
+      (when elot-mode--applied-toggle-key
+        (define-key elot-mode-map
+                    (kbd elot-mode--applied-toggle-key) nil)
+        (setq elot-mode--applied-toggle-key nil))
+      (let ((key (and (fboundp 'elot--toggle-labels-key)
+                      (elot--toggle-labels-key))))
+        (when key
+          (define-key elot-mode-map (kbd key)
+                      #'elot-toggle-label-display)
+          (setq elot-mode--applied-toggle-key key)))))
+#+end_src
+
 ** Enable and disable
 :PROPERTIES:
 :CUSTOM_ID: enable-disable
@@ -874,12 +1094,12 @@ the user is prompted first.  The user can always run
     ;; 2. Syntax table
     (set-syntax-table elot-mode-syntax-table)
 
-    ;; 3. Ingest the Library of Babel
-    (let ((lob-file (concat (file-name-directory
-                             (locate-library "elot-tangle"))
-                            "elot-lob.org")))
-      (when (file-exists-p lob-file)
-        (org-babel-lob-ingest lob-file)))
+    ;; 3. Ingest the Library of Babel (once per Emacs session)
+    (elot-mode--ingest-lob)
+
+    ;; 3b. Apply the user's toggle-labels keybinding (if any) into
+    ;;     `elot-mode-map' now that customize has had a chance to load.
+    (elot-mode--apply-toggle-key)
 
     ;; 4. Parse the headline hierarchy (populates elot-headline-hierarchy,
     ;;    which is needed by link-abbrev refresh and label-display)
@@ -888,10 +1108,27 @@ the user is prompted first.  The user can always run
     ;; 5. Hooks
     (elot-mode--add-hooks)
 
-    ;; 6. Label-display: set up immediately (with size-gated prompt)
+    ;; 6. SPARQL advice (global, but reference-counted across ELOT buffers)
+    (elot-mode--install-sparql-advice)
+
+    ;; 7. Xref globals (advice on `xref-find-references' and entries on
+    ;;    `xref-after-update-hook'; reference-counted across ELOT buffers)
+    (elot-mode--install-xref-globals)
+
+    ;; 8. LaTeX export filter for OMN in description lists
+    (when (fboundp 'elot-latex-filter-omn-item)
+      (add-to-list 'org-export-filter-item-functions
+                   'elot-latex-filter-omn-item))
+
+    ;; 9. Export pre-processing hook (linkify, CUSTOM_IDs, prefix resolution)
+    (when (fboundp 'elot--prepare-export-buffer)
+      (add-hook 'org-export-before-processing-functions
+                #'elot--prepare-export-buffer))
+
+    ;; 10. Label-display: set up immediately (with size-gated prompt)
     (elot-mode--maybe-setup-labels)
 
-    ;; 7. Set initial fold visibility
+    ;; 11. Set initial fold visibility
     (org-cycle-set-startup-visibility))
 
   (defun elot-mode--maybe-setup-labels ()
@@ -913,12 +1150,27 @@ In batch mode (`noninteractive'), skip label-display entirely."
     ;; 1. Remove hooks
     (elot-mode--remove-hooks)
 
-    ;; 2. Remove label-display overlays
+    ;; 2. SPARQL advice (uninstall when this is the last ELOT buffer)
+    (elot-mode--uninstall-sparql-advice)
+
+    ;; 3. Xref globals (uninstall when this is the last ELOT buffer)
+    (elot-mode--uninstall-xref-globals)
+
+    ;; 4. LaTeX export filter
+    (setq org-export-filter-item-functions
+          (delq 'elot-latex-filter-omn-item
+                org-export-filter-item-functions))
+
+    ;; 5. Export pre-processing hook
+    (remove-hook 'org-export-before-processing-functions
+                 #'elot--prepare-export-buffer)
+
+    ;; 6. Remove label-display overlays
     (when (fboundp 'elot-remove-prop-display)
       (with-silent-modifications
         (elot-remove-prop-display)))
 
-    ;; 3. Restore syntax table
+    ;; 7. Restore syntax table
     (set-syntax-table org-mode-syntax-table))
 #+end_src
 
@@ -938,7 +1190,6 @@ This is the central =define-minor-mode= form.
   When enabled, sets up:
   - Tangling hooks for OMN export and ROBOT conversion
   - Label-display overlays (toggle with \\[elot-toggle-label-display])
-  - Hydra menu (\\[elot-hydra/body]) with templates and export commands
   - Syntax table tweaks for CURIE navigation
   - Library of Babel ingestion
 
@@ -961,7 +1212,7 @@ the need for any file-local variable at all.
 
 The detection function is added to =org-mode-hook=.  It searches for the
 ELOT marker property in the first few thousand characters of the
-buffer — fast enough for interactive use.
+buffer -- fast enough for interactive use.
 
 #+name: src-mode-auto-detect
 #+begin_src emacs-lisp
@@ -995,8 +1246,8 @@ their preceding Org heading, and shown in the ~*xref*~ buffer. Multi-line
 entries are flattened to improve readability.
 
 Definitions are resolved by searching open buffers for headings that contain
-the identifier. This allows users to press ~M-.~ on any CURIE—even inside the
-~*xref*~ buffer—to jump to its defining section.
+the identifier. This allows users to press ~M-.~ on any CURIE--even inside the
+~*xref*~ buffer--to jump to its defining section.
 
 Label overlays are automatically enabled in the ~*xref*~ buffer, using context
 from the originating ELOT buffer. Hooks and advice ensure the xref backend is
@@ -1071,24 +1322,76 @@ registered and the correct context is preserved across jumps.
   	like `xref-find-references'."
     nil)
 
+  (defvar elot--xref-pending-active-sources nil
+    "Transient: snapshot of `elot-active-label-sources' from the caller of xref.
+  Captured by `elot--capture-slurp' (the :before advice on
+  `xref-find-references') and consumed by
+  `elot--xref-label-overlay-setup' to seed the *xref* buffer so that
+  label display works there too.  Cleared after use.")
+
+  (defvar elot--xref-pending-source-buffer nil
+    "Transient: the buffer that invoked `xref-find-references'.
+  Captured alongside `elot--xref-pending-active-sources' so the
+  calling buffer's file can be added as a DB-backed label source in
+  the *xref* buffer.  Cleared after use.")
+
   (defun elot--capture-slurp (&rest _args)
-    "Copy the current buffer's `elot-slurp' into `elot-slurp-global'.
-
-  	This is used before xref is invoked so that label overlays can be shown
-  	in the `*xref*' buffer based on the current ELOT context."
+    "Stage label-display state for transfer into the *xref* buffer.
+  Runs as :before advice on `xref-find-references' in the originating
+  ELOT buffer.  Captures:
+    * `elot-slurp' -> `elot-slurp-global' (legacy staging path);
+    * `elot-active-label-sources' + the current buffer ->
+      `elot--xref-pending-active-sources' /
+      `elot--xref-pending-source-buffer', consumed by
+      `elot--xref-label-overlay-setup' to enable
+      `elot-global-label-display-mode' in the *xref* buffer with the
+      caller's sources (and the caller's file) seeded."
     (when (boundp 'elot-slurp)
-      (setq elot-slurp-global elot-slurp)))
+      (setq elot-slurp-global elot-slurp))
+    (setq elot--xref-pending-active-sources
+          (and (boundp 'elot-active-label-sources)
+               (copy-sequence elot-active-label-sources)))
+    (setq elot--xref-pending-source-buffer (current-buffer)))
 
-  (advice-add 'xref-find-references :before #'elot--capture-slurp)
+  ;; The advice on `xref-find-references' that runs `elot--capture-slurp'
+  ;; before xref is installed by `elot-mode--install-xref-globals' and
+  ;; removed by `elot-mode--uninstall-xref-globals'; see Milestone 3
+  ;; Step 3.5 of ELPA-SUBMISSION-PLAN.org.
 
   (defun elot--xref-label-overlay-setup ()
-    "Setup label overlays in the xref buffer using `elot-slurp-global'."
-    (when (and (equal (buffer-name) "*xref*")
-  	     (fboundp 'elot-label-display-setup))
-      (local-set-key (kbd "<f5>") #'elot-toggle-label-display)
-      (elot-label-display-setup)))
+    "Enable label display in the *xref* buffer using DB-backed sources.
+  Reads the transient values stashed by `elot--capture-slurp':
+    * sets `elot-active-label-sources' buffer-locally in *xref* to the
+      caller's list, augmented with an entry naming the caller's file
+      so identifiers defined there are looked up;
+    * enables `elot-global-label-display-mode' in *xref* (DB-driven
+      matcher, works in any major mode);
+    * binds the opt-in toggle key (if customized) locally.
+  Transients are cleared after use."
+    (when (equal (buffer-name) "*xref*")
+      ;; 1. Carry over active sources from the calling buffer.
+      (let* ((sources (copy-sequence elot--xref-pending-active-sources))
+             (src-buf elot--xref-pending-source-buffer)
+             (src-file (and (buffer-live-p src-buf)
+                            (buffer-local-value 'buffer-file-name src-buf))))
+        (when (and src-file
+                   (not (cl-find-if (lambda (e) (equal (nth 0 e) src-file))
+                                    sources)))
+          (setq sources (append sources (list (list src-file nil)))))
+        (setq-local elot-active-label-sources sources))
+      ;; 2. Bind opt-in toggle key (if customized).
+      (let ((key (and (fboundp 'elot--toggle-labels-key)
+                      (elot--toggle-labels-key))))
+        (when key
+          (local-set-key (kbd key) #'elot-toggle-label-display)))
+      ;; 3. Enable label display via the DB-driven global mode.
+      (when (fboundp 'elot-global-label-display-mode)
+        (elot-global-label-display-mode 1))
+      ;; 4. Clear transients defensively.
+      (setq elot--xref-pending-active-sources nil
+            elot--xref-pending-source-buffer nil)))
 
-  (add-hook 'xref-after-update-hook #'elot--xref-label-overlay-setup)
+  ;; Installed/removed via `elot-mode--{install,uninstall}-xref-globals'.
 
   (cl-defmethod xref-backend-definitions ((_backend (eql elot)) identifier)
     "Return Org headlines that *define* IDENTIFIER."
@@ -1106,7 +1409,7 @@ registered and the correct context is preserved across jumps.
         (make-local-variable 'xref-backend-functions)
         (add-hook 'xref-backend-functions #'elot-xref-backend nil t))))
 
-  (add-hook 'xref-after-update-hook #'elot--xref-buffer-enable-backend)
+  ;; Installed/removed via `elot-mode--{install,uninstall}-xref-globals'.
 
   (cl-defun elot-describe-curie-at-point (&optional curie)
     "Pop up a *Help* buffer describing CURIE at point (or prompt).
@@ -1123,9 +1426,15 @@ registered and the correct context is preserved across jumps.
     (unless (and curie (stringp curie) (not (string-empty-p curie)))
       (user-error "No CURIE given"))
     ;; ------------------------------------------------------------------
-    ;; 1. Capture current elot-slurp so we can reuse it in Help buffer
+    ;; 1. Capture caller-side label-display state for transfer into the
+    ;;    *ELOT Describe* buffer.  Mirrors the xref path: snapshot
+    ;;    `elot-active-label-sources' and the calling buffer's file so the
+    ;;    Help buffer can use `elot-global-label-display-mode' (DB-backed)
+    ;;    instead of the older buffer-local `elot-slurp' path.
     ;; ------------------------------------------------------------------
-    (let ((elot-slurp-global (when (boundp 'elot-slurp) elot-slurp)))
+    (let* ((caller-sources (and (boundp 'elot-active-label-sources)
+                                (copy-sequence elot-active-label-sources)))
+           (caller-file    buffer-file-name))
       ;; ----------------------------------------------------------------
       ;; 2. Gather xref data
       ;; ----------------------------------------------------------------
@@ -1140,8 +1449,6 @@ registered and the correct context is preserved across jumps.
   	(with-current-buffer buffer
   	  (help-mode)
   	  (setq truncate-lines t)
-  	  ;; make elot-slurp visible in this buffer for overlay code
-  	  (setq-local elot-slurp elot-slurp-global)
   	  ;; ------------------------------------
   	  ;; 3a. Header & definition
   	  ;; ------------------------------------
@@ -1163,17 +1470,28 @@ registered and the correct context is preserved across jumps.
   		    (elot--describe--insert-xref-button xref 4)
   		    (setq count (1+ count))))
   		(when (> (length refs) max-ref)
-  		  (princ (format "  …and %d more\n"
+  		  (princ (format "  ...and %d more\n"
   				 (- (length refs) max-ref)))))
   	    (princ "  (none)\n"))
   	  (princ
   	   "\n----\n`q' to quit, `RET' to visit location.\n")
   	  ;; ------------------------------------
-  	  ;; 3c. Bind F5 and paint label overlays
+  	  ;; 3c. Seed DB-backed label sources, bind opt-in toggle key, and
+  	  ;;     enable label display via `elot-global-label-display-mode'
+  	  ;;     (same path as the *xref* buffer).
   	  ;; ------------------------------------
-  	  (local-set-key (kbd "<f5>") #'elot-toggle-label-display)
-  	  (when (fboundp 'elot-label-display-setup)
-  	    (elot-label-display-setup)))))))
+  	  (let ((sources (copy-sequence caller-sources)))
+  	    (when (and caller-file
+  		       (not (cl-find-if (lambda (e) (equal (nth 0 e) caller-file))
+  					sources)))
+  	      (setq sources (append sources (list (list caller-file nil)))))
+  	    (setq-local elot-active-label-sources sources))
+  	  (let ((key (and (fboundp 'elot--toggle-labels-key)
+                            (elot--toggle-labels-key))))
+              (when key
+                (local-set-key (kbd key) #'elot-toggle-label-display)))
+  	  (when (fboundp 'elot-global-label-display-mode)
+  	    (elot-global-label-display-mode 1)))))))
 
   (defun elot--describe--insert-xref-button (xref indent)
     "Insert XREF as an indented bullet with filename and a clickable link."
@@ -1186,7 +1504,7 @@ registered and the correct context is preserved across jumps.
   	 (line    (with-current-buffer buf
   		    (line-number-at-pos marker))))
       ;; bullet + file prefix
-      (insert (make-string indent ?\s) "• "
+      (insert (make-string indent ?\s) "- "
   	    (propertize (concat short ": ") 'face 'font-lock-keyword-face))
       ;; clickable summary
       (insert-text-button

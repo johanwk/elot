@@ -380,6 +380,9 @@ ex:b    a       ex:C ;
 
 
 ** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
 The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
 
 #+name: prefix-table

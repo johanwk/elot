@@ -113,3 +113,58 @@ Work entirely inside =elot-tangle.org=:
 This section captures design notes and rationale as they arise during
 the work.
 
+** Strategy B for the legacy Library-of-Babel pipeline (2026-05-08)
+
+The pre-rewrite ELOT pipeline emitted OMN via a family of
+Library-of-Babel named blocks in =elot-package/elot-lob.org=
+(=resource-declarations=, =resource-taxonomy=) that delegated to
+roughly twenty helper defuns in =elot.el= (=elot-omn-declare=,
+=elot-resource-declarations-from-header=,
+=elot-resource-taxonomy-from-header=, the description-list and
+tag-parsing helpers, etc.).  The new tangle pipeline documented
+under "Data Flow" above replaces all of this.
+
+Two strategies were considered for the dead code:
+
+- *Strategy A* - keep the legacy defuns and LOB blocks around,
+  marked as deprecated, with a removal schedule.
+- *Strategy B* - delete the legacy defuns and the two retired LOB
+  blocks outright.
+
+*Decision: Strategy B*, taken as part of the MELPA submission
+preparation (see =ELPA-SUBMISSION-PLAN.org= Milestone 2).
+
+Rationale:
+
+1. The SPARQL rewrite (Milestone 1) removed the last production
+   dependency on =elot-prefix-block-from-alist='s LOB role; the
+   function itself was relocated to =elot-tangle.el= and is
+   still called from =elot-label-display.el= and the rewritten
+   SPARQL advice.
+2. A grep over =elot-package/= and =examples/*.org= confirmed
+   that the legacy defuns and the two retired LOB blocks
+   (=resource-declarations=, =resource-taxonomy=) had no
+   remaining call sites.  Their only "callers" were each other.
+3. Old example files that still contain
+   =<<resource-declarations(...)>>= noweb references continue to
+   tangle correctly to OMN: the new pipeline does not consult
+   those noweb calls and silently ignores them.  No user file
+   needs editing.
+4. The single example with hand-written SPARQL =PREFIX=
+   boilerplate (=examples/reasoner-example.org=) is treated as a
+   special case and left untouched - it does not gate the
+   milestone.
+5. =elot-lob.org= itself is *retained* selectively for
+   =#+call:=-style helpers (=rdfpuml-block=, =kill-prefixes=,
+   theme/setupfile helpers, =robot-metrics=, etc.).  These are
+   idiomatic Org affordances that have no compact Elisp
+   equivalent and remain part of ELOT's supported user-facing
+   API.  =elot-mode= now auto-ingests =elot-lob.org= on enable so
+   users no longer need to run =M-x org-babel-lob-ingest=
+   manually.
+
+Carrying ~20 dead defuns plus a deprecation schedule into the
+MELPA submission was judged worse than a clean break, given that
+no in-tree or known downstream caller exercises the removed
+surface.
+

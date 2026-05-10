@@ -32,6 +32,17 @@
 
 (require 'cl-lib)
 
+;; `elot-mode-syntax-table' is defined by `elot-mode.el', which itself
+;; requires this file.  Forward-declare to avoid a load cycle and to
+;; silence a byte-compile "free variable" warning in
+;; `elot-tangle-buffer-to-omn'.
+(defvar elot-mode-syntax-table)
+
+(defgroup elot-tangle nil
+  "Tangling and OMN generation for ELOT."
+  :group 'elot
+  :prefix "elot-")
+
 (defvar elot-omn-property-keywords
   '(
     "EquivalentTo"
@@ -336,14 +347,14 @@ non-nil, return NIL.  Otherwise raise an error."
 
 (defcustom elot-robot-jar-path (expand-file-name "~/bin/robot.jar")
   "Path to the robot.jar file."
-  :group 'elot
+  :group 'elot-tangle
   :version "29.2"
   :type 'string)
 (defvar elot-robot-command-str
   (concat "java -jar " elot-robot-jar-path))
 (defcustom elot-exporter-jar-path (expand-file-name "~/bin/elot-exporter.jar")
   "Path to the elot-exporter.jar file."
-  :group 'elot
+  :group 'elot-tangle
   :version "29.2"
   :type 'string)
 (defvar elot-exporter-command-str
@@ -668,8 +679,10 @@ Creates a dummy root at level 0 to handle multiple top-level ontologies."
 
 (defun elot--extract-headline-descriptions (hl)
   "Extract description list items immediately under headline HL.
-Does not recurse into child headlines, matching the output format of
-`elot-org-subsection-descriptions` for meta-annotations with sublists."
+Does not recurse into child headlines.  Returns a list of
+description-list items (tag . value pairs) suitable for use as
+meta-annotations, including any nested sublist items whose tags are
+recognised meta-annotation tags."
   (org-element-map (org-element-contents hl) 'item
     (lambda (y)
       (when (org-element-property :tag y)
@@ -734,6 +747,30 @@ Scans the hierarchy for nodes with `:prefixdefs \"yes\"' and adds their
                 (push (cons key val) new-abbrevs)))))
         (setq stack (append children stack))))
     (setq-local org-link-abbrev-alist-local (nreverse new-abbrevs))))
+
+(defun elot-prefix-block-from-alist (prefixes format)
+  "Return a prefix block from PREFIXES for use with filetype FORMAT.
+PREFIXES is an alist of prefixes, from an Org table or
+the standard ORG-LINK-ABBREV-ALIST or ORG-LINK-ABBREV-ALIST-LOCAL.
+FORMAT is a symbol, either `omn', `sparql', or `ttl'."
+  (let ((format-str
+         (cond
+          ((eq format 'omn) "Prefix: %-5s <%s>")
+          ((eq format 'ttl) "@prefix %-5s <%s> .")
+          ((eq format 'sparql) "PREFIX %-5s <%s>"))))
+    (mapconcat (lambda (row)
+                 (let ((prefix-str
+                        (if (string-match-p ":$" (car row))
+                            (car row) (concat (car row) ":")))
+                       (uri-str
+                        (if (listp (cdr row))
+                            (cadr row) ;; comes from org table
+                          (cdr row))))
+                       (format format-str prefix-str uri-str)))
+               (if (equal (car prefixes) '("prefix" . "uri"))
+                   (cdr prefixes)
+                 prefixes)
+                 "\n")))
 
 (defun elot-sanity-check-prefixes ()
   "Ensure level 1 `Prefixes' headings have the required property drawer.
@@ -859,12 +896,14 @@ Returns a list of lists: (URI label (plist of attributes))."
 Each member is a list of curie, label, and plist of attributes.")
 (defvar elot-slurp-global nil
   "List of resources retrieved from SPARQL endpoints.
+Used as a cross-buffer staging variable so that label overlays
+set up in *xref* / *ELOT Describe* buffers can read the slurp
+data captured from the originating ELOT buffer.
 
-Obsolete: this global list is retained only as a transitional no-op.
-Use the ELOT label DB (`elot-db-*' / `elot-label-register-source') instead.")
-(make-obsolete-variable 'elot-slurp-global
-  "use the ELOT label DB (`elot-db-*') via `elot-label-register-source' instead."
-  "ELOT 2.1")
+A future migration to the ELOT label DB (`elot-db-*' /
+`elot-label-register-source') is tracked in ELOT-DB-PLAN.org;
+until that lands, this variable is part of the supported
+internal API.")
 (defvar-local elot-codelist-ht nil
   "Hashtable holding pairs of curie and label for ELOT label-display.")
 (defvar-local elot-attriblist-ht nil
@@ -1153,10 +1192,9 @@ Uses PARENT-URI to automatically emit taxonomy axioms."
               (unless (bolp) (insert "\n\n#\n# Tangle blocks\n#\n"))
               ;; Slurp the contents that `org-babel-tangle` just wrote to disk
               (when (file-exists-p target-full)
-                (let ((start (point)))
-                  (insert-file-contents target-full)
-                  ;; insert-file-contents leaves point at `start`, so we move to the end
-                  (goto-char (point-max))))))
+                (insert-file-contents target-full)
+                ;; insert-file-contents leaves point unchanged, so move to end
+                (goto-char (point-max)))))
           ;; If the .omn file is already open in a buffer, silently revert it
           ;; so Emacs won't prompt "file changed on disk; really edit the buffer?"
           (let ((buf (find-buffer-visiting target-full)))
