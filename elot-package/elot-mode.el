@@ -984,13 +984,36 @@ otherwise return every reference."
 	like `xref-find-references'."
   nil)
 
-(defun elot--capture-slurp (&rest _args)
-  "Copy the current buffer's `elot-slurp' into `elot-slurp-global'.
+(defvar elot--xref-pending-active-sources nil
+  "Transient: snapshot of `elot-active-label-sources' from the caller of xref.
+Captured by `elot--capture-slurp' (the :before advice on
+`xref-find-references') and consumed by
+`elot--xref-label-overlay-setup' to seed the *xref* buffer so that
+label display works there too.  Cleared after use.")
 
-	This is used before xref is invoked so that label overlays can be shown
-	in the `*xref*' buffer based on the current ELOT context."
+(defvar elot--xref-pending-source-buffer nil
+  "Transient: the buffer that invoked `xref-find-references'.
+Captured alongside `elot--xref-pending-active-sources' so the
+calling buffer's file can be added as a DB-backed label source in
+the *xref* buffer.  Cleared after use.")
+
+(defun elot--capture-slurp (&rest _args)
+  "Stage label-display state for transfer into the *xref* buffer.
+Runs as :before advice on `xref-find-references' in the originating
+ELOT buffer.  Captures:
+  * `elot-slurp' -> `elot-slurp-global' (legacy staging path);
+  * `elot-active-label-sources' + the current buffer ->
+    `elot--xref-pending-active-sources' /
+    `elot--xref-pending-source-buffer', consumed by
+    `elot--xref-label-overlay-setup' to enable
+    `elot-global-label-display-mode' in the *xref* buffer with the
+    caller's sources (and the caller's file) seeded."
   (when (boundp 'elot-slurp)
-    (setq elot-slurp-global elot-slurp)))
+    (setq elot-slurp-global elot-slurp))
+  (setq elot--xref-pending-active-sources
+        (and (boundp 'elot-active-label-sources)
+             (copy-sequence elot-active-label-sources)))
+  (setq elot--xref-pending-source-buffer (current-buffer)))
 
 ;; The advice on `xref-find-references' that runs `elot--capture-slurp'
 ;; before xref is installed by `elot-mode--install-xref-globals' and
@@ -998,14 +1021,37 @@ otherwise return every reference."
 ;; Step 3.5 of ELPA-SUBMISSION-PLAN.org.
 
 (defun elot--xref-label-overlay-setup ()
-  "Setup label overlays in the xref buffer using `elot-slurp-global'."
-  (when (and (equal (buffer-name) "*xref*")
-	     (fboundp 'elot-label-display-setup))
+  "Enable label display in the *xref* buffer using DB-backed sources.
+Reads the transient values stashed by `elot--capture-slurp':
+  * sets `elot-active-label-sources' buffer-locally in *xref* to the
+    caller's list, augmented with an entry naming the caller's file
+    so identifiers defined there are looked up;
+  * enables `elot-global-label-display-mode' in *xref* (DB-driven
+    matcher, works in any major mode);
+  * binds the opt-in toggle key (if customized) locally.
+Transients are cleared after use."
+  (when (equal (buffer-name) "*xref*")
+    ;; 1. Carry over active sources from the calling buffer.
+    (let* ((sources (copy-sequence elot--xref-pending-active-sources))
+           (src-buf elot--xref-pending-source-buffer)
+           (src-file (and (buffer-live-p src-buf)
+                          (buffer-local-value 'buffer-file-name src-buf))))
+      (when (and src-file
+                 (not (cl-find-if (lambda (e) (equal (nth 0 e) src-file))
+                                  sources)))
+        (setq sources (append sources (list (list src-file nil)))))
+      (setq-local elot-active-label-sources sources))
+    ;; 2. Bind opt-in toggle key (if customized).
     (let ((key (and (fboundp 'elot--toggle-labels-key)
                     (elot--toggle-labels-key))))
       (when key
         (local-set-key (kbd key) #'elot-toggle-label-display)))
-    (elot-label-display-setup)))
+    ;; 3. Enable label display via the DB-driven global mode.
+    (when (fboundp 'elot-global-label-display-mode)
+      (elot-global-label-display-mode 1))
+    ;; 4. Clear transients defensively.
+    (setq elot--xref-pending-active-sources nil
+          elot--xref-pending-source-buffer nil)))
 
 ;; Installed/removed via `elot-mode--{install,uninstall}-xref-globals'.
 
@@ -1042,9 +1088,15 @@ buffer exactly like they are in the *xref* buffer."
   (unless (and curie (stringp curie) (not (string-empty-p curie)))
     (user-error "No CURIE given"))
   ;; ------------------------------------------------------------------
-  ;; 1. Capture current elot-slurp so we can reuse it in Help buffer
+  ;; 1. Capture caller-side label-display state for transfer into the
+  ;;    *ELOT Describe* buffer.  Mirrors the xref path: snapshot
+  ;;    `elot-active-label-sources' and the calling buffer's file so the
+  ;;    Help buffer can use `elot-global-label-display-mode' (DB-backed)
+  ;;    instead of the older buffer-local `elot-slurp' path.
   ;; ------------------------------------------------------------------
-  (let ((elot-slurp-global (when (boundp 'elot-slurp) elot-slurp)))
+  (let* ((caller-sources (and (boundp 'elot-active-label-sources)
+                              (copy-sequence elot-active-label-sources)))
+         (caller-file    buffer-file-name))
     ;; ----------------------------------------------------------------
     ;; 2. Gather xref data
     ;; ----------------------------------------------------------------
@@ -1059,8 +1111,6 @@ buffer exactly like they are in the *xref* buffer."
 	(with-current-buffer buffer
 	  (help-mode)
 	  (setq truncate-lines t)
-	  ;; make elot-slurp visible in this buffer for overlay code
-	  (setq-local elot-slurp elot-slurp-global)
 	  ;; ------------------------------------
 	  ;; 3a. Header & definition
 	  ;; ------------------------------------
@@ -1088,14 +1138,22 @@ buffer exactly like they are in the *xref* buffer."
 	  (princ
 	   "\n----\n`q' to quit, `RET' to visit location.\n")
 	  ;; ------------------------------------
-	  ;; 3c. Bind opt-in toggle key (if customized) and paint label overlays
+	  ;; 3c. Seed DB-backed label sources, bind opt-in toggle key, and
+	  ;;     enable label display via `elot-global-label-display-mode'
+	  ;;     (same path as the *xref* buffer).
 	  ;; ------------------------------------
+	  (let ((sources (copy-sequence caller-sources)))
+	    (when (and caller-file
+		       (not (cl-find-if (lambda (e) (equal (nth 0 e) caller-file))
+					sources)))
+	      (setq sources (append sources (list (list caller-file nil)))))
+	    (setq-local elot-active-label-sources sources))
 	  (let ((key (and (fboundp 'elot--toggle-labels-key)
                           (elot--toggle-labels-key))))
             (when key
               (local-set-key (kbd key) #'elot-toggle-label-display)))
-	  (when (fboundp 'elot-label-display-setup)
-	    (elot-label-display-setup)))))))
+	  (when (fboundp 'elot-global-label-display-mode)
+	    (elot-global-label-display-mode 1)))))))
 
 (defun elot--describe--insert-xref-button (xref indent)
   "Insert XREF as an indented bullet with filename and a clickable link."

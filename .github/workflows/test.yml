@@ -1,0 +1,65 @@
+name: CI
+
+# Minimal Linux-only CI for ELOT (ELPA-SUBMISSION-PLAN.org Milestone 6,
+# option B).  Runs byte-compile, the ERT suite, the load smoke test,
+# and package-lint on every push and pull request.  ROBOT-gated tests
+# skip cleanly on these runners (no Java / ROBOT installed).
+
+on:
+  push:
+    branches: [main, elpa-submission]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Emacs ${{ matrix.emacs_version }} (ubuntu-latest)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        emacs_version: ["30.1"]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Emacs
+        uses: purcell/setup-emacs@master
+        with:
+          version: ${{ matrix.emacs_version }}
+
+      - name: Show Emacs version
+        run: emacs --version
+
+      - name: Byte-compile
+        run: make byte-compile
+
+      - name: Run ERT suite
+        run: make test
+
+      - name: Load smoke test
+        run: make smoke
+
+  lint:
+    name: package-lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Emacs
+        uses: purcell/setup-emacs@master
+        with:
+          version: "30.1"
+
+      - name: Run package-lint
+        run: |
+          emacs --batch \
+            --eval "(require 'package)" \
+            --eval "(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\") t)" \
+            --eval "(package-initialize)" \
+            --eval "(unless (package-installed-p 'package-lint) (package-refresh-contents) (package-install 'package-lint))" \
+            --eval "(setq package-lint-main-file \"elot-package/elot.el\")" \
+            -L elot-package \
+            -f package-lint-batch-and-exit \
+            elot-package/*.el

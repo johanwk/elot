@@ -2413,7 +2413,7 @@ elot-mode.el:649:1: warning: `with-eval-after-load' is for use in configurations
 0 errors, 2 (intentional) warnings.
 - Run the [[#stable-status][stable-status checklist]].
 
-* Known issue - label display broken in =*xref*= buffers
+* DONE Known issue - label display broken in =*xref*= buffers and 
 :PROPERTIES:
 :CUSTOM_ID: known-issue-xref-label-display
 :END:
@@ -2454,13 +2454,86 @@ or the un-deprecation of =elot-slurp-global=) has broken the
   the same pass; double-check no overlay-setup code was
   accidentally removed alongside the keybinding.
 
+** Proposed approach (sketch, for the post-submission fix)
+
+Enable =elot-global-label-display-mode= in the =*xref*= buffer
+rather than trying to revive the older overlay-setup path.  The
+=:before= advice =elot--capture-slurp= already runs in the
+/calling/ buffer just before =xref-find-references= switches
+context, so it has access to that buffer's
+=elot-active-label-sources= and slurp data.  Extend the
+mechanism so:
+
+1. The =:before= advice records the calling buffer (or its
+   list of label sources) into a transient variable, e.g.
+   =elot--xref-pending-label-sources=, in addition to the
+   slurp data it already stages.
+
+2. =elot--xref-label-overlay-setup= (called from
+   =xref-after-update-hook=) consumes that variable: it
+   activates =elot-global-label-display-mode= in the =*xref*=
+   buffer and sets that buffer's =elot-active-label-sources=
+   to include /the calling buffer itself/ (so labels for
+   identifiers defined there resolve), plus any sources the
+   calling buffer had registered.  The transient is then
+   cleared.
+
+3. If labels for the calling buffer are sourced from its own
+   =elot-slurp= (buffer-local), the calling buffer must remain
+   live for label lookup to work in the =*xref*= buffer; this
+   is normally the case but should be documented.
+
+This replaces the current "carry slurp data via
+=elot-slurp-global=" approach with the cleaner
+"carry source-buffer references via =elot-active-label-sources="
+approach, and aligns the =*xref*= buffer with the same
+label-display path used by ordinary ELOT buffers.
+
 ** Disposition
 
-Deferred - to be fixed after Milestone 7 (MELPA submission).
-The MELPA recipe and acceptance check do not exercise this code
-path; users who rely on label display in =*xref*= buffers will
-need to wait for a follow-up release.  Tracked here so it is
-not forgotten.
+Implemented (2026-05-08, ahead of Milestone 7) along the lines
+of the proposed approach above.
+
+*** Implementation
+
+- =elot-mode.org= and =elot-package/elot-mode.el= (in lock-step):
+  - Added two transient module-level vars
+    =elot--xref-pending-active-sources= and
+    =elot--xref-pending-source-buffer=.
+  - Rewrote =elot--capture-slurp= so that, in addition to the
+    legacy =elot-slurp-global= staging, it now snapshots
+    =elot-active-label-sources= and the current buffer into the
+    transients.
+  - Rewrote =elot--xref-label-overlay-setup= to:
+    1. set =elot-active-label-sources= buffer-locally in the
+       =*xref*= buffer to the captured list, augmented with an
+       entry naming the caller's file so identifiers defined in
+       that file are looked up;
+    2. bind the opt-in toggle key (if customized);
+    3. enable =elot-global-label-display-mode= (DB-driven matcher,
+       works in any major mode);
+    4. clear the transients.
+- The legacy =elot-slurp-global= staging path is no longer
+  consulted by either of the user-facing label-display sites:
+  =elot-describe-curie-at-point= was rewritten the same way as
+  the xref path (snapshot =elot-active-label-sources= + the
+  caller's =buffer-file-name= in the calling buffer; in the
+  =*ELOT Describe*= buffer, set =elot-active-label-sources=
+  buffer-locally with the caller's file appended, then enable
+  =elot-global-label-display-mode=).  The =elot-slurp-global=
+  variable itself remains defined for now (its full removal is
+  deferred per Step 5.5's CANCELLED disposition).
+
+*** Acceptance
+
+- =M-?= (=xref-find-references=) in an ELOT buffer now opens
+  =*xref*= with label display active.
+- The opt-in toggle key (if =elot-toggle-labels-key= is set)
+  toggles labels in the =*xref*= buffer.
+- =elot--xref-pending-active-sources= /
+  =elot--xref-pending-source-buffer= are nil after each xref
+  invocation (cleared by the setup helper).
+
 
 * Milestone 6 - CI workflow for tests and lint
 :PROPERTIES:
@@ -2475,37 +2548,57 @@ The repository currently has only one GitHub Actions workflow
 local CI workflow that runs both, plus the ERT suite, catches
 problems before submission.
 
-** TODO Step 6.1 - Add =.github/workflows/test.yml=
+** Decision (2026-05-08): Option B - minimal Linux-only CI
+
+After discussion, the full multi-version matrix + separate lint
+workflow proposed in the original Steps 6.1 / 6.2 was scaled back
+to a single =.github/workflows/test.yml= covering byte-compile,
+the ERT suite, the load smoke test, and =package-lint=, all on
+Linux with Emacs 30.1 (matching the post-Milestone-5
+=Package-Requires=).  Rationale: sole maintainer, =checkdoc= is
+not gating MELPA, and the main value-add of CI here is
+Linux-vs-Windows coverage plus a public green badge.
+
+** DONE Step 6.1 - Add =.github/workflows/test.yml= (option B)
 - *File*: =.github/workflows/test.yml= (new).
-- Trigger on =push= to =main= and on =pull_request=.
-- Matrix on Emacs versions: =29.1=, =29.4=, =30.1= (snapshot if
-  available), Linux only.
-- Steps:
-  1. =purcell/setup-emacs= action.
-  2. =actions/checkout= action.
-  3. =make -C test=.
-  4. Byte-compile =elot-package/*.el= with =-Werror=.
+- Triggers on =push= to =main= and =elpa-submission=, and on
+  =pull_request= against =main=.
+- Single OS: =ubuntu-latest=.  Single Emacs version: =30.1=
+  (matrix retained as a 1-element list so adding 30.2/snapshot
+  later is a one-line edit).
+- =test= job steps:
+  1. =actions/checkout@v4=.
+  2. =purcell/setup-emacs@master= with =30.1=.
+  3. =emacs --version= (diagnostic).
+  4. =make byte-compile=.
+  5. =make test=.
+  6. =make smoke=.
+- =lint= job steps:
+  1. =actions/checkout@v4=.
+  2. =purcell/setup-emacs@master= with =30.1=.
+  3. Install =package-lint= from MELPA and run it against
+     =elot-package/*.el= with =package-lint-main-file= set to
+     =elot-package/elot.el=.
+- ROBOT-gated tests skip cleanly on these runners (no Java /
+  ROBOT installed by default; the SPARQL round-trip fixture is
+  already gated on =elot-robot-available-p=).
 
-** TODO Step 6.2 - Add =.github/workflows/lint.yml=
-- *File*: =.github/workflows/lint.yml= (new).
-- Same trigger conditions.
-- Run =package-lint= against =elot-package/elot.el= as the
-  MAIN FILE (=package-lint= follows =require= s and lints the
-  whole package transitively from the main file).
-- Run =checkdoc-file= against every =elot-package/*.el=.
-- Both jobs must be /required status checks/ (configure once
-  the workflow is green).
+** Steps 6.2, 6.3 - Folded into 6.1
+- Step 6.2 (separate =lint.yml=) is no longer needed; the
+  =lint= job lives alongside =test= in the same workflow.
+- Step 6.3 (ROBOT-gated skip verification) is already true of
+  the existing test harness; no separate action required.
 
-** TODO Step 6.3 - Mark ROBOT-gated tests skipped on CI
-- Confirm that tests requiring ROBOT call =skip-unless= or the
-  equivalent so they pass-skip on Linux runners without ROBOT.
-- The =test/Makefile= comments suggest this is already in place
-  for some tests; verify all relevant ones - including any new
-  SPARQL tests added in Milestone 1.
+** Superseded: ROBOT-gated tests skipped on CI
+- Confirmed: the SPARQL round-trip fixture (=test/elot-sparql-roundtrip-test.el=)
+  is gated on =elot-robot-available-p=, and the source-ingestion
+  Tier 1 tests under =elot-sources-test.el= follow the same
+  pattern.  They skip cleanly when ROBOT is absent, as on GitHub
+  runners.  No additional changes needed.
 
 ** Acceptance check
-- =git push= triggers both workflows and they go green on the
-  feature branch.
+- =git push= triggers the workflow; both =test= and =lint=
+  jobs go green on the =elpa-submission= branch.
 - Run the [[#stable-status][stable-status checklist]] locally.
 
 * Milestone 7 - MELPA recipe and submission
