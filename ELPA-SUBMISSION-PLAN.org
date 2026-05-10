@@ -2535,7 +2535,8 @@ of the proposed approach above.
   invocation (cleared by the setup helper).
 
 
-* Milestone 6 - CI workflow for tests and lint
+* DONE Milestone 6 - CI workflow for tests and lint
+CLOSED: [2026-05-10]
 :PROPERTIES:
 :CUSTOM_ID: milestone-6-ci
 :END:
@@ -2596,10 +2597,54 @@ Linux-vs-Windows coverage plus a public green badge.
   pattern.  They skip cleanly when ROBOT is absent, as on GitHub
   runners.  No additional changes needed.
 
-** Acceptance check
-- =git push= triggers the workflow; both =test= and =lint=
-  jobs go green on the =elpa-submission= branch.
-- Run the [[#stable-status][stable-status checklist]] locally.
+** DONE Acceptance check
+CLOSED: [2026-05-10]
+- =git push= triggered the workflow on =elpa-submission=; both
+  =test= and =lint= jobs went green after two rounds of
+  CI-specific fixes:
+  1. =test.yml='s =lint= step now extracts only real
+     =file.el:LINE:COL:= findings before stripping the two
+     documented =with-eval-after-load= warnings, so
+     package-install chatter no longer trips the failure check.
+  2. =test/elot-sparql-advice-test.el= guards the three
+     lifecycle tests with =skip-unless (fboundp
+     'org-babel-execute:sparql)= so they skip cleanly on
+     runners without =ob-sparql= installed.  The
+     =not-installed-at-load= test remains unconditional.
+- Local =make stable-check= remains the day-to-day gate.
+
+** Note - local pass vs. CI pass
+
+As a rule of thumb: if =make clean && make stable-check= passes
+on a fresh shell with no =~/.emacs.d= interference, and the
+test does not touch SPARQL / ROBOT / network / TTY, CI will
+almost certainly agree.  Known classes of "passes locally,
+fails in CI" to watch for:
+
+1. *Optional dependencies.*  Your local Emacs has
+   =sparql-mode=, =ob-sparql=, =htmlize=, =omn-mode= installed;
+   CI does not.  Guard tests that need them with
+   =skip-unless= on =fboundp= (or feature presence).
+2. *External tools.*  ROBOT, PlantUML, Java are absent from
+   the runner.  ROBOT-gated tests already use
+   =elot-robot-available-p=; follow the same pattern for any
+   new tool dependency.
+3. *OS / path differences.*  Local is Windows/MSYS2; CI is
+   Linux.  Path separators, CRLF vs LF (=.gitattributes=),
+   case-sensitivity, =call-process= quoting, file encodings.
+   The SPARQL UTF-8 hardening in Milestone 1 Step 1.4 was
+   exactly this class of bug.
+4. *Stale =.elc= / cached state.*  Local Emacs may have stale
+   byte-compiled files or =~/.emacs.d/elpa= packages that mask
+   a missing =require=.  CI starts clean every run.
+   =make clean && make stable-check= locally before pushing
+   catches most of these.
+5. *Network / time / TTY.*  CI has no TTY; =read-string= /
+   =y-or-n-p= behave differently or hang (we hit this with
+   the F5 prompt in Step 5.7).  Network calls can flake.
+6. *Emacs version drift.*  Local Emacs may be ahead of the
+   CI-pinned 30.1.  New features used in code will fail CI
+   until the pin is bumped.
 
 * Milestone 7 - MELPA recipe and submission
 :PROPERTIES:
