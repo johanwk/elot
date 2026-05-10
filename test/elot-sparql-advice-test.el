@@ -126,6 +126,11 @@ Emacs, `(advice-member-p ...)' on `org-babel-execute:sparql' is
 nil; after `M-x elot-mode' in an ELOT-looking Org buffer it is
 non-nil; after disabling `elot-mode' in the last remaining ELOT
 buffer it is nil again."
+  ;; `advice-member-p' returns nil when the target function is
+  ;; unbound, so this test is only meaningful when `ob-sparql' (or
+  ;; another provider of `org-babel-execute:sparql') is available.
+  ;; CI runners don't install ELPA's `ob-sparql'; skip there.
+  (skip-unless (fboundp 'org-babel-execute:sparql))
   (elot-spadv-test--with-clean-state
     ;; Pre-condition: advice not installed.
     (should-not (elot-spadv-test--advice-present-p))
@@ -152,6 +157,7 @@ buffer it is nil again."
 Disabling `elot-mode' in the first buffer must NOT remove the
 advice while a second ELOT buffer is still alive; only the
 second toggle-off (the last ELOT buffer) takes the advice down."
+  (skip-unless (fboundp 'org-babel-execute:sparql))
   (elot-spadv-test--with-clean-state
     (elot-spadv-test--with-elot-buffer buf-a
       (elot-mode 1)
@@ -181,6 +187,7 @@ Defence-in-depth: the advice is `:around'; double-adding it would
 chain it twice and the body would run twice per query.  The
 install helper guards against this with
 `elot--sparql-advice-installed-p'."
+  (skip-unless (fboundp 'org-babel-execute:sparql))
   (elot-spadv-test--with-clean-state
     (elot-mode--install-sparql-advice)
     (elot-mode--install-sparql-advice)

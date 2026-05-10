@@ -75,10 +75,15 @@ jobs:
           echo "=== package-lint output ==="
           cat lint.out
           echo "=== end output ==="
-          # Strip the two intentional warnings and the "Entering directory" line.
-          remaining=$(grep -vE \
-            "with-eval-after-load' is for use in configurations|Entering directory" \
-            lint.out || true)
+          # Keep only actual lint findings ("file.el:LINE:COL: ...").
+          # This drops package-install / network chatter that
+          # package-lint-batch-and-exit prints around the real findings.
+          findings=$(grep -E '^[^ ]+\.el:[0-9]+:[0-9]+:' lint.out || true)
+          # Strip the two intentional `with-eval-after-load' warnings
+          # documented at the source (Milestone 5 Step 5.6).
+          remaining=$(echo "$findings" \
+            | grep -vE "with-eval-after-load' is for use in configurations" \
+            || true)
           if [ -n "$remaining" ]; then
             echo "=== unexpected lint findings ==="
             echo "$remaining"
