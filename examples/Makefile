@@ -13,6 +13,17 @@
 #   EMACS              — Emacs binary
 #   ELOT_PACKAGE_DIR   — path to the elot-package/ elisp directory
 
+# -- Require GNU Make >= 4.0
+# macOS ships GNU Make 3.81, which has parser bugs with braces inside
+# $(shell ...) calls (e.g. awk's '{print $$1}'). Install a newer one:
+#   brew install make    # then use `gmake` instead of `make`
+_make_version_major := $(word 1,$(subst ., ,$(MAKE_VERSION)))
+ifeq ($(filter-out 0 1 2 3,$(_make_version_major)),)
+  $(error GNU Make $(MAKE_VERSION) is too old; this Makefile requires GNU Make >= 4.0. \
+On macOS run: `brew install make` and use `gmake` instead of `make`.)
+endif
+
+
 SHELL := /bin/bash
 .DELETE_ON_ERROR:
 
