@@ -325,9 +325,18 @@ Need to investigate how to query files for JSON /select/ results.
               (concat (org-babel-temp-directory) "/"
                       (file-name-base abs-input)
                       ".sparql"))
+             ;; Result file MUST be a temp file, never derived from
+             ;; the input path: with `:format ttl' on `foo.omn' the
+             ;; old derivation produced `foo.ttl', which is exactly
+             ;; the auto-tangled TTL sibling, and ROBOT would
+             ;; clobber it with the query result.  See
+             ;; ELOT-GPTEL-PLAN.org "Decisions Log".
              (result-file
-              (concat (file-name-sans-extension abs-input)
-                      "." (symbol-name format)))
+              (make-temp-file
+               (concat (file-name-as-directory (org-babel-temp-directory))
+                       (file-name-base abs-input) "-result-")
+               nil
+               (concat "." (symbol-name format))))
              (stderr-file (make-temp-file "elot-robot-stderr-"))
              (exit-code nil))
         (with-temp-file query-file
@@ -356,7 +365,9 @@ Need to investigate how to query files for JSON /select/ results.
                            (concat ":\n" stderr)))))
               (insert-file-contents result-file))
           (when (file-exists-p stderr-file)
-            (ignore-errors (delete-file stderr-file)))))))
+            (ignore-errors (delete-file stderr-file)))
+          (when (file-exists-p result-file)
+            (ignore-errors (delete-file result-file)))))))
 #+end_src
 
 Elisp /advice/ around =org-babel-execute:sparql= enables sparql queries,

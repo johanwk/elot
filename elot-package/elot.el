@@ -219,9 +219,17 @@ non-zero.  Query and result I/O are forced to UTF-8 end-to-end."
             (concat (org-babel-temp-directory) "/"
                     (file-name-base abs-input)
                     ".sparql"))
+           ;; Result file MUST be a temp file, never derived from
+           ;; the input path: with `:format ttl' on `foo.omn' the
+           ;; old derivation produced `foo.ttl', which is exactly
+           ;; the auto-tangled TTL sibling, and ROBOT would
+           ;; clobber it with the query result.
            (result-file
-            (concat (file-name-sans-extension abs-input)
-                    "." (symbol-name format)))
+            (make-temp-file
+             (concat (file-name-as-directory (org-babel-temp-directory))
+                     (file-name-base abs-input) "-result-")
+             nil
+             (concat "." (symbol-name format))))
            (stderr-file (make-temp-file "elot-robot-stderr-"))
            (exit-code nil))
       (with-temp-file query-file
@@ -250,7 +258,9 @@ non-zero.  Query and result I/O are forced to UTF-8 end-to-end."
                          (concat ":\n" stderr)))))
             (insert-file-contents result-file))
         (when (file-exists-p stderr-file)
-          (ignore-errors (delete-file stderr-file)))))))
+          (ignore-errors (delete-file stderr-file)))
+        (when (file-exists-p result-file)
+          (ignore-errors (delete-file result-file)))))))
 ;; src-robot-query ends here
 
 ;; [[file:../elot-defs.org::src-sparql-merge-prefixes][src-sparql-merge-prefixes]]
