@@ -146,6 +146,23 @@ function main() {
     passed++;
   }
 
+  // ── OWL 2 built-in annotation properties — known, should pass ─
+  {
+    const root = makeOntologyTree([
+      makeEntity("pizza:Apple", [
+        { tag: "owl:versionInfo", value: "1.0" },
+        { tag: "owl:deprecated", value: "true" },
+        { tag: "owl:priorVersion", value: "<http://example.org/v0>" },
+        { tag: "owl:backwardCompatibleWith", value: "<http://example.org/v0>" },
+        { tag: "owl:incompatibleWith", value: "<http://example.org/v0>" },
+      ]),
+    ]);
+    const diags = checkDescriptionListCuries(root);
+    assertCount(diags, 0, "owl 2 built-in annotation properties");
+    console.log("  owl:versionInfo + 4 other OWL 2 built-ins: OK");
+    passed++;
+  }
+
   // ── skos:definition declared as AnnotationProperty in slurp ───
   {
     const root = makeOntologyTree([

@@ -17,16 +17,31 @@ import type { SlurpEntry } from "./buildSlurp.js";
  * Known annotation properties and structural predicates that are always
  * allowed in description lists without being declared in the ontology.
  *
- * Mirrors `elot-known-annotation-properties` from elot-lint.el, plus
- * `rdf:type` which is auto-injected by the parser (parseOrgWasm.ts
- * infers it from the governing section's :ID: suffix and inserts a
- * synthetic `rdf:type` description item).
+ * Mirrors `elot-known-annotation-properties` from elot-lint.el. Includes:
+ *
+ * - the four RDFS built-in annotation properties (`rdfs:label`,
+ *   `rdfs:comment`, `rdfs:seeAlso`, `rdfs:isDefinedBy`);
+ * - the five OWL 2 built-in annotation properties pre-declared by the
+ *   spec (https://www.w3.org/TR/owl2-syntax/#Annotation_Properties):
+ *   `owl:versionInfo`, `owl:deprecated`, `owl:priorVersion`,
+ *   `owl:backwardCompatibleWith`, `owl:incompatibleWith`;
+ * - `rdf:type`, auto-injected by the parser (parseOrgWasm.ts infers
+ *   it from the governing section's :ID: suffix and inserts a
+ *   synthetic `rdf:type` description item).
+ *
+ * Keep in sync with `elot-known-annotation-properties` in
+ * elot-package/elot-lint.el.
  */
 const KNOWN_ANNOTATION_PROPERTIES = new Set([
   "rdfs:label",
   "rdfs:comment",
   "rdfs:seeAlso",
   "rdfs:isDefinedBy",
+  "owl:versionInfo",
+  "owl:deprecated",
+  "owl:priorVersion",
+  "owl:backwardCompatibleWith",
+  "owl:incompatibleWith",
   "rdf:type",
 ]);
 
