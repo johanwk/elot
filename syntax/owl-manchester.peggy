@@ -14,8 +14,16 @@ PrimaryExpression
   = "not" WS PrimaryExpression
   / AtomicExpression
 
+// DatatypeRestriction is tried before ClassIRI so faceted datatypes like
+// xsd:integer[< 2] -- which appear as fillers of data-property restrictions
+// (e.g. ex:hasAge some xsd:integer[< 2]) -- parse correctly.  Both rules
+// start by consuming an IRI; DatatypeRestriction additionally requires "[",
+// so PEG ordered choice falls back to ClassIRI when no bracket follows.
+// Object property restrictions are unaffected (they end on a keyword, not
+// a bracket).
 AtomicExpression
   = Restriction
+  / DatatypeRestriction
   / ClassIRI
   / "Thing"
   / "Nothing"

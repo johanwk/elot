@@ -76,34 +76,47 @@ ontology-level analysis, which is out of scope here.
 
 | File                    | Description                                              |
 |-------------------------|----------------------------------------------------------|
-| `owl-manchester.peggy`  | Reference grammar in [Peggy](https://peggyjs.org/) format |
-| `elot-owl-grammar.el`   | Hand-maintained [peg.el](https://www.gnu.org/software/emacs/manual/html_node/elisp/PEG.html) grammar (the executable one) |
-| `peggy-to-peg.el`       | Converter from Peggy → peg.el (handles a useful subset)  |
+| `owl-manchester.peggy`  | **Single source of truth** grammar in [Peggy](https://peggyjs.org/) format |
+| `elot-owl-grammar.el`   | Generated [peg.el](https://www.gnu.org/software/emacs/manual/html_node/elisp/PEG.html) grammar (do not edit by hand) |
+| `peggy-to-peg.el`       | Converter from Peggy → peg.el                            |
 | `test-grammar.el`       | Batch-mode test script                                   |
+| `test-cases.json`       | Positive/negative test cases shared with the TS port     |
+| `Makefile`              | `make grammar` regenerates the `.el`; `make install` copies it into `elot-package/`; `make test` runs the suite |
 | `README.md`             | This file                                                |
 
 ### Relationship between `.peggy` and `.el` grammars
 
-The `owl-manchester.peggy` file serves as a **reference specification** in a
-widely-used PEG notation.  The `elot-owl-grammar.el` file is the **executable
-grammar** used by Emacs' `peg.el` library.
+The `owl-manchester.peggy` file is the **single source of truth**.  The
+`elot-owl-grammar.el` file is **machine-generated** from it by
+`peggy-to-peg.el` and is the executable grammar used by Emacs' `peg.el`
+library.
 
-The Peggy→peg.el converter (`peggy-to-peg.el`) can translate most of the
-grammar automatically, but a few constructs are hand-maintained:
+**Workflow:** edit `owl-manchester.peggy` (and `test-cases.json` for new
+tests) only.  Never hand-edit `elot-owl-grammar.el` -- changes will be lost
+the next time the grammar is regenerated.
 
-- **BareName keyword exclusion** — `!KeywordToken` negative lookahead is
-  manually translated into `(not keyword-boundary)` with an explicit keyword
-  list in the `.el` file.
-- **`"o"` token boundary** in SubPropertyChain — uses `(not name-char)`
-  lookahead to avoid matching `"o"` as a prefix of longer identifiers.
-- **Facet keywords** (`length`, `minLength`, etc.) — added to the keyword
-  boundary list to prevent them from being parsed as bare-name IRIs.
+```sh
+cd syntax
+make grammar    # regenerate elot-owl-grammar.el from owl-manchester.peggy
+make install    # also copy the regenerated grammar into elot-package/
+make test       # run test-cases.json against the regenerated grammar
+```
+
+The converter handles every construct currently used in the grammar:
+sequences, ordered choice, postfix `*`/`+`/`?`, character classes, string
+literals, negative lookahead (`!E` → `(not ...)`), and named rule references.
+Keyword boundary handling (`!KeywordBoundary`, `!NameChar`) and the facet
+keyword list are all expressed in the `.peggy` and translated automatically.
 
 ## Running the tests
 
 ```sh
-cd syntax && emacs --batch -l test-grammar.el
+cd syntax && make test
 ```
+
+(or directly: `emacs --batch -l test-grammar.el`).  The test runner reads
+`test-cases.json` so the same case list can be reused by the planned
+TypeScript port.
 
 This runs all positive and negative test cases for:
 - Class expressions (51 tests)
@@ -167,7 +180,7 @@ The mapping from keyword to parser entry point is defined by
 A TypeScript implementation of the same grammar will be added later, for use
 with the [`tools/elot-cli/`](../tools/elot-cli/) VS Code extension / CLI tool.
 The `owl-manchester.peggy` file is written in
-[Peggy](https://peggyjs.org/) format specifically to facilitate this — Peggy is
-a JavaScript/TypeScript PEG parser generator, so the `.peggy` file can be used
-directly (with minor adaptations for the keyword boundary handling) to generate
-a TypeScript parser.
+[Peggy](https://peggyjs.org/) format specifically to facilitate this -- Peggy
+is a JavaScript/TypeScript PEG parser generator, so the `.peggy` file can be
+used directly to generate a TypeScript parser, and `test-cases.json` can be
+driven from the same source.

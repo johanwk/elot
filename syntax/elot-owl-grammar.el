@@ -15,7 +15,7 @@
   (or-expression () (and and-expression (* (and ws "or" ws and-expression))))
   (and-expression () (and primary-expression (* (and ws "and" ws primary-expression))))
   (primary-expression () (or (and "not" ws primary-expression) atomic-expression))
-  (atomic-expression () (or restriction class-iri "Thing" "Nothing" (and "{" ows individual-list ows "}") (and "(" ows class-expression ows ")")))
+  (atomic-expression () (or restriction datatype-restriction class-iri "Thing" "Nothing" (and "{" ows individual-list ows "}") (and "(" ows class-expression ows ")")))
   (sub-property-chain () (and object-property-expression (+ (and ws "o" (not name-char) ws object-property-expression))))
   (restriction () (or (and object-property-expression ws "some" ws primary-expression) (and object-property-expression ws "only" ws primary-expression) (and object-property-expression ws "value" ws literal) (and object-property-expression ws "value" ws individual-iri) (and object-property-expression ws "min" ws integer (opt (and ws primary-expression))) (and object-property-expression ws "max" ws integer (opt (and ws primary-expression))) (and object-property-expression ws "exactly" ws integer (opt (and ws primary-expression))) (and object-property-expression ws "Self")))
   (object-property-expression () (or (and "inverse" ws "(" ows object-property-iri ows ")") (and "inverse" ws object-property-iri) object-property-iri))

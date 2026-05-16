@@ -104,7 +104,21 @@
         ["QR: value with naked float (exponent)",
          "ex:hasWeight value 1.5e10"],
         ["QR: value with naked float (f suffix)",
-         "ex:hasWeight value 1.5f"]
+         "ex:hasWeight value 1.5f"],
+        ["Faceted datatype filler in some-restriction (<)",
+         "ex:hasAge some xsd:integer[< 2]"],
+        ["Faceted datatype filler in some-restriction (>= with typed literal)",
+         "ex:hasWeight some xsd:decimal[>= \"0.0\"^^xsd:decimal]"],
+        ["Faceted datatype filler in only-restriction (two facets)",
+         "ex:hasAge only xsd:integer[>= \"0\"^^xsd:integer , <= \"120\"^^xsd:integer]"],
+        ["Faceted datatype filler in min-restriction",
+         "ex:hasScore min 1 xsd:integer[>= \"0\"^^xsd:integer]"],
+        ["Faceted datatype filler with pattern facet",
+         "ex:hasCode some xsd:string[pattern \"[A-Z]+\"]"],
+        ["Faceted datatype filler in conjunction",
+         "ex:Person and ex:hasAge some xsd:integer[< 2]"],
+        ["Plain datatype filler in some-restriction (no facets)",
+         "ex:hasAge some xsd:integer"]
       ],
       "negative": [
         ["Reject: empty string", ""],
