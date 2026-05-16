@@ -329,8 +329,7 @@ Need to investigate how to query files for JSON /select/ results.
              ;; the input path: with `:format ttl' on `foo.omn' the
              ;; old derivation produced `foo.ttl', which is exactly
              ;; the auto-tangled TTL sibling, and ROBOT would
-             ;; clobber it with the query result.  See
-             ;; ELOT-GPTEL-PLAN.org "Decisions Log".
+             ;; clobber it with the query result.
              (result-file
               (make-temp-file
                (concat (file-name-as-directory (org-babel-temp-directory))
