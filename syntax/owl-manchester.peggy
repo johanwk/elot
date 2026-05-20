@@ -96,7 +96,16 @@ Facet
 // dataPropertyFact   ::= dataPropertyIRI literal
 // Since objectPropertyIRI and dataPropertyIRI are syntactically identical,
 // we merge: try Literal first (data property fact), then Individual (object property fact).
+//
+// In Elot Org files, a single `Facts ::' description-list row may carry
+// MULTIPLE comma-separated assertions, mirroring how `SubClassOf', `Types',
+// etc. accept comma-separated class-expression lists.  The Fact entry-point
+// therefore parses one-or-more SingleFact items separated by commas; pure
+// single-fact uses still parse unchanged.
 Fact
+  = SingleFact (OWS "," OWS SingleFact)*
+
+SingleFact
   = "not" WS ObjectPropertyIRI WS (Literal / Individual)
   / ObjectPropertyIRI WS (Literal / Individual)
 

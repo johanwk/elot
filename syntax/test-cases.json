@@ -224,7 +224,13 @@
         ["Fact: data property with naked negative integer",
          "ex:hasTemp -10"],
         ["Fact: data property with naked decimal",
-         "ex:acidity_pH 2.5"]
+         "ex:acidity_pH 2.5"],
+        ["Fact: two object-property assertions, comma-separated",
+         "lis:containedBy asset:X_deffo028442VC9, lis:arrangedPartOf asset:X_deffo0286EJPCJ"],
+        ["Fact: three assertions mixing properties",
+         "ex:hasPart ex:a, ex:hasPart ex:b, ex:hasAge 33"],
+        ["Fact: comma-separated with negation",
+         "not ex:hasChild ex:Susan, ex:hasChild ex:John"]
       ],
       "negative": [
         ["Reject fact: empty string", ""],

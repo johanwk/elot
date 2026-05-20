@@ -1,4 +1,4 @@
-# syntax/ — OWL Manchester Syntax Checker
+# syntax/ -- OWL Manchester Syntax Checker
 
 This directory implements a **syntax checker** for
 [OWL Manchester Syntax](https://www.w3.org/TR/owl2-manchester-syntax/) (OMN)
@@ -54,7 +54,7 @@ of the W3C specification:
 OWL distinguishes between *object property* restrictions (with class-expression
 fillers) and *data property* restrictions (with data-range fillers).  However,
 since `objectPropertyIRI` and `dataPropertyIRI` are **syntactically identical**
-— both are just IRIs — they cannot be distinguished by a parser without access
+-- both are just IRIs -- they cannot be distinguished by a parser without access
 to the ontology declarations.
 
 Our grammar therefore **merges** both into a single set of restriction
@@ -78,7 +78,7 @@ ontology-level analysis, which is out of scope here.
 |-------------------------|----------------------------------------------------------|
 | `owl-manchester.peggy`  | **Single source of truth** grammar in [Peggy](https://peggyjs.org/) format |
 | `elot-owl-grammar.el`   | Generated [peg.el](https://www.gnu.org/software/emacs/manual/html_node/elisp/PEG.html) grammar (do not edit by hand) |
-| `peggy-to-peg.el`       | Converter from Peggy → peg.el                            |
+| `peggy-to-peg.el`       | Converter from Peggy -> peg.el                            |
 | `test-grammar.el`       | Batch-mode test script                                   |
 | `test-cases.json`       | Positive/negative test cases shared with the TS port     |
 | `Makefile`              | `make grammar` regenerates the `.el`; `make install` copies it into `elot-package/`; `make test` runs the suite |
@@ -104,7 +104,7 @@ make test       # run test-cases.json against the regenerated grammar
 
 The converter handles every construct currently used in the grammar:
 sequences, ordered choice, postfix `*`/`+`/`?`, character classes, string
-literals, negative lookahead (`!E` → `(not ...)`), and named rule references.
+literals, negative lookahead (`!E` -> `(not ...)`), and named rule references.
 Keyword boundary handling (`!KeywordBoundary`, `!NameChar`) and the facet
 keyword list are all expressed in the `.peggy` and translated automatically.
 
@@ -133,16 +133,16 @@ The grammar provides three main entry-point functions (defined in
 `test-grammar.el` and intended for integration into `elot-mode`):
 
 ```elisp
-(elot-parse-class-expression "ex:A and ex:B")          ;; → t
-(elot-parse-class-expression-list "ex:A , ex:B and ex:C") ;; → t
-(elot-parse-property-expression "inverse ex:partOf")    ;; → t
-(elot-parse-property-expression-list "hasSpouse , loves") ;; → t
-(elot-parse-sub-property-chain "ex:p1 o ex:p2")         ;; → t
-(elot-parse-data-range "xsd:integer [>= \"0\"^^xsd:integer]") ;; → t
-(elot-parse-fact "hasWife Mary")                        ;; → t
-(elot-parse-fact "not hasChild Susan")                  ;; → t
-(elot-parse-fact "hasAge \"33\"^^xsd:integer")           ;; → t
-(elot-parse-individual-iri-list "ex:John , ex:Mary")    ;; → t
+(elot-parse-class-expression "ex:A and ex:B")          ;; -> t
+(elot-parse-class-expression-list "ex:A , ex:B and ex:C") ;; -> t
+(elot-parse-property-expression "inverse ex:partOf")    ;; -> t
+(elot-parse-property-expression-list "hasSpouse , loves") ;; -> t
+(elot-parse-sub-property-chain "ex:p1 o ex:p2")         ;; -> t
+(elot-parse-data-range "xsd:integer [>= \"0\"^^xsd:integer]") ;; -> t
+(elot-parse-fact "hasWife Mary")                        ;; -> t
+(elot-parse-fact "not hasChild Susan")                  ;; -> t
+(elot-parse-fact "hasAge \"33\"^^xsd:integer")           ;; -> t
+(elot-parse-individual-iri-list "ex:John , ex:Mary")    ;; -> t
 ```
 
 Each function returns `t` if the input is a valid OMN expression, `nil`
@@ -151,7 +151,7 @@ otherwise.
 ## Integration with `elot-lint`
 
 The grammar is used by `elot-lint.el` to validate axiom values as you
-edit.  When you run `M-x elot-org-lint` (or use the ELOT menu →
+edit.  When you run `M-x elot-org-lint` (or use the ELOT menu ->
 "Check for common problems"), description list entries whose tags are
 OMN keywords are automatically parsed against the grammar and flagged
 if invalid.
