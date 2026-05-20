@@ -424,8 +424,13 @@ and not annotation properties, and that parentheses are balanced."
                                   (seq-remove (lambda (child)
                                                 (eq (org-element-type child) 'plain-list))
                                               (org-element-contents item)))))
-                  ;; Only apply check if term is a Manchester keyword
-                  (when (member term elot-omn-all-keywords)
+                  ;; Only apply check if term is a Manchester keyword.
+                  ;; Exclude `Import': the identifier of an imported
+                  ;; ontology is by nature external and won't appear in
+                  ;; the local signature, so a "known CURIE" check is
+                  ;; never appropriate there.
+                  (when (and (member term elot-omn-all-keywords)
+                             (not (string= term "Import")))
                     ;; Check CURIEs
                     (let ((curies (seq-filter (lambda (word)
                                                 (and (string-match "\\`[-_./[:alnum:]]*:[-_/.[:alnum:]]*\\'" word)
