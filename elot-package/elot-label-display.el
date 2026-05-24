@@ -335,8 +335,8 @@ Output to OUT-FILE as an elisp list."
 ;; Shared annotation formatter (Item A.3)
 (defun elot-label-lookup--format-annotation (label prefix rdf-type definition)
   "Return a padded annotation string for completion display.
-LABEL is the completion candidate; PREFIX, RDF-TYPE, and DEFINITION
-are the annotation fields.  All arguments are strings (possibly empty)."
+  LABEL is the completion candidate; PREFIX, RDF-TYPE, and DEFINITION
+  are the annotation fields.  All arguments are strings (possibly empty)."
   (concat
    ;; pad annotations to col 35
    (make-string (max (- 35 (length label)) 0) 32)
@@ -348,9 +348,9 @@ are the annotation fields.  All arguments are strings (possibly empty)."
    (or definition "")))
 
 (defun elot-label-lookup-annotations (label)
-  "Annotation function for `elot-label-lookup' 
-using `elot-label-lookup-tmp-attriblist-ht'.
-Provides a preview string for LABEL during completing-read."
+  "Provide a preview string for LABEL during `completing-read'.
+This is the annotation function for `elot-label-lookup'; values are
+looked up in `elot-label-lookup-tmp-attriblist-ht'."
   (let* ((attrib-plist (gethash label elot-label-lookup-tmp-attriblist-ht))
          (rdf-type   (plist-get attrib-plist "rdf:type" 'string=))
          (prefix     (car (split-string (or (plist-get attrib-plist "puri" 'string=) "") ":")))
@@ -367,7 +367,7 @@ Provides a preview string for LABEL during completing-read."
 
 (defun elot-label-lookup--collect-attriblist ()
   "Return (COLLECTION . ANNOTATOR) for the buffer-local slurp path.
-Returns nil when the slurp hash is not populated."
+  Returns nil when the slurp hash is not populated."
   (when (and (bound-and-true-p elot-attriblist-ht)
              (hash-table-p elot-attriblist-ht)
              (> (hash-table-count elot-attriblist-ht) 0))
@@ -410,9 +410,9 @@ Returns nil when the slurp hash is not populated."
 
 (defun elot-label-lookup--lang-suffix-for-id (label id)
   "Return \"@LANG\" when ID has multiple `rdfs:label' language variants.
-Returns the empty string when ID has at most one variant, or when
-the winning variant carries no language tag, or when LABEL does
-not match the winning variant's VALUE.  Step 1.16.8 cosmetic."
+  Returns the empty string when ID has at most one variant, or when
+  the winning variant carries no language tag, or when LABEL does
+  not match the winning variant's VALUE.  Step 1.16.8 cosmetic."
   (when (and (fboundp 'elot-db-label-variants)
              (fboundp 'elot-db--select-by-language))
     (let ((variants (elot-db-label-variants id)))
@@ -426,9 +426,9 @@ not match the winning variant's VALUE.  Step 1.16.8 cosmetic."
             ""))))))
 
 (defun elot-label-lookup--db-annotations (label)
-  "Annotation function for `elot-label-lookup--from-db' (stage 1).
+  "Annotation function for `elot-label-lookup--from-db' (stage 1) for LABEL.
 Values in `elot-label-lookup-tmp-attriblist-ht' are plists
-(:ids IDS :count N).  Singletons get full attribute annotations;
+\(:ids IDS :count N).  Singletons get full attribute annotations;
 groups show `N matches'.  Step 1.16.8: singletons whose id has
 multiple `rdfs:label' language variants get an `@LANG' marker."
   (let* ((entry (gethash label elot-label-lookup-tmp-attriblist-ht))
@@ -474,7 +474,7 @@ multiple `rdfs:label' language variants get an `@LANG' marker."
   "Temporary DISPLAY -> id hash used by the stage-2 annotator.")
 
 (defun elot-label-lookup--stage2-annotations (display)
-  "Annotation function for stage-2 id picker."
+  "Annotation function for the stage-2 id picker; annotate DISPLAY."
   (let* ((id (gethash display elot-label-lookup--tmp-stage2-ht))
          (attrs (and id
                      (fboundp 'elot-db-get-all-attrs)
@@ -513,7 +513,7 @@ multiple `rdfs:label' language variants get an `@LANG' marker."
 
 (defun elot-label-lookup--collect-db ()
   "Return (COLLECTION . ANNOTATOR) for the DB path, or nil when empty.
-COLLECTION values are plists (:ids :count)."
+  COLLECTION values are plists (:ids :count)."
   (when (and (bound-and-true-p elot-active-label-sources)
              (fboundp 'elot-db-all-active-labels))
     (let ((raw (elot-db-all-active-labels elot-active-label-sources)))
@@ -530,7 +530,7 @@ COLLECTION values are plists (:ids :count)."
 
 (defun elot-label-lookup--from-db (&optional flat)
   "Run interactive label lookup backed by the ELOT DB active sources.
-Two-stage flow; FLAT non-nil forces flat presentation (Step 1.15)."
+  Two-stage flow; FLAT non-nil forces flat presentation (Step 1.15)."
   (let* ((pair (elot-label-lookup--collect-db)))
     (unless pair
       (user-error "No labelled entities in active ELOT DB sources"))
@@ -561,7 +561,8 @@ Two-stage flow; FLAT non-nil forces flat presentation (Step 1.15)."
                 (forward-char 1)))))))))
 
 (defun elot-label-lookup--from-db-flat (ht)
-  "Flat-presentation variant of `elot-label-lookup--from-db'."
+  "Flat-presentation variant of `elot-label-lookup--from-db'.
+HT is the label-to-entry hash table built by the caller."
   (let ((flat-ht (make-hash-table :test 'equal)))
     (maphash
      (lambda (label entry)
@@ -675,7 +676,7 @@ Two-stage flow; FLAT non-nil forces flat presentation (Step 1.15)."
     out))
 
 (defun elot-label-lookup--union-annotations (display)
-  "Annotation function for the union completion collection."
+  "Annotation function for the union completion collection; annotate DISPLAY."
   (let* ((entry (gethash display elot-label-lookup--tmp-union-ht))
          (source (plist-get entry :source))
          (id     (plist-get entry :id))
@@ -755,339 +756,342 @@ FLAT non-nil forces flat presentation on the external path (Step 1.15)."
        "No ELOT labels available: no slurp data and no active DB sources")))))
 
 ;;;###autoload
-(defun elot-label-lookup (&optional arg)
-  "Interactive lookup of resource identifier, with completion.
-
-Candidates selected per `elot-label-lookup-scope' (default `both').
-`\\[universal-argument]' pins the scope to `local'.
+  (defun elot-label-lookup (&optional arg)
+    "Interactive lookup of resource identifier, with completion.
+ARG is the raw prefix argument: a single `\\[universal-argument]'
+pins the scope to `local'; a double
 `\\[universal-argument] \\[universal-argument]' forces flat
-presentation (Step 1.15): multi-id labels are flattened into one
-completing-read with disambiguating suffixes, skipping the
-two-stage picker.  Use `elot-label-lookup-external' to pin scope
+presentation (Step 1.15) where multi-id labels are flattened into
+one `completing-read' with disambiguating suffixes, skipping the
+two-stage picker.
+
+Candidates are otherwise selected per `elot-label-lookup-scope'
+\(default `both').  Use `elot-label-lookup-external' to pin scope
 to external unambiguously."
-  (interactive "P")
-  (let* ((flat (equal arg '(16)))
-         (elot-label-lookup-scope
-          (cond
-           ((equal arg '(4)) 'local)
-           (t                elot-label-lookup-scope))))
-    (pcase elot-label-lookup-scope
-      ('local
-       (if (elot-label-lookup--collect-attriblist)
-           (elot-label-lookup--from-attriblist)
-         (user-error
-          "Scope `local' but no slurp data in this buffer")))
-      ('external
-       (if (elot-label-lookup--collect-db)
-           (elot-label-lookup--from-db flat)
-         (user-error
-          "Scope `external' but no active ELOT DB sources")))
-      (_
-       (elot-label-lookup--from-union flat)))))
+    (interactive "P")
+    (let* ((flat (equal arg '(16)))
+           (elot-label-lookup-scope
+            (cond
+             ((equal arg '(4)) 'local)
+             (t                elot-label-lookup-scope))))
+      (pcase elot-label-lookup-scope
+        ('local
+         (if (elot-label-lookup--collect-attriblist)
+             (elot-label-lookup--from-attriblist)
+           (user-error
+            "Scope `local' but no slurp data in this buffer")))
+        ('external
+         (if (elot-label-lookup--collect-db)
+             (elot-label-lookup--from-db flat)
+           (user-error
+            "Scope `external' but no active ELOT DB sources")))
+        (_
+         (elot-label-lookup--from-union flat)))))
 
-;;;###autoload
-(defun elot-label-lookup-local ()
-  "Run `elot-label-lookup' pinned to scope `local'."
-  (interactive)
-  (let ((elot-label-lookup-scope 'local))
-    (call-interactively #'elot-label-lookup)))
+  ;;;###autoload
+  (defun elot-label-lookup-local ()
+    "Run `elot-label-lookup' pinned to scope `local'."
+    (interactive)
+    (let ((elot-label-lookup-scope 'local))
+      (call-interactively #'elot-label-lookup)))
 
-;;;###autoload
-(defun elot-label-lookup-external ()
-  "Run `elot-label-lookup' pinned to scope `external'."
-  (interactive)
-  (let ((elot-label-lookup-scope 'external))
-    (call-interactively #'elot-label-lookup)))
+  ;;;###autoload
+  (defun elot-label-lookup-external ()
+    "Run `elot-label-lookup' pinned to scope `external'."
+    (interactive)
+    (let ((elot-label-lookup-scope 'external))
+      (call-interactively #'elot-label-lookup)))
 
 ;;;; -------------------------------------------------------------------
-;;;; Step 1.14: Attribute-driven eldoc / hover (Tier 1 = eldoc backend)
-;;;; -------------------------------------------------------------------
-;;
-;; The `elot-global-label-display-mode' label overlay answers the
-;; question "what does this id mean" one word at a time.  Tier 1 of
-;; Step 1.14 surfaces the /next/ level of detail (label, rdf:type,
-;; definition, source provenance) without leaving the buffer, as a
-;; one-line echo-area summary driven by eldoc.  The implementation is
-;; deliberately zero-ceremony: it registers a buffer-local backend on
-;; `eldoc-documentation-functions' and falls through on no match.
-;;
-;; In ELOT Org buffers, the slurp path (`elot-codelist-ht' /
-;; `elot-attriblist-ht', set up by `elot-label-display-setup') is
-;; preferred over the DB, mirroring the Step 1.12 dispatcher ordering.
+  ;;;; Step 1.14: Attribute-driven eldoc / hover (Tier 1 = eldoc backend)
+  ;;;; -------------------------------------------------------------------
+  ;;
+  ;; The `elot-global-label-display-mode' label overlay answers the
+  ;; question "what does this id mean" one word at a time.  Tier 1 of
+  ;; Step 1.14 surfaces the /next/ level of detail (label, rdf:type,
+  ;; definition, source provenance) without leaving the buffer, as a
+  ;; one-line echo-area summary driven by eldoc.  The implementation is
+  ;; deliberately zero-ceremony: it registers a buffer-local backend on
+  ;; `eldoc-documentation-functions' and falls through on no match.
+  ;;
+  ;; In ELOT Org buffers, the slurp path (`elot-codelist-ht' /
+  ;; `elot-attriblist-ht', set up by `elot-label-display-setup') is
+  ;; preferred over the DB, mirroring the Step 1.12 dispatcher ordering.
 
-(declare-function elot-db-expand-curie  "elot-db" (curie &optional active-sources))
-(declare-function elot-db-get-label-any "elot-db" (token &optional active-sources))
+  (declare-function elot-db-expand-curie  "elot-db" (curie &optional active-sources))
+  (declare-function elot-db-get-label-any "elot-db" (token &optional active-sources))
 
-(defcustom elot-global-label-display-eldoc t
-  "Whether `elot-global-label-display-mode' registers an eldoc backend.
-When non-nil (the default), activating the mode installs a
-buffer-local function on `eldoc-documentation-functions' that
-summarises the identifier under point using slurp data or the
-ELOT DB.  Set to nil before enabling the mode to opt out."
-  :type 'boolean
-  :group 'elot-label-display)
+  (defcustom elot-global-label-display-eldoc t
+    "Whether `elot-global-label-display-mode' registers an eldoc backend.
+  When non-nil (the default), activating the mode installs a
+  buffer-local function on `eldoc-documentation-functions' that
+  summarises the identifier under point using slurp data or the
+  ELOT DB.  Set to nil before enabling the mode to opt out."
+    :type 'boolean
+    :group 'elot-label-display)
 
-(defcustom elot-global-label-display-show-source t
-  "Whether the eldoc/hover summary carries a provenance marker.
-When non-nil, the one-line summary produced by
-`elot-global--eldoc-function' ends with `[src: <source>]' when
-the winning row's source is known.  Set to nil to suppress."
-  :type 'boolean
-  :group 'elot-label-display)
+  (defcustom elot-global-label-display-show-source t
+    "Whether the eldoc/hover summary carries a provenance marker.
+  When non-nil, the one-line summary produced by
+  `elot-global--eldoc-function' ends with `[src: <source>]' when
+  the winning row's source is known.  Set to nil to suppress."
+    :type 'boolean
+    :group 'elot-label-display)
 
-(defun elot--id-at-point ()
-  "Return the identifier under point as a string, or nil.
-Recognises, in order: angle-bracketed IRIs (<http://...>), bare
-absolute IRIs, CURIEs (prefix:localname), and plain bare ids."
-  (or (let ((b (bounds-of-thing-at-point 'symbol)))
-        (when b
-          (let ((s (buffer-substring-no-properties (car b) (cdr b))))
-            (when (and s (> (length s) 0))
-              s))))
-      ;; Angle-bracketed IRI: <http://...>
-      (save-excursion
-        (let ((p (point)))
-          (save-match-data
-            (when (re-search-backward "<" (line-beginning-position) t)
-              (when (looking-at "<\\([^<>[:space:]]+\\)>")
-                (when (and (<= (match-beginning 0) p)
-                           (>= (match-end 0) p))
-                  (match-string-no-properties 1)))))))))
+  (defun elot--id-at-point ()
+    "Return the identifier under point as a string, or nil.
+  Recognises, in order: angle-bracketed IRIs (<http://...>), bare
+  absolute IRIs, CURIEs (prefix:localname), and plain bare ids."
+    (or (let ((b (bounds-of-thing-at-point 'symbol)))
+          (when b
+            (let ((s (buffer-substring-no-properties (car b) (cdr b))))
+              (when (and s (> (length s) 0))
+                s))))
+        ;; Angle-bracketed IRI: <http://...>
+        (save-excursion
+          (let ((p (point)))
+            (save-match-data
+              (when (re-search-backward "<" (line-beginning-position) t)
+                (when (looking-at "<\\([^<>[:space:]]+\\)>")
+                  (when (and (<= (match-beginning 0) p)
+                             (>= (match-end 0) p))
+                    (match-string-no-properties 1)))))))))
 
-(defun elot--format-attribute-summary (id label rdf-type definition source-name)
-  "Compose a one-line summary for ID from LABEL, RDF-TYPE, DEFINITION, SOURCE-NAME.
-Any field may be nil or empty and is omitted.  SOURCE-NAME is
-included only when `elot-global-label-display-show-source' is
-non-nil.
+  (defun elot--format-attribute-summary (id label rdf-type definition source-name)
+    "Compose a one-line summary for ID from LABEL, RDF-TYPE, DEFINITION, SOURCE-NAME.
+  Any field may be nil or empty and is omitted.  SOURCE-NAME is
+  included only when `elot-global-label-display-show-source' is
+  non-nil.
 
-Format:
+  Format:
 
-  ID  [LABEL]  (RDF-TYPE)  -- DEFINITION   [src: SOURCE-NAME]"
-  (let ((parts (list id)))
-    (when (and label (> (length label) 0))
-      (push (format "[%s]" label) parts))
-    (when (and rdf-type (> (length rdf-type) 0))
-      (push (format "(%s)" rdf-type) parts))
-    (let ((s (mapconcat #'identity (nreverse parts) "  ")))
-      (when (and definition (> (length definition) 0))
-        (setq s (concat s "  -- "
-                        (string-replace
-                         "\n" " "
-                         (string-limit definition 200)))))
-      (when (and elot-global-label-display-show-source
-                 source-name (> (length source-name) 0))
-        (setq s (concat s "  [src: " source-name "]")))
-      s)))
+    ID  [LABEL]  (RDF-TYPE)  -- DEFINITION   [src: SOURCE-NAME]"
+    (let ((parts (list id)))
+      (when (and label (> (length label) 0))
+        (push (format "[%s]" label) parts))
+      (when (and rdf-type (> (length rdf-type) 0))
+        (push (format "(%s)" rdf-type) parts))
+      (let ((s (mapconcat #'identity (nreverse parts) "  ")))
+        (when (and definition (> (length definition) 0))
+          (setq s (concat s "  -- "
+                          (string-replace
+                           "\n" " "
+                           (string-limit definition 200)))))
+        (when (and elot-global-label-display-show-source
+                   source-name (> (length source-name) 0))
+          (setq s (concat s "  [src: " source-name "]")))
+        s)))
 
-(defun elot--summary-from-slurp (id)
-  "Compose an attribute summary for ID from slurp hashtables, or nil."
-  (when (and (boundp 'elot-codelist-ht)
-             (hash-table-p elot-codelist-ht))
-    (let ((raw (gethash id elot-codelist-ht)))
-      (when raw
-        (let* ((label (elot--strip-lang-tag raw))
-               (rdf-type (and (boundp 'elot-attriblist-ht)
-                              (hash-table-p elot-attriblist-ht)
-                              (plist-get (gethash label elot-attriblist-ht)
-                                         "rdf:type" 'equal)))
-               (definition
-                (and (boundp 'elot-attriblist-ht)
-                     (hash-table-p elot-attriblist-ht)
-                     (let ((p (gethash label elot-attriblist-ht)))
-                       (or (plist-get p "iof-av:naturalLanguageDefinition" 'equal)
-                           (plist-get p "skos:definition" 'equal)
-                           (plist-get p "dcterms:description" 'equal)
-                           (plist-get p "rdfs:comment" 'equal))))))
-          (elot--format-attribute-summary
-           id label rdf-type definition nil))))))
+  (defun elot--summary-from-slurp (id)
+    "Compose an attribute summary for ID from slurp hashtables, or nil."
+    (when (and (boundp 'elot-codelist-ht)
+               (hash-table-p elot-codelist-ht))
+      (let ((raw (gethash id elot-codelist-ht)))
+        (when raw
+          (let* ((label (elot--strip-lang-tag raw))
+                 (rdf-type (and (boundp 'elot-attriblist-ht)
+                                (hash-table-p elot-attriblist-ht)
+                                (plist-get (gethash label elot-attriblist-ht)
+                                           "rdf:type" 'equal)))
+                 (definition
+                  (and (boundp 'elot-attriblist-ht)
+                       (hash-table-p elot-attriblist-ht)
+                       (let ((p (gethash label elot-attriblist-ht)))
+                         (or (plist-get p "iof-av:naturalLanguageDefinition" 'equal)
+                             (plist-get p "skos:definition" 'equal)
+                             (plist-get p "dcterms:description" 'equal)
+                             (plist-get p "rdfs:comment" 'equal))))))
+            (elot--format-attribute-summary
+             id label rdf-type definition nil))))))
 
-(defun elot--summary-from-db (id)
-  "Compose an attribute summary for ID from the ELOT DB, or nil.
-Tries ID as-is; retries via `elot-db-expand-curie' / `elot-db-contract-uri'
-on miss.  Uses the `:source-origin' entry added by
-`elot-db-get-all-attrs' (Step 1.14) for the provenance marker."
-  (when (and (bound-and-true-p elot-active-label-sources)
-             (fboundp 'elot-db-get-all-attrs))
-    (let* ((attrs (ignore-errors
-                    (elot-db-get-all-attrs
-                     id elot-active-label-sources)))
-           (attrs (or attrs
-                      (and (fboundp 'elot-db--looks-like-curie-p)
-                           (elot-db--looks-like-curie-p id)
-                           (fboundp 'elot-db-expand-curie)
-                           (let ((iri (ignore-errors
-                                        (elot-db-expand-curie
-                                         id elot-active-label-sources))))
-                             (and iri
+  (defun elot--summary-from-db (id)
+    "Compose an attribute summary for ID from the ELOT DB, or nil.
+  Tries ID as-is; retries via `elot-db-expand-curie' / `elot-db-contract-uri'
+  on miss.  Uses the `:source-origin' entry added by
+  `elot-db-get-all-attrs' (Step 1.14) for the provenance marker."
+    (when (and (bound-and-true-p elot-active-label-sources)
+               (fboundp 'elot-db-get-all-attrs))
+      (let* ((attrs (ignore-errors
+                      (elot-db-get-all-attrs
+                       id elot-active-label-sources)))
+             (attrs (or attrs
+                        (and (fboundp 'elot-db--looks-like-curie-p)
+                             (elot-db--looks-like-curie-p id)
+                             (fboundp 'elot-db-expand-curie)
+                             (let ((iri (ignore-errors
+                                          (elot-db-expand-curie
+                                           id elot-active-label-sources))))
+                               (and iri
+                                    (ignore-errors
+                                      (elot-db-get-all-attrs
+                                       iri elot-active-label-sources)))))
+                        (and (fboundp 'elot-db--looks-like-uri-p)
+                             (elot-db--looks-like-uri-p id)
+                             (fboundp 'elot-db-contract-uri)
+                             (let ((curies (ignore-errors
+                                             (elot-db-contract-uri
+                                              id elot-active-label-sources))))
+                               (cl-some
+                                (lambda (c)
                                   (ignore-errors
                                     (elot-db-get-all-attrs
-                                     iri elot-active-label-sources)))))
-                      (and (fboundp 'elot-db--looks-like-uri-p)
-                           (elot-db--looks-like-uri-p id)
-                           (fboundp 'elot-db-contract-uri)
-                           (let ((curies (ignore-errors
-                                           (elot-db-contract-uri
-                                            id elot-active-label-sources))))
-                             (cl-some
-                              (lambda (c)
-                                (ignore-errors
-                                  (elot-db-get-all-attrs
-                                   c elot-active-label-sources)))
-                              curies))))))
-      (when attrs
-        (let* ((label (or (plist-get attrs "rdfs:label" #'string=)
-                          (and (fboundp 'elot-db-get-label)
-                               (ignore-errors
-                                 (elot-db-get-label
-                                  id elot-active-label-sources)))))
-               (rdf-type (plist-get attrs "rdf:type" #'string=))
-               (definition
-                (or (plist-get attrs "iof-av:naturalLanguageDefinition" #'string=)
-                    (plist-get attrs "skos:definition" #'string=)
-                    (plist-get attrs "dcterms:description" #'string=)
-                    (plist-get attrs "rdfs:comment" #'string=)))
-               (origin (plist-get attrs :source-origin))
-               (source-name (and (consp origin)
-                                 (format "%s" (car origin)))))
-          (elot--format-attribute-summary
-           id (elot--strip-lang-tag label)
-           rdf-type definition source-name))))))
+                                     c elot-active-label-sources)))
+                                curies))))))
+        (when attrs
+          (let* ((label (or (plist-get attrs "rdfs:label" #'string=)
+                            (and (fboundp 'elot-db-get-label)
+                                 (ignore-errors
+                                   (elot-db-get-label
+                                    id elot-active-label-sources)))))
+                 (rdf-type (plist-get attrs "rdf:type" #'string=))
+                 (definition
+                  (or (plist-get attrs "iof-av:naturalLanguageDefinition" #'string=)
+                      (plist-get attrs "skos:definition" #'string=)
+                      (plist-get attrs "dcterms:description" #'string=)
+                      (plist-get attrs "rdfs:comment" #'string=)))
+                 (origin (plist-get attrs :source-origin))
+                 (source-name (and (consp origin)
+                                   (format "%s" (car origin)))))
+            (elot--format-attribute-summary
+             id (elot--strip-lang-tag label)
+             rdf-type definition source-name))))))
 
-(defun elot-global--eldoc-function (&optional _callback &rest _ignored)
-  "ELOT eldoc backend for `elot-global-label-display-mode'.
-Returns a one-line summary of the identifier under point, or nil
-so the next eldoc backend on `eldoc-documentation-functions' can
-have a turn.  Slurp path is consulted first; DB path is fallback."
-  (when elot-global-label-display-eldoc
-    (let ((id (elot--id-at-point)))
+  (defun elot-global--eldoc-function (&optional _callback &rest _ignored)
+    "ELOT eldoc backend for `elot-global-label-display-mode'.
+  Returns a one-line summary of the identifier under point, or nil
+  so the next eldoc backend on `eldoc-documentation-functions' can
+  have a turn.  Slurp path is consulted first; DB path is fallback."
+    (when elot-global-label-display-eldoc
+      (let ((id (elot--id-at-point)))
+        (when id
+          (or (elot--summary-from-slurp id)
+              (elot--summary-from-db id))))))
+
+  ;;;; -------------------------------------------------------------------
+  ;;;; Step 1.7: Activation for non-ELOT buffers
+  ;;;; -------------------------------------------------------------------
+  ;;
+  ;; `elot-global-label-display-mode' is a general-purpose buffer-local
+  ;; minor mode that decorates identifiers in *any* buffer (Turtle,
+  ;; SPARQL, CSV, Python, Markdown, shell scripts, etc.) with labels
+  ;; drawn from the active label sources recorded in the ELOT DB.
+  ;;
+  ;; It has no dependency on:
+  ;;   - `elot-slurp' being populated in the buffer
+  ;;   - prefix tables / CURIE syntax
+  ;;   - the buffer's major mode
+  ;;
+  ;; The font-lock matcher is built from the DB: `regexp-opt' is
+  ;; applied to the union of `entities.id' strings across the active
+  ;; sources (`elot-db-all-active-ids'), producing a literal-token
+  ;; matcher.  This is what lets UC3 buffers (e.g. a Python file
+  ;; containing `EMP-12345') get labelled without any language-aware
+  ;; tokenising.
+  ;;
+  ;; Scope limit (v1): matching is literal tokens only.  No capture
+  ;; groups, no per-source regex templates, no partial-string
+  ;; substitution inside larger tokens.  See the Decisions Log in
+  ;; ELOT-DB-PLAN.org.
+
+  (declare-function elot-db-all-active-ids "elot-db"
+                    (&optional active-sources include-curies))
+  (declare-function elot-db-init "elot-db" (&optional path))
+
+  (defcustom elot-global-label-display-max-ids 10000
+    "Soft cap on the number of ids fed to `regexp-opt' by the global mode.
+  When `elot-db-all-active-ids' (augmented with CURIE contractions
+  in Step 1.7.3) exceeds this value, `elot-global--install' logs a
+  warning and installs no matcher; the mode itself stays enabled so
+  the toggle UX remains consistent.  Set to nil to disable the cap."
+    :type '(choice (integer :tag "Maximum id count")
+                   (const :tag "No cap" nil))
+    :group 'elot-label-display)
+
+  (defvar-local elot-global--fontify-regexp nil
+    "Buffer-local regexp used by `elot-global-label-display-mode'.
+  Built from `elot-db-all-active-ids' at activation time.")
+
+  (defvar-local elot-global--keywords nil
+    "Buffer-local font-lock keywords installed by the global mode.")
+
+  (defconst elot-global--fallback-curie-regexp
+    "\\_<\\([-a-z_A-Z0-9]+\\):\\([-a-z_A-Z0-9.]+\\)\\_>"
+    "Generic CURIE-shape regexp used as a fallback matcher.
+Used when `regexp-opt' produces a pattern too large for the Emacs
+regex engine.  Matches `prefix:localname' tokens; the font-lock
+keyword body then filters via `elot-db-get-label-any', so
+non-entries are cheap no-ops.")
+
+  (defun elot-global--try-compile (regexp)
+    "Return REGEXP if it compiles, nil otherwise.
+  Forces eager compilation via `string-match-p' so that
+  \"regular expression too big\" is caught here rather than later
+  inside font-lock."
+    (and regexp
+         (condition-case _err
+             (progn (string-match-p regexp "") regexp)
+           (error nil))))
+
+  (defun elot-global--build-regexp (ids)
+    "Return a DB-driven font-lock regexp matching literal IDS.
+  IDS is a list of strings (entity identifiers), typically IRIs and
+  their CURIE contractions.  Tries three tiers:
+
+    1. `regexp-opt' over IDS with symbol boundaries (best coverage).
+    2. On compile failure, retry with CURIE-shape entries only
+       (IRIs dropped; usually fits because CURIEs share prefixes).
+    3. On still-too-big, fall back to a generic CURIE pattern
+       (`elot-global--fallback-curie-regexp'); the matcher body
+       filters via `elot-db-get-label-any' so false-positive CURIEs
+       are no-ops.
+
+  Returns nil when IDS is empty."
+    (when ids
+      (or (elot-global--try-compile (regexp-opt ids 'symbols))
+          (let ((curies (seq-filter
+                         (lambda (s)
+                           (and (string-match-p ":" s)
+                                (not (string-match-p "://" s))))
+                         ids)))
+            (and curies
+                 (elot-global--try-compile (regexp-opt curies 'symbols))))
+          (prog1 elot-global--fallback-curie-regexp
+            (message
+             "elot-global-label-display-mode: %d ids too large for regexp-opt; using generic CURIE fallback"
+             (length ids))))))
+
+  (defun elot-global--help-echo (_window object pos)
+    "Lazy `help-echo' callback for `elot-global-label-display-mode'.
+  Composes a rich one-line summary (id, label, rdf:type, definition,
+  source provenance) for the identifier at POS in OBJECT, by calling
+  `elot--summary-from-db'.  Falls back to a plain `id  label' string
+  if the DB lookup yields nothing.  Computed on demand so per-match
+  font-lock cost stays at zero."
+    (let* ((id (cond
+                ((bufferp object)
+                 (with-current-buffer object
+                   (or (get-text-property pos 'elot-global--id)
+                       (let ((b (bounds-of-thing-at-point 'symbol)))
+                         (and b (buffer-substring-no-properties
+                                 (car b) (cdr b)))))))
+                ((stringp object)
+                 (or (get-text-property pos 'elot-global--id object)
+                     nil))
+                (t nil))))
       (when id
-        (or (elot--summary-from-slurp id)
-            (elot--summary-from-db id))))))
+        (or (ignore-errors (elot--summary-from-db id))
+            (let ((label (and (fboundp 'elot-db-get-label-any)
+                              (ignore-errors
+                                (elot-db-get-label-any id)))))
+              (if label (concat id "  " label) id))))))
 
-;;;; -------------------------------------------------------------------
-;;;; Step 1.7: Activation for non-ELOT buffers
-;;;; -------------------------------------------------------------------
-;;
-;; `elot-global-label-display-mode' is a general-purpose buffer-local
-;; minor mode that decorates identifiers in *any* buffer (Turtle,
-;; SPARQL, CSV, Python, Markdown, shell scripts, etc.) with labels
-;; drawn from the active label sources recorded in the ELOT DB.
-;;
-;; It has no dependency on:
-;;   - `elot-slurp' being populated in the buffer
-;;   - prefix tables / CURIE syntax
-;;   - the buffer's major mode
-;;
-;; The font-lock matcher is built from the DB: `regexp-opt' is
-;; applied to the union of `entities.id' strings across the active
-;; sources (`elot-db-all-active-ids'), producing a literal-token
-;; matcher.  This is what lets UC3 buffers (e.g. a Python file
-;; containing `EMP-12345') get labelled without any language-aware
-;; tokenising.
-;;
-;; Scope limit (v1): matching is literal tokens only.  No capture
-;; groups, no per-source regex templates, no partial-string
-;; substitution inside larger tokens.  See the Decisions Log in
-;; ELOT-DB-PLAN.org.
-
-(declare-function elot-db-all-active-ids "elot-db"
-                  (&optional active-sources include-curies))
-(declare-function elot-db-init "elot-db" (&optional path))
-
-(defcustom elot-global-label-display-max-ids 10000
-  "Soft cap on the number of ids fed to `regexp-opt' by the global mode.
-When `elot-db-all-active-ids' (augmented with CURIE contractions
-in Step 1.7.3) exceeds this value, `elot-global--install' logs a
-warning and installs no matcher; the mode itself stays enabled so
-the toggle UX remains consistent.  Set to nil to disable the cap."
-  :type '(choice (integer :tag "Maximum id count")
-                 (const :tag "No cap" nil))
-  :group 'elot-label-display)
-
-(defvar-local elot-global--fontify-regexp nil
-  "Buffer-local regexp used by `elot-global-label-display-mode'.
-Built from `elot-db-all-active-ids' at activation time.")
-
-(defvar-local elot-global--keywords nil
-  "Buffer-local font-lock keywords installed by the global mode.")
-
-(defconst elot-global--fallback-curie-regexp
-  "\\_<\\([-a-z_A-Z0-9]+\\):\\([-a-z_A-Z0-9.]+\\)\\_>"
-  "Generic CURIE-shape regexp used when `regexp-opt' produces a pattern
-too large for the Emacs regex engine.  Matches `prefix:localname'
-tokens; the font-lock keyword body then filters via
-`elot-db-get-label-any', so non-entries are cheap no-ops.")
-
-(defun elot-global--try-compile (regexp)
-  "Return REGEXP if it compiles, nil otherwise.
-Forces eager compilation via `string-match-p' so that
-\"regular expression too big\" is caught here rather than later
-inside font-lock."
-  (and regexp
-       (condition-case _err
-           (progn (string-match-p regexp "") regexp)
-         (error nil))))
-
-(defun elot-global--build-regexp (ids)
-  "Return a DB-driven font-lock regexp matching literal IDS.
-IDS is a list of strings (entity identifiers), typically IRIs and
-their CURIE contractions.  Tries three tiers:
-
-  1. `regexp-opt' over IDS with symbol boundaries (best coverage).
-  2. On compile failure, retry with CURIE-shape entries only
-     (IRIs dropped; usually fits because CURIEs share prefixes).
-  3. On still-too-big, fall back to a generic CURIE pattern
-     (`elot-global--fallback-curie-regexp'); the matcher body
-     filters via `elot-db-get-label-any' so false-positive CURIEs
-     are no-ops.
-
-Returns nil when IDS is empty."
-  (when ids
-    (or (elot-global--try-compile (regexp-opt ids 'symbols))
-        (let ((curies (seq-filter
-                       (lambda (s)
-                         (and (string-match-p ":" s)
-                              (not (string-match-p "://" s))))
-                       ids)))
-          (and curies
-               (elot-global--try-compile (regexp-opt curies 'symbols))))
-        (prog1 elot-global--fallback-curie-regexp
-          (message
-           "elot-global-label-display-mode: %d ids too large for regexp-opt; using generic CURIE fallback"
-           (length ids))))))
-
-(defun elot-global--help-echo (_window object pos)
-  "Lazy `help-echo' callback for `elot-global-label-display-mode'.
-Composes a rich one-line summary (id, label, rdf:type, definition,
-source provenance) for the identifier at POS in OBJECT, by calling
-`elot--summary-from-db'.  Falls back to a plain `id  label' string
-if the DB lookup yields nothing.  Computed on demand so per-match
-font-lock cost stays at zero."
-  (let* ((id (cond
-              ((bufferp object)
-               (with-current-buffer object
-                 (or (get-text-property pos 'elot-global--id)
-                     (let ((b (bounds-of-thing-at-point 'symbol)))
-                       (and b (buffer-substring-no-properties
-                               (car b) (cdr b)))))))
-              ((stringp object)
-               (or (get-text-property pos 'elot-global--id object)
-                   nil))
-              (t nil))))
-    (when id
-      (or (ignore-errors (elot--summary-from-db id))
-          (let ((label (and (fboundp 'elot-db-get-label-any)
-                            (ignore-errors
-                              (elot-db-get-label-any id)))))
-            (if label (concat id "  " label) id))))))
-
-(defun elot-global--build-keywords (regexp)
-  "Return a font-lock keyword form decorating REGEXP with labels.
+  (defun elot-global--build-keywords (regexp)
+    "Return a font-lock keyword form decorating REGEXP with labels.
 The matcher looks the matched id up via `elot-db-get-label-any'
 and, on a hit, installs the `elot-label-display' text property
-(aliased to `display' via `char-property-alias-alist').  The
+\(aliased to `display' via `char-property-alias-alist').  The
 property is only applied when the buffer-local toggle
-`elot-label-display' is `on', so \[elot-toggle-label-display]
+`elot-label-display' is `on', so \\[elot-toggle-label-display]
 can hide labels without disabling the mode.
 
 `help-echo' is installed as a *function* (`elot-global--help-echo')
@@ -1099,97 +1103,97 @@ it without re-tokenising the buffer.
 
 The matcher body is wrapped in `condition-case' so a failing
 lookup cannot silently disable font-lock for the whole buffer
-(Step 1.7.3 safety net)."
-  `((,regexp
-     (0 (condition-case err
-            ;; Capture match-beginning/end BEFORE calling lookup helpers,
-            ;; which use `string-match' internally and would otherwise
-            ;; clobber the global match data (Step 1.7.3 fix).
-            (let* ((mb (match-beginning 0))
-                   (me (match-end 0))
-                   (id (match-string 0))
-                   (label (and (fboundp 'elot-db-get-label-any)
-                               (ignore-errors
-                                 (elot-db-get-label-any id)))))
-              (when label
-                (put-text-property mb me 'elot-global--id id)
-                (put-text-property mb me 'help-echo
-                                   #'elot-global--help-echo)
-                (when (eq elot-label-display 'on)
-                  (put-text-property mb me 'elot-label-display label)
-                  (put-text-property mb me 'face
-                                     (if (boundp 'elot-label-display-face)
-                                         elot-label-display-face
-                                       'italic)))))
-          (error
-           (message "elot-global-label-display-mode: matcher error: %S" err)
-           nil))))))
+\(Step 1.7.3 safety net)."
+    `((,regexp
+       (0 (condition-case err
+              ;; Capture match-beginning/end BEFORE calling lookup helpers,
+              ;; which use `string-match' internally and would otherwise
+              ;; clobber the global match data (Step 1.7.3 fix).
+              (let* ((mb (match-beginning 0))
+                     (me (match-end 0))
+                     (id (match-string 0))
+                     (label (and (fboundp 'elot-db-get-label-any)
+                                 (ignore-errors
+                                   (elot-db-get-label-any id)))))
+                (when label
+                  (put-text-property mb me 'elot-global--id id)
+                  (put-text-property mb me 'help-echo
+                                     #'elot-global--help-echo)
+                  (when (eq elot-label-display 'on)
+                    (put-text-property mb me 'elot-label-display label)
+                    (put-text-property mb me 'face
+                                       (if (boundp 'elot-label-display-face)
+                                           elot-label-display-face
+                                         'italic)))))
+            (error
+             (message "elot-global-label-display-mode: matcher error: %S" err)
+             nil))))))
 
-(defun elot-global--install ()
-  "Build regexp + keywords from the DB and install them in this buffer."
-  (when (and (fboundp 'elot-db-init)
-             (or (not (boundp 'elot-db)) (null elot-db)))
-    (ignore-errors (elot-db-init)))
-  ;; Ensure the `display' alias is registered so that setting the
-  ;; `elot-label-display' text property actually swaps the glyph.
-  (unless (rassoc '(elot-label-display) char-property-alias-alist)
-    (push '(display elot-label-display) char-property-alias-alist))
-  (let* ((ids (and (fboundp 'elot-db-all-active-ids)
-                   (ignore-errors (elot-db-all-active-ids nil t))))
-         (capped (and elot-global-label-display-max-ids
-                      ids
-                      (> (length ids) elot-global-label-display-max-ids)))
-         (regexp (and ids (not capped)
-                      (elot-global--build-regexp ids))))
-    (when capped
-      (message
-       "elot-global-label-display-mode: %d ids exceeds cap of %d; no matcher installed (customize `elot-global-label-display-max-ids')"
-       (length ids) elot-global-label-display-max-ids))
-    (setq elot-global--fontify-regexp regexp)
-    (setq elot-global--keywords
-          (and regexp (elot-global--build-keywords regexp)))
+  (defun elot-global--install ()
+    "Build regexp + keywords from the DB and install them in this buffer."
+    (when (and (fboundp 'elot-db-init)
+               (or (not (boundp 'elot-db)) (null elot-db)))
+      (ignore-errors (elot-db-init)))
+    ;; Ensure the `display' alias is registered so that setting the
+    ;; `elot-label-display' text property actually swaps the glyph.
+    (unless (rassoc '(elot-label-display) char-property-alias-alist)
+      (push '(display elot-label-display) char-property-alias-alist))
+    (let* ((ids (and (fboundp 'elot-db-all-active-ids)
+                     (ignore-errors (elot-db-all-active-ids nil t))))
+           (capped (and elot-global-label-display-max-ids
+                        ids
+                        (> (length ids) elot-global-label-display-max-ids)))
+           (regexp (and ids (not capped)
+                        (elot-global--build-regexp ids))))
+      (when capped
+        (message
+         "elot-global-label-display-mode: %d ids exceeds cap of %d; no matcher installed (customize `elot-global-label-display-max-ids')"
+         (length ids) elot-global-label-display-max-ids))
+      (setq elot-global--fontify-regexp regexp)
+      (setq elot-global--keywords
+            (and regexp (elot-global--build-keywords regexp)))
+      (when elot-global--keywords
+        (with-silent-modifications
+          (font-lock-add-keywords nil elot-global--keywords 'append))
+        (font-lock-flush))))
+
+  (defun elot-global--uninstall ()
+    "Remove decorations and font-lock keywords installed by the mode."
     (when elot-global--keywords
       (with-silent-modifications
-        (font-lock-add-keywords nil elot-global--keywords 'append))
-      (font-lock-flush))))
+        (font-lock-remove-keywords nil elot-global--keywords)
+        (remove-text-properties (point-min) (point-max)
+                                '(elot-label-display nil
+                                  help-echo nil
+                                  elot-global--id nil))))
+    (setq elot-global--keywords nil)
+    (setq elot-global--fontify-regexp nil)
+    (font-lock-flush))
 
-(defun elot-global--uninstall ()
-  "Remove decorations and font-lock keywords installed by the mode."
-  (when elot-global--keywords
-    (with-silent-modifications
-      (font-lock-remove-keywords nil elot-global--keywords)
-      (remove-text-properties (point-min) (point-max)
-                              '(elot-label-display nil
-                                help-echo nil
-                                elot-global--id nil))))
-  (setq elot-global--keywords nil)
-  (setq elot-global--fontify-regexp nil)
-  (font-lock-flush))
+  (defvar-local elot-global--no-sources-warned nil
+    "Non-nil once the no-active-sources hint has been emitted in this buffer.
+  Cleared by `elot-global-label-display-setup' when the active-sources
+  list becomes non-nil, so the hint is re-emitted if sources are later
+  removed again.")
 
-(defvar-local elot-global--no-sources-warned nil
-  "Non-nil once the no-active-sources hint has been emitted in this buffer.
-Cleared by `elot-global-label-display-setup' when the active-sources
-list becomes non-nil, so the hint is re-emitted if sources are later
-removed again.")
+  (defun elot-global--maybe-warn-no-sources ()
+    "Emit a one-shot hint when the mode is enabled without active sources.
+  Debounced via the buffer-local `elot-global--no-sources-warned' so
+  toggling the mode off and on in a buffer that has no sources does not
+  spam the echo area.  The flag is cleared by
+  `elot-global-label-display-setup' when sources eventually appear."
+    (when (and (null elot-active-label-sources)
+               (not elot-global--no-sources-warned))
+      (setq elot-global--no-sources-warned t)
+      (message
+       "elot-global-label-display-mode: no active label sources in this buffer; use M-x elot-label-activate-source or set via .dir-locals.el")))
 
-(defun elot-global--maybe-warn-no-sources ()
-  "Emit a one-shot hint when the mode is enabled without active sources.
-Debounced via the buffer-local `elot-global--no-sources-warned' so
-toggling the mode off and on in a buffer that has no sources does not
-spam the echo area.  The flag is cleared by
-`elot-global-label-display-setup' when sources eventually appear."
-  (when (and (null elot-active-label-sources)
-             (not elot-global--no-sources-warned))
-    (setq elot-global--no-sources-warned t)
-    (message
-     "elot-global-label-display-mode: no active label sources in this buffer; use M-x elot-label-activate-source or set via .dir-locals.el")))
-
-;;;###autoload
-(define-minor-mode elot-global-label-display-mode
-  "Display labels from ELOT active label sources in any buffer.
+  ;;;###autoload
+  (define-minor-mode elot-global-label-display-mode
+    "Display labels from ELOT active label sources in any buffer.
 
 When enabled, identifiers present in the active sources
-(`elot-active-label-sources', usually set via `.dir-locals.el' or
+\(`elot-active-label-sources', usually set via `.dir-locals.el' or
 `M-x elot-label-activate-source') are decorated in place with
 their labels.  Works in any major mode: the font-lock matcher is
 built from the DB, not from a language grammar.
@@ -1200,72 +1204,72 @@ hint is emitted in the echo area pointing at
 `elot-label-activate-source'.  Adding a source afterwards triggers
 an automatic refresh via `elot-active-label-sources-change-hook'.
 
-Toggle with \\[elot-toggle-label-display] (F5) once enabled.  Use
+Toggle with \\[elot-toggle-label-display] once enabled.  Use
 \\[elot-global-label-display-setup] for a one-shot refresh after
 registering or activating new sources."
-  :lighter " ELOT-L"
-  :keymap (make-sparse-keymap)
-  (if elot-global-label-display-mode
-      (progn
-        (elot-global--install)
-        (make-local-variable 'elot-label-display)
-        (setq elot-label-display 'on)
-        (let ((key (and (fboundp 'elot--toggle-labels-key)
-                        (elot--toggle-labels-key))))
-          (when key
-            (local-set-key (kbd key) #'elot-toggle-label-display)))
-        (local-set-key (kbd "C-c C-x r") #'elot-label-lookup)
-        (when elot-global-label-display-eldoc
-          (add-hook 'eldoc-documentation-functions
-                    #'elot-global--eldoc-function nil t)
-          (when (fboundp 'eldoc-mode)
-            (eldoc-mode 1)))
-        (when (boundp 'elot-active-label-sources-change-hook)
-          (add-hook 'elot-active-label-sources-change-hook
-                    #'elot-global-label-display-setup nil t))
-        (elot-global--maybe-warn-no-sources))
+    :lighter " ELOT-L"
+    :keymap (make-sparse-keymap)
+    (if elot-global-label-display-mode
+        (progn
+          (elot-global--install)
+          (make-local-variable 'elot-label-display)
+          (setq elot-label-display 'on)
+          (let ((key (and (fboundp 'elot--toggle-labels-key)
+                          (elot--toggle-labels-key))))
+            (when key
+              (local-set-key (kbd key) #'elot-toggle-label-display)))
+          (local-set-key (kbd "C-c C-x r") #'elot-label-lookup)
+          (when elot-global-label-display-eldoc
+            (add-hook 'eldoc-documentation-functions
+                      #'elot-global--eldoc-function nil t)
+            (when (fboundp 'eldoc-mode)
+              (eldoc-mode 1)))
+          (when (boundp 'elot-active-label-sources-change-hook)
+            (add-hook 'elot-active-label-sources-change-hook
+                      #'elot-global-label-display-setup nil t))
+          (elot-global--maybe-warn-no-sources))
+      (elot-global--uninstall)
+      (setq elot-label-display 'off)
+      (remove-hook 'eldoc-documentation-functions
+                   #'elot-global--eldoc-function t)
+      (when (boundp 'elot-active-label-sources-change-hook)
+        (remove-hook 'elot-active-label-sources-change-hook
+                     #'elot-global-label-display-setup t))))
+
+  ;;;###autoload
+  (defun elot-global-label-display-setup ()
+    "One-shot: (re)build the DB-driven font-lock regexp in this buffer.
+  Use after registering or activating new label sources to refresh
+  decorations without toggling the minor mode off and on."
+    (interactive)
     (elot-global--uninstall)
-    (setq elot-label-display 'off)
-    (remove-hook 'eldoc-documentation-functions
-                 #'elot-global--eldoc-function t)
-    (when (boundp 'elot-active-label-sources-change-hook)
-      (remove-hook 'elot-active-label-sources-change-hook
-                   #'elot-global-label-display-setup t))))
+    (elot-global--install)
+    (unless elot-global-label-display-mode
+      (elot-global-label-display-mode 1))
+    ;; If sources are now present, clear the one-shot warning flag so
+    ;; that a later drop back to empty re-emits the hint.  If sources
+    ;; are still nil, emit the hint (debounced).
+    (if elot-active-label-sources
+        (setq elot-global--no-sources-warned nil)
+      (elot-global--maybe-warn-no-sources)))
 
-;;;###autoload
-(defun elot-global-label-display-setup ()
-  "One-shot: (re)build the DB-driven font-lock regexp in this buffer.
-Use after registering or activating new label sources to refresh
-decorations without toggling the minor mode off and on."
-  (interactive)
-  (elot-global--uninstall)
-  (elot-global--install)
-  (unless elot-global-label-display-mode
-    (elot-global-label-display-mode 1))
-  ;; If sources are now present, clear the one-shot warning flag so
-  ;; that a later drop back to empty re-emits the hint.  If sources
-  ;; are still nil, emit the hint (debounced).
-  (if elot-active-label-sources
-      (setq elot-global--no-sources-warned nil)
-    (elot-global--maybe-warn-no-sources)))
-
-;; If `elot-mode' is (or becomes) loaded, surface its ELOT menu in
-;; buffers where only `elot-global-label-display-mode' is active.
-;; The menu is bound with `:visible (not elot-mode)' so that it
-;; disappears once elot-mode activates and adds its own copy via
-;; elot-mode-map -- preventing duplicate ELOT menu entries.
-;; The sibling snippet in elot-mode.el covers the opposite load order.
-;; NOTE: `package-lint' warns about `with-eval-after-load' in packages.
-;; The warning is informational (configuration code belongs in user
-;; init); here it is intentional -- a cross-module load-order bridge
-;; between two modules of the same package, not user-config injection.
-(with-eval-after-load 'elot-mode
-  (when (and (boundp 'elot-global-label-display-mode-map)
-             (boundp 'elot-menu))
-    (define-key elot-global-label-display-mode-map
-                [menu-bar ELOT]
-                `(menu-item "ELOT" ,elot-menu
-                            :visible (not (bound-and-true-p elot-mode))))))
+  ;; If `elot-mode' is (or becomes) loaded, surface its ELOT menu in
+  ;; buffers where only `elot-global-label-display-mode' is active.
+  ;; The menu is bound with `:visible (not elot-mode)' so that it
+  ;; disappears once elot-mode activates and adds its own copy via
+  ;; elot-mode-map -- preventing duplicate ELOT menu entries.
+  ;; The sibling snippet in elot-mode.el covers the opposite load order.
+  ;; NOTE: `package-lint' warns about `with-eval-after-load' in packages.
+  ;; The warning is informational (configuration code belongs in user
+  ;; init); here it is intentional -- a cross-module load-order bridge
+  ;; between two modules of the same package, not user-config injection.
+  (with-eval-after-load 'elot-mode
+    (when (and (boundp 'elot-global-label-display-mode-map)
+               (boundp 'elot-menu))
+      (define-key elot-global-label-display-mode-map
+                  [menu-bar ELOT]
+                  `(menu-item "ELOT" ,elot-menu
+                              :visible (not (bound-and-true-p elot-mode))))))
 
 (provide 'elot-label-display)
 ;;; elot-label-display.el ends here
