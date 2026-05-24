@@ -53,8 +53,8 @@
   (string-equal (org-entry-get-with-inheritance "ELOT-context-type") "ontology"))
 
 (defun elot--inside-elot-scope-p ()
-  "Return t when point is inside
-an ELOT ontology context AND a :resourcedefs: section.
+  "Return t when point is inside an ELOT ontology resource-defining section.
+That is, an ELOT ontology context AND a :resourcedefs: section.
 This is the combined guard for ELOT-specific lint checkers: only items
 under a heading with :ELOT-context-type: ontology that also inherit
 :resourcedefs: yes should be checked."
@@ -95,13 +95,14 @@ Checks the immediately enclosing headline and its ancestors."
 ;; cause problems.
 (declare-function elot-label-display-setup "elot-label-display")
 (defun elot-org-lint ()
-  "Refresh `elot-slurp', then do `org-lint'"
+  "Refresh `elot-slurp', then run `org-lint'."
   (interactive)
   (elot-label-display-setup)
   (call-interactively #'org-lint))
 
 (defun elot-check-nodeclare-id-prefix-label (tree)
-  "ELOT rule: check ID, prefix, and label format under :resourcedefs:."
+  "ELOT rule: check ID, prefix, and label format under :resourcedefs:.
+TREE is the parsed Org element tree provided by `org-lint'."
   (let (issues)
     (org-element-map tree 'headline
       (lambda (hl)
@@ -172,7 +173,8 @@ Add warnings or errors to ISSUES at POINT."
 
 
 (defun elot-check-ontology-header (tree)
-  "ELOT rule: check top-level ontology header properties."
+  "ELOT rule: check top-level ontology header properties.
+TREE is the parsed Org element tree provided by `org-lint'."
   (let (issues)
     (org-element-map tree 'headline
       (lambda (hl)
@@ -210,7 +212,8 @@ Add warnings or errors to ISSUES at POINT."
  :trust 'high)
 
 (defun elot-check-prefix-table (tree)
-  "ELOT rule: ensure `elot-update-link-abbrev` sets useful abbrevs."
+  "ELOT rule: ensure `elot-update-link-abbrev' sets useful abbrevs.
+TREE is the parsed Org element tree provided by `org-lint'."
   (let (issues)
     (org-element-map tree 'headline
       (lambda (hl)
@@ -235,7 +238,8 @@ Add warnings or errors to ISSUES at POINT."
  :trust 'high)
 
 (defun elot-check-ontology-presence (tree)
-  "ELOT rule: ensure there is at least one top-level ontology section."
+  "ELOT rule: ensure there is at least one top-level ontology section.
+TREE is the parsed Org element tree provided by `org-lint'."
   (let ((found nil)
         issues)
     (org-element-map tree 'headline
@@ -262,7 +266,8 @@ Add warnings or errors to ISSUES at POINT."
 
 
 (defun elot-check-required-sections (tree)
-  "ELOT rule: check all required section headers for ontology."
+  "ELOT rule: check all required section headers for ontology.
+TREE is the parsed Org element tree provided by `org-lint'."
   (let (localname issues)
     ;; Find top-level ontology headline to get localname
     (org-element-map tree 'headline
@@ -325,7 +330,8 @@ Add warnings or errors to ISSUES at POINT."
   "List of annotation properties allowed in description lists without declaration.")
 
 (defun elot-check-description-list-curies (tree)
-  "Check CURIE terms in description lists are declared annotation properties."
+  "Check CURIE terms in description lists are declared annotation properties.
+TREE is the parsed Org element tree provided by `org-lint'."
   (let (issues)
     (org-element-map tree 'item
       (lambda (item)
@@ -358,7 +364,7 @@ Add warnings or errors to ISSUES at POINT."
     issues))
 
 
-;; the following not in use (yet), for warning about unknown prefixes in contents of annotations 
+;; the following not in use (yet), for warning about unknown prefixes in contents of annotations
 ;; (defun elot-check-annotation-value-prefixes (contents)
 ;;   "Check for unknown prefixes in annotation value CONTENTS.
 ;; Return a list of warning strings, or nil if no issues."
@@ -400,8 +406,10 @@ Add warnings or errors to ISSUES at POINT."
     (and balanced (= count 0))))
 
 (defun elot-check-axiom-value-curies (tree)
-  "Check that CURIEs in the value of axioms (Manchester syntax) are declared
-and not annotation properties, and that parentheses are balanced."
+  "Check CURIEs in axiom values (Manchester syntax) and parenthesis balance.
+CURIEs must be declared and must not be annotation properties; parentheses
+in the value must be balanced.
+TREE is the parsed Org element tree provided by `org-lint'."
   (let (issues)
     (org-element-map tree 'item
       (lambda (item)
@@ -505,7 +513,7 @@ and not annotation properties, and that parentheses are balanced."
 Tries `elot-parse-class-expression-list' first; if that fails, falls
 back to `elot-parse-data-range'.  This allows \='Range\=' and \='Domain\='
 to accept both class expressions (object properties) and data ranges
-(data properties) without requiring section-context awareness.
+\(data properties) without requiring section-context awareness.
 Return t if the entire string is consumed, or the 1-based column
 position where parsing stopped on failure."
   (let ((result (elot-parse-class-expression-list input)))
@@ -683,6 +691,7 @@ where parsing stopped (an integer), or nil if position is unknown."
 
 (defun elot-check-omn-syntax (tree)
   "ELOT rule: validate OWL Manchester Syntax in axiom description list values.
+TREE is the parsed Org element tree provided by `org-lint'.
 For each description list item whose tag is an OMN keyword with a known
 parser (see `elot-omn-keyword-parser-alist'), parse the value and report
 an error if it does not conform to the grammar.  When the parser reports
@@ -775,6 +784,7 @@ or nil if no known suffix matches."
 
 (defun elot-check-omn-keyword-appropriateness (tree)
   "ELOT rule: check that OMN keywords are appropriate for their section context.
+TREE is the parsed Org element tree provided by `org-lint'.
 For each description list item whose tag is an OMN keyword, verify that the
 keyword is valid for the enclosing ELOT section (Classes, Object properties,
 etc.) according to the OWL 2 Manchester Syntax specification.
