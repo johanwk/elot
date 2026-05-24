@@ -548,6 +548,7 @@ GRAMMAR-NAME defaults to \"elot-owl-grammar\"."
                 (buffer-string)))
          (result (peggy-to-peg-convert-string src grammar-name)))
     (with-temp-file output-file
+      (set-buffer-file-coding-system 'utf-8-unix)
       (insert result))
     (message "Wrote %s (%d rules)" output-file
              (with-temp-buffer
