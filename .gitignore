@@ -4,6 +4,10 @@
 ## ELOT housekeeping (top-level Makefile, stable-check target)
 tmp/stable-check/
 
+# Private working notes, not for distribution
+ELOT-GPTEL-PLAN.org
+ELOT-NEIGHBOR-GRAPH-PLAN.org
+
 ## Core latex/pdflatex auxiliary files:
 *.aux
 *.lof
