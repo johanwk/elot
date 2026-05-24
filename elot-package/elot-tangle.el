@@ -92,23 +92,23 @@
     "rdf:langRange")
   "List of built-in OWL and XSD resources that are always considered known.")
 
-(defconst elot-puri-re 
+(defconst elot-puri-re
   "^\\([a-zA-Z][-a-zA-Z0-9_.]*\\|\\):\\([-[:word:]_./:]*\\)$")
 
 (defun elot-context-type ()
     "Retrieve value of property ELOT-context-type for a governing heading.
-  This will return \"ontology\" if point is under a heading that
-  declares an ontology."
+This will return \"ontology\" if point is under a heading that
+declares an ontology."
     (org-entry-get-with-inheritance "ELOT-context-type"))
   (defun elot-context-localname ()
     "Retrieve value of property ELOT-context-localname for a governing heading.
-  This will return the localname of the ontology
-  if point is under a heading that declares an ontology."
+This will return the localname of the ontology
+if point is under a heading that declares an ontology."
     (org-entry-get-with-inheritance "ELOT-context-localname"))
   (defun elot-default-prefix ()
     "Retrieve value of property ELOT-default-prefix for a governing heading.
-  This will return the default prefix for ontology resources
-  if point is under a heading that declares an ontology."
+This will return the default prefix for ontology resources
+if point is under a heading that declares an ontology."
     (org-entry-get-with-inheritance "ELOT-default-prefix"))
   (defun elot-governing-hierarchy ()
     "Return the governing hierarchy ID if inside a hierarchy section, or nil."
@@ -147,96 +147,98 @@ Recognizes all well-known section suffixes: -datatypes,
   (string-match-p "property-hierarchy" (elot-governing-hierarchy)))
 
 (defun elot-unprefix-uri (puri abbrev-alist &optional noerror)
-  "Replace prefix in PURI with full form from ABBREV-ALIST, if there's a match."
-  (if (eq abbrev-alist nil) puri
-    (if (string-match elot-puri-re puri)
-        (let* ((this-prefix (match-string-no-properties 1 puri))
-               (this-localname (match-string-no-properties 2 puri))
-               (this-ns (cdr (assoc this-prefix abbrev-alist))))
-          (if this-ns
-              (concat "<" this-ns this-localname ">")
-            (if noerror
-                nil
-              ;;(error "Fail! Prefix \"%s\" is not defined" this-prefix)
-              ;; tentatively just let the raw value through
-              puri)))
-          puri)))
+    "Replace prefix in PURI with full form from ABBREV-ALIST, if there's a match.
+When NOERROR is non-nil, return nil for an unknown prefix rather than
+letting the raw value through."
+    (if (null abbrev-alist) puri
+      (if (string-match elot-puri-re puri)
+          (let* ((this-prefix (match-string-no-properties 1 puri))
+                 (this-localname (match-string-no-properties 2 puri))
+                 (this-ns (cdr (assoc this-prefix abbrev-alist))))
+            (if this-ns
+                (concat "<" this-ns this-localname ">")
+              (if noerror
+                  nil
+                ;;(error "Fail! Prefix \"%s\" is not defined" this-prefix)
+                ;; tentatively just let the raw value through
+                puri)))
+            puri)))
 
-(defun elot--strip-continuation-indent (str)
-  "Remove common leading whitespace from continuation lines in STR.
-Find the minimum number of leading spaces on lines after the first,
-then remove exactly that many spaces from the beginning of each
-continuation line.  The first line is left unchanged.
-Only strips from lines that actually begin with at least that many spaces."
-  (if (not (string-match-p "\n" str))
-      str
-    (let* ((lines (split-string str "\n"))
-           (first-line (car lines))
-           (rest-lines (cdr lines))
-           (min-indent
-            (cl-loop for line in rest-lines
-                     when (string-match "^\\( +\\)" line)
-                     minimize (length (match-string 1 line))
-                     into m
-                     finally return (or m 0))))
-      (if (zerop min-indent)
-          str
-        (let* ((prefix (make-string min-indent ?\s))
-               (trimmed (mapcar (lambda (line)
-                                  (if (string-prefix-p prefix line)
-                                      (substring line min-indent)
-                                    line))
-                                rest-lines)))
-          (mapconcat #'identity (cons first-line trimmed) "\n"))))))
+  (defun elot--strip-continuation-indent (str)
+    "Remove common leading whitespace from continuation lines in STR.
+  Find the minimum number of leading spaces on lines after the first,
+  then remove exactly that many spaces from the beginning of each
+  continuation line.  The first line is left unchanged.
+  Only strips from lines that actually begin with at least that many spaces."
+    (if (not (string-match-p "\n" str))
+        str
+      (let* ((lines (split-string str "\n"))
+             (first-line (car lines))
+             (rest-lines (cdr lines))
+             (min-indent
+              (cl-loop for line in rest-lines
+                       when (string-match "^\\( +\\)" line)
+                       minimize (length (match-string 1 line))
+                       into m
+                       finally return (or m 0))))
+        (if (zerop min-indent)
+            str
+          (let* ((prefix (make-string min-indent ?\s))
+                 (trimmed (mapcar (lambda (line)
+                                    (if (string-prefix-p prefix line)
+                                        (substring line min-indent)
+                                      line))
+                                  rest-lines)))
+            (mapconcat #'identity (cons first-line trimmed) "\n"))))))
 
-(defun elot-annotation-string-or-uri (str)
-  "Expand STR to be used as an annotation value in Manchester Syntax.
-Expand uri, or return number, or wrap in quotes."
-  ;; Strip common continuation-line indent first
-  (setq str (elot--strip-continuation-indent str))
-  ;; maybe there's macros in the string, expand them
-  (if (string-match "{{{.+}}}" str)
-      (let ((omt org-macro-templates))
-        (with-temp-buffer (org-mode)
-                          (insert str) (org-macro-replace-all omt)
-                          (setq str (buffer-string)))))
-  ;; NOTE: Use \\` and \\' (string-start/string-end) instead of ^ and $
-  ;; (line-start/line-end) so that multiline values like
-  ;;   "Likely to be obsoleted. See:\nhttps://example.com"
-  ;; are NOT falsely matched as a bare URI.
-  (cond
-   ;; a number -- return the string in quotes
-   ((string-match "\\`[[:digit:]]+[.]?[[:digit:]]*\\'" str)
-    (concat "  \"" str "\""))
-   ;; a bare URI, which org-mode wraps in double brackets -- wrap in angles
-   ((string-match "\\`[[][[]\\(http[^ ]*\\)[]][]]\\'" str)
-    (concat "  <" (match-string 1 str) ">"))
-   ;; a bare URI, but no double brackets -- wrap in angles
-   ((string-match "\\`\\(http[^ ]*\\)\\'" str)
-    (concat "  <" (match-string 1 str) ">"))
-   ;; a bare URI, in angles
-   ((string-match "\\`\\(<http[^ ]*>\\)\\'" str)
-    (concat "  " (match-string 1 str)))
-   ;; a bare URN, in angles
-   ((string-match "\\`\\(<urn:[^>]+>\\)\\'" str)
-    (concat "  " (match-string 1 str)))
-   ;; a URN without angles, explicitly treat as xsd:string
-   ((string-match "\\`\\(urn:uuid[^ ]+\\)\\'" str)
-    (concat "  \"" (match-string 1 str) "\"^^xsd:string"))
-   ;; true -- make it an explicit boolean (case-sensitive: "True" is a label, not a boolean)
-   ((let ((case-fold-search nil)) (string-match "\\`true\\'" str)) " \"true\"^^xsd:boolean")
-   ;; false -- make it an explicit boolean (case-sensitive: "False" is a label, not a boolean)
-   ((let ((case-fold-search nil)) (string-match "\\`false\\'" str)) " \"false\"^^xsd:boolean")
-   ;; string with datatype -- return unchanged
-   ((string-match "\\`\".*\"\\^\\^[-_[:alnum:]]*:[-_[:alnum:]]+\\'" str)
-    (concat "  " str))
-   ;; not a puri -- normal string, wrap in quotes
-   ((equal str (elot-unprefix-uri str org-link-abbrev-alist-local))
-    (if (string-match "\"\\(.*\n\\)*.*\"@[a-z]+" str)
-        (concat " " str)
-      (concat "  \"" (replace-regexp-in-string "\"" "\\\\\"" str) "\"")))
-   ;; else, a puri -- wrap in angles
-   (t (concat "  " (elot-unprefix-uri str org-link-abbrev-alist-local :noerror)))))
+  (defun elot-annotation-string-or-uri (str)
+    "Expand STR to be used as an annotation value in Manchester Syntax.
+  Expand uri, or return number, or wrap in quotes."
+    ;; Strip common continuation-line indent first
+    (setq str (elot--strip-continuation-indent str))
+    ;; maybe there's macros in the string, expand them
+    (if (string-match "{{{.+}}}" str)
+        (let ((omt org-macro-templates))
+          (with-temp-buffer (org-mode)
+                            (insert str) (org-macro-replace-all omt)
+                            (setq str (buffer-string)))))
+    ;; NOTE: Use \\` and \\' (string-start/string-end) instead of ^ and $
+    ;; (line-start/line-end) so that multiline values like
+    ;;   "Likely to be obsoleted. See:\nhttps://example.com"
+    ;; are NOT falsely matched as a bare URI.
+    (cond
+     ;; a number -- return the string in quotes
+     ((string-match "\\`[[:digit:]]+[.]?[[:digit:]]*\\'" str)
+      (concat "  \"" str "\""))
+     ;; a bare URI, which org-mode wraps in double brackets -- wrap in angles
+     ((string-match "\\`[[][[]\\(http[^ ]*\\)[]][]]\\'" str)
+      (concat "  <" (match-string 1 str) ">"))
+     ;; a bare URI, but no double brackets -- wrap in angles
+     ((string-match "\\`\\(http[^ ]*\\)\\'" str)
+      (concat "  <" (match-string 1 str) ">"))
+     ;; a bare URI, in angles
+     ((string-match "\\`\\(<http[^ ]*>\\)\\'" str)
+      (concat "  " (match-string 1 str)))
+     ;; a bare URN, in angles
+     ((string-match "\\`\\(<urn:[^>]+>\\)\\'" str)
+      (concat "  " (match-string 1 str)))
+     ;; a URN without angles, explicitly treat as xsd:string
+     ((string-match "\\`\\(urn:uuid[^ ]+\\)\\'" str)
+      (concat "  \"" (match-string 1 str) "\"^^xsd:string"))
+     ;; true -- make it an explicit boolean (case-sensitive: "True" is a label, not a boolean)
+     ((let ((case-fold-search nil)) (string-match "\\`true\\'" str)) " \"true\"^^xsd:boolean")
+     ;; false -- make it an explicit boolean (case-sensitive: "False" is a label, not a boolean)
+     ((let ((case-fold-search nil)) (string-match "\\`false\\'" str)) " \"false\"^^xsd:boolean")
+     ;; string with datatype -- return unchanged
+     ((string-match "\\`\".*\"\\^\\^[-_[:alnum:]]*:[-_[:alnum:]]+\\'" str)
+      (concat "  " str))
+     ;; not a puri -- normal string, wrap in quotes
+     ((equal str (elot-unprefix-uri str org-link-abbrev-alist-local))
+      (if (string-match "\"\\(.*\n\\)*.*\"@[a-z]+" str)
+          (concat " " str)
+        (concat "  \"" (replace-regexp-in-string "\"" "\\\\\"" str) "\"")))
+     ;; else, a puri -- wrap in angles
+     (t (concat "  " (elot-unprefix-uri str org-link-abbrev-alist-local :noerror)))))
 
 (defun elot-org-elt-exists (x elt)
   "Return a list of elements of type ELT extracted from X.
@@ -346,27 +348,27 @@ non-nil, return NIL.  Otherwise raise an error."
                (org-entry-get-with-inheritance "ID")))))))
 
 (defcustom elot-robot-jar-path (expand-file-name "~/bin/robot.jar")
-  "Path to the robot.jar file."
-  :group 'elot-tangle
-  :version "29.2"
-  :type 'string)
-(defvar elot-robot-command-str
-  (concat "java -jar " elot-robot-jar-path))
-(defcustom elot-exporter-jar-path (expand-file-name "~/bin/elot-exporter.jar")
-  "Path to the elot-exporter.jar file."
-  :group 'elot-tangle
-  :version "29.2"
-  :type 'string)
-(defvar elot-exporter-command-str
-  (concat "java -jar " elot-exporter-jar-path))
+    "Path to the robot.jar file."
+    :group 'elot-tangle
+    :version "29.2"
+    :type 'string)
+  (defvar elot-robot-command-str
+    (concat "java -jar " elot-robot-jar-path))
+  (defcustom elot-exporter-jar-path (expand-file-name "~/bin/elot-exporter.jar")
+    "Path to the elot-exporter.jar file."
+    :group 'elot-tangle
+    :version "29.2"
+    :type 'string)
+  (defvar elot-exporter-command-str
+    (concat "java -jar " elot-exporter-jar-path))
 
-(defun elot-robot-command (cmd)
-  "Execute ROBOT command CMD using `shell-command'.
-  Check whether `elot-robot-jar-path` is set and points to an existing file.
-  It not set, return an error."
-  (if (or (string= elot-robot-jar-path "") (not (file-exists-p elot-robot-jar-path)))
-      (error "ROBOT not found.  Set elot-robot-jar-path with M-x customize-variable"))
-  (shell-command (concat elot-robot-command-str " " cmd)))
+  (defun elot-robot-command (cmd)
+    "Execute ROBOT command CMD using `shell-command'.
+Check whether `elot-robot-jar-path' is set and points to an existing file.
+If not set, return an error."
+    (if (or (string= elot-robot-jar-path "") (not (file-exists-p elot-robot-jar-path)))
+        (error "ROBOT not found.  Set elot-robot-jar-path with M-x customize-variable"))
+    (shell-command (concat elot-robot-command-str " " cmd)))
 
 ;; Helper function for synchronous batch execution
 (defun elot-robot-omn-to-ttl--batch (omnfile output-file command-args)
@@ -497,50 +499,50 @@ Checks for `elot-robot-jar-path`."
         (elot-robot-omn-to-ttl--interactive omnfile output-file command-args)))))
 
 (defun elot--parse-robot-error-location (text)
-  "Extract (line column) from ROBOT error TEXT.  Return list of integers or nil."
-  (when (string-match "Line \\([0-9]+\\) column \\([0-9]+\\)" text)
-    (list (string-to-number (match-string 1 text))
-          (string-to-number (match-string 2 text)))))
+    "Extract (line column) from ROBOT error TEXT.  Return list of integers or nil."
+    (when (string-match "Line \\([0-9]+\\) column \\([0-9]+\\)" text)
+      (list (string-to-number (match-string 1 text))
+            (string-to-number (match-string 2 text)))))
 
-(defun elot--jump-to-omn-error (omnfile line col)
-  "Open OMNFILE and move point to LINE and COL."
-  (let ((buf (find-file-other-window omnfile)))
-    (with-current-buffer buf
-      (goto-char (point-min))
-      (forward-line (1- line))
-      (forward-char (1- col))
-      ;;(pulse-momentary-highlight-one-line (point))
-      )))
-
-(defun elot--jump-to-org-heading-for-identifier (omnfile line)
-  "From OMNFILE and error LINE, search upward for a declaration.
-  Jump to the Org-mode heading defining the identifier found."
-  (let ((identifier nil))
-    (save-excursion
-      (with-current-buffer (find-file-noselect omnfile)
+  (defun elot--jump-to-omn-error (omnfile line col)
+    "Open OMNFILE and move point to LINE and COL."
+    (let ((buf (find-file-other-window omnfile)))
+      (with-current-buffer buf
         (goto-char (point-min))
         (forward-line (1- line))
-        (end-of-line)
-        (when (re-search-backward "^[^ \t]" nil t)
-          (let ((line-text (buffer-substring-no-properties
-                            (line-beginning-position) (line-end-position))))
-            (when (string-match "^\\([-A-Za-z]+\\):[ \t]+\\(.+\\)" line-text)
-              (setq identifier (match-string 2 line-text)))))))
-    (when (and identifier elot-last-org-source (file-exists-p elot-last-org-source))
-      (let ((buf (find-file-other-window elot-last-org-source)))
-        (with-current-buffer buf
+        (forward-char (1- col))
+        ;;(pulse-momentary-highlight-one-line (point))
+        )))
+
+  (defun elot--jump-to-org-heading-for-identifier (omnfile line)
+    "From OMNFILE and error LINE, search upward for a declaration.
+Jump to the Org-mode heading defining the identifier found."
+    (let ((identifier nil))
+      (save-excursion
+        (with-current-buffer (find-file-noselect omnfile)
           (goto-char (point-min))
-          (if (re-search-forward
-               (format "^\\(?:\\*+ .*\\b%s\\b\\|.*::.*%s\\)"
-                       (regexp-quote identifier)
-                       (regexp-quote identifier))
-               nil t)
-              (progn
-                (beginning-of-line)
-                ;;(pulse-momentary-highlight-one-line (point))
-                ;;(message "Parse error traced to heading: %s" (match-string 0))
-                )
-            (message "Could not find Org heading for: %s" identifier)))))))
+          (forward-line (1- line))
+          (end-of-line)
+          (when (re-search-backward "^[^ \t]" nil t)
+            (let ((line-text (buffer-substring-no-properties
+                              (line-beginning-position) (line-end-position))))
+              (when (string-match "^\\([-A-Za-z]+\\):[ \t]+\\(.+\\)" line-text)
+                (setq identifier (match-string 2 line-text)))))))
+      (when (and identifier elot-last-org-source (file-exists-p elot-last-org-source))
+        (let ((buf (find-file-other-window elot-last-org-source)))
+          (with-current-buffer buf
+            (goto-char (point-min))
+            (if (re-search-forward
+                 (format "^\\(?:\\*+ .*\\b%s\\b\\|.*::.*%s\\)"
+                         (regexp-quote identifier)
+                         (regexp-quote identifier))
+                 nil t)
+                (progn
+                  (beginning-of-line)
+                  ;;(pulse-momentary-highlight-one-line (point))
+                  ;;(message "Parse error traced to heading: %s" (match-string 0))
+                  )
+              (message "Could not find Org heading for: %s" identifier)))))))
 
 (defvar elot-last-org-source nil
   "Path to the last Org-mode file that generated an OMN file.")
@@ -932,10 +934,10 @@ ELOT-ATTRIBLIST-HT (hashtables).
 
 If SQLite support is available (`sqlite-open' and
 `elot-db-update-source' bound) and the buffer is visiting a file,
-also sync the parsed entries into the ELOT label DB under
-`buffer-file-name', so other buffers / projects can look them 
-up via `elot-db-get-label' / `elot-db-get-label-any'.  Errors during
-sync are reported but do not break the local HT population."
+also sync the parsed entries into the ELOT label DB under the
+variable `buffer-file-name', so other buffers / projects can look
+them up via `elot-db-get-label' / `elot-db-get-label-any'.  Errors
+during sync are reported but do not break the local HT population."
   (let ((slurp (elot-build-slurp)))
     (setq elot-slurp slurp)
     (setq elot-codelist-ht
@@ -1116,7 +1118,7 @@ Returns nil if NODE does not define a resource or is tagged :nodeclare:."
           (push (elot-omn-format-restrictions (nreverse restrictions) 4) frame))
         
         ;; Join frame internals with a single newline (no blank lines inside)
-        (mapconcat 'identity (nreverse frame) "\n")))))
+        (mapconcat #'identity (nreverse frame) "\n")))))
 
 (defun elot-omn-misc-frames (node)
   "Generate a list of formatted misc frame strings from NODE's descriptions.
@@ -1155,10 +1157,10 @@ Uses PARENT-URI to automatically emit taxonomy axioms."
               (push child-frames frames))))))
     
     ;; Join adjacent frames with a single blank line
-    (mapconcat 'identity (nreverse frames) "\n\n")))
+    (mapconcat #'identity (nreverse frames) "\n\n")))
 
 (defun elot-get-ontology-node-omn (node)
-    "Return the OMN content for the given ONTOLOGY-NODE."
+    "Return the OMN content for the given ontology NODE."
     (let* ((prefix-block (elot-omn-prefix-block node))
            (resources (elot-omn-resource-declarations (list node))))
       (concat (or prefix-block "")

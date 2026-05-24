@@ -143,7 +143,7 @@ This section collects functions and variables that enable reading the Org outlin
 ***** TODO CURIE pattern
 Check this against other similar pattern in use
 #+begin_src emacs-lisp
-  (defconst elot-puri-re 
+  (defconst elot-puri-re
     "^\\([a-zA-Z][-a-zA-Z0-9_.]*\\|\\):\\([-[:word:]_./:]*\\)$")
 #+end_src
 
@@ -156,18 +156,18 @@ pipeline.
 #+begin_src emacs-lisp
   (defun elot-context-type ()
     "Retrieve value of property ELOT-context-type for a governing heading.
-  This will return \"ontology\" if point is under a heading that
-  declares an ontology."
+This will return \"ontology\" if point is under a heading that
+declares an ontology."
     (org-entry-get-with-inheritance "ELOT-context-type"))
   (defun elot-context-localname ()
     "Retrieve value of property ELOT-context-localname for a governing heading.
-  This will return the localname of the ontology
-  if point is under a heading that declares an ontology."
+This will return the localname of the ontology
+if point is under a heading that declares an ontology."
     (org-entry-get-with-inheritance "ELOT-context-localname"))
   (defun elot-default-prefix ()
     "Retrieve value of property ELOT-default-prefix for a governing heading.
-  This will return the default prefix for ontology resources
-  if point is under a heading that declares an ontology."
+This will return the default prefix for ontology resources
+if point is under a heading that declares an ontology."
     (org-entry-get-with-inheritance "ELOT-default-prefix"))
   (defun elot-governing-hierarchy ()
     "Return the governing hierarchy ID if inside a hierarchy section, or nil."
@@ -215,8 +215,10 @@ Functions to know where we are in an ELOT tree.
 ***** CURIE expansion
 #+begin_src emacs-lisp
   (defun elot-unprefix-uri (puri abbrev-alist &optional noerror)
-    "Replace prefix in PURI with full form from ABBREV-ALIST, if there's a match."
-    (if (eq abbrev-alist nil) puri
+    "Replace prefix in PURI with full form from ABBREV-ALIST, if there's a match.
+When NOERROR is non-nil, return nil for an unknown prefix rather than
+letting the raw value through."
+    (if (null abbrev-alist) puri
       (if (string-match elot-puri-re puri)
           (let* ((this-prefix (match-string-no-properties 1 puri))
                  (this-localname (match-string-no-properties 2 puri))
@@ -446,8 +448,8 @@ generic =elot-robot-command= wrapper.
 
   (defun elot-robot-command (cmd)
     "Execute ROBOT command CMD using `shell-command'.
-    Check whether `elot-robot-jar-path` is set and points to an existing file.
-    It not set, return an error."
+Check whether `elot-robot-jar-path' is set and points to an existing file.
+If not set, return an error."
     (if (or (string= elot-robot-jar-path "") (not (file-exists-p elot-robot-jar-path)))
         (error "ROBOT not found.  Set elot-robot-jar-path with M-x customize-variable"))
     (shell-command (concat elot-robot-command-str " " cmd)))
@@ -610,7 +612,7 @@ OMN file or the originating Org heading.
 
   (defun elot--jump-to-org-heading-for-identifier (omnfile line)
     "From OMNFILE and error LINE, search upward for a declaration.
-    Jump to the Org-mode heading defining the identifier found."
+Jump to the Org-mode heading defining the identifier found."
     (let ((identifier nil))
       (save-excursion
         (with-current-buffer (find-file-noselect omnfile)
@@ -1120,10 +1122,10 @@ The following simply replaces ~elot-slurp-entities~ with ~elot-build-slurp~, and
 
   If SQLite support is available (`sqlite-open' and
   `elot-db-update-source' bound) and the buffer is visiting a file,
-  also sync the parsed entries into the ELOT label DB under
-  `buffer-file-name', so other buffers / projects can look them 
-  up via `elot-db-get-label' / `elot-db-get-label-any'.  Errors during
-  sync are reported but do not break the local HT population."
+  also sync the parsed entries into the ELOT label DB under the
+  variable `buffer-file-name', so other buffers / projects can look
+  them up via `elot-db-get-label' / `elot-db-get-label-any'.  Errors
+  during sync are reported but do not break the local HT population."
     (let ((slurp (elot-build-slurp)))
       (setq elot-slurp slurp)
       (setq elot-codelist-ht
@@ -1324,7 +1326,7 @@ With ~M-:~ we get at the ~:children~ of ~elot-headline-hierarchy~; which is a li
             (push (elot-omn-format-restrictions (nreverse restrictions) 4) frame))
           
           ;; Join frame internals with a single newline (no blank lines inside)
-          (mapconcat 'identity (nreverse frame) "\n")))))
+          (mapconcat #'identity (nreverse frame) "\n")))))
 
   (defun elot-omn-misc-frames (node)
     "Generate a list of formatted misc frame strings from NODE's descriptions.
@@ -1363,7 +1365,7 @@ With ~M-:~ we get at the ~:children~ of ~elot-headline-hierarchy~; which is a li
                 (push child-frames frames))))))
       
       ;; Join adjacent frames with a single blank line
-      (mapconcat 'identity (nreverse frames) "\n\n")))
+      (mapconcat #'identity (nreverse frames) "\n\n")))
 
 #+end_src
 
@@ -1394,7 +1396,7 @@ This is a temporary solution only. The list of prefixes to be applied should be 
 Macro definitions are carried into the temp file with variable ~omn-save~. This gives some strange results for the ~modification-time~ macro. TODO find out why.
 #+begin_src emacs-lisp
     (defun elot-get-ontology-node-omn (node)
-      "Return the OMN content for the given ONTOLOGY-NODE."
+      "Return the OMN content for the given ontology NODE."
       (let* ((prefix-block (elot-omn-prefix-block node))
              (resources (elot-omn-resource-declarations (list node))))
         (concat (or prefix-block "")
