@@ -2657,7 +2657,8 @@ A MELPA recipe is a single Elisp form in the =melpa/melpa=
 repository under =recipes/elot=.  A draft is sketched in
 =ELOT-DB-PLAN.org= but has not been finalised.
 
-** TODO Step 7.1 - Finalise the recipe form
+** DONE Step 7.1 - Finalise the recipe form
+CLOSED: [2026-05-12 tir. 21:46]
 - Working file (this repo): create =elot-package/MELPA-RECIPE=.
 - Contents (verify each path glob actually matches files in
   =elot-package/=):
@@ -2682,25 +2683,83 @@ repository under =recipes/elot=.  A draft is sketched in
   below and should also be noted under "Design Decisions" in
   =REFACTORING.org=.
 
-** TODO Step 7.2 - Local recipe build smoke test
-- Use =package-build= locally:
-  #+begin_src sh
-  git clone https://github.com/melpa/melpa.git /tmp/melpa
-  cp elot-package/MELPA-RECIPE /tmp/melpa/recipes/elot
-  cd /tmp/melpa && make recipes/elot
-  #+end_src
-- =make recipes/elot= produces a =.tar= under =/tmp/melpa/packages/=.
-- Install that tarball into a clean Emacs profile:
-  =M-x package-install-file=, then =M-x elot-mode= in an example
-  =.org=.  Confirm it activates.
+** DONE Step 7.2 - Local recipe build smoke test
+CLOSED: [2026-05-12]
+- Used =package-build= locally via a WSL clone of the MELPA
+  fork (=johanwk/melpa=, =master= branch).  WSL is required;
+  MSYS mangles the =/c/...= paths into =c:/c/...= and fails.
+- Recipe file =recipes/elot= in the MELPA fork matches the
+  draft in Step 7.1 (glob-based =:files= clause covering all
+  =.el=, =schema.sql=, =elot-lob.org=, =.css=, =.js=, and
+  =.setup= files in =elot-package/=).
+- =make recipes/elot= produced =elot-20260510.2157.tar= under
+  =~/melpa/packages/= containing 16 files plus the
+  auto-generated =elot-pkg.el=:
 
-** TODO Step 7.3 - Update README installation section
+#+begin_example
+johanw@L25020124:~/melpa$ make recipes/elot
+ • Building package elot (from github:johanwk/elot)...
+Updating /home/johanw/melpa/working/elot/
+Checking out 774cacfdfd8e6bde939b97144014c3ae42aa370b
+Copying files (->) and directories (=>)
+  from /home/johanw/melpa/working/elot/
+  to /tmp/elot-Cf355U/elot-20260510.2157
+  ! elot-package/elot-db.el -> elot-db.el
+  ! elot-package/elot-defaults.el -> elot-defaults.el
+  ! elot-package/elot-flymake.el -> elot-flymake.el
+  ! elot-package/elot-label-display.el -> elot-label-display.el
+  ! elot-package/elot-lint.el -> elot-lint.el
+  ! elot-package/elot-mode.el -> elot-mode.el
+  ! elot-package/elot-owl-grammar.el -> elot-owl-grammar.el
+  ! elot-package/elot-sources.el -> elot-sources.el
+  ! elot-package/elot-tangle.el -> elot-tangle.el
+  ! elot-package/elot.el -> elot.el
+  ! elot-package/schema.sql -> schema.sql
+  ! elot-package/elot-lob.org -> elot-lob.org
+  ! elot-package/elot-style.css -> elot-style.css
+  ! elot-package/elot-nav.js -> elot-nav.js
+  ! elot-package/theme-elot.setup -> theme-elot.setup
+  ! elot-package/theme-readtheorg.setup -> theme-readtheorg.setup
+Created elot-20260510.2157.tar containing:
+  elot-20260510.2157/
+  elot-20260510.2157/elot-db.el
+  elot-20260510.2157/elot-defaults.el
+  elot-20260510.2157/elot-flymake.el
+  elot-20260510.2157/elot-label-display.el
+  elot-20260510.2157/elot-lint.el
+  elot-20260510.2157/elot-lob.org
+  elot-20260510.2157/elot-mode.el
+  elot-20260510.2157/elot-nav.js
+  elot-20260510.2157/elot-owl-grammar.el
+  elot-20260510.2157/elot-pkg.el
+  elot-20260510.2157/elot-sources.el
+  elot-20260510.2157/elot-style.css
+  elot-20260510.2157/elot-tangle.el
+  elot-20260510.2157/elot.el
+  elot-20260510.2157/schema.sql
+  elot-20260510.2157/theme-elot.setup
+  elot-20260510.2157/theme-readtheorg.setup
+ ✓ Success:
+  2026-05-12T19:42:57+0000  elot-20260510.2157.entry
+  2026-05-12T19:42:57+0000  elot-20260510.2157.tar
+Built elot in 1.389s, finished at 2026-05-12T19:42:57+0000
+#+end_example
+
+- Installed the tarball into a clean Emacs profile via
+  =M-x package-install-file=.  =(require 'elot)= loaded
+  cleanly; =M-x elot-mode= activated in an example =.org=
+  file; =M-x package-lint-current-buffer= on the installed
+  =elot.el= reported "No issues found."
+
+** DONE Step 7.3 - Update README installation section
+CLOSED: [2026-05-12 tir. 21:50]
 - *Files*: =README.org=, =README.md= (auto-generated).
 - Add a "Install from MELPA" subsection ahead of the existing
   "clone from Git" instructions.  Mark "from Git" as the
   development-track option.
 
-** TODO Step 7.4 - Open the MELPA pull request
+** STARTED Step 7.4 - Open the MELPA pull request
+- PR at https://github.com/melpa/melpa/pull/9411
 - Fork =melpa/melpa= on GitHub.
 - Add =recipes/elot= with the contents from Step 7.1.
 - Open the PR.  Address reviewer feedback in this repo (not in

@@ -1,0 +1,1050 @@
+\input texinfo    @c -*- texinfo -*-
+@c %**start of header
+@setfilename elot.info
+@settitle ELOT --- Literate Ontology Tool for Emacs
+@documentencoding UTF-8
+@documentlanguage en
+@syncodeindex pg cp
+@c %**end of header
+
+@copying
+This manual is for ELOT@comma{} the Emacs Literate Ontology Tool.
+
+Copyright (C) 2024--2026 Johan W@. Klüwer and contributors.
+
+@quotation
+Permission is granted to copy@comma{} distribute and/or modify this document
+under the terms of the GNU Free Documentation License@comma{} Version 1.3 or
+any later version published by the Free Software Foundation.
+
+@end quotation
+@end copying
+
+@dircategory Emacs
+@direntry
+* ELOT: (elot).         Literate Ontology Tool --- author OWL ontologies in Org-mode.
+@end direntry
+
+@finalout
+@titlepage
+@title ELOT --- Literate Ontology Tool for Emacs
+@author Johan W@. Klüwer and contributors
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+@end titlepage
+
+@contents
+
+@ifnottex
+@node Top
+@top ELOT --- Literate Ontology Tool for Emacs
+
+@quotation
+ELOT lets you author OWL ontologies in Org-mode@comma{} exporting to OWL
+Manchester Syntax@comma{} HTML and PDF documentation@comma{} and running SPARQL@comma{}
+ROBOT and rdfpuml against them from inside Emacs.
+
+@end quotation
+
+@end ifnottex
+
+@menu
+* Preface::
+* Part I --- Tutorial::
+* Part II --- How-to guides::
+* Part III --- Reference::
+* Part IV --- Background::
+* Appendices::
+* Indices::
+
+@detailmenu
+--- The Detailed Node Listing ---
+
+Preface
+
+* Who this manual is for::
+* How to read this manual::
+* Conventions::
+* Getting help::
+
+Part I --- Tutorial
+
+* Installation::
+* Your first ontology::
+* Adding axioms and annotations::
+* Exporting to OWL and HTML::
+* A first SPARQL query and rdfpuml diagram::
+
+Installation
+
+* Prerequisites::
+* Install ELOT from MELPA::
+* Install ELOT from Git::
+* Point ELOT at ROBOT::
+* Verify::
+
+Your first ontology
+
+* Create the file::
+* Tangle to OWL Manchester Syntax::
+* Sanity-check with ROBOT::
+* Where to next::
+
+Adding axioms and annotations
+
+* Annotations::
+* Object properties::
+* Disjointness::
+
+Exporting to OWL and HTML
+
+* Adding the theme::
+* PDF and Info::
+* Publishing to GitHub Pages::
+
+A first SPARQL query and rdfpuml diagram
+
+* A first SPARQL block::
+* A first diagram::
+
+Part II --- How-to guides
+
+* Authoring::
+* Querying with SPARQL and ROBOT::
+* Diagrams with rdfpuml and Library-of-Babel helpers::
+* Label display::
+* Importing existing OWL ontologies::
+* Linting and syntax checking::
+* Working with multiple ontologies and imports::
+* Collaborating via Git::
+
+Part III --- Reference
+
+* Commands and keybindings::
+* Customization variables::
+* File and header conventions::
+* @samp{#+call} helpers (Library of Babel)::
+* Manchester Syntax cheatsheet::
+* Glossary::
+
+Part IV --- Background
+
+* Why literate ontology engineering::
+* Architecture overview::
+* Relationship to other tools::
+
+Appendices
+
+* VS Code extension parity::
+* Troubleshooting and FAQ::
+* Changelog pointers::
+
+@end detailmenu
+@end menu
+
+@node Preface
+@chapter Preface
+
+ELOT --- the @emph{Emacs Literate Ontology Tool} --- is a package for
+authoring OWL ontologies in Org-mode.  A single Org file is both the
+ontology source (tangled to OWL Manchester Syntax) and the published
+documentation (exported to HTML@comma{} PDF@comma{} or Info).
+
+@menu
+* Who this manual is for::
+* How to read this manual::
+* Conventions::
+* Getting help::
+@end menu
+
+@node Who this manual is for
+@section Who this manual is for
+
+@itemize
+@item
+@strong{Ontology authors} who want their ontology and its documentation to
+stay in sync@comma{} automatically.
+@item
+@strong{Emacs users} curious about how literate programming applies to
+knowledge engineering.
+@item
+@strong{Newcomers to OWL} who want a working ontology in front of them
+before reading a 400-page semantic-web textbook.
+@end itemize
+
+No prior experience with OWL or Org-mode is assumed for Part I@.
+Parts II--IV assume you have completed the tutorial.
+
+@node How to read this manual
+@section How to read this manual
+
+This manual follows the @uref{https://diataxis.fr/, Diátaxis} structure:
+
+@itemize
+@item
+Read @ref{Part I --- Tutorial, , Part I} front-to-back the first time.
+@item
+Dip into @ref{Part II --- How-to guides, , Part II} when you have a specific task.
+@item
+Consult @ref{Part III --- Reference, , Part III} for lookups.
+@item
+Read @ref{Part IV --- Background, , Part IV} when you want to know @emph{why}.
+@end itemize
+
+@node Conventions
+@section Conventions
+
+@itemize
+@item
+@samp{code} face for CURIEs@comma{} IRIs@comma{} function names@comma{} file paths.
+@item
+@samp{~C-c C-x r~} for keystrokes.
+@item
+@emph{italic} for new terms on first use.
+@item
+@samp{M-x command-name} for interactive commands.
+@end itemize
+
+@node Getting help
+@section Getting help
+
+@itemize
+@item
+Project home: @uref{https://github.com/johanwk/elot}
+@item
+Issues and discussion: the GitHub tracker.
+@item
+The ELOT menu in any @samp{elot-mode} buffer lists the main commands.
+@end itemize
+
+@node Part I --- Tutorial
+@chapter Part I --- Tutorial
+
+This part is linear.  Read it in order; it walks a first-time user
+through installing ELOT and building a small ontology end-to-end.
+
+@menu
+* Installation::
+* Your first ontology::
+* Adding axioms and annotations::
+* Exporting to OWL and HTML::
+* A first SPARQL query and rdfpuml diagram::
+@end menu
+
+@node Installation
+@section Installation
+
+The fastest path is via MELPA once ELOT is accepted there.  Until
+then@comma{} install from Git.
+
+@menu
+* Prerequisites::
+* Install ELOT from MELPA::
+* Install ELOT from Git::
+* Point ELOT at ROBOT::
+* Verify::
+@end menu
+
+@node Prerequisites
+@subsection Prerequisites
+
+@itemize
+@item
+@strong{Emacs 30.1 or later}.  ELOT uses @samp{peg.el}@comma{} which became a built-in
+library in 30.1.
+@item
+@strong{Java 11 or later}@comma{} required by ROBOT@.
+@item
+@strong{@uref{https://github.com/ontodev/robot, ROBOT}}@comma{} an OWL command-line tool.  Download @samp{robot.jar} from the
+ROBOT releases page and note its path.
+@item
+@strong{@uref{https://plantuml.com/, PlantUML}} (optional)@comma{} for diagram rendering via @samp{rdfpuml}.
+@item
+@strong{Protégé 5.6} (optional)@comma{} for cross-checking ontologies in a GUI@.
+@end itemize
+
+@node Install ELOT from MELPA
+@subsection Install ELOT from MELPA
+
+When ELOT is on MELPA:
+
+@lisp
+(use-package elot
+  :ensure t)
+@end lisp
+
+That is the whole installation.  @samp{elot-mode} is autoloaded.
+
+@node Install ELOT from Git
+@subsection Install ELOT from Git
+
+Until the MELPA recipe lands@comma{} clone the repository and add it to
+your load path:
+
+@example
+git clone https://github.com/johanwk/elot ~/src/elot
+@end example
+
+In your @samp{init.el}:
+
+@lisp
+(add-to-list 'load-path "~/src/elot/elot-package")
+(require 'elot)
+@end lisp
+
+@node Point ELOT at ROBOT
+@subsection Point ELOT at ROBOT
+
+Set @samp{elot-robot-jar-path} to the absolute path of your downloaded
+@samp{robot.jar}:
+
+@lisp
+(setq elot-robot-jar-path "~/bin/robot.jar")
+@end lisp
+
+You can also customize it via @samp{M-x customize-variable RET
+elot-robot-jar-path}.
+
+@node Verify
+@subsection Verify
+
+Open an Org file and run @samp{M-x elot-mode}.  The ELOT menu appears in
+the menu bar.  @samp{M-x elot-version} prints the loaded version.
+
+If something goes wrong@comma{} see @ref{Troubleshooting and FAQ, , Troubleshooting and FAQ}.
+
+@node Your first ontology
+@section Your first ontology
+
+In this chapter you build a tiny ontology of @emph{pets} from scratch.
+By the end you will have:
+
+@itemize
+@item
+a working @samp{pets.org} file you can re-tangle and re-export at will@comma{}
+@item
+a generated @samp{pets.omn} ontology in OWL Manchester Syntax@comma{}
+@item
+the start of an HTML render of your ontology document.
+@end itemize
+
+Time required: 15--20 minutes.
+
+@menu
+* Create the file::
+* Tangle to OWL Manchester Syntax::
+* Sanity-check with ROBOT::
+* Where to next::
+@end menu
+
+@node Create the file
+@subsection Create the file
+
+Create @samp{pets.org} anywhere in your filesystem and paste the
+skeleton below.  Open it in Emacs and run @samp{M-x elot-mode}.
+
+@example
+#+TITLE: A tiny ontology of pets
+#+AUTHOR: Your Name
+
+* Prefixes
+@comma{}:PROPERTIES:
+@comma{}:header-args:emacs-lisp+: :tangle no
+@comma{}:END:
+
+#+name: prefix-table
+@comma{}| prefix | uri                                            |
+@comma{}|--------+------------------------------------------------|
+@comma{}| ex     | http://example.org/pets/                       |
+@comma{}| owl    | http://www.w3.org/2002/07/owl#                 |
+@comma{}| rdfs   | http://www.w3.org/2000/01/rdf-schema#          |
+@comma{}| skos   | http://www.w3.org/2004/02/skos/core#           |
+
+* ex:pets
+@comma{}:PROPERTIES:
+@comma{}:ID:       pets-ontology
+@comma{}:ontology-iri: http://example.org/pets/
+@comma{}:END:
+
+A small example ontology used by the ELOT tutorial.
+
+** Classes
+*** ex:Animal
+A living creature.
+
+*** ex:Dog
+@comma{}:PROPERTIES:
+@comma{}:subclass-of: ex:Animal
+@comma{}:END:
+A dog is an animal.
+
+*** ex:Cat
+@comma{}:PROPERTIES:
+@comma{}:subclass-of: ex:Animal
+@comma{}:END:
+A cat is an animal.
+@end example
+
+@node Tangle to OWL Manchester Syntax
+@subsection Tangle to OWL Manchester Syntax
+
+With point anywhere in @samp{pets.org}@comma{} run @samp{M-x elot-tangle}.  A file
+@samp{pets.omn} appears next to your Org source.  Open it; you should
+see Manchester-syntax declarations for @samp{ex:Animal}@comma{} @samp{ex:Dog} and
+@samp{ex:Cat}.
+
+@node Sanity-check with ROBOT
+@subsection Sanity-check with ROBOT
+
+From a shell:
+
+@example
+robot report --input pets.omn --output pets-report.tsv
+@end example
+
+ROBOT's report should be empty (or contain only INFO entries).
+Errors mean ELOT generated something OWL does not like; see
+@ref{Linting and syntax checking, , Linting and syntax checking}.
+
+@node Where to next
+@subsection Where to next
+
+@itemize
+@item
+@ref{Adding axioms and annotations, , Adding axioms and annotations} --- give your classes proper
+definitions and relationships.
+@item
+@ref{Exporting to OWL and HTML, , Exporting to OWL and HTML} --- produce a polished document.
+@end itemize
+
+@node Adding axioms and annotations
+@section Adding axioms and annotations
+
+TODO --- expand.
+
+This chapter extends the @samp{pets.org} ontology from
+@ref{Your first ontology, , the previous chapter} with:
+
+@itemize
+@item
+@samp{rdfs:label} and @samp{skos:definition} annotations on every class@comma{}
+@item
+a @samp{disjointWith} axiom between @samp{ex:Dog} and @samp{ex:Cat}@comma{}
+@item
+an object property @samp{ex:chases} with @samp{rdfs:domain} and @samp{rdfs:range}@comma{}
+@item
+an existential restriction: every @samp{ex:Dog} @emph{chases some} @samp{ex:Cat}.
+@end itemize
+
+@menu
+* Annotations::
+* Object properties::
+* Disjointness::
+@end menu
+
+@node Annotations
+@subsection Annotations
+
+Use the @samp{:annotations:} drawer key to attach annotations to a class:
+
+@example
+*** ex:Dog
+@comma{}:PROPERTIES:
+@comma{}:subclass-of: ex:Animal
+@comma{}:END:
+@comma{}:annotations:
+@comma{}- rdfs:label :: "Dog"@@en
+@comma{}- skos:definition :: "A domesticated canine."@@en
+@comma{}:end:
+@end example
+
+@node Object properties
+@subsection Object properties
+
+TODO --- show the property declaration and the existential restriction.
+
+@node Disjointness
+@subsection Disjointness
+
+TODO --- show @samp{disjointWith} and how it appears in the tangled OMN@.
+
+@node Exporting to OWL and HTML
+@section Exporting to OWL and HTML
+
+TODO --- expand.
+
+This chapter walks through the two export targets that matter to
+most authors:
+
+@enumerate
+@item
+@strong{OWL Manchester Syntax} via @samp{M-x elot-tangle} (you already saw
+this in @ref{Your first ontology, , Your first ontology}).
+@item
+@strong{HTML documentation} via Org's standard exporter (@samp{C-c C-e h h})
+plus the bundled @samp{theme-readtheorg.setup}.
+@end enumerate
+
+@menu
+* Adding the theme::
+* PDF and Info::
+* Publishing to GitHub Pages::
+@end menu
+
+@node Adding the theme
+@subsection Adding the theme
+
+Put this line near the top of your ontology Org file:
+
+@example
+#+SETUPFILE: theme-readtheorg.setup
+@end example
+
+Re-export with @samp{C-c C-e h h}; the resulting HTML uses the ELOT
+theme.
+
+@node PDF and Info
+@subsection PDF and Info
+
+For PDF: @samp{C-c C-e l p}.  For Info (Emacs help format):
+@samp{C-c C-e i i}@comma{} then @samp{install-info} the result.
+
+@node Publishing to GitHub Pages
+@subsection Publishing to GitHub Pages
+
+TODO --- recipe.
+
+@node A first SPARQL query and rdfpuml diagram
+@section A first SPARQL query and rdfpuml diagram
+
+TODO --- expand.
+
+This chapter introduces two of ELOT's most-loved features:
+
+@itemize
+@item
+running @strong{SPARQL} queries directly against your tangled @samp{.omn} via
+embedded source blocks@comma{}
+@item
+generating @strong{PlantUML diagrams} of selected triples via the
+@samp{rdfpuml-block} Library-of-Babel helper.
+@end itemize
+
+@menu
+* A first SPARQL block::
+* A first diagram::
+@end menu
+
+@node A first SPARQL block
+@subsection A first SPARQL block
+
+Add this to @samp{pets.org}@comma{} below the class definitions:
+
+@example
+#+begin_src sparql :url "pets.omn"
+@comma{}select ?s ?o where @{ ?s rdfs:subClassOf ?o @}
+#+end_src
+@end example
+
+Press @samp{C-c C-c} inside the block.  ELOT shells out to ROBOT and
+inserts the result table below the block.  No @samp{PREFIX} boilerplate
+needed --- ELOT injects prefixes from your @samp{prefix-table}.
+
+@node A first diagram
+@subsection A first diagram
+
+TODO --- @samp{rdfpuml-block} example.
+
+See @ref{Querying with SPARQL and ROBOT, , Querying with SPARQL and ROBOT} and @ref{Diagrams with rdfpuml and Library-of-Babel helpers, , Diagrams with rdfpuml} for
+the full how-tos.
+
+@node Part II --- How-to guides
+@chapter Part II --- How-to guides
+
+Each guide is self-contained@comma{} task-oriented@comma{} and answers a single
+``how do I @dots{}?'' question.  Read only the ones you need.
+
+@menu
+* Authoring::
+* Querying with SPARQL and ROBOT::
+* Diagrams with rdfpuml and Library-of-Babel helpers::
+* Label display::
+* Importing existing OWL ontologies::
+* Linting and syntax checking::
+* Working with multiple ontologies and imports::
+* Collaborating via Git::
+@end menu
+
+@node Authoring
+@section Authoring
+
+TODO --- task-oriented recipes for day-to-day authoring:
+
+@itemize
+@item
+structuring a large ontology across multiple sections@comma{}
+@item
+using description-list items for annotations@comma{}
+@item
+working with @samp{:annotations:} drawers@comma{}
+@item
+tempo templates for fast class / property insertion@comma{}
+@item
+using the ELOT easymenu.
+@end itemize
+
+@node Querying with SPARQL and ROBOT
+@section Querying with SPARQL and ROBOT
+
+TODO@.
+
+Covers:
+
+@itemize
+@item
+the ELOT @samp{org-babel-execute:sparql} advice and how @samp{:url} dispatches
+to ROBOT (for local @samp{.omn} files) or to a remote endpoint@comma{}
+@item
+prefix injection from @samp{org-link-abbrev-alist-local} and the merge
+rules with inline @samp{PREFIX} declarations@comma{}
+@item
+result formats (@samp{csv} vs @samp{ttl})@comma{}
+@item
+known gotchas (empty result sets@comma{} non-ASCII queries).
+@end itemize
+
+@node Diagrams with rdfpuml and Library-of-Babel helpers
+@section Diagrams with rdfpuml and Library-of-Babel helpers
+
+TODO@.
+
+Covers @samp{rdfpuml-block}@comma{} @samp{kill-prefixes}@comma{} and the supported
+@samp{#+call:} helpers in @samp{elot-lob.org}.
+
+@node Label display
+@section Label display
+
+TODO --- migrate content from @samp{README-global-label-display.org}
+into this chapter.
+
+Covers buffer-local label overlays@comma{} the global label-display mode@comma{}
+the label database@comma{} and label display in @samp{*xref*} /
+@samp{*ELOT Describe*} buffers.
+
+@node Importing existing OWL ontologies
+@section Importing existing OWL ontologies
+
+TODO --- ROBOT-based round-tripping of an existing ontology
+(@samp{.owl} / @samp{.ttl} / @samp{.omn}) into an ELOT Org skeleton.
+
+@node Linting and syntax checking
+@section Linting and syntax checking
+
+TODO --- @samp{elot-lint}@comma{} the OMN PEG grammar@comma{} the Flymake backend.
+
+@node Working with multiple ontologies and imports
+@section Working with multiple ontologies and imports
+
+TODO --- @samp{owl:imports}@comma{} catalog files@comma{} working tree layout for
+multi-ontology projects.
+
+@node Collaborating via Git
+@section Collaborating via Git
+
+TODO --- diff-friendly Org structure@comma{} recommended @samp{.gitattributes}@comma{}
+review workflow for ontology PRs.
+
+@node Part III --- Reference
+@chapter Part III --- Reference
+
+Exhaustive lookup material.  Most of this part is auto-generated by
+@samp{make manual-reference} from the live ELOT sources; do not edit the
+generated files by hand.
+
+@menu
+* Commands and keybindings::
+* Customization variables::
+* File and header conventions::
+* @samp{#+call} helpers (Library of Babel)::
+* Manchester Syntax cheatsheet::
+* Glossary::
+@end menu
+
+@node Commands and keybindings
+@section Commands and keybindings
+
+This chapter is auto-generated by @samp{make manual-reference}.  Do not
+edit by hand; edit the docstrings in the source instead.
+
+@multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@headitem Command
+@tab Key
+@tab Description
+@item @samp{elot-describe-curie-at-point}
+@tab ==
+@tab Pop up a @strong{Help} buffer describing CURIE at point (or prompt).
+@item @samp{elot-flymake-setup}
+@tab ==
+@tab Enable the ELOT Flymake backend in the current buffer.
+@item @samp{elot-global-label-display-mode}
+@tab ==
+@tab Display labels from ELOT active label sources in any buffer.
+@item @samp{elot-global-label-display-setup}
+@tab ==
+@tab One-shot: (re)build the DB-driven font-lock regexp in this buffer.
+@item @samp{elot-headings-from-table}
+@tab ==
+@tab Convert the Org table at point to an ELOT outline.
+@item @samp{elot-label-activate-source}
+@tab ==
+@tab Activate (SOURCE DATA-SOURCE) in `elot-active-label-sources'.
+@item @samp{elot-label-active-sources-add}
+@tab ==
+@tab Activate a registered source in the origin buffer.
+@item @samp{elot-label-active-sources-mode}
+@tab ==
+@tab Major mode for reordering `elot-active-label-sources'.
+@item @samp{elot-label-active-sources-move-down}
+@tab ==
+@tab Move the entry at point one position down (toward lower priority).
+@item @samp{elot-label-active-sources-move-up}
+@tab ==
+@tab Move the entry at point one position up (toward higher priority).
+@item @samp{elot-label-active-sources-persist}
+@tab ==
+@tab Persist the origin buffer's `elot-active-label-sources' to `.dir-locals.el'.
+@item @samp{elot-label-active-sources-refresh}
+@tab ==
+@tab Re-read the origin buffer's active sources and redraw.
+@item @samp{elot-label-active-sources-remove}
+@tab ==
+@tab Remove the entry at point from `elot-active-label-sources'.
+@item @samp{elot-label-deactivate-source}
+@tab ==
+@tab Remove (SOURCE DATA-SOURCE) from `elot-active-label-sources'.
+@item @samp{elot-label-display-setup}
+@tab ==
+@tab Read identifier-label pairs and initialise label-display.
+@item @samp{elot-label-list-active-sources}
+@tab ==
+@tab Display a tabulated buffer for reordering `elot-active-label-sources'.
+@item @samp{elot-label-list-sources}
+@tab ==
+@tab Display a tabulated list of all registered ELOT label sources.
+@item @samp{elot-label-list-sources-refresh}
+@tab ==
+@tab Rebuild the @strong{ELOT Label Sources} buffer from the DB@.
+@item @samp{elot-label-list-sources-refresh-entry}
+@tab ==
+@tab Force-refresh the source at point.
+@item @samp{elot-label-list-sources-unregister-entry}
+@tab ==
+@tab Unregister the source at point.
+@item @samp{elot-label-lookup}
+@tab @samp{C-c C-x r}
+@tab Interactive lookup of resource identifier@comma{} with completion.
+@item @samp{elot-label-lookup-external}
+@tab ==
+@tab Run `elot-label-lookup' pinned to scope `external'.
+@item @samp{elot-label-lookup-local}
+@tab ==
+@tab Run `elot-label-lookup' pinned to scope `local'.
+@item @samp{elot-label-move-source-down}
+@tab ==
+@tab Move (SOURCE DATA-SOURCE) one position down (toward lower priority).
+@item @samp{elot-label-move-source-up}
+@tab ==
+@tab Move (SOURCE DATA-SOURCE) one position up (toward higher priority).
+@item @samp{elot-label-refresh-all-sources}
+@tab ==
+@tab Refresh every registered source@comma{} continuing past individual failures.
+@item @samp{elot-label-refresh-source}
+@tab ==
+@tab Force a re-parse of SOURCE (optionally scoped to DATA-SOURCE).
+@item @samp{elot-label-register-current-buffer}
+@tab ==
+@tab Register the file visited by the current buffer as a label source.
+@item @samp{elot-label-register-source}
+@tab ==
+@tab Register SOURCE (a file path) in the ELOT label cache.
+@item @samp{elot-label-set-active-sources}
+@tab ==
+@tab Replace `elot-active-label-sources' with ENTRIES@.
+@item @samp{elot-label-sources-mode}
+@tab ==
+@tab Major mode for listing registered ELOT label sources.
+@item @samp{elot-label-unregister-source}
+@tab ==
+@tab Remove SOURCE (optionally scoped to DATA-SOURCE) from the DB@.
+@item @samp{elot-menu}
+@tab ==
+@tab ELOT Ontology Authoring Menu
+@item @samp{elot-mode}
+@tab ==
+@tab Minor mode for authoring OWL ontologies in Org-mode with ELOT@.
+@item @samp{elot-open-owl}
+@tab ==
+@tab Open an OWL ontology from OWL-SOURCE by converting with `elot-exporter'.
+@item @samp{elot-org-lint}
+@tab ==
+@tab Refresh `elot-slurp'@comma{} then do `org-lint'
+@item @samp{elot-tangle-buffer-to-omn}
+@tab ==
+@tab Update hierarchy and export OMN for all ontologies to their tangle targets.
+@item @samp{elot-toggle-label-display}
+@tab ==
+@tab Toggle between showing identifier or rdfs:label@comma{} using `elot-label-display'.
+@item @samp{elot-update-headline-hierarchy}
+@tab ==
+@tab Update `elot-headline-hierarchy' from the current org buffer.
+@end multitable
+
+@node Customization variables
+@section Customization variables
+
+Auto-generated by @samp{make manual-reference}.
+
+@multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@headitem Variable
+@tab Default
+@tab Group
+@tab Description
+@item @samp{elot-db-default-global-prefixes}
+@tab @samp{(("rdf" . "http://www.w3.org/1999/02/22-rdf-syntax-ns#") ("rdfs" . "http://www.w3.org/2000/01/rdf-schema#") ("owl" . "http://www.w3.org/2002/07/owl#") ("xsd" . "http://www.w3.org/2001/XMLSchema#") ("skos" . "http://www.w3.org/2004/02/skos/core#") ("dcterms" . "http://purl.org/dc/terms/") ("foaf" . "http://xmlns.com/foaf/0.1/") ("obo" . "http://purl.obolibrary.org/obo/") ("sh" . "http://www.w3.org/ns/shacl#") ("prov" . "http://www.w3.org/ns/prov#"))}
+@tab @samp{elot}
+@tab Seed entries for the `global@math{_prefixes}' table.
+@item @samp{elot-db-file}
+@tab @samp{"~/.emacs.d/elot-cache.sqlite"}
+@tab @samp{elot}
+@tab Path to the SQLite file backing the ELOT global-slurp cache.
+@item @samp{elot-default-image-path}
+@tab @samp{"./images/"}
+@tab @samp{elot}
+@tab ELOT default output directory for generated images.
+@item @samp{elot-exporter-jar-path}
+@tab @samp{"c:/Users/jowik/bin/elot-exporter.jar"}
+@tab @samp{elot}
+@tab Path to the elot-exporter.jar file.
+@item @samp{elot-flymake-checkers}
+@tab @samp{(elot/nodeclare-id-prefix-label elot/ontology-header elot/prefix-table elot/ontology-presence elot/required-sections elot/description-list-curies elot/axiom-value-curies elot/omn-syntax)}
+@tab @samp{elot}
+@tab List of `org-lint' checker names to run via Flymake.
+@item @samp{elot-global-label-display-eldoc}
+@tab @samp{t}
+@tab @samp{elot}
+@tab Whether `elot-global-label-display-mode' registers an eldoc backend.
+@item @samp{elot-global-label-display-max-ids}
+@tab @samp{10000}
+@tab @samp{elot}
+@tab Soft cap on the number of ids fed to `regexp-opt' by the global mode.
+@item @samp{elot-global-label-display-mode-hook}
+@tab @samp{nil}
+@tab @samp{elot}
+@tab Hook run after entering or leaving `elot-global-label-display-mode'.
+@item @samp{elot-global-label-display-show-source}
+@tab @samp{t}
+@tab @samp{elot}
+@tab Whether the eldoc/hover summary carries a provenance marker.
+@item @samp{elot-label-display-face}
+@tab @samp{elot-label-face}
+@tab @samp{elot}
+@tab Customizable face used for ELOT label fontification.
+@item @samp{elot-label-display-size-threshold}
+@tab @samp{512000}
+@tab @samp{elot}
+@tab Buffer size (bytes) above which `elot-mode' asks before enabling label-display.
+@item @samp{elot-label-lookup-scope}
+@tab @samp{both}
+@tab @samp{elot}
+@tab Which label sources `elot-label-lookup' consults.
+@item @samp{elot-mode-auto-detect}
+@tab @samp{t}
+@tab @samp{elot}
+@tab When non-nil@comma{} automatically enable `elot-mode' in ELOT buffers.
+@item @samp{elot-mode-hook}
+@tab @samp{nil}
+@tab @samp{elot}
+@tab Hook run after entering or leaving `elot-mode'.
+@item @samp{elot-preferred-languages}
+@tab @samp{nil}
+@tab @samp{elot}
+@tab Ordered list of preferred language tags for labels and annotations.
+@item @samp{elot-rdfpuml-command-str}
+@tab @samp{"rdfpuml"}
+@tab @samp{elot}
+@tab Command to execute `rdfpuml'.
+@item @samp{elot-rdfpuml-options}
+@tab ="hide empty members
+@end multitable
+hide circle
+skinparam classAttributeIconSize 0"= | @samp{elot} | Default options for rdfpuml. |
+@multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@item @samp{elot-rdfpuml-path}
+@tab @samp{"c:/Users/jowik/bin/rdf2rml/bin/rdfpuml.pl"}
+@tab @samp{elot}
+@tab Path to the rdfpuml Perl program.
+@item @samp{elot-robot-jar-path}
+@tab @samp{"c:/Users/jowik/bin/robot.jar"}
+@tab @samp{elot}
+@tab Path to the robot.jar file.
+@item @samp{elot-source-rq-cache-dir-name}
+@tab @samp{".elot-cache"}
+@tab @samp{elot}
+@tab Directory name (relative to the project root) for cached .rq results.
+@item @samp{elot-source-supported-extensions}
+@tab @samp{(("org" . elot-source-parse-org) ("csv" . elot-source-parse-csv) ("tsv" . elot-source-parse-tsv) ("json" . elot-source-parse-json) ("ttl" . elot-source-parse-ttl) ("rq" . elot-source-parse-rq))}
+@tab @samp{elot}
+@tab Alist mapping source file extensions to parser functions.
+@item @samp{elot-source-ttl-label-query}
+@tab ="PREFIX rdfs: @uref{http://www.w3.org/2000/01/rdf-schema#}
+@end multitable
+SELECT ?id ?label (LANG(?label) AS ?lang) WHERE @{
+  ?id rdfs:label ?label .
+@}"= | @samp{elot} | SPARQL query used by `elot-source-parse-ttl' to extract id/label pairs. |
+@multitable {aaaaaaaaaaaaaaaaaaaaaaaa} {aaaaa} {aaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@item @samp{elot-toggle-labels-key}
+@tab @samp{nil}
+@tab @samp{elot}
+@tab Key sequence bound to `elot-toggle-label-display' in ELOT-relevant buffers.
+@end multitable
+
+@node File and header conventions
+@section File and header conventions
+
+TODO --- @samp{prefix-table}@comma{} @samp{:ontology-iri:}@comma{} @samp{:subclass-of:}@comma{}
+@samp{:annotations:} drawers@comma{} the declaration-tree heading shape.
+
+@node @samp{#+call} helpers (Library of Babel)
+@section @samp{#+call:} helpers (Library of Babel)
+
+Auto-generated from @samp{elot-package/elot-lob.org} by
+@samp{make manual-reference}.
+
+@multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaa}
+@headitem Block
+@tab Description
+@item @samp{theme-readtheorg}
+@tab 
+@item @samp{theme-elot}
+@tab 
+@item @samp{current-date}
+@tab 
+@item @samp{current-datetime}
+@tab 
+@item @samp{robot-metrics}
+@tab 
+@item @samp{robot-sparql-select}
+@tab 
+@item @samp{ttl-Class-hierarchy}
+@tab 
+@item @samp{rdfpuml-config}
+@tab 
+@item @samp{rdfpuml-config-rangedomaindown}
+@tab 
+@item @samp{rdfpuml-config-rangedown}
+@tab 
+@item @samp{rdfpuml-block}
+@tab 
+@item @samp{example-ttl}
+@tab 
+@item @samp{fuseki-for-rdfpuml-ttl}
+@tab 
+@item @samp{kill-prefixes}
+@tab 
+@end multitable
+
+@node Manchester Syntax cheatsheet
+@section Manchester Syntax cheatsheet
+
+TODO --- import @samp{examples/manchester-syntax-quick-reference.omn}
+with brief gloss on each construct.
+
+@node Glossary
+@section Glossary
+
+TODO --- short definitions of CURIE@comma{} IRI@comma{} OMN@comma{} TTL@comma{} OWL@comma{} RDF@comma{}
+ontology@comma{} axiom@comma{} restriction@comma{} annotation@comma{} tangle@comma{} prefix table@comma{}
+label source@comma{} declaration tree.
+
+@node Part IV --- Background
+@chapter Part IV --- Background
+
+Read these once.  They explain the @emph{why} of design choices and the
+shape of the codebase --- useful when something is surprising.
+
+@menu
+* Why literate ontology engineering::
+* Architecture overview::
+* Relationship to other tools::
+@end menu
+
+@node Why literate ontology engineering
+@section Why literate ontology engineering
+
+TODO --- the argument: ontology and documentation in one source;
+review-friendly plaintext format; reuse of Org tooling; experience
+from ISO 23726-3.
+
+@node Architecture overview
+@section Architecture overview
+
+TODO --- the tangle pipeline; the label DB; the SPARQL advice
+lifecycle; the relation between the literate @samp{.org} sources and
+the tangled @samp{elot-package/*.el}.
+
+@node Relationship to other tools
+@section Relationship to other tools
+
+TODO --- where ELOT fits relative to Protégé@comma{} WIDOCO@comma{} ROBOT@comma{} OWL-CS@comma{}
+ontology editors in general.
+
+@node Appendices
+@appendix Appendices
+
+@menu
+* VS Code extension parity::
+* Troubleshooting and FAQ::
+* Changelog pointers::
+@end menu
+
+@node VS Code extension parity
+@appendixsec VS Code extension parity
+
+TODO --- table of features available in the Emacs package vs the VS
+Code extension.  Mine @samp{CLI-VS-CODE-PLAN.org} for content.
+
+@node Troubleshooting and FAQ
+@appendixsec Troubleshooting and FAQ
+
+TODO --- common pitfalls:
+
+@itemize
+@item
+@samp{elot-robot-jar-path} unset or wrong@comma{}
+@item
+Java not on @samp{PATH}@comma{}
+@item
+@samp{peg} library missing on Emacs 29@comma{}
+@item
+label display broken in @samp{*xref*} buffers (now fixed; left as
+example for future regressions)@comma{}
+@item
+SPARQL block returns empty result set@comma{}
+@item
+tangled @samp{.omn} fails ROBOT report.
+@end itemize
+
+@node Changelog pointers
+@appendixsec Changelog pointers
+
+See @uref{https://github.com/johanwk/elot/releases, the release notes on GitHub} for the version-by-version history.
+
+@node Indices
+@appendix Indices
+
+@printindex cp
+@printindex fn
+@printindex vr
+
+@bye

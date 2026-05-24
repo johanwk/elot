@@ -1,0 +1,42 @@
+:PROPERTIES:
+:corpus-source:   OOPS!
+:corpus-id:       P08
+:corpus-severity: Minor
+:corpus-url:      https://oops.linkeddata.es/catalogue.jsp#P08
+:corpus-expects:  elot/oops-missing-annotations
+:corpus-rationale: ex:undocumented is declared with no rdfs:label,
+ rdfs:comment, skos:definition or any other authored annotation; the
+ elot/oops-missing-annotations checker should fire (the heading-title
+ label auto-derived by the headline-hierarchy parser does not count).
+:END:
+#+title: OOPS! P08 -- missing annotations fixture
+
+* corpus-p08
+:PROPERTIES:
+:ID: corpus-p08
+:ELOT-context-type: ontology
+:ELOT-context-localname: corpus-p08
+:ELOT-default-prefix: ex:
+:header-args:omn: :tangle no
+:END:
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+| prefix | uri                                         |
+|--------+---------------------------------------------|
+| owl:   | http://www.w3.org/2002/07/owl#              |
+| rdfs:  | http://www.w3.org/2000/01/rdf-schema#       |
+| ex:    | http://example.org/corpus/p08/              |
+
+** corpus-p08 ontology (ex:corpus-p08 ex:corpus-p08/0.0)
+:PROPERTIES:
+:resourcedefs: yes
+:END:
+ - owl:versionInfo :: 0.0
+
+** Classes
+:PROPERTIES:
+:resourcedefs: yes
+:END:
+*** Undocumented (ex:undocumented)

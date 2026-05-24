@@ -1,0 +1,12 @@
+# Querying with SPARQL and ROBOT --- included from elot.org
+
+TODO.
+
+Covers:
+
+- the ELOT =org-babel-execute:sparql= advice and how =:url= dispatches
+  to ROBOT (for local =.omn= files) or to a remote endpoint,
+- prefix injection from =org-link-abbrev-alist-local= and the merge
+  rules with inline =PREFIX= declarations,
+- result formats (=csv= vs =ttl=),
+- known gotchas (empty result sets, non-ASCII queries).

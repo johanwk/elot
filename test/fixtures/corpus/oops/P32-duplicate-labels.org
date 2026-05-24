@@ -1,0 +1,43 @@
+:PROPERTIES:
+:corpus-source:   OOPS!
+:corpus-id:       P32
+:corpus-severity: Minor
+:corpus-url:      https://oops.linkeddata.es/catalogue.jsp#P32
+:corpus-expects:  elot/oops-duplicate-labels
+:corpus-rationale: Two classes share rdfs:label "Twin"@en; the
+ elot/oops-duplicate-labels checker should fire.
+:END:
+#+title: OOPS! P32 -- duplicate rdfs:label fixture
+
+* corpus-p32
+:PROPERTIES:
+:ID: corpus-p32
+:ELOT-context-type: ontology
+:ELOT-context-localname: corpus-p32
+:ELOT-default-prefix: ex:
+:header-args:omn: :tangle no
+:END:
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+| prefix | uri                                         |
+|--------+---------------------------------------------|
+| owl:   | http://www.w3.org/2002/07/owl#              |
+| rdfs:  | http://www.w3.org/2000/01/rdf-schema#       |
+| ex:    | http://example.org/corpus/p32/              |
+
+** corpus-p32 ontology (ex:corpus-p32 ex:corpus-p32/0.0)
+:PROPERTIES:
+:resourcedefs: yes
+:END:
+ - owl:versionInfo :: 0.0
+
+** Classes
+:PROPERTIES:
+:resourcedefs: yes
+:END:
+*** Twin one (ex:twin1)
+ - rdfs:label :: "Twin"@en
+*** Twin two (ex:twin2)
+ - rdfs:label :: "Twin"@en

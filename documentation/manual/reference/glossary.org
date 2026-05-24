@@ -1,0 +1,5 @@
+# Glossary --- included from elot.org
+
+TODO --- short definitions of CURIE, IRI, OMN, TTL, OWL, RDF,
+ontology, axiom, restriction, annotation, tangle, prefix table,
+label source, declaration tree.

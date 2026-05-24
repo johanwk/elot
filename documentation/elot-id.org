@@ -1,0 +1,175 @@
+#+TITLE: ELOT identifier-minting framework
+#+AUTHOR: ELOT contributors
+#+DATE: 2026
+#+STARTUP: overview
+
+* Overview
+
+=elot-id.el= provides a small, pluggable framework for minting and
+verifying ontology identifiers.  Different ontology projects use
+radically different identifier conventions -- timestamp-encoded,
+OBO-style prefix+counter, UUID, human-readable slug, hash-based --
+and ELOT does not bake in a single one.  Each /ontology/ selects (or
+defines) the scheme it wants; the LLM-facing tools
+=elot_mint_identifier= and =elot_verify_identifier= (registered by
+=elot-gptel.el=) stay stable across projects.
+
+This document is the user-facing reference.  The literate plan that
+governs the design lives in =ELOT-GPTEL-PLAN.org=, Milestone 10.
+
+* Built-in schemes
+
+| Name      | Local-name shape                              | When to use                          |
+|-----------+-----------------------------------------------+--------------------------------------|
+| =uuid=    | RFC 4122 UUID (lowercase 32-char hex)         | Maximum collision resistance         |
+| =slug=    | kebab-case ASCII derived from the label;      | Small, human-curated ontologies      |
+|           | numeric =-N= suffix on collision              |                                      |
+| =counter= | Literal alpha prefix + zero-padded number     | OBO / PCA / registry-style policies  |
+|           | (template configurable, e.g. =GO_0000000=)    |                                      |
+| =acme=    | =T_TTTTRRRRC= (11 chars, no slug) /default/   | Zero-config default; index- and      |
+|           | or =T_sssssTTTTRRRRC= (16 chars, with slug)   | grep-friendly; sortable by date      |
+
+* Declaring the scheme on the ontology heading
+
+The scheme is a property of the ontology's top-level heading
+(the heading carrying =:ELOT-context-type: ontology=), so a single
+=.org= file may contain several ontologies with different schemes.
+Declare it as a sibling of =:ELOT-default-prefix:= in the
+=:PROPERTIES:= drawer:
+
+#+begin_src org
+,* my-ont
+:PROPERTIES:
+:ELOT-context-type:      ontology
+:ELOT-id-scheme:         counter GO_0000000
+:ELOT-context-localname: my-ont
+:ELOT-default-prefix:    ex
+:END:
+#+end_src
+
+The property value is a /spec string/ of the form
+
+  =SCHEME [TOKEN ...]=
+
+where the first whitespace-separated token is the scheme name and
+the remaining tokens carry scheme-specific parameters.  Tokens are
+either bare positionals or =key:value= keyword pairs.
+
+| Spec                       | Effect                                                      |
+|----------------------------+-------------------------------------------------------------|
+| =uuid=                     | Mint RFC 4122 UUIDs.                                        |
+| =slug=                     | Mint =label-slug= local names; numeric suffix on collision. |
+| =counter=                  | Mint =000001=, =000002=, ... (no alpha prefix).             |
+| =counter GO_0000000=       | Mint =GO_0000001=, =GO_0000002=, ... (alpha + 7-digit pad). |
+| =counter ABC_00000=        | Mint =ABC_00001=, =ABC_00002=, ... (alpha + 5-digit pad).   |
+| =counter CHEBI00000=       | Mint =CHEBI00001=, ... (no separator, 5-digit pad).         |
+| =acme=                     | Mint 11-char slugless acme IDs (default).                   |
+| =acme slug:t=              | Mint 16-char acme IDs with a 5-char label slug.             |
+
+The counter template /literally/ shows the output shape: the leading
+non-digit run is the alpha part, the trailing run of =0= s defines
+the pad width.  Numeric counters without an alpha prefix are
+technically invalid XML NCNames; declaring a template (=GO_0000000=
+etc.) is the recommended form.
+
+The ontology heading's =:elot-id-scheme= reaches the resolver via
+the buffer-local =elot-headline-hierarchy= variable (populated by
+=elot-update-headline-hierarchy=, which most ELOT operations refresh
+automatically).  When the property is /absent/ the LLM tools refuse
+to guess and return an =ERROR:= line directing the agent to ask the
+user and add the declaration.
+
+* The =CONTEXT= plist
+
+Schemes consult these optional keys (all may be nil):
+
+| Key               | Description                                                  |
+|-------------------+--------------------------------------------------------------|
+| =:file=           | Absolute path of the ELOT =.org= file being edited           |
+| =:prefix=         | CURIE prefix (from the ontology heading's =:ELOT-default-prefix:=) |
+| =:kind=           | Symbol: =class=, =object-property=, =data-property=,         |
+|                   | =annotation-property=, =individual=, =datatype=              |
+| =:existing-iris=  | List of CURIE/IRI strings already declared under the         |
+|                   | ontology (used for collision detection and counter seeding)  |
+| =:prefix-table=   | Alist of =(prefix . iri)= for the target ontology            |
+| =:scheme-params=  | Plist of scheme-specific parameters parsed from the spec     |
+|                   | string (e.g. =(:template "GO_0000000")= or =(:slug "t")=)    |
+
+A scheme that needs more context may extend the plist; document any
+extension in your scheme's docstring.
+
+* Registering a custom scheme
+
+#+begin_src elisp
+(require 'elot-id)
+
+(elot-id-register-scheme
+ (make-elot-id-scheme
+  :name        'my-scheme
+  :description "Project-specific timestamped IDs."
+  :prefix      "MY"
+  :mint-fn     (lambda (label context)
+                 (format "MY:%d-%s"
+                         (floor (float-time))
+                         (downcase label)))
+  :verify-fn   (lambda (curie _ctx)
+                 (string-match-p "\\`MY:[0-9]+-" curie))))
+#+end_src
+
+The =mint-fn= receives =LABEL= and a =CONTEXT= plist; the
+=verify-fn= receives =CURIE= and the same =CONTEXT=.
+
+* LLM-facing tools
+
+** =elot_mint_identifier file label [scheme] [kind]=
+
+Returns a CURIE shaped by the active scheme.  Read-only with respect
+to the =.org= file -- the tool only chooses a string.  When =scheme=
+is omitted, the tool reads =:ELOT-id-scheme:= off the ontology
+heading containing the target.  When neither is available the tool
+returns an =ERROR:= line asking the agent to consult the user.
+
+** =elot_verify_identifier file curie [scheme]=
+
+Returns =OK:=, =FAIL:=, or =ERROR:=.  Same scheme-resolution rules
+as =elot_mint_identifier=.  Use before adopting an external
+identifier into the project, and in CI to check that newly
+introduced identifiers match the local convention.
+
+* The =acme= adapter, in detail
+
+The slugless default (=acme=) produces 11-char local names of shape
+=T_TTTTRRRRC=:
+
+- =T= -- single uppercase TYPE letter (from =elot-id-acme-type-letters=,
+  defaulting to the CARD-X mnemonic: =C=lass, =A=nnotation property,
+  =R=elation (object property), =D=ata property, indi=X=idual, =T=ype
+  (datatype)).
+- =TTTT= -- 4-char Crockford Base32 day count since 2020-01-01 UTC.
+- =RRRR= -- 4-char Crockford Base32 random suffix (20 bits).
+- =C= -- single Crockford Base32 check character.
+
+With =acme slug:t= the local name is 16 chars (=T_sssssTTTTRRRRC=),
+prepending a 5-char lowercase a-z slug derived from the label.
+Non-ASCII letters are stripped (not transliterated); short labels
+are padded with =x=, and the mint reports a NOTE when the slug
+carries little of the original label.
+
+Strengths: self-contained (no project state), sortable by mint date
+(lexical = temporal), checksum-protected against transcription
+errors, no ambiguous glyphs (Crockford excludes I/L/O/U).
+
+Caveats: the slug form is lossy (=lordag= and =lerdag= share a slug);
+20 bits of random entropy per slug+day means the
+=elot-acme-collision-retries= budget (default 8) is non-decorative.
+The LLM should be told that =acme= identifiers carry at most a weak
+hint of the original label; humans should rely on =rdfs:label= for
+readability, not the CURIE.
+
+* Customisation
+
+| Variable                         | Default | Purpose                                              |
+|----------------------------------+---------+------------------------------------------------------|
+| =elot-id-default-scheme=         | =acme=  | Fallback when no ontology-heading property is found  |
+| =elot-id-acme-type-letters=      | CARD-X  | KIND -> single TYPE letter alist                     |
+| =elot-acme-collision-retries=    | 8       | Re-mint budget on collisions                         |

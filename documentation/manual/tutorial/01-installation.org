@@ -1,0 +1,60 @@
+# Installation --- included from elot.org
+
+The fastest path is via MELPA once ELOT is accepted there.  Until
+then, install from Git.
+
+* Prerequisites
+
+- *Emacs 30.1 or later*.  ELOT uses =peg.el=, which became a built-in
+  library in 30.1.
+- *Java 11 or later*, required by ROBOT.
+- *[[https://github.com/ontodev/robot][ROBOT]]*, an OWL command-line tool.  Download =robot.jar= from the
+  ROBOT releases page and note its path.
+- *[[https://plantuml.com/][PlantUML]]* (optional), for diagram rendering via =rdfpuml=.
+- *Protégé 5.6* (optional), for cross-checking ontologies in a GUI.
+
+* Install ELOT from MELPA
+
+When ELOT is on MELPA:
+
+#+begin_src emacs-lisp :exports code
+(use-package elot
+  :ensure t)
+#+end_src
+
+That is the whole installation.  =elot-mode= is autoloaded.
+
+* Install ELOT from Git
+
+Until the MELPA recipe lands, clone the repository and add it to
+your load path:
+
+#+begin_src sh :exports code
+git clone https://github.com/johanwk/elot ~/src/elot
+#+end_src
+
+In your =init.el=:
+
+#+begin_src emacs-lisp :exports code
+(add-to-list 'load-path "~/src/elot/elot-package")
+(require 'elot)
+#+end_src
+
+* Point ELOT at ROBOT
+
+Set =elot-robot-jar-path= to the absolute path of your downloaded
+=robot.jar=:
+
+#+begin_src emacs-lisp :exports code
+(setq elot-robot-jar-path "~/bin/robot.jar")
+#+end_src
+
+You can also customize it via =M-x customize-variable RET
+elot-robot-jar-path=.
+
+* Verify
+
+Open an Org file and run =M-x elot-mode=.  The ELOT menu appears in
+the menu bar.  =M-x elot-version= prints the loaded version.
+
+If something goes wrong, see [[#app-troubleshooting][Troubleshooting and FAQ]].

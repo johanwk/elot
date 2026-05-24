@@ -1,0 +1,23 @@
+# #+call: helpers (Library of Babel) --- included from elot.org
+
+Auto-generated from =elot-package/elot-lob.org= by
+=make manual-reference=.
+
+# AUTO-GENERATED-BEGIN
+| Block | Description |
+|-------+-------------|
+| =theme-readtheorg= |  |
+| =theme-elot= |  |
+| =current-date= |  |
+| =current-datetime= |  |
+| =robot-metrics= |  |
+| =robot-sparql-select= |  |
+| =ttl-Class-hierarchy= |  |
+| =rdfpuml-config= |  |
+| =rdfpuml-config-rangedomaindown= |  |
+| =rdfpuml-config-rangedown= |  |
+| =rdfpuml-block= |  |
+| =example-ttl= |  |
+| =fuseki-for-rdfpuml-ttl= |  |
+| =kill-prefixes= |  |
+# AUTO-GENERATED-END

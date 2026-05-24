@@ -1,0 +1,35 @@
+# Fixture for elot/ontology-declaration-heading checker.
+# The ontology-declaration heading has a malformed parenthesised
+# identifier (space instead of colon in the version IRI), which would
+# cause the tangler to silently omit the Ontology: block.
+
+#+title: Broken Ontology Declaration
+#+author: ELOT test suite
+
+* my-ont
+:PROPERTIES:
+:ID:       my-ont
+:ELOT-context-type: ontology
+:ELOT-context-localname: my-ont
+:header-args:omn: :tangle ./my-ont.omn :noweb yes
+:ELOT-default-prefix: ex
+:END:
+
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+
+#+name: prefix-table
+| prefix | uri                    |
+|--------+------------------------|
+| ex:    | http://example.org/    |
+| exo:   | http://example.org/ont/|
+
+** my-ont ontology (exo:my-ont exo my-ont/0.0)
+:PROPERTIES:
+:ID:       my-ont-ontology-declaration
+:resourcedefs: yes
+:END:
+
+ - rdfs:comment :: example

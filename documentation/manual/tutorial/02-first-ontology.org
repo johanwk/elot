@@ -1,0 +1,82 @@
+# Your first ontology --- included from elot.org
+
+In this chapter you build a tiny ontology of /pets/ from scratch.
+By the end you will have:
+
+- a working =pets.org= file you can re-tangle and re-export at will,
+- a generated =pets.omn= ontology in OWL Manchester Syntax,
+- the start of an HTML render of your ontology document.
+
+Time required: 15--20 minutes.
+
+* Create the file
+
+Create =pets.org= anywhere in your filesystem and paste the
+skeleton below.  Open it in Emacs and run =M-x elot-mode=.
+
+#+begin_src org :exports code
+,#+TITLE: A tiny ontology of pets
+,#+AUTHOR: Your Name
+
+,* Prefixes
+,:PROPERTIES:
+,:header-args:emacs-lisp+: :tangle no
+,:END:
+
+,#+name: prefix-table
+,| prefix | uri                                            |
+,|--------+------------------------------------------------|
+,| ex     | http://example.org/pets/                       |
+,| owl    | http://www.w3.org/2002/07/owl#                 |
+,| rdfs   | http://www.w3.org/2000/01/rdf-schema#          |
+,| skos   | http://www.w3.org/2004/02/skos/core#           |
+
+,* ex:pets
+,:PROPERTIES:
+,:ID:       pets-ontology
+,:ontology-iri: http://example.org/pets/
+,:END:
+
+A small example ontology used by the ELOT tutorial.
+
+,** Classes
+,*** ex:Animal
+A living creature.
+
+,*** ex:Dog
+,:PROPERTIES:
+,:subclass-of: ex:Animal
+,:END:
+A dog is an animal.
+
+,*** ex:Cat
+,:PROPERTIES:
+,:subclass-of: ex:Animal
+,:END:
+A cat is an animal.
+#+end_src
+
+* Tangle to OWL Manchester Syntax
+
+With point anywhere in =pets.org=, run =M-x elot-tangle=.  A file
+=pets.omn= appears next to your Org source.  Open it; you should
+see Manchester-syntax declarations for =ex:Animal=, =ex:Dog= and
+=ex:Cat=.
+
+* Sanity-check with ROBOT
+
+From a shell:
+
+#+begin_src sh :exports code
+robot report --input pets.omn --output pets-report.tsv
+#+end_src
+
+ROBOT's report should be empty (or contain only INFO entries).
+Errors mean ELOT generated something OWL does not like; see
+[[#howto-lint][Linting and syntax checking]].
+
+* Where to next
+
+- [[#tut-axioms][Adding axioms and annotations]] --- give your classes proper
+  definitions and relationships.
+- [[#tut-export][Exporting to OWL and HTML]] --- produce a polished document.

@@ -1,0 +1,11 @@
+# Troubleshooting and FAQ --- included from elot.org
+
+TODO --- common pitfalls:
+
+- =elot-robot-jar-path= unset or wrong,
+- Java not on =PATH=,
+- =peg= library missing on Emacs 29,
+- label display broken in =*xref*= buffers (now fixed; left as
+  example for future regressions),
+- SPARQL block returns empty result set,
+- tangled =.omn= fails ROBOT report.

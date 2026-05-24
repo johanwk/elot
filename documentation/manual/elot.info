@@ -1,0 +1,988 @@
+This is elot.info, produced by makeinfo version 7.2 from elot.texi.
+
+This manual is for ELOT, the Emacs Literate Ontology Tool.
+
+   Copyright (C) 2024-2026 Johan W.  Klüwer and contributors.
+
+     Permission is granted to copy, distribute and/or modify this
+     document under the terms of the GNU Free Documentation License,
+     Version 1.3 or any later version published by the Free Software
+     Foundation.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* ELOT: (elot).         Literate Ontology Tool -- author OWL ontologies in Org-mode.
+END-INFO-DIR-ENTRY
+
+
+File: elot.info,  Node: Top,  Next: Preface,  Up: (dir)
+
+ELOT -- Literate Ontology Tool for Emacs
+****************************************
+
+     ELOT lets you author OWL ontologies in Org-mode, exporting to OWL
+     Manchester Syntax, HTML and PDF documentation, and running SPARQL,
+     ROBOT and rdfpuml against them from inside Emacs.
+
+* Menu:
+
+* Preface::
+* Part I --- Tutorial::
+* Part II --- How-to guides::
+* Part III --- Reference::
+* Part IV --- Background::
+* Appendices::
+* Indices::
+
+-- The Detailed Node Listing --
+
+Preface
+
+* Who this manual is for::
+* How to read this manual::
+* Conventions::
+* Getting help::
+
+Part I -- Tutorial
+
+* Installation::
+* Your first ontology::
+* Adding axioms and annotations::
+* Exporting to OWL and HTML::
+* A first SPARQL query and rdfpuml diagram::
+
+Installation
+
+* Prerequisites::
+* Install ELOT from MELPA::
+* Install ELOT from Git::
+* Point ELOT at ROBOT::
+* Verify::
+
+Your first ontology
+
+* Create the file::
+* Tangle to OWL Manchester Syntax::
+* Sanity-check with ROBOT::
+* Where to next::
+
+Adding axioms and annotations
+
+* Annotations::
+* Object properties::
+* Disjointness::
+
+Exporting to OWL and HTML
+
+* Adding the theme::
+* PDF and Info::
+* Publishing to GitHub Pages::
+
+A first SPARQL query and rdfpuml diagram
+
+* A first SPARQL block::
+* A first diagram::
+
+Part II -- How-to guides
+
+* Authoring::
+* Querying with SPARQL and ROBOT::
+* Diagrams with rdfpuml and Library-of-Babel helpers::
+* Label display::
+* Importing existing OWL ontologies::
+* Linting and syntax checking::
+* Working with multiple ontologies and imports::
+* Collaborating via Git::
+
+Part III -- Reference
+
+* Commands and keybindings::
+* Customization variables::
+* File and header conventions::
+* #+call helpers (Library of Babel)::
+* Manchester Syntax cheatsheet::
+* Glossary::
+
+Part IV -- Background
+
+* Why literate ontology engineering::
+* Architecture overview::
+* Relationship to other tools::
+
+Appendices
+
+* VS Code extension parity::
+* Troubleshooting and FAQ::
+* Changelog pointers::
+
+
+File: elot.info,  Node: Preface,  Next: Part I --- Tutorial,  Prev: Top,  Up: Top
+
+1 Preface
+*********
+
+ELOT -- the _Emacs Literate Ontology Tool_ -- is a package for authoring
+OWL ontologies in Org-mode.  A single Org file is both the ontology
+source (tangled to OWL Manchester Syntax) and the published
+documentation (exported to HTML, PDF, or Info).
+
+* Menu:
+
+* Who this manual is for::
+* How to read this manual::
+* Conventions::
+* Getting help::
+
+
+File: elot.info,  Node: Who this manual is for,  Next: How to read this manual,  Up: Preface
+
+1.1 Who this manual is for
+==========================
+
+   • *Ontology authors* who want their ontology and its documentation to
+     stay in sync, automatically.
+   • *Emacs users* curious about how literate programming applies to
+     knowledge engineering.
+   • *Newcomers to OWL* who want a working ontology in front of them
+     before reading a 400-page semantic-web textbook.
+
+   No prior experience with OWL or Org-mode is assumed for Part I.
+Parts II-IV assume you have completed the tutorial.
+
+
+File: elot.info,  Node: How to read this manual,  Next: Conventions,  Prev: Who this manual is for,  Up: Preface
+
+1.2 How to read this manual
+===========================
+
+This manual follows the Diátaxis (https://diataxis.fr/) structure:
+
+   • Read *note Part I: Part I --- Tutorial. front-to-back the first
+     time.
+   • Dip into *note Part II: Part II --- How-to guides. when you have a
+     specific task.
+   • Consult *note Part III: Part III --- Reference. for lookups.
+   • Read *note Part IV: Part IV --- Background. when you want to know
+     _why_.
+
+
+File: elot.info,  Node: Conventions,  Next: Getting help,  Prev: How to read this manual,  Up: Preface
+
+1.3 Conventions
+===============
+
+   • ‘code’ face for CURIEs, IRIs, function names, file paths.
+   • ‘~C-c C-x r~’ for keystrokes.
+   • _italic_ for new terms on first use.
+   • ‘M-x command-name’ for interactive commands.
+
+
+File: elot.info,  Node: Getting help,  Prev: Conventions,  Up: Preface
+
+1.4 Getting help
+================
+
+   • Project home: <https://github.com/johanwk/elot>
+   • Issues and discussion: the GitHub tracker.
+   • The ELOT menu in any ‘elot-mode’ buffer lists the main commands.
+
+
+File: elot.info,  Node: Part I --- Tutorial,  Next: Part II --- How-to guides,  Prev: Preface,  Up: Top
+
+2 Part I -- Tutorial
+********************
+
+This part is linear.  Read it in order; it walks a first-time user
+through installing ELOT and building a small ontology end-to-end.
+
+* Menu:
+
+* Installation::
+* Your first ontology::
+* Adding axioms and annotations::
+* Exporting to OWL and HTML::
+* A first SPARQL query and rdfpuml diagram::
+
+
+File: elot.info,  Node: Installation,  Next: Your first ontology,  Up: Part I --- Tutorial
+
+2.1 Installation
+================
+
+The fastest path is via MELPA once ELOT is accepted there.  Until then,
+install from Git.
+
+* Menu:
+
+* Prerequisites::
+* Install ELOT from MELPA::
+* Install ELOT from Git::
+* Point ELOT at ROBOT::
+* Verify::
+
+
+File: elot.info,  Node: Prerequisites,  Next: Install ELOT from MELPA,  Up: Installation
+
+2.1.1 Prerequisites
+-------------------
+
+   • *Emacs 30.1 or later*.  ELOT uses ‘peg.el’, which became a built-in
+     library in 30.1.
+   • *Java 11 or later*, required by ROBOT.
+   • *ROBOT (https://github.com/ontodev/robot)*, an OWL command-line
+     tool.  Download ‘robot.jar’ from the ROBOT releases page and note
+     its path.
+   • *PlantUML (https://plantuml.com/)* (optional), for diagram
+     rendering via ‘rdfpuml’.
+   • *Protégé 5.6* (optional), for cross-checking ontologies in a GUI.
+
+
+File: elot.info,  Node: Install ELOT from MELPA,  Next: Install ELOT from Git,  Prev: Prerequisites,  Up: Installation
+
+2.1.2 Install ELOT from MELPA
+-----------------------------
+
+When ELOT is on MELPA:
+
+     (use-package elot
+       :ensure t)
+
+   That is the whole installation.  ‘elot-mode’ is autoloaded.
+
+
+File: elot.info,  Node: Install ELOT from Git,  Next: Point ELOT at ROBOT,  Prev: Install ELOT from MELPA,  Up: Installation
+
+2.1.3 Install ELOT from Git
+---------------------------
+
+Until the MELPA recipe lands, clone the repository and add it to your
+load path:
+
+     git clone https://github.com/johanwk/elot ~/src/elot
+
+   In your ‘init.el’:
+
+     (add-to-list 'load-path "~/src/elot/elot-package")
+     (require 'elot)
+
+
+File: elot.info,  Node: Point ELOT at ROBOT,  Next: Verify,  Prev: Install ELOT from Git,  Up: Installation
+
+2.1.4 Point ELOT at ROBOT
+-------------------------
+
+Set ‘elot-robot-jar-path’ to the absolute path of your downloaded
+‘robot.jar’:
+
+     (setq elot-robot-jar-path "~/bin/robot.jar")
+
+   You can also customize it via ‘M-x customize-variable RET
+elot-robot-jar-path’.
+
+
+File: elot.info,  Node: Verify,  Prev: Point ELOT at ROBOT,  Up: Installation
+
+2.1.5 Verify
+------------
+
+Open an Org file and run ‘M-x elot-mode’.  The ELOT menu appears in the
+menu bar.  ‘M-x elot-version’ prints the loaded version.
+
+   If something goes wrong, see *note Troubleshooting and FAQ:
+Troubleshooting and FAQ.
+
+
+File: elot.info,  Node: Your first ontology,  Next: Adding axioms and annotations,  Prev: Installation,  Up: Part I --- Tutorial
+
+2.2 Your first ontology
+=======================
+
+In this chapter you build a tiny ontology of _pets_ from scratch.  By
+the end you will have:
+
+   • a working ‘pets.org’ file you can re-tangle and re-export at will,
+   • a generated ‘pets.omn’ ontology in OWL Manchester Syntax,
+   • the start of an HTML render of your ontology document.
+
+   Time required: 15-20 minutes.
+
+* Menu:
+
+* Create the file::
+* Tangle to OWL Manchester Syntax::
+* Sanity-check with ROBOT::
+* Where to next::
+
+
+File: elot.info,  Node: Create the file,  Next: Tangle to OWL Manchester Syntax,  Up: Your first ontology
+
+2.2.1 Create the file
+---------------------
+
+Create ‘pets.org’ anywhere in your filesystem and paste the skeleton
+below.  Open it in Emacs and run ‘M-x elot-mode’.
+
+     #+TITLE: A tiny ontology of pets
+     #+AUTHOR: Your Name
+
+     * Prefixes
+     ,:PROPERTIES:
+     ,:header-args:emacs-lisp+: :tangle no
+     ,:END:
+
+     #+name: prefix-table
+     ,| prefix | uri                                            |
+     ,|--------+------------------------------------------------|
+     ,| ex     | http://example.org/pets/                       |
+     ,| owl    | http://www.w3.org/2002/07/owl#                 |
+     ,| rdfs   | http://www.w3.org/2000/01/rdf-schema#          |
+     ,| skos   | http://www.w3.org/2004/02/skos/core#           |
+
+     * ex:pets
+     ,:PROPERTIES:
+     ,:ID:       pets-ontology
+     ,:ontology-iri: http://example.org/pets/
+     ,:END:
+
+     A small example ontology used by the ELOT tutorial.
+
+     ** Classes
+     *** ex:Animal
+     A living creature.
+
+     *** ex:Dog
+     ,:PROPERTIES:
+     ,:subclass-of: ex:Animal
+     ,:END:
+     A dog is an animal.
+
+     *** ex:Cat
+     ,:PROPERTIES:
+     ,:subclass-of: ex:Animal
+     ,:END:
+     A cat is an animal.
+
+
+File: elot.info,  Node: Tangle to OWL Manchester Syntax,  Next: Sanity-check with ROBOT,  Prev: Create the file,  Up: Your first ontology
+
+2.2.2 Tangle to OWL Manchester Syntax
+-------------------------------------
+
+With point anywhere in ‘pets.org’, run ‘M-x elot-tangle’.  A file
+‘pets.omn’ appears next to your Org source.  Open it; you should see
+Manchester-syntax declarations for ‘ex:Animal’, ‘ex:Dog’ and ‘ex:Cat’.
+
+
+File: elot.info,  Node: Sanity-check with ROBOT,  Next: Where to next,  Prev: Tangle to OWL Manchester Syntax,  Up: Your first ontology
+
+2.2.3 Sanity-check with ROBOT
+-----------------------------
+
+From a shell:
+
+     robot report --input pets.omn --output pets-report.tsv
+
+   ROBOT's report should be empty (or contain only INFO entries).
+Errors mean ELOT generated something OWL does not like; see *note
+Linting and syntax checking: Linting and syntax checking.
+
+
+File: elot.info,  Node: Where to next,  Prev: Sanity-check with ROBOT,  Up: Your first ontology
+
+2.2.4 Where to next
+-------------------
+
+   • *note Adding axioms and annotations: Adding axioms and annotations.
+     -- give your classes proper definitions and relationships.
+   • *note Exporting to OWL and HTML: Exporting to OWL and HTML. --
+     produce a polished document.
+
+
+File: elot.info,  Node: Adding axioms and annotations,  Next: Exporting to OWL and HTML,  Prev: Your first ontology,  Up: Part I --- Tutorial
+
+2.3 Adding axioms and annotations
+=================================
+
+TODO -- expand.
+
+   This chapter extends the ‘pets.org’ ontology from *note the previous
+chapter: Your first ontology. with:
+
+   • ‘rdfs:label’ and ‘skos:definition’ annotations on every class,
+   • a ‘disjointWith’ axiom between ‘ex:Dog’ and ‘ex:Cat’,
+   • an object property ‘ex:chases’ with ‘rdfs:domain’ and ‘rdfs:range’,
+   • an existential restriction: every ‘ex:Dog’ _chases some_ ‘ex:Cat’.
+
+* Menu:
+
+* Annotations::
+* Object properties::
+* Disjointness::
+
+
+File: elot.info,  Node: Annotations,  Next: Object properties,  Up: Adding axioms and annotations
+
+2.3.1 Annotations
+-----------------
+
+Use the ‘:annotations:’ drawer key to attach annotations to a class:
+
+     *** ex:Dog
+     ,:PROPERTIES:
+     ,:subclass-of: ex:Animal
+     ,:END:
+     ,:annotations:
+     ,- rdfs:label :: "Dog"@en
+     ,- skos:definition :: "A domesticated canine."@en
+     ,:end:
+
+
+File: elot.info,  Node: Object properties,  Next: Disjointness,  Prev: Annotations,  Up: Adding axioms and annotations
+
+2.3.2 Object properties
+-----------------------
+
+TODO -- show the property declaration and the existential restriction.
+
+
+File: elot.info,  Node: Disjointness,  Prev: Object properties,  Up: Adding axioms and annotations
+
+2.3.3 Disjointness
+------------------
+
+TODO -- show ‘disjointWith’ and how it appears in the tangled OMN.
+
+
+File: elot.info,  Node: Exporting to OWL and HTML,  Next: A first SPARQL query and rdfpuml diagram,  Prev: Adding axioms and annotations,  Up: Part I --- Tutorial
+
+2.4 Exporting to OWL and HTML
+=============================
+
+TODO -- expand.
+
+   This chapter walks through the two export targets that matter to most
+authors:
+
+  1. *OWL Manchester Syntax* via ‘M-x elot-tangle’ (you already saw this
+     in *note Your first ontology: Your first ontology.).
+  2. *HTML documentation* via Org's standard exporter (‘C-c C-e h h’)
+     plus the bundled ‘theme-readtheorg.setup’.
+
+* Menu:
+
+* Adding the theme::
+* PDF and Info::
+* Publishing to GitHub Pages::
+
+
+File: elot.info,  Node: Adding the theme,  Next: PDF and Info,  Up: Exporting to OWL and HTML
+
+2.4.1 Adding the theme
+----------------------
+
+Put this line near the top of your ontology Org file:
+
+     #+SETUPFILE: theme-readtheorg.setup
+
+   Re-export with ‘C-c C-e h h’; the resulting HTML uses the ELOT theme.
+
+
+File: elot.info,  Node: PDF and Info,  Next: Publishing to GitHub Pages,  Prev: Adding the theme,  Up: Exporting to OWL and HTML
+
+2.4.2 PDF and Info
+------------------
+
+For PDF: ‘C-c C-e l p’.  For Info (Emacs help format): ‘C-c C-e i i’,
+then ‘install-info’ the result.
+
+
+File: elot.info,  Node: Publishing to GitHub Pages,  Prev: PDF and Info,  Up: Exporting to OWL and HTML
+
+2.4.3 Publishing to GitHub Pages
+--------------------------------
+
+TODO -- recipe.
+
+
+File: elot.info,  Node: A first SPARQL query and rdfpuml diagram,  Prev: Exporting to OWL and HTML,  Up: Part I --- Tutorial
+
+2.5 A first SPARQL query and rdfpuml diagram
+============================================
+
+TODO -- expand.
+
+   This chapter introduces two of ELOT's most-loved features:
+
+   • running *SPARQL* queries directly against your tangled ‘.omn’ via
+     embedded source blocks,
+   • generating *PlantUML diagrams* of selected triples via the
+     ‘rdfpuml-block’ Library-of-Babel helper.
+
+* Menu:
+
+* A first SPARQL block::
+* A first diagram::
+
+
+File: elot.info,  Node: A first SPARQL block,  Next: A first diagram,  Up: A first SPARQL query and rdfpuml diagram
+
+2.5.1 A first SPARQL block
+--------------------------
+
+Add this to ‘pets.org’, below the class definitions:
+
+     #+begin_src sparql :url "pets.omn"
+     ,select ?s ?o where { ?s rdfs:subClassOf ?o }
+     #+end_src
+
+   Press ‘C-c C-c’ inside the block.  ELOT shells out to ROBOT and
+inserts the result table below the block.  No ‘PREFIX’ boilerplate
+needed -- ELOT injects prefixes from your ‘prefix-table’.
+
+
+File: elot.info,  Node: A first diagram,  Prev: A first SPARQL block,  Up: A first SPARQL query and rdfpuml diagram
+
+2.5.2 A first diagram
+---------------------
+
+TODO -- ‘rdfpuml-block’ example.
+
+   See *note Querying with SPARQL and ROBOT: Querying with SPARQL and
+ROBOT. and *note Diagrams with rdfpuml: Diagrams with rdfpuml and
+Library-of-Babel helpers. for the full how-tos.
+
+
+File: elot.info,  Node: Part II --- How-to guides,  Next: Part III --- Reference,  Prev: Part I --- Tutorial,  Up: Top
+
+3 Part II -- How-to guides
+**************************
+
+Each guide is self-contained, task-oriented, and answers a single "how
+do I ...?"  question.  Read only the ones you need.
+
+* Menu:
+
+* Authoring::
+* Querying with SPARQL and ROBOT::
+* Diagrams with rdfpuml and Library-of-Babel helpers::
+* Label display::
+* Importing existing OWL ontologies::
+* Linting and syntax checking::
+* Working with multiple ontologies and imports::
+* Collaborating via Git::
+
+
+File: elot.info,  Node: Authoring,  Next: Querying with SPARQL and ROBOT,  Up: Part II --- How-to guides
+
+3.1 Authoring
+=============
+
+TODO -- task-oriented recipes for day-to-day authoring:
+
+   • structuring a large ontology across multiple sections,
+   • using description-list items for annotations,
+   • working with ‘:annotations:’ drawers,
+   • tempo templates for fast class / property insertion,
+   • using the ELOT easymenu.
+
+
+File: elot.info,  Node: Querying with SPARQL and ROBOT,  Next: Diagrams with rdfpuml and Library-of-Babel helpers,  Prev: Authoring,  Up: Part II --- How-to guides
+
+3.2 Querying with SPARQL and ROBOT
+==================================
+
+TODO.
+
+   Covers:
+
+   • the ELOT ‘org-babel-execute:sparql’ advice and how ‘:url’
+     dispatches to ROBOT (for local ‘.omn’ files) or to a remote
+     endpoint,
+   • prefix injection from ‘org-link-abbrev-alist-local’ and the merge
+     rules with inline ‘PREFIX’ declarations,
+   • result formats (‘csv’ vs ‘ttl’),
+   • known gotchas (empty result sets, non-ASCII queries).
+
+
+File: elot.info,  Node: Diagrams with rdfpuml and Library-of-Babel helpers,  Next: Label display,  Prev: Querying with SPARQL and ROBOT,  Up: Part II --- How-to guides
+
+3.3 Diagrams with rdfpuml and Library-of-Babel helpers
+======================================================
+
+TODO.
+
+   Covers ‘rdfpuml-block’, ‘kill-prefixes’, and the supported ‘#+call:’
+helpers in ‘elot-lob.org’.
+
+
+File: elot.info,  Node: Label display,  Next: Importing existing OWL ontologies,  Prev: Diagrams with rdfpuml and Library-of-Babel helpers,  Up: Part II --- How-to guides
+
+3.4 Label display
+=================
+
+TODO -- migrate content from ‘README-global-label-display.org’ into this
+chapter.
+
+   Covers buffer-local label overlays, the global label-display mode,
+the label database, and label display in ‘*xref*’ / ‘*ELOT Describe*’
+buffers.
+
+
+File: elot.info,  Node: Importing existing OWL ontologies,  Next: Linting and syntax checking,  Prev: Label display,  Up: Part II --- How-to guides
+
+3.5 Importing existing OWL ontologies
+=====================================
+
+TODO -- ROBOT-based round-tripping of an existing ontology (‘.owl’ /
+‘.ttl’ / ‘.omn’) into an ELOT Org skeleton.
+
+
+File: elot.info,  Node: Linting and syntax checking,  Next: Working with multiple ontologies and imports,  Prev: Importing existing OWL ontologies,  Up: Part II --- How-to guides
+
+3.6 Linting and syntax checking
+===============================
+
+TODO -- ‘elot-lint’, the OMN PEG grammar, the Flymake backend.
+
+
+File: elot.info,  Node: Working with multiple ontologies and imports,  Next: Collaborating via Git,  Prev: Linting and syntax checking,  Up: Part II --- How-to guides
+
+3.7 Working with multiple ontologies and imports
+================================================
+
+TODO -- ‘owl:imports’, catalog files, working tree layout for
+multi-ontology projects.
+
+
+File: elot.info,  Node: Collaborating via Git,  Prev: Working with multiple ontologies and imports,  Up: Part II --- How-to guides
+
+3.8 Collaborating via Git
+=========================
+
+TODO -- diff-friendly Org structure, recommended ‘.gitattributes’,
+review workflow for ontology PRs.
+
+
+File: elot.info,  Node: Part III --- Reference,  Next: Part IV --- Background,  Prev: Part II --- How-to guides,  Up: Top
+
+4 Part III -- Reference
+***********************
+
+Exhaustive lookup material.  Most of this part is auto-generated by
+‘make manual-reference’ from the live ELOT sources; do not edit the
+generated files by hand.
+
+* Menu:
+
+* Commands and keybindings::
+* Customization variables::
+* File and header conventions::
+* #+call helpers (Library of Babel)::
+* Manchester Syntax cheatsheet::
+* Glossary::
+
+
+File: elot.info,  Node: Commands and keybindings,  Next: Customization variables,  Up: Part III --- Reference
+
+4.1 Commands and keybindings
+============================
+
+This chapter is auto-generated by ‘make manual-reference’.  Do not edit
+by hand; edit the docstrings in the source instead.
+
+Command                                      Key           Description
+------------------------------------------------------------------------------------------------------------------------------------------
+‘elot-describe-curie-at-point’               ==            Pop up a *Help* buffer describing CURIE at point (or prompt).
+‘elot-flymake-setup’                         ==            Enable the ELOT Flymake backend in the current buffer.
+‘elot-global-label-display-mode’             ==            Display labels from ELOT active label sources in any buffer.
+‘elot-global-label-display-setup’            ==            One-shot: (re)build the DB-driven font-lock regexp in this buffer.
+‘elot-headings-from-table’                   ==            Convert the Org table at point to an ELOT outline.
+‘elot-label-activate-source’                 ==            Activate (SOURCE DATA-SOURCE) in 'elot-active-label-sources'.
+‘elot-label-active-sources-add’              ==            Activate a registered source in the origin buffer.
+‘elot-label-active-sources-mode’             ==            Major mode for reordering 'elot-active-label-sources'.
+‘elot-label-active-sources-move-down’        ==            Move the entry at point one position down (toward lower priority).
+‘elot-label-active-sources-move-up’          ==            Move the entry at point one position up (toward higher priority).
+‘elot-label-active-sources-persist’          ==            Persist the origin buffer's 'elot-active-label-sources' to '.dir-locals.el'.
+‘elot-label-active-sources-refresh’          ==            Re-read the origin buffer's active sources and redraw.
+‘elot-label-active-sources-remove’           ==            Remove the entry at point from 'elot-active-label-sources'.
+‘elot-label-deactivate-source’               ==            Remove (SOURCE DATA-SOURCE) from 'elot-active-label-sources'.
+‘elot-label-display-setup’                   ==            Read identifier-label pairs and initialise label-display.
+‘elot-label-list-active-sources’             ==            Display a tabulated buffer for reordering 'elot-active-label-sources'.
+‘elot-label-list-sources’                    ==            Display a tabulated list of all registered ELOT label sources.
+‘elot-label-list-sources-refresh’            ==            Rebuild the *ELOT Label Sources* buffer from the DB.
+‘elot-label-list-sources-refresh-entry’      ==            Force-refresh the source at point.
+‘elot-label-list-sources-unregister-entry’   ==            Unregister the source at point.
+‘elot-label-lookup’                          ‘C-c C-x r’   Interactive lookup of resource identifier, with completion.
+‘elot-label-lookup-external’                 ==            Run 'elot-label-lookup' pinned to scope 'external'.
+‘elot-label-lookup-local’                    ==            Run 'elot-label-lookup' pinned to scope 'local'.
+‘elot-label-move-source-down’                ==            Move (SOURCE DATA-SOURCE) one position down (toward lower priority).
+‘elot-label-move-source-up’                  ==            Move (SOURCE DATA-SOURCE) one position up (toward higher priority).
+‘elot-label-refresh-all-sources’             ==            Refresh every registered source, continuing past individual failures.
+‘elot-label-refresh-source’                  ==            Force a re-parse of SOURCE (optionally scoped to DATA-SOURCE).
+‘elot-label-register-current-buffer’         ==            Register the file visited by the current buffer as a label source.
+‘elot-label-register-source’                 ==            Register SOURCE (a file path) in the ELOT label cache.
+‘elot-label-set-active-sources’              ==            Replace 'elot-active-label-sources' with ENTRIES.
+‘elot-label-sources-mode’                    ==            Major mode for listing registered ELOT label sources.
+‘elot-label-unregister-source’               ==            Remove SOURCE (optionally scoped to DATA-SOURCE) from the DB.
+‘elot-menu’                                  ==            ELOT Ontology Authoring Menu
+‘elot-mode’                                  ==            Minor mode for authoring OWL ontologies in Org-mode with ELOT.
+‘elot-open-owl’                              ==            Open an OWL ontology from OWL-SOURCE by converting with 'elot-exporter'.
+‘elot-org-lint’                              ==            Refresh 'elot-slurp', then do 'org-lint'
+‘elot-tangle-buffer-to-omn’                  ==            Update hierarchy and export OMN for all ontologies to their tangle targets.
+‘elot-toggle-label-display’                  ==            Toggle between showing identifier or rdfs:label, using 'elot-label-display'.
+‘elot-update-headline-hierarchy’             ==            Update 'elot-headline-hierarchy' from the current org buffer.
+
+
+File: elot.info,  Node: Customization variables,  Next: File and header conventions,  Prev: Commands and keybindings,  Up: Part III --- Reference
+
+4.2 Customization variables
+===========================
+
+Auto-generated by ‘make manual-reference’.
+
+Variable                                  Default                                                                                                                                                                                                                                                                                                                                                                                                                                                                  Group    Description
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+‘elot-db-default-global-prefixes’         ‘(("rdf" . "http://www.w3.org/1999/02/22-rdf-syntax-ns#") ("rdfs" . "http://www.w3.org/2000/01/rdf-schema#") ("owl" . "http://www.w3.org/2002/07/owl#") ("xsd" . "http://www.w3.org/2001/XMLSchema#") ("skos" . "http://www.w3.org/2004/02/skos/core#") ("dcterms" . "http://purl.org/dc/terms/") ("foaf" . "http://xmlns.com/foaf/0.1/") ("obo" . "http://purl.obolibrary.org/obo/") ("sh" . "http://www.w3.org/ns/shacl#") ("prov" . "http://www.w3.org/ns/prov#"))’   ‘elot’   Seed entries for the 'global_prefixes' table.
+‘elot-db-file’                            ‘"~/.emacs.d/elot-cache.sqlite"’                                                                                                                                                                                                                                                                                                                                                                                                                                         ‘elot’   Path to the SQLite file backing the ELOT global-slurp cache.
+‘elot-default-image-path’                 ‘"./images/"’                                                                                                                                                                                                                                                                                                                                                                                                                                                            ‘elot’   ELOT default output directory for generated images.
+‘elot-exporter-jar-path’                  ‘"c:/Users/jowik/bin/elot-exporter.jar"’                                                                                                                                                                                                                                                                                                                                                                                                                                 ‘elot’   Path to the elot-exporter.jar file.
+‘elot-flymake-checkers’                   ‘(elot/nodeclare-id-prefix-label elot/ontology-header elot/prefix-table elot/ontology-presence elot/required-sections elot/description-list-curies elot/axiom-value-curies elot/omn-syntax)’                                                                                                                                                                                                                                                                             ‘elot’   List of 'org-lint' checker names to run via Flymake.
+‘elot-global-label-display-eldoc’         ‘t’                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ‘elot’   Whether 'elot-global-label-display-mode' registers an eldoc backend.
+‘elot-global-label-display-max-ids’       ‘10000’                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ‘elot’   Soft cap on the number of ids fed to 'regexp-opt' by the global mode.
+‘elot-global-label-display-mode-hook’     ‘nil’                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ‘elot’   Hook run after entering or leaving 'elot-global-label-display-mode'.
+‘elot-global-label-display-show-source’   ‘t’                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ‘elot’   Whether the eldoc/hover summary carries a provenance marker.
+‘elot-label-display-face’                 ‘elot-label-face’                                                                                                                                                                                                                                                                                                                                                                                                                                                        ‘elot’   Customizable face used for ELOT label fontification.
+‘elot-label-display-size-threshold’       ‘512000’                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ‘elot’   Buffer size (bytes) above which 'elot-mode' asks before enabling label-display.
+‘elot-label-lookup-scope’                 ‘both’                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ‘elot’   Which label sources 'elot-label-lookup' consults.
+‘elot-mode-auto-detect’                   ‘t’                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ‘elot’   When non-nil, automatically enable 'elot-mode' in ELOT buffers.
+‘elot-mode-hook’                          ‘nil’                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ‘elot’   Hook run after entering or leaving 'elot-mode'.
+‘elot-preferred-languages’                ‘nil’                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ‘elot’   Ordered list of preferred language tags for labels and annotations.
+‘elot-rdfpuml-command-str’                ‘"rdfpuml"’                                                                                                                                                                                                                                                                                                                                                                                                                                                              ‘elot’   Command to execute 'rdfpuml'.
+‘elot-rdfpuml-options’                    ="hide empty members
+   hide circle skinparam classAttributeIconSize 0"= | ‘elot’ | Default
+options for rdfpuml.  |
+‘elot-rdfpuml-path’                  ‘"c:/Users/jowik/bin/rdf2rml/bin/rdfpuml.pl"’                                                                                                                                                         ‘elot’   Path to the rdfpuml Perl program.
+‘elot-robot-jar-path’                ‘"c:/Users/jowik/bin/robot.jar"’                                                                                                                                                                      ‘elot’   Path to the robot.jar file.
+‘elot-source-rq-cache-dir-name’      ‘".elot-cache"’                                                                                                                                                                                       ‘elot’   Directory name (relative to the project root) for cached .rq results.
+‘elot-source-supported-extensions’   ‘(("org" . elot-source-parse-org) ("csv" . elot-source-parse-csv) ("tsv" . elot-source-parse-tsv) ("json" . elot-source-parse-json) ("ttl" . elot-source-parse-ttl) ("rq" . elot-source-parse-rq))’   ‘elot’   Alist mapping source file extensions to parser functions.
+‘elot-source-ttl-label-query’        ="PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+   SELECT ?id ?label (LANG(?label) AS ?lang) WHERE { ?id rdfs:label
+?label .  }"= | ‘elot’ | SPARQL query used by 'elot-source-parse-ttl' to
+extract id/label pairs.  |
+‘elot-toggle-labels-key’   ‘nil’   ‘elot’   Key sequence bound to 'elot-toggle-label-display' in ELOT-relevant buffers.
+
+
+File: elot.info,  Node: File and header conventions,  Next: #+call helpers (Library of Babel),  Prev: Customization variables,  Up: Part III --- Reference
+
+4.3 File and header conventions
+===============================
+
+TODO -- ‘prefix-table’, ‘:ontology-iri:’, ‘:subclass-of:’,
+‘:annotations:’ drawers, the declaration-tree heading shape.
+
+
+File: elot.info,  Node: #+call helpers (Library of Babel),  Next: Manchester Syntax cheatsheet,  Prev: File and header conventions,  Up: Part III --- Reference
+
+4.4 ‘#+call:’ helpers (Library of Babel)
+========================================
+
+Auto-generated from ‘elot-package/elot-lob.org’ by ‘make
+manual-reference’.
+
+Block                              Description
+-------------------------------------------------
+‘theme-readtheorg’
+‘theme-elot’
+‘current-date’
+‘current-datetime’
+‘robot-metrics’
+‘robot-sparql-select’
+‘ttl-Class-hierarchy’
+‘rdfpuml-config’
+‘rdfpuml-config-rangedomaindown’
+‘rdfpuml-config-rangedown’
+‘rdfpuml-block’
+‘example-ttl’
+‘fuseki-for-rdfpuml-ttl’
+‘kill-prefixes’
+
+
+File: elot.info,  Node: Manchester Syntax cheatsheet,  Next: Glossary,  Prev: #+call helpers (Library of Babel),  Up: Part III --- Reference
+
+4.5 Manchester Syntax cheatsheet
+================================
+
+TODO -- import ‘examples/manchester-syntax-quick-reference.omn’ with
+brief gloss on each construct.
+
+
+File: elot.info,  Node: Glossary,  Prev: Manchester Syntax cheatsheet,  Up: Part III --- Reference
+
+4.6 Glossary
+============
+
+TODO -- short definitions of CURIE, IRI, OMN, TTL, OWL, RDF, ontology,
+axiom, restriction, annotation, tangle, prefix table, label source,
+declaration tree.
+
+
+File: elot.info,  Node: Part IV --- Background,  Next: Appendices,  Prev: Part III --- Reference,  Up: Top
+
+5 Part IV -- Background
+***********************
+
+Read these once.  They explain the _why_ of design choices and the shape
+of the codebase -- useful when something is surprising.
+
+* Menu:
+
+* Why literate ontology engineering::
+* Architecture overview::
+* Relationship to other tools::
+
+
+File: elot.info,  Node: Why literate ontology engineering,  Next: Architecture overview,  Up: Part IV --- Background
+
+5.1 Why literate ontology engineering
+=====================================
+
+TODO -- the argument: ontology and documentation in one source;
+review-friendly plaintext format; reuse of Org tooling; experience from
+ISO 23726-3.
+
+
+File: elot.info,  Node: Architecture overview,  Next: Relationship to other tools,  Prev: Why literate ontology engineering,  Up: Part IV --- Background
+
+5.2 Architecture overview
+=========================
+
+TODO -- the tangle pipeline; the label DB; the SPARQL advice lifecycle;
+the relation between the literate ‘.org’ sources and the tangled
+‘elot-package/*.el’.
+
+
+File: elot.info,  Node: Relationship to other tools,  Prev: Architecture overview,  Up: Part IV --- Background
+
+5.3 Relationship to other tools
+===============================
+
+TODO -- where ELOT fits relative to Protégé, WIDOCO, ROBOT, OWL-CS,
+ontology editors in general.
+
+
+File: elot.info,  Node: Appendices,  Next: Indices,  Prev: Part IV --- Background,  Up: Top
+
+Appendix A Appendices
+*********************
+
+* Menu:
+
+* VS Code extension parity::
+* Troubleshooting and FAQ::
+* Changelog pointers::
+
+
+File: elot.info,  Node: VS Code extension parity,  Next: Troubleshooting and FAQ,  Up: Appendices
+
+A.1 VS Code extension parity
+============================
+
+TODO -- table of features available in the Emacs package vs the VS Code
+extension.  Mine ‘CLI-VS-CODE-PLAN.org’ for content.
+
+
+File: elot.info,  Node: Troubleshooting and FAQ,  Next: Changelog pointers,  Prev: VS Code extension parity,  Up: Appendices
+
+A.2 Troubleshooting and FAQ
+===========================
+
+TODO -- common pitfalls:
+
+   • ‘elot-robot-jar-path’ unset or wrong,
+   • Java not on ‘PATH’,
+   • ‘peg’ library missing on Emacs 29,
+   • label display broken in ‘*xref*’ buffers (now fixed; left as
+     example for future regressions),
+   • SPARQL block returns empty result set,
+   • tangled ‘.omn’ fails ROBOT report.
+
+
+File: elot.info,  Node: Changelog pointers,  Prev: Troubleshooting and FAQ,  Up: Appendices
+
+A.3 Changelog pointers
+======================
+
+See the release notes on GitHub
+(https://github.com/johanwk/elot/releases) for the version-by-version
+history.
+
+
+File: elot.info,  Node: Indices,  Prev: Appendices,  Up: Top
+
+Appendix B Indices
+******************
+
+
+Tag Table:
+Node: Top564
+Node: Preface2586
+Node: Who this manual is for3040
+Node: How to read this manual3645
+Node: Conventions4217
+Node: Getting help4567
+Node: Part I --- Tutorial4858
+Node: Installation5302
+Node: Prerequisites5639
+Node: Install ELOT from MELPA6256
+Node: Install ELOT from Git6573
+Node: Point ELOT at ROBOT7004
+Node: Verify7395
+Node: Your first ontology7730
+Node: Create the file8361
+Node: Tangle to OWL Manchester Syntax9669
+Node: Sanity-check with ROBOT10118
+Node: Where to next10585
+Node: Adding axioms and annotations10969
+Node: Annotations11699
+Node: Object properties12107
+Node: Disjointness12350
+Node: Exporting to OWL and HTML12563
+Node: Adding the theme13231
+Node: PDF and Info13550
+Node: Publishing to GitHub Pages13836
+Node: A first SPARQL query and rdfpuml diagram14027
+Node: A first SPARQL block14604
+Node: A first diagram15148
+Node: Part II --- How-to guides15535
+Node: Authoring16113
+Node: Querying with SPARQL and ROBOT16564
+Node: Diagrams with rdfpuml and Library-of-Babel helpers17215
+Node: Label display17620
+Node: Importing existing OWL ontologies18076
+Node: Linting and syntax checking18430
+Node: Working with multiple ontologies and imports18745
+Node: Collaborating via Git19106
+Node: Part III --- Reference19399
+Node: Commands and keybindings19922
+Node: Customization variables25198
+Node: File and header conventions37574
+Node: #+call helpers (Library of Babel)37934
+Node: Manchester Syntax cheatsheet38697
+Node: Glossary39013
+Node: Part IV --- Background39300
+Node: Why literate ontology engineering39695
+Node: Architecture overview40042
+Node: Relationship to other tools40418
+Node: Appendices40697
+Node: VS Code extension parity40927
+Node: Troubleshooting and FAQ41217
+Node: Changelog pointers41757
+Node: Indices42011
+
+End Tag Table
+
+
+Local Variables:
+coding: utf-8
+Info-documentlanguage: en
+End:

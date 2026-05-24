@@ -1,0 +1,58 @@
+#+TITLE: ELOT Manual --- Style Guide
+#+OPTIONS: toc:nil num:nil
+
+One page.  Keep voice consistent across chapters.
+
+* Voice and tense
+- Present tense, second person.  "You open the file", not "the user
+  will open the file" or "we will open the file".
+- Avoid "simply", "just", "easy", "obvious", "of course".  They make
+  readers who do /not/ find it simple feel stupid.
+- Prefer short sentences.  One idea per sentence.
+
+* Audience layering (Diátaxis)
+Every chapter belongs to exactly one of four categories.  Put it in
+the right folder and the rest follows:
+
+| Folder                  | Purpose                          | Voice                 |
+|-------------------------+----------------------------------+-----------------------|
+| =tutorial/=             | Learn by doing, linear, one path | "Type this, then..."  |
+| =howto/=                | Solve one task, self-contained   | "To X, do Y."         |
+| =reference/=            | Look up details                  | Terse; tables OK      |
+| =background/=           | Understand /why/                 | Expository, narrative |
+
+If a chapter outline does not fit cleanly into one of those, you are
+probably mixing audiences.  Split it.
+
+* Code blocks
+- Elisp: =#+begin_src emacs-lisp :results silent= for setup,
+  =:exports both= when the output matters.
+- Shell: =#+begin_src sh :exports code= unless output is teaching content.
+- SPARQL: =#+begin_src sparql :url "..."= --- always specify =:url=
+  so a reader can copy-paste and run.
+- Org snippets that should /not/ be evaluated: use
+  =#+begin_example= or escape the inner =#+= with a comma.
+
+* Typography
+- CURIEs and IRIs in =code= face: =ex:Dog=, not /ex:Dog/.
+- Keybindings: =~C-c C-x r~=.  Org translates this correctly for
+  HTML, PDF and Info.
+- File paths: =~elot-package/elot.el~=.
+- New term on first use: /italic/, with a forward link to the
+  glossary entry.
+
+* Cross-references
+- Put a =:CUSTOM_ID:= on every heading you ever link to.  This keeps
+  Info node names stable across heading renames.
+- Prefer =[[#custom-id][readable text]]= over heading-text links.
+
+* Length
+- Tutorial chapters: 15--30 minutes of reading time.
+- How-to: aim for one printed page each.  If longer, split.
+- Reference: as long as it needs to be, but tables over prose.
+
+* Examples
+- One worked example threads the tutorial: a small =pets.org=
+  ontology with three classes and one object property.
+- Reuse it.  Do not invent a new example per chapter unless the
+  point of the chapter requires it.

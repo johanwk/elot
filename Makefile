@@ -40,7 +40,41 @@ SMOKE_LOG       := $(STABLE_LOG_DIR)/smoke.log
 
 .PHONY: all stable-check byte-compile native-compile test smoke baseline \
         baseline-warnings baseline-tests baseline-symbols \
+        manual manual-html manual-info manual-reference \
         clean help
+
+## ---------------------------------------------------------------------------
+## Manual (documentation/manual/elot.org)
+## ---------------------------------------------------------------------------
+
+MANUAL_DIR  := documentation/manual
+MANUAL_ORG  := $(MANUAL_DIR)/elot.org
+MANUAL_HTML := $(MANUAL_DIR)/elot.html
+MANUAL_INFO := $(MANUAL_DIR)/elot.info
+
+manual: manual-html manual-info
+
+# Regenerate auto-generated reference chapters (commands, customization,
+# LOB helpers) by introspecting the loaded ELOT package.
+manual-reference:
+	$(EMACS) --batch -L $(PACKAGE_DIR) \
+	  -l $(MANUAL_DIR)/gen-manual-reference.el
+
+manual-html: manual-reference
+	$(EMACS) --batch -L $(PACKAGE_DIR) \
+	  --eval "(require 'org)" \
+	  --eval "(require 'ox-html)" \
+	  --eval "(find-file \"$(MANUAL_ORG)\")" \
+	  --eval "(org-html-export-to-html)"
+	@echo "Wrote $(MANUAL_HTML)"
+
+manual-info: manual-reference
+	$(EMACS) --batch -L $(PACKAGE_DIR) \
+	  --eval "(require 'org)" \
+	  --eval "(require 'ox-texinfo)" \
+	  --eval "(find-file \"$(MANUAL_ORG)\")" \
+	  --eval "(org-texinfo-export-to-info)"
+	@echo "Wrote $(MANUAL_INFO)"
 
 all: help
 
@@ -187,5 +221,11 @@ help:
 	@echo "  make baseline       capture Step B.1-B.3 baselines under /tmp/"
 	@echo "                      (override with BASELINE_DIR=...)"
 	@echo "  make clean          remove .elc files in $(PACKAGE_DIR)"
+	@echo ""
+	@echo "  make manual         export the manual to HTML + Info"
+	@echo "  make manual-html    HTML only"
+	@echo "  make manual-info    Info only (install with install-info)"
+	@echo "  make manual-reference"
+	@echo "                      regenerate auto-generated reference chapters"
 	@echo ""
 	@echo "Override Emacs:  make EMACS=emacs30 stable-check"

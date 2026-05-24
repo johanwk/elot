@@ -1,0 +1,4 @@
+# Relationship to other tools --- included from elot-manual.org
+
+TODO --- where ELOT fits relative to Protégé, WIDOCO, ROBOT, OWL-CS,
+ontology editors in general.

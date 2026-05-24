@@ -1,0 +1,53 @@
+:PROPERTIES:
+:corpus-source:   Rector
+:corpus-id:       R01
+:corpus-severity: Important
+:corpus-url:      https://doi.org/10.1007/978-3-540-30202-5_5
+:corpus-citation: Rector, Drummond, Horridge, Wroe, Stevens, Wang, Wroe (2004), "OWL Pizzas: Practical Experience of Teaching OWL-DL", EKAW 2004, sec. 4 (Trivial Satisfaction of Universal Restrictions).
+:corpus-expects:  planned/rector-only-without-some
+:corpus-rationale: Universal-only restriction without an accompanying
+ existential is trivially satisfied on individuals that have no
+ fillers; authors typically intend "has at least one and only".
+:END:
+#+title: Rector R01 -- universal restriction without accompanying existential
+
+* corpus-r01
+:PROPERTIES:
+:ID: corpus-r01
+:ELOT-context-type: ontology
+:ELOT-context-localname: corpus-r01
+:ELOT-default-prefix: ex:
+:header-args:omn: :tangle no
+:END:
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+| prefix | uri                                   |
+|--------+---------------------------------------|
+| owl:   | http://www.w3.org/2002/07/owl#        |
+| rdfs:  | http://www.w3.org/2000/01/rdf-schema# |
+| ex:    | http://example.org/corpus/r01/        |
+
+** corpus-r01 ontology (ex:corpus-r01 ex:corpus-r01/0.0)
+:PROPERTIES:
+:resourcedefs: yes
+:END:
+ - owl:versionInfo :: 0.0
+
+** Classes
+:PROPERTIES:
+:resourcedefs: yes
+:END:
+*** Vegetarian pizza (ex:VegetarianPizza)
+ - rdfs:label :: "Vegetarian pizza"@en
+ - SubClassOf :: ex:hasTopping only ex:VegetableTopping
+*** Vegetable topping (ex:VegetableTopping)
+ - rdfs:label :: "Vegetable topping"@en
+
+** Object properties
+:PROPERTIES:
+:resourcedefs: yes
+:END:
+*** has topping (ex:hasTopping)
+ - rdfs:label :: "has topping"@en

@@ -1,0 +1,31 @@
+# Exporting to OWL and HTML --- included from elot.org
+
+TODO --- expand.
+
+This chapter walks through the two export targets that matter to
+most authors:
+
+1. *OWL Manchester Syntax* via =M-x elot-tangle= (you already saw
+   this in [[#tut-first-ontology][Your first ontology]]).
+2. *HTML documentation* via Org's standard exporter (=C-c C-e h h=)
+   plus the bundled =theme-readtheorg.setup=.
+
+* Adding the theme
+
+Put this line near the top of your ontology Org file:
+
+#+begin_src org :exports code
+,#+SETUPFILE: theme-readtheorg.setup
+#+end_src
+
+Re-export with =C-c C-e h h=; the resulting HTML uses the ELOT
+theme.
+
+* PDF and Info
+
+For PDF: =C-c C-e l p=.  For Info (Emacs help format):
+=C-c C-e i i=, then =install-info= the result.
+
+* Publishing to GitHub Pages
+
+TODO --- recipe.

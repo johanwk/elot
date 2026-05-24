@@ -7,6 +7,7 @@
 :PROPERTIES:
 :ID: my-ont
 :ELOT-context-type: ontology
+:ELOT-id-scheme: acme
 :ELOT-context-localname: my-ont
 :ELOT-default-prefix: ex
 :header-args:omn: :tangle ./my-ont.omn :noweb yes
@@ -15,6 +16,7 @@
 :END:
 
 ** Queries
+*** select query for OP domain/range
 #+begin_src sparql :url "my-ont.omn" :eval never-export :exports both
   select *
   {
@@ -28,9 +30,9 @@
 | OP     | domain | range |
 |--------+--------+-------|
 | ex:chases | ex:dog    | ex:cat   |
-
+*** construct query ~my-construct~ for class taxonomy and OP domain/range
 #+name: my-construct
-#+begin_src sparql :url "my-ont.omn" :eval never-export :format ttl :wrap "src ttl" :cache yes :post kill-prefixes(data=*this*) :eval never-export :exports results
+#+begin_src sparql :url "my-ont.omn" :eval never-export :format ttl :wrap "src ttl" :cache yes :post kill-prefixes(data=*this*)
   construct {
     ?class a owl:Class .
     ?subclass rdfs:subClassOf ?class .
@@ -43,7 +45,7 @@
   } 
 #+end_src
 
-#+RESULTS[d2abbf7936d85939c7c4cc4eb9d4a1385a9c4df2]: my-construct
+#+RESULTS[2657206f9951f3562686f03c2b63b57728cb6fd3]: my-construct
 #+begin_src ttl
 
 ex:snake  a              owl:Class ;
@@ -62,14 +64,64 @@ ex:chases  a         owl:ObjectProperty ;
         rdfs:range   ex:cat .
 #+end_src
 
+*** rdfpuml diagram from ~my-construct~
 #+name: rdfpuml:my-construct
 #+call: rdfpuml-block(ttlblock="my-construct") :eval never-export
 #+caption: Animal diagram
 #+results: rdfpuml:my-construct
 [[file:./images/my-construct.svg]]
+*** construct query for axiom annotations
+#+name: my-axiom-annotations
+#+begin_src sparql :url "my-ont.omn" :eval never-export :format ttl :wrap "src ttl" :cache no :post kill-prefixes(data=*this*) 
+  construct {
+    ?class a owl:Class .
+    ?OP a owl:ObjectProperty ; ?rdfs_prop ?class .
+    ?axiom a owl:Axiom ; owl:annotatedSource ?OP ; ?ann_prop ?ann_target .
+  } {
+    values ?rdfs_prop { rdfs:domain rdfs:range }
+    ?class a owl:Class .
+    ?OP ?rdfs_prop ?class .
+    optional { 
+      ?axiom a owl:Axiom ;
+           owl:annotatedSource ?OP ;
+           ?ann_prop ?ann_target .
+    } 
+  } 
+#+end_src
 
+#+RESULTS[ed9dfcf72060ba3d0de92bf7f5c992d6f6e937f8]: my-axiom-annotations
+#+begin_src ttl
 
+ex:cat  a       owl:Class .
 
+[ a                      owl:Axiom ;
+  rdfs:seeAlso           <https://www.wikidata.org/wiki/Q1839152> ;
+  owl:annotatedProperty  rdfs:range ;
+  owl:annotatedSource    ex:chases ;
+  owl:annotatedTarget    ex:cat ;
+  skos:example           "Tom Cat is chased by Spike, AKA Butch or Killer."
+] .
+
+ex:dog  a       owl:Class .
+
+[ a                      owl:Axiom ;
+  rdfs:comment           "Certain dogs have found this axiom offensive. Others, not." , "Consult popular cartoons for excellent evidence of this domain axiom." ;
+  owl:annotatedProperty  rdfs:domain ;
+  owl:annotatedSource    ex:chases ;
+  owl:annotatedTarget    ex:dog
+] .
+
+ex:chases  a         owl:ObjectProperty ;
+        rdfs:domain  ex:dog ;
+        rdfs:range   ex:cat .
+#+end_src
+
+*** rdfpuml diagram from ~my-axiom-annotations~
+#+name: rdfpuml:my-axiom-annotations
+#+call: rdfpuml-block(ttlblock="my-axiom-annotations") :eval never-export
+#+caption: Animal diagram with annotated axioms
+#+results: rdfpuml:my-axiom-annotations
+[[file:./images/my-axiom-annotations.svg]]
 
 ** Prefixes
 :PROPERTIES:
@@ -78,7 +130,6 @@ ex:chases  a         owl:ObjectProperty ;
 The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
 
 #+name: prefix-table
-#+attr_latex: :align lp{.8\textwidth} :font  mall
 #+caption: OWL ontology prefixes
 | prefix   | uri                                                                            |
 |----------+--------------------------------------------------------------------------------|
@@ -96,63 +147,106 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 | iof-av:  | https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/ |
 | ex:      | http://example.org/                                                            |
 | exo:     | http://example.org/ont/                                                        |
+| pizza:   | https://raw.githubusercontent.com/owlcs/pizza-ontology/refs/heads/master/pizza.owl# |
 
 ** my-ont ontology (exo:my-ont exo:my-ont/0.0)
 :PROPERTIES:
-:ID:       my-ont-ontology-declaration
+:ID: my-ont-ontology-declaration
 :custom_id: my-ont-ontology-declaration
 :resourcedefs: yes
 :END:
- # - Import :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/
+
  - owl:versionInfo :: 0.0 start of my-ont
  - dcterms:title :: "my-ont ontology"@en
- - owl:versionInfo :: 0.0 start of my-ont
  - pav:lastUpdateOn :: {{{modification-time("%Y-%m-%dT%H:%M:%SZ",t)}}}^^xsd:dateTime
  - dcterms:license :: [[https://creativecommons.org/licenses/by-sa/4.0/]]
- - dcterms:creator :: {{{author}}}
+ - dcterms:creator :: {{{author()}}}
  - dcterms:modified ::  {{{modification-time("%Y-%m-%d",t)}}}^^xsd:date
  - dcterms:publisher :: https://example.org/thepublisher
  - dc:rights :: Copyright info here
  - dcterms:description :: The my-ont ontology is ...
  - rdfs:comment :: The my-ont ontology is ...
+** Datatypes
+:PROPERTIES:
+:ID:       my-ont-datatypes
+:custom_id: my-ont-datatypes
+:resourcedefs: yes
+:END:
 ** Classes
 :PROPERTIES:
 :ID:       my-ont-class-hierarchy
 :custom_id: my-ont-class-hierarchy
 :resourcedefs: yes
 :END:
+*** Food (ex:hello)
+ - rdfs:isDefinedBy :: https://raw.githubusercontent.com/owlcs/pizza-ontology/refs/heads/master/pizza.owl
+**** Pizza (pizza:Pizza)
+ - rdfs:isDefinedBy :: https://raw.githubusercontent.com/owlcs/pizza-ontology/refs/heads/master/pizza.owl
+ - rdfs:label :: "Pizza"@en
 *** Animal (ex:animal) [4/4]
  - [X] iof-av:naturalLanguageDefinition :: A living organism
  - [X] iof-av:isPrimitive :: true
  - [X] iof-av:primitiveRationale :: It's so basic
  - [X] skos:example :: mouse, elephant
+ - DisjointClasses :: ex:dog, ex:cat
+**** Hawk (ex:C_028TF72P2)
+ - SubClassOf :: ex:chases some ex:mouse
+**** Elephant (ex:elephant)
+ - SubClassOf :: ex:isAfraidOf some ex:mouse
+***** AsianElephant (ex:asianElephant)
+**** Mouse (ex:mouse)
+ - SubClassOf :: ex:isAfraidOf some ex:cat
+ - SubClassOf :: ex:isAfraidOf some ex:C_028TF72P2
+ - SubClassOf :: ex:isAfraidOf some ex:snake
+**** Cat (ex:cat) [1/4]
+ - iof-av:naturalLanguageDefinition :: A carnivoran mammal of the family Felidae, characterised by retractile claws, a specialised dentition adapted for hypercarnivory, and a hyoid apparatus whose configuration differentiates its major subfamilies.
+ - SubClassOf :: ex:isAfraidOf some ex:dog
+ - SubClassOf :: ex:chases some ex:mouse
+***** Snake (ex:snake) [1/4]
+ - SubClassOf :: ex:isAfraidOf some ex:C_028TF72P2
+ - SubClassOf :: ex:chases some ex:mouse
+****** Felinae (ex:C_028TVPNEW)
+ - EquivalentTo :: ex:cat and (ex:R_028T19WV3 some ex:C_028TQA4FW)
+ - iof-av:naturalLanguageDefinition :: The subfamily of Felidae whose members possess a fully ossified hyoid apparatus, mechanically supporting sustained purring during both phases of respiration; includes the domestic cat and most small wild cats.
+ - skos:example :: domestic cat, lynx, cheetah, cougar, ocelot, serval
 **** Dog (ex:dog) [2/4]
  - [X] iof-av:naturalLanguageDefinition :: A domesticated carnivorous mammal
- - [X] iof-av:isPrimitive :: true
- - [ ] iof-av:primitiveRationale :: 
- - [ ] skos:example :: 
-**** Cat (ex:cat) [1/4]
- - [ ] iof-av:naturalLanguageDefinition :: 
- - [X] iof-av:isPrimitive :: true
- - [ ] iof-av:primitiveRationale :: 
- - [ ] skos:example :: 
-**** Snake (ex:snake) [1/4]
- - [ ] iof-av:naturalLanguageDefinition :: 
- - [X] iof-av:isPrimitive :: true
- - [ ] iof-av:primitiveRationale :: 
- - [ ] skos:example :: 
-
+ - SubClassOf :: ex:chases some ex:cat
+*** HyoidStructure (ex:C_028T5CM1A)
+ - iof-av:naturalLanguageDefinition :: An anatomical structure consisting of the hyoid apparatus, a complex of small bones and cartilages supporting the tongue and larynx; in felids, the degree of ossification of its epihyoid element correlates with vocal capability.
+ - DisjointUnionOf :: ex:C_028TG9YQ2, ex:C_028TQA4FW
+**** FlexibleHyoid (ex:C_028TG9YQ2)
+ - SubClassOf :: ex:C_028T5CM1A
+ - iof-av:naturalLanguageDefinition :: A hyoid structure in which the epihyoid element remains a cartilaginous ligament rather than fully ossifying, granting the larynx the elastic mobility associated with roaring vocalisation.
+**** OssifiedHyoid (ex:C_028TQA4FW)
+ - SubClassOf :: ex:C_028T5CM1A
+ - iof-av:naturalLanguageDefinition :: A hyoid structure in which all elements, including the epihyoid, are fully ossified into a rigid bony chain, mechanically supporting sustained purring vocalisation but precluding roaring.
 ** Object properties
 :PROPERTIES:
 :ID:       my-ont-object-property-hierarchy
 :custom_id: my-ont-object-property-hierarchy
 :resourcedefs: yes
 :END:
+*** hasAnatomicalFeature (ex:R_028T19WV3)
+ - Domain :: ex:animal
+ - Range :: ex:C_028T5CM1A
+ - iof-av:naturalLanguageDefinition :: x hasAnatomicalFeature y iff y is an anatomical structure that is a constitutive part of the body plan of x.
+*** isAfraidOf (ex:isAfraidOf)
+ - Domain :: ex:animal
+ - Range :: ex:animal
+ - Characteristics :: Irreflexive, Asymmetric
+ - iof-av:naturalLanguageDefinition :: x isAfraidOf y iff x experiences fear in the presence of, or at the thought of, y.
+ - skos:example :: A mouse is afraid of a cat.
 *** chases (ex:chases) [1/2]
  - [ ] iof-av:naturalLanguageDefinition :: x chases y iff ...
  - [X] skos:example :: Fido chases Max
- - Domain :: ex:dog
- - Range :: ex:cat
+ - Domain :: ex:animal
+   - rdfs:comment :: Certain dogs have found this axiom offensive. Others, not.
+   - rdfs:comment :: Consult popular cartoons for excellent evidence of this domain axiom.
+ - Range :: ex:animal
+   - rdfs:seeAlso :: https://www.wikidata.org/wiki/Q1839152
+   - skos:example :: Tom Cat is chased by Spike, AKA Butch or Killer.
+ - Characteristics :: Asymmetric
 ** Data properties
 :PROPERTIES:
 :ID:       my-ont-data-property-hierarchy
@@ -165,6 +259,8 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 :custom_id: my-ont-annotation-property-hierarchy
 :resourcedefs: yes
 :END:
+*** rdfs:comment
+*** rdfs:seeAlso
 *** owl:versionInfo
 *** dcterms:title
  - rdfs:isDefinedBy :: http://purl.org/dc/terms/
@@ -185,7 +281,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 *** pav:lastUpdateOn
  - rdfs:isDefinedBy :: [[http://purl.org/pav/]]
 *** iof-av:isPrimitive
- - rdfs:isDefinedBy :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary
+ - rdfs:isDefinedBy :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/
 
 *** skos:definition
  - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
@@ -193,11 +289,17 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - rdfs:isDefinedBy :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/
 **** iof-av:primitiveRationale
  - rdfs:isDefinedBy :: https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/
-
 ** Individuals
 :PROPERTIES:
 :ID:       my-ont-individuals
 :custom_id: my-ont-individuals
 :resourcedefs: yes
 :END:
+*** spooky (ex:spooky)
+ - Types :: ex:chases some owl:Thing
+ 
+The individual ~ex:spooky~ would render the ontology inconsistent if ~owl:Thing~ is replaced with ~ex:dog~.
+ 
+*** scooby (ex:scooby)
+ - Types :: ex:dog 
 

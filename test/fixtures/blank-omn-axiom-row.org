@@ -1,0 +1,101 @@
+#+title: Fixture: Blank OMN axiom description-list rows (Step 9.3.F4)
+#+author: ELOT test suite
+
+# Fixture for elot/blank-omn-axiom-row (Step 9.3.F4).
+#
+# Expected lint findings (only WARNING-level rows for this checker):
+# - ex:chases   : Domain :: <blank>           -> WARN
+# - ex:chases   : Range :: <blank>            -> WARN (mid-list blank, populated rows on either side)
+# - ex:animal   : DisjointClasses :: <blank>  -> WARN (misc keyword)
+# - ex:dog      : SubClassOf :: <blank>       -> WARN
+#
+# NOT flagged:
+# - ex:bites    : Domain :: ex:dog            (populated)
+# - ex:bites    : Range :: ex:human           (populated)
+# - ex:cat      : rdfs:comment :: <blank>     (annotation, not OMN keyword)
+# - ex:cat      : skos:example :: <blank>     (annotation)
+
+* my-ont
+:PROPERTIES:
+:ID: my-ont
+:ELOT-context-type: ontology
+:ELOT-context-localname: my-ont
+:ELOT-default-prefix: ex
+:header-args:omn: :tangle ./my-ont.omn :noweb yes
+:END:
+
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+
+#+name: prefix-table
+| prefix | uri                                         |
+|--------+---------------------------------------------|
+| owl:   | http://www.w3.org/2002/07/owl#              |
+| rdf:   | http://www.w3.org/1999/02/22-rdf-syntax-ns# |
+| rdfs:  | http://www.w3.org/2000/01/rdf-schema#       |
+| xsd:   | http://www.w3.org/2001/XMLSchema#           |
+| skos:  | http://www.w3.org/2004/02/skos/core#        |
+| ex:    | http://example.org/                         |
+| exo:   | http://example.org/ont/                     |
+
+** my-ont ontology (exo:my-ont exo:my-ont/0.0)
+:PROPERTIES:
+:ID: my-ont-ontology-declaration
+:resourcedefs: yes
+:END:
+
+ - rdfs:comment :: A test ontology.
+
+** Datatypes
+:PROPERTIES:
+:ID: my-ont-datatypes
+:resourcedefs: yes
+:END:
+
+** Classes
+:PROPERTIES:
+:ID: my-ont-class-hierarchy
+:resourcedefs: yes
+:END:
+*** Animal (ex:animal)
+ - DisjointClasses ::
+*** Dog (ex:dog)
+ - SubClassOf ::
+*** Cat (ex:cat)
+ - rdfs:comment ::
+ - skos:example ::
+*** Human (ex:human)
+ - rdfs:label :: Human
+
+** Object properties
+:PROPERTIES:
+:ID: my-ont-object-property-hierarchy
+:resourcedefs: yes
+:END:
+*** chases (ex:chases)
+ - Domain ::
+ - Characteristics :: Asymmetric
+ - Range ::
+*** bites (ex:bites)
+ - Domain :: ex:dog
+ - Range :: ex:human
+
+** Data properties
+:PROPERTIES:
+:ID: my-ont-data-property-hierarchy
+:resourcedefs: yes
+:END:
+
+** Annotation properties
+:PROPERTIES:
+:ID: my-ont-annotation-property-hierarchy
+:resourcedefs: yes
+:END:
+
+** Individuals
+:PROPERTIES:
+:ID: my-ont-individuals
+:resourcedefs: yes
+:END:

@@ -1,0 +1,4 @@
+# VS Code extension parity --- included from elot-manual.org
+
+TODO --- table of features available in the Emacs package vs the VS
+Code extension.  Mine =CLI-VS-CODE-PLAN.org= for content.

@@ -1,0 +1,26 @@
+# File and header conventions --- included from elot.org
+
+TODO --- =prefix-table=, =:ontology-iri:=, =:subclass-of:=,
+=:annotations:= drawers, the declaration-tree heading shape.
+
+* Ontology heading properties
+
+Each ontology heading (the heading carrying =:ELOT-context-type:
+ontology=) declares its identity and authoring conventions in its
+=:PROPERTIES:= drawer.  The principal properties are:
+
+| Property                  | Purpose                                                    |
+|---------------------------+------------------------------------------------------------|
+| =:ELOT-context-type:=     | Must be =ontology= for the heading to be recognised.       |
+| =:ELOT-context-localname:= | Short name used for tangle targets and IDs.               |
+| =:ELOT-default-prefix:=   | CURIE prefix used for resources declared in this ontology. |
+| =:ELOT-id-scheme:=        | Identifier-minting scheme used by ELOT's authoring tools.  |
+
+** =:ELOT-id-scheme:= --- choosing an identifier convention
+
+TODO --- expand from the README and =documentation/elot-id.org=
+references.  The short form is a /spec string/ =SCHEME [FORMAT...]=,
+e.g. =counter GO_0000000= or =acme slug:t=.  Built-in schemes:
+=uuid=, =slug=, =counter=, =acme=.  See =documentation/elot-id.org=
+for the full reference, including custom-scheme registration and
+the =CONTEXT= plist consumed by =mint-fn= / =verify-fn=.

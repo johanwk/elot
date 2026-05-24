@@ -1,0 +1,496 @@
+#+title: ELOT with gptel: LLM-assisted ontology authoring
+#+author: ELOT Contributors
+#+startup: overview
+
+* Overview
+
+=elot-gptel.el= exposes ELOT's ontology-authoring capabilities to large
+language models through the [[https://github.com/karthink/gptel][gptel]]
+tool protocol.  The aim is a /shared/ authoring environment in which the
+human author and an LLM use the same lint, queries, reasoners, and
+identifier-cache that ELOT already provides interactively.
+
+The file is /optional/.  Users who do not run gptel see no behavioural
+change.  ROBOT, too, is optional: only the OMN/TTL conversion, SPARQL,
+and reasoning tools require a configured ROBOT command (=elot-robot-jar-path=
+or =robot= on =exec-path=).
+
+** Loading and registering
+
+#+begin_src elisp
+(require 'gptel)
+(require 'elot-gptel)
+(elot-gptel-register-tools)
+#+end_src
+
+Then enable some or all =elot_*= tools in =gptel-menu=.
+Tools are idempotently re-registered; =elot-gptel-unregister-tools=
+clears them for tests.
+
+** Safety model
+
+| Layer            | Default        | Notes                                                       |
+|------------------+----------------+-------------------------------------------------------------|
+| Read-only tools  | always on      | Lint, validate, SPARQL SELECT/ASK, reasoning, DB inspection |
+| Mutating SPARQL  | refused        | Set =elot-gptel-allow-side-effects= to permit (M4 only)     |
+| Write-back tools | not yet landed | Reserved for Milestone 9 (=elot_edit_axiom=, ...)           |
+
+Every file argument is canonicalised and required to be under
+=project-current= (or =default-directory=).  ROBOT is always invoked
+via =make-process= with an argv list -- never =shell-command=, never
+string concatenation.
+
+** Conventions on results
+
+Every tool returns plain text the LLM can quote back to the human.
+Common shapes:
+
+- =OK: <one-line summary>= when nothing of note happened.
+- =ERROR: <message>= when the tool refused or failed.  Tools never
+  raise; the LLM always sees a structured line.
+- A line-oriented report or TSV table otherwise; truncated tables end
+  with =... N more rows omitted=.
+
+ASCII only throughout -- non-ASCII trips JSON marshalling in some
+gptel backends.
+
+* Tool reference
+
+Tools are grouped by the kind of question they answer.
+
+** Validation tools
+
+*** =elot_lint=
+
+Lint an ELOT =.org= source file.  Runs standard =org-lint= checkers
+plus the ELOT-specific checkers (prefix table, ontology header,
+required sections, description-list CURIEs, OMN syntax, ...).
+
+| Arg          | Type   | Required | Description                                       |
+|--------------+--------+----------+---------------------------------------------------|
+| =file=       | string | yes      | Path to an ELOT =.org= file                       |
+| =severity=   | string | no       | =error= / =warning= / =all= (default =all=)       |
+| =categories= | array  | no       | Subset of checker names to run                    |
+
+Output: one line per issue,
+=LINE:COL  [CATEGORY/TRUST]  MESSAGE=, plus a final
+=Summary: N errors, M warnings=.  Returns =OK: no lint issues= when
+the file is clean.
+
+*** =elot_omn_validate=
+
+Validate the OMN export of an ELOT =.org= file by feeding it through
+ROBOT.  Catches whole-file errors the per-axiom ELOT lint cannot --
+e.g. an object property used in class position, a datatype property
+declared with a class as its range.  Optionally also runs
+=robot validate-profile= for an OWL 2 profile.
+
+| Arg       | Type   | Required | Description                                  |
+|-----------+--------+----------+----------------------------------------------|
+| =file=    | string | yes      | ELOT =.org= file                             |
+| =profile= | string | no       | =DL= / =EL= / =QL= / =RL= / =Full=           |
+
+Use the =DL= profile to catch the non-simple-object-property pitfalls
+(transitive + asymmetric, etc.) that ROBOT's plain convert pass lets
+through but OWL 2 DL reasoners refuse.  See =examples/pets.org= for a
+worked example.
+
+** Inspection tools
+
+*** =elot_sparql=
+
+Execute a SPARQL query against an ontology.  =file= may be an ELOT
+=.org= source (tangled to OMN inside a temp workspace) or any RDF
+file ROBOT can read (=.ttl=, =.owl=, =.ofn=, =.omn=, =.rdf=, =.nt=,
+=.nq=, =.jsonld=, =.obo=, =.rdfxml=).
+
+| Arg      | Type   | Required | Description                                       |
+|----------+--------+----------+---------------------------------------------------|
+| =file=   | string | yes      | ELOT =.org= or RDF file                           |
+| =query=  | string | yes      | SPARQL query text                                 |
+| =format= | string | no       | =tsv= (default) / =csv= / =json= / =table=        |
+| =limit=  | number | no       | Cap on returned rows (default 200, max 5000)      |
+
+=format=table= renders an Org-table.  Mutating SPARQL (INSERT, DELETE,
+LOAD, CLEAR, CREATE, DROP, COPY, MOVE, ADD) is refused unless
+=elot-gptel-allow-side-effects= is non-nil.  CONSTRUCT and DESCRIBE
+are read-only with respect to the dataset and always permitted.
+
+When =file= is an ELOT =.org=, the OMN it queries lives in a
+temporary workspace that is discarded on exit -- so any mutating
+SPARQL against a =.org= input is a no-op against the user's source.
+The proper way to edit an ELOT ontology is via its =.org= source.
+
+*** =elot_sparql_select=
+
+Read-only sibling of =elot_sparql=.  Refuses anything other than
+SELECT or ASK, /regardless/ of =elot-gptel-allow-side-effects=.  Use
+this in confirm-free agent loops that need a hard guarantee no
+mutating keyword can reach ROBOT.
+
+Argument schema identical to =elot_sparql=.
+
+** Reasoning tools
+
+All three reasoning tools accept an optional =reasoner= argument.
+HermiT enforces OWL 2 DL strictly and refuses non-DL inputs; Whelk
+works in EL and surfaces model-level clashes on ontologies HermiT
+refuses.  Keep both available -- they cover complementary failure
+modes (see the worked example in =examples/pets.org=).
+
+*** =elot_consistency=
+
+Check whether an ontology is consistent.
+
+| Arg        | Type   | Required | Description                                     |
+|------------+--------+----------+-------------------------------------------------|
+| =file=     | string | yes      | ELOT =.org= or RDF file                         |
+| =reasoner= | string | no       | =hermit= (default) / =whelk=                    |
+
+Returns =OK: ontology is consistent ...=,
+=OK: ontology is consistent but has unsatisfiable classes ...= (with
+a pointer at =elot_unsatisfiable= for details), or
+=INCONSISTENT: <explanation>= when the ontology has no model.
+
+*** =elot_unsatisfiable=
+
+Report unsatisfiable classes.  Same argument shape as
+=elot_consistency=.  Returns
+=OK: no unsatisfiable classes (reasoner=R, ...)= or a bulleted list
+of offending IRIs (labels resolved via the ELOT DB when available).
+
+*** =elot_explain=
+
+Justify an axiom -- "why does this ontology entail X?".  Useful for
+debugging unsatisfiability (=Foo SubClassOf: owl:Nothing=) and
+inconsistency (=owl:Thing SubClassOf: owl:Nothing=).
+
+| Arg        | Type   | Required | Description                                     |
+|------------+--------+----------+-------------------------------------------------|
+| =file=     | string | yes      | ELOT =.org= file                                |
+| =axiom=    | string | yes      | A single Manchester Syntax axiom                |
+| =reasoner= | string | no       | =hermit= (default) / =whelk= / =elk=            |
+| =max=      | number | no       | Max distinct justifications (default 1)         |
+
+ROBOT's =--axiom= parser resolves names through the ontology's
+*label-based* short-form provider.  The tool auto-translates CURIEs
+and angle-bracket IRIs to =rdfs:label= values before calling ROBOT,
+so all three of these forms work:
+
+- =Dog SubClassOf: Animal=
+- =ex:dog SubClassOf: ex:animal=
+- =<http://example.org/dog> SubClassOf: <http://example.org/animal>=
+
+Substitutions are reported as a NOTE block prepended to the
+explanation.  =owl:Thing= / =owl:Nothing= pass through verbatim.  A
+HINT pointing at =elot_consistency= / =elot_unsatisfiable= is
+appended when ROBOT reports "No explanations found." (the axiom is
+either not entailed or trivially entailed because the ontology is
+inconsistent).
+
+** Database tools
+
+ELOT keeps a cross-session SQLite cache of every ontology source the
+user has registered (=elot-label-activate-source=, batch ingest).
+The DB tools expose it for /lookups before edits/: existing labels,
+existing identifiers, source provenance, citation targets for
+=rdfs:isDefinedBy=.
+
+All DB tools are strictly read-only.  Mutating SQL is refused at the
+parser level before reaching SQLite, and the connection is also
+pinned to =PRAGMA query_only = 1= for the duration of each call.
+
+*** =elot_db_query=
+
+Run a SELECT (or =WITH ... SELECT=) against the cache.
+
+| Arg     | Type   | Required | Description                                  |
+|---------+--------+----------+----------------------------------------------|
+| =sql=   | string | yes      | A SELECT or =WITH ... SELECT= statement      |
+| =limit= | number | no       | Default 200, max 5000                        |
+
+Output: TSV with a header row.  Truncated rows annotated with
+=... N more rows omitted=.
+
+*** =elot_db_schema=
+
+Zero-argument tool.  Returns the code-side schema-version constant,
+the =schema_version= row stored in the open database, and the full
+DDL from =elot-package/schema.sql= fenced as a ```sql``` block.  Use
+this to compose correct =elot_db_query= statements without having
+the schema in the system prompt.
+
+*** =elot_db_list_sources=
+
+Zero-argument.  Returns a TSV of every registered source:
+=source=, =data_source=, =type=, =last_modified=, =last_updated=.
+
+*** =elot_db_get_label=
+
+Best-effort label lookup.
+
+| Arg     | Type   | Required | Description                                       |
+|---------+--------+----------+---------------------------------------------------|
+| =token= | string | yes      | CURIE, full IRI (bare or =<bracketed>=), or id    |
+
+Returns the label on one line, or =(no label)= when the token is
+unknown.  Consults active label sources first, then cross-source
+CURIE / IRI prefix rewrites.
+
+*** =elot_db_expand_curie=
+
+| Arg     | Type   | Required | Description                                       |
+|---------+--------+----------+---------------------------------------------------|
+| =curie= | string | yes      | =prefix:local= (empty prefix permitted)           |
+
+Returns the full IRI, or =ERROR: no expansion found ...= on miss.
+
+*** =elot_db_get_attributes=
+
+List all =(prop, value, lang, source)= rows for an entity id.
+
+| Arg      | Type   | Required | Description                                  |
+|----------+--------+----------+----------------------------------------------|
+| =id=     | string | yes      | Entity id (CURIE or full IRI)                |
+| =source= | string | no       | Restrict to a single source                  |
+
+*** =elot_db_supertypes=
+
+Direct =rdfs:subClassOf= / =rdfs:subPropertyOf= (RDF spellings) /and/
+=SubClassOf= / =SubPropertyOf= (OMN frame keywords used by ELOT
+=.org= tangle).  Both ingest paths produce uniform results.
+
+| Arg      | Type   | Required | Description                                  |
+|----------+--------+----------+----------------------------------------------|
+| =id=     | string | yes      | Entity id                                    |
+| =source= | string | no       | Restrict to a single source                  |
+
+*** =elot_db_individual_types=
+
+Asserted types of a /named individual/ -- gated by an EXISTS guard
+so class- or property-level =rdf:type owl:Class= rows are not
+returned when asking "what classes does this individual inhabit?".
+
+| Arg      | Type   | Required | Description                                  |
+|----------+--------+----------+----------------------------------------------|
+| =id=     | string | yes      | Individual id                                |
+| =source= | string | no       | Restrict to a single source                  |
+
+*** =elot_db_search_label=
+
+Search the *entire* DB (every source ever registered) by label or
+id substring.
+
+| Arg          | Type    | Required | Description                                       |
+|--------------+---------+----------+---------------------------------------------------|
+| =query=      | string  | yes      | Substring or LIKE pattern                         |
+| =kind=       | string  | no       | =class= / =object-property= / =data-property= / =annotation-property= / =individual= / =datatype= / =ontology= |
+| =source=     | string  | no       | Restrict to a single source                       |
+| =lang=       | string  | no       | Require at least one =rdfs:label= row with LANG   |
+| =limit=      | number  | no       | Default 50, max 500 (=0= = no cap)                |
+| =exact_only= | boolean | no       | Disable the cross-prefix local-name fallback      |
+
+Output: TSV with header
+=id  label  kind  ontology_iri  source  data_source  via=.
+The =via= column is one of:
+
+- =exact= -- the id column matched QUERY verbatim (case-insensitively);
+- =label-substring= -- a regular label or id substring hit;
+- =local-name= -- a Milestone 11.1 fallback row (see below).
+
+/Cross-prefix fallback (Step 11.1)./ When QUERY is CURIE-shaped
+(=prefix:localname=, no =%= wildcards) and the direct match misses
+or returns only entries under other prefixes, a second SELECT
+matches the bare local-name against the id and label columns of
+every source.  The canonical motivating case: searching for
+=ex:Margherita= finds =:Margherita= in =examples/org/pizza.org=
+(where the term lives under the default prefix), tagged
+=via=local-name=.  Set =exact_only=t= to suppress the fallback when
+you really do want strict equality.
+
+*** =elot_db_borrow_term=
+
+Produce an ELOT description-list snippet for reusing a term in the
+current ontology.  Always emits an =rdfs:isDefinedBy= back-pointer
+to the source ontology IRI (or =(source: NAME)= when the source has
+no =owl:Ontology= declaration), and a =skos:definition= row when
+cached.
+
+| Arg     | Type   | Required | Description                                |
+|---------+--------+----------+--------------------------------------------|
+| =token= | string | yes      | CURIE, IRI, or =<bracketed IRI>= known to the DB |
+
+Output shape:
+
+#+begin_example
+* "Label"@lang (curie)
+ - rdfs:isDefinedBy :: <source-ontology-iri>
+ - skos:definition :: "..."
+ # rdf:type owl:Class; source: <path>; source title: ...
+
+NOTE: the leading `*' is a placeholder -- re-level the heading
+to match the target ontology's structure before inserting ...
+#+end_example
+
+The =rdfs:isDefinedBy= row is part of the /output shape/, not
+docstring advice, so mechanical reuse always carries the
+attribution.  Consume with =elot_add_term= (Milestone 9) once that
+tool lands.
+
+** Local-name vs. CURIE form in DB queries
+
+ELOT stores entities under the id form the source ingested --
+typically =:Margherita= (default-prefix) or =pizza:Margherita=
+depending on the source's prefix table, /not/ =ex:Margherita= just
+because some other ontology happens to use the =ex:= prefix.
+Recommended search ladder for the LLM:
+
+1. Try =elot_db_get_attributes= or =elot_db_query= with an exact id
+   match.
+2. On empty result, fall through to =elot_db_search_label= -- its
+   substring matcher catches the default-prefix / alternative-prefix
+   case mechanically (and Step 11.1 marks fallback rows with
+   =via=local-name= so the imperfect match is visible).
+3. As a last resort, run an =elot_db_query= with
+   =WHERE id LIKE '%LOCALNAME%' OR a.value LIKE '%LOCALNAME%'=.
+
+A future =elot_db_fuzzy_search= tool (Milestone 11.2) will add FTS5
+prefix and diacritic-folded matching on top of this ladder.
+
+* Composing tools: typical authoring loops
+
+** Validation loop (today)
+
+Supervised, human-in-the-loop:
+
+1. =elot_lint= -- catches structural problems in the =.org= source.
+2. =elot_omn_validate file profile=DL= -- catches OWL 2 DL profile
+   violations the lint cannot see.
+3. =elot_consistency= -- check the ontology has a model.
+4. =elot_unsatisfiable= -- list classes with no possible instances.
+5. =elot_explain= -- justify a specific entailment when one of the
+   above surfaces a surprise.
+
+A worked example from a live session against the deliberately
+broken =examples/pets.org= is recorded in =ELOT-GPTEL-PLAN.org=
+under Milestone 5.
+
+** Reuse-before-mint loop
+
+When introducing a new class or property:
+
+1. =elot_db_search_label query=<concept>= -- has anyone already
+   minted an identifier for this concept in any of my ontologies?
+2. If yes: =elot_db_borrow_term token=<curie>= -- get the snippet
+   (heading + =rdfs:isDefinedBy=) ready to embed.
+3. If no: future Milestone 10 =elot_mint_identifier= produces a
+   fresh CURIE that fits the project's scheme.
+
+Both halves of the loop are read-only with respect to the user's
+files -- the LLM produces text the human pastes (and, once
+Milestone 9 lands, =elot_add_term= will apply patch-shaped edits
+under a confirm prompt).
+
+* Customisation
+
+| Variable                          | Default | Purpose                                              |
+|-----------------------------------+---------+------------------------------------------------------|
+| =elot-gptel-allow-side-effects=   | nil     | Permit mutating SPARQL through =elot_sparql=         |
+| =elot-gptel-explain-timeout=      | 60      | Wall-clock budget (seconds) for =elot_explain=       |
+| =elot-gptel-explain-max=          | 1       | Default =max= for =elot_explain=                     |
+| =elot-robot-jar-path=             | nil     | Path to =robot.jar=; falls back to =robot= on PATH   |
+| =elot-robot-jvm-args=             | nil     | Extra JVM flags                                      |
+| =elot-robot-default-timeout=      | nil     | Per-call wall-clock budget for all ROBOT invocations |
+| =elot-robot-timeout-grace=        | 2.0     | SIGTERM -> SIGKILL gap                               |
+| =elot-db-busy-timeout-ms=         | 5000    | SQLite =busy_timeout= applied at every =elot-db-init= |
+
+* Performance notes
+
+- ROBOT JVM startup dominates wall time for the validate / SPARQL /
+  reasoning tools.  Plan for ~1--3 s per call on typical hardware,
+  more for large ontologies or =reason= / =explain=.
+- DB tools hit an indexed SQLite cache -- sub-millisecond for
+  typical workloads.
+- =elot-gptel-explain-timeout= guards against runaway =explain=
+  calls; the watchdog SIGTERM's the JVM, then SIGKILL's it after
+  the grace period.
+
+* Portability
+
+Each tool's argument schema and result shape is stable enough that
+the same operations can be re-exposed by =elot-cli= over MCP for
+non-Emacs hosts (VS Code, Cursor, web).  Implementation in those
+hosts is out of scope here.
+
+* Milestones still to land
+
+Headings reserved so the doc grows in step with the plan.  See
+=ELOT-GPTEL-PLAN.org= for full specifications.
+
+** Milestone 7.5: LLM authoring legibility
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+Five small interventions to teach the LLM ELOT's heading-nesting
+and reuse idioms mechanically: an =elot_conventions= tool, optional
+=content= argument on =elot_lint= / =elot_omn_validate= to remove
+the disk roundtrip, a borrow-snippet NOTE-line tweak, a new lint
+checker =elot/subclass-in-description-list=, and a worked
+=examples/= exemplar (delivered inline as a fenced =org= block in
+=elot-package/elot-conventions.md=, section 9).
+
+** Milestone 8: External ontology-quality test corpus
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+Ground the test surface in published catalogues (OOPS! pitfalls,
+OWL Pizzas, ROBOT =report= queries, OBO Foundry principles, OWL 2
+DL profile violations) so that every failure cites a recognised
+pitfall by name.  Includes corpus-aware tool output (e.g. lint
+findings annotated with =(see OOPS! P11)=).
+
+** Milestone 9: Authoring action tools (write-back)
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+Patch-shaped mutators gated by =elot-gptel-allow-side-effects=:
+=elot_db_activate_source=, =elot_edit_axiom=, =elot_add_term=,
+=elot_audit= (canned OOPS! / ROBOT-report probes), =elot_diff=
+(structural before/after via =robot diff=), =elot_competency_check=
+(CQ regression harness).  Closes the autonomous edit/verify loop.
+
+** Milestone 10: Identifier minting
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+Pluggable =elot-id-scheme= framework with built-in =uuid= / =slug=
+/ =counter= / =acme= backends, plus =elot_mint_identifier= and
+=elot_verify_identifier= tools.  The =acme= local-name minter
+lives inside =elot-id.el= (functions prefixed =elot-acme-=) and
+is the zero-config default.
+
+** Milestone 11.2--11.3: Fuzzy label search
+:PROPERTIES:
+:STATUS: TODO
+:END:
+
+FTS5 mirror table =entity_labels_fts= with diacritic-folding
+tokeniser, sync triggers, and a new =elot_db_fuzzy_search= tool;
+optional Elisp Levenshtein re-rank pass on the candidate set.
+Step 11.1 (cross-prefix local-name fallback) already landed --
+see the =via= column in =elot_db_search_label= above.
+
+* See also
+
+- =ELOT-GPTEL-PLAN.org= -- the canonical implementation plan,
+  including the Decisions Log and Changelog.
+- =examples/pets.org= -- a deliberately broken ontology used as a
+  worked example for the reasoning tools.
+- =examples/org/pizza.org= -- the classic OWL Pizzas ontology;
+  =:IceCream= is unsatisfiable by design (its =hasTopping some
+  FruitTopping= restriction combined with =hasTopping= having domain
+  =:Pizza= and =:Pizza= disjoint with =:IceCream=).

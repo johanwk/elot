@@ -159,8 +159,31 @@ recommended.
 
 #### Install ELOT in Emacs
 
-ELOT is in active development. For easy access to updates, you
-should *clone* the ELOT repository using Git.
+The recommended way to install ELOT is from [MELPA](https://melpa.org/).
+Pinning your installation to a Git clone is also supported, and is
+preferable if you want to track development closely or contribute back.
+
+##### Install from MELPA (recommended)
+
+Ensure MELPA is in your `package-archives`, then install:
+
+    M-x package-refresh-contents RET
+    M-x package-install RET elot RET
+
+Add to your Emacs init file:
+
+    (require 'elot)
+
+This loads `elot-mode` and all supporting modules. ELOT requires
+Emacs 30.1 or newer.
+
+Several features require external tools (ROBOT, PlantUML, rdfpuml,
+`elot-exporter`); see [Install ELOT auxiliaries](#orgf439b08) below.
+
+##### Install from Git (development track)
+
+ELOT is in active development. For easy access to unreleased changes,
+or to contribute back, you can *clone* the ELOT repository using Git.
 
 1.  Create a directory for local Emacs add-ons in your home folder,
     named `elisp` (on Windows, that will likely mean
@@ -415,6 +438,55 @@ Beyond the visual overlays, the mode provides:
 
 See [README-global-label-display.org](README-global-label-display.org) for
 configuration, source registration, and language-preference details.
+
+
+### Identifier schemes (`ELOT-id-scheme`)
+
+Different ontology projects use very different conventions for the
+*local-name* part of their resource IRIs — OBO uses zero-padded
+counters like `GO_0000001`, ISO 15926-style libraries use prefixed
+counters like `RDS123456789`, some projects use UUIDs, some use
+human-readable slugs.  ELOT does not bake in a single convention.
+Instead, each ontology *declares* the scheme it uses, as a property
+of its top-level heading (sibling of `ELOT-default-prefix`):
+
+```org
+* my-ont
+:PROPERTIES:
+:ELOT-context-type:      ontology
+:ELOT-id-scheme:         counter GO_0000000
+:ELOT-context-localname: my-ont
+:ELOT-default-prefix:    ex
+:END:
+```
+
+The property value is `SCHEME [FORMAT...]`.  Four built-in schemes
+are available:
+
+| Spec                       | Sample local name              | Notes                                                |
+|----------------------------|-------------------------------|-----------------------------------------------------|
+| `uuid`                     | `9af6a481-c172-4858-9d44-...` | RFC 4122 UUID; maximum collision resistance         |
+| `slug`                     | `donkey`, `dog-2`             | kebab-case from label; numeric suffix on collision  |
+| `counter GO_0000000`       | `GO_0000001`, `GO_0000002`    | OBO/PCA-style: literal alpha part + zero-padded N   |
+| `acme`                     | `C_028QZQ8C4`                 | 11-char date+random+checksum, no project state      |
+| `acme slug:t`              | `C_dogxx028QZQ8C4`            | 16-char acme with 5-char label slug prepended       |
+
+The counter template *literally* shows the output shape: leading
+non-digit run = alpha prefix, trailing run of `0` s = pad width.
+Numeric-only counters (no alpha prefix) are technically invalid XML
+NCNames, so declaring a template such as `GO_0000000`, `ABC_00000`,
+or `CHEBI00000` is recommended.
+
+The declaration is consumed by ELOT's LLM-facing tools
+(`elot_mint_identifier`, `elot_verify_identifier` in
+[elot-gptel.el](elot-package/elot-gptel.el)) so that AI-assisted
+authoring produces identifiers matching the project's convention
+automatically.  When no scheme is declared the tools refuse to
+guess and direct the agent to ask the user.
+
+See [documentation/elot-id.org](documentation/elot-id.org) for the
+full reference, including the `CONTEXT` plist surface and how to
+register a custom scheme.
 
 
 ### Supported `#+call:` helpers (Library of Babel)

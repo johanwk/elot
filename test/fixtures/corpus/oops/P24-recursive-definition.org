@@ -1,0 +1,43 @@
+:PROPERTIES:
+:corpus-source:   OOPS!
+:corpus-id:       P24
+:corpus-severity: Minor
+:corpus-url:      https://oops.linkeddata.es/catalogue.jsp#P24
+:corpus-expects:  elot/oops-recursive-definition
+:corpus-rationale: ex:recursive is declared SubClassOf itself; the
+ elot/oops-recursive-definition checker should fire on the
+ self-referential axiom row.
+:END:
+#+title: OOPS! P24 -- recursive definition fixture
+
+* corpus-p24
+:PROPERTIES:
+:ID: corpus-p24
+:ELOT-context-type: ontology
+:ELOT-context-localname: corpus-p24
+:ELOT-default-prefix: ex:
+:header-args:omn: :tangle no
+:END:
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+| prefix | uri                                         |
+|--------+---------------------------------------------|
+| owl:   | http://www.w3.org/2002/07/owl#              |
+| rdfs:  | http://www.w3.org/2000/01/rdf-schema#       |
+| ex:    | http://example.org/corpus/p24/              |
+
+** corpus-p24 ontology (ex:corpus-p24 ex:corpus-p24/0.0)
+:PROPERTIES:
+:resourcedefs: yes
+:END:
+ - owl:versionInfo :: 0.0
+
+** Classes
+:PROPERTIES:
+:resourcedefs: yes
+:END:
+*** Recursive (ex:recursive)
+ - rdfs:label :: "Recursive"@en
+ - SubClassOf :: ex:recursive

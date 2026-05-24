@@ -78,6 +78,17 @@ scope at this stage."
   :type 'file
   :group 'elot-db)
 
+(defcustom elot-db-busy-timeout-ms 5000
+  "SQLite `busy_timeout' (milliseconds) applied at connection open.
+When a second connection encounters a locked database (typically a
+short-lived writer from `elot-slurp-to-vars' contending with the main
+ELOT connection), SQLite will retry up to this many milliseconds before
+returning `database is locked'.  The default of 5 seconds matches the
+`sqlite' CLI and is comfortably more than any single ELOT write takes.
+Set to 0 to disable (restore the historical immediate-fail behaviour)."
+  :type 'integer
+  :group 'elot-db)
+
 (defcustom elot-db-default-global-prefixes
   '(("rdf"     . "http://www.w3.org/1999/02/22-rdf-syntax-ns#")
     ("rdfs"    . "http://www.w3.org/2000/01/rdf-schema#")
@@ -464,6 +475,15 @@ Returns the open connection and stores it in `elot-db'."
         (progn
           ;; `sqlite-pragma' is the documented way to toggle pragmas;
           ;; going through `sqlite-execute' is unreliable here.
+          ;; Apply `busy_timeout' first so every subsequent statement
+          ;; (including the schema probe and migration) benefits from
+          ;; the retry budget when a concurrent connection holds a
+          ;; write lock (e.g. `elot-slurp-to-vars' running in a second
+          ;; connection during lint).
+          (when (and (integerp elot-db-busy-timeout-ms)
+                     (> elot-db-busy-timeout-ms 0))
+            (sqlite-pragma db (format "busy_timeout = %d"
+                                      elot-db-busy-timeout-ms)))
           (sqlite-pragma db "foreign_keys = ON")
           (if (null (sqlite-select
                      db
@@ -1125,6 +1145,417 @@ variants in the winning source."
                    (list id src ds))
        when rows return
        (mapcar (lambda (r) (cons (nth 0 r) (nth 1 r))) rows)))))
+
+;;;; -------------------------------------------------------------------
+;;;; Milestone 6 Step 6.1: read-only SQL gate
+;;;; -------------------------------------------------------------------
+
+(defun elot-db--sql-strip-comments (sql)
+  "Return SQL with SQL line and block comments removed.
+
+Strips `-- ... EOL' line comments and `/* ... */' block
+comments.  Text inside single-quoted string literals is
+preserved verbatim, so a comment marker appearing inside a
+literal does not start a comment; doubled single quotes (`''')
+inside a literal are treated as an escaped quote and do not end
+the literal.
+
+Used by `elot-db--sql-first-token' so the read-only gate
+recognises SELECT / WITH even when preceded by comments, and
+cannot be fooled by a mutating keyword that occurs inside a
+comment."
+  (with-temp-buffer
+    (insert sql)
+    (goto-char (point-min))
+    (let ((in-string nil))
+      (while (not (eobp))
+        (cond
+         ((and (not in-string) (eq (char-after) ?\'))
+          (setq in-string t)
+          (forward-char 1))
+         ((and in-string (eq (char-after) ?\'))
+          (if (eq (char-after (1+ (point))) ?\')
+              (forward-char 2)
+            (setq in-string nil)
+            (forward-char 1)))
+         (in-string
+          (forward-char 1))
+         ((looking-at "--")
+          (delete-region (point) (line-end-position)))
+         ((looking-at "/\\*")
+          (let ((start (point)))
+            (if (re-search-forward "\\*/" nil t)
+                (delete-region start (point))
+              (delete-region start (point-max)))))
+         (t (forward-char 1)))))
+    (buffer-string)))
+
+(defun elot-db--sql-first-token (sql)
+  "Return the first SQL keyword in SQL (uppercased), or nil.
+
+Comments are stripped via `elot-db--sql-strip-comments' first;
+the result is then scanned past leading whitespace for a run of
+ASCII letters, which is returned uppercased.  Returns nil when
+SQL is empty or starts with a non-letter token."
+  (let ((stripped (elot-db--sql-strip-comments sql)))
+    (when (string-match "\\`[ \t\n\r]*\\([A-Za-z]+\\)" stripped)
+      (upcase (match-string 1 stripped)))))
+
+(defun elot-db-execute-readonly (sql &optional params return-type)
+  "Execute SQL as a read-only query and return its rows.
+
+SQL must be a SELECT or WITH ... SELECT statement (case
+insensitive; SQL line/block comments are allowed before the
+keyword).  Anything else -- INSERT, UPDATE, DELETE, CREATE,
+DROP, ALTER, ATTACH, DETACH, PRAGMA, REPLACE, VACUUM, ANALYZE,
+REINDEX, BEGIN, COMMIT, ROLLBACK, SAVEPOINT, RELEASE -- signals
+`user-error' without touching the database.
+
+For the duration of the call the connection's
+`PRAGMA query_only' is set to 1 (and unconditionally restored
+to 0 in cleanup), so even a SELECT carrying an embedded
+expression that attempts a write would be refused at the
+SQLite level.
+
+PARAMS, when non-nil, is the bind-parameter list passed to
+`sqlite-select'.  RETURN-TYPE, when non-nil, is forwarded to
+`sqlite-select' (use the symbol `full' to also receive the
+column-name header alongside the data rows).  Returns the
+result rows exactly as `sqlite-select' would.  Signals
+`user-error' when there is no open connection (call
+`elot-db-init' first).
+
+Designed as the single read-only SQL gate used by the
+Milestone 6 gptel tools (`elot_db_query', `elot_db_search_label',
+`elot_db_borrow_term')."
+  (unless (and (stringp sql) (not (string-empty-p (string-trim sql))))
+    (user-error "elot-db: empty SQL"))
+  (let ((tok (elot-db--sql-first-token sql)))
+    (unless (member tok '("SELECT" "WITH"))
+      (user-error
+       "elot-db: read-only gate refuses non-SELECT statement \
+(first token: %s)"
+       (or tok "<none>"))))
+  (unless (and elot-db (sqlitep elot-db))
+    (user-error "elot-db: no open connection (call `elot-db-init')"))
+  (unwind-protect
+      (progn
+        (sqlite-pragma elot-db "query_only = 1")
+        (cond
+         ((and params return-type)
+          (sqlite-select elot-db sql params return-type))
+         (params
+          (sqlite-select elot-db sql params))
+         (return-type
+          (sqlite-select elot-db sql nil return-type))
+         (t
+          (sqlite-select elot-db sql))))
+    (ignore-errors (sqlite-pragma elot-db "query_only = 0"))))
+
+
+;;;; -------------------------------------------------------------------
+;;;; Milestone 6 Step 6.5: cross-ontology identifier reuse
+;;;; -------------------------------------------------------------------
+
+(defconst elot-db--search-kind-map
+  '(("class"               . "owl:Class")
+    ("object-property"     . "owl:ObjectProperty")
+    ("data-property"       . "owl:DatatypeProperty")
+    ("annotation-property" . "owl:AnnotationProperty")
+    ("individual"          . "owl:NamedIndividual")
+    ("datatype"            . "rdfs:Datatype")
+    ("ontology"            . "owl:Ontology"))
+  "Mapping from human-friendly entity kinds to RDF-type CURIEs.
+Used by `elot-db-search-entities' to filter results by what the
+entity actually IS in the ontology (its `rdf:type'), as opposed
+to the `entities.kind' column which only records `uri'/`curie'/
+`unknown' (the identifier *form*, not the resource *category*).")
+
+(defun elot-db--search-kind-curie (kind)
+  "Resolve KIND (a human-friendly string) to its RDF-type CURIE.
+Returns nil when KIND is nil or empty.  Signals `user-error'
+when KIND is non-empty but unknown."
+  (cond
+   ((or (null kind) (and (stringp kind) (string-empty-p kind))) nil)
+   ((not (stringp kind))
+    (user-error "elot-db: kind must be a string"))
+   (t (or (cdr (assoc (downcase kind) elot-db--search-kind-map))
+          (user-error
+           "elot-db: unknown kind %S (expected one of: %s)"
+           kind
+           (mapconcat #'car elot-db--search-kind-map ", "))))))
+
+(defconst elot-db--search-curie-shape-regexp
+  "\\`[A-Za-z_][A-Za-z0-9_-]*:.+\\'"
+  "Regexp matching a CURIE-shaped QUERY (`prefix:localname').
+Used by `elot-db-search-entities' to decide when to issue the
+M11.1 cross-prefix local-name fallback SELECT.")
+
+(defun elot-db--search-curie-shaped-p (query)
+  "Non-nil when QUERY looks like a CURIE (`prefix:local').
+Wildcard characters (`%') in QUERY suppress the fallback --
+the caller is doing explicit LIKE matching, not asking about
+a single CURIE."
+  (and (stringp query)
+       (not (string-match-p "%" query))
+       (string-match-p elot-db--search-curie-shape-regexp query)))
+
+(defun elot-db--search-curie-localname (query)
+  "Return the local-name part of a CURIE-shaped QUERY, or nil."
+  (when (elot-db--search-curie-shaped-p query)
+    (substring query (1+ (string-match ":" query)))))
+
+(defun elot-db-search-entities (query &optional limit kind source lang exact-only)
+  "Search every registered source for entities matching QUERY.
+
+QUERY is a non-empty string matched (case-insensitively, as a
+substring) against `entities.label' and `entities.id'.  Use
+`%' as a wildcard if you want explicit LIKE semantics; bare
+QUERY is wrapped in `%QUERY%' automatically when it contains
+no wildcards.
+
+LIMIT caps the number of rows returned (default 50; nil = 50;
+0 or negative = no cap).  KIND, when non-nil, restricts the
+result to entities asserted with the corresponding `rdf:type'
+(class / object-property / data-property / annotation-property
+/ individual / datatype / ontology -- see
+`elot-db--search-kind-map').  SOURCE, when non-nil, restricts
+to a single registered source.  LANG, when non-nil, requires
+the entity to carry at least one `rdfs:label' row with that
+language tag.
+
+EXACT-ONLY, when non-nil, suppresses the M11.1 cross-prefix
+local-name fallback (described below).  Use this when strict
+equality semantics are required (e.g. `elot-db-entity-citation'
+already matches on the id column exactly and does not want
+imperfect alternatives).
+
+Returns a list of rows
+  (id label rdf-type ontology-iri source data-source via)
+where RDF-TYPE is the entity's asserted `rdf:type' CURIE (nil
+when unknown), ONTOLOGY-IRI is the id of the ontology
+declaration in the same source -- the citation target for an
+`rdfs:isDefinedBy' back-pointer -- and VIA is a marker
+indicating how the row was found:
+  `exact'           id column matched the (un-wrapped) query exactly.
+  `label-substring' label or id matched as a LIKE substring.
+  `local-name'      cross-prefix fallback (M11.1): QUERY was
+                    CURIE-shaped, the direct prefix:local lookup
+                    missed, but an entity in some source carries
+                    the same local-name under a different prefix.
+The first two come from the primary SELECT; `local-name'
+appears only when QUERY looks like `prefix:local' and
+EXACT-ONLY is nil.  Rows found by both passes are reported
+once with their primary-pass VIA value (no duplication).
+
+Read-only over the entire database; runs through the M6.1
+`elot-db-execute-readonly' gate.  Designed as the sole DB
+access path for `elot_db_search_label' (and, in a follow-up,
+`elot_db_borrow_term')."
+  (unless (and (stringp query) (not (string-empty-p query)))
+    (user-error "elot-db: query must be a non-empty string"))
+  (let* ((q-bare query)
+         (q     (if (string-match-p "%" query)
+                    query
+                  (concat "%" query "%")))
+         (lim   (cond
+                 ((null limit) 50)
+                 ((and (integerp limit) (<= limit 0)) nil)
+                 ((integerp limit) limit)
+                 (t (user-error
+                     "elot-db: limit must be an integer"))))
+         (kind-curie (elot-db--search-kind-curie kind))
+         (extra-clauses nil)
+         (extra-params  nil))
+    (when source
+      (push "AND e.source = ?" extra-clauses)
+      (setq extra-params (append extra-params (list source))))
+    (when kind-curie
+      (push "AND EXISTS (SELECT 1 FROM attributes ak
+                          WHERE ak.id = e.id
+                            AND ak.source = e.source
+                            AND ak.data_source = e.data_source
+                            AND ak.prop = 'rdf:type'
+                            AND ak.value = ?)" extra-clauses)
+      (setq extra-params (append extra-params (list kind-curie))))
+    (when lang
+      (push "AND EXISTS (SELECT 1 FROM attributes al
+                          WHERE al.id = e.id
+                            AND al.source = e.source
+                            AND al.data_source = e.data_source
+                            AND al.prop = 'rdfs:label'
+                            AND al.lang = ?)" extra-clauses)
+      (setq extra-params (append extra-params (list lang))))
+    (let* ((extra (mapconcat #'identity (nreverse extra-clauses) "\n   "))
+           (select-cols "SELECT
+   e.id,
+   e.label,
+   (SELECT a1.value FROM attributes a1
+     WHERE a1.id = e.id AND a1.source = e.source
+       AND a1.data_source = e.data_source
+       AND a1.prop = 'rdf:type'
+     LIMIT 1) AS rdf_type,
+   (SELECT a2.id FROM attributes a2
+     WHERE a2.source = e.source AND a2.data_source = e.data_source
+       AND a2.prop = 'rdf:type' AND a2.value = 'owl:Ontology'
+     LIMIT 1) AS ontology_iri,
+   e.source,
+   e.data_source,
+   CASE WHEN LOWER(e.id) = LOWER(?) THEN 'exact'
+        ELSE 'label-substring'
+   END AS via
+ FROM entities e
+")
+           (order " ORDER BY e.source, e.label, e.id")
+           (limit-clause (when lim (format " LIMIT %d" lim)))
+           ;; Primary pass: substring on label OR id.
+           (primary-sql
+            (concat select-cols
+                    " WHERE (LOWER(e.label) LIKE LOWER(?) "
+                    "        OR LOWER(e.id) LIKE LOWER(?)) "
+                    extra
+                    order limit-clause))
+           (primary-params
+            (append (list q-bare q q) extra-params))
+           (primary (elot-db-execute-readonly primary-sql primary-params))
+           (localname (and (not exact-only)
+                           (elot-db--search-curie-localname q-bare))))
+      (if (not localname)
+          primary
+        ;; M11.1 fallback: cross-prefix local-name match.  Use the
+        ;; CURIE local-name to match either the id column's
+        ;; local-name part (after the last `:') or the label column
+        ;; exactly (case-insensitive).  Rows already returned by the
+        ;; primary pass are dropped to avoid duplication.
+        (let* ((local-q localname)
+               (fallback-sql
+                (concat select-cols
+                        " WHERE (LOWER(substr(e.id, instr(e.id, ':')+1))
+                                 = LOWER(?)
+                                 OR LOWER(e.label) = LOWER(?)) "
+                        extra
+                        order limit-clause))
+               (fallback-params
+                (append (list q-bare local-q local-q) extra-params))
+               (fallback (elot-db-execute-readonly
+                          fallback-sql fallback-params))
+               ;; Build a set of primary-pass keys so we can dedupe.
+               (primary-keys
+                (mapcar (lambda (r)
+                          (cons (nth 0 r)
+                                (cons (nth 4 r) (nth 5 r))))
+                        primary))
+               (extras
+                (cl-remove-if
+                 (lambda (r)
+                   (member (cons (nth 0 r)
+                                 (cons (nth 4 r) (nth 5 r)))
+                           primary-keys))
+                 fallback)))
+          ;; Tag every fallback-only row as `local-name'.  In SQL the
+          ;; CASE would have classified them as `label-substring' or
+          ;; `exact' on a coincidence -- override here so the marker
+          ;; actually reflects how the row was found.
+          (setq extras
+                (mapcar (lambda (r)
+                          (append (butlast r) (list "local-name")))
+                        extras))
+          (let ((merged (append primary extras)))
+            (if lim
+                (cl-subseq merged 0 (min lim (length merged)))
+              merged)))))))
+
+
+;;; --------------------------------------------------------------------
+;;; Entity citation -- M6.5 second half (reuse-before-mint)
+;;; --------------------------------------------------------------------
+
+(defun elot-db-entity-citation (token)
+  "Return citation metadata for TOKEN, or nil when unknown.
+
+TOKEN is an entity id as stored in `entities.id' -- typically
+a CURIE like `ex:dog' or a full IRI.  Angle brackets around an
+IRI are stripped.  The match is exact on `entities.id'.
+
+Returns a plist with keys
+  :id             -- the entity id (as stored)
+  :label          -- the entity's display label (from `entities.label')
+  :label-lang     -- best `rdfs:label' lang tag (string, or nil)
+  :definition     -- `skos:definition' value, if cached (or nil)
+  :rdf-type       -- the entity's asserted `rdf:type' CURIE (or nil)
+  :source         -- the source name the entity lives in
+  :data-source    -- the data_source string
+  :ontology-iri   -- id of the same source's owl:Ontology declaration
+                     (the citation target for `rdfs:isDefinedBy'),
+                     or nil if the source has no such declaration
+  :ontology-title -- `dcterms:title' of the ontology id (or nil)
+
+Returns nil when TOKEN does not name a known entity.  Read-only;
+runs through the M6.1 `elot-db-execute-readonly' gate.  This is
+the sole DB access path for `elot_db_borrow_term'."
+  (unless (and (stringp token) (not (string-empty-p token)))
+    (user-error "elot-db: token must be a non-empty string"))
+  (let* ((id (if (and (string-prefix-p "<" token)
+                      (string-suffix-p ">" token)
+                      (> (length token) 2))
+                 (substring token 1 -1)
+               token))
+         (rows (elot-db-execute-readonly
+                "SELECT id, label, source, data_source
+                   FROM entities WHERE id = ? LIMIT 1"
+                (list id))))
+    (when rows
+      (let* ((row    (car rows))
+             (id*    (nth 0 row))
+             (label  (nth 1 row))
+             (source (nth 2 row))
+             (data   (nth 3 row))
+             (one (lambda (sql params)
+                    (caar (elot-db-execute-readonly sql params))))
+             (rdf-type
+              (funcall one
+                       "SELECT value FROM attributes
+                          WHERE id = ? AND source = ? AND data_source = ?
+                            AND prop = 'rdf:type' LIMIT 1"
+                       (list id* source data)))
+             (label-lang
+              (funcall one
+                       "SELECT lang FROM attributes
+                          WHERE id = ? AND source = ? AND data_source = ?
+                            AND prop = 'rdfs:label'
+                            AND lang IS NOT NULL AND lang != ''
+                          LIMIT 1"
+                       (list id* source data)))
+             (definition
+              (funcall one
+                       "SELECT value FROM attributes
+                          WHERE id = ? AND source = ? AND data_source = ?
+                            AND prop = 'skos:definition' LIMIT 1"
+                       (list id* source data)))
+             (ont-iri
+              (funcall one
+                       "SELECT id FROM attributes
+                          WHERE source = ? AND data_source = ?
+                            AND prop = 'rdf:type'
+                            AND value = 'owl:Ontology' LIMIT 1"
+                       (list source data)))
+             (ont-title
+              (and ont-iri
+                   (funcall one
+                            "SELECT value FROM attributes
+                               WHERE id = ? AND source = ? AND data_source = ?
+                                 AND prop = 'dcterms:title' LIMIT 1"
+                            (list ont-iri source data)))))
+        (list :id            id*
+              :label         label
+              :label-lang    label-lang
+              :definition    definition
+              :rdf-type      rdf-type
+              :source        source
+              :data-source   data
+              :ontology-iri  ont-iri
+              :ontology-title ont-title)))))
+
 
 (provide 'elot-db)
 

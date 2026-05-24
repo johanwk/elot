@@ -1,0 +1,1410 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2026-05-13 ons. 09:34 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ELOT &#x2014; Literate Ontology Tool for Emacs</title>
+<meta name="author" content="Johan W. Klüwer and contributors" />
+<meta name="generator" content="Org Mode" />
+<link rel="stylesheet" type="text/css" href="https://fniessen.github.io/org-html-themes/src/readtheorg_theme/css/htmlize.css"/>
+<link rel="stylesheet" type="text/css" href="https://fniessen.github.io/org-html-themes/src/readtheorg_theme/css/readtheorg.css"/>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="https://fniessen.github.io/org-html-themes/src/lib/js/jquery.stickytableheaders.min.js"></script>
+<script type="text/javascript" src="https://fniessen.github.io/org-html-themes/src/readtheorg_theme/js/readtheorg.js"></script>
+</head>
+<body>
+<div id="content" class="content">
+<h1 class="title">ELOT &#x2014; Literate Ontology Tool for Emacs</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#preface">1. Preface</a>
+<ul>
+<li><a href="#orgf1af74e">1.1. Who this manual is for</a></li>
+<li><a href="#org2af741b">1.2. How to read this manual</a></li>
+<li><a href="#orgb2d6c2d">1.3. Conventions</a></li>
+<li><a href="#orgfab8b94">1.4. Getting help</a></li>
+</ul>
+</li>
+<li><a href="#part-tutorial">2. Part I &#x2014; Tutorial</a>
+<ul>
+<li><a href="#tut-installation">2.1. Installation</a>
+<ul>
+<li><a href="#orgab7b966">2.1.1. Prerequisites</a></li>
+<li><a href="#orgb7455fe">2.1.2. Install ELOT from MELPA</a></li>
+<li><a href="#orge6d2fcc">2.1.3. Install ELOT from Git</a></li>
+<li><a href="#orga19659f">2.1.4. Point ELOT at ROBOT</a></li>
+<li><a href="#orgee4fe07">2.1.5. Verify</a></li>
+</ul>
+</li>
+<li><a href="#tut-first-ontology">2.2. Your first ontology</a>
+<ul>
+<li><a href="#org631d11a">2.2.1. Create the file</a></li>
+<li><a href="#org48975fc">2.2.2. Tangle to OWL Manchester Syntax</a></li>
+<li><a href="#orgf587171">2.2.3. Sanity-check with ROBOT</a></li>
+<li><a href="#orgd0e3477">2.2.4. Where to next</a></li>
+</ul>
+</li>
+<li><a href="#tut-axioms">2.3. Adding axioms and annotations</a>
+<ul>
+<li><a href="#orgfdfa1d9">2.3.1. Annotations</a></li>
+<li><a href="#orgb40e29e">2.3.2. Object properties</a></li>
+<li><a href="#orge8d8fcd">2.3.3. Disjointness</a></li>
+</ul>
+</li>
+<li><a href="#tut-export">2.4. Exporting to OWL and HTML</a>
+<ul>
+<li><a href="#org4a943c2">2.4.1. Adding the theme</a></li>
+<li><a href="#orgc43087d">2.4.2. PDF and Info</a></li>
+<li><a href="#orgecc04f4">2.4.3. Publishing to GitHub Pages</a></li>
+</ul>
+</li>
+<li><a href="#tut-query-diagram">2.5. A first SPARQL query and rdfpuml diagram</a>
+<ul>
+<li><a href="#orgd9c6ef8">2.5.1. A first SPARQL block</a></li>
+<li><a href="#org1a29b01">2.5.2. A first diagram</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#part-howto">3. Part II &#x2014; How-to guides</a>
+<ul>
+<li><a href="#howto-authoring">3.1. Authoring</a></li>
+<li><a href="#howto-querying">3.2. Querying with SPARQL and ROBOT</a></li>
+<li><a href="#howto-diagrams">3.3. Diagrams with rdfpuml and Library-of-Babel helpers</a></li>
+<li><a href="#howto-label-display">3.4. Label display</a></li>
+<li><a href="#howto-import-owl">3.5. Importing existing OWL ontologies</a></li>
+<li><a href="#howto-lint">3.6. Linting and syntax checking</a></li>
+<li><a href="#howto-multi-ontology">3.7. Working with multiple ontologies and imports</a></li>
+<li><a href="#howto-git">3.8. Collaborating via Git</a></li>
+</ul>
+</li>
+<li><a href="#part-reference">4. Part III &#x2014; Reference</a>
+<ul>
+<li><a href="#ref-commands">4.1. Commands and keybindings</a></li>
+<li><a href="#ref-customization">4.2. Customization variables</a></li>
+<li><a href="#ref-file-conventions">4.3. File and header conventions</a></li>
+<li><a href="#ref-lob">4.4. <code>#+call:</code> helpers (Library of Babel)</a></li>
+<li><a href="#ref-manchester">4.5. Manchester Syntax cheatsheet</a></li>
+<li><a href="#ref-glossary">4.6. Glossary</a></li>
+</ul>
+</li>
+<li><a href="#part-background">5. Part IV &#x2014; Background</a>
+<ul>
+<li><a href="#bg-why-literate">5.1. Why literate ontology engineering</a></li>
+<li><a href="#bg-architecture">5.2. Architecture overview</a></li>
+<li><a href="#bg-other-tools">5.3. Relationship to other tools</a></li>
+</ul>
+</li>
+<li><a href="#appendices">6. Appendices</a>
+<ul>
+<li><a href="#app-vscode-parity">6.1. VS Code extension parity</a></li>
+<li><a href="#app-troubleshooting">6.2. Troubleshooting and FAQ</a></li>
+<li><a href="#app-changelog">6.3. Changelog pointers</a></li>
+</ul>
+</li>
+<li><a href="#indices">7. Indices</a></li>
+<li><a href="#copying">8. Copying</a></li>
+</ul>
+</div>
+</div>
+<blockquote>
+<p>
+ELOT lets you author OWL ontologies in Org-mode, exporting to OWL
+Manchester Syntax, HTML and PDF documentation, and running SPARQL,
+ROBOT and rdfpuml against them from inside Emacs.
+</p>
+</blockquote>
+<div id="outline-container-preface" class="outline-2">
+<h2 id="preface"><span class="section-number-2">1.</span> Preface</h2>
+<div class="outline-text-2" id="text-preface">
+<p>
+ELOT &#x2014; the <i>Emacs Literate Ontology Tool</i> &#x2014; is a package for
+authoring OWL ontologies in Org-mode.  A single Org file is both the
+ontology source (tangled to OWL Manchester Syntax) and the published
+documentation (exported to HTML, PDF, or Info).
+</p>
+</div>
+<div id="outline-container-orgf1af74e" class="outline-3">
+<h3 id="orgf1af74e"><span class="section-number-3">1.1.</span> Who this manual is for</h3>
+<div class="outline-text-3" id="text-1-1">
+<ul class="org-ul">
+<li><b>Ontology authors</b> who want their ontology and its documentation to
+stay in sync, automatically.</li>
+<li><b>Emacs users</b> curious about how literate programming applies to
+knowledge engineering.</li>
+<li><b>Newcomers to OWL</b> who want a working ontology in front of them
+before reading a 400-page semantic-web textbook.</li>
+</ul>
+
+<p>
+No prior experience with OWL or Org-mode is assumed for Part I.
+Parts II&#x2013;IV assume you have completed the tutorial.
+</p>
+</div>
+</div>
+<div id="outline-container-org2af741b" class="outline-3">
+<h3 id="org2af741b"><span class="section-number-3">1.2.</span> How to read this manual</h3>
+<div class="outline-text-3" id="text-1-2">
+<p>
+This manual follows the <a href="https://diataxis.fr/">Diátaxis</a> structure:
+</p>
+
+<ul class="org-ul">
+<li>Read <a href="#part-tutorial">Part I</a> front-to-back the first time.</li>
+<li>Dip into <a href="#part-howto">Part II</a> when you have a specific task.</li>
+<li>Consult <a href="#part-reference">Part III</a> for lookups.</li>
+<li>Read <a href="#part-background">Part IV</a> when you want to know <i>why</i>.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgb2d6c2d" class="outline-3">
+<h3 id="orgb2d6c2d"><span class="section-number-3">1.3.</span> Conventions</h3>
+<div class="outline-text-3" id="text-1-3">
+<ul class="org-ul">
+<li><code>code</code> face for CURIEs, IRIs, function names, file paths.</li>
+<li><code>~C-c C-x r~</code> for keystrokes.</li>
+<li><i>italic</i> for new terms on first use.</li>
+<li><code>M-x command-name</code> for interactive commands.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgfab8b94" class="outline-3">
+<h3 id="orgfab8b94"><span class="section-number-3">1.4.</span> Getting help</h3>
+<div class="outline-text-3" id="text-1-4">
+<ul class="org-ul">
+<li>Project home: <a href="https://github.com/johanwk/elot">https://github.com/johanwk/elot</a></li>
+<li>Issues and discussion: the GitHub tracker.</li>
+<li>The ELOT menu in any <code>elot-mode</code> buffer lists the main commands.</li>
+</ul>
+</div>
+</div>
+</div>
+<div id="outline-container-part-tutorial" class="outline-2">
+<h2 id="part-tutorial"><span class="section-number-2">2.</span> Part I &#x2014; Tutorial</h2>
+<div class="outline-text-2" id="text-part-tutorial">
+<p>
+This part is linear.  Read it in order; it walks a first-time user
+through installing ELOT and building a small ontology end-to-end.
+</p>
+</div>
+<div id="outline-container-tut-installation" class="outline-3">
+<h3 id="tut-installation"><span class="section-number-3">2.1.</span> Installation</h3>
+<div class="outline-text-3" id="text-tut-installation">
+<p>
+The fastest path is via MELPA once ELOT is accepted there.  Until
+then, install from Git.
+</p>
+</div>
+<div id="outline-container-orgab7b966" class="outline-4">
+<h4 id="orgab7b966"><span class="section-number-4">2.1.1.</span> Prerequisites</h4>
+<div class="outline-text-4" id="text-2-1-1">
+<ul class="org-ul">
+<li><b>Emacs 30.1 or later</b>.  ELOT uses <code>peg.el</code>, which became a built-in
+library in 30.1.</li>
+<li><b>Java 11 or later</b>, required by ROBOT.</li>
+<li><b><a href="https://github.com/ontodev/robot">ROBOT</a></b>, an OWL command-line tool.  Download <code>robot.jar</code> from the
+ROBOT releases page and note its path.</li>
+<li><b><a href="https://plantuml.com/">PlantUML</a></b> (optional), for diagram rendering via <code>rdfpuml</code>.</li>
+<li><b>Protégé 5.6</b> (optional), for cross-checking ontologies in a GUI.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgb7455fe" class="outline-4">
+<h4 id="orgb7455fe"><span class="section-number-4">2.1.2.</span> Install ELOT from MELPA</h4>
+<div class="outline-text-4" id="text-2-1-2">
+<p>
+When ELOT is on MELPA:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package elot
+  :ensure t)
+</pre>
+</div>
+
+<p>
+That is the whole installation.  <code>elot-mode</code> is autoloaded.
+</p>
+</div>
+</div>
+<div id="outline-container-orge6d2fcc" class="outline-4">
+<h4 id="orge6d2fcc"><span class="section-number-4">2.1.3.</span> Install ELOT from Git</h4>
+<div class="outline-text-4" id="text-2-1-3">
+<p>
+Until the MELPA recipe lands, clone the repository and add it to
+your load path:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">git clone https://github.com/johanwk/elot ~/src/elot
+</pre>
+</div>
+
+<p>
+In your <code>init.el</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(add-to-list 'load-path "~/src/elot/elot-package")
+(require 'elot)
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orga19659f" class="outline-4">
+<h4 id="orga19659f"><span class="section-number-4">2.1.4.</span> Point ELOT at ROBOT</h4>
+<div class="outline-text-4" id="text-2-1-4">
+<p>
+Set <code>elot-robot-jar-path</code> to the absolute path of your downloaded
+<code>robot.jar</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq elot-robot-jar-path "~/bin/robot.jar")
+</pre>
+</div>
+
+<p>
+You can also customize it via <code>M-x customize-variable RET
+elot-robot-jar-path</code>.
+</p>
+</div>
+</div>
+<div id="outline-container-orgee4fe07" class="outline-4">
+<h4 id="orgee4fe07"><span class="section-number-4">2.1.5.</span> Verify</h4>
+<div class="outline-text-4" id="text-2-1-5">
+<p>
+Open an Org file and run <code>M-x elot-mode</code>.  The ELOT menu appears in
+the menu bar.  <code>M-x elot-version</code> prints the loaded version.
+</p>
+
+<p>
+If something goes wrong, see <a href="#app-troubleshooting">Troubleshooting and FAQ</a>.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-tut-first-ontology" class="outline-3">
+<h3 id="tut-first-ontology"><span class="section-number-3">2.2.</span> Your first ontology</h3>
+<div class="outline-text-3" id="text-tut-first-ontology">
+<p>
+In this chapter you build a tiny ontology of <i>pets</i> from scratch.
+By the end you will have:
+</p>
+
+<ul class="org-ul">
+<li>a working <code>pets.org</code> file you can re-tangle and re-export at will,</li>
+<li>a generated <code>pets.omn</code> ontology in OWL Manchester Syntax,</li>
+<li>the start of an HTML render of your ontology document.</li>
+</ul>
+
+<p>
+Time required: 15&#x2013;20 minutes.
+</p>
+</div>
+<div id="outline-container-org631d11a" class="outline-4">
+<h4 id="org631d11a"><span class="section-number-4">2.2.1.</span> Create the file</h4>
+<div class="outline-text-4" id="text-2-2-1">
+<p>
+Create <code>pets.org</code> anywhere in your filesystem and paste the
+skeleton below.  Open it in Emacs and run <code>M-x elot-mode</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-org">#+TITLE: A tiny ontology of pets
+#+AUTHOR: Your Name
+
+* Prefixes
+,:PROPERTIES:
+,:header-args:emacs-lisp+: :tangle no
+,:END:
+
+#+name: prefix-table
+,| prefix | uri                                            |
+,|--------+------------------------------------------------|
+,| ex     | http://example.org/pets/                       |
+,| owl    | http://www.w3.org/2002/07/owl#                 |
+,| rdfs   | http://www.w3.org/2000/01/rdf-schema#          |
+,| skos   | http://www.w3.org/2004/02/skos/core#           |
+
+* ex:pets
+,:PROPERTIES:
+,:ID:       pets-ontology
+,:ontology-iri: http://example.org/pets/
+,:END:
+
+A small example ontology used by the ELOT tutorial.
+
+** Classes
+*** ex:Animal
+A living creature.
+
+*** ex:Dog
+,:PROPERTIES:
+,:subclass-of: ex:Animal
+,:END:
+A dog is an animal.
+
+*** ex:Cat
+,:PROPERTIES:
+,:subclass-of: ex:Animal
+,:END:
+A cat is an animal.
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org48975fc" class="outline-4">
+<h4 id="org48975fc"><span class="section-number-4">2.2.2.</span> Tangle to OWL Manchester Syntax</h4>
+<div class="outline-text-4" id="text-2-2-2">
+<p>
+With point anywhere in <code>pets.org</code>, run <code>M-x elot-tangle</code>.  A file
+<code>pets.omn</code> appears next to your Org source.  Open it; you should
+see Manchester-syntax declarations for <code>ex:Animal</code>, <code>ex:Dog</code> and
+<code>ex:Cat</code>.
+</p>
+</div>
+</div>
+<div id="outline-container-orgf587171" class="outline-4">
+<h4 id="orgf587171"><span class="section-number-4">2.2.3.</span> Sanity-check with ROBOT</h4>
+<div class="outline-text-4" id="text-2-2-3">
+<p>
+From a shell:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">robot report --input pets.omn --output pets-report.tsv
+</pre>
+</div>
+
+<p>
+ROBOT's report should be empty (or contain only INFO entries).
+Errors mean ELOT generated something OWL does not like; see
+<a href="#howto-lint">Linting and syntax checking</a>.
+</p>
+</div>
+</div>
+<div id="outline-container-orgd0e3477" class="outline-4">
+<h4 id="orgd0e3477"><span class="section-number-4">2.2.4.</span> Where to next</h4>
+<div class="outline-text-4" id="text-2-2-4">
+<ul class="org-ul">
+<li><a href="#tut-axioms">Adding axioms and annotations</a> &#x2014; give your classes proper
+definitions and relationships.</li>
+<li><a href="#tut-export">Exporting to OWL and HTML</a> &#x2014; produce a polished document.</li>
+</ul>
+</div>
+</div>
+</div>
+<div id="outline-container-tut-axioms" class="outline-3">
+<h3 id="tut-axioms"><span class="section-number-3">2.3.</span> Adding axioms and annotations</h3>
+<div class="outline-text-3" id="text-tut-axioms">
+<p>
+TODO &#x2014; expand.
+</p>
+
+<p>
+This chapter extends the <code>pets.org</code> ontology from
+<a href="#tut-first-ontology">the previous chapter</a> with:
+</p>
+
+<ul class="org-ul">
+<li><code>rdfs:label</code> and <code>skos:definition</code> annotations on every class,</li>
+<li>a <code>disjointWith</code> axiom between <code>ex:Dog</code> and <code>ex:Cat</code>,</li>
+<li>an object property <code>ex:chases</code> with <code>rdfs:domain</code> and <code>rdfs:range</code>,</li>
+<li>an existential restriction: every <code>ex:Dog</code> <i>chases some</i> <code>ex:Cat</code>.</li>
+</ul>
+</div>
+<div id="outline-container-orgfdfa1d9" class="outline-4">
+<h4 id="orgfdfa1d9"><span class="section-number-4">2.3.1.</span> Annotations</h4>
+<div class="outline-text-4" id="text-2-3-1">
+<p>
+Use the <code>:annotations:</code> drawer key to attach annotations to a class:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-org">*** ex:Dog
+,:PROPERTIES:
+,:subclass-of: ex:Animal
+,:END:
+,:annotations:
+,- rdfs:label :: "Dog"@en
+,- skos:definition :: "A domesticated canine."@en
+,:end:
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgb40e29e" class="outline-4">
+<h4 id="orgb40e29e"><span class="section-number-4">2.3.2.</span> Object properties</h4>
+<div class="outline-text-4" id="text-2-3-2">
+<p>
+TODO &#x2014; show the property declaration and the existential restriction.
+</p>
+</div>
+</div>
+<div id="outline-container-orge8d8fcd" class="outline-4">
+<h4 id="orge8d8fcd"><span class="section-number-4">2.3.3.</span> Disjointness</h4>
+<div class="outline-text-4" id="text-2-3-3">
+<p>
+TODO &#x2014; show <code>disjointWith</code> and how it appears in the tangled OMN.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-tut-export" class="outline-3">
+<h3 id="tut-export"><span class="section-number-3">2.4.</span> Exporting to OWL and HTML</h3>
+<div class="outline-text-3" id="text-tut-export">
+<p>
+TODO &#x2014; expand.
+</p>
+
+<p>
+This chapter walks through the two export targets that matter to
+most authors:
+</p>
+
+<ol class="org-ol">
+<li><b>OWL Manchester Syntax</b> via <code>M-x elot-tangle</code> (you already saw
+this in <a href="#tut-first-ontology">Your first ontology</a>).</li>
+<li><b>HTML documentation</b> via Org's standard exporter (<code>C-c C-e h h</code>)
+plus the bundled <code>theme-readtheorg.setup</code>.</li>
+</ol>
+</div>
+<div id="outline-container-org4a943c2" class="outline-4">
+<h4 id="org4a943c2"><span class="section-number-4">2.4.1.</span> Adding the theme</h4>
+<div class="outline-text-4" id="text-2-4-1">
+<p>
+Put this line near the top of your ontology Org file:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-org">#+SETUPFILE: theme-readtheorg.setup
+</pre>
+</div>
+
+<p>
+Re-export with <code>C-c C-e h h</code>; the resulting HTML uses the ELOT
+theme.
+</p>
+</div>
+</div>
+<div id="outline-container-orgc43087d" class="outline-4">
+<h4 id="orgc43087d"><span class="section-number-4">2.4.2.</span> PDF and Info</h4>
+<div class="outline-text-4" id="text-2-4-2">
+<p>
+For PDF: <code>C-c C-e l p</code>.  For Info (Emacs help format):
+<code>C-c C-e i i</code>, then <code>install-info</code> the result.
+</p>
+</div>
+</div>
+<div id="outline-container-orgecc04f4" class="outline-4">
+<h4 id="orgecc04f4"><span class="section-number-4">2.4.3.</span> Publishing to GitHub Pages</h4>
+<div class="outline-text-4" id="text-2-4-3">
+<p>
+TODO &#x2014; recipe.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-tut-query-diagram" class="outline-3">
+<h3 id="tut-query-diagram"><span class="section-number-3">2.5.</span> A first SPARQL query and rdfpuml diagram</h3>
+<div class="outline-text-3" id="text-tut-query-diagram">
+<p>
+TODO &#x2014; expand.
+</p>
+
+<p>
+This chapter introduces two of ELOT's most-loved features:
+</p>
+
+<ul class="org-ul">
+<li>running <b>SPARQL</b> queries directly against your tangled <code>.omn</code> via
+embedded source blocks,</li>
+<li>generating <b>PlantUML diagrams</b> of selected triples via the
+<code>rdfpuml-block</code> Library-of-Babel helper.</li>
+</ul>
+</div>
+<div id="outline-container-orgd9c6ef8" class="outline-4">
+<h4 id="orgd9c6ef8"><span class="section-number-4">2.5.1.</span> A first SPARQL block</h4>
+<div class="outline-text-4" id="text-2-5-1">
+<p>
+Add this to <code>pets.org</code>, below the class definitions:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-org">#+begin_src sparql :url "pets.omn"
+,select ?s ?o where { ?s rdfs:subClassOf ?o }
+#+end_src
+</pre>
+</div>
+
+<p>
+Press <code>C-c C-c</code> inside the block.  ELOT shells out to ROBOT and
+inserts the result table below the block.  No <code>PREFIX</code> boilerplate
+needed &#x2014; ELOT injects prefixes from your <code>prefix-table</code>.
+</p>
+</div>
+</div>
+<div id="outline-container-org1a29b01" class="outline-4">
+<h4 id="org1a29b01"><span class="section-number-4">2.5.2.</span> A first diagram</h4>
+<div class="outline-text-4" id="text-2-5-2">
+<p>
+TODO &#x2014; <code>rdfpuml-block</code> example.
+</p>
+
+<p>
+See <a href="#howto-querying">Querying with SPARQL and ROBOT</a> and <a href="#howto-diagrams">Diagrams with rdfpuml</a> for
+the full how-tos.
+</p>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-part-howto" class="outline-2">
+<h2 id="part-howto"><span class="section-number-2">3.</span> Part II &#x2014; How-to guides</h2>
+<div class="outline-text-2" id="text-part-howto">
+<p>
+Each guide is self-contained, task-oriented, and answers a single
+"how do I &#x2026;?" question.  Read only the ones you need.
+</p>
+</div>
+<div id="outline-container-howto-authoring" class="outline-3">
+<h3 id="howto-authoring"><span class="section-number-3">3.1.</span> Authoring</h3>
+<div class="outline-text-3" id="text-howto-authoring">
+<p>
+TODO &#x2014; task-oriented recipes for day-to-day authoring:
+</p>
+
+<ul class="org-ul">
+<li>structuring a large ontology across multiple sections,</li>
+<li>using description-list items for annotations,</li>
+<li>working with <code>:annotations:</code> drawers,</li>
+<li>tempo templates for fast class / property insertion,</li>
+<li>using the ELOT easymenu.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-howto-querying" class="outline-3">
+<h3 id="howto-querying"><span class="section-number-3">3.2.</span> Querying with SPARQL and ROBOT</h3>
+<div class="outline-text-3" id="text-howto-querying">
+<p>
+TODO.
+</p>
+
+<p>
+Covers:
+</p>
+
+<ul class="org-ul">
+<li>the ELOT <code>org-babel-execute:sparql</code> advice and how <code>:url</code> dispatches
+to ROBOT (for local <code>.omn</code> files) or to a remote endpoint,</li>
+<li>prefix injection from <code>org-link-abbrev-alist-local</code> and the merge
+rules with inline <code>PREFIX</code> declarations,</li>
+<li>result formats (<code>csv</code> vs <code>ttl</code>),</li>
+<li>known gotchas (empty result sets, non-ASCII queries).</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-howto-diagrams" class="outline-3">
+<h3 id="howto-diagrams"><span class="section-number-3">3.3.</span> Diagrams with rdfpuml and Library-of-Babel helpers</h3>
+<div class="outline-text-3" id="text-howto-diagrams">
+<p>
+TODO.
+</p>
+
+<p>
+Covers <code>rdfpuml-block</code>, <code>kill-prefixes</code>, and the supported
+<code>#+call:</code> helpers in <code>elot-lob.org</code>.
+</p>
+</div>
+</div>
+<div id="outline-container-howto-label-display" class="outline-3">
+<h3 id="howto-label-display"><span class="section-number-3">3.4.</span> Label display</h3>
+<div class="outline-text-3" id="text-howto-label-display">
+<p>
+TODO &#x2014; migrate content from <code>README-global-label-display.org</code>
+into this chapter.
+</p>
+
+<p>
+Covers buffer-local label overlays, the global label-display mode,
+the label database, and label display in <code>*xref*</code> /
+<code>*ELOT Describe*</code> buffers.
+</p>
+</div>
+</div>
+<div id="outline-container-howto-import-owl" class="outline-3">
+<h3 id="howto-import-owl"><span class="section-number-3">3.5.</span> Importing existing OWL ontologies</h3>
+<div class="outline-text-3" id="text-howto-import-owl">
+<p>
+TODO &#x2014; ROBOT-based round-tripping of an existing ontology
+(<code>.owl</code> / <code>.ttl</code> / <code>.omn</code>) into an ELOT Org skeleton.
+</p>
+</div>
+</div>
+<div id="outline-container-howto-lint" class="outline-3">
+<h3 id="howto-lint"><span class="section-number-3">3.6.</span> Linting and syntax checking</h3>
+<div class="outline-text-3" id="text-howto-lint">
+<p>
+TODO &#x2014; <code>elot-lint</code>, the OMN PEG grammar, the Flymake backend.
+</p>
+</div>
+</div>
+<div id="outline-container-howto-multi-ontology" class="outline-3">
+<h3 id="howto-multi-ontology"><span class="section-number-3">3.7.</span> Working with multiple ontologies and imports</h3>
+<div class="outline-text-3" id="text-howto-multi-ontology">
+<p>
+TODO &#x2014; <code>owl:imports</code>, catalog files, working tree layout for
+multi-ontology projects.
+</p>
+</div>
+</div>
+<div id="outline-container-howto-git" class="outline-3">
+<h3 id="howto-git"><span class="section-number-3">3.8.</span> Collaborating via Git</h3>
+<div class="outline-text-3" id="text-howto-git">
+<p>
+TODO &#x2014; diff-friendly Org structure, recommended <code>.gitattributes</code>,
+review workflow for ontology PRs.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-part-reference" class="outline-2">
+<h2 id="part-reference"><span class="section-number-2">4.</span> Part III &#x2014; Reference</h2>
+<div class="outline-text-2" id="text-part-reference">
+<p>
+Exhaustive lookup material.  Most of this part is auto-generated by
+<code>make manual-reference</code> from the live ELOT sources; do not edit the
+generated files by hand.
+</p>
+</div>
+<div id="outline-container-ref-commands" class="outline-3">
+<h3 id="ref-commands"><span class="section-number-3">4.1.</span> Commands and keybindings</h3>
+<div class="outline-text-3" id="text-ref-commands">
+<p>
+This chapter is auto-generated by <code>make manual-reference</code>.  Do not
+edit by hand; edit the docstrings in the source instead.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Command</th>
+<th scope="col" class="org-left">Key</th>
+<th scope="col" class="org-left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>elot-describe-curie-at-point</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Pop up a <b>Help</b> buffer describing CURIE at point (or prompt).</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-flymake-setup</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Enable the ELOT Flymake backend in the current buffer.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-global-label-display-mode</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Display labels from ELOT active label sources in any buffer.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-global-label-display-setup</code></td>
+<td class="org-left">==</td>
+<td class="org-left">One-shot: (re)build the DB-driven font-lock regexp in this buffer.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-headings-from-table</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Convert the Org table at point to an ELOT outline.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-activate-source</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Activate (SOURCE DATA-SOURCE) in `elot-active-label-sources'.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-active-sources-add</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Activate a registered source in the origin buffer.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-active-sources-mode</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Major mode for reordering `elot-active-label-sources'.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-active-sources-move-down</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Move the entry at point one position down (toward lower priority).</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-active-sources-move-up</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Move the entry at point one position up (toward higher priority).</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-active-sources-persist</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Persist the origin buffer's `elot-active-label-sources' to `.dir-locals.el'.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-active-sources-refresh</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Re-read the origin buffer's active sources and redraw.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-active-sources-remove</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Remove the entry at point from `elot-active-label-sources'.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-deactivate-source</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Remove (SOURCE DATA-SOURCE) from `elot-active-label-sources'.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-display-setup</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Read identifier-label pairs and initialise label-display.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-list-active-sources</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Display a tabulated buffer for reordering `elot-active-label-sources'.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-list-sources</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Display a tabulated list of all registered ELOT label sources.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-list-sources-refresh</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Rebuild the <b>ELOT Label Sources</b> buffer from the DB.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-list-sources-refresh-entry</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Force-refresh the source at point.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-list-sources-unregister-entry</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Unregister the source at point.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-lookup</code></td>
+<td class="org-left"><code>C-c C-x r</code></td>
+<td class="org-left">Interactive lookup of resource identifier, with completion.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-lookup-external</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Run `elot-label-lookup' pinned to scope `external'.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-lookup-local</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Run `elot-label-lookup' pinned to scope `local'.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-move-source-down</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Move (SOURCE DATA-SOURCE) one position down (toward lower priority).</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-move-source-up</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Move (SOURCE DATA-SOURCE) one position up (toward higher priority).</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-refresh-all-sources</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Refresh every registered source, continuing past individual failures.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-refresh-source</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Force a re-parse of SOURCE (optionally scoped to DATA-SOURCE).</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-register-current-buffer</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Register the file visited by the current buffer as a label source.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-register-source</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Register SOURCE (a file path) in the ELOT label cache.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-set-active-sources</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Replace `elot-active-label-sources' with ENTRIES.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-sources-mode</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Major mode for listing registered ELOT label sources.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-unregister-source</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Remove SOURCE (optionally scoped to DATA-SOURCE) from the DB.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-menu</code></td>
+<td class="org-left">==</td>
+<td class="org-left">ELOT Ontology Authoring Menu</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-mode</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Minor mode for authoring OWL ontologies in Org-mode with ELOT.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-open-owl</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Open an OWL ontology from OWL-SOURCE by converting with `elot-exporter'.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-org-lint</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Refresh `elot-slurp', then do `org-lint'</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-tangle-buffer-to-omn</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Update hierarchy and export OMN for all ontologies to their tangle targets.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-toggle-label-display</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Toggle between showing identifier or rdfs:label, using `elot-label-display'.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-update-headline-hierarchy</code></td>
+<td class="org-left">==</td>
+<td class="org-left">Update `elot-headline-hierarchy' from the current org buffer.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-ref-customization" class="outline-3">
+<h3 id="ref-customization"><span class="section-number-3">4.2.</span> Customization variables</h3>
+<div class="outline-text-3" id="text-ref-customization">
+<p>
+Auto-generated by <code>make manual-reference</code>.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Variable</th>
+<th scope="col" class="org-left">Default</th>
+<th scope="col" class="org-left">Group</th>
+<th scope="col" class="org-left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>elot-db-default-global-prefixes</code></td>
+<td class="org-left"><code>(("rdf" . "http://www.w3.org/1999/02/22-rdf-syntax-ns#") ("rdfs" . "http://www.w3.org/2000/01/rdf-schema#") ("owl" . "http://www.w3.org/2002/07/owl#") ("xsd" . "http://www.w3.org/2001/XMLSchema#") ("skos" . "http://www.w3.org/2004/02/skos/core#") ("dcterms" . "http://purl.org/dc/terms/") ("foaf" . "http://xmlns.com/foaf/0.1/") ("obo" . "http://purl.obolibrary.org/obo/") ("sh" . "http://www.w3.org/ns/shacl#") ("prov" . "http://www.w3.org/ns/prov#"))</code></td>
+<td class="org-left"><code>elot</code></td>
+<td class="org-left">Seed entries for the `global<sub>prefixes</sub>' table.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-db-file</code></td>
+<td class="org-left"><code>"~/.emacs.d/elot-cache.sqlite"</code></td>
+<td class="org-left"><code>elot</code></td>
+<td class="org-left">Path to the SQLite file backing the ELOT global-slurp cache.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-default-image-path</code></td>
+<td class="org-left"><code>"./images/"</code></td>
+<td class="org-left"><code>elot</code></td>
+<td class="org-left">ELOT default output directory for generated images.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-exporter-jar-path</code></td>
+<td class="org-left"><code>"c:/Users/jowik/bin/elot-exporter.jar"</code></td>
+<td class="org-left"><code>elot</code></td>
+<td class="org-left">Path to the elot-exporter.jar file.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-flymake-checkers</code></td>
+<td class="org-left"><code>(elot/nodeclare-id-prefix-label elot/ontology-header elot/prefix-table elot/ontology-presence elot/required-sections elot/description-list-curies elot/axiom-value-curies elot/omn-syntax)</code></td>
+<td class="org-left"><code>elot</code></td>
+<td class="org-left">List of `org-lint' checker names to run via Flymake.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-global-label-display-eldoc</code></td>
+<td class="org-left"><code>t</code></td>
+<td class="org-left"><code>elot</code></td>
+<td class="org-left">Whether `elot-global-label-display-mode' registers an eldoc backend.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-global-label-display-max-ids</code></td>
+<td class="org-left"><code>10000</code></td>
+<td class="org-left"><code>elot</code></td>
+<td class="org-left">Soft cap on the number of ids fed to `regexp-opt' by the global mode.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-global-label-display-mode-hook</code></td>
+<td class="org-left"><code>nil</code></td>
+<td class="org-left"><code>elot</code></td>
+<td class="org-left">Hook run after entering or leaving `elot-global-label-display-mode'.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-global-label-display-show-source</code></td>
+<td class="org-left"><code>t</code></td>
+<td class="org-left"><code>elot</code></td>
+<td class="org-left">Whether the eldoc/hover summary carries a provenance marker.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-display-face</code></td>
+<td class="org-left"><code>elot-label-face</code></td>
+<td class="org-left"><code>elot</code></td>
+<td class="org-left">Customizable face used for ELOT label fontification.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-display-size-threshold</code></td>
+<td class="org-left"><code>512000</code></td>
+<td class="org-left"><code>elot</code></td>
+<td class="org-left">Buffer size (bytes) above which `elot-mode' asks before enabling label-display.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-label-lookup-scope</code></td>
+<td class="org-left"><code>both</code></td>
+<td class="org-left"><code>elot</code></td>
+<td class="org-left">Which label sources `elot-label-lookup' consults.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-mode-auto-detect</code></td>
+<td class="org-left"><code>t</code></td>
+<td class="org-left"><code>elot</code></td>
+<td class="org-left">When non-nil, automatically enable `elot-mode' in ELOT buffers.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-mode-hook</code></td>
+<td class="org-left"><code>nil</code></td>
+<td class="org-left"><code>elot</code></td>
+<td class="org-left">Hook run after entering or leaving `elot-mode'.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-preferred-languages</code></td>
+<td class="org-left"><code>nil</code></td>
+<td class="org-left"><code>elot</code></td>
+<td class="org-left">Ordered list of preferred language tags for labels and annotations.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-rdfpuml-command-str</code></td>
+<td class="org-left"><code>"rdfpuml"</code></td>
+<td class="org-left"><code>elot</code></td>
+<td class="org-left">Command to execute `rdfpuml'.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-rdfpuml-options</code></td>
+<td class="org-left">="hide empty members</td>
+</tr>
+</tbody>
+</table>
+<p>
+hide circle
+skinparam classAttributeIconSize 0"= | <code>elot</code> | Default options for rdfpuml. |
+</p>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left"><code>elot-rdfpuml-path</code></td>
+<td class="org-left"><code>"c:/Users/jowik/bin/rdf2rml/bin/rdfpuml.pl"</code></td>
+<td class="org-left"><code>elot</code></td>
+<td class="org-left">Path to the rdfpuml Perl program.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-robot-jar-path</code></td>
+<td class="org-left"><code>"c:/Users/jowik/bin/robot.jar"</code></td>
+<td class="org-left"><code>elot</code></td>
+<td class="org-left">Path to the robot.jar file.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-source-rq-cache-dir-name</code></td>
+<td class="org-left"><code>".elot-cache"</code></td>
+<td class="org-left"><code>elot</code></td>
+<td class="org-left">Directory name (relative to the project root) for cached .rq results.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-source-supported-extensions</code></td>
+<td class="org-left"><code>(("org" . elot-source-parse-org) ("csv" . elot-source-parse-csv) ("tsv" . elot-source-parse-tsv) ("json" . elot-source-parse-json) ("ttl" . elot-source-parse-ttl) ("rq" . elot-source-parse-rq))</code></td>
+<td class="org-left"><code>elot</code></td>
+<td class="org-left">Alist mapping source file extensions to parser functions.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>elot-source-ttl-label-query</code></td>
+<td class="org-left">="PREFIX rdfs: <a href="http://www.w3.org/2000/01/rdf-schema#">http://www.w3.org/2000/01/rdf-schema#</a></td>
+</tr>
+</tbody>
+</table>
+<p>
+SELECT ?id ?label (LANG(?label) AS ?lang) WHERE {
+  ?id rdfs:label ?label .
+}"= | <code>elot</code> | SPARQL query used by `elot-source-parse-ttl' to extract id/label pairs. |
+</p>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left"><code>elot-toggle-labels-key</code></td>
+<td class="org-left"><code>nil</code></td>
+<td class="org-left"><code>elot</code></td>
+<td class="org-left">Key sequence bound to `elot-toggle-label-display' in ELOT-relevant buffers.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-ref-file-conventions" class="outline-3">
+<h3 id="ref-file-conventions"><span class="section-number-3">4.3.</span> File and header conventions</h3>
+<div class="outline-text-3" id="text-ref-file-conventions">
+<p>
+TODO &#x2014; <code>prefix-table</code>, <code>:ontology-iri:</code>, <code>:subclass-of:</code>,
+<code>:annotations:</code> drawers, the declaration-tree heading shape.
+</p>
+</div>
+</div>
+<div id="outline-container-ref-lob" class="outline-3">
+<h3 id="ref-lob"><span class="section-number-3">4.4.</span> <code>#+call:</code> helpers (Library of Babel)</h3>
+<div class="outline-text-3" id="text-ref-lob">
+<p>
+Auto-generated from <code>elot-package/elot-lob.org</code> by
+<code>make manual-reference</code>.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Block</th>
+<th scope="col" class="org-left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>theme-readtheorg</code></td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>theme-elot</code></td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>current-date</code></td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>current-datetime</code></td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>robot-metrics</code></td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>robot-sparql-select</code></td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>ttl-Class-hierarchy</code></td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>rdfpuml-config</code></td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>rdfpuml-config-rangedomaindown</code></td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>rdfpuml-config-rangedown</code></td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>rdfpuml-block</code></td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>example-ttl</code></td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>fuseki-for-rdfpuml-ttl</code></td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>kill-prefixes</code></td>
+<td class="org-left">&#xa0;</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-ref-manchester" class="outline-3">
+<h3 id="ref-manchester"><span class="section-number-3">4.5.</span> Manchester Syntax cheatsheet</h3>
+<div class="outline-text-3" id="text-ref-manchester">
+<p>
+TODO &#x2014; import <code>examples/manchester-syntax-quick-reference.omn</code>
+with brief gloss on each construct.
+</p>
+</div>
+</div>
+<div id="outline-container-ref-glossary" class="outline-3">
+<h3 id="ref-glossary"><span class="section-number-3">4.6.</span> Glossary</h3>
+<div class="outline-text-3" id="text-ref-glossary">
+<p>
+TODO &#x2014; short definitions of CURIE, IRI, OMN, TTL, OWL, RDF,
+ontology, axiom, restriction, annotation, tangle, prefix table,
+label source, declaration tree.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-part-background" class="outline-2">
+<h2 id="part-background"><span class="section-number-2">5.</span> Part IV &#x2014; Background</h2>
+<div class="outline-text-2" id="text-part-background">
+<p>
+Read these once.  They explain the <i>why</i> of design choices and the
+shape of the codebase &#x2014; useful when something is surprising.
+</p>
+</div>
+<div id="outline-container-bg-why-literate" class="outline-3">
+<h3 id="bg-why-literate"><span class="section-number-3">5.1.</span> Why literate ontology engineering</h3>
+<div class="outline-text-3" id="text-bg-why-literate">
+<p>
+TODO &#x2014; the argument: ontology and documentation in one source;
+review-friendly plaintext format; reuse of Org tooling; experience
+from ISO 23726-3.
+</p>
+</div>
+</div>
+<div id="outline-container-bg-architecture" class="outline-3">
+<h3 id="bg-architecture"><span class="section-number-3">5.2.</span> Architecture overview</h3>
+<div class="outline-text-3" id="text-bg-architecture">
+<p>
+TODO &#x2014; the tangle pipeline; the label DB; the SPARQL advice
+lifecycle; the relation between the literate <code>.org</code> sources and
+the tangled <code>elot-package/*.el</code>.
+</p>
+</div>
+</div>
+<div id="outline-container-bg-other-tools" class="outline-3">
+<h3 id="bg-other-tools"><span class="section-number-3">5.3.</span> Relationship to other tools</h3>
+<div class="outline-text-3" id="text-bg-other-tools">
+<p>
+TODO &#x2014; where ELOT fits relative to Protégé, WIDOCO, ROBOT, OWL-CS,
+ontology editors in general.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-appendices" class="outline-2">
+<h2 id="appendices"><span class="section-number-2">6.</span> Appendices</h2>
+<div class="outline-text-2" id="text-appendices">
+</div>
+<div id="outline-container-app-vscode-parity" class="outline-3">
+<h3 id="app-vscode-parity"><span class="section-number-3">6.1.</span> VS Code extension parity</h3>
+<div class="outline-text-3" id="text-app-vscode-parity">
+<p>
+TODO &#x2014; table of features available in the Emacs package vs the VS
+Code extension.  Mine <code>CLI-VS-CODE-PLAN.org</code> for content.
+</p>
+</div>
+</div>
+<div id="outline-container-app-troubleshooting" class="outline-3">
+<h3 id="app-troubleshooting"><span class="section-number-3">6.2.</span> Troubleshooting and FAQ</h3>
+<div class="outline-text-3" id="text-app-troubleshooting">
+<p>
+TODO &#x2014; common pitfalls:
+</p>
+
+<ul class="org-ul">
+<li><code>elot-robot-jar-path</code> unset or wrong,</li>
+<li>Java not on <code>PATH</code>,</li>
+<li><code>peg</code> library missing on Emacs 29,</li>
+<li>label display broken in <code>*xref*</code> buffers (now fixed; left as
+example for future regressions),</li>
+<li>SPARQL block returns empty result set,</li>
+<li>tangled <code>.omn</code> fails ROBOT report.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-app-changelog" class="outline-3">
+<h3 id="app-changelog"><span class="section-number-3">6.3.</span> Changelog pointers</h3>
+<div class="outline-text-3" id="text-app-changelog">
+<p>
+See <a href="https://github.com/johanwk/elot/releases">the release notes on GitHub</a> for the version-by-version history.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-indices" class="outline-2">
+<h2 id="indices"><span class="section-number-2">7.</span> Indices</h2>
+<div class="outline-text-2" id="text-indices">
+</div>
+</div>
+<div id="outline-container-copying" class="outline-2">
+<h2 id="copying"><span class="section-number-2">8.</span> Copying</h2>
+<div class="outline-text-2" id="text-copying">
+<p>
+This manual is for ELOT, the Emacs Literate Ontology Tool.
+</p>
+
+<p>
+Copyright (C) 2024&#x2013;2026 Johan W. Klüwer and contributors.
+</p>
+
+<blockquote>
+<p>
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation.
+</p>
+</blockquote>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Author: Johan W. Klüwer and contributors</p>
+<p class="date">Created: 2026-05-13 ons. 09:34</p>
+<p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>

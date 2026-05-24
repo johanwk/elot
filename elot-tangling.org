@@ -116,6 +116,22 @@ This section collects functions and variables that enable reading the Org outlin
   (defvar elot-omn-all-keywords
     (append elot-omn-property-keywords elot-omn-misc-keywords)
     "List of all Manchester syntax keywords, both property and misc keywords.")
+
+  (defun elot--omn-row-blank-axiom-p (row)
+    "Return non-nil when ROW is an OMN axiom keyword with no value.
+ROW is a description-list row of the shape (KEY VALUE . META) as
+produced by `elot--extract-headline-descriptions'.  The row
+qualifies as blank when KEY is a member of `elot-omn-all-keywords'
+and VALUE is nil or, after `string-trim', the empty string.  Used
+on the tangle path to skip rows like `Domain ::' (no class
+expression) which would otherwise produce malformed OMN.  Plain
+annotation rows (e.g. `rdfs:comment ::' with an empty value) are
+unaffected -- only OMN axiom keywords trigger the skip."
+    (let ((k (car row))
+          (v (cadr row)))
+      (and (member k elot-omn-all-keywords)
+           (or (null v)
+               (and (stringp v) (string-empty-p (string-trim v)))))))
 #+end_src
 
 ***** OWL built-in resources
@@ -425,17 +441,16 @@ This also avoids any other normalization artifacts that =org-element-interpret-d
 *** Support Tangling and Robot post-processing
 
 **** ROBOT configuration
-Custom paths to external Java tools, derived command strings, and the
-generic =elot-robot-command= wrapper.
+The ROBOT-related configuration (=elot-robot-jar-path=,
+=elot-robot-command-str=) lives in =elot-robot.el= (the shared
+process layer used by tangle, sources, and gptel tools).  We simply
+require it here so that all existing references in this file keep
+working unchanged.  Only the legacy =elot-robot-command= wrapper
+(shell-string based) and the =elot-exporter-*= variables remain
+tangle-local.
 
 #+begin_src emacs-lisp
-  (defcustom elot-robot-jar-path (expand-file-name "~/bin/robot.jar")
-    "Path to the robot.jar file."
-    :group 'elot-tangle
-    :version "29.2"
-    :type 'string)
-  (defvar elot-robot-command-str
-    (concat "java -jar " elot-robot-jar-path))
+  (require 'elot-robot)
   (defcustom elot-exporter-jar-path (expand-file-name "~/bin/elot-exporter.jar")
     "Path to the elot-exporter.jar file."
     :group 'elot-tangle
@@ -447,7 +462,10 @@ generic =elot-robot-command= wrapper.
   (defun elot-robot-command (cmd)
     "Execute ROBOT command CMD using `shell-command'.
     Check whether `elot-robot-jar-path` is set and points to an existing file.
-    It not set, return an error."
+    It not set, return an error.
+
+    Deprecated: prefer `elot-robot-run' from `elot-robot.el', which
+    uses an argv-based invocation and avoids shell quoting issues."
     (if (or (string= elot-robot-jar-path "") (not (file-exists-p elot-robot-jar-path)))
         (error "ROBOT not found.  Set elot-robot-jar-path with M-x customize-variable"))
     (shell-command (concat elot-robot-command-str " " cmd)))
@@ -593,10 +611,18 @@ OMN file or the originating Org heading.
 
 #+begin_src emacs-lisp
   (defun elot--parse-robot-error-location (text)
-    "Extract (line column) from ROBOT error TEXT.  Return list of integers or nil."
-    (when (string-match "Line \\([0-9]+\\) column \\([0-9]+\\)" text)
-      (list (string-to-number (match-string 1 text))
-            (string-to-number (match-string 2 text)))))
+    "Extract (line column) from ROBOT error TEXT.  Return list of integers or nil.
+
+Thin wrapper over `elot-robot-classify' (see `elot-robot.el').  Kept
+for backwards compatibility with existing callers; new code should
+classify ROBOT results directly."
+    (let* ((kind+payload (elot-robot-classify text))
+           (kind         (car kind+payload))
+           (payload      (cdr kind+payload))
+           (line         (plist-get payload :line))
+           (col          (plist-get payload :column)))
+      (when (and (eq kind :syntax-error) line col)
+        (list line col))))
 
   (defun elot--jump-to-omn-error (omnfile line col)
     "Open OMNFILE and move point to LINE and COL."
@@ -720,6 +746,19 @@ Functions that take an ontology AST node and extract specific components (prefix
                    (context-type (org-element-property :ELOT-CONTEXT-TYPE hl))
                    (context-localname (org-element-property :ELOT-CONTEXT-LOCALNAME hl))
                    (default-prefix (org-element-property :ELOT-DEFAULT-PREFIX hl))
+                   ;; `:elot-id-scheme:' carries either a bare scheme name
+                   ;; (e.g. "acme") or a scheme name followed by scheme-
+                   ;; specific tokens (e.g. "counter GO_0000000",
+                   ;; "acme slug:t").  Split on the first whitespace run:
+                   ;; the head is the scheme name, the tail (when present)
+                   ;; is the verbatim format string.  Both reach the node
+                   ;; under `:elot-id-scheme' / `:elot-id-scheme-format'.
+                   (id-scheme-raw (org-element-property :ELOT-ID-SCHEME hl))
+                   (id-scheme (and id-scheme-raw
+                                   (string-match "\\`[ \t]*\\([^ \t]+\\)\\(?:[ \t]+\\(.+?\\)\\)?[ \t]*\\'" id-scheme-raw)
+                                   (match-string 1 id-scheme-raw)))
+                   (id-scheme-format (and id-scheme-raw id-scheme
+                                          (match-string 2 id-scheme-raw)))
                    (resourcedefs (org-element-property :RESOURCEDEFS hl))
                    (prefixdefs (org-element-property :PREFIXDEFS hl))
                    (header-args-omn (org-element-property :HEADER-ARGS:OMN hl))
@@ -779,9 +818,14 @@ Functions that take an ontology AST node and extract specific components (prefix
                             (list :id id
                                   :resourcedefs resourcedefs))
                           (when (equal context-type "ontology")
-                            (list :elot-context-type context-type
-                                  :elot-context-localname context-localname
-                                  :elot-default-prefix default-prefix))
+                            (append
+                             (list :elot-context-type context-type)
+                             (when id-scheme
+                               (append (list :elot-id-scheme id-scheme)
+                                       (when id-scheme-format
+                                         (list :elot-id-scheme-format id-scheme-format))))
+                             (list :elot-context-localname context-localname
+                                   :elot-default-prefix default-prefix)))
                           (when (or uri (not (or (equal resourcedefs "yes") (equal context-type "ontology"))))
                             (list :uri uri
                                   :label label))
@@ -1001,6 +1045,33 @@ To define the local variable ~elot-headline-hierarchy~ and an update function:
 (defvar-local elot-headline-hierarchy nil
   "Stores the parsed headline hierarchy for the current Elot buffer.")
 
+(defvar-local elot-headline-hierarchy-stale-p nil
+  "Non-nil when `elot-headline-hierarchy' may not reflect the buffer.
+Mutation primitives (insert / move / rename / set-scheme) set this
+in O(1) via `elot-headline-hierarchy-mark-stale'; readers consult
+it through `elot-headline-hierarchy-ensure-fresh', which performs
+exactly one rescan per pending edit batch.  See ELOT-GPTEL-PLAN.org
+Step 9.3.F8 for the design rationale (avoid repeated full rescans
+when several mutations chain through the gptel write-back path).")
+
+(defun elot-headline-hierarchy-mark-stale ()
+  "Mark `elot-headline-hierarchy' as not reflecting buffer state.
+O(1) -- toggles the buffer-local `elot-headline-hierarchy-stale-p'
+flag.  Call from any code that mutates resource headings so the
+*next* reader triggers a single `elot-update-headline-hierarchy'
+rather than every mutation paying for a full reparse."
+  (setq elot-headline-hierarchy-stale-p t))
+
+(defun elot-headline-hierarchy-ensure-fresh ()
+  "Refresh `elot-headline-hierarchy' iff stale or never built.
+Cheap when fresh: returns immediately without touching the buffer
+when the cache is current.  Otherwise calls
+`elot-update-headline-hierarchy', which resets the stale flag on
+completion."
+  (when (or elot-headline-hierarchy-stale-p
+            (null elot-headline-hierarchy))
+    (elot-update-headline-hierarchy)))
+
 (defun elot-update-headline-hierarchy ()
   "Update `elot-headline-hierarchy' from the current org buffer.
 This uses `elot-parse-headline-hierarchy' on the parsed buffer elements."
@@ -1010,7 +1081,9 @@ This uses `elot-parse-headline-hierarchy' on the parsed buffer elements."
   (let ((ast (org-element-parse-buffer)))
     (setq elot-headline-hierarchy
           (elot-parse-headline-hierarchy ast)))
-  (elot-update-link-abbrev))
+  (elot-update-link-abbrev)
+  ;; Cache is now in sync with the buffer; clear the stale marker.
+  (setq elot-headline-hierarchy-stale-p nil))
 #+end_src
 
 
@@ -1281,10 +1354,18 @@ With ~M-:~ we get at the ~:children~ of ~elot-headline-hierarchy~; which is a li
            (annotations nil)
            (restrictions nil))
       (when (and uri (stringp uri) (not (member "nodeclare" tags)))
-        ;; 1. Partition descriptions into restrictions and annotations
+        ;; 1. Partition descriptions into restrictions and annotations.
+        ;;    Blank OMN-axiom rows (e.g. `Domain ::' with no value, inherited
+        ;;    from the M10.6 sibling/child insert template) are silently
+        ;;    dropped here -- emitting them would produce malformed OMN
+        ;;    (`Domain:' with no class expression) and ROBOT's OWLAPI
+        ;;    parser refuses the whole file.  The companion
+        ;;    `elot/blank-omn-axiom-row' lint warning (F4) surfaces the
+        ;;    same condition to the author.
         (dolist (y desc)
           (let ((k (car y)))
             (cond
+             ((elot--omn-row-blank-axiom-p y) nil)
              ((member k elot-omn-property-keywords)
               (push y restrictions))
              ((member k elot-omn-misc-keywords) nil) ;; Ignored here, handled by misc-frames
@@ -1328,11 +1409,14 @@ With ~M-:~ we get at the ~:children~ of ~elot-headline-hierarchy~; which is a li
 
   (defun elot-omn-misc-frames (node)
     "Generate a list of formatted misc frame strings from NODE's descriptions.
-  These represent top-level standalone axioms like DisjointClasses."
+  These represent top-level standalone axioms like DisjointClasses.
+  Blank OMN-keyword rows (e.g. `DisjointClasses ::' with no value)
+  are skipped silently -- see `elot--omn-row-blank-axiom-p'."
     (let ((desc (plist-get node :descriptions))
           (misc-frames nil))
       (dolist (y desc)
-        (when (member (car y) elot-omn-misc-keywords)
+        (when (and (member (car y) elot-omn-misc-keywords)
+                   (not (elot--omn-row-blank-axiom-p y)))
           ;; elot-omn-format-restrictions with indent=0 works perfectly for top-level misc frames
           (push (elot-omn-format-restrictions (list y) 0) misc-frames)))
       (nreverse misc-frames)))

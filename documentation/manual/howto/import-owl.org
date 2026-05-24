@@ -1,0 +1,4 @@
+# Importing existing OWL ontologies --- included from elot.org
+
+TODO --- ROBOT-based round-tripping of an existing ontology
+(=.owl= / =.ttl= / =.omn=) into an ELOT Org skeleton.

@@ -44,6 +44,9 @@
 (require 'elot-db)
 (require 'elot-sources)
 (require 'elot-label-display)
+(require 'elot-id-insert)
+(require 'elot-id-rename)
+(require 'elot-id-move)
 (require 'xref)
 (require 'easymenu)
 (require 'tempo)
@@ -59,6 +62,17 @@
 
 ;; Lint is optional -- only loaded when the user invokes it
 (autoload 'elot-org-lint "elot-lint" "Refresh `elot-slurp', then run `org-lint'." t)
+
+;; gptel integration is optional -- only loaded when the user invokes it.
+;; This exposes ELOT's authoring tools (lint, validate, reason, query) to
+;; the gptel LLM tool protocol.  Users without gptel see no behavioural
+;; change; users with gptel can opt in via M-x elot-gptel-register-tools.
+;;;###autoload
+(autoload 'elot-gptel-register-tools "elot-gptel"
+  "Register ELOT's ontology-authoring tools with gptel." t)
+;;;###autoload
+(autoload 'elot-gptel-unregister-tools "elot-gptel"
+  "Remove ELOT's gptel tools from the registry." t)
 
 (defgroup elot
     nil
@@ -527,11 +541,23 @@ or `xsd:integer' on a column header will be applied to values."
     ["... (external only)" elot-label-lookup-external
      :active (fboundp 'elot-label-lookup-external)
      :enable (bound-and-true-p elot-active-label-sources)]
-    ["Insert Class heading" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-class-skos))
-     :active (fboundp 'tempo-template-elot-class-skos)
+    ["Insert Sibling resource" elot-insert-sibling-resource
+     :active (fboundp 'elot-insert-sibling-resource)
      :enable (elot--in-elot-buffer-p)]
-    ["Insert Property heading" (lambda () (interactive) (outline-next-heading) (tempo-template-elot-property-skos))
-     :active (fboundp 'tempo-template-elot-property-skos)
+    ["Insert Child resource" elot-insert-child-resource
+     :active (fboundp 'elot-insert-child-resource)
+     :enable (elot--in-elot-buffer-p)]
+    ["Set identifier scheme..." elot-id-set-scheme
+     :active (fboundp 'elot-id-set-scheme)
+     :enable (elot--in-elot-buffer-p)]
+    ["Show identifier scheme" elot-id-show-scheme
+     :active (fboundp 'elot-id-show-scheme)
+     :enable (elot--in-elot-buffer-p)]
+    ["Rename resource (CURIE)..." elot-rename-resource
+     :active (fboundp 'elot-rename-resource)
+     :enable (elot--in-elot-buffer-p)]
+    ["Move resource..." elot-move-resource
+     :active (fboundp 'elot-move-resource)
      :enable (elot--in-elot-buffer-p)]
     "---"
     ["Jump to Resource Headline (M-.)" xref-find-definitions
@@ -628,7 +654,35 @@ or `xsd:integer' on a column header will be applied to values."
        :active (fboundp 'elot-toggle-label-display)
        :style toggle
        :selected (and (boundp 'elot-label-display)
-                      (eq elot-label-display 'on))]))))
+                      (eq elot-label-display 'on))]))
+    "---"
+    ("gptel"
+     ["Allow LLM side effects (session-only)"
+      (lambda () (interactive)
+        (setq elot-gptel-allow-side-effects
+              (not (bound-and-true-p elot-gptel-allow-side-effects)))
+        (when (and (featurep 'gptel)
+                   (bound-and-true-p elot-gptel--tools)
+                   (eq elot-gptel-confirm-mutations 'once-armed)
+                   (fboundp 'elot-gptel-register-tools))
+          (ignore-errors (elot-gptel-register-tools)))
+        (message "ELOT: LLM side effects %s"
+                 (if elot-gptel-allow-side-effects "ENABLED" "disabled")))
+      :style toggle
+      :selected (bound-and-true-p elot-gptel-allow-side-effects)
+      :help "Toggle whether ELOT gptel tools may modify files.
+Session-only: not persisted across Emacs restarts."]
+     "---"
+     ["Register ELOT tools with gptel" elot-gptel-register-tools
+      :active (fboundp 'elot-gptel-register-tools)
+      :enable (featurep 'gptel)]
+     ["Unregister ELOT tools from gptel" elot-gptel-unregister-tools
+      :active (fboundp 'elot-gptel-unregister-tools)
+      :enable (and (featurep 'gptel)
+                   (bound-and-true-p elot-gptel--tools))])
+    "---"
+    ["Customize ELOT..." (lambda () (interactive) (customize-group 'elot))
+     :active (fboundp 'customize-group)]))
 
 ; Also surface the ELOT menu when `elot-global-label-display-mode'
 ;; is active in a non-ELOT buffer.  We bind the same menu into the
