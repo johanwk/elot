@@ -70,7 +70,7 @@
   "Return non-nil if ROBOT is usable on this machine.
 Checks `elot-robot-jar-path' (the canonical ELOT setting, pointing
 at a `robot.jar' invoked via `java -jar') first, and falls back to
-a `robot' executable on `PATH' for users with a shell shim."
+a `robot' executable on PATH for users with a shell shim."
   (require 'elot-tangle nil t)
   (or (and (bound-and-true-p elot-robot-jar-path)
            (stringp elot-robot-jar-path)
@@ -84,7 +84,7 @@ OUTPUT-FILE's extension determines the result format (CSV when it
 ends in `.csv', which is what the callers in this module use).
 
 Prefers `java -jar elot-robot-jar-path'; falls back to a `robot'
-executable on `PATH'.  Non-zero exit status raises `user-error'
+executable on PATH.  Non-zero exit status raises `user-error'
 with ROBOT's stderr captured from the process buffer."
   (require 'elot-tangle nil t)
   (unless (elot-robot-available-p)
@@ -153,7 +153,7 @@ for the extension."
   (let* ((ext (elot-source--extension source))
          (fn  (cdr (assoc ext elot-source-supported-extensions))))
     (unless fn
-      (user-error "elot-sources: no parser registered for extension %S"
+      (user-error "Elot-sources: no parser registered for extension %S"
                   (or ext "(none)")))
     (apply fn source args)))
 
@@ -231,7 +231,8 @@ returned with surrounding quotes stripped."
     (nreverse fields)))
 
 (defun elot-source--parse-separated (file sep)
-  "Common CSV/TSV parser; SEP is a single-character separator string.
+  "Parse delimited FILE into slurp entries.
+Common CSV/TSV parser; SEP is a single-character separator string.
 
 Recognises two language-tag conventions (Step 1.16.6):
 
@@ -351,7 +352,7 @@ Two accepted shapes:
 
 In the nested form, the value of the `label' key becomes the
 entry's label, and all other keys become attribute plist entries
-(values are coerced to strings).  UC3-oriented; covers the
+\(values are coerced to strings).  UC3-oriented; covers the
 common ad-hoc mapping shape found in config / i18n / dashboard
 JSON."
   (let ((data (elot-source--json-read file))
@@ -404,16 +405,16 @@ JSON."
   "Return an alist ((PREFIX . EXPANSION) ...) harvested from FILE.
 
 Matches both Turtle-style declarations
-  `@prefix NAME: <EXPANSION> .'
+  @prefix NAME: <EXPANSION> .
 and SPARQL-style declarations
-  `PREFIX NAME: <EXPANSION>'
-at the start of a line (with optional leading whitespace).  The
-empty prefix (`@prefix : <...>') is supported and stored with the
+  PREFIX NAME: <EXPANSION>
+at the start of a line \(with optional leading whitespace).  The
+empty prefix (@prefix : <...>) is supported and stored with the
 empty string as key.
 
 Whitespace and alignment between tokens are tolerated; simple
-full-line `#' comments are skipped implicitly because the regex
-requires `@prefix' / `PREFIX' at the start of the matched line.
+full-line # comments are skipped implicitly because the regex
+requires @prefix / PREFIX at the start of the matched line.
 Duplicate prefix names: the first occurrence wins (matching the
 semantics ROBOT and most readers apply)."
   (let ((result nil))
@@ -516,7 +517,8 @@ looking for common markers, and finally to FILE's own directory."
                (when-let ((proj (project-current nil)))
                  (expand-file-name (if (fboundp 'project-root)
                                        (project-root proj)
-                                     (car (with-no-warnings
+                                     (car (with-suppressed-warnings
+                                              ((obsolete project-roots))
                                             (project-roots proj))))))))
         (locate-dominating-file dir ".git")
         (locate-dominating-file dir ".elot-cache")
@@ -586,7 +588,7 @@ cache is preserved.
 
 Returns the extended result shape `(:entries ENTRIES :prefixes
 PREFIXES)' (see Step 1.7.3).  Prefixes are harvested from
-QUERY-FILE's own `PREFIX' lines, since the cached CSV does not
+QUERY-FILE's own PREFIX lines, since the cached CSV does not
 carry the source TTL's declarations."
   (let* ((cache (elot-source-rq-cache-path query-file data-source))
          (dir   (file-name-directory cache)))
@@ -666,7 +668,7 @@ carry the source TTL's declarations."
 
 (defun elot-source--registered-completions ()
   "Return a list of (LABEL . (SOURCE . DATA-SOURCE)) for registered sources.
-LABEL is `SOURCE' when DATA-SOURCE is empty, else `SOURCE -> DATA-SOURCE'."
+LABEL is SOURCE when DATA-SOURCE is empty, else SOURCE -> DATA-SOURCE."
   (mapcar
    (lambda (row)
      (let* ((src (nth 0 row))
@@ -679,15 +681,15 @@ LABEL is `SOURCE' when DATA-SOURCE is empty, else `SOURCE -> DATA-SOURCE'."
    (elot-db-list-sources)))
 
 (defun elot-source--read-registered-source (prompt)
-  "Prompt via `completing-read' for a registered (SOURCE . DATA-SOURCE) pair.
-Returns the cons cell, or signals `user-error' when no sources are
-registered."
+  "Prompt with PROMPT for a registered (SOURCE . DATA-SOURCE) pair.
+Uses `completing-read'.  Returns the cons cell, or signals
+`user-error' when no sources are registered."
   (let* ((cands (elot-source--registered-completions)))
     (unless cands
-      (user-error "elot-sources: no sources registered in the DB"))
+      (user-error "Elot-sources: no sources registered in the DB"))
     (let* ((choice (completing-read prompt (mapcar #'car cands) nil t)))
       (or (cdr (assoc choice cands))
-          (user-error "elot-sources: no such registered source: %s" choice)))))
+          (user-error "Elot-sources: no such registered source: %s" choice)))))
 
 (defun elot-source--read-source-for-registration ()
   "Interactive helper: read a source file path, and for `.rq' a data-source.
@@ -723,7 +725,7 @@ to (SOURCE, DATA-SOURCE).  Introduced in Step 1.7.3."
         (list :skipped source ds-norm)
       (let* ((type     (or (elot-source--type-for source)
                            (user-error
-                            "elot-sources: no parser for %s" source)))
+                            "Elot-sources: no parser for %s" source)))
              (raw      (if (equal type "rq")
                            (elot-source-parse source ds-norm)
                          (elot-source-parse source)))
@@ -763,7 +765,7 @@ advanced since the last ingest, this is a no-op; use
 For `.rq' buffers the data-source is prompted for."
   (interactive)
   (unless buffer-file-name
-    (user-error "elot-sources: current buffer is not visiting a file"))
+    (user-error "Elot-sources: current buffer is not visiting a file"))
   (let* ((source buffer-file-name)
          (ds     (when (equal (elot-source--extension source) "rq")
                    (elot-source--normalize-data-source
@@ -859,7 +861,7 @@ include the error message for each failing source."
   (tabulated-list-init-header))
 
 (defun elot-label--format-time (time)
-  "Format a float-time TIME for display in the source list."
+  "Format a `float-time' TIME for display in the source list."
   (if (and time (numberp time) (> time 0))
       (format-time-string "%Y-%m-%d %H:%M" (seconds-to-time time))
     "-"))
@@ -1143,7 +1145,7 @@ end in the requested direction."
             new))))))
 
 (defun elot-label--active-completions ()
-  "Return an alist (LABEL . ENTRY) for `elot-active-label-sources'."
+  "Return an alist \(LABEL . ENTRY) for `elot-active-label-sources'."
   (mapcar (lambda (e)
             (let* ((src (nth 0 e))
                    (ds  (nth 1 e))
@@ -1152,7 +1154,8 @@ end in the requested direction."
           elot-active-label-sources))
 
 (defun elot-label--read-active-entry (prompt)
-  "Prompt for an entry from `elot-active-label-sources'.  Return the entry."
+  "Prompt with PROMPT for an entry from `elot-active-label-sources'.
+Return the entry."
   (let ((cands (elot-label--active-completions)))
     (unless cands (user-error "No active label sources"))
     (cdr (assoc (completing-read prompt (mapcar #'car cands) nil t)
@@ -1247,7 +1250,7 @@ Key bindings:
 (defun elot-label-list-active-sources ()
   "Display a tabulated buffer for reordering `elot-active-label-sources'.
 Mutations performed in the buffer act on the originating buffer
-(the one current when this command was invoked), so that the
+\(the one current when this command was invoked), so that the
 buffer-local active-sources list and any buffer-local change hooks
 resolve correctly."
   (interactive)

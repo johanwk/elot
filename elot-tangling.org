@@ -612,7 +612,7 @@ OMN file or the originating Org heading.
 
   (defun elot--jump-to-org-heading-for-identifier (omnfile line)
     "From OMNFILE and error LINE, search upward for a declaration.
-Jump to the Org-mode heading defining the identifier found."
+  Jump to the Org-mode heading defining the identifier found."
     (let ((identifier nil))
       (save-excursion
         (with-current-buffer (find-file-noselect omnfile)

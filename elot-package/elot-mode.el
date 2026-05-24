@@ -110,7 +110,7 @@ xref navigation, etc.) when the menu is visible via
       (modify-syntax-entry ?_ "w" st)
       st)
     "Syntax table for `elot-mode'.
-  Treats `:' and `_' as word-constituent characters.")
+Treats `:' and `_' as word-constituent characters.")
 
 (tempo-define-template "elot-doc-header"
                        '("#+title: " (p "Document title: " doctitle) > n
@@ -504,7 +504,7 @@ or `xsd:integer' on a column header will be applied to values."
   "Keymap active when `elot-mode' is enabled.")
 
 (easy-menu-define elot-menu elot-mode-map
-  "ELOT Ontology Authoring Menu"
+  "ELOT Ontology Authoring Menu."
   '("ELOT"
     ["Check for common problems" elot-org-lint
      :active (fboundp 'elot-org-lint)
@@ -650,11 +650,20 @@ or `xsd:integer' on a column header will be applied to values."
                 `(menu-item "ELOT" ,elot-menu
                             :visible (not (bound-and-true-p elot-mode))))))
 
+(defun elot-mode--refresh-inline-images ()
+  "Refresh inline image previews after a Babel block executes.
+Use `org-link-preview-refresh' on Org 9.8+, falling back to
+the older `org-redisplay-inline-images' on earlier versions."
+  (if (fboundp 'org-link-preview-refresh)
+      (org-link-preview-refresh)
+    (when (fboundp 'org-redisplay-inline-images)
+      (org-redisplay-inline-images))))
+
 (defun elot-mode--add-hooks ()
   "Add buffer-local hooks for an ELOT buffer."
   ;; Pre-tangle: remember source file
   (add-hook 'org-babel-pre-tangle-hook #'elot--remember-org-source nil t)
-  (add-hook 'org-babel-after-execute-hook #'org-redisplay-inline-images nil t)
+  (add-hook 'org-babel-after-execute-hook #'elot-mode--refresh-inline-images nil t)
   ;; After save: refresh link abbreviations and slurp data
   (add-hook 'after-save-hook #'elot-update-link-abbrev nil t)
   (add-hook 'after-save-hook #'elot-slurp-to-vars nil t)
@@ -664,24 +673,24 @@ or `xsd:integer' on a column header will be applied to values."
 (defun elot-mode--remove-hooks ()
   "Remove buffer-local hooks added by `elot-mode--add-hooks'."
   (remove-hook 'org-babel-pre-tangle-hook #'elot--remember-org-source t)
-  (remove-hook 'org-babel-after-execute-hook #'org-redisplay-inline-images t)
+  (remove-hook 'org-babel-after-execute-hook #'elot-mode--refresh-inline-images t)
   (remove-hook 'after-save-hook #'elot-update-link-abbrev t)
   (remove-hook 'after-save-hook #'elot-slurp-to-vars t)
   (remove-hook 'xref-backend-functions #'elot-xref-backend t))
 
 (defvar elot--sparql-advice-installed-p nil
   "Non-nil when ELOT's around-advice on `org-babel-execute:sparql' is active.
-Managed by `elot-mode--install-sparql-advice' and
-`elot-mode--uninstall-sparql-advice'.")
+  Managed by `elot-mode--install-sparql-advice' and
+  `elot-mode--uninstall-sparql-advice'.")
 
 (defvar elot--sparql-advice-buffer-count 0
   "Number of live buffers in which `elot-mode' is currently enabled.
-When this drops to zero, `elot-mode--uninstall-sparql-advice' removes
-the global advice on `org-babel-execute:sparql'.")
+  When this drops to zero, `elot-mode--uninstall-sparql-advice' removes
+  the global advice on `org-babel-execute:sparql'.")
 
 (defun elot-mode--install-sparql-advice ()
   "Install ELOT's around-advice on `org-babel-execute:sparql'.
-Idempotent: safe to call from every `elot-mode--enable'."
+  Idempotent: safe to call from every `elot-mode--enable'."
   (cl-incf elot--sparql-advice-buffer-count)
   (unless elot--sparql-advice-installed-p
     (when (fboundp 'elot--custom-org-babel-execute-sparql)
@@ -690,8 +699,8 @@ Idempotent: safe to call from every `elot-mode--enable'."
       (setq elot--sparql-advice-installed-p t))))
 
 (defun elot-mode--uninstall-sparql-advice ()
-  "Remove ELOT's around-advice on `org-babel-execute:sparql' when no
-ELOT buffer is left.  Idempotent."
+  "Remove ELOT's around-advice on `org-babel-execute:sparql'.
+Uninstalled when no ELOT buffer is left.  Idempotent."
   (when (> elot--sparql-advice-buffer-count 0)
     (cl-decf elot--sparql-advice-buffer-count))
   (when (and elot--sparql-advice-installed-p
@@ -703,21 +712,21 @@ ELOT buffer is left.  Idempotent."
 
 (defvar elot--xref-globals-installed-p nil
   "Non-nil when ELOT's global xref advice and hooks are installed.
-Managed by `elot-mode--install-xref-globals' and
-`elot-mode--uninstall-xref-globals'.")
+  Managed by `elot-mode--install-xref-globals' and
+  `elot-mode--uninstall-xref-globals'.")
 
 (defvar elot--xref-globals-buffer-count 0
-  "Reference count of live buffers with `elot-mode' enabled, for the
-purpose of managing ELOT's global xref advice and hooks.  When this
-drops to zero, `elot-mode--uninstall-xref-globals' removes the
-global advice on `xref-find-references' and the entries on
-`xref-after-update-hook'.")
+  "Reference count of live ELOT buffers for global xref management.
+Counts buffers with `elot-mode' enabled, for the purpose of managing
+ELOT's global xref advice and hooks.  When this drops to zero,
+`elot-mode--uninstall-xref-globals' removes the global advice on
+`xref-find-references' and the entries on `xref-after-update-hook'.")
 
 (defun elot-mode--install-xref-globals ()
   "Install ELOT's global xref advice and `xref-after-update-hook' entries.
-Idempotent: safe to call from every `elot-mode--enable'.  The
-backing helpers are defined later in this file, so each install
-is guarded with `fboundp' so that loading order does not matter."
+  Idempotent: safe to call from every `elot-mode--enable'.  The
+  backing helpers are defined later in this file, so each install
+  is guarded with `fboundp' so that loading order does not matter."
   (cl-incf elot--xref-globals-buffer-count)
   (unless elot--xref-globals-installed-p
     (when (fboundp 'elot--capture-slurp)
@@ -729,8 +738,8 @@ is guarded with `fboundp' so that loading order does not matter."
     (setq elot--xref-globals-installed-p t)))
 
 (defun elot-mode--uninstall-xref-globals ()
-  "Remove ELOT's global xref advice and hooks when no ELOT buffer is
-left.  Idempotent."
+  "Remove ELOT's global xref advice and hooks.
+Uninstalled when no ELOT buffer is left.  Idempotent."
   (when (> elot--xref-globals-buffer-count 0)
     (cl-decf elot--xref-globals-buffer-count))
   (when (and elot--xref-globals-installed-p
@@ -914,6 +923,11 @@ Detection looks for `:ELOT-context-type: ontology' in the buffer."
                 ":ELOT-context-type:.*ontology" nil t)))
     (elot-mode 1)))
 
+;; NOTE: This `add-hook' is intentional and is the standard idiom
+;; for a minor mode that opts users in based on Org-file content (the
+;; :ELOT-context-type: property) rather than on a global preference.
+;; The predicate `elot-mode--maybe-enable' is a cheap no-op for
+;; non-ELOT Org buffers.
 (add-hook 'org-mode-hook #'elot-mode--maybe-enable)
 
 (defun elot-xref-backend ()
@@ -1136,7 +1150,7 @@ buffer exactly like they are in the *xref* buffer."
 				 (- (length refs) max-ref)))))
 	    (princ "  (none)\n"))
 	  (princ
-	   "\n----\n`q' to quit, `RET' to visit location.\n")
+	   "\n----\nType q to quit, RET to visit location.\n")
 	  ;; ------------------------------------
 	  ;; 3c. Seed DB-backed label sources, bind opt-in toggle key, and
 	  ;;     enable label display via `elot-global-label-display-mode'
@@ -1156,7 +1170,7 @@ buffer exactly like they are in the *xref* buffer."
 	    (elot-global-label-display-mode 1)))))))
 
 (defun elot--describe--insert-xref-button (xref indent)
-  "Insert XREF as an indented bullet with filename and a clickable link."
+  "Insert XREF as a bullet indented by INDENT, with filename and a clickable link."
   (let* ((summary (xref-item-summary xref))
 	 (loc     (xref-item-location  xref))
 	 (marker  (xref-location-marker loc))

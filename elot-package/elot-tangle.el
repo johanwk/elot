@@ -499,50 +499,50 @@ Checks for `elot-robot-jar-path`."
         (elot-robot-omn-to-ttl--interactive omnfile output-file command-args)))))
 
 (defun elot--parse-robot-error-location (text)
-    "Extract (line column) from ROBOT error TEXT.  Return list of integers or nil."
-    (when (string-match "Line \\([0-9]+\\) column \\([0-9]+\\)" text)
-      (list (string-to-number (match-string 1 text))
-            (string-to-number (match-string 2 text)))))
+  "Extract (line column) from ROBOT error TEXT.  Return list of integers or nil."
+  (when (string-match "Line \\([0-9]+\\) column \\([0-9]+\\)" text)
+    (list (string-to-number (match-string 1 text))
+          (string-to-number (match-string 2 text)))))
 
-  (defun elot--jump-to-omn-error (omnfile line col)
-    "Open OMNFILE and move point to LINE and COL."
-    (let ((buf (find-file-other-window omnfile)))
-      (with-current-buffer buf
+(defun elot--jump-to-omn-error (omnfile line col)
+  "Open OMNFILE and move point to LINE and COL."
+  (let ((buf (find-file-other-window omnfile)))
+    (with-current-buffer buf
+      (goto-char (point-min))
+      (forward-line (1- line))
+      (forward-char (1- col))
+      ;;(pulse-momentary-highlight-one-line (point))
+      )))
+
+(defun elot--jump-to-org-heading-for-identifier (omnfile line)
+  "From OMNFILE and error LINE, search upward for a declaration.
+Jump to the Org-mode heading defining the identifier found."
+  (let ((identifier nil))
+    (save-excursion
+      (with-current-buffer (find-file-noselect omnfile)
         (goto-char (point-min))
         (forward-line (1- line))
-        (forward-char (1- col))
-        ;;(pulse-momentary-highlight-one-line (point))
-        )))
-
-  (defun elot--jump-to-org-heading-for-identifier (omnfile line)
-    "From OMNFILE and error LINE, search upward for a declaration.
-Jump to the Org-mode heading defining the identifier found."
-    (let ((identifier nil))
-      (save-excursion
-        (with-current-buffer (find-file-noselect omnfile)
+        (end-of-line)
+        (when (re-search-backward "^[^ \t]" nil t)
+          (let ((line-text (buffer-substring-no-properties
+                            (line-beginning-position) (line-end-position))))
+            (when (string-match "^\\([-A-Za-z]+\\):[ \t]+\\(.+\\)" line-text)
+              (setq identifier (match-string 2 line-text)))))))
+    (when (and identifier elot-last-org-source (file-exists-p elot-last-org-source))
+      (let ((buf (find-file-other-window elot-last-org-source)))
+        (with-current-buffer buf
           (goto-char (point-min))
-          (forward-line (1- line))
-          (end-of-line)
-          (when (re-search-backward "^[^ \t]" nil t)
-            (let ((line-text (buffer-substring-no-properties
-                              (line-beginning-position) (line-end-position))))
-              (when (string-match "^\\([-A-Za-z]+\\):[ \t]+\\(.+\\)" line-text)
-                (setq identifier (match-string 2 line-text)))))))
-      (when (and identifier elot-last-org-source (file-exists-p elot-last-org-source))
-        (let ((buf (find-file-other-window elot-last-org-source)))
-          (with-current-buffer buf
-            (goto-char (point-min))
-            (if (re-search-forward
-                 (format "^\\(?:\\*+ .*\\b%s\\b\\|.*::.*%s\\)"
-                         (regexp-quote identifier)
-                         (regexp-quote identifier))
-                 nil t)
-                (progn
-                  (beginning-of-line)
-                  ;;(pulse-momentary-highlight-one-line (point))
-                  ;;(message "Parse error traced to heading: %s" (match-string 0))
-                  )
-              (message "Could not find Org heading for: %s" identifier)))))))
+          (if (re-search-forward
+               (format "^\\(?:\\*+ .*\\b%s\\b\\|.*::.*%s\\)"
+                       (regexp-quote identifier)
+                       (regexp-quote identifier))
+               nil t)
+              (progn
+                (beginning-of-line)
+                ;;(pulse-momentary-highlight-one-line (point))
+                ;;(message "Parse error traced to heading: %s" (match-string 0))
+                )
+            (message "Could not find Org heading for: %s" identifier)))))))
 
 (defvar elot-last-org-source nil
   "Path to the last Org-mode file that generated an OMN file.")
