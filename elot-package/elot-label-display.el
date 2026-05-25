@@ -335,8 +335,8 @@ Output to OUT-FILE as an elisp list."
 ;; Shared annotation formatter (Item A.3)
 (defun elot-label-lookup--format-annotation (label prefix rdf-type definition)
   "Return a padded annotation string for completion display.
-  LABEL is the completion candidate; PREFIX, RDF-TYPE, and DEFINITION
-  are the annotation fields.  All arguments are strings (possibly empty)."
+LABEL is the completion candidate; PREFIX, RDF-TYPE, and DEFINITION
+are the annotation fields.  All arguments are strings (possibly empty)."
   (concat
    ;; pad annotations to col 35
    (make-string (max (- 35 (length label)) 0) 32)
@@ -367,7 +367,7 @@ looked up in `elot-label-lookup-tmp-attriblist-ht'."
 
 (defun elot-label-lookup--collect-attriblist ()
   "Return (COLLECTION . ANNOTATOR) for the buffer-local slurp path.
-  Returns nil when the slurp hash is not populated."
+Returns nil when the slurp hash is not populated."
   (when (and (bound-and-true-p elot-attriblist-ht)
              (hash-table-p elot-attriblist-ht)
              (> (hash-table-count elot-attriblist-ht) 0))
@@ -410,9 +410,9 @@ looked up in `elot-label-lookup-tmp-attriblist-ht'."
 
 (defun elot-label-lookup--lang-suffix-for-id (label id)
   "Return \"@LANG\" when ID has multiple `rdfs:label' language variants.
-  Returns the empty string when ID has at most one variant, or when
-  the winning variant carries no language tag, or when LABEL does
-  not match the winning variant's VALUE."
+Returns the empty string when ID has at most one variant, or when
+the winning variant carries no language tag, or when LABEL does
+not match the winning variant's VALUE."
   (when (and (fboundp 'elot-db-label-variants)
              (fboundp 'elot-db--select-by-language))
     (let ((variants (elot-db-label-variants id)))
@@ -513,7 +513,7 @@ groups show `N matches'.  Singletons whose id has multiple
 
 (defun elot-label-lookup--collect-db ()
   "Return (COLLECTION . ANNOTATOR) for the DB path, or nil when empty.
-  COLLECTION values are plists (:ids :count)."
+COLLECTION values are plists (:ids :count)."
   (when (and (bound-and-true-p elot-active-label-sources)
              (fboundp 'elot-db-all-active-labels))
     (let ((raw (elot-db-all-active-labels elot-active-label-sources)))
@@ -530,7 +530,7 @@ groups show `N matches'.  Singletons whose id has multiple
 
 (defun elot-label-lookup--from-db (&optional flat)
   "Run interactive label lookup backed by the ELOT DB active sources.
-  Two-stage flow; FLAT non-nil forces flat presentation."
+Two-stage flow; FLAT non-nil forces flat presentation."
   (let* ((pair (elot-label-lookup--collect-db)))
     (unless pair
       (user-error "No labelled entities in active ELOT DB sources"))

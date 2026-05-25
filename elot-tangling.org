@@ -704,7 +704,6 @@ Functions that take an ontology AST node and extract specific components (prefix
   Creates a dummy root at level 0 to handle multiple top-level ontologies."
     (let* ((dummy-root (list :level 0 :title "ROOT" :descriptions nil :children nil))
            (stack (list dummy-root)))
-      
       (org-element-map tree 'headline
         (lambda (hl)
           (let ((level (org-element-property :level hl)))

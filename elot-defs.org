@@ -92,9 +92,10 @@ in SPARQL select results.
   this file is loaded more than once (e.g.  byte-compile + load, or
   via several sibling modules).")
 
-  ;; Reset the list on each evaluation so repeated loads do not
-  ;; accumulate duplicate entries.
-  (setq elot-missing-dependencies nil)
+  ;; `cl-pushnew' below prevents duplicate accumulation across
+  ;; repeated loads, so no top-level reset of
+  ;; `elot-missing-dependencies' is needed (and a top-level `setq'
+  ;; would be flagged by package-lint / melpazoid).
   (dolist (pkg '(htmlize omn-mode sparql-mode ob-sparql ob-plantuml))
     (unless (require pkg nil t)
       (cl-pushnew pkg elot-missing-dependencies)))
@@ -1168,11 +1169,11 @@ variable; no prompt, no modal interruption.
   (defcustom elot-toggle-labels-key nil
     "Key sequence bound to `elot-toggle-label-display' in ELOT-relevant buffers.
 ELOT ships with no default keystroke for the labels toggle.
-Single function keys (F5-F9) and `\\=C-c <letter>' are reserved
-for the user, so ELOT does not claim any of them.  Set this
-variable (via \\[customize-variable]) to a string in `kbd'
-notation -- for example \"<f5>\", \"<f9>\", or \"\\=C-c t l\" --
-to install a binding for `elot-toggle-label-display' in
+Single function keys (F5-F9) and user-reserved prefixes are
+left alone by default, so ELOT does not claim any of them.
+Set this variable (via \\[customize-variable]) to a string in
+`kbd' notation -- for example \"<f5>\" or \"<f9>\" -- to install
+a binding for `elot-toggle-label-display' in
 `elot-mode-map' and in the ELOT-managed `*xref*' / `*ELOT
 Describe*' buffers.
 

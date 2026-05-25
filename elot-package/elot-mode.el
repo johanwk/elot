@@ -680,17 +680,17 @@ the older `org-redisplay-inline-images' on earlier versions."
 
 (defvar elot--sparql-advice-installed-p nil
   "Non-nil when ELOT's around-advice on `org-babel-execute:sparql' is active.
-  Managed by `elot-mode--install-sparql-advice' and
-  `elot-mode--uninstall-sparql-advice'.")
+Managed by `elot-mode--install-sparql-advice' and
+`elot-mode--uninstall-sparql-advice'.")
 
 (defvar elot--sparql-advice-buffer-count 0
   "Number of live buffers in which `elot-mode' is currently enabled.
-  When this drops to zero, `elot-mode--uninstall-sparql-advice' removes
-  the global advice on `org-babel-execute:sparql'.")
+When this drops to zero, `elot-mode--uninstall-sparql-advice' removes
+the global advice on `org-babel-execute:sparql'.")
 
 (defun elot-mode--install-sparql-advice ()
   "Install ELOT's around-advice on `org-babel-execute:sparql'.
-  Idempotent: safe to call from every `elot-mode--enable'."
+Idempotent: safe to call from every `elot-mode--enable'."
   (cl-incf elot--sparql-advice-buffer-count)
   (unless elot--sparql-advice-installed-p
     (when (fboundp 'elot--custom-org-babel-execute-sparql)
@@ -712,8 +712,8 @@ Uninstalled when no ELOT buffer is left.  Idempotent."
 
 (defvar elot--xref-globals-installed-p nil
   "Non-nil when ELOT's global xref advice and hooks are installed.
-  Managed by `elot-mode--install-xref-globals' and
-  `elot-mode--uninstall-xref-globals'.")
+Managed by `elot-mode--install-xref-globals' and
+`elot-mode--uninstall-xref-globals'.")
 
 (defvar elot--xref-globals-buffer-count 0
   "Reference count of live ELOT buffers for global xref management.
@@ -724,9 +724,9 @@ ELOT's global xref advice and hooks.  When this drops to zero,
 
 (defun elot-mode--install-xref-globals ()
   "Install ELOT's global xref advice and `xref-after-update-hook' entries.
-  Idempotent: safe to call from every `elot-mode--enable'.  The
-  backing helpers are defined later in this file, so each install
-  is guarded with `fboundp' so that loading order does not matter."
+Idempotent: safe to call from every `elot-mode--enable'.  The
+backing helpers are defined later in this file, so each install
+is guarded with `fboundp' so that loading order does not matter."
   (cl-incf elot--xref-globals-buffer-count)
   (unless elot--xref-globals-installed-p
     (when (fboundp 'elot--capture-slurp)
