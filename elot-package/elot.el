@@ -69,11 +69,25 @@
 (defvar elot-missing-dependencies nil
   "List of missing external dependencies for legacy ELOT features.")
 
+(defvar elot--missing-deps-reported nil
+  "Non-nil once the missing-dependencies hint has been emitted.
+Guards `elot-missing-dependencies' against duplicate reporting when
+this file is loaded more than once (e.g.  byte-compile + load, or
+via several sibling modules).")
+
+;; Reset the list on each evaluation so repeated loads do not
+;; accumulate duplicate entries.
+(setq elot-missing-dependencies nil)
 (dolist (pkg '(htmlize omn-mode sparql-mode ob-sparql ob-plantuml))
   (unless (require pkg nil t)
-    (push pkg elot-missing-dependencies)))
+    (cl-pushnew pkg elot-missing-dependencies)))
 
-(when elot-missing-dependencies
+;; Only emit the message once per Emacs session, and never during
+;; byte-compilation -- the warning is for end users, not for CI logs.
+(when (and elot-missing-dependencies
+           (not elot--missing-deps-reported)
+           (not (bound-and-true-p byte-compile-current-file)))
+  (setq elot--missing-deps-reported t)
   (message "ELOT: Optional dependencies missing: %s. Some features will be disabled."
            (mapconcat #'symbol-name elot-missing-dependencies ", ")))
 ;; src-require ends here

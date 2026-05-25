@@ -902,10 +902,9 @@ Used as a cross-buffer staging variable so that label overlays
 set up in *xref* / *ELOT Describe* buffers can read the slurp
 data captured from the originating ELOT buffer.
 
-A future migration to the ELOT label DB (`elot-db-*' /
-`elot-label-register-source') is tracked in ELOT-DB-PLAN.org;
-until that lands, this variable is part of the supported
-internal API.")
+This variable is part of the supported internal API until a
+future migration to the ELOT label DB (`elot-db-*' /
+`elot-label-register-source') is complete.")
 (defvar-local elot-codelist-ht nil
   "Hashtable holding pairs of curie and label for ELOT label-display.")
 (defvar-local elot-attriblist-ht nil
@@ -944,7 +943,7 @@ during sync are reported but do not break the local HT population."
           (elot--ht-from-plist (elot-codelist-from-slurp elot-slurp)))
     (setq elot-attriblist-ht
           (elot--ht-from-alist (elot-attriblist-from-slurp elot-slurp)))
-    ;; Optional DB sync (Step 1.6): if SQLite is available, try to load
+    ;; Optional DB sync: if SQLite is available, try to load
     ;; the elot-db subsystem on first use, then write the slurp.
     (when (and slurp
                buffer-file-name

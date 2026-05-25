@@ -32,12 +32,10 @@
 ;; functions in TypeScript against `sql.js', sharing the schema
 ;; verbatim.
 ;;
-;; See `ELOT-DB-PLAN.org' (top-level of the repository) for the
-;; authoritative design.  This module implements Steps 1.1, 1.1.1,
-;; and 1.2: the schema (v2, with prefix support), the connection
-;; lifecycle (`elot-db-init', `elot-db-close'), the migration stub
-;; (`elot-db-migrate', including a v1->v2 branch), a small prefix
-;; API (`elot-db-add-prefix', `elot-db-list-prefixes',
+;; The module provides the schema (with prefix support), the
+;; connection lifecycle (`elot-db-init', `elot-db-close'), the
+;; migration handler (`elot-db-migrate'), a small prefix API
+;; (`elot-db-add-prefix', `elot-db-list-prefixes',
 ;; `elot-db-expand-curie', `elot-db-contract-uri'), the two-pass
 ;; label lookup (`elot-db-get-label-any'), plus the read/write
 ;; primitives (`elot-db-update-source', `elot-db-remove-source',
@@ -45,13 +43,12 @@
 ;; `elot-db-source-needs-update-p', `elot-db-get-label',
 ;; `elot-db-get-attr', `elot-db-get-all-attrs').
 ;;
-;; Note: unlike most of ELOT, this file is authored directly as Elisp
-;; rather than tangled from an Org document -- see the Decisions Log
-;; in `ELOT-DB-PLAN.org' for rationale.
+;; Unlike most of ELOT, this file is authored directly as Elisp
+;; rather than tangled from an Org document.
 ;;
 ;; The canonical schema DDL lives in the sibling file `schema.sql',
-;; shared verbatim with the VS Code / CLI port (Step 2.1 of the
-;; plan).  `elot-db-init' reads it on first use; an embedded copy
+;; shared verbatim with the VS Code / CLI port.  `elot-db-init'
+;; reads it on first use; an embedded copy
 ;; (`elot-db--schema-ddl-embedded') is kept as a defensive fallback
 ;; and test-pinned byte-for-byte to the on-disk file.
 ;;
@@ -105,13 +102,12 @@ corresponding migration branch.")
 (defvar elot-db nil
   "Open SQLite connection used by the `elot-db-*' API, or nil.")
 
-(defvar elot-active-label-sources nil
+(defvar-local elot-active-label-sources nil
   "Buffer-local ordered list of active label sources.
-Each entry is a (SOURCE DATA-SOURCE) pair; DATA-SOURCE is nil (or
+Each entry is a \(SOURCE DATA-SOURCE) pair; DATA-SOURCE is nil (or
 the empty string) for non-SPARQL sources.  Earlier entries have
-higher priority.  Wired up in Step 1.5; defined here so that
-Step 1.2 lookup primitives have a stable default to fall back on.")
-(make-variable-buffer-local 'elot-active-label-sources)
+higher priority.  Provides a stable default for the label-lookup
+primitives when no project-local configuration is active.")
 ;;;###autoload
 (put 'elot-active-label-sources 'safe-local-variable
      (lambda (v)
@@ -124,7 +120,7 @@ Step 1.2 lookup primitives have a stable default to fall back on.")
                                  (stringp (nth 1 e)))))
                       v))))
 
-;;;; Language preferences (Step 1.16.1)
+;;;; Language preferences
 
 (defcustom elot-preferred-languages nil
   "Ordered list of preferred language tags for labels and annotations.
@@ -155,8 +151,7 @@ Consulted by `elot-db-get-attr', `elot-db-get-all-attrs',
 `elot-db-get-label', and `elot-db-all-active-labels' via
 `elot-db--pick-value-by-lang' / `elot-db--select-by-language'.
 Slurp-path readers in ELOT Org buffers are intentionally not
-affected (Step 1.16 scope decision).  See also
-`README-global-label-display.org' for examples."
+affected.  See also `README-global-label-display.org' for examples."
   :type '(repeat (choice (const :tag "Untagged literal" :untagged)
                          (string :tag "Language tag (e.g. \"en\")")))
   :group 'elot-db)
@@ -297,11 +292,11 @@ CREATE INDEX IF NOT EXISTS idx_prefixes_expansion
 CREATE INDEX IF NOT EXISTS idx_attrs_prop_lang
   ON attributes(prop, lang);
 "
-  "Canonical DDL (embedded fallback copy) applied by `elot-db-init'
-when the sibling `schema.sql' file cannot be located.  Schema v3.
+  "Canonical DDL applied by `elot-db-init' as an embedded fallback.
+Used when the sibling `schema.sql' file cannot be located; schema v3.
 The authoritative on-disk copy is `elot-package/schema.sql' and is
-shared verbatim with the VS Code / CLI port (Step 2.1).  The
-embedded copy exists purely as a defensive fallback; a test pins
+shared verbatim with the VS Code / CLI port.  The embedded copy
+exists purely as a defensive fallback; a test pins
 the two together byte-for-byte so drift is caught at test time.")
 
 (defun elot-db--schema-sql-path ()
@@ -417,8 +412,8 @@ if they skip re-applying the schema.  Bumps the stored version."
 
 (defun elot-db-migrate (&optional db)
   "Reconcile the stored schema version with `elot-db-schema-version'.
-Handles the v1 -> v2 (Step 1.1.1) and v2 -> v3 (Step 1.16.2)
-transitions automatically, including the combined v1 -> v3 path.
+Handles the v1 -> v2 and v2 -> v3 transitions automatically,
+including the combined v1 -> v3 path.
 For any other mismatch, signal a `user-error' rather than silently
 rewrite the user's cache.  DB defaults to `elot-db'."
   (let* ((db (or db elot-db))
@@ -427,7 +422,7 @@ rewrite the user's cache.  DB defaults to `elot-db'."
     (cond
      ((null stored)
       (user-error
-       "elot-db: schema_version table is empty; database looks corrupt"))
+       "Elot-db: schema_version table is empty; database looks corrupt"))
      ((equal stored elot-db-schema-version)
       stored)
      ((and (equal stored 1) (equal elot-db-schema-version 3))
@@ -442,7 +437,7 @@ rewrite the user's cache.  DB defaults to `elot-db'."
       elot-db-schema-version)
      (t
       (user-error
-       "elot-db: schema version mismatch (stored %s, code %s); \
+       "Elot-db: schema version mismatch (stored %s, code %s); \
 no automatic migration path"
        stored elot-db-schema-version)))))
 
@@ -453,10 +448,10 @@ PATH overrides `elot-db-file' (useful for tests).  On a fresh database,
 the schema is created and `schema_version' is seeded with
 `elot-db-schema-version'.  On a pre-existing database,
 `elot-db-migrate' reconciles the stored version; a supported transition
-(e.g. v1 -> v2) is applied automatically, any other mismatch errors.
+\(e.g. v1 -> v2) is applied automatically, any other mismatch errors.
 Returns the open connection and stores it in `elot-db'."
   (unless (fboundp 'sqlite-open)
-    (error "elot-db: this Emacs build has no SQLite support"))
+    (error "Elot-db: this Emacs build has no SQLite support"))
   (let* ((file (or path elot-db-file))
          (db   (sqlite-open file))
          (ok   nil))
@@ -500,7 +495,7 @@ WHERE type='table' AND name='schema_version' LIMIT 1"))
 
 
 ;;;; -------------------------------------------------------------------
-;;;; Step 1.1.1 subtask B: Prefix API
+;;;; Prefix API
 ;;;; -------------------------------------------------------------------
 
 (defun elot-db--normalize-ds (data-source)
@@ -545,7 +540,7 @@ Each returned element is a list (SOURCE DATA-SOURCE PREFIX EXPANSION)."
 (defun elot-db--expansion-in-sources (prefix active-sources)
   "Look up PREFIX's expansion in ACTIVE-SOURCES (in priority order).
 Return the first match or nil.  ACTIVE-SOURCES entries are
-(SOURCE DATA-SOURCE) pairs."
+\(SOURCE DATA-SOURCE) pairs."
   (cl-loop
    for entry in active-sources
    for src = (nth 0 entry)
@@ -618,7 +613,7 @@ prefix of URI."
 
 
 ;;;; -------------------------------------------------------------------
-;;;; Step 1.1.1 subtask C: Two-pass label lookup
+;;;; Two-pass label lookup
 ;;;; -------------------------------------------------------------------
 
 (defun elot-db--looks-like-uri-p (s)
@@ -634,7 +629,7 @@ prefix of URI."
 (defun elot-db--label-in-sources (id active-sources)
   "Return label for ID by trying each entry in ACTIVE-SOURCES in order.
 First hit wins; returns nil if no source has ID.  Entries are
-(SOURCE DATA-SOURCE) pairs."
+\(SOURCE DATA-SOURCE) pairs."
   (cl-loop
    for entry in active-sources
    for src = (nth 0 entry)
@@ -673,7 +668,7 @@ ACTIVE-SOURCES defaults to the buffer-local `elot-active-label-sources'."
 
 
 ;;;; -------------------------------------------------------------------
-;;;; Step 1.2 subtask A: write path
+;;;; Write path
 ;;;; -------------------------------------------------------------------
 
 (defun elot-db-source-exists-p (source &optional data-source)
@@ -734,8 +729,8 @@ written to `entities.kind' (the `:kind' pair is *not* written to
 `attributes').
 
 A PLIST value may also be a two-element list (VALUE LANG) carrying
-an explicit language tag; in that case LANG is written to the new
-`attributes.lang' column (Step 1.16.3).  Bare-string values write
+an explicit language tag; in that case LANG is written to the
+`attributes.lang' column.  Bare-string values write
 `lang = \='\='''.  DATA-SOURCE is nil or the empty-string sentinel
 for non-SPARQL sources; a local file path or endpoint URL for
 SPARQL sources.  TYPE is e.g. \"org\", \"csv\", \"tsv\", \"ttl\",
@@ -796,9 +791,9 @@ and DATA is ingested.  Returns the number of entity rows written."
                      (label (nth 0 cell))
                      (plist (nth 1 cell))
                      (kind  (or (plist-get plist :kind) "unknown"))
-                     ;; Step 1.16 fix: when the plist carries
-                     ;; `rdfs:label' rows with language info (emitted
-                     ;; by multi-row-per-id ingestors like the ROBOT
+                     ;; When the plist carries `rdfs:label' rows
+                     ;; with language info (emitted by
+                     ;; multi-row-per-id ingestors like the ROBOT
                      ;; TTL path), derive the denormalised
                      ;; `entities.label' via the language picker
                      ;; instead of taking the arbitrary first-seen
@@ -840,7 +835,7 @@ and DATA is ingested.  Returns the number of entity rows written."
 
 
 ;;;; -------------------------------------------------------------------
-;;;; Step 1.2 subtask B: priority-aware read path
+;;;; Priority-aware read path
 ;;;; -------------------------------------------------------------------
 
 (defun elot-db--active-or-default (active-sources)
@@ -852,11 +847,11 @@ and DATA is ingested.  Returns the number of entity rows written."
 ACTIVE-SOURCES defaults to the buffer-local `elot-active-label-sources'.
 Returns nil if ACTIVE-SOURCES is empty or no active source has ID.
 
-Step 1.16.5: when the winning source has `rdfs:label' rows in the
+When the winning source has `rdfs:label' rows in the
 `attributes' table, they are consulted first and resolved via
 `elot-db--pick-value-by-lang' against `elot-preferred-languages'.
 Otherwise the denormalised `entities.label' column is returned
-(the default ingest-time label, which itself reflects the default
+\(the default ingest-time label, which itself reflects the default
 language policy when the ingestor emitted multiple variants)."
   (let ((sources (elot-db--active-or-default active-sources)))
     (when sources
@@ -884,10 +879,10 @@ language policy when the ingestor emitted multiple variants)."
 
 (defun elot-db--pick-value-by-lang (rows &optional prefs)
   "Pick one VALUE from ROWS, a list of (VALUE . LANG) cons cells.
-Step 1.16.5: delegates to `elot-db--select-by-language', which
-consults PREFS (or, when nil, `elot-preferred-languages' via
+Delegates to `elot-db--select-by-language', which consults PREFS
+\(or, when nil, `elot-preferred-languages' via
 `elot-db--effective-language-prefs').  Returns the VALUE string
-(unwrapped from the (VALUE . LANG) cons) of the winning row, or
+\(unwrapped from the (VALUE . LANG) cons) of the winning row, or
 nil when ROWS is empty."
   (car (elot-db--select-by-language rows prefs)))
 
@@ -896,7 +891,7 @@ nil when ROWS is empty."
 First active source that has a matching attribute row wins.  If a
 given source has multiple attribute rows for the same (ID, PROP),
 one is chosen via `elot-db--pick-value-by-lang', which consults
-`elot-preferred-languages' (Step 1.16.5)."
+`elot-preferred-languages'."
   (let ((sources (elot-db--active-or-default active-sources)))
     (when sources
       (cl-loop
@@ -916,7 +911,7 @@ one is chosen via `elot-db--pick-value-by-lang', which consults
 (defun elot-db-source-entity-count (source &optional data-source)
   "Return the number of `entities' rows for (SOURCE, DATA-SOURCE).
 DATA-SOURCE defaults to the empty-string sentinel.  Used by the
-Step 1.4 source-listing UI."
+source-listing UI."
   (caar (sqlite-select
          elot-db
          "SELECT COUNT(*) FROM entities
@@ -932,15 +927,15 @@ lower-priority sources are not merged (v1 policy: a single source
 owns an entity's attribute view).  Returns nil when no active
 source has rows for ID.
 
-Step 1.14: the returned plist carries an additional
-`:source-origin' keyword whose value is the cons cell
+The returned plist carries an additional `:source-origin'
+keyword whose value is the cons cell
 \(SOURCE . DATA-SOURCE) identifying the winning source.  Callers
 that look up only string-keyed attributes (using `string=' as
 predicate, as ELOT's formatters do) are unaffected; the extra
 entry is a no-op for them.
 
-Step 1.16.5: for each prop, all rows in the winning source are
-grouped and `elot-db--pick-value-by-lang' collapses them to a
+For each prop, all rows in the winning source are grouped and
+`elot-db--pick-value-by-lang' collapses them to a
 single value by consulting `elot-preferred-languages'.  For data
 with no language-tagged rows, behaviour is identical to the
 pre-widening path (the lone untagged row wins trivially)."
@@ -974,7 +969,7 @@ pre-widening path (the lone untagged row wins trivially)."
 
 
 ;;;; -------------------------------------------------------------------
-;;;; Step 1.7: DB-driven font-lock support (all-active-ids)
+;;;; DB-driven font-lock support (all-active-ids)
 ;;;; -------------------------------------------------------------------
 
 (defun elot-db-all-active-ids (&optional active-sources include-curies)
@@ -982,7 +977,7 @@ pre-widening path (the lone untagged row wins trivially)."
 ACTIVE-SOURCES defaults to the buffer-local `elot-active-label-sources'.
 Order is not significant; the result is suitable as input to
 `regexp-opt' for building a DB-driven font-lock matcher in
-`elot-global-label-display-mode' (Step 1.7).  Returns nil if no
+`elot-global-label-display-mode'.  Returns nil if no
 active sources are set or none contain any entities.
 
 When INCLUDE-CURIES is non-nil, each id that looks like a full
@@ -990,7 +985,7 @@ URI is additionally contracted via `elot-db-contract-uri'
 against the active sources' prefix tables + globals, and every
 resulting CURIE form is added to the output.  This is what lets
 `elot-global-label-display-mode' match CURIE-form tokens in
-buffers whose stored ids are full IRIs (Step 1.7.3).  IRI forms
+buffers whose stored ids are full IRIs.  IRI forms
 come first in the returned list for deterministic fallback
 behaviour; duplicates are removed with `equal' semantics."
   (let ((sources (elot-db--active-or-default active-sources)))
@@ -1022,7 +1017,7 @@ behaviour; duplicates are removed with `equal' semantics."
         (nreverse out)))))
 
 ;;;; -------------------------------------------------------------------
-;;;; Step 1.12 Item A: DB-driven label collection for elot-label-lookup
+;;;; DB-driven label collection for elot-label-lookup
 ;;;; -------------------------------------------------------------------
 
 (defun elot-db-all-active-labels (&optional active-sources)
@@ -1031,16 +1026,16 @@ ACTIVE-SOURCES defaults to the buffer-local `elot-active-label-sources'.
 
 Sources are consulted in priority order.  Within a single winning
 source, /all/ ids carrying the label are preserved in the returned
-list (Step 1.15: industrial-asset files routinely have 20+
-identifiers sharing a single label like \"thimble B\").  When two
+list (industrial-asset files routinely have 20+ identifiers
+sharing a single label like \"thimble B\").  When two
 sources share a label, the higher-priority source wins - all of
 its ids are kept, and the lower-priority source's ids for that
 label are ignored silently.  First-source-wins, consistent with
 `elot-db-get-label'.  Returns an empty hashtable (never nil) when
 no active sources are set or none have labelled entities.
 
-Step 1.16.5: when a source carries `rdfs:label' attribute rows
-for an id, `elot-db--pick-value-by-lang' (against
+When a source carries `rdfs:label' attribute rows for an id,
+`elot-db--pick-value-by-lang' (against
 `elot-preferred-languages') chooses the label key.  Ids without
 such rows fall back to the denormalised `entities.label' column.
 
@@ -1096,6 +1091,7 @@ for a direct lookup."
 
 (defun elot-db-ids-for-label (label &optional active-sources)
   "Return the list of ids carrying LABEL in the winning active source.
+ACTIVE-SOURCES defaults to the buffer-local `elot-active-label-sources'.
 Convenience wrapper around `elot-db-all-active-labels'.  Returns
 nil when LABEL is unknown."
   (gethash label (elot-db-all-active-labels active-sources)))
@@ -1108,9 +1104,9 @@ order) that has any `rdfs:label' attribute rows for ID wins; all
 of its variants are returned.  Returns nil when ID has no such
 rows in any active source.
 
-Step 1.16.8 helper: used by the completion-display disambiguator
-to surface `@LANG' when a singleton label has multiple language
-variants in the winning source."
+Used by the completion-display disambiguator to surface `@LANG'
+when a singleton label has multiple language variants in the
+winning source."
   (let ((sources (elot-db--active-or-default active-sources)))
     (when sources
       (cl-loop

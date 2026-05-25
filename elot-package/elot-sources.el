@@ -24,18 +24,18 @@
 
 ;;; Commentary:
 
-;; Step 1.3 of the ELOT global-slurp plan: one parser per source
-;; type, all producing the common (ID LABEL PLIST) slurp shape
-;; consumed by `elot-db-update-source'.  No DB writes happen here;
-;; that wiring is Step 1.4.
+;; One parser per source type, all producing the common
+;; (ID LABEL PLIST) slurp shape consumed by
+;; `elot-db-update-source'.  No DB writes happen here; that
+;; wiring lives in the source-registration UI below.
 ;;
-;; Supported formats (v1):
+;; Supported formats:
 ;;
 ;;   org   -- ELOT Org document, via `elot-build-slurp'
-;;   csv   -- header-row-aware flat dict (UC3 primary path)
-;;   tsv   -- header-row-aware flat dict (UC3 primary path)
+;;   csv   -- header-row-aware flat dict
+;;   tsv   -- header-row-aware flat dict
 ;;   json  -- flat ({"id": "label"}) or nested
-;;            ({"id": {"label": ..., "prop": ...}}) dict (UC3)
+;;            ({"id": {"label": ..., "prop": ...}}) dict
 ;;   ttl   -- Turtle via ROBOT + label SPARQL query
 ;;   rq    -- SPARQL query against a local file or endpoint, via
 ;;            ROBOT, with CSV result caching under .elot-cache/
@@ -43,9 +43,8 @@
 ;; The dispatcher maps file extensions to parsers via the
 ;; user-extensible `elot-source-supported-extensions' defcustom.
 ;;
-;; See ELOT-DB-PLAN.org (Step 1.3 and the UC3 subsection) for the
-;; authoritative design.  Like `elot-db.el', this file is authored
-;; directly as Elisp rather than tangled from an Org document.
+;; Like `elot-db.el', this file is authored directly as Elisp
+;; rather than tangled from an Org document.
 
 ;;; Code:
 
@@ -234,7 +233,7 @@ returned with surrounding quotes stripped."
   "Parse delimited FILE into slurp entries.
 Common CSV/TSV parser; SEP is a single-character separator string.
 
-Recognises two language-tag conventions (Step 1.16.6):
+Recognises two language-tag conventions:
 
 - A header named exactly `lang' carries a row-level BCP-47 tag
   that attaches to the row's primary `rdfs:label' (emitted as a
@@ -291,7 +290,7 @@ convention ingest exactly as in earlier versions."
                                  (not (assoc i label-at-cols))) do
                        (setq plist (nconc plist (list h v))))
               ;; Row-level lang attaches to the primary label.  When
-              ;; the CSV has a `lang' column (Step 1.16.6), emit an
+              ;; the CSV has a `lang' column, emit an
               ;; `rdfs:label' attribute row for every non-empty
               ;; label -- including untagged rows (lang = "") -- so
               ;; the language-aware picker can see the full set of
@@ -398,7 +397,7 @@ JSON."
     (nreverse result)))
 
 ;;;; ------------------------------------------------------------------
-;;;; Step 1.7.3 subtask A: prefix harvest for TTL / RQ
+;;;; Prefix harvest for TTL / RQ
 ;;;; ------------------------------------------------------------------
 
 (defun elot-source--harvest-prefixes (file)
@@ -462,7 +461,7 @@ variables become attribute plist entries (column name -> key).
 The default query projects a third column `?lang' carrying the
 BCP-47 language tag of each label (empty string for untagged
 literals).  The CSV parser recognises the `lang' column (see
-`elot-source--parse-separated', Step 1.16.6) and writes the tag
+`elot-source--parse-separated') and writes the tag
 into `attributes.lang'.  Users who have customised this defcustom
 keep their previous (language-less) behaviour until they opt in
 by adding `(LANG(?label) AS ?lang)' to their projection."
@@ -482,7 +481,7 @@ as part of an extended result shape
 `elot-label-register-source' can thread them through to
 `elot-db-add-prefix'.  This is what lets
 `elot-global-label-display-mode' match CURIE-form tokens in a
-buffer whose ids are stored as full IRIs (Step 1.7.3)."
+buffer whose ids are stored as full IRIs."
   (unless (elot-robot-available-p)
     (user-error
      "elot-sources: ROBOT not available; set `elot-robot-jar-path'"))
@@ -587,7 +586,7 @@ invoked.  On empty results or executor failure, the existing
 cache is preserved.
 
 Returns the extended result shape `(:entries ENTRIES :prefixes
-PREFIXES)' (see Step 1.7.3).  Prefixes are harvested from
+PREFIXES)'.  Prefixes are harvested from
 QUERY-FILE's own PREFIX lines, since the cached CSV does not
 carry the source TTL's declarations."
   (let* ((cache (elot-source-rq-cache-path query-file data-source))
@@ -620,14 +619,13 @@ carry the source TTL's declarations."
           :prefixes (elot-source--harvest-prefixes query-file))))
 
 ;;;; ------------------------------------------------------------------
-;;;; Step 1.4 - Source registration UI
+;;;; Source registration UI
 ;;;; ------------------------------------------------------------------
 
-;; Thin glue layer over `elot-source-parse' (Step 1.3) and
-;; `elot-db-*' (Steps 1.1 / 1.1.1 / 1.2).  Provides user-facing
-;; commands for managing the contents of the label cache.  No new
-;; persistent state is introduced here; everything is derived from
-;; the DB.
+;; Thin glue layer over `elot-source-parse' and the `elot-db-*'
+;; primitives.  Provides user-facing commands for managing the
+;; contents of the label cache.  No new persistent state is
+;; introduced here; everything is derived from the DB.
 
 (require 'tabulated-list)
 (require 'elot-db)
@@ -715,7 +713,7 @@ successful ingest.  Signals on parser / DB errors.
 If the parser returns the extended shape
 `(:entries ENTRIES :prefixes PREFIXES)', the PREFIXES alist is
 written to the `prefixes' table via `elot-db-add-prefix' scoped
-to (SOURCE, DATA-SOURCE).  Introduced in Step 1.7.3."
+to (SOURCE, DATA-SOURCE)."
   (elot-source--ensure-db)
   (let* ((ds-norm (elot-source--normalize-data-source data-source))
          (fresh   (and (not force)
@@ -931,12 +929,12 @@ Signals `user-error' if point is not on an entry."
       (elot-label-list-sources-refresh))))
 
 
-;;;; Step 1.5 - per-project active-sources configuration
+;;;; Per-project active-sources configuration
 
 ;; The buffer-local `elot-active-label-sources' variable and its
-;; safe-local-variable predicate are defined in elot-db.el (so that
-;; the Step 1.2 read primitives have a stable default).  The commands
-;; below manage that list and, optionally, persist changes to
+;; safe-local-variable predicate are defined in elot-db.el so that
+;; the read primitives have a stable default.  The commands below
+;; manage that list and, optionally, persist changes to
 ;; `.dir-locals.el' via `add-dir-local-variable'.
 
 (defun elot-label--normalize-entry (entry)
@@ -1119,7 +1117,7 @@ updated list to `.dir-locals.el'."
     new))
 
 ;;;; ------------------------------------------------------------------
-;;;; Step 1.7.2 - Active-sources priority UI
+;;;; Active-sources priority UI
 ;;;; ------------------------------------------------------------------
 
 (defun elot-label--move-entry (entry delta)

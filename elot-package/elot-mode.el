@@ -1031,8 +1031,7 @@ ELOT buffer.  Captures:
 
 ;; The advice on `xref-find-references' that runs `elot--capture-slurp'
 ;; before xref is installed by `elot-mode--install-xref-globals' and
-;; removed by `elot-mode--uninstall-xref-globals'; see Milestone 3
-;; Step 3.5 of ELPA-SUBMISSION-PLAN.org.
+;; removed by `elot-mode--uninstall-xref-globals'.
 
 (defun elot--xref-label-overlay-setup ()
   "Enable label display in the *xref* buffer using DB-backed sources.

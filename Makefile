@@ -15,6 +15,18 @@
 #                   the no-native-compile file-local cookie.
 #   test          - delegate to test/Makefile (full ERT suite).
 #   smoke         - load elot-mode in a fresh batch Emacs.
+#   package-lint  - run package-lint-batch-and-exit over elot*.el with
+#                   package-lint-main-file set to elot.el (matches the
+#                   MELPA reviewer's invocation).  Installs package-lint
+#                   into a throwaway elpa dir on first run.
+#                   NOTE: this target exits non-zero whenever package-lint
+#                   reports ANY issue, including informational warnings.
+#                   Two `with-eval-after-load' warnings are expected and
+#                   intentional (cross-module load-order bridges in
+#                   elot-mode.el and elot-label-display.el, both
+#                   documented with NOTE comments in source and waved
+#                   through by the MELPA reviewer).  Read the output
+#                   rather than relying on the exit status.
 #   baseline      - capture the Baseline files described in
 #                   ELPA-SUBMISSION-PLAN.org Steps B.1-B.3 under /tmp/.
 #   clean         - remove .elc files left in elot-package/.
@@ -40,7 +52,7 @@ SMOKE_LOG       := $(STABLE_LOG_DIR)/smoke.log
 
 .PHONY: all stable-check byte-compile native-compile test smoke baseline \
         baseline-warnings baseline-tests baseline-symbols \
-        clean help
+        package-lint clean help
 
 all: help
 
@@ -119,6 +131,41 @@ smoke:
 	  --eval "(message \"OK: elot loaded; elot-mode bound\")"
 
 ## ---------------------------------------------------------------------------
+## package-lint (MELPA reviewer's check)
+## ---------------------------------------------------------------------------
+
+# Throwaway elpa dir so package-lint installation does not pollute the
+# user's ~/.emacs.d/elpa.  Re-used across runs (refresh only on miss).
+PKG_LINT_ELPA := $(STABLE_LOG_DIR)/package-lint-elpa
+
+# NOTE on exit status: `package-lint-batch-and-exit' exits 1 whenever
+# ANY issue is reported, including informational warnings.  Two
+# `with-eval-after-load' warnings are expected here (intentional
+# cross-module load-order bridges in elot-mode.el and
+# elot-label-display.el).  The trailing `echo' / `true' below prints a
+# reminder and forces a clean exit so `make package-lint' succeeds when
+# only the two known warnings are present.  Inspect the output above to
+# confirm no NEW warnings appeared.
+package-lint:
+	@mkdir -p $(STABLE_LOG_DIR)
+	-$(EMACS) -Q --batch \
+	  -L $(PACKAGE_DIR) \
+	  --eval "(setq package-user-dir (expand-file-name \"$(PKG_LINT_ELPA)\" default-directory))" \
+	  --eval "(require 'package)" \
+	  --eval "(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\") t)" \
+	  --eval "(package-initialize)" \
+	  --eval "(unless (package-installed-p 'package-lint) (package-refresh-contents) (package-install 'package-lint))" \
+	  --eval "(require 'package-lint)" \
+	  --eval "(setq package-lint-main-file \"$(PACKAGE_DIR)/elot.el\")" \
+	  -f package-lint-batch-and-exit \
+	  $(PACKAGE_DIR)/elot*.el
+	@echo ""
+	@echo "NOTE: package-lint exits non-zero whenever it reports ANY issue."
+	@echo "      Two 'with-eval-after-load' warnings are EXPECTED and intentional"
+	@echo "      (cross-module load-order bridges; reviewer waved them through)."
+	@echo "      Inspect the output above; only NEW issues need action."
+
+## ---------------------------------------------------------------------------
 ## Baseline capture (run once, before Milestone 1; see Step B.1-B.3).
 ## ---------------------------------------------------------------------------
 
@@ -184,6 +231,8 @@ help:
 	@echo "  make test           full ERT suite (delegates to test/Makefile)"
 	@echo "  make smoke          (require 'elot) in a fresh batch Emacs;"
 	@echo "                      asserts elot-mode is bound as a side effect"
+	@echo "  make package-lint   run package-lint over $(PACKAGE_DIR)/elot*.el"
+	@echo "                      with package-lint-main-file=elot.el"
 	@echo "  make baseline       capture Step B.1-B.3 baselines under /tmp/"
 	@echo "                      (override with BASELINE_DIR=...)"
 	@echo "  make clean          remove .elc files in $(PACKAGE_DIR)"

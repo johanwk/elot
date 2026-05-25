@@ -894,11 +894,10 @@ Scans the hierarchy for nodes with `:prefixdefs \"yes\"' and adds their
 
 *** Make prefix blocks for omn, sparql, ttl
 This helper returns a textual block of prefix declarations in
-Manchester (=omn=), SPARQL, or Turtle syntax.  It originally lived
-in =elot.el= (block =src-prefix-blocks= in =elot-defs.org=) and
-was relocated here in Milestone 2 Step 2.1 of the ELPA submission
-plan: it is needed by =elot-label-display.el= and by the SPARQL
-advice in =elot.el=, both of which already =(require 'elot-tangle)=.
+Manchester (=omn=), SPARQL, or Turtle syntax.  It lives here
+(rather than in =elot.el=) because it is needed by
+=elot-label-display.el= and by the SPARQL advice in =elot.el=,
+both of which already =(require 'elot-tangle)=.
 #+name: src-prefix-blocks
 #+begin_src emacs-lisp
 (defun elot-prefix-block-from-alist (prefixes format)
@@ -1086,10 +1085,9 @@ for fontification and lookup.
   set up in *xref* / *ELOT Describe* buffers can read the slurp
   data captured from the originating ELOT buffer.
 
-  A future migration to the ELOT label DB (`elot-db-*' /
-  `elot-label-register-source') is tracked in ELOT-DB-PLAN.org;
-  until that lands, this variable is part of the supported
-  internal API.")
+  This variable is part of the supported internal API until a
+  future migration to the ELOT label DB (`elot-db-*' /
+  `elot-label-register-source') is complete.")
   (defvar-local elot-codelist-ht nil
     "Hashtable holding pairs of curie and label for ELOT label-display.")
   (defvar-local elot-attriblist-ht nil
@@ -1132,7 +1130,7 @@ The following simply replaces ~elot-slurp-entities~ with ~elot-build-slurp~, and
             (elot--ht-from-plist (elot-codelist-from-slurp elot-slurp)))
       (setq elot-attriblist-ht
             (elot--ht-from-alist (elot-attriblist-from-slurp elot-slurp)))
-      ;; Optional DB sync (Step 1.6): if SQLite is available, try to load
+      ;; Optional DB sync: if SQLite is available, try to load
       ;; the elot-db subsystem on first use, then write the slurp.
       (when (and slurp
                  buffer-file-name

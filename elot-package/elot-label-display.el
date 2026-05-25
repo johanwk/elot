@@ -412,7 +412,7 @@ looked up in `elot-label-lookup-tmp-attriblist-ht'."
   "Return \"@LANG\" when ID has multiple `rdfs:label' language variants.
   Returns the empty string when ID has at most one variant, or when
   the winning variant carries no language tag, or when LABEL does
-  not match the winning variant's VALUE.  Step 1.16.8 cosmetic."
+  not match the winning variant's VALUE."
   (when (and (fboundp 'elot-db-label-variants)
              (fboundp 'elot-db--select-by-language))
     (let ((variants (elot-db-label-variants id)))
@@ -429,8 +429,8 @@ looked up in `elot-label-lookup-tmp-attriblist-ht'."
   "Annotation function for `elot-label-lookup--from-db' (stage 1) for LABEL.
 Values in `elot-label-lookup-tmp-attriblist-ht' are plists
 \(:ids IDS :count N).  Singletons get full attribute annotations;
-groups show `N matches'.  Step 1.16.8: singletons whose id has
-multiple `rdfs:label' language variants get an `@LANG' marker."
+groups show `N matches'.  Singletons whose id has multiple
+`rdfs:label' language variants get an `@LANG' marker."
   (let* ((entry (gethash label elot-label-lookup-tmp-attriblist-ht))
          (ids   (plist-get entry :ids))
          (count (or (plist-get entry :count) (length ids))))
@@ -530,7 +530,7 @@ multiple `rdfs:label' language variants get an `@LANG' marker."
 
 (defun elot-label-lookup--from-db (&optional flat)
   "Run interactive label lookup backed by the ELOT DB active sources.
-  Two-stage flow; FLAT non-nil forces flat presentation (Step 1.15)."
+  Two-stage flow; FLAT non-nil forces flat presentation."
   (let* ((pair (elot-label-lookup--collect-db)))
     (unless pair
       (user-error "No labelled entities in active ELOT DB sources"))
@@ -715,7 +715,7 @@ HT is the label-to-entry hash table built by the caller."
 
 (defun elot-label-lookup--from-union (&optional flat)
   "Run interactive label lookup over the union of local + external sources.
-FLAT non-nil forces flat presentation on the external path (Step 1.15)."
+FLAT non-nil forces flat presentation on the external path."
   (let* ((local-pair    (elot-label-lookup--collect-attriblist))
          (external-pair (elot-label-lookup--collect-db)))
     (cond
@@ -761,8 +761,8 @@ FLAT non-nil forces flat presentation on the external path (Step 1.15)."
 ARG is the raw prefix argument: a single `\\[universal-argument]'
 pins the scope to `local'; a double
 `\\[universal-argument] \\[universal-argument]' forces flat
-presentation (Step 1.15) where multi-id labels are flattened into
-one `completing-read' with disambiguating suffixes, skipping the
+presentation, where multi-id labels are flattened into one
+`completing-read' with disambiguating suffixes, skipping the
 two-stage picker.
 
 Candidates are otherwise selected per `elot-label-lookup-scope'
@@ -803,12 +803,12 @@ to external unambiguously."
       (call-interactively #'elot-label-lookup)))
 
 ;;;; -------------------------------------------------------------------
-  ;;;; Step 1.14: Attribute-driven eldoc / hover (Tier 1 = eldoc backend)
+  ;;;; Attribute-driven eldoc / hover (eldoc backend)
   ;;;; -------------------------------------------------------------------
   ;;
   ;; The `elot-global-label-display-mode' label overlay answers the
-  ;; question "what does this id mean" one word at a time.  Tier 1 of
-  ;; Step 1.14 surfaces the /next/ level of detail (label, rdf:type,
+  ;; question "what does this id mean" one word at a time.  This
+  ;; backend surfaces the /next/ level of detail (label, rdf:type,
   ;; definition, source provenance) without leaving the buffer, as a
   ;; one-line echo-area summary driven by eldoc.  The implementation is
   ;; deliberately zero-ceremony: it registers a buffer-local backend on
@@ -816,7 +816,7 @@ to external unambiguously."
   ;;
   ;; In ELOT Org buffers, the slurp path (`elot-codelist-ht' /
   ;; `elot-attriblist-ht', set up by `elot-label-display-setup') is
-  ;; preferred over the DB, mirroring the Step 1.12 dispatcher ordering.
+  ;; preferred over the DB, mirroring the dispatcher ordering.
 
   (declare-function elot-db-expand-curie  "elot-db" (curie &optional active-sources))
   (declare-function elot-db-get-label-any "elot-db" (token &optional active-sources))
@@ -908,7 +908,7 @@ to external unambiguously."
     "Compose an attribute summary for ID from the ELOT DB, or nil.
   Tries ID as-is; retries via `elot-db-expand-curie' / `elot-db-contract-uri'
   on miss.  Uses the `:source-origin' entry added by
-  `elot-db-get-all-attrs' (Step 1.14) for the provenance marker."
+  `elot-db-get-all-attrs' for the provenance marker."
     (when (and (bound-and-true-p elot-active-label-sources)
                (fboundp 'elot-db-get-all-attrs))
       (let* ((attrs (ignore-errors
@@ -968,7 +968,7 @@ to external unambiguously."
               (elot--summary-from-db id))))))
 
   ;;;; -------------------------------------------------------------------
-  ;;;; Step 1.7: Activation for non-ELOT buffers
+  ;;;; Activation for non-ELOT buffers
   ;;;; -------------------------------------------------------------------
   ;;
   ;; `elot-global-label-display-mode' is a general-purpose buffer-local
@@ -990,8 +990,7 @@ to external unambiguously."
   ;;
   ;; Scope limit (v1): matching is literal tokens only.  No capture
   ;; groups, no per-source regex templates, no partial-string
-  ;; substitution inside larger tokens.  See the Decisions Log in
-  ;; ELOT-DB-PLAN.org.
+  ;; substitution inside larger tokens.
 
   (declare-function elot-db-all-active-ids "elot-db"
                     (&optional active-sources include-curies))
@@ -1000,7 +999,7 @@ to external unambiguously."
   (defcustom elot-global-label-display-max-ids 10000
     "Soft cap on the number of ids fed to `regexp-opt' by the global mode.
   When `elot-db-all-active-ids' (augmented with CURIE contractions
-  in Step 1.7.3) exceeds this value, `elot-global--install' logs a
+  in `elot-db-all-active-ids') exceeds this value, `elot-global--install' logs a
   warning and installs no matcher; the mode itself stays enabled so
   the toggle UX remains consistent.  Set to nil to disable the cap."
     :type '(choice (integer :tag "Maximum id count")
@@ -1103,12 +1102,12 @@ it without re-tokenising the buffer.
 
 The matcher body is wrapped in `condition-case' so a failing
 lookup cannot silently disable font-lock for the whole buffer
-\(Step 1.7.3 safety net)."
+\(safety net)."
     `((,regexp
        (0 (condition-case err
               ;; Capture match-beginning/end BEFORE calling lookup helpers,
               ;; which use `string-match' internally and would otherwise
-              ;; clobber the global match data (Step 1.7.3 fix).
+              ;; clobber the global match data.
               (let* ((mb (match-beginning 0))
                      (me (match-end 0))
                      (id (match-string 0))
