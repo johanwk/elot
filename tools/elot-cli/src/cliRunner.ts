@@ -27,7 +27,11 @@ export interface RefreshArgs {
 }
 
 function quoteForDisplay(s: string): string {
-  return /[\s"'\\]/.test(s) ? `"${s.replace(/"/g, '\\"')}"` : s;
+  // Escape backslashes first, then double quotes, so the rendered form is
+  // unambiguous (and CodeQL's "incomplete string escaping" check is happy).
+  return /[\s"'\\]/.test(s)
+    ? `"${s.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`
+    : s;
 }
 
 function renderDisplay(cli: string, args: string[]): string {
