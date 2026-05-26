@@ -4242,12 +4242,13 @@ keyword %s's expected leaf kind."
 ;;; buffer back to its pre-edit contents.
 
 (defconst elot-gptel--axiom-toplevel-row-re
-  "^ - \\(?:\\[[^]]*\\] \\)?\\(\\S-+\\) :: \\(.*\\)$"
+  "^ - \\(?:\\[[^]]*\\] \\)?\\(\\S-+\\) ::\\(?:[ \t]+\\(.*\\)\\|[ \t]*\\)$"
   "Regex matching a top-level ELOT description-list row.
 Group 1 is the keyword (after an optional `[X]'-style checkbox
-cookie).  Group 2 is the value text.  Top-level rows carry a
-single leading space; nested annotation rows under an axiom row
-carry three or more.")
+cookie).  Group 2 is the value text, or nil when the row has no
+value (Org-mode writes empty rows as `- KEY ::' with no trailing
+whitespace).  Top-level rows carry a single leading space; nested
+annotation rows under an axiom row carry three or more.")
 
 (defun elot-gptel--axiom-normalise-fragment (s)
   "Return S with internal whitespace runs collapsed and trimmed.
@@ -4278,7 +4279,7 @@ current buffer; SUBTREE-END caps the scan."
         (cond
          ((looking-at elot-gptel--axiom-toplevel-row-re)
           (let* ((kw   (match-string-no-properties 1))
-                 (val  (match-string-no-properties 2))
+                 (val  (or (match-string-no-properties 2) ""))
                  (start (line-number-at-pos))
                  (end   start)
                  (nested 0))
