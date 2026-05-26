@@ -5,6 +5,9 @@ name: CI
 # and package-lint on every push and pull request.  ROBOT-gated tests
 # skip cleanly on these runners (no Java / ROBOT installed).
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main, elpa-submission]
