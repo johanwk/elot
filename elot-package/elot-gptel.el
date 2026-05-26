@@ -6735,6 +6735,7 @@ followed by a final `Summary: N errors, M warnings'.  Returns
              "Filter: `error', `warning', or `all' (default).")
       (:name "categories"
              :type array
+             :items (:type string)
              :optional t
              :description
              "Restrict to a subset of org-lint checker names \
@@ -7456,6 +7457,7 @@ success returns:
 :CUSTOM_ID: of the heading the new sibling(s) follow.")
       (:name "labels"
              :type array
+             :items (:type string)
              :description
              "Array of rdfs:label strings; length = batch size.")))
     ("elot_insert_child_resource"
@@ -7493,6 +7495,7 @@ rollback on failure."
 resource of an empty resource section.")
       (:name "labels"
              :type array
+             :items (:type string)
              :description
              "Array of rdfs:label strings; length = batch size.")))
     ("elot_insert_resource_tree"
@@ -7549,6 +7552,7 @@ the caller can unambiguously route follow-up renames."
 :CUSTOM_ID: of the heading the tree attaches to.")
       (:name "tree"
              :type array
+             :items (:type string)
              :description
              "Forest of nodes; each node is a LABEL string or a \
 [LABEL, CHILD, ...] array (recursive).")
@@ -8251,6 +8255,7 @@ batches, partial-success / continue-on-error, reordering edits."
              "Path to an ELOT .org file (project-relative).")
       (:name "edits"
              :type array
+             :items (:type object)
              :description
              "Ordered array of edit objects.  Each object: \
 {subject, op?, keyword, fragment?, match_fragment?}.  Same \
