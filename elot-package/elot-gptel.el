@@ -4250,13 +4250,32 @@ value (Org-mode writes empty rows as `- KEY ::' with no trailing
 whitespace).  Top-level rows carry a single leading space; nested
 annotation rows under an axiom row carry three or more.")
 
+(defconst elot-gptel--axiom-match-empty 'elot-gptel--match-empty-value
+  "Sentinel returned by `elot-gptel--axiom-normalise-fragment' for
+an empty / whitespace-only input string.  Distinct from nil (which
+means \"no matcher supplied\"), so the matcher in
+`elot-gptel--axiom-match-rows' can target rows whose value is
+empty or whitespace-only.  A symbol is used so it cannot collide
+with any string a caller might write as a fragment.")
+
 (defun elot-gptel--axiom-normalise-fragment (s)
   "Return S with internal whitespace runs collapsed and trimmed.
-Returns nil for nil / non-string / empty input."
-  (when (and (stringp s) (not (string-empty-p s)))
+
+Returns nil for nil or non-string input (= no matcher supplied).
+Returns `elot-gptel--axiom-match-empty' for a string that is
+empty or whitespace-only after trimming (= match rows whose
+value is empty); see that constant's docstring for the
+rationale.  Otherwise returns the normalised non-empty string."
+  (cond
+   ((null s) nil)
+   ((not (stringp s)) nil)
+   ((string-empty-p s) elot-gptel--axiom-match-empty)
+   (t
     (let ((n (string-trim
               (replace-regexp-in-string "[ \t\n\r]+" " " s))))
-      (and (not (string-empty-p n)) n))))
+      (if (string-empty-p n)
+          elot-gptel--axiom-match-empty
+        n)))))
 
 (defun elot-gptel--axiom-find-rows-in-buffer (heading-pos subtree-end)
   "Return the list of top-level description-list rows under HEADING-POS.
@@ -4319,15 +4338,25 @@ current buffer; SUBTREE-END caps the scan."
   "Return rows whose :keyword equals KEYWORD (and optionally :fragment matches).
 Fragment match is ASCII-normalised (whitespace collapsed and
 trimmed) on both sides.  When MATCH-FRAGMENT is nil all rows
-with the matching keyword pass."
+with the matching keyword pass.  When MATCH-FRAGMENT normalises
+to `elot-gptel--axiom-match-empty' (the sentinel returned for
+empty / whitespace-only input), only rows whose value is empty
+or whitespace-only pass -- this is how callers target an empty
+row when a populated sibling exists under the same keyword."
   (let ((nf (elot-gptel--axiom-normalise-fragment match-fragment)))
     (cl-remove-if-not
      (lambda (r)
        (and (equal (plist-get r :keyword) keyword)
-            (or (null nf)
-                (equal (elot-gptel--axiom-normalise-fragment
+            (cond
+             ((null nf) t)
+             ((eq nf elot-gptel--axiom-match-empty)
+              (let ((v (plist-get r :fragment)))
+                (or (null v)
+                    (and (stringp v)
+                         (string-empty-p (string-trim v))))))
+             (t (equal (elot-gptel--axiom-normalise-fragment
                         (plist-get r :fragment))
-                       nf))))
+                       nf)))))
      rows)))
 
 (defun elot-gptel--axiom-apply-edit
@@ -4382,12 +4411,101 @@ returned by `elot-gptel--axiom-find-rows'."
            (goto-char (point-min))
            (forward-line (plist-get match-row :end-line))
            (setq end (point))
-           (delete-region beg end))
+           (delete-region beg end)
+           ;; Tidy (Option A): collapse any run of blank lines that
+           ;; became adjacent to the cut down to zero.  A deletion
+           ;; never adds blanks, but it can surface a run of
+           ;; consecutive blanks previously masked by the removed
+           ;; row (e.g. blanks between the heading and the row, or
+           ;; between two rows).  Inside an Org description list
+           ;; blank lines break the list, so removing them is a
+           ;; correctness fix, not a style choice.  The scan is
+           ;; strictly local to the cut point; it touches no other
+           ;; whitespace in the subject region or beyond.
+           (save-excursion
+             (goto-char beg)
+             ;; Eat blank lines at/after the cut.
+             (while (and (not (eobp))
+                         (looking-at "^[ \t]*$"))
+               (delete-region (point)
+                              (min (point-max)
+                                   (1+ (line-end-position)))))
+             ;; Eat blank lines immediately preceding the cut.
+             (while (and (> (point) (point-min))
+                         (save-excursion
+                           (forward-line -1)
+                           (looking-at "^[ \t]*$")))
+               (forward-line -1)
+               (delete-region (point)
+                              (min (point-max)
+                                   (1+ (line-end-position)))))))
          (list :draft (buffer-substring-no-properties
                        (point-min) (point-max))
                :verb "deleted"
                :nested-count (plist-get match-row :nested-count)))
         (_ (user-error "elot-gptel: unknown op: %S" op))))))
+
+(defun elot-gptel--axiom-row-empty-p (row)
+  "Return non-nil when ROW's :fragment is nil or whitespace-only.
+ROW is a row plist returned by `elot-gptel--axiom-find-rows'."
+  (let ((v (plist-get row :fragment)))
+    (or (null v)
+        (and (stringp v)
+             (string-empty-p (string-trim v))))))
+
+(defun elot-gptel--axiom-delete-empty-rows
+    (file-contents subject-curie subject-label &optional keyword)
+  "Delete every empty (or whitespace-only) top-level row on SUBJECT.
+
+FILE-CONTENTS is the buffer-contents string to operate on (the
+running draft for the batch tool, or the buffer's current bytes
+for the singleton).  SUBJECT-CURIE / SUBJECT-LABEL identify the
+subject heading the same way `elot-gptel--axiom-apply-edit'
+does.  When KEYWORD is non-nil and non-empty, restrict the
+sweep to rows whose left-hand keyword equals KEYWORD;
+otherwise sweep every empty row regardless of keyword.
+
+Returns a plist (:draft STRING :deleted-keywords (KW ...))
+where :draft is FILE-CONTENTS with the matching rows (and
+their nested annotation children) removed, and
+:deleted-keywords is the list of keywords whose rows were
+removed, in document order.  When no row matches, the draft
+equals FILE-CONTENTS unchanged and :deleted-keywords is nil --
+callers treat that as the idempotent no-op success case.
+
+The implementation finds all matching rows in one pass, then
+deletes them via `elot-gptel--axiom-apply-edit' from the
+bottom up (highest :start-line first) so the line-number
+coordinates recorded for earlier rows remain valid through
+the sweep."
+  (let* ((kw (and (stringp keyword) (not (string-empty-p keyword))
+                  keyword))
+         (rows (elot-gptel--axiom-find-rows
+                file-contents subject-curie subject-label))
+         (empties (cl-remove-if-not
+                   (lambda (r)
+                     (and (elot-gptel--axiom-row-empty-p r)
+                          (or (null kw)
+                              (equal (plist-get r :keyword) kw))))
+                   rows))
+         ;; Document-order list of keywords we will delete (for the
+         ;; caller's success summary).
+         (deleted-keywords
+          (mapcar (lambda (r) (plist-get r :keyword)) empties))
+         ;; Delete from the bottom up so earlier rows' line
+         ;; coordinates stay valid.
+         (descending (sort (copy-sequence empties)
+                           (lambda (a b)
+                             (> (plist-get a :start-line)
+                                (plist-get b :start-line)))))
+         (draft file-contents))
+    (dolist (row descending)
+      (let ((res (elot-gptel--axiom-apply-edit
+                  draft subject-curie subject-label
+                  'delete (plist-get row :keyword) nil row)))
+        (setq draft (plist-get res :draft))))
+    (list :draft draft
+          :deleted-keywords deleted-keywords)))
 
 (defun elot-gptel-tool-edit-axiom
     (file subject keyword &optional fragment op match-fragment)
@@ -4397,7 +4515,7 @@ Implementation of the `elot_edit_axiom' tool (Milestone 9 Step
 9.2.c).  Side-effecting -- gated by
 `elot-gptel-allow-side-effects'.
 
-OP is one of `add' (default), `replace', `delete':
+OP is one of `add' (default), `replace', `delete', `delete-empty':
   - `add' appends a new row as the last top-level row of
     SUBJECT's description list.  FRAGMENT is the new value.
   - `replace' finds the row whose keyword equals KEYWORD and
@@ -4408,9 +4526,17 @@ OP is one of `add' (default), `replace', `delete':
   - `delete' finds the matched row (matcher: MATCH-FRAGMENT or
     FRAGMENT) and deletes it together with its nested
     annotation children.
+  - `delete-empty' sweeps every row on SUBJECT whose value is
+    empty or whitespace-only and deletes them in one atomic
+    edit.  When KEYWORD is supplied the sweep is restricted to
+    rows with that keyword; when KEYWORD is the empty string the
+    sweep runs over every keyword on SUBJECT.  FRAGMENT and
+    MATCH-FRAGMENT are ignored.  Zero matches is a success
+    (idempotent no-op).
 
 Match resolution refuses with an ERROR: line on 0 matches or
->1 ambiguous matches.
+>1 ambiguous matches (does not apply to `delete-empty', which
+treats 0 matches as success).
 
 Caller is expected to have run `elot_axiom_check' first; this
 tool trusts its input and does not re-run the 9.2.b static
@@ -4426,8 +4552,6 @@ diagnostic under a `FAIL:' header."
 (set `elot-gptel-allow-side-effects' to t)"))
         (unless (and (stringp subject) (not (string-empty-p subject)))
           (user-error "subject must be a non-empty string"))
-        (unless (and (stringp keyword) (not (string-empty-p keyword)))
-          (user-error "keyword must be a non-empty string"))
         (let* ((op-sym
                 (cond
                  ((or (null op)
@@ -4436,10 +4560,16 @@ diagnostic under a `FAIL:' header."
                  ((stringp op) (intern op))
                  ((symbolp op) op)
                  (t (user-error
-                     "op must be `add', `replace', or `delete': %S" op)))))
-          (unless (memq op-sym '(add replace delete))
+                     "op must be `add', `replace', `delete', or `delete-empty': %S" op)))))
+          (unless (memq op-sym '(add replace delete delete-empty))
             (user-error
-             "op must be `add', `replace', or `delete': %S" op))
+             "op must be `add', `replace', `delete', or `delete-empty': %S" op))
+          ;; `delete-empty' relaxes the keyword requirement (empty /
+          ;; nil means "sweep every keyword").  Other ops still
+          ;; require a non-empty keyword.
+          (unless (eq op-sym 'delete-empty)
+            (unless (and (stringp keyword) (not (string-empty-p keyword)))
+              (user-error "keyword must be a non-empty string")))
           (when (and (memq op-sym '(add replace))
                      (or (null fragment)
                          (and (stringp fragment)
@@ -4471,83 +4601,132 @@ diagnostic under a `FAIL:' header."
                   (let* ((before-text
                           (buffer-substring-no-properties
                            (point-min) (point-max)))
-                         (before-modified-p (buffer-modified-p))
-                         ;; Matcher: explicit MATCH-FRAGMENT wins; else
-                         ;; fall back to FRAGMENT (delete's natural
-                         ;; shape and 9.2.b's `old' equivalent).
-                         (matcher
-                          (or (elot-gptel--axiom-normalise-fragment
-                               match-fragment)
-                              (and (eq op-sym 'delete)
-                                   (elot-gptel--axiom-normalise-fragment
-                                    fragment))))
-                         match-row)
-                    (when (memq op-sym '(replace delete))
-                      (let* ((rows (elot-gptel--axiom-find-rows
-                                    before-text curie label))
-                             (matches (elot-gptel--axiom-match-rows
-                                       rows keyword matcher)))
+                         (before-modified-p (buffer-modified-p)))
+                    (cond
+                     ;; --- delete-empty branch: bulk sweep --------------
+                     ((eq op-sym 'delete-empty)
+                      (let* ((sweep (elot-gptel--axiom-delete-empty-rows
+                                     before-text curie label
+                                     (and (stringp keyword)
+                                          (not (string-empty-p keyword))
+                                          keyword)))
+                             (draft (plist-get sweep :draft))
+                             (deleted (plist-get sweep :deleted-keywords))
+                             (n (length deleted)))
                         (cond
-                         ((null matches)
-                          (user-error
-                           "no row matches keyword %S%s on %s"
-                           keyword
-                           (if matcher
-                               (format " with fragment %S" matcher)
-                             "")
-                           curie))
-                         ((> (length matches) 1)
-                          (user-error
-                           "ambiguous; %d rows match keyword %S on %s; \
-supply `match_fragment'"
-                           (length matches) keyword curie))
-                         (t (setq match-row (car matches))))))
-                    (let* ((edit (elot-gptel--axiom-apply-edit
-                                  before-text curie label
-                                  op-sym keyword fragment match-row))
-                           (draft (plist-get edit :draft))
-                           (nested (plist-get edit :nested-count)))
-                      (let ((inhibit-read-only t))
-                        (erase-buffer)
-                        (insert draft))
-                      (save-buffer)
-                      (let* ((verdict (elot-gptel--rename-revalidate file))
-                             (ok (plist-get verdict :ok))
-                             (report (plist-get verdict :report)))
-                        (cond
-                         ((not ok)
+                         ((zerop n)
+                          ;; Idempotent no-op: return success WITHOUT
+                          ;; writing or saving (file is unchanged).
+                          (format
+                           "OK: no empty rows on %s%s"
+                           curie
+                           (if (and (stringp keyword)
+                                    (not (string-empty-p keyword)))
+                               (format " for keyword %S" keyword)
+                             "")))
+                         (t
                           (let ((inhibit-read-only t))
                             (erase-buffer)
-                            (insert before-text))
+                            (insert draft))
                           (save-buffer)
-                          (set-buffer-modified-p before-modified-p)
-                          (concat
-                           "FAIL: revalidation failed -- changes rolled back\n\n"
-                           report))
-                         (t
-                          (let ((head
-                                 (pcase op-sym
-                                   ('add
-                                    (format
-                                     "OK: added 1 row on %s: - %s :: %s"
-                                     curie keyword fragment))
-                                   ('replace
-                                    (format
-                                     "OK: replaced 1 row on %s: - %s :: %s%s"
-                                     curie keyword fragment
-                                     (if (> nested 0)
-                                         (format
-                                          " (preserved %d nested annotation%s)"
-                                          nested
-                                          (if (= nested 1) "" "s"))
-                                       "")))
-                                   ('delete
-                                    (format
-                                     "OK: deleted 1 row + %d nested annotation%s on %s"
-                                     nested
-                                     (if (= nested 1) "" "s")
-                                     curie)))))
-                            (concat head "\n\n" report)))))))))))))
+                          (let* ((verdict (elot-gptel--rename-revalidate file))
+                                 (ok (plist-get verdict :ok))
+                                 (report (plist-get verdict :report)))
+                            (cond
+                             ((not ok)
+                              (let ((inhibit-read-only t))
+                                (erase-buffer)
+                                (insert before-text))
+                              (save-buffer)
+                              (set-buffer-modified-p before-modified-p)
+                              (concat
+                               "FAIL: revalidation failed -- changes rolled back\n\n"
+                               report))
+                             (t
+                              (let ((head
+                                     (format
+                                      "OK: deleted %d empty row%s on %s: %s"
+                                      n (if (= n 1) "" "s") curie
+                                      (mapconcat #'identity deleted ", "))))
+                                (concat head "\n\n" report)))))))))
+                     ;; --- add / replace / delete branch (original) ----
+                     (t
+                      (let* (;; Matcher: explicit MATCH-FRAGMENT wins; else
+                             ;; fall back to FRAGMENT (delete's natural
+                             ;; shape and 9.2.b's `old' equivalent).
+                             (matcher
+                              (or (elot-gptel--axiom-normalise-fragment
+                                   match-fragment)
+                                  (and (eq op-sym 'delete)
+                                       (elot-gptel--axiom-normalise-fragment
+                                        fragment))))
+                             match-row)
+                        (when (memq op-sym '(replace delete))
+                          (let* ((rows (elot-gptel--axiom-find-rows
+                                        before-text curie label))
+                                 (matches (elot-gptel--axiom-match-rows
+                                           rows keyword matcher)))
+                            (cond
+                             ((null matches)
+                              (user-error
+                               "no row matches keyword %S%s on %s"
+                               keyword
+                               (if matcher
+                                   (format " with fragment %S" matcher)
+                                 "")
+                               curie))
+                             ((> (length matches) 1)
+                              (user-error
+                               "ambiguous; %d rows match keyword %S on %s; \
+supply `match_fragment'"
+                               (length matches) keyword curie))
+                             (t (setq match-row (car matches))))))
+                        (let* ((edit (elot-gptel--axiom-apply-edit
+                                      before-text curie label
+                                      op-sym keyword fragment match-row))
+                               (draft (plist-get edit :draft))
+                               (nested (plist-get edit :nested-count)))
+                          (let ((inhibit-read-only t))
+                            (erase-buffer)
+                            (insert draft))
+                          (save-buffer)
+                          (let* ((verdict (elot-gptel--rename-revalidate file))
+                                 (ok (plist-get verdict :ok))
+                                 (report (plist-get verdict :report)))
+                            (cond
+                             ((not ok)
+                              (let ((inhibit-read-only t))
+                                (erase-buffer)
+                                (insert before-text))
+                              (save-buffer)
+                              (set-buffer-modified-p before-modified-p)
+                              (concat
+                               "FAIL: revalidation failed -- changes rolled back\n\n"
+                               report))
+                             (t
+                              (let ((head
+                                     (pcase op-sym
+                                       ('add
+                                        (format
+                                         "OK: added 1 row on %s: - %s :: %s"
+                                         curie keyword fragment))
+                                       ('replace
+                                        (format
+                                         "OK: replaced 1 row on %s: - %s :: %s%s"
+                                         curie keyword fragment
+                                         (if (> nested 0)
+                                             (format
+                                              " (preserved %d nested annotation%s)"
+                                              nested
+                                              (if (= nested 1) "" "s"))
+                                           "")))
+                                       ('delete
+                                        (format
+                                         "OK: deleted 1 row + %d nested annotation%s on %s"
+                                         nested
+                                         (if (= nested 1) "" "s")
+                                         curie)))))
+                                (concat head "\n\n" report))))))))))))))))
     (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
 
@@ -4626,18 +4805,22 @@ caller can attribute the failure to a specific entry."
            ((stringp op) (intern op))
            ((symbolp op) op)
            (t (user-error
-               "edits[%d]: op must be `add', `replace', or `delete': %S"
+               "edits[%d]: op must be `add', `replace', `delete', or `delete-empty': %S"
                idx op)))))
-    (unless (memq op-sym '(add replace delete))
+    (unless (memq op-sym '(add replace delete delete-empty))
       (user-error
-       "edits[%d]: op must be `add', `replace', or `delete': %S"
+       "edits[%d]: op must be `add', `replace', `delete', or `delete-empty': %S"
        idx op))
     (unless (and (stringp subject) (not (string-empty-p subject)))
       (user-error "edits[%d]: subject must be a non-empty string"
                   idx))
-    (unless (and (stringp keyword) (not (string-empty-p keyword)))
-      (user-error "edits[%d]: keyword must be a non-empty string"
-                  idx))
+    ;; `delete-empty' relaxes the keyword requirement (empty / nil
+    ;; means "sweep every keyword on SUBJECT").  Other ops still
+    ;; require a non-empty keyword.
+    (unless (eq op-sym 'delete-empty)
+      (unless (and (stringp keyword) (not (string-empty-p keyword)))
+        (user-error "edits[%d]: keyword must be a non-empty string"
+                    idx)))
     (when (and (memq op-sym '(add replace))
                (or (null fragment)
                    (and (stringp fragment)
@@ -4669,36 +4852,52 @@ Returns (:draft NEW :verb V :curie C :keyword K :nested N)."
        "edits[%d]: subject %s not found (try a declared CURIE or label)"
        idx subject))
     (let* ((curie (car row))
-           (label (cadr row))
-           (matcher
-            (or (elot-gptel--axiom-normalise-fragment match-fragment)
-                (and (eq op 'delete)
-                     (elot-gptel--axiom-normalise-fragment fragment))))
-           match-row)
-      (when (memq op '(replace delete))
-        (let* ((rows (elot-gptel--axiom-find-rows draft curie label))
-               (matches (elot-gptel--axiom-match-rows
-                         rows keyword matcher)))
-          (cond
-           ((null matches)
-            (user-error
-             "edits[%d]: no row matches keyword %S%s on %s"
-             idx keyword
-             (if matcher (format " with fragment %S" matcher) "")
-             curie))
-           ((> (length matches) 1)
-            (user-error
-             "edits[%d]: ambiguous; %d rows match keyword %S on %s; \
+           (label (cadr row)))
+      (cond
+       ;; `delete-empty' sweep: bypass the match-rows path entirely.
+       ((eq op 'delete-empty)
+        (let* ((kw (and (stringp keyword)
+                        (not (string-empty-p keyword))
+                        keyword))
+               (sweep (elot-gptel--axiom-delete-empty-rows
+                       draft curie label kw))
+               (deleted (plist-get sweep :deleted-keywords)))
+          (list :draft (plist-get sweep :draft)
+                :verb "swept"
+                :nested 0
+                :curie curie
+                :keyword (or kw "(any)")
+                :swept-keywords deleted)))
+       (t
+        (let* ((matcher
+                (or (elot-gptel--axiom-normalise-fragment match-fragment)
+                    (and (eq op 'delete)
+                         (elot-gptel--axiom-normalise-fragment fragment))))
+               match-row)
+          (when (memq op '(replace delete))
+            (let* ((rows (elot-gptel--axiom-find-rows draft curie label))
+                   (matches (elot-gptel--axiom-match-rows
+                             rows keyword matcher)))
+              (cond
+               ((null matches)
+                (user-error
+                 "edits[%d]: no row matches keyword %S%s on %s"
+                 idx keyword
+                 (if matcher (format " with fragment %S" matcher) "")
+                 curie))
+               ((> (length matches) 1)
+                (user-error
+                 "edits[%d]: ambiguous; %d rows match keyword %S on %s; \
 supply `match_fragment'"
-             idx (length matches) keyword curie))
-           (t (setq match-row (car matches))))))
-      (let ((result (elot-gptel--axiom-apply-edit
-                     draft curie label op keyword fragment match-row)))
-        (list :draft (plist-get result :draft)
-              :verb  (plist-get result :verb)
-              :nested (plist-get result :nested-count)
-              :curie curie
-              :keyword keyword)))))
+                 idx (length matches) keyword curie))
+               (t (setq match-row (car matches))))))
+          (let ((result (elot-gptel--axiom-apply-edit
+                         draft curie label op keyword fragment match-row)))
+            (list :draft (plist-get result :draft)
+                  :verb  (plist-get result :verb)
+                  :nested (plist-get result :nested-count)
+                  :curie curie
+                  :keyword keyword))))))))
 
 (defun elot-gptel--axioms-revalidate-content (file draft)
   "Run lint (+ OMN parse when ROBOT is up) against DRAFT for FILE.
@@ -4733,14 +4932,36 @@ the file on disk -- used by `dry_run' batches."
   "Render SUMMARIES (a list of per-edit plists) as a bulleted block."
   (mapconcat
    (lambda (s)
-     (format "  - edits[%d]: %s on %s (%s)%s"
-             (plist-get s :idx)
-             (plist-get s :verb)
-             (plist-get s :curie)
-             (plist-get s :keyword)
-             (let ((n (plist-get s :nested)))
-               (if (and (integerp n) (> n 0))
-                   (format " [%d nested]" n) ""))))
+     (let ((swept (plist-get s :swept-keywords)))
+       (cond
+        (swept
+         (format "  - edits[%d]: swept %d empty row%s on %s%s"
+                 (plist-get s :idx)
+                 (length swept)
+                 (if (= (length swept) 1) "" "s")
+                 (plist-get s :curie)
+                 (if swept
+                     (concat ": " (mapconcat #'identity swept ", "))
+                   "")))
+        ((and (stringp (plist-get s :verb))
+              (string= (plist-get s :verb) "swept"))
+         ;; Sweep with zero matches (idempotent no-op).
+         (format "  - edits[%d]: no empty rows on %s%s"
+                 (plist-get s :idx)
+                 (plist-get s :curie)
+                 (let ((kw (plist-get s :keyword)))
+                   (if (and kw (not (string= kw "(any)")))
+                       (format " for keyword %S" kw)
+                     ""))))
+        (t
+         (format "  - edits[%d]: %s on %s (%s)%s"
+                 (plist-get s :idx)
+                 (plist-get s :verb)
+                 (plist-get s :curie)
+                 (plist-get s :keyword)
+                 (let ((n (plist-get s :nested)))
+                   (if (and (integerp n) (> n 0))
+                       (format " [%d nested]" n) "")))))))
    summaries "\n"))
 
 (defun elot-gptel-tool-edit-axioms (file edits &optional dry-run)
@@ -4754,16 +4975,20 @@ EDITS is an ordered list (or JSON array) of edit objects; each
 object has the same shape as the args to `elot_edit_axiom' minus
 FILE:
   - subject         (required) -- CURIE or rdfs:label
-  - op              (optional, default `add') -- `add' / `replace' / `delete'
-  - keyword         (required)
+  - op              (optional, default `add')
+                     -- `add' / `replace' / `delete' / `delete-empty'
+  - keyword         (required for add/replace/delete; optional for delete-empty)
   - fragment        (required for `add' / `replace')
-  - match_fragment  (optional matcher for `replace' / `delete')
+  - match_fragment  (optional matcher for `replace' / `delete';
+                     pass \"\" to target an empty-value row)
 
 Edits apply in order.  Per-edit match resolution runs against
 the running draft, so later edits see earlier ones.  A failure
 at edit K (subject not found, no row matches, ambiguous match)
 aborts the batch with `FAIL at edits[K]:' and leaves FILE
-byte-identical to its pre-call state.
+byte-identical to its pre-call state.  The `delete-empty' op
+treats zero matches as success (idempotent no-op), in line with
+the singleton tool.
 
 The whole batch runs inside a single revalidate window: after
 all edits have been applied to the in-memory draft, the file is
@@ -4825,7 +5050,9 @@ a real commit, but FILE on disk is unchanged."
                                   :verb (plist-get res :verb)
                                   :curie (plist-get res :curie)
                                   :keyword (plist-get res :keyword)
-                                  :nested (plist-get res :nested))
+                                  :nested (plist-get res :nested)
+                                  :swept-keywords
+                                  (plist-get res :swept-keywords))
                             summaries)))
                   (setq summaries (nreverse summaries))
                   (cond
@@ -8159,10 +8386,19 @@ OP selects the operation:
   - `delete' removes the unique row (matcher: `match_fragment'
     when supplied, else FRAGMENT) together with its nested
     annotation children.  FRAGMENT may be omitted.
+  - `delete-empty' sweeps every row on SUBJECT whose value is
+    empty or whitespace-only and removes them in one atomic
+    edit.  When KEYWORD is supplied the sweep is restricted to
+    rows with that keyword; pass the empty string (or omit
+    KEYWORD) to sweep every keyword on SUBJECT.  FRAGMENT and
+    `match_fragment' are ignored.  Zero matches is success
+    (idempotent no-op; the file is not touched).
 
 Match resolution refuses on 0 hits (`no row matches') or >1
 hits (`ambiguous; N rows match'); the LLM should supply
-`match_fragment' to disambiguate.
+`match_fragment' to disambiguate.  Targeting an empty-value
+row: pass `match_fragment: \"\"' (empty string) on `replace' /
+`delete' to match rows whose value is empty or whitespace-only.
 
 Post-commit auto-revalidate runs the standard lint pipeline
 (plus OMN parse / consistency when ROBOT is configured).  On
@@ -8188,18 +8424,21 @@ declared in FILE.")
              :description
              "OMN frame keyword (`SubClassOf', `Domain', `Types', \
 ...) or a declared annotation property CURIE (`rdfs:comment', \
-`skos:definition', ...).  Required for every op.")
+`skos:definition', ...).  Required for `add' / `replace' / \
+`delete'; optional for `delete-empty' (empty / omitted = sweep \
+all keywords).")
       (:name "fragment"
              :type string
              :optional t
              :description
              "New value (no leading `- KEYWORD ::').  Required \
 for `add' / `replace'; optional for `delete' (when supplied, \
-also serves as the matcher when `match_fragment' is omitted).")
+also serves as the matcher when `match_fragment' is omitted); \
+ignored for `delete-empty'.")
       (:name "op"
              :type string
              :optional t
-             :enum ["add" "replace" "delete"]
+             :enum ["add" "replace" "delete" "delete-empty"]
              :description
              "Operation to perform (default `add').")
       (:name "match_fragment"
@@ -8208,8 +8447,10 @@ also serves as the matcher when `match_fragment' is omitted).")
              :description
              "For `replace' / `delete': existing-value text of \
 the row to target.  Match is ASCII-normalised (whitespace \
-runs collapsed, ends trimmed).  Omit when KEYWORD alone is \
-unique on SUBJECT.")))
+runs collapsed, ends trimmed).  Pass the empty string to \
+target a row whose value is empty / whitespace-only.  Omit \
+when KEYWORD alone is unique on SUBJECT.  Ignored for \
+`delete-empty'.")))
     ("elot_edit_axioms"
      :function elot-gptel-tool-edit-axioms
      :confirm t
@@ -8226,10 +8467,16 @@ window.
 EDITS is an ordered array.  Each element is an object with the
 same fields as `elot_edit_axiom' minus `file':
   - `subject'         (required)
-  - `op'              (optional, default `add')
-  - `keyword'         (required)
-  - `fragment'        (required for `add' / `replace')
-  - `match_fragment'  (optional matcher for `replace' / `delete')
+  - `op'              (optional, default `add'; one of `add' /
+                       `replace' / `delete' / `delete-empty')
+  - `keyword'         (required for add/replace/delete; optional
+                       for delete-empty -- empty/omitted sweeps
+                       every keyword on the subject)
+  - `fragment'        (required for `add' / `replace';
+                       ignored for `delete-empty')
+  - `match_fragment'  (optional matcher for `replace' / `delete';
+                       pass \"\" to target an empty-value row;
+                       ignored for `delete-empty')
 
 Semantics:
   - Atomic: snapshot -> apply each edit in order to the running
