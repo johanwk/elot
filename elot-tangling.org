@@ -119,14 +119,14 @@ This section collects functions and variables that enable reading the Org outlin
 
   (defun elot--omn-row-blank-axiom-p (row)
     "Return non-nil when ROW is an OMN axiom keyword with no value.
-ROW is a description-list row of the shape (KEY VALUE . META) as
-produced by `elot--extract-headline-descriptions'.  The row
-qualifies as blank when KEY is a member of `elot-omn-all-keywords'
-and VALUE is nil or, after `string-trim', the empty string.  Used
-on the tangle path to skip rows like `Domain ::' (no class
-expression) which would otherwise produce malformed OMN.  Plain
-annotation rows (e.g. `rdfs:comment ::' with an empty value) are
-unaffected -- only OMN axiom keywords trigger the skip."
+  ROW is a description-list row of the shape (KEY VALUE . META) as
+  produced by `elot--extract-headline-descriptions'.  The row
+  qualifies as blank when KEY is a member of `elot-omn-all-keywords'
+  and VALUE is nil or, after `string-trim', the empty string.  Used
+  on the tangle path to skip rows like `Domain ::' (no class
+  expression) which would otherwise produce malformed OMN.  Plain
+  annotation rows (e.g. `rdfs:comment ::' with an empty value) are
+  unaffected -- only OMN axiom keywords trigger the skip."
     (let ((k (car row))
           (v (cadr row)))
       (and (member k elot-omn-all-keywords)
@@ -615,9 +615,9 @@ OMN file or the originating Org heading.
   (defun elot--parse-robot-error-location (text)
     "Extract (line column) from ROBOT error TEXT.  Return list of integers or nil.
 
-Thin wrapper over `elot-robot-classify' (see `elot-robot.el').  Kept
-for backwards compatibility with existing callers; new code should
-classify ROBOT results directly."
+  Thin wrapper over `elot-robot-classify' (see `elot-robot.el').  Kept
+  for backwards compatibility with existing callers; new code should
+  classify ROBOT results directly."
     (let* ((kind+payload (elot-robot-classify text))
            (kind         (car kind+payload))
            (payload      (cdr kind+payload))
@@ -738,7 +738,7 @@ Functions that take an ontology AST node and extract specific components (prefix
               (pop stack))
             
             (let* ((title-raw (org-element-property :title hl))
-                   (title (substring-no-properties 
+                   (title (substring-no-properties
                            (if (stringp title-raw)
                                title-raw
                              (org-element-interpret-data title-raw))))
@@ -777,7 +777,7 @@ Functions that take an ontology AST node and extract specific components (prefix
                     (unless (or nodeclare commented)
                       (elot-entity-from-header title t))) ; t = noerror for wrapper headings
                    (label (if (string-match "\\(.+\\) (.*)" title)
-                              (match-string 1 title) 
+                              (match-string 1 title)
                             uri)) ; fallback to uri if no label matches
                    ;; Find ancestor with resourcedefs "yes" to determine rdf:type
                    (ancestor-resourcedefs (cl-find-if (lambda (n) (equal (plist-get n :resourcedefs) "yes")) stack))
@@ -1236,7 +1236,7 @@ To update the hashtables for fontification:
   The identifier (puri) of the resource is added to the plist with key \"puri\"."
     (let (result)
       (dolist (row slurp (nreverse result))
-        ;; (nth 1 row) is the label. 
+        ;; (nth 1 row) is the label.
         ;; The rest becomes the cdr of the alist entry (the property list).
         (push (cons (nth 1 row)
                     (cons "puri" (cons (nth 0 row) (nth 2 row))))
@@ -1396,8 +1396,8 @@ With ~M-:~ we get at the ~:children~ of ~elot-headline-hierarchy~; which is a li
                (frame (list (format "%s: %s" omn-type uri))))
           
           (when annotations
-            (push (concat "    Annotations: \n" 
-                          (elot-omn-format-annotations (nreverse annotations) 8)) 
+            (push (concat "    Annotations: \n"
+                          (elot-omn-format-annotations (nreverse annotations) 8))
                   frame))
           
           (when restrictions
@@ -1483,6 +1483,90 @@ Macro definitions are carried into the temp file with variable ~omn-save~. This 
         (concat (or prefix-block "")
                 (if (and prefix-block (not (string-empty-p resources))) "\n\n" "")
                 resources)))
+
+  ;; ---------------------------------------------------------------------------
+  ;; Heading-granular source map (Org <-> OMN)
+  ;;
+  ;; The OMN frames produced by `elot-omn-resource-frame' and friends are
+  ;; generated text, not slices of the source.  The helpers below build a
+  ;; modest "which Org heading produced which OMN frame" map suitable for
+  ;; mapping ROBOT diagnostics back to the source.  See Milestone 3 Step 3.3
+  ;; of ELOT-GPTEL-PLAN.org for the design rationale.
+  
+  (defun elot-omn-collect-uri-line-map (node &optional acc)
+    "Walk NODE recursively and collect (URI . ORG-LINE) pairs into ACC.
+  Each node's `:marker' is resolved against its source buffer.
+  Returns the accumulated alist (most recent additions first)."
+    (let ((marker (plist-get node :marker))
+          (uri (plist-get node :uri))
+          (children (plist-get node :children)))
+      (when (and uri (stringp uri) (markerp marker))
+        (let ((pos (marker-position marker))
+              (buf (marker-buffer marker)))
+          (when (and pos buf (buffer-live-p buf))
+            (with-current-buffer buf
+              (push (cons uri (line-number-at-pos pos)) acc)))))
+      (dolist (c children)
+        (setq acc (elot-omn-collect-uri-line-map c acc)))
+      acc))
+  
+  (defconst elot--omn-frame-opener-re
+    "\\`\\(Class\\|ObjectProperty\\|DataProperty\\|AnnotationProperty\\|Individual\\|Datatype\\|Ontology\\):[ \t]+\\([^ \t\n]+\\)"
+    "Regex matching a top-level OMN frame opener.")
+  
+  (defun elot-omn-line-map-from-string (omn uri-line-alist)
+    "Return a list of plists describing frame openers in OMN.
+  Each entry is (:omn-line N :uri U :org-line L-or-nil :frame TYPE).
+  URI-LINE-ALIST maps URI strings to source Org line numbers."
+    (let ((entries '())
+          (omn-line 0))
+      (with-temp-buffer
+        (insert omn)
+        (goto-char (point-min))
+        (while (not (eobp))
+          (setq omn-line (1+ omn-line))
+          (let ((line (buffer-substring-no-properties
+                       (line-beginning-position) (line-end-position))))
+            (when (string-match elot--omn-frame-opener-re line)
+              (let* ((frame-type (match-string 1 line))
+                     (uri        (match-string 2 line))
+                     (org-line   (cdr (assoc uri uri-line-alist))))
+                (push (list :omn-line omn-line
+                            :uri      uri
+                            :org-line org-line
+                            :frame    frame-type)
+                      entries))))
+          (forward-line 1)))
+      (nreverse entries)))
+  
+  (defun elot-omn-write-sidecar-map (path map org-file)
+    "Write source MAP to sidecar file PATH.
+  MAP is a list of plists from `elot-omn-line-map-from-string'.
+  ORG-FILE is recorded in the header for downstream consumers."
+    (with-temp-file path
+      (insert "# elot OMN source map (heading-granular)\n")
+      (insert (format "# org-file:\t%s\n" (or org-file "")))
+      (insert "# columns: omn-line\\torg-line\\turi\\tframe-type\n")
+      (dolist (e map)
+        (insert (format "%d\t%s\t%s\t%s\n"
+                        (plist-get e :omn-line)
+                        (or (plist-get e :org-line) "")
+                        (or (plist-get e :uri) "")
+                        (or (plist-get e :frame) ""))))))
+  
+  (defun elot-omn-lookup-org-line (omn-line map)
+    "Return the (URI . ORG-LINE) anchor for OMN-LINE using MAP.
+  Picks the entry with the largest `:omn-line' that is <= OMN-LINE.
+  Returns nil when no preceding frame opener is recorded."
+    (let ((best nil))
+      (dolist (e map)
+        (let ((n (plist-get e :omn-line)))
+          (when (and n (<= n omn-line)
+                     (or (null best)
+                         (> n (plist-get best :omn-line))))
+            (setq best e))))
+      (when best
+        (cons (plist-get best :uri) (plist-get best :org-line)))))
 
   (defun elot-tangle-buffer-to-omn ()
     "Update hierarchy and export OMN for all ontologies to their tangle targets."
