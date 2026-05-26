@@ -94,6 +94,7 @@
 (defvar elot-flymake-checkers)
 (defvar org-lint--checkers)
 (defvar elot-headline-hierarchy)
+(defvar elot-gptel--sparql-rdf-extensions)
 
 ;;; ---------------------------------------------------------------------------
 ;;; Customization
