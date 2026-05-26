@@ -4261,12 +4261,19 @@ with any string a caller might write as a fragment.")
 (defun elot-gptel--axiom-normalise-fragment (s)
   "Return S with internal whitespace runs collapsed and trimmed.
 
-Returns nil for nil or non-string input (= no matcher supplied).
-Returns `elot-gptel--axiom-match-empty' for a string that is
-empty or whitespace-only after trimming (= match rows whose
-value is empty); see that constant's docstring for the
+Returns nil for nil or non-string input (= no matcher supplied),
+EXCEPT that `elot-gptel--axiom-match-empty' passes through
+unchanged so the helper is idempotent on the sentinel (callers
+that hand a previously-normalised matcher back through the
+normaliser -- e.g. `elot-gptel--axiom-match-rows', which
+re-normalises its MATCH-FRAGMENT argument -- must not lose the
+empty-row signal that distinguishes \"match empty\" from \"no
+matcher\").  Returns `elot-gptel--axiom-match-empty' for a string
+that is empty or whitespace-only after trimming (= match rows
+whose value is empty); see that constant's docstring for the
 rationale.  Otherwise returns the normalised non-empty string."
   (cond
+   ((eq s elot-gptel--axiom-match-empty) s)
    ((null s) nil)
    ((not (stringp s)) nil)
    ((string-empty-p s) elot-gptel--axiom-match-empty)
