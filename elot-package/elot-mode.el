@@ -75,20 +75,20 @@
   "Remove ELOT's gptel tools from the registry." t)
 
 (defgroup elot
-    nil
-    "Customization group for Emacs Literate Ontology Tool (ELOT)."
-    :prefix "elot-"
-    :group 'org)
+  nil
+  "Customization group for Emacs Literate Ontology Tool (ELOT)."
+  :prefix "elot-"
+  :group 'org)
 
-  (defcustom elot-label-display-size-threshold (* 500 1024)
-    "Buffer size (bytes) above which `elot-mode' asks before enabling label-display.
+(defcustom elot-label-display-size-threshold (* 500 1024)
+  "Buffer size (bytes) above which `elot-mode' asks before enabling label-display.
 When a file is larger than this threshold, the user is prompted
 with a yes/no question.  Files at or below the threshold get
 label-display automatically.  Set to 0 to always ask, or nil to
 never ask."
-    :type '(choice (const :tag "Never ask -- always enable" nil)
-                   (integer :tag "Byte threshold"))
-    :group 'elot)
+  :type '(choice (const :tag "Never ask -- always enable" nil)
+                 (integer :tag "Byte threshold"))
+  :group 'elot)
 
 (defun elot-mode--set-buffer-locals ()
   "Set buffer-local variables for an ELOT buffer.
@@ -119,11 +119,11 @@ xref navigation, etc.) when the menu is visible via
        (bound-and-true-p elot-mode)))
 
 (defvar elot-mode-syntax-table
-    (let ((st (make-syntax-table org-mode-syntax-table)))
-      (modify-syntax-entry ?: "w" st)
-      (modify-syntax-entry ?_ "w" st)
-      st)
-    "Syntax table for `elot-mode'.
+  (let ((st (make-syntax-table org-mode-syntax-table)))
+    (modify-syntax-entry ?: "w" st)
+    (modify-syntax-entry ?_ "w" st)
+    st)
+  "Syntax table for `elot-mode'.
 Treats `:' and `_' as word-constituent characters.")
 
 (tempo-define-template "elot-doc-header"
@@ -850,98 +850,111 @@ call from every `elot-mode--enable'."
         (setq elot-mode--applied-toggle-key key)))))
 
 (defun elot-mode--enable ()
-    "Set up ELOT in the current Org buffer."
-    ;; Guard: elot-mode is only meaningful inside Org-mode buffers.
-    ;; Silently refuse when invoked in a non-Org file so that visiting
-    ;; a .ttl (or any non-Org) file does not accidentally spawn a
-    ;; second ELOT menu via this mode's keymap.
-    (unless (derived-mode-p 'org-mode)
-      (elot-mode -1)
-      (user-error "elot-mode is only supported in Org-mode buffers"))
-    ;; 1. Buffer-local variables
-    (elot-mode--set-buffer-locals)
+  "Set up ELOT in the current Org buffer."
+  ;; Guard: elot-mode is only meaningful inside Org-mode buffers.
+  ;; Silently refuse when invoked in a non-Org file so that visiting
+  ;; a .ttl (or any non-Org) file does not accidentally spawn a
+  ;; second ELOT menu via this mode's keymap.
+  (unless (derived-mode-p 'org-mode)
+    (elot-mode -1)
+    (user-error "elot-mode is only supported in Org-mode buffers"))
+  ;; 1. Buffer-local variables
+  (elot-mode--set-buffer-locals)
 
-    ;; 2. Syntax table
-    (set-syntax-table elot-mode-syntax-table)
+  ;; 2. Syntax table
+  (set-syntax-table elot-mode-syntax-table)
 
-    ;; 3. Ingest the Library of Babel (once per Emacs session)
-    (elot-mode--ingest-lob)
+  ;; 3. Ingest the Library of Babel (once per Emacs session)
+  (elot-mode--ingest-lob)
 
-    ;; 3b. Apply the user's toggle-labels keybinding (if any) into
-    ;;     `elot-mode-map' now that customize has had a chance to load.
-    (elot-mode--apply-toggle-key)
+  ;; 3b. Apply the user's toggle-labels keybinding (if any) into
+  ;;     `elot-mode-map' now that customize has had a chance to load.
+  (elot-mode--apply-toggle-key)
 
-    ;; 4. Parse the headline hierarchy (populates elot-headline-hierarchy,
-    ;;    which is needed by link-abbrev refresh and label-display)
-    (elot-update-headline-hierarchy)
+  ;; 4. Parse the headline hierarchy (populates elot-headline-hierarchy,
+  ;;    which is needed by link-abbrev refresh and label-display)
+  (elot-update-headline-hierarchy)
 
-    ;; 5. Hooks
-    (elot-mode--add-hooks)
+  ;; 5. Hooks
+  (elot-mode--add-hooks)
 
-    ;; 6. SPARQL advice (global, but reference-counted across ELOT buffers)
-    (elot-mode--install-sparql-advice)
+  ;; 6. SPARQL advice (global, but reference-counted across ELOT buffers)
+  (elot-mode--install-sparql-advice)
 
-    ;; 7. Xref globals (advice on `xref-find-references' and entries on
-    ;;    `xref-after-update-hook'; reference-counted across ELOT buffers)
-    (elot-mode--install-xref-globals)
+  ;; 7. Xref globals (advice on `xref-find-references' and entries on
+  ;;    `xref-after-update-hook'; reference-counted across ELOT buffers)
+  (elot-mode--install-xref-globals)
 
-    ;; 8. LaTeX export filter for OMN in description lists
-    (when (fboundp 'elot-latex-filter-omn-item)
-      (add-to-list 'org-export-filter-item-functions
-                   'elot-latex-filter-omn-item))
+  ;; 8. LaTeX export filter for OMN in description lists
+  (when (fboundp 'elot-latex-filter-omn-item)
+    (add-to-list 'org-export-filter-item-functions
+                 'elot-latex-filter-omn-item))
 
-    ;; 9. Export pre-processing hook (linkify, CUSTOM_IDs, prefix resolution)
-    (when (fboundp 'elot--prepare-export-buffer)
-      (add-hook 'org-export-before-processing-functions
-                #'elot--prepare-export-buffer))
+  ;; 9. Export pre-processing hook (linkify, CUSTOM_IDs, prefix resolution)
+  (when (fboundp 'elot--prepare-export-buffer)
+    (add-hook 'org-export-before-processing-functions
+              #'elot--prepare-export-buffer))
 
-    ;; 10. Label-display: set up immediately (with size-gated prompt)
-    (elot-mode--maybe-setup-labels)
+  ;; 10. Label-display: set up immediately (with size-gated prompt)
+  (elot-mode--maybe-setup-labels)
 
-    ;; 11. Set initial fold visibility
-    (org-cycle-set-startup-visibility))
+  ;; 11. Set initial fold visibility
+  ;;     Guarded: during desktop restoration the org-element cache
+  ;;     can be in an inconsistent intermediate state when
+  ;;     `org-mode-hook' runs, and `org-element-at-point' (called
+  ;;     transitively by `org-cycle-set-startup-visibility' via
+  ;;     `org-fold--hide-drawers') may signal
+  ;;     (wrong-type-argument integer-or-marker-p nil).  The fold
+  ;;     state is cosmetic; do not let a parser hiccup abort
+  ;;     `elot-mode' setup.
+  (condition-case err
+      (org-cycle-set-startup-visibility)
+    (error
+     (message "elot-mode: skipping startup visibility in %s (%s)"
+              (buffer-name) (error-message-string err)))))
 
-  (defun elot-mode--maybe-setup-labels ()
-    "Set up label-display, prompting the user for large files.
+(defun elot-mode--maybe-setup-labels ()
+  "Set up label-display, prompting the user for large files.
 If `elot-label-display-size-threshold' is nil, always set up.
 If the buffer is larger than the threshold, ask the user first.
+
 In batch mode (`noninteractive'), skip label-display entirely."
-    (unless noninteractive
-      (let ((threshold elot-label-display-size-threshold))
-        (when (or (null threshold)
-                  (<= (buffer-size) threshold)
-                  (y-or-n-p
-                   (format "Buffer is %s KB -- enable ELOT label-display? "
-                           (/ (buffer-size) 1024))))
-          (elot-label-display-setup)))))
+  (unless noninteractive
+    (let ((threshold elot-label-display-size-threshold))
+      (when (or (null threshold)
+                (<= (buffer-size) threshold)
+                (y-or-n-p
+                 (format "Buffer is %s KB -- enable ELOT label-display? "
+                         (/ (buffer-size) 1024))))
+        (elot-label-display-setup)))))
 
-  (defun elot-mode--disable ()
-    "Tear down ELOT in the current Org buffer."
-    ;; 1. Remove hooks
-    (elot-mode--remove-hooks)
+(defun elot-mode--disable ()
+  "Tear down ELOT in the current Org buffer."
+  ;; 1. Remove hooks
+  (elot-mode--remove-hooks)
 
-    ;; 2. SPARQL advice (uninstall when this is the last ELOT buffer)
-    (elot-mode--uninstall-sparql-advice)
+  ;; 2. SPARQL advice (uninstall when this is the last ELOT buffer)
+  (elot-mode--uninstall-sparql-advice)
 
-    ;; 3. Xref globals (uninstall when this is the last ELOT buffer)
-    (elot-mode--uninstall-xref-globals)
+  ;; 3. Xref globals (uninstall when this is the last ELOT buffer)
+  (elot-mode--uninstall-xref-globals)
 
-    ;; 4. LaTeX export filter
-    (setq org-export-filter-item-functions
-          (delq 'elot-latex-filter-omn-item
-                org-export-filter-item-functions))
+  ;; 4. LaTeX export filter
+  (setq org-export-filter-item-functions
+        (delq 'elot-latex-filter-omn-item
+              org-export-filter-item-functions))
 
-    ;; 5. Export pre-processing hook
-    (remove-hook 'org-export-before-processing-functions
-                 #'elot--prepare-export-buffer)
+  ;; 5. Export pre-processing hook
+  (remove-hook 'org-export-before-processing-functions
+               #'elot--prepare-export-buffer)
 
-    ;; 6. Remove label-display overlays
-    (when (fboundp 'elot-remove-prop-display)
-      (with-silent-modifications
-        (elot-remove-prop-display)))
+  ;; 6. Remove label-display overlays
+  (when (fboundp 'elot-remove-prop-display)
+    (with-silent-modifications
+      (elot-remove-prop-display)))
 
-    ;; 7. Restore syntax table
-    (set-syntax-table org-mode-syntax-table))
+  ;; 7. Restore syntax table
+  (set-syntax-table org-mode-syntax-table))
 
 ;;;###autoload
 (define-minor-mode elot-mode
@@ -967,7 +980,14 @@ Detection looks for `:ELOT-context-type: ontology' in the buffer."
   :group 'elot)
 
 (defun elot-mode--maybe-enable ()
-  "Enable `elot-mode' if the current Org buffer looks like an ELOT file."
+  "Enable `elot-mode' if the current Org buffer looks like an ELOT file.
+Deferred via `run-at-time' 0 so that `elot-mode--enable' does not
+run inside `org-mode-hook' while Org is still initializing the
+buffer (text properties, fold state, element cache).  That timing
+is especially fragile during `desktop-read', where the buffer is
+restored in pieces and the org-element parser can otherwise
+signal (wrong-type-argument integer-or-marker-p nil) from inside
+`org-element-item-parser'."
   (when (and elot-mode-auto-detect
              (derived-mode-p 'org-mode)
              (not (bound-and-true-p elot-mode))
@@ -975,7 +995,20 @@ Detection looks for `:ELOT-context-type: ontology' in the buffer."
                (goto-char (point-min))
                (re-search-forward
                 ":ELOT-context-type:.*ontology" nil t)))
-    (elot-mode 1)))
+    (let ((buf (current-buffer)))
+      (run-at-time
+       0 nil
+       (lambda ()
+         (when (and (buffer-live-p buf)
+                    (with-current-buffer buf
+                      (and (derived-mode-p 'org-mode)
+                           (not (bound-and-true-p elot-mode)))))
+           (with-current-buffer buf
+             (condition-case err
+                 (elot-mode 1)
+               (error
+                (message "elot-mode: auto-enable failed in %s (%s)"
+                         (buffer-name) (error-message-string err)))))))))))
 
 ;; NOTE: This `add-hook' is intentional and is the standard idiom
 ;; for a minor mode that opts users in based on Org-file content (the
