@@ -1,9 +1,8 @@
 name: CI
 
-# Minimal Linux-only CI for ELOT (ELPA-SUBMISSION-PLAN.org Milestone 6,
-# option B).  Runs byte-compile, the ERT suite, the load smoke test,
-# and package-lint on every push and pull request.  ROBOT-gated tests
-# skip cleanly on these runners (no Java / ROBOT installed).
+# Minimal Linux-only CI for ELOT.  Runs byte-compile, the ERT suite,
+# the load smoke test, and package-lint on every push and pull request.
+# ROBOT-gated tests skip cleanly on these runners (no Java / ROBOT installed).
 
 permissions:
   contents: read
