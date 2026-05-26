@@ -24,18 +24,18 @@
 
 ;;; Commentary:
 
-;; Step 1.3 of the ELOT global-slurp plan: one parser per source
-;; type, all producing the common (ID LABEL PLIST) slurp shape
-;; consumed by `elot-db-update-source'.  No DB writes happen here;
-;; that wiring is Step 1.4.
+;; One parser per source type, all producing the common
+;; (ID LABEL PLIST) slurp shape consumed by
+;; `elot-db-update-source'.  No DB writes happen here; that
+;; wiring lives in the source-registration UI below.
 ;;
-;; Supported formats (v1):
+;; Supported formats:
 ;;
 ;;   org   -- ELOT Org document, via `elot-build-slurp'
-;;   csv   -- header-row-aware flat dict (UC3 primary path)
-;;   tsv   -- header-row-aware flat dict (UC3 primary path)
+;;   csv   -- header-row-aware flat dict
+;;   tsv   -- header-row-aware flat dict
 ;;   json  -- flat ({"id": "label"}) or nested
-;;            ({"id": {"label": ..., "prop": ...}}) dict (UC3)
+;;            ({"id": {"label": ..., "prop": ...}}) dict
 ;;   ttl   -- Turtle via ROBOT + label SPARQL query
 ;;   rq    -- SPARQL query against a local file or endpoint, via
 ;;            ROBOT, with CSV result caching under .elot-cache/
@@ -43,9 +43,8 @@
 ;; The dispatcher maps file extensions to parsers via the
 ;; user-extensible `elot-source-supported-extensions' defcustom.
 ;;
-;; See ELOT-DB-PLAN.org (Step 1.3 and the UC3 subsection) for the
-;; authoritative design.  Like `elot-db.el', this file is authored
-;; directly as Elisp rather than tangled from an Org document.
+;; Like `elot-db.el', this file is authored directly as Elisp
+;; rather than tangled from an Org document.
 
 ;;; Code:
 
@@ -130,7 +129,7 @@ for the extension."
   (let* ((ext (elot-source--extension source))
          (fn  (cdr (assoc ext elot-source-supported-extensions))))
     (unless fn
-      (user-error "elot-sources: no parser registered for extension %S"
+      (user-error "Elot-sources: no parser registered for extension %S"
                   (or ext "(none)")))
     (apply fn source args)))
 
@@ -208,9 +207,10 @@ returned with surrounding quotes stripped."
     (nreverse fields)))
 
 (defun elot-source--parse-separated (file sep)
-  "Common CSV/TSV parser; SEP is a single-character separator string.
+  "Parse delimited FILE into slurp entries.
+Common CSV/TSV parser; SEP is a single-character separator string.
 
-Recognises two language-tag conventions (Step 1.16.6):
+Recognises two language-tag conventions:
 
 - A header named exactly `lang' carries a row-level BCP-47 tag
   that attaches to the row's primary `rdfs:label' (emitted as a
@@ -267,7 +267,7 @@ convention ingest exactly as in earlier versions."
                                  (not (assoc i label-at-cols))) do
                        (setq plist (nconc plist (list h v))))
               ;; Row-level lang attaches to the primary label.  When
-              ;; the CSV has a `lang' column (Step 1.16.6), emit an
+              ;; the CSV has a `lang' column, emit an
               ;; `rdfs:label' attribute row for every non-empty
               ;; label -- including untagged rows (lang = "") -- so
               ;; the language-aware picker can see the full set of
@@ -328,7 +328,7 @@ Two accepted shapes:
 
 In the nested form, the value of the `label' key becomes the
 entry's label, and all other keys become attribute plist entries
-(values are coerced to strings).  UC3-oriented; covers the
+\(values are coerced to strings).  UC3-oriented; covers the
 common ad-hoc mapping shape found in config / i18n / dashboard
 JSON."
   (let ((data (elot-source--json-read file))
@@ -374,23 +374,23 @@ JSON."
     (nreverse result)))
 
 ;;;; ------------------------------------------------------------------
-;;;; Step 1.7.3 subtask A: prefix harvest for TTL / RQ
+;;;; Prefix harvest for TTL / RQ
 ;;;; ------------------------------------------------------------------
 
 (defun elot-source--harvest-prefixes (file)
   "Return an alist ((PREFIX . EXPANSION) ...) harvested from FILE.
 
 Matches both Turtle-style declarations
-  `@prefix NAME: <EXPANSION> .'
+  @prefix NAME: <EXPANSION> .
 and SPARQL-style declarations
-  `PREFIX NAME: <EXPANSION>'
-at the start of a line (with optional leading whitespace).  The
-empty prefix (`@prefix : <...>') is supported and stored with the
+  PREFIX NAME: <EXPANSION>
+at the start of a line \(with optional leading whitespace).  The
+empty prefix (@prefix : <...>) is supported and stored with the
 empty string as key.
 
 Whitespace and alignment between tokens are tolerated; simple
-full-line `#' comments are skipped implicitly because the regex
-requires `@prefix' / `PREFIX' at the start of the matched line.
+full-line # comments are skipped implicitly because the regex
+requires @prefix / PREFIX at the start of the matched line.
 Duplicate prefix names: the first occurrence wins (matching the
 semantics ROBOT and most readers apply)."
   (let ((result nil))
@@ -438,7 +438,7 @@ variables become attribute plist entries (column name -> key).
 The default query projects a third column `?lang' carrying the
 BCP-47 language tag of each label (empty string for untagged
 literals).  The CSV parser recognises the `lang' column (see
-`elot-source--parse-separated', Step 1.16.6) and writes the tag
+`elot-source--parse-separated') and writes the tag
 into `attributes.lang'.  Users who have customised this defcustom
 keep their previous (language-less) behaviour until they opt in
 by adding `(LANG(?label) AS ?lang)' to their projection."
@@ -458,7 +458,7 @@ as part of an extended result shape
 `elot-label-register-source' can thread them through to
 `elot-db-add-prefix'.  This is what lets
 `elot-global-label-display-mode' match CURIE-form tokens in a
-buffer whose ids are stored as full IRIs (Step 1.7.3)."
+buffer whose ids are stored as full IRIs."
   (unless (elot-robot-available-p)
     (user-error
      "elot-sources: ROBOT not available; set `elot-robot-jar-path'"))
@@ -492,7 +492,8 @@ looking for common markers, and finally to FILE's own directory."
                (when-let ((proj (project-current nil)))
                  (expand-file-name (if (fboundp 'project-root)
                                        (project-root proj)
-                                     (car (with-no-warnings
+                                     (car (with-suppressed-warnings
+                                              ((obsolete project-roots))
                                             (project-roots proj))))))))
         (locate-dominating-file dir ".git")
         (locate-dominating-file dir ".elot-cache")
@@ -561,8 +562,8 @@ invoked.  On empty results or executor failure, the existing
 cache is preserved.
 
 Returns the extended result shape `(:entries ENTRIES :prefixes
-PREFIXES)' (see Step 1.7.3).  Prefixes are harvested from
-QUERY-FILE's own `PREFIX' lines, since the cached CSV does not
+PREFIXES)'.  Prefixes are harvested from
+QUERY-FILE's own PREFIX lines, since the cached CSV does not
 carry the source TTL's declarations."
   (let* ((cache (elot-source-rq-cache-path query-file data-source))
          (dir   (file-name-directory cache)))
@@ -594,14 +595,13 @@ carry the source TTL's declarations."
           :prefixes (elot-source--harvest-prefixes query-file))))
 
 ;;;; ------------------------------------------------------------------
-;;;; Step 1.4 - Source registration UI
+;;;; Source registration UI
 ;;;; ------------------------------------------------------------------
 
-;; Thin glue layer over `elot-source-parse' (Step 1.3) and
-;; `elot-db-*' (Steps 1.1 / 1.1.1 / 1.2).  Provides user-facing
-;; commands for managing the contents of the label cache.  No new
-;; persistent state is introduced here; everything is derived from
-;; the DB.
+;; Thin glue layer over `elot-source-parse' and the `elot-db-*'
+;; primitives.  Provides user-facing commands for managing the
+;; contents of the label cache.  No new persistent state is
+;; introduced here; everything is derived from the DB.
 
 (require 'tabulated-list)
 (require 'elot-db)
@@ -642,7 +642,7 @@ carry the source TTL's declarations."
 
 (defun elot-source--registered-completions ()
   "Return a list of (LABEL . (SOURCE . DATA-SOURCE)) for registered sources.
-LABEL is `SOURCE' when DATA-SOURCE is empty, else `SOURCE -> DATA-SOURCE'."
+LABEL is SOURCE when DATA-SOURCE is empty, else SOURCE -> DATA-SOURCE."
   (mapcar
    (lambda (row)
      (let* ((src (nth 0 row))
@@ -655,15 +655,15 @@ LABEL is `SOURCE' when DATA-SOURCE is empty, else `SOURCE -> DATA-SOURCE'."
    (elot-db-list-sources)))
 
 (defun elot-source--read-registered-source (prompt)
-  "Prompt via `completing-read' for a registered (SOURCE . DATA-SOURCE) pair.
-Returns the cons cell, or signals `user-error' when no sources are
-registered."
+  "Prompt with PROMPT for a registered (SOURCE . DATA-SOURCE) pair.
+Uses `completing-read'.  Returns the cons cell, or signals
+`user-error' when no sources are registered."
   (let* ((cands (elot-source--registered-completions)))
     (unless cands
-      (user-error "elot-sources: no sources registered in the DB"))
+      (user-error "Elot-sources: no sources registered in the DB"))
     (let* ((choice (completing-read prompt (mapcar #'car cands) nil t)))
       (or (cdr (assoc choice cands))
-          (user-error "elot-sources: no such registered source: %s" choice)))))
+          (user-error "Elot-sources: no such registered source: %s" choice)))))
 
 (defun elot-source--read-source-for-registration ()
   "Interactive helper: read a source file path, and for `.rq' a data-source.
@@ -689,7 +689,7 @@ successful ingest.  Signals on parser / DB errors.
 If the parser returns the extended shape
 `(:entries ENTRIES :prefixes PREFIXES)', the PREFIXES alist is
 written to the `prefixes' table via `elot-db-add-prefix' scoped
-to (SOURCE, DATA-SOURCE).  Introduced in Step 1.7.3."
+to (SOURCE, DATA-SOURCE)."
   (elot-source--ensure-db)
   (let* ((ds-norm (elot-source--normalize-data-source data-source))
          (fresh   (and (not force)
@@ -699,7 +699,7 @@ to (SOURCE, DATA-SOURCE).  Introduced in Step 1.7.3."
         (list :skipped source ds-norm)
       (let* ((type     (or (elot-source--type-for source)
                            (user-error
-                            "elot-sources: no parser for %s" source)))
+                            "Elot-sources: no parser for %s" source)))
              (raw      (if (equal type "rq")
                            (elot-source-parse source ds-norm)
                          (elot-source-parse source)))
@@ -739,7 +739,7 @@ advanced since the last ingest, this is a no-op; use
 For `.rq' buffers the data-source is prompted for."
   (interactive)
   (unless buffer-file-name
-    (user-error "elot-sources: current buffer is not visiting a file"))
+    (user-error "Elot-sources: current buffer is not visiting a file"))
   (let* ((source buffer-file-name)
          (ds     (when (equal (elot-source--extension source) "rq")
                    (elot-source--normalize-data-source
@@ -901,7 +901,7 @@ Step 9.1 of ELOT-GPTEL-PLAN.org."
   (tabulated-list-init-header))
 
 (defun elot-label--format-time (time)
-  "Format a float-time TIME for display in the source list."
+  "Format a `float-time' TIME for display in the source list."
   (if (and time (numberp time) (> time 0))
       (format-time-string "%Y-%m-%d %H:%M" (seconds-to-time time))
     "-"))
@@ -971,12 +971,12 @@ Signals `user-error' if point is not on an entry."
       (elot-label-list-sources-refresh))))
 
 
-;;;; Step 1.5 - per-project active-sources configuration
+;;;; Per-project active-sources configuration
 
 ;; The buffer-local `elot-active-label-sources' variable and its
-;; safe-local-variable predicate are defined in elot-db.el (so that
-;; the Step 1.2 read primitives have a stable default).  The commands
-;; below manage that list and, optionally, persist changes to
+;; safe-local-variable predicate are defined in elot-db.el so that
+;; the read primitives have a stable default.  The commands below
+;; manage that list and, optionally, persist changes to
 ;; `.dir-locals.el' via `add-dir-local-variable'.
 
 (defun elot-label--normalize-entry (entry)
@@ -1159,7 +1159,7 @@ updated list to `.dir-locals.el'."
     new))
 
 ;;;; ------------------------------------------------------------------
-;;;; Step 1.7.2 - Active-sources priority UI
+;;;; Active-sources priority UI
 ;;;; ------------------------------------------------------------------
 
 (defun elot-label--move-entry (entry delta)
@@ -1185,7 +1185,7 @@ end in the requested direction."
             new))))))
 
 (defun elot-label--active-completions ()
-  "Return an alist (LABEL . ENTRY) for `elot-active-label-sources'."
+  "Return an alist \(LABEL . ENTRY) for `elot-active-label-sources'."
   (mapcar (lambda (e)
             (let* ((src (nth 0 e))
                    (ds  (nth 1 e))
@@ -1194,7 +1194,8 @@ end in the requested direction."
           elot-active-label-sources))
 
 (defun elot-label--read-active-entry (prompt)
-  "Prompt for an entry from `elot-active-label-sources'.  Return the entry."
+  "Prompt with PROMPT for an entry from `elot-active-label-sources'.
+Return the entry."
   (let ((cands (elot-label--active-completions)))
     (unless cands (user-error "No active label sources"))
     (cdr (assoc (completing-read prompt (mapcar #'car cands) nil t)
@@ -1289,7 +1290,7 @@ Key bindings:
 (defun elot-label-list-active-sources ()
   "Display a tabulated buffer for reordering `elot-active-label-sources'.
 Mutations performed in the buffer act on the originating buffer
-(the one current when this command was invoked), so that the
+\(the one current when this command was invoked), so that the
 buffer-local active-sources list and any buffer-local change hooks
 resolve correctly."
   (interactive)

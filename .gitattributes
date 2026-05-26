@@ -1,0 +1,27 @@
+# Normalize line endings: store LF in the repo, check out LF on all
+# platforms. Prevents spurious CRLF warnings on Windows and keeps the
+# files MELPA / byte-compile / checkdoc-friendly.
+
+* text=auto eol=lf
+
+# Source files: always LF
+*.el      text eol=lf
+*.org     text eol=lf
+*.md      text eol=lf
+*.js      text eol=lf
+*.css     text eol=lf
+*.setup   text eol=lf
+*.sql     text eol=lf
+*.ttl     text eol=lf
+*.omn     text eol=lf
+*.peggy   text eol=lf
+Makefile  text eol=lf
+
+# Binary: never touch
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.svg     text eol=lf
+*.pdf     binary
+*.jar     binary

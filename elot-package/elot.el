@@ -73,11 +73,26 @@
 (defvar elot-missing-dependencies nil
   "List of missing external dependencies for legacy ELOT features.")
 
+(defvar elot--missing-deps-reported nil
+  "Non-nil once the missing-dependencies hint has been emitted.
+Guards `elot-missing-dependencies' against duplicate reporting when
+this file is loaded more than once (e.g.  byte-compile + load, or
+via several sibling modules).")
+
+;; `cl-pushnew' below prevents duplicate accumulation across
+;; repeated loads, so no top-level reset of
+;; `elot-missing-dependencies' is needed (and a top-level `setq'
+;; would be flagged by package-lint / melpazoid).
 (dolist (pkg '(htmlize omn-mode sparql-mode ob-sparql ob-plantuml))
   (unless (require pkg nil t)
-    (push pkg elot-missing-dependencies)))
+    (cl-pushnew pkg elot-missing-dependencies)))
 
-(when elot-missing-dependencies
+;; Only emit the message once per Emacs session, and never during
+;; byte-compilation -- the warning is for end users, not for CI logs.
+(when (and elot-missing-dependencies
+           (not elot--missing-deps-reported)
+           (not (bound-and-true-p byte-compile-current-file)))
+  (setq elot--missing-deps-reported t)
   (message "ELOT: Optional dependencies missing: %s. Some features will be disabled."
            (mapconcat #'symbol-name elot-missing-dependencies ", ")))
 ;; src-require ends here
@@ -412,143 +427,143 @@ should call `elot--sparql-compute-merged-prefixes' directly."
 
 ;; [[file:../elot-defs.org::src-sparql-exec-patch][src-sparql-exec-patch]]
 (defun elot--is-elot-buffer ()
-  "Check if the current buffer is an ELOT buffer."
-  (bound-and-true-p elot-mode))
+    "Check if the current buffer is an ELOT buffer."
+    (bound-and-true-p elot-mode))
 
-(defconst elot--sparql-empty-result-sentinel
-  "[empty result set]"
-  "Sentinel returned by the ELOT SPARQL advice when a CSV result has
-no rows.  Used in place of an empty CSV body so that
+  (defconst elot--sparql-empty-result-sentinel
+    "[empty result set]"
+    "Sentinel returned by the ELOT SPARQL advice for empty CSV results.
+Used in place of an empty CSV body so that
 `org-babel-sparql-convert-to-table' is not invoked on input it
 cannot parse.")
 
-(defun elot--sparql-resolve-format (raw)
-  "Classify the :format header value RAW as the symbol `ttl' or `csv'.
-A nil or empty RAW maps to `csv'.  An unrecognised non-empty RAW
-also maps to `csv', but emits a single `display-warning' under
-category `elot-sparql' so that the silent fallback is at least
-visible."
-  (cond
-   ((or (null raw) (and (stringp raw) (string-empty-p raw))) 'csv)
-   ((not (stringp raw))
-    (display-warning
-     'elot-sparql
-     (format "Non-string :format %S; defaulting to csv" raw)
-     :warning)
-    'csv)
-   ((string-match-p "\\(turtle\\|ttl\\)" raw) 'ttl)
-   ((string-match-p "\\(csv\\|text/csv\\)" raw) 'csv)
-   (t (display-warning
+  (defun elot--sparql-resolve-format (raw)
+    "Classify the :format header value RAW as the symbol `ttl' or `csv'.
+  A nil or empty RAW maps to `csv'.  An unrecognised non-empty RAW
+  also maps to `csv', but emits a single `display-warning' under
+  category `elot-sparql' so that the silent fallback is at least
+  visible."
+    (cond
+     ((or (null raw) (and (stringp raw) (string-empty-p raw))) 'csv)
+     ((not (stringp raw))
+      (display-warning
        'elot-sparql
-       (format "Unrecognised :format %S; defaulting to csv" raw)
+       (format "Non-string :format %S; defaulting to csv" raw)
        :warning)
-      'csv)))
+      'csv)
+     ((string-match-p "\\(turtle\\|ttl\\)" raw) 'ttl)
+     ((string-match-p "\\(csv\\|text/csv\\)" raw) 'csv)
+     (t (display-warning
+         'elot-sparql
+         (format "Unrecognised :format %S; defaulting to csv" raw)
+         :warning)
+        'csv)))
 
-(defun elot--sparql-classify-url (url)
-  "Classify URL as the symbol `endpoint' or `local-file'.
-URL is the value of the :url header argument.  Signals a
-`user-error' when URL is nil/empty, or when it is non-HTTP and
-points to a local file that does not exist; the message in the
-latter case names the resolved absolute path and the current
-`default-directory'."
-  (cond
-   ((or (null url) (and (stringp url) (string-empty-p url)))
-    (user-error
-     "ELOT SPARQL: missing :url header argument (set :url to an HTTP endpoint or a local ontology file)"))
-   ((not (stringp url))
-    (user-error "ELOT SPARQL: :url must be a string, got %S" url))
-   ((string-match-p "\\`https?:" url) 'endpoint)
-   (t
-    (let ((abs (expand-file-name url)))
-      (unless (file-exists-p abs)
-        (user-error
-         "ELOT SPARQL: local :url file does not exist: %s (default-directory: %s)"
-         abs default-directory))
-      'local-file))))
+  (defun elot--sparql-classify-url (url)
+    "Classify URL as the symbol `endpoint' or `local-file'.
+  URL is the value of the :url header argument.  Signals a
+  `user-error' when URL is nil/empty, or when it is non-HTTP and
+  points to a local file that does not exist; the message in the
+  latter case names the resolved absolute path and the current
+  `default-directory'."
+    (cond
+     ((or (null url) (and (stringp url) (string-empty-p url)))
+      (user-error
+       "ELOT SPARQL: missing :url header argument (set :url to an HTTP endpoint or a local ontology file)"))
+     ((not (stringp url))
+      (user-error "ELOT SPARQL: :url must be a string, got %S" url))
+     ((string-match-p "\\`https?:" url) 'endpoint)
+     (t
+      (let ((abs (expand-file-name url)))
+        (unless (file-exists-p abs)
+          (user-error
+           "ELOT SPARQL: local :url file does not exist: %s (default-directory: %s)"
+           abs default-directory))
+        'local-file))))
 
-(defun elot--sparql-result-empty-p (format-symbol)
-  "Return non-nil if the current buffer holds an empty SPARQL result.
-FORMAT-SYMBOL is `csv' or `ttl' as returned by
-`elot--sparql-resolve-format'.  An empty result is a buffer that is
-either completely empty, contains only whitespace, or -- for csv --
-contains only a header row."
-  (save-excursion
-    (goto-char (point-min))
-    (or (= (point-min) (point-max))
-        (looking-at-p "\\`[ \t\n\r]*\\'")
-        (and (eq format-symbol 'csv)
-             (save-excursion
-               (forward-line 1)
-               (looking-at-p "[ \t\n\r]*\\'"))))))
+  (defun elot--sparql-result-empty-p (format-symbol)
+    "Return non-nil if the current buffer holds an empty SPARQL result.
+  FORMAT-SYMBOL is `csv' or `ttl' as returned by
+  `elot--sparql-resolve-format'.  An empty result is a buffer that is
+  either completely empty, contains only whitespace, or -- for csv --
+  contains only a header row."
+    (save-excursion
+      (goto-char (point-min))
+      (or (= (point-min) (point-max))
+          (looking-at-p "\\`[ \t\n\r]*\\'")
+          (and (eq format-symbol 'csv)
+               (save-excursion
+                 (forward-line 1)
+                 (looking-at-p "[ \t\n\r]*\\'"))))))
 
-(defun elot--custom-org-babel-execute-sparql (orig-fun &rest args)
-  "ELOT-specific SPARQL execution with support for ROBOT.
-This function provides advice :around `org-babel-execute:sparql'.
-ORIG-FUN and ARGS are the original function and its arguments,
-invoked unchanged when not called from an ELOT buffer.
+  (defun elot--custom-org-babel-execute-sparql (orig-fun &rest args)
+    "ELOT-specific SPARQL execution with support for ROBOT.
+  This function provides advice :around `org-babel-execute:sparql'.
+  ORIG-FUN and ARGS are the original function and its arguments,
+  invoked unchanged when not called from an ELOT buffer.
 
-In an ELOT buffer the advice:
+  In an ELOT buffer the advice:
 
-- requires :url and verifies that local files actually exist
-  \(via `elot--sparql-classify-url'\);
-- normalises :format to one of the symbols `csv' or `ttl'
-  \(via `elot--sparql-resolve-format'\);
-- merges and de-duplicates prefix declarations from
-  `org-link-abbrev-alist-local' and the query body
-  \(via `elot--sparql-merge-prefixes'\);
-- forces UTF-8 for query and result I/O so non-ASCII content
-  round-trips cleanly;
-- returns `elot--sparql-empty-result-sentinel' instead of throwing
-  when a CSV result is empty;
-- propagates ROBOT's stderr when the local-file branch fails."
-  (if (not (elot--is-elot-buffer))
-      (apply orig-fun args)
-    (let* ((body          (nth 0 args))
-           (params        (nth 1 args))
-           (raw-url       (cdr (assoc :url params)))
-           (raw-format    (cdr (assoc :format params)))
-           (kind          (elot--sparql-classify-url raw-url))
-           (format-symbol (elot--sparql-resolve-format raw-format))
-           (expanded      (org-babel-expand-body:sparql body params))
-           (computed      (elot--sparql-compute-merged-prefixes
-                           org-link-abbrev-alist-local expanded))
-           (merged-pairs  (car computed))
-           (query-body    (cdr computed))
-           (prefix-block  (elot--sparql-format-prefix-block merged-pairs))
-           ;; Make inline-declared prefixes participate in result-IRI
-           ;; shortening too: feed the *merged* pairs (alist + inline,
-           ;; with inline overrides applied) to ob-sparql's curie
-           ;; abbreviator instead of just `org-link-abbrev-alist-local'.
-           (org-babel-sparql--current-curies
-            (append merged-pairs org-link-abbrev-alist))
-           (final-query
-            (if (or (null prefix-block) (string-empty-p prefix-block))
-                query-body
-              (concat prefix-block "\n" query-body)))
-           (coding-system-for-read  'utf-8)
-           (coding-system-for-write 'utf-8))
-      (message "ELOT SPARQL: %s, format=%s" kind format-symbol)
-      (with-temp-buffer
-        (set-buffer-file-coding-system 'utf-8)
-        (pcase kind
-          ('endpoint
-           (sparql-execute-query final-query raw-url raw-format t))
-          ('local-file
-           (elot-robot-execute-query final-query raw-url format-symbol)))
-        (org-babel-result-cond
-            (cdr (assoc :result-params params))
-          (buffer-string)
-          (cond
-           ((eq format-symbol 'csv)
-            (if (elot--sparql-result-empty-p 'csv)
-                elot--sparql-empty-result-sentinel
-              (org-babel-sparql-convert-to-table)))
-           (t (buffer-string))))))))
+  - requires :url and verifies that local files actually exist
+    \(via `elot--sparql-classify-url'\);
+  - normalises :format to one of the symbols `csv' or `ttl'
+    \(via `elot--sparql-resolve-format'\);
+  - merges and de-duplicates prefix declarations from
+    `org-link-abbrev-alist-local' and the query body
+    \(via `elot--sparql-merge-prefixes'\);
+  - forces UTF-8 for query and result I/O so non-ASCII content
+    round-trips cleanly;
+  - returns `elot--sparql-empty-result-sentinel' instead of throwing
+    when a CSV result is empty;
+  - propagates ROBOT's stderr when the local-file branch fails."
+    (if (not (elot--is-elot-buffer))
+        (apply orig-fun args)
+      (let* ((body          (nth 0 args))
+             (params        (nth 1 args))
+             (raw-url       (cdr (assoc :url params)))
+             (raw-format    (cdr (assoc :format params)))
+             (kind          (elot--sparql-classify-url raw-url))
+             (format-symbol (elot--sparql-resolve-format raw-format))
+             (expanded      (org-babel-expand-body:sparql body params))
+             (computed      (elot--sparql-compute-merged-prefixes
+                             org-link-abbrev-alist-local expanded))
+             (merged-pairs  (car computed))
+             (query-body    (cdr computed))
+             (prefix-block  (elot--sparql-format-prefix-block merged-pairs))
+             ;; Make inline-declared prefixes participate in result-IRI
+             ;; shortening too: feed the *merged* pairs (alist + inline,
+             ;; with inline overrides applied) to ob-sparql's curie
+             ;; abbreviator instead of just `org-link-abbrev-alist-local'.
+             (org-babel-sparql--current-curies
+              (append merged-pairs org-link-abbrev-alist))
+             (final-query
+              (if (or (null prefix-block) (string-empty-p prefix-block))
+                  query-body
+                (concat prefix-block "\n" query-body)))
+             (coding-system-for-read  'utf-8)
+             (coding-system-for-write 'utf-8))
+        (message "ELOT SPARQL: %s, format=%s" kind format-symbol)
+        (with-temp-buffer
+          (set-buffer-file-coding-system 'utf-8)
+          (pcase kind
+            ('endpoint
+             (sparql-execute-query final-query raw-url raw-format t))
+            ('local-file
+             (elot-robot-execute-query final-query raw-url format-symbol)))
+          (org-babel-result-cond
+              (cdr (assoc :result-params params))
+            (buffer-string)
+            (cond
+             ((eq format-symbol 'csv)
+              (if (elot--sparql-result-empty-p 'csv)
+                  elot--sparql-empty-result-sentinel
+                (org-babel-sparql-convert-to-table)))
+             (t (buffer-string))))))))
 
-;; The advice is installed and removed by `elot-mode--enable' /
-;; `elot-mode--disable' (see elot-mode.el).  Installing it here at
-;; load time would mutate global state for every Emacs session that
-;; merely loads ELOT, contrary to MELPA guidance.
+  ;; The advice is installed and removed by `elot-mode--enable' /
+  ;; `elot-mode--disable' (see elot-mode.el).  Installing it here at
+  ;; load time would mutate global state for every Emacs session that
+  ;; merely loads ELOT, contrary to MELPA guidance.
 ;; src-sparql-exec-patch ends here
 
 ;; [[file:../elot-defs.org::src-babel-passthrough][src-babel-passthrough]]
@@ -568,8 +583,9 @@ PARAMS is ignored."
     (always params)  ;; ignore argument
     body))
 
-(unless (fboundp #'org-babel-execute:ttl)
-  (defalias #'org-babel-execute:ttl #'elot-org-babel-execute-passthrough))
+(declare-function org-babel-execute:ttl "ext:ob-ttl" (body params))
+(unless (fboundp 'org-babel-execute:ttl)
+  (defalias 'org-babel-execute:ttl #'elot-org-babel-execute-passthrough))
 ;; src-babel-passthrough ends here
 
 ;; [[file:../elot-defs.org::src-rdfpuml-execute][src-rdfpuml-execute]]
@@ -609,6 +625,11 @@ EPILOGUE extra PlantUML clauses."
 ;; src-rdfpuml-execute ends here
 
 ;; [[file:../elot-defs.org::src-plantuml-execute][src-plantuml-execute]]
+;; `org-plantuml-jar-path' is defined by ob-plantuml, an optional
+;; dependency.  Declare it so the byte-compiler does not warn when
+;; ob-plantuml is not loaded at compile time.
+(defvar org-plantuml-jar-path)
+
 (defun elot-plantuml-execute (puml-file output-name format)
   "With PlantUML, read PUML-FILE and write image file to OUTPUT-NAME.FORMAT.
 The file is stored in the ELOT default image directory.
@@ -645,85 +666,94 @@ replace <prefix> with the result of `elot-unprefix-uri`."
 ;; src-resolve-prefixes-on-export ends here
 
 ;; [[file:../elot-defs.org::src-linkify-codelist-items-in-buffer][src-linkify-codelist-items-in-buffer]]
-(defun elot--linkify-codelist-items-in-buffer ()
-  "Search for `elot-codelist-fontify-regexp` in the current buffer
+;; Defined in elot-label-display.el (loaded after elot.el); declare
+  ;; so the byte-compiler does not flag the reference as free.
+  (defvar elot-codelist-fontify-regexp)
+
+  (defun elot--linkify-codelist-items-in-buffer ()
+    "Linkify codelist items found in the current buffer.
+Search for `elot-codelist-fontify-regexp' in the current buffer
 and replace matches with Org-mode links, unless the match is
-within a code block, example block, fixed-width area, or IN a headline's text.
-The link description is obtained using `(elot-codelist-id-label MATCH)`."
-  (save-excursion
-    (goto-char (point-min))
-    (while-let ((matched-text
-                 (and (re-search-forward elot-codelist-fontify-regexp nil t)
-                      (match-string-no-properties 0))))
-      (let ((start (match-beginning 0))
-            (end (match-end 0)))
-        ;; Corrected check:
-        (if (let* ((element-at-start ;; Get element at the beginning of the match
-                    (save-excursion
-                      (goto-char start)
-                      (org-element-context))))
-              (or
-               (eq (org-element-type element-at-start) 'headline)
-               (org-element-lineage element-at-start
-                                    '(src-block example-block fixed-width)
-                                    t))) ; 't' checks element-at-start itself too
-            nil ; In forbidden context, do nothing and skip to next match
-          (let* ((label (elot-codelist-id-label matched-text))
-                 (link-string (if label (format "[[#%s][%s]]" matched-text label))))
-            (if label 
-                (progn
-                  (delete-region start end)
-                  (goto-char start)
-                  (insert link-string)))))))))
+within a code block, example block, fixed-width area, or IN a
+headline's text.  The link description is obtained by calling
+`elot-codelist-id-label' on the matched text."
+    (save-excursion
+      (goto-char (point-min))
+      (while-let ((matched-text
+                   (and (re-search-forward elot-codelist-fontify-regexp nil t)
+                        (match-string-no-properties 0))))
+        (let ((start (match-beginning 0))
+              (end (match-end 0)))
+          ;; Corrected check:
+          (if (let* ((element-at-start ;; Get element at the beginning of the match
+                      (save-excursion
+                        (goto-char start)
+                        (org-element-context))))
+                (or
+                 (eq (org-element-type element-at-start) 'headline)
+                 (org-element-lineage element-at-start
+                                      '(src-block example-block fixed-width)
+                                      t))) ; 't' checks element-at-start itself too
+              nil ; In forbidden context, do nothing and skip to next match
+            (let* ((label (elot-codelist-id-label matched-text))
+                   (link-string (if label (format "[[#%s][%s]]" matched-text label))))
+              (if label
+                  (progn
+                    (delete-region start end)
+                    (goto-char start)
+                    (insert link-string)))))))))
 ;; src-linkify-codelist-items-in-buffer ends here
 
 ;; [[file:../elot-defs.org::src-stable-links-export][src-stable-links-export]]
 (defun elot--prepare-export-buffer (backend)
-  "Prepare the export clone for Elot:
+    "Prepare the export clone for Elot, dispatching on BACKEND.
+For non-LaTeX BACKEND values:
 
   - Give each resource-declaring headline a CUSTOM_ID (if missing).
   - Replace every visible CURIE with an internal link to that ID,
-    except when the CURIE is inside a src/example/fixed-width block."
-  (when (org-export-derived-backend-p backend 'latex)
-    (cl-return-from elot--prepare-export-buffer))
-  ;; ------------------------------------------------------------
-  ;; 0  Re-parse the headline hierarchy in the export clone
-  ;;    (buffer-local vars like `elot-headline-hierarchy' and
-  ;;    `org-link-abbrev-alist-local' are nil in a fresh clone)
-  ;; ------------------------------------------------------------
-  (elot-update-headline-hierarchy)
-  ;; ------------------------------------------------------------
-  ;; 1  Turn uses of defined resources into links
-  ;; ------------------------------------------------------------
-  (org-fold-show-all)
-  (elot-label-display-setup)
-  (font-lock-ensure) ;; because "linkify" reads properties
-  (elot--linkify-codelist-items-in-buffer)
-  ;; ------------------------------------------------------------
-  ;; 2  Ensure CUSTOM_ID drawers
-  ;; ------------------------------------------------------------
-  (let (pending)                                   ; (marker . id) pairs
-    (org-with-wide-buffer
-     (org-element-map (org-element-parse-buffer 'headline) 'headline
-       (lambda (hl)
-         (let* ((title (org-element-property :raw-value hl))
-                (id    (elot-entity-from-header title t)))
-           (when id
-             (let ((m (copy-marker (org-element-property :begin hl))))
-               (unless (org-entry-get m "CUSTOM_ID")
-                 (push (cons m id) pending)))))))
-     ;; Insert from bottom to top so earlier insertions don't shift markers
-     (dolist (cell (nreverse pending))
-       (org-with-point-at (car cell)
-         (org-entry-put (car cell) "CUSTOM_ID" (cdr cell))))))
-  ;; ------------------------------------------------------------
-  ;; 3  Resolve prefixes in description list values
-  ;; ------------------------------------------------------------
-  (elot--resolve-prefixes-in-description-list))
+    except when the CURIE is inside a src/example/fixed-width block.
 
-;; The export hook is installed and removed by `elot-mode--enable' /
-;; `elot-mode--disable' (see `elot-mode.el'); it is not added at
-;; load time so that `(require 'elot)' has no global side effect.
+For LaTeX BACKEND values this function returns early."
+    (when (org-export-derived-backend-p backend 'latex)
+      (cl-return-from elot--prepare-export-buffer))
+    ;; ------------------------------------------------------------
+    ;; 0  Re-parse the headline hierarchy in the export clone
+    ;;    (buffer-local vars like `elot-headline-hierarchy' and
+    ;;    `org-link-abbrev-alist-local' are nil in a fresh clone)
+    ;; ------------------------------------------------------------
+    (elot-update-headline-hierarchy)
+    ;; ------------------------------------------------------------
+    ;; 1  Turn uses of defined resources into links
+    ;; ------------------------------------------------------------
+    (org-fold-show-all)
+    (elot-label-display-setup)
+    (font-lock-ensure) ;; because "linkify" reads properties
+    (elot--linkify-codelist-items-in-buffer)
+    ;; ------------------------------------------------------------
+    ;; 2  Ensure CUSTOM_ID drawers
+    ;; ------------------------------------------------------------
+    (let (pending)                                   ; (marker . id) pairs
+      (org-with-wide-buffer
+       (org-element-map (org-element-parse-buffer 'headline) 'headline
+         (lambda (hl)
+           (let* ((title (org-element-property :raw-value hl))
+                  (id    (elot-entity-from-header title t)))
+             (when id
+               (let ((m (copy-marker (org-element-property :begin hl))))
+                 (unless (org-entry-get m "CUSTOM_ID")
+                   (push (cons m id) pending)))))))
+       ;; Insert from bottom to top so earlier insertions don't shift markers
+       (dolist (cell (nreverse pending))
+         (org-with-point-at (car cell)
+           (org-entry-put (car cell) "CUSTOM_ID" (cdr cell))))))
+    ;; ------------------------------------------------------------
+    ;; 3  Resolve prefixes in description list values
+    ;; ------------------------------------------------------------
+    (elot--resolve-prefixes-in-description-list))
+
+  ;; The export hook is installed and removed by `elot-mode--enable' /
+  ;; `elot-mode--disable' (see `elot-mode.el'); it is not added at
+  ;; load time so that `(require 'elot)' has no global side effect.
 ;; src-stable-links-export ends here
 
 ;; [[file:../elot-defs.org::src-latex-section-export][src-latex-section-export]]
@@ -757,45 +787,45 @@ are passed on to `org-get-heading'."
 
 ;; [[file:../elot-defs.org::src-org-find-description-value][src-org-find-description-value]]
 (defun elot-org-find-description-value (term-regex &optional value-regex)
-  "Find a description-list value for TERM-REGEX in the current Org section.
+    "Find a description-list value for TERM-REGEX in the current Org section.
 
 Walks the description list(s) in the body of the Org headline at point
-(excluding descendant subsections) and returns the value of the first
+\(excluding descendant subsections) and returns the value of the first
 item whose tag matches TERM-REGEX.  If several tags match, prefer the
 first whose value matches VALUE-REGEX; otherwise fall back to the first
 match.  Return nil if no tag matches.
 
 VALUE-REGEX is optional; defaults to match anything."
-  (setq value-regex (or value-regex ""))
-  (save-excursion
-    (save-restriction
-      (widen)
-      (org-back-to-heading t)
-      (let* ((beg (point))
-             (end (save-excursion (outline-next-heading) (point))))
-        (narrow-to-region beg end)
-        (let* ((tree (org-element-parse-buffer))
-               (descriptions
-                (org-element-map tree 'item
-                  (lambda (it)
-                    (when (org-element-property :tag it)
-                      (elot-org-elt-item-str it)))))
-               (matches (seq-filter
-                         (lambda (pair)
-                           (and (car pair)
-                                (stringp (car pair))
-                                (string-match-p term-regex (car pair))))
-                         descriptions))
-               (result
-                (or (seq-some (lambda (pair)
-                                (let ((value (cadr pair)))
-                                  (when (and value
-                                             (stringp value)
-                                             (string-match-p value-regex value))
-                                    value)))
-                              matches)
-                    (when matches (cadr (car matches))))))
-          (and (stringp result) result))))))
+    (setq value-regex (or value-regex ""))
+    (save-excursion
+      (save-restriction
+        (widen)
+        (org-back-to-heading t)
+        (let* ((beg (point))
+               (end (save-excursion (outline-next-heading) (point))))
+          (narrow-to-region beg end)
+          (let* ((tree (org-element-parse-buffer))
+                 (descriptions
+                  (org-element-map tree 'item
+                    (lambda (it)
+                      (when (org-element-property :tag it)
+                        (elot-org-elt-item-str it)))))
+                 (matches (seq-filter
+                           (lambda (pair)
+                             (and (car pair)
+                                  (stringp (car pair))
+                                  (string-match-p term-regex (car pair))))
+                           descriptions))
+                 (result
+                  (or (seq-some (lambda (pair)
+                                  (let ((value (cadr pair)))
+                                    (when (and value
+                                               (stringp value)
+                                               (string-match-p value-regex value))
+                                      value)))
+                                matches)
+                      (when matches (cadr (car matches))))))
+            (and (stringp result) result))))))
 ;; src-org-find-description-value ends here
 
 ;; [[file:../elot-defs.org::src-get-description-entry :tangle no][src-get-description-entry :tangle no]]
@@ -878,13 +908,13 @@ conducted."
 
 ;; [[file:../elot-defs.org::src-keybinding][src-keybinding]]
 (defcustom elot-toggle-labels-key nil
-  "Key sequence bound to `elot-toggle-label-display' in ELOT-relevant buffers.
+    "Key sequence bound to `elot-toggle-label-display' in ELOT-relevant buffers.
 ELOT ships with no default keystroke for the labels toggle.
-Single function keys (F5-F9) and `C-c <letter>' are reserved
-for the user, so ELOT does not claim any of them.  Set this
-variable (via \\[customize-variable]) to a string in `kbd'
-notation -- for example \"<f5>\", \"<f9>\", or \"C-c t l\" --
-to install a binding for `elot-toggle-label-display' in
+Single function keys (F5-F9) and user-reserved prefixes are
+left alone by default, so ELOT does not claim any of them.
+Set this variable (via \\[customize-variable]) to a string in
+`kbd' notation -- for example \"<f5>\" or \"<f9>\" -- to install
+a binding for `elot-toggle-label-display' in
 `elot-mode-map' and in the ELOT-managed `*xref*' / `*ELOT
 Describe*' buffers.
 
@@ -893,43 +923,43 @@ Leave at nil (the default) to use the ELOT easymenu or
 `elot-mode' activation in a session will emit a single
 informational message pointing at this variable; subsequent
 activations are silent."
-  :type '(choice (const  :tag "No binding (use menu / M-x)" nil)
-                 (string :tag "Key sequence (kbd notation)"))
-  :set (lambda (sym val)
-         (set-default sym val)
-         ;; Rebind live in `elot-mode-map' so customize-driven
-         ;; changes take effect immediately, without requiring the
-         ;; user to toggle `elot-mode' off and on.  The helper is
-         ;; defined in elot-mode.el; guard with `fboundp' for the
-         ;; case where elot-mode.el has not yet loaded.
-         (when (fboundp 'elot-mode--apply-toggle-key)
-           (elot-mode--apply-toggle-key)))
-  :group 'elot)
+    :type '(choice (const  :tag "No binding (use menu / M-x)" nil)
+                   (string :tag "Key sequence (kbd notation)"))
+    :set (lambda (sym val)
+           (set-default sym val)
+           ;; Rebind live in `elot-mode-map' so customize-driven
+           ;; changes take effect immediately, without requiring the
+           ;; user to toggle `elot-mode' off and on.  The helper is
+           ;; defined in elot-mode.el; guard with `fboundp' for the
+           ;; case where elot-mode.el has not yet loaded.
+           (when (fboundp 'elot-mode--apply-toggle-key)
+             (elot-mode--apply-toggle-key)))
+    :group 'elot)
 
-(defvar elot--toggle-labels-key-notice-shown nil
-  "Non-nil once the one-time `elot-toggle-labels-key' notice has been emitted.
-Reset on Emacs restart.  Used by `elot--toggle-labels-key' to
-emit a hint at most once per session when no binding is set.")
+  (defvar elot--toggle-labels-key-notice-shown nil
+    "Non-nil once the one-time `elot-toggle-labels-key' notice has been emitted.
+  Reset on Emacs restart.  Used by `elot--toggle-labels-key' to
+  emit a hint at most once per session when no binding is set.")
 
-(defun elot--toggle-labels-key ()
-  "Return the key sequence string for `elot-toggle-label-display', or nil.
+  (defun elot--toggle-labels-key ()
+    "Return the key sequence string for `elot-toggle-label-display', or nil.
 If `elot-toggle-labels-key' is a non-empty string, return it
-(callers pass the result through `kbd').  Otherwise return nil
+\(callers pass the result through `kbd').  Otherwise return nil
 and, the first time this happens in an interactive session,
 emit a one-line message pointing the user at the customize
 variable so they can set a binding if they want one."
-  (cond
-   ((and (stringp elot-toggle-labels-key)
-         (not (string-empty-p elot-toggle-labels-key)))
-    elot-toggle-labels-key)
-   (t
-    (unless (or noninteractive elot--toggle-labels-key-notice-shown)
-      (setq elot--toggle-labels-key-notice-shown t)
-      (message
-       "ELOT: no key bound to `elot-toggle-label-display'.  \
-Use the ELOT menu, M-x, or `M-x customize-variable RET \
-elot-toggle-labels-key' to set one."))
-    nil)))
+    (cond
+     ((and (stringp elot-toggle-labels-key)
+           (not (string-empty-p elot-toggle-labels-key)))
+      elot-toggle-labels-key)
+     (t
+      (unless (or noninteractive elot--toggle-labels-key-notice-shown)
+        (setq elot--toggle-labels-key-notice-shown t)
+        (message
+         "ELOT: no key bound to `elot-toggle-label-display'.  \
+  Use the ELOT menu, M-x, or `M-x customize-variable RET \
+  elot-toggle-labels-key' to set one."))
+      nil)))
 ;; src-keybinding ends here
 
 ;; [[file:../elot-defs.org::src-tsv-table][src-tsv-table]]

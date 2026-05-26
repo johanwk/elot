@@ -159,7 +159,7 @@ unaffected -- only OMN axiom keywords trigger the skip."
 ***** TODO CURIE pattern
 Check this against other similar pattern in use
 #+begin_src emacs-lisp
-  (defconst elot-puri-re 
+  (defconst elot-puri-re
     "^\\([a-zA-Z][-a-zA-Z0-9_.]*\\|\\):\\([-[:word:]_./:]*\\)$")
 #+end_src
 
@@ -194,10 +194,10 @@ pipeline.
 
   (defun elot-governing-section-id ()
     "Return the governing ELOT section ID, or nil.
-Recognizes all well-known section suffixes: -datatypes,
--class-hierarchy, -object-property-hierarchy,
--data-property-hierarchy, -annotation-property-hierarchy,
--individuals, and -ontology-declaration."
+  Recognizes all well-known section suffixes: -datatypes,
+  -class-hierarchy, -object-property-hierarchy,
+  -data-property-hierarchy, -annotation-property-hierarchy,
+  -individuals, and -ontology-declaration."
     (let ((this-ID (org-entry-get-with-inheritance "ID")))
       (when (and this-ID
                  (string-match-p
@@ -231,8 +231,10 @@ Functions to know where we are in an ELOT tree.
 ***** CURIE expansion
 #+begin_src emacs-lisp
   (defun elot-unprefix-uri (puri abbrev-alist &optional noerror)
-    "Replace prefix in PURI with full form from ABBREV-ALIST, if there's a match."
-    (if (eq abbrev-alist nil) puri
+    "Replace prefix in PURI with full form from ABBREV-ALIST, if there's a match.
+When NOERROR is non-nil, return nil for an unknown prefix rather than
+letting the raw value through."
+    (if (null abbrev-alist) puri
       (if (string-match elot-puri-re puri)
           (let* ((this-prefix (match-string-no-properties 1 puri))
                  (this-localname (match-string-no-properties 2 puri))
@@ -636,7 +638,7 @@ classify ROBOT results directly."
 
   (defun elot--jump-to-org-heading-for-identifier (omnfile line)
     "From OMNFILE and error LINE, search upward for a declaration.
-    Jump to the Org-mode heading defining the identifier found."
+  Jump to the Org-mode heading defining the identifier found."
     (let ((identifier nil))
       (save-excursion
         (with-current-buffer (find-file-noselect omnfile)
@@ -728,7 +730,6 @@ Functions that take an ontology AST node and extract specific components (prefix
   Creates a dummy root at level 0 to handle multiple top-level ontologies."
     (let* ((dummy-root (list :level 0 :title "ROOT" :descriptions nil :children nil))
            (stack (list dummy-root)))
-      
       (org-element-map tree 'headline
         (lambda (hl)
           (let ((level (org-element-property :level hl)))
@@ -936,11 +937,10 @@ Scans the hierarchy for nodes with `:prefixdefs \"yes\"' and adds their
 
 *** Make prefix blocks for omn, sparql, ttl
 This helper returns a textual block of prefix declarations in
-Manchester (=omn=), SPARQL, or Turtle syntax.  It originally lived
-in =elot.el= (block =src-prefix-blocks= in =elot-defs.org=) and
-was relocated here in Milestone 2 Step 2.1 of the ELPA submission
-plan: it is needed by =elot-label-display.el= and by the SPARQL
-advice in =elot.el=, both of which already =(require 'elot-tangle)=.
+Manchester (=omn=), SPARQL, or Turtle syntax.  It lives here
+(rather than in =elot.el=) because it is needed by
+=elot-label-display.el= and by the SPARQL advice in =elot.el=,
+both of which already =(require 'elot-tangle)=.
 #+name: src-prefix-blocks
 #+begin_src emacs-lisp
 (defun elot-prefix-block-from-alist (prefixes format)
@@ -1157,10 +1157,9 @@ for fontification and lookup.
   set up in *xref* / *ELOT Describe* buffers can read the slurp
   data captured from the originating ELOT buffer.
 
-  A future migration to the ELOT label DB (`elot-db-*' /
-  `elot-label-register-source') is tracked in ELOT-DB-PLAN.org;
-  until that lands, this variable is part of the supported
-  internal API.")
+  This variable is part of the supported internal API until a
+  future migration to the ELOT label DB (`elot-db-*' /
+  `elot-label-register-source') is complete.")
   (defvar-local elot-codelist-ht nil
     "Hashtable holding pairs of curie and label for ELOT label-display.")
   (defvar-local elot-attriblist-ht nil
@@ -1193,17 +1192,17 @@ The following simply replaces ~elot-slurp-entities~ with ~elot-build-slurp~, and
 
   If SQLite support is available (`sqlite-open' and
   `elot-db-update-source' bound) and the buffer is visiting a file,
-  also sync the parsed entries into the ELOT label DB under
-  `buffer-file-name', so other buffers / projects can look them 
-  up via `elot-db-get-label' / `elot-db-get-label-any'.  Errors during
-  sync are reported but do not break the local HT population."
+  also sync the parsed entries into the ELOT label DB under the
+  variable `buffer-file-name', so other buffers / projects can look
+  them up via `elot-db-get-label' / `elot-db-get-label-any'.  Errors
+  during sync are reported but do not break the local HT population."
     (let ((slurp (elot-build-slurp)))
       (setq elot-slurp slurp)
       (setq elot-codelist-ht
             (elot--ht-from-plist (elot-codelist-from-slurp elot-slurp)))
       (setq elot-attriblist-ht
             (elot--ht-from-alist (elot-attriblist-from-slurp elot-slurp)))
-      ;; Optional DB sync (Step 1.6): if SQLite is available, try to load
+      ;; Optional DB sync: if SQLite is available, try to load
       ;; the elot-db subsystem on first use, then write the slurp.
       (when (and slurp
                  buffer-file-name
@@ -1405,7 +1404,7 @@ With ~M-:~ we get at the ~:children~ of ~elot-headline-hierarchy~; which is a li
             (push (elot-omn-format-restrictions (nreverse restrictions) 4) frame))
           
           ;; Join frame internals with a single newline (no blank lines inside)
-          (mapconcat 'identity (nreverse frame) "\n")))))
+          (mapconcat #'identity (nreverse frame) "\n")))))
 
   (defun elot-omn-misc-frames (node)
     "Generate a list of formatted misc frame strings from NODE's descriptions.
@@ -1447,7 +1446,7 @@ With ~M-:~ we get at the ~:children~ of ~elot-headline-hierarchy~; which is a li
                 (push child-frames frames))))))
       
       ;; Join adjacent frames with a single blank line
-      (mapconcat 'identity (nreverse frames) "\n\n")))
+      (mapconcat #'identity (nreverse frames) "\n\n")))
 
 #+end_src
 
@@ -1478,7 +1477,7 @@ This is a temporary solution only. The list of prefixes to be applied should be 
 Macro definitions are carried into the temp file with variable ~omn-save~. This gives some strange results for the ~modification-time~ macro. TODO find out why.
 #+begin_src emacs-lisp
     (defun elot-get-ontology-node-omn (node)
-      "Return the OMN content for the given ONTOLOGY-NODE."
+      "Return the OMN content for the given ontology NODE."
       (let* ((prefix-block (elot-omn-prefix-block node))
              (resources (elot-omn-resource-declarations (list node))))
         (concat (or prefix-block "")

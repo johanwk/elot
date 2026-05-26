@@ -514,8 +514,8 @@ The supported helpers are:
   the resulting table.
 - **`robot-sparql-select`** — run a named SPARQL query through ROBOT
   against a local OMN file and return the result as an Org table.
-- **`theme-readtheorg` / `theme-elot`** — expand to the right
-  `#+SETUPFILE:` line for the bundled HTML themes.
+- **`theme-elot`** — expands to the right
+  `#+SETUPFILE:` line for the HTML theme. 
 - **`current-date` / `current-datetime`** — format the current
   date/time, useful in `pav:lastUpdateOn` annotations.
 

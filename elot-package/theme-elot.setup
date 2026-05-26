@@ -1,4 +1,5 @@
 # -*- mode: org; -*-
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 #+OPTIONS: html-style:nil toc:t
 #+HTML_HEAD: <link rel="stylesheet" type="text/css" href="https://johanwk.github.io/elot/elot-package/elot-style.css"/>

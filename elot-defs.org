@@ -90,11 +90,26 @@ in SPARQL select results.
   (defvar elot-missing-dependencies nil
     "List of missing external dependencies for legacy ELOT features.")
 
+  (defvar elot--missing-deps-reported nil
+    "Non-nil once the missing-dependencies hint has been emitted.
+  Guards `elot-missing-dependencies' against duplicate reporting when
+  this file is loaded more than once (e.g.  byte-compile + load, or
+  via several sibling modules).")
+
+  ;; `cl-pushnew' below prevents duplicate accumulation across
+  ;; repeated loads, so no top-level reset of
+  ;; `elot-missing-dependencies' is needed (and a top-level `setq'
+  ;; would be flagged by package-lint / melpazoid).
   (dolist (pkg '(htmlize omn-mode sparql-mode ob-sparql ob-plantuml))
     (unless (require pkg nil t)
-      (push pkg elot-missing-dependencies)))
+      (cl-pushnew pkg elot-missing-dependencies)))
 
-  (when elot-missing-dependencies
+  ;; Only emit the message once per Emacs session, and never during
+  ;; byte-compilation -- the warning is for end users, not for CI logs.
+  (when (and elot-missing-dependencies
+             (not elot--missing-deps-reported)
+             (not (bound-and-true-p byte-compile-current-file)))
+    (setq elot--missing-deps-reported t)
     (message "ELOT: Optional dependencies missing: %s. Some features will be disabled."
              (mapconcat #'symbol-name elot-missing-dependencies ", ")))
 #+end_src
@@ -554,10 +569,10 @@ Semantics, formally:
 
   (defconst elot--sparql-empty-result-sentinel
     "[empty result set]"
-    "Sentinel returned by the ELOT SPARQL advice when a CSV result has
-  no rows.  Used in place of an empty CSV body so that
-  `org-babel-sparql-convert-to-table' is not invoked on input it
-  cannot parse.")
+    "Sentinel returned by the ELOT SPARQL advice for empty CSV results.
+Used in place of an empty CSV body so that
+`org-babel-sparql-convert-to-table' is not invoked on input it
+cannot parse.")
 
   (defun elot--sparql-resolve-format (raw)
     "Classify the :format header value RAW as the symbol `ttl' or `csv'.
@@ -707,8 +722,9 @@ To get the ttl block to process correctly, for rdfpuml use.
       (always params)  ;; ignore argument
       body))
 
-  (unless (fboundp #'org-babel-execute:ttl)
-    (defalias #'org-babel-execute:ttl #'elot-org-babel-execute-passthrough))
+  (declare-function org-babel-execute:ttl "ext:ob-ttl" (body params))
+  (unless (fboundp 'org-babel-execute:ttl)
+    (defalias 'org-babel-execute:ttl #'elot-org-babel-execute-passthrough))
 #+end_src
 *** Execute rdfpuml on Turtle content
 Function =elot-rdfpuml-execute= takes a Turtle /string/ plus options, runs
@@ -755,6 +771,11 @@ and format suffix of the generated diagram. Resulting graphic file is
 placed in the default ELOT directory, and the filename returned.
 #+name: src-plantuml-execute
 #+begin_src emacs-lisp :results silent
+  ;; `org-plantuml-jar-path' is defined by ob-plantuml, an optional
+  ;; dependency.  Declare it so the byte-compiler does not warn when
+  ;; ob-plantuml is not loaded at compile time.
+  (defvar org-plantuml-jar-path)
+
   (defun elot-plantuml-execute (puml-file output-name format)
     "With PlantUML, read PUML-FILE and write image file to OUTPUT-NAME.FORMAT.
   The file is stored in the ELOT default image directory.
@@ -814,11 +835,17 @@ This allows us to have e.g. an empty prefix ~:~ in ~rdfs:isDefinedBy~ expanded t
 The following will replace uses of defined resources with links that have labels in output.
 #+name: src-linkify-codelist-items-in-buffer
 #+begin_src emacs-lisp
+  ;; Defined in elot-label-display.el (loaded after elot.el); declare
+  ;; so the byte-compiler does not flag the reference as free.
+  (defvar elot-codelist-fontify-regexp)
+
   (defun elot--linkify-codelist-items-in-buffer ()
-    "Search for `elot-codelist-fontify-regexp` in the current buffer
-  and replace matches with Org-mode links, unless the match is
-  within a code block, example block, fixed-width area, or IN a headline's text.
-  The link description is obtained using `(elot-codelist-id-label MATCH)`."
+    "Linkify codelist items found in the current buffer.
+Search for `elot-codelist-fontify-regexp' in the current buffer
+and replace matches with Org-mode links, unless the match is
+within a code block, example block, fixed-width area, or IN a
+headline's text.  The link description is obtained by calling
+`elot-codelist-id-label' on the matched text."
     (save-excursion
       (goto-char (point-min))
       (while-let ((matched-text
@@ -839,7 +866,7 @@ The following will replace uses of defined resources with links that have labels
               nil ; In forbidden context, do nothing and skip to next match
             (let* ((label (elot-codelist-id-label matched-text))
                    (link-string (if label (format "[[#%s][%s]]" matched-text label))))
-              (if label 
+              (if label
                   (progn
                     (delete-region start end)
                     (goto-char start)
@@ -849,11 +876,14 @@ The following will replace uses of defined resources with links that have labels
 #+name: src-stable-links-export
 #+begin_src emacs-lisp
   (defun elot--prepare-export-buffer (backend)
-    "Prepare the export clone for Elot:
+    "Prepare the export clone for Elot, dispatching on BACKEND.
+For non-LaTeX BACKEND values:
 
-    - Give each resource-declaring headline a CUSTOM_ID (if missing).
-    - Replace every visible CURIE with an internal link to that ID,
-      except when the CURIE is inside a src/example/fixed-width block."
+  - Give each resource-declaring headline a CUSTOM_ID (if missing).
+  - Replace every visible CURIE with an internal link to that ID,
+    except when the CURIE is inside a src/example/fixed-width block.
+
+For LaTeX BACKEND values this function returns early."
     (when (org-export-derived-backend-p backend 'latex)
       (cl-return-from elot--prepare-export-buffer))
     ;; ------------------------------------------------------------
@@ -979,13 +1009,13 @@ place.
   (defun elot-org-find-description-value (term-regex &optional value-regex)
     "Find a description-list value for TERM-REGEX in the current Org section.
 
-  Walks the description list(s) in the body of the Org headline at point
-  (excluding descendant subsections) and returns the value of the first
-  item whose tag matches TERM-REGEX.  If several tags match, prefer the
-  first whose value matches VALUE-REGEX; otherwise fall back to the first
-  match.  Return nil if no tag matches.
+Walks the description list(s) in the body of the Org headline at point
+\(excluding descendant subsections) and returns the value of the first
+item whose tag matches TERM-REGEX.  If several tags match, prefer the
+first whose value matches VALUE-REGEX; otherwise fall back to the first
+match.  Return nil if no tag matches.
 
-  VALUE-REGEX is optional; defaults to match anything."
+VALUE-REGEX is optional; defaults to match anything."
     (setq value-regex (or value-regex ""))
     (save-excursion
       (save-restriction
@@ -1142,20 +1172,20 @@ variable; no prompt, no modal interruption.
 #+begin_src emacs-lisp
   (defcustom elot-toggle-labels-key nil
     "Key sequence bound to `elot-toggle-label-display' in ELOT-relevant buffers.
-  ELOT ships with no default keystroke for the labels toggle.
-  Single function keys (F5-F9) and `C-c <letter>' are reserved
-  for the user, so ELOT does not claim any of them.  Set this
-  variable (via \\[customize-variable]) to a string in `kbd'
-  notation -- for example \"<f5>\", \"<f9>\", or \"C-c t l\" --
-  to install a binding for `elot-toggle-label-display' in
-  `elot-mode-map' and in the ELOT-managed `*xref*' / `*ELOT
-  Describe*' buffers.
+ELOT ships with no default keystroke for the labels toggle.
+Single function keys (F5-F9) and user-reserved prefixes are
+left alone by default, so ELOT does not claim any of them.
+Set this variable (via \\[customize-variable]) to a string in
+`kbd' notation -- for example \"<f5>\" or \"<f9>\" -- to install
+a binding for `elot-toggle-label-display' in
+`elot-mode-map' and in the ELOT-managed `*xref*' / `*ELOT
+Describe*' buffers.
 
-  Leave at nil (the default) to use the ELOT easymenu or
-  `M-x elot-toggle-label-display' instead.  The first
-  `elot-mode' activation in a session will emit a single
-  informational message pointing at this variable; subsequent
-  activations are silent."
+Leave at nil (the default) to use the ELOT easymenu or
+`M-x elot-toggle-label-display' instead.  The first
+`elot-mode' activation in a session will emit a single
+informational message pointing at this variable; subsequent
+activations are silent."
     :type '(choice (const  :tag "No binding (use menu / M-x)" nil)
                    (string :tag "Key sequence (kbd notation)"))
     :set (lambda (sym val)
@@ -1176,11 +1206,11 @@ variable; no prompt, no modal interruption.
 
   (defun elot--toggle-labels-key ()
     "Return the key sequence string for `elot-toggle-label-display', or nil.
-  If `elot-toggle-labels-key' is a non-empty string, return it
-  (callers pass the result through `kbd').  Otherwise return nil
-  and, the first time this happens in an interactive session,
-  emit a one-line message pointing the user at the customize
-  variable so they can set a binding if they want one."
+If `elot-toggle-labels-key' is a non-empty string, return it
+\(callers pass the result through `kbd').  Otherwise return nil
+and, the first time this happens in an interactive session,
+emit a one-line message pointing the user at the customize
+variable so they can set a binding if they want one."
     (cond
      ((and (stringp elot-toggle-labels-key)
            (not (string-empty-p elot-toggle-labels-key)))

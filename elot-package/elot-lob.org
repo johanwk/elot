@@ -1,4 +1,5 @@
 #+title: ELOT library of babel
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 # This file is part of ELOT's supported, user-facing API.  It
 # collects =#+call:=-style helpers (most notably =rdfpuml-block=,
