@@ -38,6 +38,9 @@
   "activationEvents": [
     "onStartupFinished"
   ],
+  "overrides": {
+    "serialize-javascript": "^7.0.3"
+  },
   "contributes": {
     "commands": [
       {
@@ -222,7 +225,11 @@
         "elot.labelDisplay.fontStyle": {
           "type": "string",
           "default": "italic",
-          "enum": ["italic", "normal", "oblique"],
+          "enum": [
+            "italic",
+            "normal",
+            "oblique"
+          ],
           "description": "Font style for displayed labels (when label display is ON)"
         },
         "elot.labelDisplay.hoverEnabled": {
@@ -265,7 +272,10 @@
           "default": [],
           "description": "Ordered list of active label sources. Each entry is either a string (source name) or `{\"source\": \"name\", \"dataSource\": \"path\"}`. First match wins on lookup conflicts.",
           "items": {
-            "type": ["string", "object"]
+            "type": [
+              "string",
+              "object"
+            ]
           }
         },
         "elot.preferredLanguages": {
@@ -290,7 +300,11 @@
         "elot.labelLookup.scope": {
           "type": "string",
           "default": "both",
-          "enum": ["local", "external", "both"],
+          "enum": [
+            "local",
+            "external",
+            "both"
+          ],
           "enumDescriptions": [
             "Buffer slurp only (Org files).",
             "DB active sources only.",
@@ -490,7 +504,6 @@
     "test:views": "npm run test:views-source-items",
     "test:db-resolve": "tsx src/tests/db/dbResolve.test.ts",
     "test:db": "npm run test:db-lang && npm run test:db-read && npm run test:db-write && npm run test:db-paths && npm run test:db-parsers && npm run test:db-prefixes && npm run test:db-rq-cache && npm run test:db-ttl-robot && npm run test:db-roundtrip && npm run test:db-org && npm run test:db-cli-e2e && npm run test:db-golden && npm run test:db-bridge && npm run test:db-hover-token && npm run test:db-hover-render && npm run test:db-decorations && npm run test:db-resolve && npm run test:settings && npm run test:label-lookup && npm run test:views",
-
     "test:settings": "npm run test:settings-active-sources && npm run test:settings-reorder && npm run test:settings-cli-runner && npm run test:settings-persist",
     "test:label-lookup": "npm run test:label-lookup-items",
     "compile:test": "tsc -p tsconfig.test.json",
@@ -512,7 +525,7 @@
     "@vscode/test-electron": "^2.4.1",
     "esbuild": "^0.25.0",
     "glob": "^10.3.10",
-    "mocha": "^10.7.0",
+    "mocha": "^11.7.6",
     "peggy": "^4.2.0",
     "tsx": "^4.0.0",
     "typescript": "^5.4.0"
