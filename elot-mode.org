@@ -169,10 +169,10 @@ must be defined early, before any =defcustom= that references =:group
 
   (defcustom elot-label-display-size-threshold (* 500 1024)
     "Buffer size (bytes) above which `elot-mode' asks before enabling label-display.
-When a file is larger than this threshold, the user is prompted
-with a yes/no question.  Files at or below the threshold get
-label-display automatically.  Set to 0 to always ask, or nil to
-never ask."
+  When a file is larger than this threshold, the user is prompted
+  with a yes/no question.  Files at or below the threshold get
+  label-display automatically.  Set to 0 to always ask, or nil to
+  never ask."
     :type '(choice (const :tag "Never ask -- always enable" nil)
                    (integer :tag "Byte threshold"))
     :group 'elot)
@@ -223,25 +223,25 @@ in on enable and restore the original on disable.
 
 #+name: src-elot-buffer-predicate
 #+begin_src emacs-lisp
-(defun elot--in-elot-buffer-p ()
-  "Return non-nil when the current buffer is an active ELOT Org buffer.
-Used as an `:enable' guard in the ELOT menu to grey out entries that
-only make sense inside an ELOT Org file (tangle, lint, templates,
-xref navigation, etc.) when the menu is visible via
-`elot-global-label-display-mode' in a non-ELOT buffer."
-  (and (derived-mode-p 'org-mode)
-       (bound-and-true-p elot-mode)))
+  (defun elot--in-elot-buffer-p ()
+    "Return non-nil when the current buffer is an active ELOT Org buffer.
+  Used as an `:enable' guard in the ELOT menu to grey out entries that
+  only make sense inside an ELOT Org file (tangle, lint, templates,
+  xref navigation, etc.) when the menu is visible via
+  `elot-global-label-display-mode' in a non-ELOT buffer."
+    (and (derived-mode-p 'org-mode)
+         (bound-and-true-p elot-mode)))
 #+end_src
 
 #+name: src-mode-syntax-table
 #+begin_src emacs-lisp
-(defvar elot-mode-syntax-table
+  (defvar elot-mode-syntax-table
     (let ((st (make-syntax-table org-mode-syntax-table)))
       (modify-syntax-entry ?: "w" st)
       (modify-syntax-entry ?_ "w" st)
       st)
     "Syntax table for `elot-mode'.
-Treats `:' and `_' as word-constituent characters.")
+  Treats `:' and `_' as word-constituent characters.")
 #+end_src
 
 ** Tempo Templates
@@ -837,7 +837,7 @@ replaces the ad-hoc =local-set-key= calls in =elot-setup-org-keybindings=.
         :style toggle
         :selected (bound-and-true-p elot-gptel-allow-side-effects)
         :help "Toggle whether ELOT gptel tools may modify files.
-Session-only: not persisted across Emacs restarts."]
+  Session-only: not persisted across Emacs restarts."]
        "---"
        ["Register ELOT tools with gptel" elot-gptel-register-tools
         :active (fboundp 'elot-gptel-register-tools)
@@ -1192,13 +1192,26 @@ the user is prompted first.  The user can always run
     (elot-mode--maybe-setup-labels)
 
     ;; 11. Set initial fold visibility
-    (org-cycle-set-startup-visibility))
+    ;;     Guarded: during desktop restoration the org-element cache
+    ;;     can be in an inconsistent intermediate state when
+    ;;     `org-mode-hook' runs, and `org-element-at-point' (called
+    ;;     transitively by `org-cycle-set-startup-visibility' via
+    ;;     `org-fold--hide-drawers') may signal
+    ;;     (wrong-type-argument integer-or-marker-p nil).  The fold
+    ;;     state is cosmetic; do not let a parser hiccup abort
+    ;;     `elot-mode' setup.
+    (condition-case err
+        (org-cycle-set-startup-visibility)
+      (error
+       (message "elot-mode: skipping startup visibility in %s (%s)"
+                (buffer-name) (error-message-string err)))))
 
   (defun elot-mode--maybe-setup-labels ()
     "Set up label-display, prompting the user for large files.
-If `elot-label-display-size-threshold' is nil, always set up.
-If the buffer is larger than the threshold, ask the user first.
-In batch mode (`noninteractive'), skip label-display entirely."
+  If `elot-label-display-size-threshold' is nil, always set up.
+  If the buffer is larger than the threshold, ask the user first.
+
+  In batch mode (`noninteractive'), skip label-display entirely."
     (unless noninteractive
       (let ((threshold elot-label-display-size-threshold))
         (when (or (null threshold)
@@ -1286,7 +1299,14 @@ buffer -- fast enough for interactive use.
     :group 'elot)
 
   (defun elot-mode--maybe-enable ()
-    "Enable `elot-mode' if the current Org buffer looks like an ELOT file."
+    "Enable `elot-mode' if the current Org buffer looks like an ELOT file.
+  Deferred via `run-at-time' 0 so that `elot-mode--enable' does not
+  run inside `org-mode-hook' while Org is still initializing the
+  buffer (text properties, fold state, element cache).  That timing
+  is especially fragile during `desktop-read', where the buffer is
+  restored in pieces and the org-element parser can otherwise
+  signal (wrong-type-argument integer-or-marker-p nil) from inside
+  `org-element-item-parser'."
     (when (and elot-mode-auto-detect
                (derived-mode-p 'org-mode)
                (not (bound-and-true-p elot-mode))
@@ -1294,7 +1314,20 @@ buffer -- fast enough for interactive use.
                  (goto-char (point-min))
                  (re-search-forward
                   ":ELOT-context-type:.*ontology" nil t)))
-      (elot-mode 1)))
+      (let ((buf (current-buffer)))
+        (run-at-time
+         0 nil
+         (lambda ()
+           (when (and (buffer-live-p buf)
+                      (with-current-buffer buf
+                        (and (derived-mode-p 'org-mode)
+                             (not (bound-and-true-p elot-mode)))))
+             (with-current-buffer buf
+               (condition-case err
+                   (elot-mode 1)
+                 (error
+                  (message "elot-mode: auto-enable failed in %s (%s)"
+                           (buffer-name) (error-message-string err)))))))))))
 
   ;; NOTE: This `add-hook' is intentional and is the standard idiom
   ;; for a minor mode that opts users in based on Org-file content (the
