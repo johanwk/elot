@@ -208,7 +208,7 @@ references, so insert a synthetic parent for the test."
       (let ((out (elot-gptel-tool-delete-resource
                   (elot-gptel-dr-test--rel path) "ex:cat")))
         (should (string-prefix-p "ERROR:" out))
-        (should (string-match-p "child heading" out))
+        (should (string-match-p "semantic dependent" out))
         (should (string-match-p "ex:kitten" out))
         (should (string-match-p "cascade=" out))))))
 
@@ -412,7 +412,7 @@ this test pins the same precedence under cascade=reparent."
         (should (string-match-p "Domain" out))
         ;; Refusal precedence: dangling refs win over the
         ;; children-branch -- we must not see the cascade hint.
-        (should-not (string-match-p "child heading" out))))))
+        (should-not (string-match-p "semantic dependent" out))))))
 
 
 ;;; ---------------------------------------------------------------------------
