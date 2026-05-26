@@ -4215,6 +4215,160 @@ keyword %s's expected leaf kind."
       (error      (format "ERROR: %s" (error-message-string err))))))
 
 ;;; ---------------------------------------------------------------------------
+;;; Mutation HOF and Macro
+;;; ---------------------------------------------------------------------------
+
+(defun elot-gptel--rename-revalidate (file)
+  "Re-run lint (+ OMN parse when ROBOT is up) against FILE.
+Returns a plist (:ok BOOL :report STRING).  REPORT is empty when
+:ok is t and there is nothing to surface; otherwise it carries
+the diagnostic body the LLM should see."
+  (let* ((lint (elot-gptel-tool-lint file))
+         (lint-err (or (string-prefix-p "ERROR:" lint)
+                       (elot-gptel--check-lint-failed-p lint)))
+         (robot-ok (condition-case _err
+                       (progn (require 'elot-robot)
+                              (and (fboundp 'elot-robot-available-p)
+                                   (elot-robot-available-p)))
+                     (error nil)))
+         (omn (and (not lint-err) robot-ok
+                   (elot-gptel-tool-omn-validate file)))
+         (omn-err (and omn (elot-gptel--check-omn-failed-p omn))))
+    (list :ok (not (or lint-err omn-err))
+          :report
+          (concat
+           (when lint-err
+             (concat "== LINT ==\n" lint))
+           (when omn-err
+             (concat (when lint-err "\n\n")
+                     "== OMN PARSE ==\n" omn))
+           (unless (or lint-err omn-err)
+             (concat "== LINT ==\n" lint
+                     (when omn
+                       (concat "\n\n== OMN PARSE ==\n" omn))))))))
+
+(defun elot-gptel--axioms-revalidate-content (file draft)
+  "Run lint (+ OMN parse when ROBOT is up) against DRAFT for FILE.
+Mirrors `elot-gptel--rename-revalidate' but drives the read-only
+`content=' code path so DRAFT can be evaluated without touching
+the file on disk -- used by `dry_run' batches."
+  (let* ((lint (elot-gptel-tool-lint file nil nil draft))
+         (lint-err (or (string-prefix-p "ERROR:" lint)
+                       (elot-gptel--check-lint-failed-p lint)))
+         (robot-ok (condition-case _err
+                       (progn (require 'elot-robot)
+                              (and (fboundp 'elot-robot-available-p)
+                                   (elot-robot-available-p)))
+                     (error nil)))
+         (omn (and (not lint-err) robot-ok
+                   (elot-gptel-tool-omn-validate file nil draft)))
+         (omn-err (and omn (elot-gptel--check-omn-failed-p omn))))
+    (list :ok (not (or lint-err omn-err))
+          :report
+          (concat
+           (when lint-err
+             (concat "== LINT ==\n" lint))
+           (when omn-err
+             (concat (when lint-err "\n\n")
+                     "== OMN PARSE ==\n" omn))
+           (unless (or lint-err omn-err)
+             (concat "== LINT ==\n" lint
+                     (when omn
+                       (concat "\n\n== OMN PARSE ==\n" omn))))))))
+
+(defun elot-gptel--apply-mutation (file dry-run callback)
+  "Execute a side-effecting mutation on FILE via CALLBACK.
+Handles side-effects gating, buffer setup, snapshotting, saving,
+auto-revalidation, and rollback on failure.
+
+CALLBACK is a function of zero arguments, executed within the context
+of FILE's buffer. It must perform the buffer modifications and return
+the success header string (e.g. \"OK: inserted 1 heading\").
+
+Returns the final response string (success header + validation reports,
+or ERROR/FAIL line)."
+  (condition-case err
+      (progn
+        (unless (or dry-run elot-gptel-allow-side-effects)
+          (user-error
+           "elot-gptel: mutation refused -- side effects disabled \
+(set `elot-gptel-allow-side-effects' to t, or pass dry_run=true)"))
+        (let* ((true-file (elot-gptel--resolve-file file))
+               (buf (or (find-buffer-visiting true-file)
+                        (let ((inhibit-message t))
+                          (find-file-noselect true-file 'nowarn)))))
+          (unless (buffer-live-p buf)
+            (user-error "elot-gptel: cannot open %s" file))
+          (with-current-buffer buf
+            (unless (derived-mode-p 'org-mode)
+              (let ((org-inhibit-startup t) (org-mode-hook nil))
+                (org-mode)))
+            (let ((before-text (buffer-substring-no-properties (point-min) (point-max)))
+                  (before-modified-p (buffer-modified-p))
+                  (success-header nil))
+              (setq success-header (funcall callback))
+              (unless (stringp success-header)
+                (error "elot-gptel--apply-mutation: callback must return a string"))
+              
+              (let ((after-text (buffer-substring-no-properties (point-min) (point-max))))
+                (if (equal before-text after-text)
+                    success-header
+                  (cond
+                   (dry-run
+                    (let* ((verdict (elot-gptel--axioms-revalidate-content file after-text))
+                           (ok (plist-get verdict :ok))
+                           (report (plist-get verdict :report)))
+                      (let ((inhibit-read-only t))
+                        (widen)
+                        (erase-buffer)
+                        (insert before-text))
+                      (set-buffer-modified-p before-modified-p)
+                      (when (fboundp 'elot-headline-hierarchy-mark-stale)
+                        (ignore-errors (elot-headline-hierarchy-mark-stale)))
+                      (cond
+                       ((not ok)
+                        (concat "FAIL: dry-run revalidation failed (no file written)\n\n" report))
+                       (t
+                        (let ((dry-note "  (dry_run: file unchanged on disk)"))
+                          (concat (if (string-match "\n" success-header)
+                                      (replace-match (concat dry-note "\n") t t success-header)
+                                    (concat success-header dry-note))
+                                  (if (and report (not (string-empty-p report)))
+                                      (concat "\n\n" report)
+                                    "")))))))
+                   (t
+                    (save-buffer)
+                    (let* ((verdict (elot-gptel--rename-revalidate file))
+                           (ok (plist-get verdict :ok))
+                           (report (plist-get verdict :report)))
+                      (cond
+                       ((not ok)
+                        (let ((inhibit-read-only t))
+                          (widen)
+                          (erase-buffer)
+                          (insert before-text))
+                        (save-buffer)
+                        (set-buffer-modified-p before-modified-p)
+                        (when (fboundp 'elot-headline-hierarchy-mark-stale)
+                          (ignore-errors (elot-headline-hierarchy-mark-stale)))
+                        (concat "ERROR: revalidation failed -- changes rolled back\n\n" report))
+                       (t
+                        (concat success-header
+                                (if (and report (not (string-empty-p report)))
+                                    (concat "\n\n" report)
+                                  "")))))))))))))
+    (user-error (format "ERROR: %s" (error-message-string err)))
+    (error      (format "ERROR: %s" (error-message-string err)))))
+
+(defmacro elot-gptel-with-mutation (args &rest body)
+  "Evaluate BODY as a buffer mutation.
+ARGS is (FILE DRY-RUN).
+The current buffer will be the target file's buffer.
+BODY must return the success header string."
+  (declare (indent 1) (debug (listp body)))
+  `(elot-gptel--apply-mutation ,(car args) ,(cadr args) (lambda () ,@body)))
+
+;;; ---------------------------------------------------------------------------
 ;;; elot_edit_axiom tool (Milestone 9 Step 9.2.c)
 ;;; ---------------------------------------------------------------------------
 ;;;
@@ -4552,37 +4706,33 @@ checkers.  Post-commit revalidation runs `elot_lint' (and
 the buffer back to its pre-edit contents and returns the
 diagnostic under a `FAIL:' header."
   (condition-case err
-      (progn
-        (unless elot-gptel-allow-side-effects
+      (let* ((op-sym
+              (cond
+               ((or (null op)
+                    (and (stringp op) (string-empty-p op)))
+                'add)
+               ((stringp op) (intern op))
+               ((symbolp op) op)
+               (t (user-error
+                   "op must be `add', `replace', `delete', or `delete-empty': %S" op)))))
+        (unless (memq op-sym '(add replace delete delete-empty))
           (user-error
-           "elot-gptel: edit refused -- side effects disabled \
-(set `elot-gptel-allow-side-effects' to t)"))
-        (unless (and (stringp subject) (not (string-empty-p subject)))
-          (user-error "subject must be a non-empty string"))
-        (let* ((op-sym
-                (cond
-                 ((or (null op)
-                      (and (stringp op) (string-empty-p op)))
-                  'add)
-                 ((stringp op) (intern op))
-                 ((symbolp op) op)
-                 (t (user-error
-                     "op must be `add', `replace', `delete', or `delete-empty': %S" op)))))
-          (unless (memq op-sym '(add replace delete delete-empty))
-            (user-error
-             "op must be `add', `replace', `delete', or `delete-empty': %S" op))
-          ;; `delete-empty' relaxes the keyword requirement (empty /
-          ;; nil means "sweep every keyword").  Other ops still
-          ;; require a non-empty keyword.
-          (unless (eq op-sym 'delete-empty)
-            (unless (and (stringp keyword) (not (string-empty-p keyword)))
-              (user-error "keyword must be a non-empty string")))
-          (when (and (memq op-sym '(add replace))
-                     (or (null fragment)
-                         (and (stringp fragment)
-                              (string-empty-p (string-trim fragment)))))
-            (user-error "fragment must be a non-empty string for %s"
-                        (symbol-name op-sym)))
+           "op must be `add', `replace', `delete', or `delete-empty': %S" op))
+        ;; `delete-empty' relaxes the keyword requirement (empty /
+        ;; nil means "sweep every keyword").  Other ops still
+        ;; require a non-empty keyword.
+        (unless (eq op-sym 'delete-empty)
+          (unless (and (stringp keyword) (not (string-empty-p keyword)))
+            (user-error "keyword must be a non-empty string")))
+        (when (and (memq op-sym '(add replace))
+                   (or (null fragment)
+                       (and (stringp fragment)
+                            (string-empty-p (string-trim fragment)))))
+          (user-error "fragment must be a non-empty string for %s"
+                      (symbol-name op-sym)))
+        (elot-gptel-with-mutation (file nil)
+          (unless (and (stringp subject) (not (string-empty-p subject)))
+            (user-error "subject must be a non-empty string"))
           (let* ((true (elot-gptel--resolve-file file))
                  (slurp (elot-gptel--axiom-slurp-for-file true)))
             (unless slurp
@@ -4596,144 +4746,98 @@ diagnostic under a `FAIL:' header."
                  subject))
               (let* ((curie (car row))
                      (label (cadr row))
-                     (buf (or (find-buffer-visiting true)
-                              (let ((inhibit-message t))
-                                (find-file-noselect true 'nowarn)))))
-                (unless (buffer-live-p buf)
-                  (user-error "cannot open %s" file))
-                (with-current-buffer buf
-                  (unless (derived-mode-p 'org-mode)
-                    (let ((org-inhibit-startup t) (org-mode-hook nil))
-                      (org-mode)))
-                  (let* ((before-text
-                          (buffer-substring-no-properties
-                           (point-min) (point-max)))
-                         (before-modified-p (buffer-modified-p)))
+                     (before-text (buffer-string)))
+                (cond
+                 ;; --- delete-empty branch: bulk sweep --------------
+                 ((eq op-sym 'delete-empty)
+                  (let* ((sweep (elot-gptel--axiom-delete-empty-rows
+                                 before-text curie label
+                                 (and (stringp keyword)
+                                      (not (string-empty-p keyword))
+                                      keyword)))
+                         (draft (plist-get sweep :draft))
+                         (deleted (plist-get sweep :deleted-keywords))
+                         (n (length deleted)))
                     (cond
-                     ;; --- delete-empty branch: bulk sweep --------------
-                     ((eq op-sym 'delete-empty)
-                      (let* ((sweep (elot-gptel--axiom-delete-empty-rows
-                                     before-text curie label
-                                     (and (stringp keyword)
-                                          (not (string-empty-p keyword))
-                                          keyword)))
-                             (draft (plist-get sweep :draft))
-                             (deleted (plist-get sweep :deleted-keywords))
-                             (n (length deleted)))
-                        (cond
-                         ((zerop n)
-                          ;; Idempotent no-op: return success WITHOUT
-                          ;; writing or saving (file is unchanged).
-                          (format
-                           "OK: no empty rows on %s%s"
-                           curie
-                           (if (and (stringp keyword)
-                                    (not (string-empty-p keyword)))
-                               (format " for keyword %S" keyword)
-                             "")))
-                         (t
-                          (let ((inhibit-read-only t))
-                            (erase-buffer)
-                            (insert draft))
-                          (save-buffer)
-                          (let* ((verdict (elot-gptel--rename-revalidate file))
-                                 (ok (plist-get verdict :ok))
-                                 (report (plist-get verdict :report)))
-                            (cond
-                             ((not ok)
-                              (let ((inhibit-read-only t))
-                                (erase-buffer)
-                                (insert before-text))
-                              (save-buffer)
-                              (set-buffer-modified-p before-modified-p)
-                              (concat
-                               "FAIL: revalidation failed -- changes rolled back\n\n"
-                               report))
-                             (t
-                              (let ((head
-                                     (format
-                                      "OK: deleted %d empty row%s on %s: %s"
-                                      n (if (= n 1) "" "s") curie
-                                      (mapconcat #'identity deleted ", "))))
-                                (concat head "\n\n" report)))))))))
-                     ;; --- add / replace / delete branch (original) ----
+                     ((zerop n)
+                      ;; Idempotent no-op: return success WITHOUT
+                      ;; writing or saving (file is unchanged).
+                      (format
+                       "OK: no empty rows on %s%s"
+                       curie
+                       (if (and (stringp keyword)
+                                (not (string-empty-p keyword)))
+                           (format " for keyword %S" keyword)
+                         "")))
                      (t
-                      (let* (;; Matcher: explicit MATCH-FRAGMENT wins; else
-                             ;; fall back to FRAGMENT (delete's natural
-                             ;; shape and 9.2.b's `old' equivalent).
-                             (matcher
-                              (or (elot-gptel--axiom-normalise-fragment
-                                   match-fragment)
-                                  (and (eq op-sym 'delete)
-                                       (elot-gptel--axiom-normalise-fragment
-                                        fragment))))
-                             match-row)
-                        (when (memq op-sym '(replace delete))
-                          (let* ((rows (elot-gptel--axiom-find-rows
-                                        before-text curie label))
-                                 (matches (elot-gptel--axiom-match-rows
-                                           rows keyword matcher)))
-                            (cond
-                             ((null matches)
-                              (user-error
-                               "no row matches keyword %S%s on %s"
-                               keyword
-                               (if matcher
-                                   (format " with fragment %S" matcher)
-                                 "")
-                               curie))
-                             ((> (length matches) 1)
-                              (user-error
-                               "ambiguous; %d rows match keyword %S on %s; \
+                      (let ((inhibit-read-only t))
+                        (erase-buffer)
+                        (insert draft))
+                      (format
+                       "OK: deleted %d empty row%s on %s: %s"
+                       n (if (= n 1) "" "s") curie
+                       (mapconcat #'identity deleted ", "))))))
+                 ;; --- add / replace / delete branch (original) ----
+                 (t
+                  (let* (;; Matcher: explicit MATCH-FRAGMENT wins; else
+                         ;; fall back to FRAGMENT (delete's natural
+                         ;; shape and 9.2.b's `old' equivalent).
+                         (matcher
+                          (or (elot-gptel--axiom-normalise-fragment
+                               match-fragment)
+                              (and (eq op-sym 'delete)
+                                   (elot-gptel--axiom-normalise-fragment
+                                    fragment))))
+                         match-row)
+                    (when (memq op-sym '(replace delete))
+                      (let* ((rows (elot-gptel--axiom-find-rows
+                                    before-text curie label))
+                             (matches (elot-gptel--axiom-match-rows
+                                       rows keyword matcher)))
+                        (cond
+                         ((null matches)
+                          (user-error
+                           "no row matches keyword %S%s on %s"
+                           keyword
+                           (if matcher
+                               (format " with fragment %S" matcher)
+                             "")
+                           curie))
+                         ((> (length matches) 1)
+                          (user-error
+                           "ambiguous; %d rows match keyword %S on %s; \
 supply `match_fragment'"
-                               (length matches) keyword curie))
-                             (t (setq match-row (car matches))))))
-                        (let* ((edit (elot-gptel--axiom-apply-edit
-                                      before-text curie label
-                                      op-sym keyword fragment match-row))
-                               (draft (plist-get edit :draft))
-                               (nested (plist-get edit :nested-count)))
-                          (let ((inhibit-read-only t))
-                            (erase-buffer)
-                            (insert draft))
-                          (save-buffer)
-                          (let* ((verdict (elot-gptel--rename-revalidate file))
-                                 (ok (plist-get verdict :ok))
-                                 (report (plist-get verdict :report)))
-                            (cond
-                             ((not ok)
-                              (let ((inhibit-read-only t))
-                                (erase-buffer)
-                                (insert before-text))
-                              (save-buffer)
-                              (set-buffer-modified-p before-modified-p)
-                              (concat
-                               "FAIL: revalidation failed -- changes rolled back\n\n"
-                               report))
-                             (t
-                              (let ((head
-                                     (pcase op-sym
-                                       ('add
-                                        (format
-                                         "OK: added 1 row on %s: - %s :: %s"
-                                         curie keyword fragment))
-                                       ('replace
-                                        (format
-                                         "OK: replaced 1 row on %s: - %s :: %s%s"
-                                         curie keyword fragment
-                                         (if (> nested 0)
-                                             (format
-                                              " (preserved %d nested annotation%s)"
-                                              nested
-                                              (if (= nested 1) "" "s"))
-                                           "")))
-                                       ('delete
-                                        (format
-                                         "OK: deleted 1 row + %d nested annotation%s on %s"
-                                         nested
-                                         (if (= nested 1) "" "s")
-                                         curie)))))
-                                (concat head "\n\n" report))))))))))))))))
+                           (length matches) keyword curie))
+                         (t (setq match-row (car matches))))))
+                    (let* ((edit (elot-gptel--axiom-apply-edit
+                                  before-text curie label
+                                  op-sym keyword fragment match-row))
+                           (draft (plist-get edit :draft))
+                           (nested (plist-get edit :nested-count)))
+                      (let ((inhibit-read-only t))
+                        (erase-buffer)
+                        (insert draft))
+                      (pcase op-sym
+                        ('add
+                         (format
+                          "OK: added 1 row on %s: - %s :: %s"
+                          curie keyword fragment))
+                        ('replace
+                         (format
+                          "OK: replaced 1 row on %s: - %s :: %s%s"
+                          curie keyword fragment
+                          (if (> nested 0)
+                              (format
+                               " (preserved %d nested annotation%s)"
+                               nested
+                               (if (= nested 1) "" "s"))
+                            "")))
+                        ('delete
+                         (format
+                          "OK: deleted 1 row + %d nested annotation%s on %s"
+                          nested
+                          (if (= nested 1) "" "s")
+                          curie))))))))))))
     (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
 
@@ -4906,35 +5010,6 @@ supply `match_fragment'"
                   :curie curie
                   :keyword keyword))))))))
 
-(defun elot-gptel--axioms-revalidate-content (file draft)
-  "Run lint (+ OMN parse when ROBOT is up) against DRAFT for FILE.
-Mirrors `elot-gptel--rename-revalidate' but drives the read-only
-`content=' code path so DRAFT can be evaluated without touching
-the file on disk -- used by `dry_run' batches."
-  (let* ((lint (elot-gptel-tool-lint file nil nil draft))
-         (lint-err (or (string-prefix-p "ERROR:" lint)
-                       (elot-gptel--check-lint-failed-p lint)))
-         (robot-ok (condition-case _err
-                       (progn (require 'elot-robot)
-                              (and (fboundp 'elot-robot-available-p)
-                                   (elot-robot-available-p)))
-                     (error nil)))
-         (omn (and (not lint-err) robot-ok
-                   (elot-gptel-tool-omn-validate file nil draft)))
-         (omn-err (and omn (elot-gptel--check-omn-failed-p omn))))
-    (list :ok (not (or lint-err omn-err))
-          :report
-          (concat
-           (when lint-err
-             (concat "== LINT ==\n" lint))
-           (when omn-err
-             (concat (when lint-err "\n\n")
-                     "== OMN PARSE ==\n" omn))
-           (unless (or lint-err omn-err)
-             (concat "== LINT ==\n" lint
-                     (when omn
-                       (concat "\n\n== OMN PARSE ==\n" omn))))))))
-
 (defun elot-gptel--axioms-format-summary (summaries)
   "Render SUMMARIES (a list of per-edit plists) as a bulleted block."
   (mapconcat
@@ -5009,117 +5084,50 @@ against the draft via the read-only `content=' code path; the
 LLM gets back the same OK / FAIL envelope it would have got from
 a real commit, but FILE on disk is unchanged."
   (condition-case err
-      (progn
-        (unless (or dry-run elot-gptel-allow-side-effects)
-          (user-error
-           "elot-gptel: edit refused -- side effects disabled \
-(set `elot-gptel-allow-side-effects' to t, or pass dry_run=true)"))
-        (let* ((coerced (elot-gptel--axioms-coerce-edits edits)))
-          (unless (and (listp coerced) coerced)
-            (user-error "edits must be a non-empty array"))
-          ;; Normalise every edit up front so shape errors surface
-          ;; before we open the buffer or touch anything.
-          (let* ((normalised
-                  (let ((i -1))
-                    (mapcar (lambda (e)
-                              (elot-gptel--axioms-normalise-edit
-                               e (cl-incf i)))
-                            coerced)))
-                 (true (elot-gptel--resolve-file file))
-                 (slurp (elot-gptel--axiom-slurp-for-file true)))
-            (unless slurp
-              (user-error
-               "no resources declared in %s (elot-slurp empty)" file))
-            (let* ((buf (or (find-buffer-visiting true)
-                            (let ((inhibit-message t))
-                              (find-file-noselect true 'nowarn)))))
-              (unless (buffer-live-p buf)
-                (user-error "cannot open %s" file))
-              (with-current-buffer buf
-                (unless (derived-mode-p 'org-mode)
-                  (let ((org-inhibit-startup t) (org-mode-hook nil))
-                    (org-mode)))
-                (let* ((before-text
-                        (buffer-substring-no-properties
-                         (point-min) (point-max)))
-                       (before-modified-p (buffer-modified-p))
-                       (draft before-text)
-                       (i -1)
-                       (summaries nil))
-                  ;; Per-edit apply on the running draft.  A failure
-                  ;; here aborts the whole batch before any save.
-                  (dolist (edit normalised)
-                    (cl-incf i)
-                    (let ((res (elot-gptel--axioms-apply-one
-                                draft slurp edit i)))
-                      (setq draft (plist-get res :draft))
-                      (push (list :idx i
-                                  :verb (plist-get res :verb)
-                                  :curie (plist-get res :curie)
-                                  :keyword (plist-get res :keyword)
-                                  :nested (plist-get res :nested)
-                                  :swept-keywords
-                                  (plist-get res :swept-keywords))
-                            summaries)))
-                  (setq summaries (nreverse summaries))
-                  (cond
-                   (dry-run
-                    ;; In-memory revalidate; never touch the buffer
-                    ;; (and never save).
-                    (let* ((verdict
-                            (elot-gptel--axioms-revalidate-content
-                             file draft))
-                           (ok (plist-get verdict :ok))
-                           (report (plist-get verdict :report)))
-                      (cond
-                       ((not ok)
-                        (concat
-                         (format
-                          "FAIL: dry-run revalidation failed (no file written, %d edit%s)\n\n"
-                          (length summaries)
-                          (if (= (length summaries) 1) "" "s"))
-                         report))
-                       (t
-                        (concat
-                         (format
-                          "OK: dry-run applied %d edit%s (no file written)\n"
-                          (length summaries)
-                          (if (= (length summaries) 1) "" "s"))
-                         (elot-gptel--axioms-format-summary summaries)
-                         "\n\n"
-                         report)))))
-                   (t
-                    ;; Real commit: write the post-batch draft, save,
-                    ;; revalidate; restore on failure.
-                    (let ((inhibit-read-only t))
-                      (erase-buffer)
-                      (insert draft))
-                    (save-buffer)
-                    (let* ((verdict (elot-gptel--rename-revalidate file))
-                           (ok (plist-get verdict :ok))
-                           (report (plist-get verdict :report)))
-                      (cond
-                       ((not ok)
-                        (let ((inhibit-read-only t))
-                          (erase-buffer)
-                          (insert before-text))
-                        (save-buffer)
-                        (set-buffer-modified-p before-modified-p)
-                        (concat
-                         (format
-                          "FAIL: revalidation failed -- batch rolled back (%d edit%s)\n\n"
-                          (length summaries)
-                          (if (= (length summaries) 1) "" "s"))
-                         report))
-                       (t
-                        (concat
-                         (format
-                          "OK: applied %d edit%s\n"
-                          (length summaries)
-                          (if (= (length summaries) 1) "" "s"))
-                         (elot-gptel--axioms-format-summary summaries)
-                         "\n\n"
-                         report))))))))))))
+      (let* ((coerced (elot-gptel--axioms-coerce-edits edits)))
+        (unless (and (listp coerced) coerced)
+          (user-error "edits must be a non-empty array"))
+        ;; Normalise every edit up front so shape errors surface
+        ;; before we open the buffer or touch anything.
+        (let* ((normalised
+                (let ((i -1))
+                  (mapcar (lambda (e)
+                            (elot-gptel--axioms-normalise-edit
+                             e (cl-incf i)))
+                          coerced))))
+          (elot-gptel-with-mutation (file dry-run)
+            (let* ((true (elot-gptel--resolve-file file))
+                   (slurp (elot-gptel--axiom-slurp-for-file true)))
+              (unless slurp
+                (user-error
+                 "no resources declared in %s (elot-slurp empty)" file))
+              (let* ((draft (buffer-string))
+                     (i -1)
+                     (summaries nil))
+                ;; Per-edit apply on the running draft.  A failure
+                ;; here aborts the whole batch before any save.
+                (dolist (edit normalised)
+                  (cl-incf i)
+                  (let ((res (elot-gptel--axioms-apply-one
+                              draft slurp edit i)))
+                    (setq draft (plist-get res :draft))
+                    (push (list :idx i
+                                :verb (plist-get res :verb)
+                                :curie (plist-get res :curie)
+                                :keyword (plist-get res :keyword)
+                                :nested (plist-get res :nested)
+                                :swept-keywords
+                                (plist-get res :swept-keywords))
+                          summaries)))
+                (setq summaries (nreverse summaries))
+                (let ((inhibit-read-only t))
+                  (erase-buffer)
+                  (insert draft))
+                (format
+                 "OK: applied %d edit%s\n%s"
+                 (length summaries)
+                 (if (= (length summaries) 1) "" "s")
+                 (elot-gptel--axioms-format-summary summaries)))))))
     (user-error (format "FAIL at %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
 
@@ -5168,37 +5176,8 @@ hint as a trailing clause."
        "retry with target_iri=<IRI>"
      "supply a fresh target_iri=<IRI>")))
 
-(defun elot-gptel--rename-revalidate (file)
-  "Re-run lint (+ OMN parse when ROBOT is up) against FILE.
-Returns a plist (:ok BOOL :report STRING).  REPORT is empty when
-:ok is t and there is nothing to surface; otherwise it carries
-the diagnostic body the LLM should see."
-  (let* ((lint (elot-gptel-tool-lint file))
-         (lint-err (or (string-prefix-p "ERROR:" lint)
-                       (elot-gptel--check-lint-failed-p lint)))
-         (robot-ok (condition-case _err
-                       (progn (require 'elot-robot)
-                              (and (fboundp 'elot-robot-available-p)
-                                   (elot-robot-available-p)))
-                     (error nil)))
-         (omn (and (not lint-err) robot-ok
-                   (elot-gptel-tool-omn-validate file)))
-         (omn-err (and omn (elot-gptel--check-omn-failed-p omn))))
-    (list :ok (not (or lint-err omn-err))
-          :report
-          (concat
-           (when lint-err
-             (concat "== LINT ==\n" lint))
-           (when omn-err
-             (concat (when lint-err "\n\n")
-                     "== OMN PARSE ==\n" omn))
-           (unless (or lint-err omn-err)
-             (concat "== LINT ==\n" lint
-                     (when omn
-                       (concat "\n\n== OMN PARSE ==\n" omn))))))))
-
 (defun elot-gptel-tool-rename-resource
-    (file source target &optional ontology target-iri new-label op)
+    (file source target &optional ontology target-iri new-label op dry-run)
   "Implementation of the `elot_rename_resource' tool.
 
 Rewrites every occurrence of SOURCE (a CURIE declared on a
@@ -5241,116 +5220,68 @@ buffer is restored to its pre-rewrite contents.  Returns:
 
 or an `ERROR:' line on refusal / failure."
   (ignore ontology)
-  (condition-case err
-      (progn
-        (unless elot-gptel-allow-side-effects
-          (user-error
-           "elot-gptel: rename refused -- side effects disabled \
-(set `elot-gptel-allow-side-effects' to t)"))
-        (unless (and (stringp source) (not (string-empty-p source)))
-          (user-error "elot-gptel: source must be a non-empty CURIE string"))
-        (unless (and (stringp target) (not (string-empty-p target)))
-          (user-error "elot-gptel: target must be a non-empty CURIE string"))
-        (require 'elot-id-rename)
-        (let* ((true-file (elot-gptel--resolve-file file))
-               (buf (or (find-buffer-visiting true-file)
-                        (let ((inhibit-message t))
-                          (find-file-noselect true-file 'nowarn)))))
-          (unless (buffer-live-p buf)
-            (user-error "elot-gptel: cannot open %s" file))
-          (with-current-buffer buf
-            (unless (derived-mode-p 'org-mode)
-              (let ((org-inhibit-startup t) (org-mode-hook nil))
-                (org-mode)))
-            ;; Normalize `op': accept the symbol or the string forms
-            ;; "rename" / "merge".  Default to `rename'.
-            (setq op
-                  (cond
-                   ((null op) 'rename)
-                   ((symbolp op) op)
-                   ((and (stringp op)
-                         (member op '("rename" "merge")))
-                    (intern op))
-                   (t (user-error
-                       "elot-gptel: op must be `rename' or `merge' (got %S)"
-                       op))))
-            ;; Preflight: if target prefix is undeclared and TARGET_IRI
-            ;; was not supplied, refuse with a structured candidate line
-            ;; before mutating anything.  The split-curie call also
-            ;; shape-validates TARGET.  In `op=merge' mode TARGET must
-            ;; be declared (and therefore its prefix declared too) by
-            ;; construction; skip the DB candidate preflight there and
-            ;; let `elot-rename-resource' surface the more specific
-            ;; "op=merge requires TARGET to be declared" message.
-            (unless (eq op 'merge)
-              (let* ((tgt-parts (elot-id-rename--split-curie target))
-                     (tgt-prefix (car tgt-parts))
-                     (prefix-table (elot-id-rename--read-prefix-table))
-                     (declared-p (assoc tgt-prefix prefix-table)))
-                (when (and (not declared-p)
-                           (or (null target-iri)
-                               (and (stringp target-iri)
-                                    (string-empty-p target-iri))))
-                  (let ((candidates
-                         (ignore-errors
-                           (elot-id-rename--db-candidates tgt-prefix))))
-                    (user-error
-                     "%s"
-                     (elot-gptel--rename-format-candidates
-                      tgt-prefix candidates))))))
-            ;; Snapshot for rollback.
-            (let ((before-text
-                   (buffer-substring-no-properties (point-min) (point-max)))
-                  (before-modified-p (buffer-modified-p))
-                  rename-result)
-              (setq rename-result
-                    (let* ((tiri (and (stringp target-iri)
-                                      (not (string-empty-p target-iri))
-                                      target-iri))
-                           (nlab (and (stringp new-label)
-                                      (not (string-empty-p new-label))
-                                      new-label))
-                           (keys (list :op op)))
-                      (when tiri
-                        (setq keys (append (list :target-iri tiri) keys)))
-                      (when nlab
-                        (setq keys (append (list :new-label nlab) keys)))
-                      (apply #'elot-rename-resource source target keys)))
-              (save-buffer)
-              (let* ((verdict (elot-gptel--rename-revalidate file))
-                     (ok (plist-get verdict :ok))
-                     (report (plist-get verdict :report)))
-                (cond
-                 ((not ok)
-                  ;; Rollback: restore pre-rewrite bytes, save, return error.
-                  (let ((inhibit-read-only t))
-                    (erase-buffer)
-                    (insert before-text))
-                  (save-buffer)
-                  (set-buffer-modified-p before-modified-p)
-                  (concat
-                   "ERROR: revalidation failed -- changes rolled back\n\n"
-                   report))
-                 (t
-                  (let* ((c (plist-get rename-result :curie-count))
-                         (i (plist-get rename-result :iri-count))
-                         (k (plist-get rename-result :prose-skipped))
-                         (decl (plist-get rename-result :declared-prefix))
-                         (verb (if (eq op 'merge) "merged" "renamed"))
-                         (arrow (if (eq op 'merge) "into" "->"))
-                         (head
-                          (format
-                           "OK: %s %s %s %s (%d CURIE, %d IRI; %d prose mention%s skipped%s)%s"
-                           verb source arrow target c i k
-                           (if (= k 1) "" "s")
-                           (if (> k 0) " -- audit recommended" "")
-                           (if decl
-                               (format " (declared prefix %s: -> <%s>)"
-                                       (car decl) (cdr decl))
-                             ""))))
-                    (concat head "\n\n" report)))))))))
-    (user-error (format "ERROR: %s" (error-message-string err)))
-    (error      (format "ERROR: %s" (error-message-string err)))))
+  (elot-gptel-with-mutation (file dry-run)
+    (unless (and (stringp source) (not (string-empty-p source)))
+      (user-error "elot-gptel: source must be a non-empty CURIE string"))
+    (unless (and (stringp target) (not (string-empty-p target)))
+      (user-error "elot-gptel: target must be a non-empty CURIE string"))
+    (require 'elot-id-rename)
+    (setq op
+          (cond
+           ((null op) 'rename)
+           ((symbolp op) op)
+           ((and (stringp op)
+                 (member op '("rename" "merge")))
+            (intern op))
+           (t (user-error
+               "elot-gptel: op must be `rename' or `merge' (got %S)"
+               op))))
+    (unless (eq op 'merge)
+      (let* ((tgt-parts (elot-id-rename--split-curie target))
+             (tgt-prefix (car tgt-parts))
+             (prefix-table (elot-id-rename--read-prefix-table))
+             (declared-p (assoc tgt-prefix prefix-table)))
+        (when (and (not declared-p)
+                   (or (null target-iri)
+                       (and (stringp target-iri)
+                            (string-empty-p target-iri))))
+          (let ((candidates
+                 (ignore-errors
+                   (elot-id-rename--db-candidates tgt-prefix))))
+            (user-error
+             "%s"
+             (elot-gptel--rename-format-candidates
+              tgt-prefix candidates))))))
+    (let* ((tiri (and (stringp target-iri)
+                      (not (string-empty-p target-iri))
+                      target-iri))
+           (nlab (and (stringp new-label)
+                      (not (string-empty-p new-label))
+                      new-label))
+           (keys (list :op op))
+           rename-result)
+      (when tiri
+        (setq keys (append (list :target-iri tiri) keys)))
+      (when nlab
+        (setq keys (append (list :new-label nlab) keys)))
+      (setq rename-result (apply #'elot-rename-resource source target keys))
+      (let* ((c (plist-get rename-result :curie-count))
+             (i (plist-get rename-result :iri-count))
+             (k (plist-get rename-result :prose-skipped))
+             (decl (plist-get rename-result :declared-prefix))
+             (verb (if (eq op 'merge) "merged" "renamed"))
+             (arrow (if (eq op 'merge) "into" "->"))
+             (head
+              (format
+               "OK: %s %s %s %s (%d CURIE, %d IRI; %d prose mention%s skipped%s)%s"
+               verb source arrow target c i k
+               (if (= k 1) "" "s")
+               (if (> k 0) " -- audit recommended" "")
+               (if decl
+                   (format " (declared prefix %s: -> <%s>)"
+                           (car decl) (cdr decl))
+                 ""))))
+        head))))
 
 ;;; ---------------------------------------------------------------------------
 ;;; elot_move_resource tool (Milestone 12 Step 12.1)
@@ -5601,73 +5532,38 @@ the gate check, opens the file, snapshots for rollback, positions
 point at ANCHOR, calls `elot-id-insert--do-insert', re-validates,
 and on success returns an OK envelope; on validation failure
 restores the pre-insert bytes."
-  (unless elot-gptel-allow-side-effects
-    (user-error
-     "elot-gptel: insert refused -- side effects disabled \
-(set `elot-gptel-allow-side-effects' to t)"))
-  (setq labels (elot-gptel--insert-coerce-labels labels))
-  (elot-gptel--insert-validate-labels labels)
-  (require 'elot-id-insert)
-  (let* ((true-file (elot-gptel--resolve-file file))
-         (buf (or (find-buffer-visiting true-file)
-                  (let ((inhibit-message t))
-                    (find-file-noselect true-file 'nowarn)))))
-    (unless (buffer-live-p buf)
-      (user-error "elot-gptel: cannot open %s" file))
-    (with-current-buffer buf
-      (unless (derived-mode-p 'org-mode)
-        (let ((org-inhibit-startup t) (org-mode-hook nil))
-          (org-mode)))
-      (let ((before-text
-             (buffer-substring-no-properties (point-min) (point-max)))
-            (before-modified-p (buffer-modified-p))
-            curies)
-        (condition-case err
-            (save-excursion
-              (elot-gptel--insert-goto-anchor anchor)
-              (atomic-change-group
-                (setq curies
-                      (if child-p
-                          (elot-id-insert--do-insert
-                           t (length labels) labels)
-                        (elot-id-insert--do-insert
-                         nil (length labels) labels)))))
-          (error
-           ;; Failure before any save: just rethrow as user-error.
-           (signal (car err) (cdr err))))
-        (save-buffer)
-        (let* ((verdict (elot-gptel--rename-revalidate file))
-               (ok (plist-get verdict :ok))
-               (report (plist-get verdict :report)))
-          (cond
-           ((not ok)
-            (let ((inhibit-read-only t))
-              (erase-buffer)
-              (insert before-text))
-            (save-buffer)
-            (set-buffer-modified-p before-modified-p)
-            (concat
-             "ERROR: revalidation failed -- changes rolled back\n\n"
-             report))
-           (t
-            (let* ((n (length curies))
-                   (head
-                    (format
-                     "OK: inserted %d %s under %s"
-                     n
-                     (if child-p
-                         (if (= n 1) "child" "children")
-                       (if (= n 1) "sibling" "siblings"))
-                     anchor))
-                   ;; F13: pair CURIEs with their input labels so the
-                   ;; response is unambiguous for follow-up renames.
-                   ;; `do-insert' mints in label order, so a positional
-                   ;; zip is the right pairing.
-                   (pairs (cl-mapcar #'cons curies labels))
-                   (block (elot-gptel--insert-format-curies pairs)))
-              (concat head "\n\n" block
-                      (if (string-empty-p block) "" "\n\n")
-                      report)))))))))
+  (elot-gptel-with-mutation (file nil)
+    (setq labels (elot-gptel--insert-coerce-labels labels))
+    (elot-gptel--insert-validate-labels labels)
+    (require 'elot-id-insert)
+    (let (curies)
+      (save-excursion
+        (elot-gptel--insert-goto-anchor anchor)
+        (atomic-change-group
+          (setq curies
+                (if child-p
+                    (elot-id-insert--do-insert
+                     t (length labels) labels)
+                  (elot-id-insert--do-insert
+                   nil (length labels) labels)))))
+      (let* ((n (length curies))
+             (head
+              (format
+               "OK: inserted %d %s under %s"
+               n
+               (if child-p
+                   (if (= n 1) "child" "children")
+                 (if (= n 1) "sibling" "siblings"))
+               anchor))
+             ;; F13: pair CURIEs with their input labels so the
+             ;; response is unambiguous for follow-up renames.
+             ;; `do-insert' mints in label order, so a positional
+             ;; zip is the right pairing.
+             (pairs (cl-mapcar #'cons curies labels))
+             (block (elot-gptel--insert-format-curies pairs)))
+        (if (string-empty-p block)
+            head
+          (concat head "\n\n" block))))))
 
 (defun elot-gptel-tool-insert-sibling-resource (file anchor labels)
   "Implementation of the `elot_insert_sibling_resource' tool.
@@ -5688,10 +5584,7 @@ returns
 
 followed by the list of minted CURIEs and the lint (and
 OMN-parse) reports."
-  (condition-case err
-      (elot-gptel--insert-do file anchor nil labels)
-    (user-error (format "ERROR: %s" (error-message-string err)))
-    (error      (format "ERROR: %s" (error-message-string err)))))
+  (elot-gptel--insert-do file anchor nil labels))
 
 (defun elot-gptel-tool-insert-child-resource (file anchor labels)
   "Implementation of the `elot_insert_child_resource' tool.
@@ -5706,10 +5599,7 @@ level-2 section heading is always allowed (seeds the first
 resource).
 
 Same write-back contract as `elot_insert_sibling_resource'."
-  (condition-case err
-      (elot-gptel--insert-do file anchor t labels)
-    (user-error (format "ERROR: %s" (error-message-string err)))
-    (error      (format "ERROR: %s" (error-message-string err)))))
+  (elot-gptel--insert-do file anchor t labels))
 
 (defun elot-gptel-tool-insert-resource-tree (file anchor tree &optional as)
   "Implementation of the `elot_insert_resource_tree' tool.
@@ -5739,87 +5629,48 @@ CURIE collection: identifiers are accumulated by wrapping
 the call -- the primitive returns its inserted slice on each
 call, so concatenating those slices in invocation order gives
 the level-ordered sequence."
-  (condition-case err
-      (progn
-        (unless elot-gptel-allow-side-effects
-          (user-error
-           "elot-gptel: insert refused -- side effects disabled \
-(set `elot-gptel-allow-side-effects' to t)"))
-        (let ((as-sym (cond
-                       ((or (null as) (and (stringp as) (string-empty-p as)))
-                        'sibling)
-                       ((stringp as) (intern as))
-                       ((symbolp as) as)
-                       (t (user-error
-                           "elot-gptel: as must be \"child\" or \"sibling\": %S"
-                           as)))))
-          (unless (memq as-sym '(child sibling))
-            (user-error
-             "elot-gptel: as must be \"child\" or \"sibling\": %S" as))
-          (require 'elot-id-insert)
-          (let* ((lisp-tree (elot-gptel--insert-walk-tree tree))
-                 (true-file (elot-gptel--resolve-file file))
-                 (buf (or (find-buffer-visiting true-file)
-                          (let ((inhibit-message t))
-                            (find-file-noselect true-file 'nowarn)))))
-            (unless (buffer-live-p buf)
-              (user-error "elot-gptel: cannot open %s" file))
-            (with-current-buffer buf
-              (unless (derived-mode-p 'org-mode)
-                (let ((org-inhibit-startup t) (org-mode-hook nil))
-                  (org-mode)))
-              (let ((before-text
-                     (buffer-substring-no-properties
-                      (point-min) (point-max)))
-                    (before-modified-p (buffer-modified-p))
-                    (orig-fn (symbol-function 'elot-id-insert--do-insert))
-                    (collected nil))
-                ;; F13: pair each minted CURIE with the label that
-                ;; produced it.  `do-insert' mints in label order, so
-                ;; positional zip of `cs' with `labels' is correct.
-                ;; The walker preserves level-order across calls, so
-                ;; the concatenated pair list also matches level order.
-                (cl-letf (((symbol-function 'elot-id-insert--do-insert)
-                           (lambda (child-p n &optional labels)
-                             (let* ((cs (funcall orig-fn child-p n labels))
-                                    (these (cl-mapcar #'cons cs labels)))
-                               (setq collected (append collected these))
-                               cs))))
-                  (condition-case err
-                      (save-excursion
-                        (elot-gptel--insert-goto-anchor anchor)
-                        (atomic-change-group
-                          (elot-insert-labels-tree lisp-tree as-sym)))
-                    (error
-                     (signal (car err) (cdr err)))))
-                (save-buffer)
-                (let* ((verdict (elot-gptel--rename-revalidate file))
-                       (ok (plist-get verdict :ok))
-                       (report (plist-get verdict :report)))
-                  (cond
-                   ((not ok)
-                    (let ((inhibit-read-only t))
-                      (erase-buffer)
-                      (insert before-text))
-                    (save-buffer)
-                    (set-buffer-modified-p before-modified-p)
-                    (concat
-                     "ERROR: revalidation failed -- changes rolled back\n\n"
-                     report))
-                   (t
-                    (let* ((n (length collected))
-                           (head (format
-                                  "OK: inserted %d heading%s under %s (as %s)"
-                                  n (if (= n 1) "" "s")
-                                  anchor (symbol-name as-sym)))
-                           ;; F13: `collected' is already a list of
-                           ;; (CURIE . LABEL) cons cells.
-                           (block (elot-gptel--insert-format-curies collected)))
-                      (concat head "\n\n" block
-                              (if (string-empty-p block) "" "\n\n")
-                              report)))))))))) 
-    (user-error (format "ERROR: %s" (error-message-string err)))
-    (error      (format "ERROR: %s" (error-message-string err)))))
+  (elot-gptel-with-mutation (file nil)
+    (let ((as-sym (cond
+                   ((or (null as) (and (stringp as) (string-empty-p as)))
+                    'sibling)
+                   ((stringp as) (intern as))
+                   ((symbolp as) as)
+                   (t (user-error
+                       "elot-gptel: as must be \"child\" or \"sibling\": %S"
+                       as)))))
+      (unless (memq as-sym '(child sibling))
+        (user-error
+         "elot-gptel: as must be \"child\" or \"sibling\": %S" as))
+      (require 'elot-id-insert)
+      (let ((lisp-tree (elot-gptel--insert-walk-tree tree)))
+        (let ((orig-fn (symbol-function 'elot-id-insert--do-insert))
+              (collected nil))
+          ;; F13: pair each minted CURIE with the label that
+          ;; produced it.  `do-insert' mints in label order, so
+          ;; positional zip of `cs' with `labels' is correct.
+          ;; The walker preserves level-order across calls, so
+          ;; the concatenated pair list also matches level order.
+          (cl-letf (((symbol-function 'elot-id-insert--do-insert)
+                     (lambda (child-p n &optional labels)
+                       (let* ((cs (funcall orig-fn child-p n labels))
+                              (these (cl-mapcar #'cons cs labels)))
+                         (setq collected (append collected these))
+                         cs))))
+            (save-excursion
+              (elot-gptel--insert-goto-anchor anchor)
+              (atomic-change-group
+                (elot-insert-labels-tree lisp-tree as-sym))))
+          (let* ((n (length collected))
+                 (head (format
+                        "OK: inserted %d heading%s under %s (as %s)"
+                        n (if (= n 1) "" "s")
+                        anchor (symbol-name as-sym)))
+                 ;; F13: `collected' is already a list of
+                 ;; (CURIE . LABEL) cons cells.
+                 (block (elot-gptel--insert-format-curies collected)))
+            (if (string-empty-p block)
+                head
+              (concat head "\n\n" block))))))))
 
 (defun elot-gptel-tool-move-resource
     (file source target &optional as)
@@ -5867,73 +5718,34 @@ re-run, and the response has the shape:
 On revalidation failure the pre-move bytes are restored and an
 `ERROR: revalidation failed -- changes rolled back' header
 precedes the diagnostic body."
-  (condition-case err
-      (progn
-        (unless elot-gptel-allow-side-effects
-          (user-error
-           "elot-gptel: move refused -- side effects disabled \
-(set `elot-gptel-allow-side-effects' to t)"))
-        (unless (and (stringp source) (not (string-empty-p source)))
-          (user-error "elot-gptel: source must be a non-empty CURIE string"))
-        (unless (and (stringp target) (not (string-empty-p target)))
-          (user-error
-           "elot-gptel: target must be a non-empty CURIE string or \"top\""))
-        (let* ((as-sym (cond
-                        ((null as) 'child)
-                        ((and (stringp as) (string-empty-p as)) 'child)
-                        ((stringp as) (intern as))
-                        ((symbolp as) as)
-                        (t (user-error
-                            "elot-gptel: as must be \"child\" or \"sibling\": %S"
-                            as))))
-               (_ (unless (memq as-sym '(child sibling))
-                    (user-error
-                     "elot-gptel: as must be \"child\" or \"sibling\": %S"
-                     as)))
-               (true-file (elot-gptel--resolve-file file))
-               (buf (or (find-buffer-visiting true-file)
-                        (let ((inhibit-message t))
-                          (find-file-noselect true-file 'nowarn)))))
-          (unless (buffer-live-p buf)
-            (user-error "elot-gptel: cannot open %s" file))
-          (require 'elot-id-move)
-          (with-current-buffer buf
-            (unless (derived-mode-p 'org-mode)
-              (let ((org-inhibit-startup t) (org-mode-hook nil))
-                (org-mode)))
-            (let ((before-text
-                   (buffer-substring-no-properties (point-min) (point-max)))
-                  (before-modified-p (buffer-modified-p))
-                  move-result)
-              (setq move-result
-                    (elot-move-resource source target as-sym))
-              (save-buffer)
-              (let* ((verdict (elot-gptel--rename-revalidate file))
-                     (ok (plist-get verdict :ok))
-                     (report (plist-get verdict :report)))
-                (cond
-                 ((not ok)
-                  (let ((inhibit-read-only t))
-                    (erase-buffer)
-                    (insert before-text))
-                  (save-buffer)
-                  (set-buffer-modified-p before-modified-p)
-                  (concat
-                   "ERROR: revalidation failed -- changes rolled back\n\n"
-                   report))
-                 (t
-                  (let* ((from-parent (or (plist-get move-result :from-parent)
-                                          "(top-level)"))
-                         (to-parent   (or (plist-get move-result :to-parent)
-                                          "(top-level)"))
-                         (head
-                          (format
-                           "OK: moved %s from %s to %s (as %s)"
-                           source from-parent to-parent
-                           (symbol-name as-sym))))
-                    (concat head "\n\n" report)))))))))
-    (user-error (format "ERROR: %s" (error-message-string err)))
-    (error      (format "ERROR: %s" (error-message-string err)))))
+  (elot-gptel-with-mutation (file nil)
+    (unless (and (stringp source) (not (string-empty-p source)))
+      (user-error "elot-gptel: source must be a non-empty CURIE string"))
+    (unless (and (stringp target) (not (string-empty-p target)))
+      (user-error
+       "elot-gptel: target must be a non-empty CURIE string or \"top\""))
+    (let* ((as-sym (cond
+                    ((null as) 'child)
+                    ((and (stringp as) (string-empty-p as)) 'child)
+                    ((stringp as) (intern as))
+                    ((symbolp as) as)
+                    (t (user-error
+                        "elot-gptel: as must be \"child\" or \"sibling\": %S"
+                        as)))))
+      (unless (memq as-sym '(child sibling))
+        (user-error
+         "elot-gptel: as must be \"child\" or \"sibling\": %S"
+         as))
+      (require 'elot-id-move)
+      (let* ((move-result (elot-move-resource source target as-sym))
+             (from-parent (or (plist-get move-result :from-parent)
+                              "(top-level)"))
+             (to-parent   (or (plist-get move-result :to-parent)
+                              "(top-level)")))
+        (format
+         "OK: moved %s from %s to %s (as %s)"
+         source from-parent to-parent
+         (symbol-name as-sym))))))
 
 ;;; ---------------------------------------------------------------------------
 ;;; M9.9 -- reference-scan helper for resource deletion
@@ -6803,8 +6615,7 @@ or an `ERROR:' line on refusal / failure."
                           (when (file-exists-p true-file)
                             (ignore-errors
                               (set-visited-file-modtime)))
-                          (let ((inhibit-read-only t)
-                                (inhibit-modification-hooks t))
+                          (let ((inhibit-read-only t))
                             (widen)
                             (erase-buffer)
                             (insert buf-bytes))
