@@ -209,6 +209,9 @@ _minted*
 # svg
 svg-inkscape/
 
+# a set of MCP tools for OBO ROBOT
+vendor/
+
 # sympy
 *.sout
 *.sympy
