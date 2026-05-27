@@ -14,6 +14,7 @@ db-test:
 	$(EMACS) --batch \
 	  -L $(PACKAGE_DIR) \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-db-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -22,6 +23,7 @@ prefix-test:
 	$(EMACS) --batch \
 	  -L $(PACKAGE_DIR) \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-db-prefixes-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -30,6 +32,7 @@ crud-test:
 	$(EMACS) --batch \
 	  -L $(PACKAGE_DIR) \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-db-crud-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -40,6 +43,7 @@ sources-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-sources-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -50,6 +54,7 @@ register-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-sources-register-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -59,6 +64,7 @@ active-sources-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-active-sources-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -69,6 +75,7 @@ slurp-integration-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-slurp-integration-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -79,6 +86,7 @@ global-mode-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-global-mode-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -89,6 +97,7 @@ active-sources-ui-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-active-sources-ui-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -100,6 +109,7 @@ ttl-prefix-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-ttl-prefix-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -110,6 +120,7 @@ step-1-11-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-step-1-11-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -120,6 +131,7 @@ step-1-12-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-label-lookup-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -132,6 +144,7 @@ step-1-12-item-b-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-menu-item-b-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -142,6 +155,7 @@ step-1-13-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-label-lookup-scope-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -154,6 +168,7 @@ step-1-14-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-label-display-hover-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -165,6 +180,7 @@ step-1-15-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-label-lookup-stage-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -177,6 +193,7 @@ step-1-16-1-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-lang-prefs-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -188,6 +205,7 @@ step-1-16-2-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-db-schema-v3-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -199,6 +217,7 @@ step-1-16-3-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-db-lang-write-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -210,6 +229,7 @@ step-1-16-4-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-db-lang-read-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -222,6 +242,7 @@ step-1-16-5-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-db-lang-picker-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -233,6 +254,7 @@ step-1-16-6-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-sources-lang-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -244,6 +266,7 @@ step-1-16-7-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-sources-ttl-lang-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -255,6 +278,7 @@ step-1-16-8-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-label-lookup-lang-suffix-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -265,6 +289,7 @@ menu-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-menu-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -276,6 +301,7 @@ step-2-1-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-db-schema-sql-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -286,6 +312,7 @@ golden-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-db-golden-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -295,6 +322,7 @@ sparql-merge-prefixes-test:
 	$(EMACS) --batch \
 	  -L $(PACKAGE_DIR) \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-sparql-merge-prefixes-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -306,6 +334,7 @@ sparql-exec-helpers-test:
 	$(EMACS) --batch \
 	  -L $(PACKAGE_DIR) \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-sparql-exec-helpers-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -319,6 +348,7 @@ sparql-advice-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-sparql-advice-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -331,6 +361,7 @@ sparql-roundtrip-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-sparql-roundtrip-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -344,6 +375,7 @@ tangle-roundtrip-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-tangle-roundtrip-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -357,6 +389,7 @@ load-without-sparql-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-load-without-sparql-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -368,6 +401,7 @@ gptel-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -379,6 +413,7 @@ robot-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-robot-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -389,6 +424,7 @@ omn-validate-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-omn-validate-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -400,6 +436,7 @@ omn-report-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-omn-report-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -411,6 +448,7 @@ gptel-diff-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-diff-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -421,6 +459,7 @@ sparql-tool-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-sparql-tool-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -432,6 +471,7 @@ reasoning-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-reasoning-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -442,6 +482,7 @@ readonly-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-db-readonly-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -453,6 +494,7 @@ db-query-tool-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-db-query-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -465,6 +507,7 @@ db-schema-tool-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-db-schema-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -476,6 +519,7 @@ db-shims-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-db-shims-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -487,6 +531,7 @@ db-shims-wave-b-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-db-shims-wave-b-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -498,6 +543,7 @@ db-search-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-db-search-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -510,6 +556,7 @@ db-borrow-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-db-borrow-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -521,6 +568,7 @@ db-borrow-compose-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-db-borrow-compose-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -535,6 +583,7 @@ lint-content-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-lint-content-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -548,6 +597,7 @@ conventions-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-conventions-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -561,6 +611,7 @@ check-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-check-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -572,6 +623,7 @@ lint-axiom-signature-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-lint-axiom-signature-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -584,6 +636,7 @@ lint-oops-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-lint-oops-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -597,6 +650,7 @@ corpus-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-corpus-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -610,6 +664,7 @@ corpus-oops-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-corpus-oops-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -619,6 +674,7 @@ subclass-in-dl-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-lint-subclass-in-dl-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -630,6 +686,7 @@ id-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-id-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -641,6 +698,7 @@ id-insert-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-id-insert-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -651,6 +709,7 @@ id-set-scheme-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-id-set-scheme-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -662,6 +721,7 @@ gptel-rename-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-rename-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -673,6 +733,7 @@ move-resource-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-move-resource-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -684,6 +745,7 @@ gptel-move-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-move-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -696,6 +758,7 @@ gptel-insert-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-insert-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -707,6 +770,7 @@ gptel-axiom-keywords-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-axiom-keywords-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -718,6 +782,7 @@ gptel-axiom-check-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-axiom-check-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -729,6 +794,7 @@ gptel-edit-axiom-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-edit-axiom-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -740,6 +806,7 @@ gptel-edit-axioms-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-edit-axioms-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -751,6 +818,7 @@ gptel-confirm-mutations-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-confirm-mutations-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -764,6 +832,7 @@ hh-stale-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-headline-hierarchy-stale-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -777,6 +846,7 @@ tangle-blank-omn-row-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-tangle-blank-omn-row-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -789,6 +859,7 @@ lint-blank-omn-row-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-lint-blank-omn-row-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -800,6 +871,7 @@ gptel-db-activate-source-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-db-activate-source-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -813,6 +885,7 @@ id-rename-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-id-rename-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -824,6 +897,7 @@ gptel-delete-reference-scan-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-delete-reference-scan-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -835,6 +909,7 @@ gptel-replace-parents-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-replace-parents-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -847,6 +922,7 @@ gptel-replace-with-parent-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-replace-with-parent-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -861,6 +937,7 @@ gptel-rename-merge-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-rename-merge-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -872,6 +949,7 @@ gptel-delete-apply-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-delete-apply-test.el \
 	  -f ert-run-tests-batch-and-exit
 
@@ -884,6 +962,7 @@ gptel-delete-resource-test:
 	  -L $(PACKAGE_DIR) \
 	  -L . \
 	  -l ert \
+	  -l ./test-helper.el \
 	  -l elot-gptel-delete-resource-test.el \
 	  -f ert-run-tests-batch-and-exit
 
