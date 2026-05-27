@@ -75,6 +75,22 @@ scope at this stage."
   :type 'file
   :group 'elot-db)
 
+(defcustom elot-db-sync-on-slurp t
+  "When non-nil (default), `elot-slurp-to-vars' writes the slurp
+into the ELOT label DB (`elot-db-file').
+
+Set to nil in test harnesses or other ephemeral contexts to keep
+short-lived fixture files out of the user's global label cache.
+The local `elot-slurp', `elot-codelist-ht' and `elot-attriblist-ht'
+buffer-local variables are unaffected -- only the cross-buffer DB
+sync is suppressed.
+
+Disable from the command line via:
+
+    emacs --batch --eval \"(setq elot-db-sync-on-slurp nil)\" ..."
+  :type 'boolean
+  :group 'elot-db)
+
 (defcustom elot-db-busy-timeout-ms 5000
   "SQLite `busy_timeout' (milliseconds) applied at connection open.
 When a second connection encounters a locked database (typically a

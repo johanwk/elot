@@ -1204,9 +1204,17 @@ The following simply replaces ~elot-slurp-entities~ with ~elot-build-slurp~, and
             (elot--ht-from-alist (elot-attriblist-from-slurp elot-slurp)))
       ;; Optional DB sync: if SQLite is available, try to load
       ;; the elot-db subsystem on first use, then write the slurp.
+      ;; The `elot-db-sync-on-slurp' gate (defined in elot-db.el, but
+      ;; consulted defensively via `bound-and-true-p' so this branch
+      ;; degrades gracefully if elot-db has not been loaded yet) lets
+      ;; test harnesses suppress writes to the user's global cache.
       (when (and slurp
                  buffer-file-name
-                 (fboundp 'sqlite-open))
+                 (fboundp 'sqlite-open)
+                 ;; Default-true: the variable is nil only when
+                 ;; explicitly disabled (test-helper.el, etc.).
+                 (or (not (boundp 'elot-db-sync-on-slurp))
+                     (symbol-value 'elot-db-sync-on-slurp)))
         (require 'elot-db nil t)
         (when (fboundp 'elot-db-update-source)
           (condition-case err
