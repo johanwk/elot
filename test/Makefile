@@ -19,12 +19,12 @@ define run-ert-test
 	  -f ert-run-tests-batch-and-exit
 endef
 
-.PHONY: all test test-helper-guard-test db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-14-test step-1-15-test step-1-16-1-test step-1-16-2-test step-1-16-3-test step-1-16-4-test step-1-16-5-test step-1-16-6-test step-1-16-7-test step-1-16-8-test step-2-1-test sparql-merge-prefixes-test sparql-exec-helpers-test sparql-advice-test sparql-roundtrip-test tangle-roundtrip-test load-without-sparql-test golden-test gptel-test robot-test omn-validate-test omn-report-test gptel-diff-test sparql-tool-test reasoning-test readonly-test db-query-tool-test db-schema-tool-test db-shims-test db-shims-wave-b-test db-search-test db-borrow-test db-borrow-compose-test conventions-test lint-content-test check-test subclass-in-dl-test lint-oops-test corpus-test corpus-oops-test lint-axiom-signature-test id-test id-insert-test id-set-scheme-test id-rename-test gptel-rename-test move-resource-test gptel-move-test gptel-insert-test gptel-confirm-mutations-test hh-stale-test tangle-blank-omn-row-test lint-blank-omn-row-test gptel-db-activate-source-test gptel-delete-reference-scan-test gptel-replace-parents-test gptel-replace-with-parent-test gptel-rename-merge-test gptel-delete-apply-test gptel-delete-resource-test clean help
+.PHONY: all test test-helper-guard-test db-test prefix-test crud-test remove-source-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-14-test step-1-15-test step-1-16-1-test step-1-16-2-test step-1-16-3-test step-1-16-4-test step-1-16-5-test step-1-16-6-test step-1-16-7-test step-1-16-8-test step-2-1-test sparql-merge-prefixes-test sparql-exec-helpers-test sparql-advice-test sparql-roundtrip-test tangle-roundtrip-test load-without-sparql-test golden-test gptel-test robot-test omn-validate-test omn-report-test gptel-diff-test sparql-tool-test reasoning-test readonly-test db-query-tool-test db-schema-tool-test db-shims-test db-shims-wave-b-test db-search-test db-borrow-test db-borrow-compose-test conventions-test lint-content-test check-test subclass-in-dl-test lint-oops-test corpus-test corpus-oops-test lint-axiom-signature-test id-test id-insert-test id-set-scheme-test id-rename-test gptel-rename-test move-resource-test gptel-move-test gptel-insert-test gptel-confirm-mutations-test hh-stale-test tangle-blank-omn-row-test lint-blank-omn-row-test gptel-db-activate-source-test gptel-delete-reference-scan-test gptel-replace-parents-test gptel-replace-with-parent-test gptel-rename-merge-test gptel-delete-apply-test gptel-delete-resource-test clean help
 
 all: test
 
 # Run the full ELOT ERT test suite.
-test: test-helper-guard-test db-test prefix-test crud-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-14-test step-1-15-test step-1-16-1-test step-1-16-2-test step-1-16-3-test step-1-16-4-test step-1-16-5-test step-1-16-6-test step-1-16-7-test step-1-16-8-test step-2-1-test sparql-merge-prefixes-test sparql-exec-helpers-test sparql-advice-test sparql-roundtrip-test tangle-roundtrip-test load-without-sparql-test golden-test gptel-test
+test: test-helper-guard-test db-test prefix-test crud-test remove-source-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-14-test step-1-15-test step-1-16-1-test step-1-16-2-test step-1-16-3-test step-1-16-4-test step-1-16-5-test step-1-16-6-test step-1-16-7-test step-1-16-8-test step-2-1-test sparql-merge-prefixes-test sparql-exec-helpers-test sparql-advice-test sparql-roundtrip-test tangle-roundtrip-test load-without-sparql-test golden-test gptel-test
 
 # Regression guard: verifies test-helper.el is loaded for every
 # batch run (elot-db-sync-on-slurp is nil; elot-db-file is under
@@ -44,6 +44,12 @@ prefix-test:
 # Step 1.2 tests: write/read primitives.
 crud-test:
 	$(call run-ert-test,elot-db-crud-test.el)
+
+# Briefing test-helper-rollout-and-source-removal.org, Task 2.6:
+# `elot-db-remove-source' (exact + LIKE-pattern modes) and the
+# companion `elot-db-list-sources-like' preview helper.
+remove-source-test:
+	$(call run-ert-test,elot-db-remove-source-test.el)
 
 # Step 1.3 + 1.3.1 tests: source parsers (org / csv / tsv / json / rq-cache)
 # plus ROBOT-local Tier 1 tests (skipped cleanly if ROBOT absent).
@@ -531,6 +537,7 @@ help:
 	@echo "  db-test      run test/elot-db-test.el (Step 1.1)"
 	@echo "  prefix-test  run test/elot-db-prefixes-test.el (Step 1.1.1)"
 	@echo "  crud-test    run test/elot-db-crud-test.el (Step 1.2)"
+	@echo "  remove-source-test  run test/elot-db-remove-source-test.el (briefing Task 2.6)"
 	@echo "  sources-test run test/elot-sources-test.el (Step 1.3)"
 	@echo "  register-test run test/elot-sources-register-test.el (Step 1.4)"
 	@echo "  active-sources-test run test/elot-active-sources-test.el (Step 1.5)"

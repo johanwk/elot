@@ -155,7 +155,7 @@ different DATA-SOURCE values yields two independent sources rows."
      "s1" nil "org"
      '(("e1" "E1" ("rdf:type" "owl:Class"))))
     (elot-db-add-prefix "s1" nil "ex" "http://example.org/")
-    (should (elot-db-remove-source "s1"))
+    (should (= 1 (elot-db-remove-source "s1")))
     (should-not (elot-db-source-exists-p "s1"))
     (should (= 0 (caar (sqlite-select
                         elot-db "SELECT COUNT(*) FROM entities"))))
@@ -163,8 +163,8 @@ different DATA-SOURCE values yields two independent sources rows."
                         elot-db "SELECT COUNT(*) FROM attributes"))))
     (should (= 0 (caar (sqlite-select
                         elot-db "SELECT COUNT(*) FROM prefixes"))))
-    ;; Removing a non-existent source is a no-op returning nil.
-    (should-not (elot-db-remove-source "does-not-exist"))))
+    ;; Removing a non-existent source is a no-op returning 0.
+    (should (= 0 (elot-db-remove-source "does-not-exist")))))
 
 (ert-deftest test-elot-db-source-needs-update-p ()
   "needs-update-p is true for unknown sources, true when file mtime

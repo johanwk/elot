@@ -727,16 +727,93 @@ string for non-SPARQL sources)."
      FROM sources
      ORDER BY source, data_source"))
 
-(defun elot-db-remove-source (source &optional data-source)
-  "Delete the sources row for (SOURCE, DATA-SOURCE) and cascade.
-Returns non-nil if a row was removed, nil otherwise."
-  (let ((existed (elot-db-source-exists-p source data-source)))
-    (when existed
-      (sqlite-execute
-       elot-db
-       "DELETE FROM sources WHERE source = ? AND data_source = ?"
-       (list source (elot-db--normalize-ds data-source))))
-    existed))
+(defun elot-db-list-sources-like (source-pattern &optional data-source-pattern)
+  "Return rows from `sources' matching SQL LIKE patterns.
+SOURCE-PATTERN and DATA-SOURCE-PATTERN follow SQLite LIKE syntax
+(`%' matches any sequence of characters; `_' matches a single
+character).  DATA-SOURCE-PATTERN defaults to `\"%\"' (match any
+data_source).  Returns rows in the same shape as
+`elot-db-list-sources': (SOURCE DATA-SOURCE TYPE LAST-MODIFIED
+LAST-UPDATED).
+
+Useful as a dry-run preview before calling `elot-db-remove-source'
+with its LIKE flag."
+  (sqlite-select
+   elot-db
+   "SELECT source, data_source, type, last_modified, last_updated
+     FROM sources
+     WHERE source LIKE ? AND data_source LIKE ?
+     ORDER BY source, data_source"
+   (list source-pattern (or data-source-pattern "%"))))
+
+(defun elot-db-remove-source (source &optional data-source like allow-all)
+  "Delete sources row(s) for (SOURCE, DATA-SOURCE) and cascade.
+
+The DELETE relies on `ON DELETE CASCADE' declared on `entities',
+`attributes' and `prefixes' in `schema.sql', so the dependent rows
+are removed in the same statement.  This requires
+`PRAGMA foreign_keys = ON', which `elot-db-init' sets on every
+connection.
+
+Exact-match mode (LIKE nil, the default):
+  SOURCE and DATA-SOURCE are matched exactly.  DATA-SOURCE
+  defaults to the empty-string sentinel.  At most one `sources'
+  row can match, since (source, data_source) is the primary key.
+
+Pattern mode (LIKE non-nil):
+  SOURCE and DATA-SOURCE are treated as SQL LIKE patterns
+  (`%' matches any sequence of characters; `_' matches a single
+  character).  DATA-SOURCE defaults to `\"%\"' (match any
+  data_source).  Any number of rows may be removed.  As a safety
+  guard against accidental whole-table deletion, the function
+  signals an error when SOURCE is `\"\"' or `\"%\"' unless
+  ALLOW-ALL is non-nil.  Use `elot-db-list-sources-like' for a
+  read-only preview before deleting.
+
+The operation runs inside a transaction so a mid-delete failure
+rolls back.  Idempotent: returns the number of `sources' rows
+removed (0 when nothing matches)."
+  (let* ((pattern-mode like)
+         (src  (if pattern-mode
+                   source
+                 source))
+         (ds   (if pattern-mode
+                   (or data-source "%")
+                 (elot-db--normalize-ds data-source)))
+         (n    0)
+         (ok   nil))
+    (when (and pattern-mode
+               (not allow-all)
+               (member src '("" "%")))
+      (error "elot-db-remove-source: refusing to delete every source (SOURCE=%S) without ALLOW-ALL"
+             src))
+    (sqlite-transaction elot-db)
+    (unwind-protect
+        (progn
+          (if pattern-mode
+              (progn
+                (setq n (caar (sqlite-select
+                               elot-db
+                               "SELECT COUNT(*) FROM sources
+                                 WHERE source LIKE ? AND data_source LIKE ?"
+                               (list src ds))))
+                (when (and n (> n 0))
+                  (sqlite-execute
+                   elot-db
+                   "DELETE FROM sources
+                     WHERE source LIKE ? AND data_source LIKE ?"
+                   (list src ds))))
+            (when (elot-db-source-exists-p src ds)
+              (sqlite-execute
+               elot-db
+               "DELETE FROM sources WHERE source = ? AND data_source = ?"
+               (list src ds))
+              (setq n 1)))
+          (setq ok t))
+      (if ok
+          (sqlite-commit elot-db)
+        (sqlite-rollback elot-db)))
+    (or n 0)))
 
 (defun elot-db-source-needs-update-p (file &optional data-source)
   "Return t if FILE has been modified since last parsed into the DB.

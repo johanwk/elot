@@ -756,7 +756,7 @@ Interactively, completes over registered sources."
                 "Unregister source: ")))
      (list (car pair) (cdr pair))))
   (elot-source--ensure-db)
-  (let ((removed (elot-db-remove-source source data-source)))
+  (let ((removed (> (elot-db-remove-source source data-source) 0)))
     (if removed
         (message "elot-sources: unregistered %s%s"
                  source
