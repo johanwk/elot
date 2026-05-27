@@ -2370,6 +2370,12 @@ Read-only."
 
 (declare-function elot-db-get-label-any "elot-db" (token &optional active-sources))
 (declare-function elot-db-list-sources "elot-db" ())
+(declare-function elot-db-list-sources-like "elot-db"
+                  (source-pattern &optional data-source-pattern))
+(declare-function elot-db-source-exists-p "elot-db"
+                  (source &optional data-source))
+(declare-function elot-db-remove-source "elot-db"
+                  (source &optional data-source like allow-all))
 (declare-function elot-db-expand-curie "elot-db" (curie &optional active-sources))
 (defvar elot-active-label-sources)      ; from elot-db.el; buffer-local at use sites
 
@@ -2459,6 +2465,70 @@ success, or an =ERROR:= line on refusal / parse failure."
                   true-file
                   (substring (symbol-name status) 1) ; drop leading ":"
                   n (if (= n 1) "y" "ies"))))
+    (user-error (format "ERROR: %s" (error-message-string err)))
+    (error      (format "ERROR: %s" (error-message-string err)))))
+
+(defun elot-gptel-tool-db-remove-source
+    (source &optional data-source like allow-all dry-run)
+  "Implementation of the `elot_db_remove_source' tool.
+
+Deletes the matching row(s) in the ELOT label DB's `sources'
+table, cascading to `entities', `attributes', and `prefixes' via
+`ON DELETE CASCADE'.  See `elot-db-remove-source' for the full
+semantics; this wrapper adds the gptel envelope: side-effects
+gate, dry-run preview, and TSV-shaped response.
+
+When LIKE is non-nil, SOURCE and DATA-SOURCE are SQL LIKE
+patterns; DATA-SOURCE defaults to `\"%\"' (any).  ALLOW-ALL
+must be supplied to permit SOURCE=`\"\"' or `\"%\"' in pattern
+mode -- a guard against accidental whole-table deletion.
+
+DRY-RUN reports the rows that would be removed without touching
+the DB (preview via `elot-db-list-sources-like' in pattern mode,
+`elot-db-source-exists-p' in exact mode) and bypasses the
+side-effects gate.  The real delete is gated by
+`elot-gptel-allow-side-effects'."
+  (condition-case err
+      (progn
+        (unless (and (stringp source) (not (string-empty-p source)))
+          (user-error "elot-gptel: source must be a non-empty string"))
+        (unless (or dry-run elot-gptel-allow-side-effects)
+          (user-error
+           "elot-gptel: elot_db_remove_source refused -- mutating tool \
+(set `elot-gptel-allow-side-effects' to t, or pass dry_run=true)"))
+        (elot-gptel--db-ensure-open)
+        (let* ((ds (cond ((and (stringp data-source)
+                               (not (string-empty-p data-source)))
+                          data-source)
+                         (t nil))))
+          (if dry-run
+              ;; Preview only -- no DELETE issued.
+              (if like
+                  (let* ((rows (elot-db-list-sources-like
+                                source (or ds "%"))))
+                    (if (null rows)
+                        (format "OK: dry-run -- 0 source(s) match %S / %S"
+                                source (or ds "%"))
+                      (concat
+                       (format "OK: dry-run -- %d source(s) would be removed\n"
+                               (length rows))
+                       (elot-gptel--db-format-rows
+                        '("source" "data_source" "type"
+                          "last_modified" "last_updated")
+                        rows nil))))
+                (if (elot-db-source-exists-p source ds)
+                    (format "OK: dry-run -- 1 source would be removed (%s, %s)"
+                            source (or ds ""))
+                  (format "OK: dry-run -- 0 source(s) match %s / %s"
+                          source (or ds ""))))
+            ;; Real delete.
+            (let ((n (elot-db-remove-source source ds like allow-all)))
+              (format "OK: removed %d source%s (%s%s%s%s)"
+                      n (if (= n 1) "" "s")
+                      (if like "pattern " "")
+                      source
+                      (if ds (concat ", " ds) "")
+                      (if allow-all ", allow-all" ""))))))
     (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
 
@@ -7723,6 +7793,75 @@ where STATUS is one of `registered', `refreshed',
              "Path to an ELOT .org file (or any source ELOT's \
 parser dispatcher knows: .csv, .tsv, .json, .ttl, .rq), \
 project-relative.")))
+    ("elot_db_remove_source"
+     :function elot-gptel-tool-db-remove-source
+     :confirm t
+     :description
+     "Remove a registered source (and its cascade) from the ELOT label DB.
+
+Deletes the matching row(s) in the `sources' table; the FK
+`ON DELETE CASCADE' declared on `entities', `attributes', and
+`prefixes' removes the dependent rows in the same operation.
+The shared `global_prefixes' table is untouched.
+
+Exact mode (LIKE absent / false):
+  SOURCE and DATA_SOURCE are matched verbatim.  DATA_SOURCE
+  defaults to the empty-string sentinel ELOT uses for non-SPARQL
+  sources.  At most one row can match.
+
+Pattern mode (LIKE true):
+  SOURCE and DATA_SOURCE are SQL LIKE patterns (`%' matches any
+  sequence; `_' matches one character).  DATA_SOURCE defaults to
+  `%' (match any).  Any number of rows may match.  As a safety
+  guard the tool refuses SOURCE=`' or SOURCE=`%' unless
+  ALLOW_ALL is also true -- which would otherwise nuke the whole
+  table.
+
+DRY_RUN, when true, lists the rows that would be deleted (TSV
+with columns `source', `data_source', `type', `last_modified',
+`last_updated' in pattern mode; a one-line existence check in
+exact mode) without touching the DB.  Bypasses the side-effects
+gate (read-only by construction).
+
+Gated by `elot-gptel-allow-side-effects' for the real delete;
+DRY_RUN does not require the gate.  Returns `OK: removed N
+source(s) (...)' on success, or an `ERROR:' line on refusal /
+failure.  Use `elot_db_list_sources' first to inspect the
+relevant rows."
+     :args
+     ((:name "source"
+             :type string
+             :description
+             "Source identifier (exact, by default) or SQL LIKE \
+pattern when `like' is true.  Use `elot_db_list_sources' to \
+discover candidate values.")
+      (:name "data_source"
+             :type string
+             :optional t
+             :description
+             "Secondary key (SPARQL endpoint / data file).  In \
+exact mode defaults to the empty-string sentinel; in pattern \
+mode defaults to `%' (match any).")
+      (:name "like"
+             :type boolean
+             :optional t
+             :description
+             "When true, treat SOURCE and DATA_SOURCE as SQL \
+LIKE patterns (multi-row delete).")
+      (:name "allow_all"
+             :type boolean
+             :optional t
+             :description
+             "When true in pattern mode, permits SOURCE=`' or \
+`%' (which would otherwise be refused as accidental \
+whole-table deletion).  Ignored in exact mode.")
+      (:name "dry_run"
+             :type boolean
+             :optional t
+             :description
+             "When true, preview the rows that would be \
+removed without performing the DELETE.  Bypasses the \
+side-effects gate.")))
     ("elot_db_expand_curie"
      :function elot-gptel-tool-db-expand-curie
      :description
@@ -8387,6 +8526,10 @@ known tool symbols to a lambda with the matching arity."
      (lambda (file) (elot-gptel-tool-db-activate-source file)))
     ('elot-gptel-tool-db-expand-curie
      (lambda (curie) (elot-gptel-tool-db-expand-curie curie)))
+    ('elot-gptel-tool-db-remove-source
+     (lambda (source &optional data-source like allow-all dry-run)
+       (elot-gptel-tool-db-remove-source
+        source data-source like allow-all dry-run)))
     ('elot-gptel-tool-db-get-attributes
      (lambda (id &optional source)
        (elot-gptel-tool-db-get-attributes id source)))
