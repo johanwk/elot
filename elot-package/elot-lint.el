@@ -831,7 +831,9 @@ are skipped."
 ;; (W3C Recommendation, Section 2.5 Frames and Miscellaneous).
 
 (defconst elot-omn-keywords-by-section
-  '(("-datatypes"
+  '(("-ontology"
+     "Import")
+    ("-datatypes"
      "EquivalentTo")
     ("-class-hierarchy"
      "SubClassOf" "EquivalentTo" "DisjointWith" "DisjointUnionOf" "HasKey")
@@ -849,7 +851,8 @@ are skipped."
 Derived from the OWL 2 Manchester Syntax specification, Section 2.5.")
 
 (defconst elot-omn-kind-to-section-suffix
-  '(("rdfs:Datatype"           . "-datatypes")
+  '(("owl:Ontology"            . "-ontology")
+    ("rdfs:Datatype"           . "-datatypes")
     ("owl:Class"               . "-class-hierarchy")
     ("owl:ObjectProperty"      . "-object-property-hierarchy")
     ("owl:DatatypeProperty"    . "-data-property-hierarchy")

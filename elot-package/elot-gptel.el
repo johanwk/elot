@@ -3779,7 +3779,9 @@ not <ObjectProperty> <Individual>")
      ("SameAs"           . "<Individual>")
      ("DifferentFrom"    . "<Individual>"))
     ("rdfs:Datatype"
-     ("EquivalentTo"     . "<DataRange>")))
+     ("EquivalentTo"     . "<DataRange>"))
+    ("owl:Ontology"
+     ("Import"           . "<IRI>")))
   "Static OMN frame-keyword table indexed by `rdf:type'.
 Each entry has the shape (KIND (KEYWORD . SHAPE-HINT) ...).
 Drawn from the Manchester Syntax spec; intentionally a
@@ -3816,7 +3818,8 @@ Filtered out of the `Existing rows' block returned by
      "owl:Class" "owl:ObjectProperty" "owl:DatatypeProperty"
      "owl:NamedIndividual" "rdfs:Datatype")
     ("rdfs:Datatype"
-     "rdfs:Datatype"))
+     "rdfs:Datatype")
+    ("owl:Ontology"))
   "Per-kind list of signature buckets actually reachable from the
 subject's frame keywords.  Mitigation (1) from the M9.2 size
 discussion: a property-axiom author has no use for Individuals or
@@ -5515,16 +5518,39 @@ inputs are returned unchanged so the validator can flag them."
    ((vectorp labels) (append labels nil))
    (t labels)))
 
+(defun elot-gptel--insert-label-curie-parenthetical-p (label)
+  "Return non-nil when LABEL ends with a CURIE parenthetical.
+Example: \"identifier (dcterms:identifier)\".  The insert-resource
+GPT tools mint fresh identifiers, so accepting this shape is a footgun:
+the heading renderer would produce `identifier (dcterms:identifier)
+(rdl:minted)', while ELOT's heading parser treats the first
+parenthetical as the declaration CURIE."
+  (and (stringp label)
+       (string-match-p
+        "[ \\t]*(\\(?:[A-Za-z_][A-Za-z0-9_.-]*\\):[^() \\t]+)[ \\t]*\\'"
+        (string-trim label))))
+
 (defun elot-gptel--insert-validate-labels (labels)
   "Signal `user-error' when LABELS is not a non-empty list of strings.
 LABELS must already have been passed through
-`elot-gptel--insert-coerce-labels'."
+`elot-gptel--insert-coerce-labels'.  These tools mint fresh
+identifiers, so LABELS are plain rdfs:label strings, not full ELOT
+heading titles.  Reject labels that smuggle a CURIE parenthetical such
+as \"identifier (dcterms:identifier)\": otherwise the underlying
+inserter would mint a fresh CURIE but the ELOT heading parser would
+read the first parenthetical as the declared CURIE, producing a file
+whose actual declaration disagrees with the tool's \"Minted CURIEs\"
+report."
   (unless (and (listp labels) labels)
     (user-error "elot-gptel: labels must be a non-empty array"))
   (dolist (l labels)
     (unless (and (stringp l) (not (string-empty-p (string-trim l))))
       (user-error
-       "elot-gptel: every label must be a non-empty string (got %S)" l))))
+       "elot-gptel: every label must be a non-empty string (got %S)" l))
+    (when (elot-gptel--insert-label-curie-parenthetical-p l)
+      (user-error
+       "elot-gptel: labels are plain rdfs:label strings, not `Label (curie)' headings; got %S.  To reuse an existing CURIE, declare/borrow that resource explicitly instead of using an insert-* minting tool."
+       l))))
 
 (defun elot-gptel--insert-walk-tree-node (node path)
   "Translate JSON tree NODE to the shape `elot-insert-labels-tree' expects.
@@ -5535,10 +5561,18 @@ walks arrays."
    ((stringp node)
     (when (string-empty-p (string-trim node))
       (user-error "elot-gptel: empty label at tree path %S" (nreverse path)))
+    (when (elot-gptel--insert-label-curie-parenthetical-p node)
+      (user-error
+       "elot-gptel: tree labels are plain rdfs:label strings, not `Label (curie)' headings; got %S at path %S"
+       node (nreverse path)))
     node)
    ((and (listp node) node (stringp (car node)))
     (when (string-empty-p (string-trim (car node)))
       (user-error "elot-gptel: empty label at tree path %S" (nreverse path)))
+    (when (elot-gptel--insert-label-curie-parenthetical-p (car node))
+      (user-error
+       "elot-gptel: tree labels are plain rdfs:label strings, not `Label (curie)' headings; got %S at path %S"
+       (car node) (nreverse path)))
     (cons (car node)
           (let ((i 0))
             (mapcar (lambda (child)
@@ -7531,9 +7565,12 @@ existing heading in an ELOT .org file.
 
 ANCHOR identifies the existing heading (CURIE preferred -- e.g.
 `ex:dog' -- or an unambiguous label).  LABELS is a non-empty
-array of rdfs:label strings; one new heading is inserted per
-label.  The new headings are placed AFTER ANCHOR's whole
-subtree, at ANCHOR's outline level.
+array of plain rdfs:label strings; one new heading is inserted per
+label.  Do not pass full heading titles of the form `Label (curie)'
+here: these tools always mint fresh identifiers.  Reuse an existing
+CURIE with the borrow/direct-declaration workflow instead.  The new
+headings are placed AFTER ANCHOR's whole subtree, at ANCHOR's outline
+level.
 
 Identifiers are minted under the ontology heading's
 `:ELOT-id-scheme:' via `elot-id-mint-batch' (collision-aware
@@ -7575,7 +7612,7 @@ success returns:
              :type array
              :items (:type string)
              :description
-             "Array of rdfs:label strings; length = batch size.")))
+             "Array of plain rdfs:label strings (not `Label (curie)' headings); length = batch size.")))
     ("elot_insert_child_resource"
      :function elot-gptel-tool-insert-child-resource
      :confirm t
@@ -7613,7 +7650,7 @@ resource of an empty resource section.")
              :type array
              :items (:type string)
              :description
-             "Array of rdfs:label strings; length = batch size.")))
+             "Array of plain rdfs:label strings (not `Label (curie)' headings); length = batch size.")))
     ("elot_insert_resource_tree"
      :function elot-gptel-tool-insert-resource-tree
      :confirm t
@@ -7621,9 +7658,12 @@ resource of an empty resource section.")
      "Insert a forest of new resource headings under (or after) an
 existing heading in an ELOT .org file.
 
-TREE is a JSON array of nodes.  Each node is either a string
-LABEL (a leaf -- no children) or an array [LABEL, CHILD, ...]
-whose tail is recursively the same shape.  Example:
+TREE is a JSON array of nodes.  Each node is either a plain
+rdfs:label string (a leaf -- no children) or an array [LABEL,
+CHILD, ...] whose tail is recursively the same shape.  Do not pass
+full heading titles of the form `Label (curie)' here: this tool
+always mints fresh identifiers; reuse existing CURIEs via the
+borrow/direct-declaration workflow.  Example:
 
   [[\"Mammal\", \"Mouse\", \"Whale\"], \"Bird\"]
 
