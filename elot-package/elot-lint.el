@@ -1306,15 +1306,19 @@ Annotation rows (e.g. `rdfs:comment ::') are not in scope."
 ;;   - P32 Several classes with the same label
 ;;        https://oops.linkeddata.es/catalogue.jsp#P32
 
-(defconst elot--oops-p08-annotation-keys
-  '("rdfs:label" "rdfs:comment"
+(defcustom elot-oops-p08-annotation-keys
+  '("rdfs:comment"
     "skos:definition" "skos:prefLabel" "skos:altLabel"
     "iof-av:naturalLanguageDefinition"
+    "iof-av:usageNote"
+    "rdfs:seeAlso"
     "dcterms:description")
   "Description-list keys that count as authored documentation for P08.
 A resource heading whose :descriptions contain none of these is
-considered undocumented, regardless of its title-derived label
-(which is auto-generated and so does not satisfy the pitfall).")
+considered undocumented. `rdfs:label` (auto-generated or explicit)
+is insufficient to satisfy the pitfall."
+  :type '(repeat string)
+  :group 'elot)
 
 (defconst elot--oops-p24-axiom-keys
   '("SubClassOf" "EquivalentTo" "DisjointWith" "DisjointUnionOf"
@@ -1400,23 +1404,81 @@ heading title."
                  (string-trim (org-element-interpret-data tag))))))
           nil nil '(headline item))))
 
+(defun elot--current-ontology-uris ()
+  "Return up to 4 URIs that identify the ontology defined in the current buffer.
+Returns CURIEs (with/without version) and full URIs (with/without version)."
+  (let (uris
+        prefixes
+        ontology-curies-str)
+    (when (and (boundp 'elot-headline-hierarchy) elot-headline-hierarchy)
+      (cl-labels ((walk (node)
+                    (when (equal (plist-get node :prefixdefs) "yes")
+                      (setq prefixes (or prefixes (plist-get node :prefixes))))
+                    (let ((title (plist-get node :title))
+                          (node-uri (plist-get node :uri))
+                          (id (plist-get node :id)))
+                      (when (and title node-uri
+                                 (or (string-match-p "\\bontology\\b" (downcase title))
+                                     (and id (string-suffix-p "-ontology-declaration" id))))
+                        (setq ontology-curies-str (or ontology-curies-str node-uri))))
+                    (dolist (child (plist-get node :children))
+                      (walk child))))
+        (walk elot-headline-hierarchy)))
+    
+    (when ontology-curies-str
+      (let ((parts (split-string ontology-curies-str "[ \t]+" t)))
+        (dolist (part parts)
+          (if (string-match "\\`<\\(.*\\)>\\'" part)
+              (let ((raw (match-string 1 part)))
+                (push raw uris)
+                (push part uris))
+            (push part uris)
+            (let ((curie-parts (split-string part ":")))
+              (when (= (length curie-parts) 2)
+                (let* ((prefix (car curie-parts))
+                       (local (cadr curie-parts))
+                       (full-prefix (or (cdr (assoc prefix prefixes))
+                                        (cdr (assoc (concat prefix ":") prefixes)))))
+                  (when full-prefix
+                    (let ((full (concat full-prefix local)))
+                      (push full uris)
+                      (push (concat "<" full ">") uris))))))))))
+    uris))
+
+(defun elot--oops-headline-item-alist (hl)
+  "Return the alist of authored description-list (KEY . VALUE) directly under HL.
+Does not descend into child headlines or nested items."
+  (delq nil
+        (org-element-map (org-element-contents hl) 'item
+          (lambda (item)
+            (let ((tag (org-element-property :tag item)))
+              (when tag
+                (cons
+                 (substring-no-properties
+                  (string-trim (org-element-interpret-data tag)))
+                 (substring-no-properties
+                  (string-trim (elot-org-elt-item-pars-str item)))))))
+          nil nil '(headline item))))
+
 (defun elot-check-oops-missing-annotations (tree)
   "ELOT/OOPS! P08: warn on resource headings with no authored documentation.
 A resource heading (one whose title carries a CURIE in parentheses)
 is flagged when none of its *authored* description-list keys is in
-`elot--oops-p08-annotation-keys'.  Headings under a `:nodeclare:'
+`elot-oops-p08-annotation-keys'.  Headings under a `:nodeclare:'
 ancestor are skipped.
 
 The authored view is computed by re-walking the headline's contents
-directly, so the `rdfs:label' that
-`elot-parse-headline-hierarchy' auto-derives from the heading title
-is correctly ignored (the title-derived label does not satisfy the
-pitfall).
+directly. Note that `rdfs:label` (whether explicitly authored or
+auto-derived from the heading title) is no longer considered sufficient
+to satisfy the pitfall.
 
 Citation: OOPS! P08 -- Missing annotations
 https://oops.linkeddata.es/catalogue.jsp#P08."
+  (when (fboundp 'elot-update-headline-hierarchy)
+    (ignore-errors (elot-update-headline-hierarchy)))
   (let ((issues nil)
-        (nodeclare-ranges (elot--oops-nodeclare-ranges tree)))
+        (nodeclare-ranges (elot--oops-nodeclare-ranges tree))
+        (ontology-uris (elot--current-ontology-uris)))
     (org-element-map tree 'headline
       (lambda (hl)
         (let* ((begin (org-element-property :begin hl))
@@ -1430,15 +1492,20 @@ https://oops.linkeddata.es/catalogue.jsp#P08."
                      (not (member "nodeclare"
                                   (org-element-property :tags hl)))
                      (not (elot--oops-in-ranges-p begin nodeclare-ranges)))
-            (let ((curie (match-string 1 title))
-                  (keys  (elot--oops-headline-item-tags hl)))
-              (unless (cl-some (lambda (k)
-                                 (member k elot--oops-p08-annotation-keys))
-                               keys)
+            (let* ((curie (match-string 1 title))
+                   (keys  (elot--oops-headline-item-tags hl))
+                   (alist (elot--oops-headline-item-alist hl))
+                   (is-defined-by (cdr (assoc "rdfs:isDefinedBy" alist))))
+              (unless (or (cl-some (lambda (k)
+                                     (member k elot-oops-p08-annotation-keys))
+                                   keys)
+                          (and is-defined-by
+                               ontology-uris
+                               (not (member is-defined-by ontology-uris))))
                 (push (list begin
                             (propertize
                              (format
-                              "WARNING: %s has no authored annotation (rdfs:label / rdfs:comment / skos:definition / ...); the heading-title label is auto-derived and does not count.  [OOPS! P08, see https://oops.linkeddata.es/catalogue.jsp#P08]"
+                              "WARNING: %s has no authored annotation (skos:definition / rdfs:comment / ...); the heading-title label is auto-derived and does not count.  [OOPS! P08, see https://oops.linkeddata.es/catalogue.jsp#P08]"
                               curie)
                              'face 'warning))
                       issues)))))))
