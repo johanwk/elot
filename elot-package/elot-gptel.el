@@ -1279,9 +1279,16 @@ form keyword is found."
           (with-temp-buffer
             (insert no-comments)
             (goto-char (point-min))
-            (while (looking-at
-                    "[ \t\n\r]*\\(PREFIX\\|BASE\\)\\_>[^\n]*\n?")
-              (goto-char (match-end 0)))
+            ;; Skip prologue declarations.  Each PREFIX / BASE
+            ;; clause ends at the closing `>' of its IRI, *not*
+            ;; at end-of-line -- a one-line query like
+            ;; `PREFIX p: <iri> SELECT ...' must not have its
+            ;; SELECT keyword swallowed by `[^\n]*'.
+            (let ((case-fold-search t))
+              (while (looking-at
+                      "[ \t\n\r]*\\(?:PREFIX[ \t\n\r]+[^<]*<[^>]*>\
+\\|BASE[ \t\n\r]+<[^>]*>\\)")
+                (goto-char (match-end 0))))
             (buffer-substring-no-properties (point) (point-max)))))
     (when (string-match
            "\\_<\\(SELECT\\|ASK\\|CONSTRUCT\\|DESCRIBE\\|INSERT\\|DELETE\\|LOAD\\|CLEAR\\|CREATE\\|DROP\\|COPY\\|MOVE\\|ADD\\)\\_>"
