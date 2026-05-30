@@ -1117,6 +1117,67 @@ grammar."
  :categories '(default elot)
  :trust 'high)
 
+(defun elot-check-facts-punning (tree)
+  "ELOT rule: check for punned class CURIEs without individual declaration.
+Manchester syntax requires explicit declaration for punned entities.
+If a CURIE declared as a Class appears in a Facts, SameAs, or DifferentFrom
+row, it must also be declared as an Individual in the same file.
+TREE is the parsed Org element tree provided by `org-lint'."
+  (let ((classes (make-hash-table :test 'equal))
+        (individuals (make-hash-table :test 'equal))
+        (properties (make-hash-table :test 'equal))
+        issues)
+    ;; 1. Populate sets from elot-slurp
+    (dolist (entry elot-slurp)
+      (let* ((curie (car entry))
+             (attrs (nth 2 entry))
+             (type  (plist-get attrs "rdf:type" #'equal)))
+        (cond
+         ((equal type "owl:Class") (puthash curie t classes))
+         ((equal type "owl:NamedIndividual") (puthash curie t individuals))
+         ((member type '("owl:ObjectProperty" "owl:DatatypeProperty"))
+          (puthash curie t properties)))))
+    ;; 2. Scan Individual-related rows
+    (org-element-map tree 'item
+      (lambda (item)
+        (let* ((parent (org-element-property :parent item))
+               (type (org-element-property :type parent)))
+          (when (eq type 'descriptive)
+            (let* ((tag (org-element-property :tag item))
+                   (term (org-element-interpret-data tag)))
+              (when (member term '("Facts" "SameAs" "DifferentFrom"))
+                (goto-char (org-element-property :begin item))
+                (when (elot--inside-elot-scope-p)
+                  (let* ((contents (org-element-interpret-data
+                                    (seq-remove (lambda (child)
+                                                  (eq (org-element-type child) 'plain-list))
+                                                (org-element-contents item))))
+                         (words (split-string contents "[ \n\t,]+" t)))
+                    (dolist (word words)
+                      (when (and (string-match "\\`[-_./[:alnum:]]*:[-_/.[:alnum:]]*\\'" word)
+                                 (not (string-match "\\`https?://" word)))
+                        (when (and (gethash word classes)
+                                   (not (gethash word individuals))
+                                   ;; Facts keyword can contain properties; SameAs/DifferentFrom only individuals.
+                                   ;; We avoid flagging a Class that is also a Property in a Facts row, 
+                                   ;; as it might be used in the property position.
+                                   (not (and (equal term "Facts")
+                                             (gethash word properties))))
+                          (push (list (org-element-property :begin item)
+                                      (propertize
+                                       (format "ERROR: Class '%s' used as an individual must be explicitly declared as an Individual (punning)."
+                                               word)
+                                       'face 'error))
+                                issues))))))))))))
+    issues))
+
+(org-lint-add-checker
+ 'elot/facts-punning
+ "ELOT: check for class CURIEs used as individuals without individual declaration"
+ #'elot-check-facts-punning
+ :categories '(default elot)
+ :trust 'high)
+
 
 ;;; ---- Idiomatic-heading-nesting check (Step 7.5.4) ----
 

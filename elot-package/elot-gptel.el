@@ -350,6 +350,7 @@ call reads naturally inline."
     elot/omn-syntax
     elot/omn-keyword-appropriateness
     elot/axiom-keyword-range
+    elot/facts-punning
     elot/blank-omn-axiom-row
     elot/subclass-in-description-list
     ;; OOPS!-derived sliver (M8 follow-up); the full SPARQL-backed
