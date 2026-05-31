@@ -5402,7 +5402,8 @@ or an `ERROR:' line on refusal / failure."
 ;;; The underlying Elisp commands already do scheme + prefix
 ;;; resolution, batch-aware identifier minting via
 ;;; `elot-id-mint-batch', blanked description-list inheritance,
-;;; and kind-by-section refusal under Datatypes / Individuals.
+;;; and kind-by-section refusal under Datatypes (Individuals
+;;; are allowed to nest as a visual / editing aid).
 ;;; These wrappers are pure plumbing: anchor resolution + atomic
 ;;; apply + auto-revalidate + rollback.  The result envelope
 ;;; mirrors the M12.1 / M12.4 wrappers (OK: one-liner + lint/OMN
@@ -5705,7 +5706,7 @@ Inserts (length LABELS) new resource headings as first children
 of the heading named by ANCHOR in FILE.  ANCHOR is a CURIE
 (preferred) or an unambiguous label.  Inherits the level-2
 section refusal contract from the underlying Elisp command --
-ANCHOR under Datatypes / Individuals (at level 3+) returns an
+ANCHOR under Datatypes (at level 3+) returns an
 `ERROR:' line citing the user-error.  Anchor directly on the
 level-2 section heading is always allowed (seeds the first
 resource).
@@ -7633,11 +7634,12 @@ headings land at one outline level deeper than ANCHOR, before
 any existing children.
 
 Refusal contract from the underlying interactive command:
-ANCHOR at level 3+ under Datatypes or Individuals returns an
-ERROR: -- those kinds have no inherent subtype / sub-individual
-relation in OWL.  ANCHOR on the level-2 section heading itself
-is always allowed (seeds the first resource of an empty
-section).
+ANCHOR at level 3+ under Datatypes returns an ERROR: -- that
+kind has no inherent subtype relation in OWL.  Nested headings
+under Individuals are permitted as a visual / editing aid (OWL
+carries no semantic sub-relation between named individuals).
+ANCHOR on the level-2 section heading itself is always allowed
+(seeds the first resource of an empty section).
 
 Same write-back contract as `elot_insert_sibling_resource':
 gated by `elot-gptel-allow-side-effects', auto-revalidate,

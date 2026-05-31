@@ -38,7 +38,7 @@
 ;; Kind is inferred from the level-2 ELOT resource section the
 ;; current heading sits under (Classes -> class, Object properties ->
 ;; object-property, ...).  `elot-insert-child-resource' refuses
-;; under Datatypes / Individuals (no inherent subtype relation),
+;; under Datatypes (no inherent subtype relation among datatypes),
 ;; *except* when invoked directly on the section heading itself --
 ;; in which case the new "first child" is the first level-3 resource
 ;; of that section (the natural way to seed an empty section).
@@ -83,12 +83,15 @@
   "Map level-2 ELOT resource section title to entity kind symbol.")
 
 (defconst elot-id-insert--child-allowed-kinds
-  '(class object-property data-property annotation-property)
+  '(class object-property data-property annotation-property individual)
   "Kinds for which `elot-insert-child-resource' is permitted under a
-level-3+ heading.  Datatypes and Individuals are sibling-only under
-their respective resources, but a child insert directly on the
-level-2 section heading is always allowed (it seeds the first
-resource).")
+level-3+ heading.  Datatypes remain sibling-only under their
+respective resources (OWL has no inherent datatype sub-relation),
+but a child insert directly on the level-2 section heading is
+always allowed (it seeds the first resource).  Individuals are
+included here even though OWL carries no semantic sub-relation
+between named individuals: nested headings under the Individuals
+section are permitted purely as a visual / editing aid.")
 
 ;;; ---------------------------------------------------------------------------
 ;;; Section + scheme + prefix lookup
@@ -267,7 +270,9 @@ Assumes point is at (or will be moved back to) the current heading."
   "Signal `user-error' when KIND / CHILD-P / CUR-LEVEL are incompatible.
 A child insert on a level-2 section heading is always permitted
 \(it seeds the first resource of an empty section).  Below that,
-Datatypes and Individuals refuse the child variant."
+Datatypes refuse the child variant; nested headings under
+Individuals are allowed as a visual / editing aid (OWL carries no
+semantic sub-relation between named individuals)."
   (when (and child-p
              (>= cur-level 3)
              (not (memq kind elot-id-insert--child-allowed-kinds)))
@@ -705,8 +710,9 @@ Each level reuses `elot-insert-sibling-resource' /
 scheme + prefix resolution from the ontology heading, kind
 inferred from the level-2 section, description-list inheritance
 from the heading at point, and refusal of child inserts under
-Datatypes / Individuals (a deeply-nested Datatype with children
-will surface the error at the offending recursive call).
+Datatypes (a deeply-nested Datatype with children will surface
+the error at the offending recursive call).  Nested headings
+under Individuals are permitted as a visual / editing aid.
 
 When called from code, returns the list of CURIEs minted at the
 top level (the buffer carries the full tree at point of return)."
@@ -744,8 +750,10 @@ Otherwise N (default 1, or the numeric prefix argument when
 interactive) headings are inserted and the user is prompted in
 the minibuffer for one rdfs:label per heading.  Refuses with
 `user-error' when invoked on a level-3+ heading whose section is
-Datatypes or Individuals (those kinds have no inherent subtype
-relation).  Invoked on a level-2 section heading the child variant
+Datatypes (no inherent subtype relation among datatypes).  Nested
+headings under Individuals are allowed as a visual / editing aid
+(OWL carries no semantic sub-relation between named individuals).
+Invoked on a level-2 section heading the child variant
 always succeeds and seeds the first resource."
   (interactive "p")
   (elot-id-insert--do-insert t (or n 1) labels))
