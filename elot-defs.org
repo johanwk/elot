@@ -871,7 +871,7 @@ headline's text.  The link description is obtained by calling
 
 #+name: src-stable-links-export
 #+begin_src emacs-lisp
-  (defun elot--prepare-export-buffer (backend)
+  (cl-defun elot--prepare-export-buffer (backend)
     "Prepare the export clone for Elot, dispatching on BACKEND.
 For non-LaTeX BACKEND values:
 
