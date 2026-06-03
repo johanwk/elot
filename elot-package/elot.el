@@ -705,7 +705,7 @@ headline's text.  The link description is obtained by calling
 ;; src-linkify-codelist-items-in-buffer ends here
 
 ;; [[file:../elot-defs.org::src-stable-links-export][src-stable-links-export]]
-(defun elot--prepare-export-buffer (backend)
+(cl-defun elot--prepare-export-buffer (backend)
     "Prepare the export clone for Elot, dispatching on BACKEND.
 For non-LaTeX BACKEND values:
 
