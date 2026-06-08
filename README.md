@@ -4,81 +4,80 @@
 
 *A single plain-text document that is simultaneously your ontology source, its documentation, its query workspace, and its diagram generator.*
 
-## VS Code Extension — Now on the Marketplace
-
-**ELOT is no longer Emacs-only.** The Elot VS Code extension brings literate ontology editing to Visual Studio Code, with full support for Org-mode ontology files.
-
-**Install it now from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=johanwk.elot)** — or search for "Elot" in the VS Code Extensions panel.
-
-The extension provides:
-
-- **Org→OWL pipeline** — Generate OWL Manchester Syntax directly from Org-mode files (powered by orgize, a Rust Org parser compiled to WASM)
-- **Label Display** — Hover over CURIEs to see labels and annotations; press F5 to visually replace identifiers with human-readable labels
-- **Headline Folding** — Click the gutter chevrons or press Tab to fold/unfold headings, just like Emacs Org-mode
-- **Go to Definition** — Ctrl+Click or F12 on any CURIE to jump to the heading where that entity is declared
-- **Org Indent Mode** — Toggle visual indentation (Ctrl+Shift+I) that mimics Emacs's `org-indent-mode`
-- **IntelliSense Completion** — Press Ctrl+Space for a dropdown of all OWL entities in the file, searchable by label or CURIE
-- **Bold Headlines & Description List Fontification** — Always-on visual enhancements for readability
-- **HTML Export** — Generate styled HTML documentation via Pandoc, with clickable CURIE links and section numbering
-
-See the full [extension README](tools/elot-cli/README.md) for keybindings, settings, and screenshots.
-
-### Importing existing OWL ontologies into VS Code
-
-Have an existing ontology? The Elot extension can import it directly:
-
-1. Open the Command Palette (`Ctrl+Shift+P`) and run **Elot: Import OWL Ontology**
-2. Choose a local file or paste a URL (e.g. from a published ontology IRI)
-3. The extension downloads `elot-exporter.jar` automatically (requires Java 21+ on PATH) and converts the OWL file into Elot's Org-mode format
-4. You are prompted to save the resulting `.org` file — once saved, all Elot features activate immediately
-
-You can also use the CLI directly:
-
-```bash
-node dist/cli.js input-ontology.owl -o output.org
-```
-
----
-
 ## Why ELOT?
 
-Ontology engineering today is fragmented across disconnected tools: you author in Protégé, generate documentation with WIDOCO or PyLODE, visualize in WebVOWL, and manage versions in Git — each tool speaking its own language.
-This fragmentation creates friction, makes it hard to keep documentation and formalization in sync, and discourages prose justification of design decisions.
-
-ELOT introduces **literate ontology engineering**: a workflow, inspired by Knuth's literate programming tradition, in which a single [Org Mode](https://orgmode.org/) plain-text file is the authoritative source for everything.
+ELOT enables **literate ontology engineering**: a workflow, inspired by Knuth's _literate programming_, in which a single [Org Mode](https://orgmode.org/) plain-text file is the authoritative source for both ontology and documentation.
 Headlines are the taxonomy; description lists are the axioms and annotations.
-Documentation is not generated after the fact from `rdfs:comment` fields — it lives alongside the formal content, and HTML or PDF export captures both.
-SPARQL queries and rdfpuml diagrams execute in place, so the document is also an analytical workspace.
-Because the source is plain text, ontology changes produce clean, human-readable diffs; and because it is plain text, it is naturally consumable by LLMs for AI-assisted authoring.
+Documentation lives alongside the formal content, and HTML or PDF export captures both.
+SPARQL queries and rdfpuml diagrams execute in place, so the document is also a workspace.
+Because the source is ordinary plain text, ontology changes produce clean, human-readable diffs under version control — and, for that same reason, the format is naturally consumable by large language models, making ELOT well suited to AI-assisted authoring.
 
-This approach has real-world validation: ELOT has been used across scores of ontology projects, including the ISO 23726-3 Industrial Data Ontology.
+ELOT has been used across scores of ontology projects, including the ISO 23726-3 Industrial Data Ontology.
 In collaborative standards work, having a single source for ontology and documentation is a decisive practical advantage.
 
-## What's New in 2026
+## The ELOT file format
 
--   **Global label-display mode** — A new minor mode, `elot-global-label-display-mode`, brings ELOT's readable-label overlays to *any* buffer: Turtle files, SPARQL queries, CSV data, source code, log files. Labels are drawn from a persistent SQLite index (`elot-db`) that is populated automatically and silently as you work in ELOT Org files — every ontology you open or save contributes its id/label mappings to the database, so they are available across sessions and across buffers. A scope-aware `elot-label-lookup` command (`C-c C-x r`) offers completion over both the current buffer's ontology and everything the DB knows about, with two-stage disambiguation when many identifiers share a label (common in industrial asset data). Attribute-driven eldoc and lazy `help-echo` surface rdf:type, definitions, and source provenance on hover. BCP-47 language tags are respected via `elot-preferred-languages` (default: untagged, then `@en`, then alphabetical). See [README-global-label-display.org](README-global-label-display.org) for details.
--   **VS Code extension on the Marketplace** — Install from [marketplace.visualstudio.com](https://marketplace.visualstudio.com/items?itemName=johanwk.elot). ELOT is now accessible to any developer with VS Code — no Emacs required. Features include label display, headline folding, go-to-definition, org-indent mode, IntelliSense, and bold/fontified headings.
--   **v2.0 refactoring** — Ontology content is now derived directly from Org headlines and description lists; no more boilerplate `org-babel` source blocks required. Parsing is cleaner, significantly more efficient on large files, and supports multiple ontologies per file.
--   **elot-exporter** (Java/OWLAPI) — Comprehensive OWL→Org conversion with checksum protection and Manchester Syntax rendering.
-    Import any existing ontology and continue working in ELOT.
-    Download from [releases](https://github.com/johanwk/elot/releases); source in [`tools/elot-exporter/`](tools/elot-exporter/).
--   **elot-cli** (TypeScript/WASM) — An editor-independent Org→OWL pipeline built on orgize (Rust) compiled to WASM.
-    Source in [`tools/elot-cli/`](tools/elot-cli/).
--   **Round-trip test suite** — Systematic validation against real-world ontologies (BFO, Pizza, and others) with automated diffing.
+An ELOT file is a text document — readable by anyone —
+to which ELOT assigns ontological meaning through a few
+structures familiar from the Org format:
 
-## How It Compares
+-   **Headlines are the taxonomy.** Outline headings declare classes,
+    properties, and individuals; their nesting expresses the
+    subclass/subproperty hierarchy.
+-   **Description lists are the axioms and annotations.** A list item
+    `- key :: value` attaches an annotation (`- rdfs:label :: ...`) or an
+    OWL axiom in Manchester Syntax (`- SubClassOf :: ...`) to the entity
+    under whose headline it appears.
 
-Most ontology tools occupy a single niche: Protégé is an authoring GUI, WIDOCO/PyLODE generate reference documentation, WebVOWL provides interactive visualization, and VoCol supports Git-based collaboration workflows.
-ELOT is the only tool that spans authoring, documentation generation, integrated SPARQL querying, diagram generation, and VCS-friendly plain-text format in a single workflow — at the cost of a higher initial learning curve.
-The VS Code extension and `elot-cli` are progressively lowering that barrier.
+A small excerpt — Dog is nested under Animal (so `ex:dog rdfs:subClassOf
+ex:animal` follows from the structure), while the description-list items
+add a definition and a Manchester-Syntax restriction:
 
-## Two Ways to Use ELOT
+```org
+*** Animal (ex:animal)
+ - iof-av:naturalLanguageDefinition :: A living organism
+ - skos:example :: mouse, elephant
+**** Dog (ex:dog)
+ - iof-av:naturalLanguageDefinition :: A domesticated carnivorous mammal
+ - SubClassOf :: ex:chases some ex:cat
+```
+
+Because this is *just text*, the very same file is read and
+written by every part of the ELOT ecosystem: the Emacs package, the VS
+Code extension, the editor-independent `elot-cli`, and — 
+the large language models people use to draft and review ontologies. The
+format, not any single tool, is what you commit to. Dedicated ELOT
+tooling for LLM-assisted authoring is under active development; in the
+meantime the plain-text source already pairs well with any chat-based or
+in-editor AI assistant.
+
+## Two ways to use ELOT: Emacs and VS Code
+
+ELOT was developed as an Emacs package, and is now also a Visual Studio
+Code extension, published on the [Visual Studio
+Marketplace](https://marketplace.visualstudio.com/items?itemName=johanwk.elot). Both
+editors operate on the same `.org` files:
+
+-   **Emacs** — install from [MELPA](https://melpa.org/#/elot), or clone
+    the repository and `(require 'elot-mode)`. This is the reference
+    implementation and the maintainer's daily driver, so it stays a
+    little ahead: SPARQL querying and rdfpuml diagram generation run
+    in-buffer here today.
+-   **VS Code** — search for "Elot" in the Extensions panel, or
+    install from the
+    [Marketplace](https://marketplace.visualstudio.com/items?itemName=johanwk.elot).
+    The extension covers the core import, authoring, reading, and export loop
+    — Org→OWL, label display, folding, go-to-definition, IntelliSense,
+    and HTML export. See [extension README](tools/elot-cli/README.md)
+    for keybindings, settings, and screenshots.
 
 | | **VS Code** | **Emacs** |
 |---|---|---|
-| **Install** | [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=johanwk.elot) | Clone repo + `(require 'elot-mode)` |
+| **Install** | [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=johanwk.elot) | [MELPA](https://melpa.org/#/elot), or clone + `(require 'elot-mode)` |
 | **Org→OWL** | ✅ Built-in (WASM) | ✅ Built-in (Elisp) |
+| **OWL→Org** | ✅ elot-exporter JAR | ✅ elot-exporter JAR |
 | **Label display** | ✅ F5 toggle | ✅ Menu / opt-in F5 |
+| **Global label display** | ✅ Any file via shared DB | ✅ Any buffer via shared DB |
 | **Folding** | ✅ Tab / gutter | ✅ Native Org cycling |
 | **Go to definition** | ✅ F12 / Ctrl+Click | ✅ M-. (xref) |
 | **IntelliSense** | ✅ Ctrl+Space | ✅ `completing-read` |
@@ -86,7 +85,43 @@ The VS Code extension and `elot-cli` are progressively lowering that barrier.
 | **Diagrams** | — (planned) | ✅ rdfpuml integration |
 | **HTML export** | ✅ Built-in (Pandoc) | ✅ `org-export` |
 
----
+For automation outside any editor, `elot-cli` offers Org→OWL
+conversion and HTML export from the command line, handy in CI
+pipelines.
+
+## Main features
+
+-   **Org→OWL pipeline** — Generate OWL Manchester Syntax directly
+    from the Org source (and, via OBO ROBOT, Turtle).
+-   **Content derived from structure** — Ontology content comes
+    directly from Org headlines and description lists. A single file
+    may declare multiple ontologies.
+-   **Readable label display** — Show human-readable labels instead of
+    opaque CURIEs, with an in-buffer toggle in both editors. This
+    works in any file — Turtle, SPARQL, CSV, source code, log files —
+    drawing on a shared SQLite index that fills up silently as you
+    work (Emacs: the `elot-global-label-display-mode` minor mode and
+    `elot-db`; VS Code: DB-backed hover and F5 in non-Org files).
+    BCP-47 language preferences are honoured. See
+    [README-global-label-display.org](README-global-label-display.org)
+    for the Emacs guide.
+-   **In-place SPARQL and diagrams** — Use the existing Org support
+    for SPARQL `SELECT`/`CONSTRUCT` queries, and render
+    rdfpuml/PlantUML diagrams directly in the document (Emacs; planned
+    for VS Code).
+-   **Documentation export** — Produce styled, cross-linked HTML that
+    captures both the prose and the formal content, with clickable
+    CURIE links and stable anchors. With Emacs or Pandoc, a range of
+    formats can be generated.
+-   **Import existing ontologies** — `elot-exporter` (Java/OWLAPI)
+    converts any existing OWL ontology into the ELOT Org format so you
+    can use ELOT for ontologies you already have. Download from
+    [releases](https://github.com/johanwk/elot/releases); source in
+    [`tools/elot-exporter/`](tools/elot-exporter/).
+-   **Editor-independent CLI** — `elot-cli` (TypeScript/WASM) provides
+    the Org→OWL pipeline and HTML export outside any editor, plus a `db`
+    sub-command that manages the shared label index. Source in
+    [`tools/elot-cli/`](tools/elot-cli/).
 
 ## Getting Started with VS Code
 
@@ -98,154 +133,43 @@ The VS Code extension and `elot-cli` are progressively lowering that barrier.
 6. **Press F12** on a CURIE to jump to its definition
 7. **Press Ctrl+Space** to search and insert entities
 
-To import an existing OWL file, use the **Elot: Import OWL Ontology** command — the extension downloads `elot-exporter` automatically. Requires Java 21+ (see the [Install ELOT auxiliaries](#install-elot-auxiliaries) section for details).
+### Importing an existing OWL ontology
+
+Note: **Java 21 or newer is required for `elot-exporter`.** Many
+enterprise laptops ship with an older Java (8, 11, or 17); check with
+`java -version` and upgrade if needed.
+
+
+1. Open the Command Palette (`Ctrl+Shift+P`) and run **Elot: Import OWL Ontology**.
+2. Choose a local file or paste a URL (e.g. a published ontology IRI).
+3. The extension downloads `elot-exporter.jar` automatically and converts the OWL file into ELOT's Org format. 
+4. Save the resulting `.org` file; every ELOT feature activates as soon as it is saved.
+
+For more details, see [extension README](tools/elot-cli/README.md).
 
 ---
 
 ## Getting Started with Emacs
 
--   [Prerequisites in brief](#orgc137b62)
--   [Installation](#org7d49c93)
-    -   [Get Emacs](#org3790fd7)
-    -   [Install ELOT in Emacs](#org4aeb69c)
-    -   [Install ELOT auxiliaries](#orgf439b08)
--   [Quick start using ELOT](#org96abf8a)
-    -   [Adding an ontology](#orgf808072)
-    -   [Adding classes and relations](#org2619c43)
-    -   [Adding annotations](#orgb39dc69)
-    -   [Querying the ontology](#org8c7cf45)
-    -   [Making a diagram](#org33527b7)
-    -   [Display labels instead of identifiers](#org8075a93)
+### Install ELOT in Emacs
 
+The quickest way is from [MELPA](https://melpa.org/#/elot): once MELPA
+is in your `package-archives`, run `M-x package-install RET elot RET`,
+then add `(require 'elot-mode)` to your init file. With `elot-mode`
+turned on, check out the ELOT menu.
 
-<a id="orgc137b62"></a>
-
-### Prerequisites in brief
-
--   Download ELOT using [Git](https://github.com/git-guides/install-git) to easily obtain updates
--   Use a recent version (29+) of [Emacs](https://www.gnu.org/software/emacs/download.html)
--   For viewing your ontologies, install [Protégé Desktop](https://protege.stanford.edu/)
--   Install [Java](https://www.java.com/en/download/help/download_options.html) to enable advanced features
-    -   Turtle output, ontology metrics, and more: install [ROBOT](http://robot.obolibrary.org/)
-    -   Ontology diagrams: install [PlantUML](https://plantuml.com/) and [rdfpuml](https://github.com/VladimirAlexiev/rdf2rml)
-    -   Open OWL files: Download `elot-exporter` from [releases](https://github.com/johanwk/elot/releases)
-    -   **Java 21 or newer is required for `elot-exporter`.** Many enterprise
-        laptops ship with an older Java (8, 11, or 17); check with
-        `java -version` and upgrade if needed. Running the jar on an
-        older JRE fails with `UnsupportedClassVersionError`. See the
-        [elot-exporter notes](#java-version-for-elot-exporter) below.
-
-
-<a id="org7d49c93"></a>
-
-### Installation
-
-
-<a id="org3790fd7"></a>
-
-#### Get Emacs
-
-See the [GNU Emacs download page](https://www.gnu.org/software/emacs/download.html).
-
-For new Windows users: download Emacs from a [GNU mirror](http://ftpmirror.gnu.org/emacs/windows); the latest
-version is in the `emacs-30` directory. The package named
-[emacs-30.1-installer.exe](http://ftp.gnu.org/gnu/emacs/windows/emacs-30/emacs-30.1-installer.exe) will work fine (as of 2025-03-11). It's
-preferable to install into a folder that doesn't contain spaces.
-
-If you are new to Emacs, the book [Mastering Emacs](https://www.masteringemacs.org/) is highly
-recommended.
-
-
-<a id="org4aeb69c"></a>
-
-#### Install ELOT in Emacs
-
-ELOT is in active development. For easy access to updates, you
-should *clone* the ELOT repository using Git.
-
-1.  Create a directory for local Emacs add-ons in your home folder,
-    named `elisp` (on Windows, that will likely mean
-    `c:\Users\mynamelisp\`).
-2.  Clone ELOT into the `elisp` folder using your Git client.  If using
-    a terminal for Git, the following will do it.
-    
-        cd elisp
-        git clone https://github.com/johanwk/elot.git
-    
-    You should now have a subfolder of `elisp` called `elot`.
-3.  Ensure ELOT is loaded when Emacs starts up.
-    -   For new Emacs users: find the file `elot-init.el` inside the `elot`
-        folder, and copy its contents to your `.emacs` file (typically
-        found in your home folder), then restart Emacs. You should now
-        have a basic, working Emacs configuration that automatically
-        activates `elot-mode` when you open an ontology file.
-    -   Experienced Emacs users should add `~/elisp/elot/elot-package/`
-        to their `load-path` and `(require 'elot-mode)`.
-
-
-<a id="orgf439b08"></a>
+ELOT is in active development, and is the maintainer's daily driver, so
+the Git version stays a little ahead of the MELPA release. If you want
+the newest features (or to contribute), *clone* the repository instead.
 
 #### Install ELOT auxiliaries
 
-ELOT relies on external software programs to query your ontologies
-and produce diagrams. These need to be downloaded.
-
-Preparatory steps, if needed:
-
-1.  Create a directory named `bin` in your home folder: you will
-    download programs to this folder. On Windows, that will mean
-    `c:\Users\mynamein\`; also ensure the environment variable
-    `HOME` is set (check [issue 83](https://github.com/johanwk/elot/issues/83)).
-2.  Ensure the `bin` folder is on your PATH, so the programs can be
-    found by ELOT. On Windows, use the Control Panel to edit Local
-    Environment Variables and add `c:\Users\mynamein\` to the list.
-
-Get the tools:
-
-1.  The [ROBOT](http://robot.obolibrary.org/) tool is highly recommended for ELOT. Download [robot.jar](https://github.com/ontodev/robot/releases/download/v1.9.5/robot.jar)
-    from the [ROBOT releases](https://github.com/ontodev/robot/releases) page to your `bin` folder.
-2.  The [PlantUML](https://plantuml.com/) tool is needed for diagrams.
-    Download the latest version from [PlantUML Downloads](https://plantuml.com/download) (tested with [plantuml-1.2024.3.jar](https://github.com/plantuml/plantuml/releases/download/v1.2024.3/plantuml-1.2024.3.jar))
-    to your `bin` folder.
-    For convenience, rename it as just `plantuml.jar` (on Linux, make a symlink).
-3.  The [rdfpuml](https://github.com/VladimirAlexiev/rdf2rml) tool will produce great-looking diagrams for
-    ontologies.
-    -   On Windows, download [rdfpuml.exe](https://github.com/VladimirAlexiev/rdf2rml/raw/master/bin/rdfpuml.exe) to your `bin` folder.
-    -   On Linux or MacOS, clone the repository to your `bin` folder, then
-        add `~/bin/rdf2rml/bin/` to your PATH. Install Perl modules as
-        listed in the [rdfpuml installation guide](https://github.com/VladimirAlexiev/rdf2rml?tab=readme-ov-file#installation).
-        
-            cd ~/bin
-            git clone https://github.com/VladimirAlexiev/rdf2rml.git
-4.  <a id="java-version-for-elot-exporter"></a>The `elot-exporter` tool
-    converts existing OWL ontologies to ELOT's org-mode format. Once
-    downloaded, you can open an OWL ontology from a local file, or
-    from a URL, with `M-x elot-open-owl`.
-    -   download the latest Java JAR from [releases](https://github.com/johanwk/elot/releases) and save it as
-        `elot-exporter.jar` in your `bin` folder.
-    -   the source code is available in [`tools/elot-exporter/`](tools/elot-exporter/) in this repository.
-    -   **Requires Java 21 or newer.** The jar is compiled against
-        Java 21 (see `<release>21</release>` in
-        [`tools/elot-exporter/pom.xml`](tools/elot-exporter/pom.xml)). Many
-        enterprise laptops are provisioned with an older Java (8, 11,
-        or 17); running the jar on those will fail with
-        `UnsupportedClassVersionError: ... class file version 65.0`
-        (65 is the class-file major version emitted by Java 21).
-        -   Check your version: `java -version`.
-        -   If it reports 20 or lower, install a current JDK or JRE —
-            for example [Eclipse Temurin 21+](https://adoptium.net/temurin/releases/?version=21),
-            [Microsoft Build of OpenJDK 21](https://learn.microsoft.com/en-us/java/openjdk/download),
-            or [Oracle JDK 21+](https://www.oracle.com/java/technologies/downloads/).
-        -   If your organisation pins an older system Java, you can
-            install a newer JDK alongside it and point ELOT at it via
-            `JAVA_HOME` or by invoking the jar with an explicit path
-            to the Java 21+ launcher.
-        -   ROBOT and PlantUML are less demanding (both run on Java 11+),
-            so upgrading to Java 21 for `elot-exporter` is safe for the
-            other ELOT auxiliaries as well.
+-   Install [Java](https://www.java.com/en/download/help/download_options.html) to enable advanced features
+ -   Turtle output, ontology metrics, and more: install [ROBOT](http://robot.obolibrary.org/)
+ -   Ontology diagrams: install [PlantUML](https://plantuml.com/) and [rdfpuml](https://github.com/VladimirAlexiev/rdf2rml)
+ -   Open OWL files: Download `elot-exporter` from [releases](https://github.com/johanwk/elot/releases)
 
 
-<a id="org96abf8a"></a>
 
 ### Quick start using ELOT
 
@@ -385,95 +309,17 @@ ELOT-managed `*xref*` / `*ELOT Describe*` buffers.
 
 ### Global label-display: labels everywhere, automatically
 
-ELOT's label-display is no longer confined to Org buffers. The minor mode
-`elot-global-label-display-mode` lights up readable labels in *any* buffer
-— `.ttl` files, SPARQL queries, CSV exports, even source code and log files
-that mention ontology identifiers. Toggle from the *ELOT* menu or via
-`M-x elot-toggle-label-display` (or your chosen keystroke if you
-set one — see `elot-toggle-labels-key`).
+The minor mode `elot-global-label-display-mode` renders readable
+labels in *any* buffer — `.ttl` files, SPARQL queries, CSV exports,
+source code and log files. Toggle from the *ELOT* menu or via `M-x
+elot-toggle-label-display` (or your chosen keystroke if you set one —
+see `elot-toggle-labels-key`).
 
-The feature that makes this practical in daily work: **id/label mappings are
-collected silently and automatically as you edit ELOT Org files**. Every
-ontology you open, tangle, or save contributes its declarations to a
-persistent SQLite index (`elot-db`) that lives across sessions. The more
-ontologies you touch, the richer the index becomes — with no explicit
-import step, no manual curation, and no rebuild when you come back
-tomorrow. Additional sources (TTL via ROBOT, SPARQL endpoints, CSV/TSV/JSON
-exports) can be registered per-buffer via `.dir-locals.el`.
-
-Beyond the visual overlays, the mode provides:
-
--   **`elot-label-lookup`** (`C-c C-x r`) — Insert an existing resource
-    identifier by searching on its label. Scope is configurable (current
-    buffer only, external sources only, or a union of both). When many
-    identifiers share a label — common in industrial asset data — a
-    two-stage picker lets you drill down with full attribute context.
--   **Attribute-driven hover** — Idle the cursor on any identifier to see
-    its `rdf:type`, definition, and source provenance in the echo area.
--   **Language preferences** — Multi-lingual ontologies (e.g. English +
-    Korean) display the right variant based on `elot-preferred-languages`;
-    the default policy is untagged first, then `@en`, then alphabetical.
-
-See [README-global-label-display.org](README-global-label-display.org) for
-configuration, source registration, and language-preference details.
-
-
-### Supported `#+call:` helpers (Library of Babel)
-
-ELOT ships a small Library of Babel file
-([`elot-package/elot-lob.org`](elot-package/elot-lob.org))
-that defines a handful of named source blocks intended to be invoked
-from your ontology Org files via Org's `#+call:` syntax. When
-`elot-mode` is enabled in a buffer, ELOT automatically ingests the
-file (via `org-babel-lob-ingest`) so the helpers below are available
-without any manual setup — no `M-x org-babel-lob-ingest` step
-required.
-
-The supported helpers are:
-
-- **`rdfpuml-block`** — render a Turtle (or SPARQL `CONSTRUCT`) source
-  block as an rdfpuml/PlantUML diagram. Takes the *name* of another
-  named block as its `ttlblock` argument, plus optional `config`,
-  `add-options`, `epilogue` and `format` arguments. Produces an
-  image file referenced from the surrounding caption.
-- **`kill-prefixes`** — strip leading `@prefix` / `PREFIX` declarations
-  from a Turtle string. Most commonly used as a `:post` hook on a
-  SPARQL `CONSTRUCT` block to keep the visible result compact.
-- **`robot-metrics`** — run `robot measure` on an OMN file and return
-  the resulting table.
-- **`robot-sparql-select`** — run a named SPARQL query through ROBOT
-  against a local OMN file and return the result as an Org table.
-- **`theme-elot`** — expands to the right
-  `#+SETUPFILE:` line for the HTML theme. 
-- **`current-date` / `current-datetime`** — format the current
-  date/time, useful in `pav:lastUpdateOn` annotations.
-
-A minimal example, taken from
-[`examples/pets.org`](examples/pets.org), showing
-`rdfpuml-block` consuming a CONSTRUCT block whose result is also
-post-processed by `kill-prefixes`:
-
-```org
-#+name: my-construct
-#+begin_src sparql :url "my-ont.omn" :format ttl :wrap "src ttl" \
-                  :cache yes :post kill-prefixes(data=*this*)
-  construct {
-    ?class a owl:Class .
-    ?subclass rdfs:subClassOf ?class .
-  } {
-    ?class a owl:Class .
-    optional { ?subclass rdfs:subClassOf ?class }
-  }
-#+end_src
-
-#+name: rdfpuml:my-construct
-#+call: rdfpuml-block(ttlblock="my-construct")
-#+caption: Animal diagram
-```
-
-Place point on the `#+call:` line and hit `C-c C-c` to render the
-diagram. See `examples/pets.org` for the complete working file.
-
+**id/label mappings are collected silently and automatically as you
+edit ELOT Org files**, into a persistent SQLite index (`elot-db`) that
+lives across sessions. The more ontologies you touch, the richer the
+index becomes. Default sources  can be registered per project via
+`.dir-locals.el`.
 
 ### Navigating Ontologies with Xref
 
