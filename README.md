@@ -1,6 +1,6 @@
 # ELOT — Literate Ontology Engineering
 
-[![MELPA Stable](https://melpa.org/packages/elot-badge.svg)](https://melpa.org/#/elot) [![VS Code Extension Version](https://badgen.net/vs-marketplace/v/johanwk.elot/latest?icon=visualstudio&color=blue&label=VS+Code)](https://marketplace.visualstudio.com/items?itemName=johanwk.elot)
+[![MELPA Stable](https://melpa.org/packages/elot-badge.svg)](https://melpa.org/#/elot) [![VS Code Extension Version](https://badgen.net/vs-marketplace/v/johanwk.elot/latest?icon=visualstudio&color=[...]
 
 *A single plain-text document that is simultaneously your ontology source and its documentation.*
 
@@ -170,7 +170,7 @@ turned on, check out the ELOT menu.
     resources it will contain. You should see something like this
     screenshot:
 
-![img](./documentation/images/elot-skeleton1.png)
+<img src="./documentation/images/elot-skeleton1.png" width="70%" />
 
 Now create an OWL file from your new document.
 
@@ -181,12 +181,12 @@ Now create an OWL file from your new document.
     will also be generated.
 -   Have Protégé ready, and open the ontology file to inspect it.
 
-![img](./documentation/images/protege-skeleton1.png)
+<img src="./documentation/images/protege-skeleton1.png" width="70%" />
 
 -   Export to an HTML document with menu entry *Export to HTML*. The document
     will open in your web browser.
 
-![img](./documentation/images/firefox-skeleton1.png)
+<img src="./documentation/images/firefox-skeleton1.png" width="70%" />
 
 
 <a id="org2619c43"></a>
@@ -204,7 +204,7 @@ Now create an OWL file from your new document.
 -   The screenshot shows how checkboxes are included for tracking
     progress. These are completely optional and won't appear in output.
 
-![img](documentation/images/elot-animal1.png)
+<img src="documentation/images/elot-animal1.png" width="60%" />
 
 
 <a id="orgb39dc69"></a>
@@ -215,7 +215,7 @@ ELOT makes it easy to add annotations to both annotations and axioms:
 just put them in a description list (` - term :: value`).
 In this screenshot, two annotations are added to the "transitive" characteristic axiom:
 
-![img](documentation/images/elot-annotate-axiom1.png)
+<img src="documentation/images/elot-annotate-axiom1.png" width="60%" />
 
 
 <a id="org8c7cf45"></a>
@@ -228,7 +228,7 @@ In this screenshot, two annotations are added to the "transitive" characteristic
     the ontology.
 -   Hit `C-c C-c` to run the query.
 
-![img](documentation/images/elot-query1.png)
+<img src="documentation/images/elot-query1.png" width="60%" />
 
 
 <a id="org33527b7"></a>
@@ -239,7 +239,7 @@ In this screenshot, two annotations are added to the "transitive" characteristic
     diagram. Select *Insert SPARQL Construct Block*.
 -   Write a query and hit `C-c C-c` to run it.
 
-![img](documentation/images/elot-query2.png)
+<img src="documentation/images/elot-query2.png" width="60%" />
 
 -   Select *Insert RDFPUML Diagram Block*.
 -   When prompted, provide the name of the Turtle source (the name of
@@ -247,11 +247,11 @@ In this screenshot, two annotations are added to the "transitive" characteristic
 -   Place the cursor on the row of the  `#+call:` and hit `C-c C-c`. A
     diagram is generated.
 
-![img](documentation/images/elot-rdfpuml1.png)
+<img src="documentation/images/elot-rdfpuml1.png" width="60%" />
 
 -   Select *Export to HTML* to view your ontology in a browser.
 
-![img](documentation/images/firefox-diagram1.png)
+<img src="documentation/images/firefox-diagram1.png" width="70%" />
 
 
 #### Display labels instead of identifiers
@@ -268,7 +268,7 @@ string — for example `<f5>`, `<f9>`, or `C-c t l`.  When set, ELOT
 installs the binding in `elot-mode-map` and in the ELOT-managed
 `*xref*` / `*ELOT Describe*` buffers.
 
-![img](documentation/images/elot-label-display1.png)
+<img src="documentation/images/elot-label-display1.png" width="60%" />
 
 
 ### Global label-display: labels everywhere, automatically
@@ -313,7 +313,7 @@ This functionality is activated automatically for Org files when `elot-mode` is 
 
 HTML output from ELOT produces stable anchors for ontology resources,
 and shows readable labels with internal, clickable links.
-![img](documentation/images/elot-html-format.png)
+<img src="documentation/images/elot-html-format.png" width="70%" />
 
 ---
 
