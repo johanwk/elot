@@ -1,6 +1,6 @@
 # ELOT — Literate Ontology Engineering
 
-[![MELPA Stable](https://melpa.org/packages/elot-badge.svg)](https://melpa.org/#/elot) [![VS Code Extension Version](https://badgen.net/vs-marketplace/v/johanwk.elot/latest?icon=visualstudio&color=[...]
+[![MELPA Stable](https://melpa.org/packages/elot-badge.svg)](https://melpa.org/#/elot) [![VS Code Extension Version](https://badgen.net/vs-marketplace/v/johanwk.elot/latest?icon=visualstudio&color=blue&label=VS+Code)](https://marketplace.visualstudio.com/items?itemName=johanwk.elot)
 
 *A single plain-text document that is simultaneously your ontology source and its documentation.*
 
