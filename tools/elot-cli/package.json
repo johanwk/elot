@@ -524,7 +524,7 @@
     "@types/sql.js": "^1.4.9",
     "@types/vscode": "^1.75.0",
     "@vscode/test-electron": "^2.4.1",
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.28.1",
     "glob": "^10.3.10",
     "mocha": "^11.7.6",
     "peggy": "^4.2.0",
