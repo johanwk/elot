@@ -10,6 +10,16 @@ simultaneously your ontology source, its documentation, and your analytical
 workspace. This extension brings the core ELOT experience to VS Code — no Emacs
 required.
 
+> **Who is this for?** ELOT is designed for people who *already work with OWL
+> ontologies* — ontology engineers, knowledge-graph architects, and standards
+> authors. It is not an introduction to ontology modelling. You should be
+> comfortable with OWL 2 axioms, Manchester Syntax, and the open-world
+> assumption before using ELOT productively. New to OWL? Start with the
+> [W3C OWL 2 Primer](https://www.w3.org/TR/owl2-primer/) and the
+> [Protégé Pizza Tutorial](https://protegewiki.protege.stanford.edu/wiki/Protege4CourseworkPortal),
+> then come back. A worked ELOT example explaining key OWL concepts is available at
+> [`examples/owl-concepts.org`](https://github.com/johanwk/elot/blob/master/examples/owl-concepts.org).
+
 ## Features at a Glance
 
 | Feature | Shortcut |

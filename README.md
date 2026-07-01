@@ -4,6 +4,41 @@
 
 *A single plain-text document that is simultaneously your ontology source and its documentation.*
 
+## Who is ELOT for?
+
+ELOT is a tool for **people who already work with OWL ontologies** — ontology engineers,
+knowledge-graph architects, and standards authors who want a better authoring and documentation
+workflow. It is not an introduction to ontology modelling or OWL, and it does not make OWL
+simpler than it is.
+
+If you are new to OWL, please read [Prerequisites](#prerequisites) first.
+
+## Prerequisites
+
+ELOT assumes you are comfortable with the following concepts. If any of them are unfamiliar,
+the resources listed here will get you up to speed before you invest time in the tool:
+
+- **OWL 2 and Description Logics** — the difference between `SubClassOf` and `EquivalentTo`,
+  what an *open-world assumption* means, and why a reasoner may draw conclusions you didn't
+  explicitly state.
+- **Manchester Syntax** — the human-readable OWL syntax that ELOT generates. A quick reference
+  is in [`examples/manchester-syntax-quick-reference.omn`](examples/manchester-syntax-quick-reference.omn).
+- **RDF and SPARQL basics** — IRIs, prefixes, triples, and simple `SELECT`/`CONSTRUCT` queries.
+
+### Recommended reading
+
+| Resource | What it teaches |
+|---|---|
+| [W3C OWL 2 Primer](https://www.w3.org/TR/owl2-primer/) | OWL 2 concepts, classes, properties, individuals, axioms |
+| [W3C Manchester Syntax](https://www.w3.org/TR/owl2-manchester-syntax/) | The syntax ELOT generates |
+| Allemang & Hendler, *Semantic Web for the Working Ontologist* | Practical RDF/OWL modelling patterns |
+| [Protégé Pizza Tutorial](https://protegewiki.protege.stanford.edu/wiki/Protege4CourseworkPortal) | Hands-on OWL modelling in a GUI before working in plain text |
+
+> **New to ELOT's file format?** Start with
+> [`examples/owl-concepts.org`](examples/owl-concepts.org) — a worked example that explains
+> the key OWL modelling decisions (SubClassOf vs EquivalentTo, open-world assumption,
+> property characteristics, and more) directly in ELOT's Org format with plain-English commentary.
+
 ## Why ELOT?
 
 ELOT enables **literate ontology engineering**: a workflow, inspired by Knuth's _literate programming_, in which a plain-text notebook file is the single source for both ontology and documentation.

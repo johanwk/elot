@@ -3,7 +3,7 @@
   "displayName": "Elot: Org-mode Ontology Editor",
   "version": "0.4.2",
   "publisher": "johanwk",
-  "description": "Manchester Syntax generation for ontologies written in Org-mode",
+  "description": "Write OWL ontologies as plain-text Org-mode files — with label display, IntelliSense, syntax checking, and one-click OWL/Turtle export.",
   "icon": "images/elot-icon.png",
   "galleryBanner": {
     "color": "#1e1e1e",
@@ -12,10 +12,18 @@
   "keywords": [
     "ontology",
     "OWL",
+    "OWL 2",
     "Manchester Syntax",
     "Org-mode",
     "RDF",
-    "knowledge graph"
+    "RDFS",
+    "Turtle",
+    "SPARQL",
+    "knowledge graph",
+    "semantic web",
+    "description logic",
+    "literate programming",
+    "SWRL"
   ],
   "badges": [],
   "qna": "marketplace",

@@ -1,0 +1,288 @@
+#+title: OWL Concepts Through ELOT — a Worked Example
+#+subtitle: Understanding OWL modelling decisions in the ELOT file format
+#+author: ELOT project
+#+date: 2026
+
+# ============================================================
+# PURPOSE OF THIS FILE
+#
+# This file explains key OWL 2 concepts by showing them in
+# ELOT's Org-mode format.  It is not a substitute for an OWL
+# primer — read the W3C OWL 2 Primer
+#   https://www.w3.org/TR/owl2-primer/
+# and work through the Protégé Pizza Tutorial before using
+# ELOT for real ontology work.
+#
+# Each section introduces one concept, explains why it matters,
+# and shows how to express it in ELOT.
+# ============================================================
+
+* owl-concepts
+:PROPERTIES:
+:ID: owl-concepts
+:ELOT-context-type: ontology
+:ELOT-context-localname: owl-concepts
+:ELOT-default-prefix: ex
+:header-args:omn: :tangle ./owl-concepts.omn :noweb yes
+:header-args:emacs-lisp: :tangle no :exports results
+:header-args: :padline yes
+:END:
+
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+#+name: prefix-table
+| prefix   | uri                                             |
+|----------+-------------------------------------------------|
+| owl:     | http://www.w3.org/2002/07/owl#                  |
+| rdf:     | http://www.w3.org/1999/02/22-rdf-syntax-ns#     |
+| xml:     | http://www.w3.org/XML/1998/namespace            |
+| xsd:     | http://www.w3.org/2001/XMLSchema#               |
+| rdfs:    | http://www.w3.org/2000/01/rdf-schema#           |
+| skos:    | http://www.w3.org/2004/02/skos/core#            |
+| dcterms: | http://purl.org/dc/terms/                       |
+| ex:      | http://example.org/concepts#                    |
+
+** owl-concepts ontology (ex:owl-concepts ex:owl-concepts/0.1)
+:PROPERTIES:
+:ID:       owl-concepts-ontology-declaration
+:custom_id: owl-concepts-ontology-declaration
+:resourcedefs: yes
+:END:
+ - owl:versionInfo :: 0.1
+ - dcterms:title :: "OWL Concepts Through ELOT"@en
+ - dcterms:description :: A worked example demonstrating key OWL modelling decisions in ELOT's Org format.
+
+** Classes
+:PROPERTIES:
+:ID:       owl-concepts-class-hierarchy
+:custom_id: owl-concepts-class-hierarchy
+:resourcedefs: yes
+:END:
+
+# ============================================================
+# CONCEPT 1: SubClassOf vs EquivalentTo
+#
+# SubClassOf is a one-way inclusion: every A is a B, but not
+# every B is necessarily an A.
+#
+# EquivalentTo is a two-way definition: a class is defined
+# entirely by a condition.  An open-world reasoner will
+# *classify* individuals into the class automatically.
+#
+# Guideline:
+#   - Use SubClassOf for taxonomy ("a Dog is an Animal").
+#   - Use EquivalentTo only when you want automatic
+#     classification and you can fully enumerate the conditions.
+#   - Mixing them accidentally is the most common OWL mistake.
+# ============================================================
+
+*** Animal (ex:animal)
+ # SubClassOf axioms come from the heading hierarchy:
+ # ex:animal has no parent here, so it is a direct subclass
+ # of owl:Thing (the universal class in OWL).
+ - skos:definition :: A living organism.
+
+**** Mammal (ex:mammal)
+ # This nesting means: ex:mammal SubClassOf ex:animal.
+ # A mammal IS an animal, but an animal is NOT necessarily a mammal.
+ - skos:definition :: A warm-blooded vertebrate that nurses its young.
+
+***** Dog (ex:dog)
+ # ex:dog SubClassOf ex:mammal (and transitively SubClassOf ex:animal).
+ - skos:definition :: A domesticated carnivorous mammal (Canis lupus familiaris).
+
+***** Cat (ex:cat)
+ - skos:definition :: A small domesticated carnivorous mammal (Felis catus).
+
+*** Pet (ex:pet)
+ # "Pet" is defined by a condition, not by its place in a taxonomy.
+ # We use EquivalentTo with an existential restriction:
+ #   ex:pet EquivalentTo ex:animal and (ex:ownedBy some ex:person)
+ #
+ # A reasoner will then INFER that any individual that is an animal
+ # AND is owned by a person is a Pet — you do not need to assert it.
+ #
+ # Compare: if we had used SubClassOf instead, the reasoner would know
+ # that every Pet is an animal that is owned by a person, but it would
+ # NOT classify an anonymous "animal owned by a person" as a Pet.
+ - skos:definition :: An animal kept by a person for companionship.
+ - EquivalentTo :: ex:animal and (ex:ownedBy some ex:person)
+
+*** Person (ex:person)
+ - skos:definition :: A human being.
+
+# ============================================================
+# CONCEPT 2: The Open-World Assumption (OWA)
+#
+# In OWL, absence of information does NOT mean negation.
+# If you have not stated "ex:fido rdf:type ex:cat", it does NOT
+# follow that Fido is not a cat — it simply means you haven't
+# said so yet.
+#
+# Practical consequence: if you want to say two classes are
+# *disjoint* (no individual can be both), you MUST state it
+# explicitly with DisjointWith.
+#
+# Without DisjointWith, a reasoner is happy to classify an
+# individual as both a Dog AND a Cat.
+# ============================================================
+
+**** ← DisjointWith example (add to Dog or Cat)
+
+ # The axiom below is attached to ex:dog:
+ # ex:dog DisjointWith ex:cat
+ # This tells the reasoner no individual can be both.
+ # Without it, the reasoner will not complain if you assert
+ # someone is both a dog and a cat.
+
+** Object properties
+:PROPERTIES:
+:ID:       owl-concepts-object-property-hierarchy
+:custom_id: owl-concepts-object-property-hierarchy
+:resourcedefs: yes
+:END:
+
+# ============================================================
+# CONCEPT 3: Property Characteristics
+#
+# OWL properties can have logical characteristics that the
+# reasoner exploits.  These are declared under the property
+# heading as description-list items.
+#
+# Common characteristics and what they mean:
+#   Functional      — each individual has at most one value
+#                     (like a "unique key" in a database)
+#   InverseFunctional — each value maps to at most one subject
+#   Symmetric       — if A r B then B r A
+#   Asymmetric      — if A r B then NOT B r A (e.g. "isChildOf")
+#   Transitive      — if A r B and B r C then A r C (e.g. "partOf")
+#   Reflexive       — every individual is related to itself
+#   Irreflexive     — no individual is related to itself
+#
+# Mistake to avoid: marking a property Transitive AND Functional
+# is almost always an error — transitivity + functionality quickly
+# forces all individuals into a single equivalence class.
+# ============================================================
+
+*** ownedBy (ex:ownedBy)
+ # Used in the EquivalentTo definition of ex:pet above.
+ - skos:definition :: Relates an animal to the person who keeps it.
+ - Domain :: ex:animal
+ - Range :: ex:person
+ # Functional: each animal has at most one owner in this model.
+ - Characteristics :: Functional
+
+*** haspart (ex:hasPart)
+ # Parthood is the classic transitive property.
+ # Because it is transitive, if A hasPart B and B hasPart C,
+ # the reasoner infers A hasPart C without you stating it.
+ - skos:definition :: Relates a whole to one of its parts.
+ - Characteristics :: Transitive
+
+*** livesIn (ex:livesIn)
+ # No special characteristics — just a plain object property.
+ - skos:definition :: Relates an animal or person to the place they inhabit.
+ - Domain :: ex:animal
+ - Range :: ex:place
+
+** Data properties
+:PROPERTIES:
+:ID:       owl-concepts-data-property-hierarchy
+:custom_id: owl-concepts-data-property-hierarchy
+:resourcedefs: yes
+:END:
+
+# ============================================================
+# CONCEPT 4: Data Properties and Datatypes
+#
+# Data properties relate individuals to literal values
+# (strings, numbers, dates, etc.).
+# Always specify a range datatype — it helps reasoners and
+# tooling validate your data.
+# ============================================================
+
+*** birthYear (ex:birthYear)
+ - skos:definition :: The year an animal or person was born.
+ - Domain :: ex:animal
+ - Range :: xsd:gYear
+ # Functional: a biological individual has exactly one birth year.
+ - Characteristics :: Functional
+
+** Annotation properties
+:PROPERTIES:
+:ID:       owl-concepts-annotation-property-hierarchy
+:custom_id: owl-concepts-annotation-property-hierarchy
+:resourcedefs: yes
+:END:
+*** skos:definition
+ - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
+
+** Individuals
+:PROPERTIES:
+:ID:       owl-concepts-individuals
+:custom_id: owl-concepts-individuals
+:resourcedefs: yes
+:END:
+
+# ============================================================
+# CONCEPT 5: Individuals and the Unique-Name Assumption
+#
+# OWL does NOT assume two differently-named individuals are
+# different things (no Unique-Name Assumption by default).
+# If you need the reasoner to treat ex:fido and ex:rex as
+# distinct, you MUST assert DifferentFrom.
+#
+# Conversely, SameAs merges two names into one individual —
+# useful for linking across ontologies.
+# ============================================================
+
+*** Fido (ex:fido)
+ - rdf:type :: ex:dog
+ - ex:ownedBy :: ex:alice
+ # Because ex:fido is a dog (ex:mammal → ex:animal) AND
+ # is owned by a person, the reasoner will infer:
+ #   ex:fido rdf:type ex:pet
+ # You do not need to assert it — the EquivalentTo on ex:pet
+ # does the work.  This is what "automatic classification" means.
+ - ex:birthYear :: "2019"^^xsd:gYear
+
+*** Rex (ex:rex)
+ - rdf:type :: ex:dog
+ - ex:ownedBy :: ex:bob
+ # Without the next line, a reasoner could conclude Fido and Rex
+ # are the same individual (OWA + no unique-name assumption).
+ - DifferentFrom :: ex:fido
+
+*** Alice (ex:alice)
+ - rdf:type :: ex:person
+
+*** Bob (ex:bob)
+ - rdf:type :: ex:person
+ - DifferentFrom :: ex:alice
+
+** ← Summary: most common mistakes
+# ============================================================
+# For reference — the OWL modelling mistakes this example
+# is designed to help you avoid:
+#
+# 1. Using SubClassOf when you meant EquivalentTo (or vice versa).
+#    Result: classifications you expected the reasoner to infer
+#    silently do not appear.
+#
+# 2. Forgetting DisjointWith between classes that cannot overlap.
+#    Result: inconsistencies go undetected; the reasoner merges
+#    classes you intended to be separate.
+#
+# 3. Assuming "not stated" means "false" (closed-world thinking).
+#    Result: surprise when the reasoner accepts individuals that
+#    violate your informal intent.
+#
+# 4. Forgetting DifferentFrom between individuals you intend to
+#    be distinct.
+#    Result: the reasoner may silently equate them.
+#
+# 5. Mixing Transitive with Functional on the same property.
+#    Result: the reasoner collapses your domain into a single node.
+# ============================================================
