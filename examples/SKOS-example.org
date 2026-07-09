@@ -1,0 +1,191 @@
+#+title: SKOS taxonomy from Org outline using ELOT
+#+subtitle: An OWL ontology
+#+author: 
+#+date: today
+#+call: theme-elot()
+
+
+* elot-skos-example
+:PROPERTIES:
+:ID:       elot-skos-example
+:ELOT-context-type: ontology
+:ELOT-context-localname: elot-skos-example
+:ELOT-default-prefix: elot-skos-example
+:header-args:omn: :tangle ./elot-skos-example.omn :noweb yes
+:header-args:emacs-lisp: :tangle no :exports results
+:header-args: :padline yes
+:END:
+
+This example shows how an ordinary /Org outline/ of individuals becomes
+a *SKOS taxonomy* on export. The concept hierarchy is expressed purely
+by *nesting subheadings* under the [[*Individuals][Individuals]] section, and a single
+drawer property --- set with
+#+begin_example
+:ELOT-subheading-relation: skos:broader
+#+end_example
+--- instructs ELOT to assert skos:broader from every nested concept to
+its immediate parent, at any depth. You therefore never write the
+skos:broader links by hand: the outline is their single source of
+truth. See the [[*Individuals][Individuals]] section for the details.
+
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+The ontology document in OWL employs the namespace prefixes of table [[prefix-table]].
+
+#+name: prefix-table
+#+attr_latex: :align lp{.8\textwidth} :font small
+#+caption: OWL ontology prefixes
+| prefix | uri                                         |
+|--------+---------------------------------------------|
+| ex:    | http://example.org/                         |
+| owl:   | http://www.w3.org/2002/07/owl#              |
+| rdf:   | http://www.w3.org/1999/02/22-rdf-syntax-ns# |
+| rdfs:  | http://www.w3.org/2000/01/rdf-schema#       |
+| skos:  | http://www.w3.org/2004/02/skos/core#        |
+| xml:   | http://www.w3.org/XML/1998/namespace        |
+| xsd:   | http://www.w3.org/2001/XMLSchema#           |
+
+** elot-skos-example ontology (http://example.org/ontology/elot-skos-example)
+:PROPERTIES:
+:ID:       elot-skos-example-ontology-declaration
+:custom_id: elot-skos-example-ontology-declaration
+:resourcedefs: yes
+:END:
+
+ - Import :: http://www.w3.org/2004/02/skos/core
+ - rdfs:label :: Example: ELOT individuals outline into SKOS taxonomy
+
+** Datatypes
+:PROPERTIES:
+:ID:       elot-skos-example-datatypes
+:custom_id: elot-skos-example-datatypes
+:resourcedefs: yes
+:END:
+
+
+** Classes
+:PROPERTIES:
+:ID:       elot-skos-example-class-hierarchy
+:custom_id: elot-skos-example-class-hierarchy
+:resourcedefs: yes
+:END:
+
+*** "Concept Scheme"@en (skos:ConceptScheme)
+*** "Concept"@en (skos:Concept)
+
+** Object properties
+:PROPERTIES:
+:ID:       elot-skos-example-object-property-hierarchy
+:custom_id: elot-skos-example-object-property-hierarchy
+:resourcedefs: yes
+:END:
+
+*** "has broader"@en (skos:broader)
+*** "has related"@en (skos:related)
+*** "has top concept"@en (skos:hasTopConcept)
+*** "is in scheme"@en (skos:inScheme)
+
+** Data properties
+:PROPERTIES:
+:ID:       elot-skos-example-data-property-hierarchy
+:custom_id: elot-skos-example-data-property-hierarchy
+:resourcedefs: yes
+:END:
+
+*** "notation"@en (skos:notation)
+
+** Annotation properties
+:PROPERTIES:
+:ID:       elot-skos-example-annotation-property-hierarchy
+:custom_id: elot-skos-example-annotation-property-hierarchy
+:resourcedefs: yes
+:END:
+
+*** "alternative label"@en (skos:altLabel)
+*** "definition"@en (skos:definition)
+*** "preferred label"@en (skos:prefLabel)
+*** rdfs:label
+
+** Individuals
+:PROPERTIES:
+:ID:       elot-skos-example-individuals
+:custom_id: elot-skos-example-individuals
+:resourcedefs: yes
+:END:
+
+The individuals below form a small SKOS concept scheme.  Two mechanisms
+build its taxonomy:
+
+1. *Outline nesting.*  Concepts are nested as subheadings, so =Dog= sits
+   under =Mammal=, which sits under =Animal=.
+
+2. *The =:ELOT-subheading-relation:= property.*  Setting
+   : :ELOT-subheading-relation: skos:broader 
+   on the =Concept= wrapper heading makes ELOT emit, on export, a
+   description-list axiom
+
+   : Facts: skos:broader <immediate-parent>
+
+   for every concept nested beneath it.  The relation is *inherited*
+   to any depth, and each concept always points at its *immediate*
+   parent --- so =Mammal= gets skos:broader ex:Animal, =Dog= gets
+   skos:broader ex:Mammal (not ex:Animal), and =Pet= gets
+   skos:broader ex:Animal.  The container =Concept= heading is tagged
+   =:nodeclare:= (it only groups its children) and gets no =skos:broader=
+   of its own; likewise =Animal=, as the top concept, has no parent to
+   point at.
+
+Because the outline is the single source of truth for skos:broader,
+those links are *not* written out below --- only facts that /cannot/ be
+derived from the nesting appear explicitly: labels, definitions,
+skos:inScheme, the scheme's skos:hasTopConcept, and one hand-authored
+skos:related on =Pet= (which coexists with =Pet='s automatically
+generated skos:broader ex:Animal).  To use a different relation for a
+given subtree --- say skos:narrower or skos:related --- set that
+value in the subtree's own =:ELOT-subheading-relation:= drawer; it
+overrides the inherited relation from that point downward.
+
+The "Concept Scheme" wrapper below carries /no/ relation property, so its
+member individual (ex:AnimalsScheme) is deliberately kept out of the
+skos:broader hierarchy.
+
+*** "Concept Scheme"@en                                           :nodeclare:
+**** "Animal Taxonomy Concept Scheme"@en (ex:AnimalsScheme)
+ - skos:definition :: "A controlled vocabulary for animal concepts."@en
+ - skos:prefLabel :: "Animal Taxonomy Concept Scheme"@en
+ - Types :: skos:ConceptScheme
+ - Facts :: skos:hasTopConcept ex:Animal
+
+*** "Concept"@en                                                  :nodeclare:
+:PROPERTIES:
+:ELOT-subheading-relation: skos:broader
+:END:
+**** "Animal"@en (ex:Animal)
+ - skos:altLabel :: "Creature"@en
+ - skos:definition :: "A living organism that feeds on organic matter."@en
+ - skos:prefLabel :: "Animal"@en
+ - Types :: skos:Concept
+ - Facts :: skos:inScheme ex:AnimalsScheme
+
+***** "Mammal"@en (ex:Mammal)
+ - skos:definition :: "Warm-blooded vertebrate animals."@en
+ - skos:prefLabel :: "Mammal"@en
+ - Types :: skos:Concept
+ - Facts :: skos:inScheme ex:AnimalsScheme
+
+****** "Dog"@en (ex:Dog)
+ - skos:altLabel :: "Canine"@en
+ - skos:prefLabel :: "Dog"@en
+ - Types :: skos:Concept
+ - Facts :: skos:inScheme ex:AnimalsScheme
+ - Facts :: skos:notation "CAN-001"
+
+***** "Pet"@en (ex:Pet)
+ - skos:prefLabel :: "Pet"@en
+ - Types :: skos:Concept
+ - Facts :: skos:inScheme ex:AnimalsScheme
+ - Facts :: skos:related ex:Dog
+
+
