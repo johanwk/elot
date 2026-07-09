@@ -1,0 +1,40 @@
+# Negative-control fixture for the individual "subheading-relation"
+# feature (see briefings/individual-SKOS-broader-relation.org).
+#
+# Identical individual nesting to skos-individuals.org, but with NO
+# :ELOT-subheading-relation: drawer anywhere.  The generated OMN must
+# therefore contain no Facts: axioms at all -- proving the feature is
+# inert unless the property is present, so existing files tangle
+# unchanged.
+
+#+title: SKOS subheading-relation negative control
+
+* SKOS individuals (no relation)
+:PROPERTIES:
+:ID:       skos-none
+:ELOT-context-type: ontology
+:ELOT-context-localname: skos-none
+:ELOT-default-prefix: ex
+:END:
+
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+
+| prefix | uri                                  |
+|--------+--------------------------------------|
+| ex:    | http://example.org/skostest#         |
+| skos:  | http://www.w3.org/2004/02/skos/core# |
+
+** Individuals
+:PROPERTIES:
+:ID:       skos-none-individuals
+:resourcedefs: yes
+:END:
+
+*** Animal (ex:animal)
+
+**** Mammal (ex:mammal)
+
+***** Dog (ex:dog)

@@ -1,0 +1,56 @@
+# Fixture for the individual "subheading-relation" feature
+# (see briefings/individual-SKOS-broader-relation.org).
+#
+# A 3-deep individual nest governed by one relation (skos:broader),
+# plus a sibling subtree with a *different* relation (skos:related).
+# Together these exercise:
+#   - inheritance of the relation to arbitrary depth,
+#   - the Facts target always being the *immediate* parent,
+#   - per-subtree scoping/override of the relation,
+#   - the declaring heading itself receiving no Facts.
+#
+# The top heading deliberately carries no CURIE, so no spurious
+# resource frame is emitted for the ontology node itself; only the
+# individual frames appear in the generated OMN.
+
+#+title: SKOS subheading-relation test
+
+* SKOS individuals test
+:PROPERTIES:
+:ID:       skos-test
+:ELOT-context-type: ontology
+:ELOT-context-localname: skos-test
+:ELOT-default-prefix: ex
+:END:
+
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+
+| prefix | uri                                  |
+|--------+--------------------------------------|
+| ex:    | http://example.org/skostest#         |
+| skos:  | http://www.w3.org/2004/02/skos/core# |
+
+** Individuals
+:PROPERTIES:
+:ID:       skos-test-individuals
+:resourcedefs: yes
+:END:
+
+*** Animal (ex:animal)
+:PROPERTIES:
+:ELOT-subheading-relation: skos:broader
+:END:
+
+**** Mammal (ex:mammal)
+
+***** Dog (ex:dog)
+
+*** Colour (ex:colour)
+:PROPERTIES:
+:ELOT-subheading-relation: skos:related
+:END:
+
+**** Red (ex:red)
