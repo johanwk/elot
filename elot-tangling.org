@@ -723,6 +723,7 @@ Functions that take an ontology AST node and extract specific components (prefix
                    (default-prefix (org-element-property :ELOT-DEFAULT-PREFIX hl))
                    (resourcedefs (org-element-property :RESOURCEDEFS hl))
                    (prefixdefs (org-element-property :PREFIXDEFS hl))
+                   (subheading-relation (org-element-property :ELOT-SUBHEADING-RELATION hl))
                    (header-args-omn (org-element-property :HEADER-ARGS:OMN hl))
                    (tangle-target-omn (when (and header-args-omn (string-match ":tangle[ \t]+\\([^ \t\n]+\\)" header-args-omn))
                                         (match-string 1 header-args-omn)))
@@ -791,6 +792,8 @@ Functions that take an ontology AST node and extract specific components (prefix
                                     (let ((prefixes-alist (elot-get-prefixes-alist hl id)))
                                       (when prefixes-alist
                                         (list :prefixes prefixes-alist)))))
+                          (when subheading-relation
+                            (list :subheading-relation subheading-relation))
                           (list :descriptions desc
                                 :children nil))))
               
@@ -1269,9 +1272,12 @@ With ~M-:~ we get at the ~:children~ of ~elot-headline-hierarchy~; which is a li
                  l
                  "\n")))
 
-  (defun elot-omn-resource-frame (node parent-uri)
+  (defun elot-omn-resource-frame (node parent-uri &optional parent-relation)
     "Generate a resource frame string for NODE.
   Uses PARENT-URI to automatically emit taxonomy axioms.
+  For an individual, PARENT-RELATION (inherited from an ancestor's
+  :ELOT-subheading-relation: drawer property) emits a Facts axiom
+  relating NODE to its immediate PARENT-URI.
   Returns nil if NODE does not define a resource or is tagged :nodeclare:."
     (let* ((uri (plist-get node :uri))
            (desc (plist-get node :descriptions))
@@ -1299,7 +1305,11 @@ With ~M-:~ we get at the ~:children~ of ~elot-headline-hierarchy~; which is a li
               (push (list "SubClassOf" parent-uri) restrictions)))
            ((and type (string-match-p "Property$" type))
             (unless (member (list "SubPropertyOf" parent-uri) restrictions)
-              (push (list "SubPropertyOf" parent-uri) restrictions)))))
+              (push (list "SubPropertyOf" parent-uri) restrictions)))
+           ((and (equal type "owl:NamedIndividual") parent-relation parent-uri)
+            (let ((fact (list "Facts" (concat parent-relation " " parent-uri))))
+              (unless (member fact restrictions)
+                (push fact restrictions))))))
         
         ;; 3. Build the strictly-formatted OMN frame string
         (let* ((omn-type (cond
@@ -1336,17 +1346,21 @@ With ~M-:~ we get at the ~:children~ of ~elot-headline-hierarchy~; which is a li
           (push (elot-omn-format-restrictions (list y) 0) misc-frames)))
       (nreverse misc-frames)))
 
-  (defun elot-omn-resource-declarations (nodes &optional parent-uri)
+  (defun elot-omn-resource-declarations (nodes &optional parent-uri parent-relation)
     "Recursively traverse AST NODES to generate OMN syntax frames.
   Nodes are property lists from `elot-headline-hierarchy`.
-  Uses PARENT-URI to automatically emit taxonomy axioms."
+  Uses PARENT-URI to automatically emit taxonomy axioms.
+  For individuals, PARENT-RELATION is the inherited relation (from an
+  ancestor's :ELOT-subheading-relation: drawer property) used to emit a
+  Facts axiom to the immediate parent; a node's own :subheading-relation
+  overrides it for that node's subtree."
     (let ((frames nil))
       (dolist (node nodes)
         (let ((uri (plist-get node :uri))
               (children (plist-get node :children)))
           
           ;; 1. Try to generate a resource frame
-          (let ((res-frame (elot-omn-resource-frame node parent-uri)))
+          (let ((res-frame (elot-omn-resource-frame node parent-uri parent-relation)))
             (when res-frame
               (push res-frame frames)))
               
@@ -1357,7 +1371,10 @@ With ~M-:~ we get at the ~:children~ of ~elot-headline-hierarchy~; which is a li
           
           ;; 3. Recurse into children
           (when children
-            (let ((child-frames (elot-omn-resource-declarations children (if (and uri (stringp uri)) uri parent-uri))))
+            (let* ((next-uri (if (and uri (stringp uri)) uri parent-uri))
+                   (next-rel (or (plist-get node :subheading-relation)
+                                 parent-relation))
+                   (child-frames (elot-omn-resource-declarations children next-uri next-rel)))
               (when (not (string-empty-p child-frames))
                 (push child-frames frames))))))
       

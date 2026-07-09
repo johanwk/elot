@@ -52,6 +52,14 @@ Marketplace](https://marketplace.visualstudio.com/items?itemName=johanwk.elot).
 -   **Description lists are the axioms and annotations.** A list item
     attaches an annotation or an OWL axiom in Manchester Syntax to the
     entity under whose headline it appears.
+-   **Nesting can relate individuals, too.** In an *Individuals*
+    section, add `:ELOT-subheading-relation: skos:broader` to a
+    heading's `:PROPERTIES:` drawer, and every individual nested beneath
+    it asserts that relation to its *immediate* parent — inherited to
+    any depth, and overridable per subtree. This is ideal for SKOS
+    concept schemes, where the outline becomes the single source of
+    truth for the `skos:broader` hierarchy. See
+    [`examples/SKOS-example.org`](examples/SKOS-example.org).
 
 A small excerpt — Dog is nested under Animal (so `ex:dog rdfs:subClassOf
 ex:animal` follows from the structure), while the description-list items
@@ -76,7 +84,10 @@ development.
     from the Org source (and, via OBO ROBOT, Turtle).
 -   **Content derived from structure** — Ontology content comes
     directly from Org headlines and description lists. A single file
-    may declare multiple ontologies.
+    may declare multiple ontologies. Under *Individuals*, the
+    `:ELOT-subheading-relation:` property extends this to relations
+    such as `skos:broader`, deriving a SKOS taxonomy from the outline
+    nesting.
 -   **Readable label display** — Show human-readable labels instead of
     opaque CURIEs, with an in-buffer toggle in both editors. This
     works in any file — Turtle, SPARQL, CSV, source code, log files.
