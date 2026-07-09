@@ -24,3 +24,14 @@ Design notes:
   "non-ontology project" path is exercised alongside the ontology path.
 - Live-network and ROBOT-dependent tests are gated by
   `ELOT_TEST_NETWORK=1` and live outside this directory.
+
+## Tangling fixtures (individual subheading-relation)
+
+Used by `../elot-subheading-relation-test.el` (a pure AST -> OMN string
+test; no ROBOT / Java / network):
+
+| File                     | Shape                                                                 |
+|--------------------------|-----------------------------------------------------------------------|
+| `skos-individuals.org`   | 3-deep individual nest with `:ELOT-subheading-relation: skos:broader` on the root, plus a sibling subtree using `skos:related` (proves inheritance, immediate-parent target, and per-subtree override). |
+| `skos-no-relation.org`   | Same individual nesting with *no* relation drawer (negative control: no `Facts:` emitted).                                              |
+

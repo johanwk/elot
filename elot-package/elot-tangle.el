@@ -595,7 +595,7 @@ Creates a dummy root at level 0 to handle multiple top-level ontologies."
             (pop stack))
           
           (let* ((title-raw (org-element-property :title hl))
-                 (title (substring-no-properties
+                 (title (substring-no-properties 
                          (if (stringp title-raw)
                              title-raw
                            (org-element-interpret-data title-raw))))
@@ -619,6 +619,7 @@ Creates a dummy root at level 0 to handle multiple top-level ontologies."
                                         (match-string 2 id-scheme-raw)))
                  (resourcedefs (org-element-property :RESOURCEDEFS hl))
                  (prefixdefs (org-element-property :PREFIXDEFS hl))
+                 (subheading-relation (org-element-property :ELOT-SUBHEADING-RELATION hl))
                  (header-args-omn (org-element-property :HEADER-ARGS:OMN hl))
                  (tangle-target-omn (when (and header-args-omn (string-match ":tangle[ \t]+\\([^ \t\n]+\\)" header-args-omn))
                                       (match-string 1 header-args-omn)))
@@ -634,7 +635,7 @@ Creates a dummy root at level 0 to handle multiple top-level ontologies."
                   (unless (or nodeclare commented)
                     (elot-entity-from-header title t))) ; t = noerror for wrapper headings
                  (label (if (string-match "\\(.+\\) (.*)" title)
-                            (match-string 1 title)
+                            (match-string 1 title) 
                           uri)) ; fallback to uri if no label matches
                  ;; Find ancestor with resourcedefs "yes" to determine rdf:type
                  (ancestor-resourcedefs (cl-find-if (lambda (n) (equal (plist-get n :resourcedefs) "yes")) stack))
@@ -692,6 +693,8 @@ Creates a dummy root at level 0 to handle multiple top-level ontologies."
                                   (let ((prefixes-alist (elot-get-prefixes-alist hl id)))
                                     (when prefixes-alist
                                       (list :prefixes prefixes-alist)))))
+                        (when subheading-relation
+                          (list :subheading-relation subheading-relation))
                         (list :descriptions desc
                               :children nil))))
             
@@ -1049,7 +1052,7 @@ SLURP is a list of lists made with `elot-slurp-entities'.
 The identifier (puri) of the resource is added to the plist with key \"puri\"."
   (let (result)
     (dolist (row slurp (nreverse result))
-      ;; (nth 1 row) is the label.
+      ;; (nth 1 row) is the label. 
       ;; The rest becomes the cdr of the alist entry (the property list).
       (push (cons (nth 1 row)
                   (cons "puri" (cons (nth 0 row) (nth 2 row))))
@@ -1138,9 +1141,12 @@ Includes the property keyword (e.g., `SubClassOf:`)."
                l
                "\n")))
 
-(defun elot-omn-resource-frame (node parent-uri)
+(defun elot-omn-resource-frame (node parent-uri &optional parent-relation)
   "Generate a resource frame string for NODE.
 Uses PARENT-URI to automatically emit taxonomy axioms.
+For an individual, PARENT-RELATION (inherited from an ancestor's
+:ELOT-subheading-relation: drawer property) emits a Facts axiom
+relating NODE to its immediate PARENT-URI.
 Returns nil if NODE does not define a resource or is tagged :nodeclare:."
   (let* ((uri (plist-get node :uri))
          (desc (plist-get node :descriptions))
@@ -1176,7 +1182,11 @@ Returns nil if NODE does not define a resource or is tagged :nodeclare:."
             (push (list "SubClassOf" parent-uri) restrictions)))
          ((and type (string-match-p "Property$" type))
           (unless (member (list "SubPropertyOf" parent-uri) restrictions)
-            (push (list "SubPropertyOf" parent-uri) restrictions)))))
+            (push (list "SubPropertyOf" parent-uri) restrictions)))
+         ((and (equal type "owl:NamedIndividual") parent-relation parent-uri)
+          (let ((fact (list "Facts" (concat parent-relation " " parent-uri))))
+            (unless (member fact restrictions)
+              (push fact restrictions))))))
       
       ;; 3. Build the strictly-formatted OMN frame string
       (let* ((omn-type (cond
@@ -1192,8 +1202,8 @@ Returns nil if NODE does not define a resource or is tagged :nodeclare:."
              (frame (list (format "%s: %s" omn-type uri))))
         
         (when annotations
-          (push (concat "    Annotations: \n"
-                        (elot-omn-format-annotations (nreverse annotations) 8))
+          (push (concat "    Annotations: \n" 
+                        (elot-omn-format-annotations (nreverse annotations) 8)) 
                 frame))
         
         (when restrictions
@@ -1216,17 +1226,21 @@ are skipped silently -- see `elot--omn-row-blank-axiom-p'."
         (push (elot-omn-format-restrictions (list y) 0) misc-frames)))
     (nreverse misc-frames)))
 
-(defun elot-omn-resource-declarations (nodes &optional parent-uri)
+(defun elot-omn-resource-declarations (nodes &optional parent-uri parent-relation)
   "Recursively traverse AST NODES to generate OMN syntax frames.
 Nodes are property lists from `elot-headline-hierarchy`.
-Uses PARENT-URI to automatically emit taxonomy axioms."
+Uses PARENT-URI to automatically emit taxonomy axioms.
+For individuals, PARENT-RELATION is the inherited relation (from an
+ancestor's :ELOT-subheading-relation: drawer property) used to emit a
+Facts axiom to the immediate parent; a node's own :subheading-relation
+overrides it for that node's subtree."
   (let ((frames nil))
     (dolist (node nodes)
       (let ((uri (plist-get node :uri))
             (children (plist-get node :children)))
         
         ;; 1. Try to generate a resource frame
-        (let ((res-frame (elot-omn-resource-frame node parent-uri)))
+        (let ((res-frame (elot-omn-resource-frame node parent-uri parent-relation)))
           (when res-frame
             (push res-frame frames)))
             
@@ -1237,7 +1251,10 @@ Uses PARENT-URI to automatically emit taxonomy axioms."
         
         ;; 3. Recurse into children
         (when children
-          (let ((child-frames (elot-omn-resource-declarations children (if (and uri (stringp uri)) uri parent-uri))))
+          (let* ((next-uri (if (and uri (stringp uri)) uri parent-uri))
+                 (next-rel (or (plist-get node :subheading-relation)
+                               parent-relation))
+                 (child-frames (elot-omn-resource-declarations children next-uri next-rel)))
             (when (not (string-empty-p child-frames))
               (push child-frames frames))))))
     
