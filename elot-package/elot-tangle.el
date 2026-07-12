@@ -595,7 +595,7 @@ Creates a dummy root at level 0 to handle multiple top-level ontologies."
             (pop stack))
           
           (let* ((title-raw (org-element-property :title hl))
-                 (title (substring-no-properties 
+                 (title (substring-no-properties
                          (if (stringp title-raw)
                              title-raw
                            (org-element-interpret-data title-raw))))
@@ -635,7 +635,7 @@ Creates a dummy root at level 0 to handle multiple top-level ontologies."
                   (unless (or nodeclare commented)
                     (elot-entity-from-header title t))) ; t = noerror for wrapper headings
                  (label (if (string-match "\\(.+\\) (.*)" title)
-                            (match-string 1 title) 
+                            (match-string 1 title)
                           uri)) ; fallback to uri if no label matches
                  ;; Find ancestor with resourcedefs "yes" to determine rdf:type
                  (ancestor-resourcedefs (cl-find-if (lambda (n) (equal (plist-get n :resourcedefs) "yes")) stack))
@@ -1052,7 +1052,7 @@ SLURP is a list of lists made with `elot-slurp-entities'.
 The identifier (puri) of the resource is added to the plist with key \"puri\"."
   (let (result)
     (dolist (row slurp (nreverse result))
-      ;; (nth 1 row) is the label. 
+      ;; (nth 1 row) is the label.
       ;; The rest becomes the cdr of the alist entry (the property list).
       (push (cons (nth 1 row)
                   (cons "puri" (cons (nth 0 row) (nth 2 row))))
@@ -1202,8 +1202,8 @@ Returns nil if NODE does not define a resource or is tagged :nodeclare:."
              (frame (list (format "%s: %s" omn-type uri))))
         
         (when annotations
-          (push (concat "    Annotations: \n" 
-                        (elot-omn-format-annotations (nreverse annotations) 8)) 
+          (push (concat "    Annotations: \n"
+                        (elot-omn-format-annotations (nreverse annotations) 8))
                 frame))
         
         (when restrictions
