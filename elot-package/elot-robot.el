@@ -27,9 +27,9 @@
 ;; Shared process-layer wrapper for the ROBOT command-line tool
 ;; (https://robot.obolibrary.org/).  Used by:
 ;;
-;;   - `elot-tangle.el'  — post-tangle OMN -> Turtle conversion
-;;   - `elot-sources.el' — SPARQL queries against Turtle sources
-;;   - `elot-gptel.el'   — LLM-callable validation, SPARQL and
+;;   - `elot-tangle.el'  -- post-tangle OMN -> Turtle conversion
+;;   - `elot-sources.el' -- SPARQL queries against Turtle sources
+;;   - `elot-gptel.el'   -- LLM-callable validation, SPARQL and
 ;;                          reasoning tools (Milestones 3-5)
 ;;
 ;; *ROBOT is optional for ELOT.*  Manchester Syntax (OMN) output
@@ -53,7 +53,7 @@
 ;;      on `exec-path'; used as a fallback when the jar is absent.
 ;;
 ;; All process invocations use `make-process' / `call-process' with
-;; an explicit argv list — never `shell-command' with a concatenated
+;; an explicit argv list -- never `shell-command' with a concatenated
 ;; string.  This eliminates an entire category of bugs around quoting,
 ;; spaces in paths, and shell injection.
 
@@ -165,7 +165,7 @@ The result is cached for the rest of the Emacs session.  Pass a
 non-nil REFRESH to force re-evaluation, e.g. after the user has
 just set `elot-robot-jar-path' via `customize'.
 
-This is a *cheap* probe — it only checks the filesystem and
+This is a *cheap* probe -- it only checks the filesystem and
 `exec-path'.  It does *not* spawn a JVM.  Use `elot-robot-version'
 when you need to verify ROBOT actually runs."
   (when (or refresh (eq elot-robot--available-cache 'unset))
@@ -334,7 +334,7 @@ exit codes (and timeouts) are *returned* in the plist, so callers
 can classify them (see `elot-robot-classify')."
   (unless (elot-robot-available-p)
     (user-error
-     "ROBOT not available — set `elot-robot-jar-path' or install `robot' on PATH"))
+     "ROBOT not available -- set `elot-robot-jar-path' or install `robot' on PATH"))
   (let* ((prefix    (elot-robot-invocation))
          (full-argv (append prefix args))
          (program   (car full-argv))
