@@ -491,12 +491,12 @@ Checks for `elot-robot-jar-path`."
                elot-robot-jar-path
                (not (string-empty-p elot-robot-jar-path))
                (file-exists-p elot-robot-jar-path)))
-      ;; ROBOT jar not available — skip silently in batch, error interactively
+      ;; ROBOT jar not available -- skip silently in batch, error interactively
       (if noninteractive
           (message "[elot-robot-omn-to-ttl] Skipping ROBOT conversion: jar path is empty or invalid.")
         (error "elot-robot-jar-path is not set or invalid: %s" elot-robot-jar-path))
 
-    ;; ROBOT jar available — proceed with conversion
+    ;; ROBOT jar available -- proceed with conversion
     (let* ((output-file (concat (file-name-sans-extension omnfile) ".ttl"))
            ;; Base command arguments list (suitable for both helpers)
            (command-args (list "java" "-jar" elot-robot-jar-path

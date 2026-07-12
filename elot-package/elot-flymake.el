@@ -29,8 +29,8 @@
 ;; `elot-lint.el') to Emacs's built-in Flymake framework.
 ;;
 ;; When `elot-mode' is active, Flymake runs the ELOT lint checkers in
-;; the background and underlines problems directly in the buffer —
-;; errors in red, warnings in yellow — just like the "squiggly lines"
+;; the background and underlines problems directly in the buffer --
+;; errors in red, warnings in yellow -- just like the "squiggly lines"
 ;; in VS Code.
 ;;
 ;; The `org-lint' list view (M-x elot-org-lint) continues to work as

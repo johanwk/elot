@@ -163,7 +163,7 @@ You can choose any face (e.g. `italic', `shadow', `underline')"
            (0
             (unless (memq (get-char-property (match-beginning 0) 'face)
                           org-level-faces)
-              ;; bind once per match — match-string and both ht lookups
+              ;; bind once per match -- match-string and both ht lookups
               (let* ((id    (match-string 0))
                      (label (elot-codelist-id-label id))
                      (rtype (elot-attriblist-label-value label "rdf:type")))
