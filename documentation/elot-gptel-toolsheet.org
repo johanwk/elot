@@ -382,6 +382,23 @@ considers documented.  Either the checker is not recognising an
 authored annotation it should, or the fixtures need updating.  Needs
 investigation in Phase 1.  P0 (red).
 
+*RESOLVED (2026-07-12): fixed fixtures/tests, not the checker.*  Root
+cause: the P08 checker was deliberately tightened so =rdfs:label= alone
+no longer counts as documentation.  The failing fixtures still assumed
+the old "label counts" behaviour, so P08 correctly fired on label-only
+subjects and tripped the corpus harness's "no other oops checker fires"
+guard.  Changes: (1) =P24-recursive-definition.org= and
+=P32-duplicate-labels.org= fixtures given a =skos:definition= on their
+label-only subjects (=ex:recursive=, =ex:twin1=, =ex:twin2=) so each
+fixture isolates its own OOPS pattern; (2) =oops-lint-sliver.org= +
+=elot-lint-oops-test.el=: =ex:labelled= dropped from the
+=p08-silent-on-documented= list and a new
+=elot-lint-oops-test-p08-fires-on-label-only= test added that pins the
+tightened policy; sliver header comment updated.  Checker/tool bodies
+unchanged.  *CONFIRMED GREEN (2026-07-12):* =make lint-oops-test
+corpus-oops-test= passed 12 resp. 2 tests, 0 unexpected.  Cluster C is
+CLOSED.  Clears the final 2 of the 9 Phase 1 P0 reds.
+
 ** Bucket 3 -- skipped-without-ROBOT
 
 - sources-test: 2 skipped (*) -- ROBOT-gated Tier-1 ingestion tests.
@@ -427,9 +444,9 @@ Ran the full ~40-target list.  Result: *36 targets green, 4 red* (the
 | lint-content-test             |    16 |          0 |                     |
 | check-test                    |    13 |          0 |                     |
 | subclass-in-dl-test           |     5 |          0 |                     |
-| lint-oops-test                |    11 |          1 | Cluster C           |
+| lint-oops-test                |    11 |          1 | Cluster C (RESOLVED)|
 | corpus-test                   |     7 |          0 |                     |
-| corpus-oops-test              |     2 |          1 | Cluster C           |
+| corpus-oops-test              |     2 |          1 | Cluster C (RESOLVED)|
 | lint-axiom-signature-test     |    12 |          0 |                     |
 | id-test                       |    53 |          0 |                     |
 | id-insert-test                |    34 |          1 | Cluster A           |
