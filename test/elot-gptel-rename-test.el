@@ -348,6 +348,8 @@ right argument shape."
            (args (plist-get plist :args)))
       (should (eq (plist-get plist :function)
                   'elot-gptel-tool-rename-resource))
+      ;; Mutating tool -- must carry `:confirm t' like the other mutators.
+      (should (eq t (plist-get plist :confirm)))
       (should (= 7 (length args)))
       (should (equal (plist-get (nth 0 args) :name) "file"))
       (should (equal (plist-get (nth 1 args) :name) "source"))

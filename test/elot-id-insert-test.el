@@ -161,7 +161,7 @@ Point is moved to the first match of HEADLINE-SEARCH-RE before BODY runs."
 
 
 ;;; ---------------------------------------------------------------------------
-;;; Child insert + refusal under datatypes/individuals
+;;; Child insert + refusal under datatypes
 ;;; ---------------------------------------------------------------------------
 
 (ert-deftest elot-id-insert-test-child-under-class ()
@@ -175,9 +175,17 @@ Point is moved to the first match of HEADLINE-SEARCH-RE before BODY runs."
   (elot-id-insert-test--with-buffer "slug" "^\\*\\*\\* myType"
     (should-error (elot-id-insert--do-insert t 1 '("sub")) :type 'user-error)))
 
-(ert-deftest elot-id-insert-test-child-refused-individual-resource ()
+(ert-deftest elot-id-insert-test-child-allowed-under-individual ()
+  "Child insert under an individual is permitted.
+Unlike datatypes, individuals may carry sub-headings: the outline
+nesting expresses an author-chosen object property declared via the
+`:ELOT-subheading-relation:' heading property (SKOS `broader' being
+the initial use case, but any object property is allowed)."
   (elot-id-insert-test--with-buffer "slug" "^\\*\\*\\* spooky"
-    (should-error (elot-id-insert--do-insert t 1 '("sub")) :type 'user-error)))
+    (let ((curies (elot-id-insert--do-insert t 1 '("sub"))))
+      (should (= (length curies) 1))
+      (beginning-of-line)
+      (should (looking-at "^\\*\\*\\*\\* sub (")))))
 
 (ert-deftest elot-id-insert-test-child-allowed-on-section-heading ()
   "Child insert directly on the level-2 section heading is permitted

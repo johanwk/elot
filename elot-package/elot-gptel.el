@@ -7239,6 +7239,7 @@ ROBOT.  Examples: \"Dog SubClassOf: Animal\", \
 (default 1).")))
     ("elot_rename_resource"
      :function elot-gptel-tool-rename-resource
+     :confirm t
      :description
      "Rename a declared resource CURIE everywhere it appears in an ELOT .org file.
 
@@ -7336,6 +7337,7 @@ outline level.  Use `merge' to fold one resource into an existing \
 co-extensive one (the workflow behind `elot_replace_with_parent').")))
     ("elot_move_resource"
      :function elot-gptel-tool-move-resource
+     :confirm t
      :description
      "Move a resource heading within an ELOT .org file.
 

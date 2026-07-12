@@ -9,8 +9,8 @@
 
 37 tools registered in =elot-gptel--tool-specs=.  Every spec has a
 matching arm in =elot-gptel--tool-thunk=; every dispatcher arm has a
-spec (37/37).  RO = read-only, MUT = mutating (has =:confirm t=),
-MUT* = mutating in effect but spec has NO =:confirm t= (FINDING).
+spec (37/37).  RO = read-only, MUT = mutating (has =:confirm t=).
+All 9 mutators now carry =:confirm t= (rename/move fixed in Step 1.2).
 
 ** Read-only / diagnostic tools
 
@@ -61,8 +61,8 @@ MUT* = mutating in effect but spec has NO =:confirm t= (FINDING).
 |------------------------------+-----------------------------+-------------------------------------------------------------+------|
 | elot_edit_axiom              | edit-axiom                  | file, subject, keyword, [fragment, op, match-fragment]      | MUT  |
 | elot_edit_axioms             | edit-axioms                 | file, edits, [dry-run]                                      | MUT  |
-| elot_rename_resource         | rename-resource             | file, source, target, [ontology, target-iri, new-label, op] | MUT* |
-| elot_move_resource           | move-resource               | file, source, target, [as]                                  | MUT* |
+| elot_rename_resource         | rename-resource             | file, source, target, [ontology, target-iri, new-label, op] | MUT  |
+| elot_move_resource           | move-resource               | file, source, target, [as]                                  | MUT  |
 | elot_replace_with_parent     | replace-with-parent         | file, subject, [parent, dry-run]                            | MUT  |
 | elot_delete_resource         | delete-resource             | file, subject, [cascade, dry-run]                           | MUT  |
 | elot_insert_sibling_resource | insert-sibling-resource     | file, anchor, labels                                        | MUT  |
@@ -71,13 +71,14 @@ MUT* = mutating in effect but spec has NO =:confirm t= (FINDING).
 
 * Findings (feed Phase 1 / Phase 2)
 
-1. *[P0 candidate -> Step 1.2 / 2.2]* =elot_rename_resource= and
-   =elot_move_resource= are mutating tools but their specs carry NO
-   =:confirm t=.  Every other mutator (delete, replace_with_parent,
-   the three inserts, edit_axiom, edit_axioms, db_remove_source) does.
-   Decide whether this is intentional (they are already gated by
-   =elot-gptel-allow-side-effects=) or a missing confirm flag.  The
-   registry meta-test (Step 1.2) should pin whichever answer we pick.
+1. *[RESOLVED -> Step 1.2]* =elot_rename_resource= and
+   =elot_move_resource= were mutating tools whose specs carried NO
+   =:confirm t=, unlike every other mutator (delete, replace_with_parent,
+   the three inserts, edit_axiom, edit_axioms, db_remove_source).
+   Fixed: both specs now carry =:confirm t=, and each spec-registration
+   test (=elot-gptel-rename-test=, =elot-gptel-move-test=) asserts it.
+   The registry meta-test (still open in Step 1.2) will pin this across
+   the whole roster automatically.
 
 2. Spec <-> dispatcher parity is clean: 37 specs, 37 dispatcher arms,
    arities agree by inspection.  No orphan arms, no missing arms.
@@ -86,9 +87,373 @@ MUT* = mutating in effect but spec has NO =:confirm t= (FINDING).
    is =fboundp= at load time, and capture =:enum= sets vs what each
    implementation validates (Step 1.2 / Step 1.3 input).
 
+* DONE Step 0.2 -- build / lint debt inventory
+CLOSED: [2026-07-12 søn. 19:59]
+
+Findings only; nothing fixed here (feeds Phase 3).
+
+*Verdict (elot-gptel.el evidence):*
+- byte-compile (canonical =make byte-compile=): clean.
+- package-lint: no actionable debt.
+- checkdoc: cosmetic docstring/message-style debt only; deferred to
+  Phase 3 (where it is fixed anyway).
+
+** byte-compile -- DONE (clean)
+
+*Canonical baseline = the =make byte-compile= target.*  The package
+files legitimately =require= one another, so the authoritative build
+compiles them together with the package dir on =load-path=:
+
+: cd elot-package && emacs --batch -L . \
+:   --eval "(setq byte-compile-error-on-warn nil)" \
+:   -f batch-byte-compile <all *.el>
+
+Run over all 16 files (elot-db, elot-defaults, elot-flymake,
+elot-gptel, elot-id-insert, elot-id-move, elot-id-rename, elot-id,
+elot-label-display, elot-lint, elot-mode, elot-owl-grammar, elot-robot,
+elot-sources, elot-tangle, elot) it is *clean -- zero warnings, zero
+errors*.  Real Step 0.2 build debt: *none*.
+
+*** Isolated per-file runs (ARTEFACT, not the baseline)
+
+The per-file =emacs -Q --batch -f batch-byte-compile FILE= run is
+*not* a valid baseline: without =-L .= intra-package =require=s do not
+resolve (e.g. elot-label-display.el errors with "Cannot open load
+file: elot-tangle"), and without org preloaded the org-* references
+show as undefined.  Load-path / load-order artefacts of compiling in
+isolation, *not* real defects -- kept only for the record.
+
+Captured on elot-gptel.el: 26 warnings in three classes -- all
+disappear under the canonical =make byte-compile= run above:
+
+- *Class A -- unused lexical =org-inhibit-startup= / =org-mode-hook=*
+  (9 sites, 18 warnings): a =let= binds these two around org parsing but
+  never references them in-scope.  Sites: elot-gptel--run-lint (407-408),
+  --tangle-ontologies-to-workspace (633-634), --axiom-synthesise-draft
+  (4077), --apply-mutation (4385), --axiom-find-rows (4567),
+  --axiom-apply-edit (4613), tool-delete-resource (6446),
+  tool-replace-with-parent (6663).  Real (harmless) dead bindings ->
+  Phase 3 cleanup: either drop them or actually bind them via =dlet=/set.
+
+- *Class B -- free variable* =elot-codelist-ht= in
+  --slurp-label-context (1916): needs a =defvar= / =require= so the
+  reference is declared.  Real -> Phase 3.
+
+- *Class C -- "function ... not known to be defined"* (13 warnings, all
+  =org-*= / =org-lint-*= at "end of data"): load-order artefact of
+  compiling standalone without org loaded.  Not a bug, but Phase 3 should
+  add =(require 'org)= / =(require 'org-lint)= / =(eval-when-compile
+  (require 'org-element))= or explicit =declare-function= to silence.
+
+** package-lint -- DONE (no actionable debt)
+
+=package-lint-current-buffer= on elot-gptel.el reports 313 issues, but
+they are *all* of the "you should depend on (emacs \"NN\")" family
+(lexical-binding, cl-lib, subr-x, string-empty-p, ...).  These are
+false positives here: the package's dependency floor is declared in
+elot.el with =;; Package-Requires: ((emacs "30.1"))=, which subsumes
+every version package-lint asks for.  package-lint flags them because
+it is run against elot-gptel.el in isolation rather than the package's
+main file.  *No actionable package-lint debt* -> Phase 3 need only
+confirm the header is read from elot.el.
+
+** checkdoc -- documentation debt (Phase 3)
+
+=checkdoc-file= on elot-gptel.el yields many messages, all cosmetic
+docstring/message-style nits (no correctness impact).  Grouped:
+
+- *"Messages should start with a capital letter"* -- the large majority
+  (~130 sites).  =message=/=error= strings begin lower-case.  Bulk,
+  mechanical.
+- *"Open parenthesis in column 0 should be escaped"* (~17 sites, e.g.
+  200, 1090, 1660, 2112, 2547, 2823, 3668, 3862, 4042, 4981, 5534,
+  5688, 5706, 5734, 6172, 6323): =(= at column 0 inside docstrings/
+  strings; escape as =\(=.
+- *"Argument X should appear (as X) in the doc string"* (~11 sites:
+  1542 file, 1578 iri-or-curie, 3617 file, 4050 label, 4071/4564
+  subject-curie, 4361 dry-run, 4580 rows, 4607 file-contents, 4754
+  file, 6288 curie, 6622 file): docstrings omit documented args.
+- *"First line is not a complete sentence"* (2989, 3309, 3831, 4028,
+  4489, 4981, 8526).
+- *"Probably \"X\" should be imperative"* (1253/2012/3365 contains,
+  4497 runs, 5426 looks, 5642 Returns): docstring first-verb mood.
+- *"Lisp symbol should appear in quotes"* (2450/4132 project-root,
+  5285 atomic-change-group).
+- *"Disambiguate ... by preceding w/ function,command,..."* (389
+  buffer-file-name, 8685/8708 gptel-tools).
+- *One-offs*: 5561 "Error messages should *not* end with a period";
+  6546 "White space found at end of line".
+
+All Phase 3 hygiene; none affect behaviour.  (The stray "Preferred
+=gptel-model= ... Gemini" line is gptel init noise, not checkdoc.)
+
+Deferred to Phase 3 (not a Phase 0 blocker): the checkdoc sweep over
+the other 15 sibling .el files, and confirming package-lint reads the
+header from elot.el.  The build baseline is clean and the checkdoc
+nits are uniformly cosmetic, so cataloguing more now adds little.
+
+
+* Step 0.3 -- ERT pass/fail/skip baseline
+
+Source: `make all` (== `make test`) on 2026-07-12, keep-lines summary
+of the per-target ERT footer.
+
+** Key finding (P0 for CI, Step 4.2): the default target is partial
+
+`make all' aliases `make test', whose prerequisite list *stops at
+gptel-test'.  It runs 36 of the ~90 targets defined in the Makefile.
+NOT run by the default target:
+
+- Every ROBOT-gated tool target: robot-test, omn-validate-test,
+  omn-report-test, gptel-diff-test, sparql-tool-test, reasoning-test.
+- Every M9 authoring-tool target: gptel-rename-test, move-resource-test,
+  gptel-move-test, gptel-insert-test, gptel-delete-apply-test,
+  gptel-delete-resource-test, gptel-delete-reference-scan-test,
+  gptel-replace-parents-test, gptel-replace-with-parent-test,
+  gptel-rename-merge-test, gptel-edit-axiom-test, gptel-edit-axioms-test,
+  gptel-axiom-keywords-test, gptel-axiom-check-test,
+  gptel-confirm-mutations-test, gptel-db-activate-source-test.
+- The db/gptel shims + read-only tools: readonly-test,
+  db-query-tool-test, db-schema-tool-test, db-shims-test,
+  db-shims-wave-b-test, db-search-test, db-borrow-test,
+  db-borrow-compose-test, conventions-test, lint-content-test,
+  check-test.
+- Lint/corpus/id: subclass-in-dl-test, lint-oops-test, corpus-test,
+  corpus-oops-test, lint-axiom-signature-test, tangle-blank-omn-row-test,
+  lint-blank-omn-row-test, id-test, id-insert-test, id-set-scheme-test,
+  id-rename-test, hh-stale-test.
+
+Consequence: "make all green" does NOT cover the tool surface under
+stabilisation.  The Phase 4 CI target must run an aggregate that
+includes all pure-Elisp targets (bucket 1) and a ROBOT job for the
+ROBOT-gated ones (bucket 3).  Recommend adding a `test-all' (or
+`test-gptel') aggregate target so this can't drift again.
+
+** Bucket 1 -- green today (ran, 0 unexpected)
+
+All 36 targets that the default run exercised passed:
+
+| target                          | tests | note        |
+|---------------------------------+-------+-------------|
+| test-helper-guard-test          |     2 |             |
+| db-test                         |     6 |             |
+| prefix-test                     |    18 |             |
+| crud-test                       |    13 |             |
+| remove-source-test              |    12 |             |
+| sources-test                    |    15 | 2 skipped * |
+| register-test                   |    10 |             |
+| active-sources-test             |     7 |             |
+| slurp-integration-test          |     5 |             |
+| global-mode-test                |     7 |             |
+| active-sources-ui-test          |     9 |             |
+| ttl-prefix-test                 |    11 |             |
+| menu-test                       |     7 |             |
+| step-1-11-test                  |     6 |             |
+| step-1-12-test                  |     8 |             |
+| step-1-12-item-b-test           |     5 |             |
+| step-1-13-test                  |     8 |             |
+| step-1-14-test                  |     1 |             |
+| step-1-15-test                  |     8 |             |
+| step-1-16-1-test                |     8 |             |
+| step-1-16-2-test                |     3 |             |
+| step-1-16-3-test                |     3 |             |
+| step-1-16-4-test                |     4 |             |
+| step-1-16-5-test                |     5 |             |
+| step-1-16-6-test                |     6 |             |
+| step-1-16-7-test                |     3 |             |
+| step-1-16-8-test                |     5 |             |
+| step-2-1-test                   |     3 |             |
+| sparql-merge-prefixes-test      |    13 |             |
+| sparql-exec-helpers-test        |    15 |             |
+| sparql-advice-test              |     4 |             |
+| sparql-roundtrip-test           |     7 |             |
+| tangle-roundtrip-test           |     2 |             |
+| load-without-sparql-test        |     1 |             |
+| golden-test                     |     2 |             |
+| gptel-test                      |     6 |             |
+
+Total: 245 tests, 0 unexpected.
+
+** Bucket 2 -- red today (P0, must be green before merge)
+
+The bucket-4 run (make -k, all ~40 targets) surfaced *9 failing tests*
+across *4 targets*, clustering into *3 root causes*:
+
+*** Cluster A -- child insert under an individual: WANTED (author-chosen subheading relation) -- RESOLVED (tests rewritten)
+
+- gptel-insert-test: elot-gptel-insert-test-child-refused-under-individual
+- id-insert-test:    elot-id-insert-test-child-refused-individual-resource
+
+Original diagnosis (superseded): inserting a child under an individual
+was read as a missing guard, since individuals cannot have
+subclasses/subproperties.
+
+*Reframed by maintainer (2026-07-12):* NOT a defect -- the behaviour is
+*wanted*.  Nesting one individual under another in the Org outline
+authors an object-property relation between them.  The *author chooses*
+which object property applies to sub-headings via a heading property,
+e.g.:
+
+#+begin_example
+:PROPERTIES:
+:ELOT-subheading-relation: skos:broader
+:END:
+#+end_example
+
+SKOS =broader= is the initial and likely most common use case, but the
+mechanism is general -- any object property may be chosen, for other
+applications too.  So accepting a child under an individual is
+*correct*, and the two tests that expect a refusal are the thing that
+is wrong.
+
+*Action:* the current tool/insert behaviour (accept) is retained.  The
+two failing tests
+  - =elot-gptel-insert-test-child-refused-under-individual=
+  - =elot-id-insert-test-child-refused-individual-resource=
+should be *deleted or rewritten* to assert that a child under an
+individual is *accepted* (ideally with a positive test that sets
+=:ELOT-subheading-relation:= and checks the resulting object-property
+nesting).  The datatype guard is unaffected (datatypes genuinely
+cannot take children -- that guard stays).
+
+This flips Cluster A from "fix the code" to "fix the tests"; net effect
+still clears both reds.  Phase 1 slice.
+
+*RESOLVED (Phase 1):* the two refusal tests were replaced by positive
+tests asserting a child under an individual is *accepted*:
+  - =elot-gptel-insert-test-child-refused-under-individual= ->
+    =elot-gptel-insert-test-child-allowed-under-individual=
+  - =elot-id-insert-test-child-refused-individual-resource= ->
+    =elot-id-insert-test-child-allowed-under-individual=
+Tool/insert behaviour unchanged; datatype guard untouched.
+
+*CONFIRMED GREEN (2026-07-12):* live run of =make gptel-insert-test
+id-insert-test= passed 36 resp. 34 tests, 0 unexpected.  Cluster A is
+CLOSED.
+
+*** Cluster B -- edit-axiom(s) result-contract drift (6 tests)
+
+- gptel-edit-axiom-test:  elot-gptel-edit-axiom-test-rollback-on-lint-fail
+- gptel-edit-axioms-test: atomic-on-bad-edit, dry-run-bypasses-gate,
+  empty-fragment-ambiguous-among-empties, rollback-on-lint-fail,
+  side-effects-disabled
+
+Every failure is a *prefix / wording mismatch* between what the tool
+returns and what the test asserts:
+
+| test expects prefix        | tool now returns                                  |
+|----------------------------+---------------------------------------------------|
+| FAIL:                      | ERROR: revalidation failed -- changes rolled back |
+| FAIL at edits[N]:          | ERROR: edits[N]: ...                              |
+| FAIL (side-effects)        | ERROR: elot-gptel: mutation refused -- ...        |
+| OK: dry-run applied N edits | OK: applied N edits  (dry_run: file unchanged...) |
+
+The tool bodies were evidently re-worded (ERROR:/OK: applied ...) but
+the tests still assert the older FAIL:/dry-run wording.  Needs a
+*decision in Step 1.3* (error-path uniformity): pick the canonical
+prefixes, then align tool or tests.  Not a behaviour bug -- the tools
+do the right thing (rollback, refusal, dry-run) -- but a contract the
+tests pin to the old strings.  P0 (red), low-risk fix.
+
+*RESOLVED (2026-07-12): aligned the tests, not the tools.*  The
+=ERROR:= / =OK: applied ...= envelope is already the family-wide
+canonical contract -- the delete/insert/move/rename tests all assert
+=ERROR: revalidation failed -- changes rolled back=, and their tool
+bodies (via the shared =elot-gptel--apply-mutation=) emit it.  The
+edit-axiom(s) tests were the only outliers still pinned to the
+pre-refactor =FAIL:= / =dry-run applied= wording.  Six assertions
+updated: =elot-gptel-edit-axiom-test.el= (rollback-on-lint-fail) and
+=elot-gptel-edit-axioms-test.el= (atomic-on-bad-edit,
+rollback-on-lint-fail, side-effects-disabled, dry-run-bypasses-gate,
+empty-fragment-ambiguous-among-empties).  Tool bodies unchanged.
+*CONFIRMED GREEN (2026-07-12):* live run of =make gptel-edit-axiom-test
+gptel-edit-axioms-test= passed 11 resp. 19 tests, 0 unexpected.
+Cluster B is CLOSED.  Clears 6 of the 9 Phase 1 P0 reds.
+
+*** Cluster C -- OOPS P08 over-fires (2 tests)
+
+- lint-oops-test:   elot-lint-oops-test-p08-silent-on-documented
+- corpus-oops-test: elot-corpus-oops-test-fixtures (P24 fixture also
+  trips P08)
+
+The =elot/oops-missing-annotations= (P08) checker fires on a subject
+(=ex:labelled=, and =ex:recursive= in the P24 fixture) that the test
+considers documented.  Either the checker is not recognising an
+authored annotation it should, or the fixtures need updating.  Needs
+investigation in Phase 1.  P0 (red).
+
+** Bucket 3 -- skipped-without-ROBOT
+
+- sources-test: 2 skipped (*) -- ROBOT-gated Tier-1 ingestion tests.
+- Not visible in this run but ROBOT-gated by design (skip cleanly when
+  ROBOT absent; must go green in the Phase 4 ROBOT CI job):
+  robot-test, omn-validate-test, omn-report-test, gptel-diff-test,
+  sparql-tool-test, reasoning-test, sparql-roundtrip-test (ran green
+  here, so ROBOT *was* present in this run), ttl-prefix-test /
+  step-1-16-7-test (ROBOT-gated subsets), gptel-axiom-check-test.
+
+** Bucket 4 -- default-omitted targets (now run: make -k, 2026-07-12)
+
+Ran the full ~40-target list.  Result: *36 targets green, 4 red* (the
+9 tests catalogued in Bucket 2 above).  Per-target footers:
+
+| target                        | tests | unexpected | note                |
+|-------------------------------+-------+------------+---------------------|
+| gptel-rename-test             |    12 |          0 |                     |
+| gptel-move-test               |     9 |          0 | :confirm t (1.2)    |
+| move-resource-test            |    21 |          0 |                     |
+| gptel-insert-test             |    36 |          1 | Cluster A           |
+| gptel-delete-apply-test       |     8 |          0 |                     |
+| gptel-delete-resource-test    |    15 |          0 |                     |
+| gptel-delete-reference-scan   |    12 |          0 |                     |
+| gptel-replace-parents-test    |     8 |          0 |                     |
+| gptel-replace-with-parent     |     9 |          0 |                     |
+| gptel-rename-merge-test       |     5 |          0 |                     |
+| gptel-edit-axiom-test         |    11 |          1 | Cluster B (RESOLVED)|
+| gptel-edit-axioms-test        |    19 |          5 | Cluster B (RESOLVED)|
+| gptel-axiom-keywords-test     |    14 |          0 |                     |
+| gptel-axiom-check-test        |    10 |          0 |                     |
+| gptel-confirm-mutations-test  |     7 |          0 |                     |
+| gptel-db-activate-source-test |    12 |          0 |                     |
+| readonly-test                 |    20 |          0 |                     |
+| db-query-tool-test            |    18 |          0 |                     |
+| db-schema-tool-test           |     3 |          0 |                     |
+| db-shims-test                 |    10 |          0 |                     |
+| db-shims-wave-b-test          |    13 |          0 |                     |
+| db-search-test                |    26 |          0 |                     |
+| db-borrow-test                |    23 |          0 |                     |
+| db-borrow-compose-test        |    11 |          0 |                     |
+| conventions-test              |     5 |          0 |                     |
+| lint-content-test             |    16 |          0 |                     |
+| check-test                    |    13 |          0 |                     |
+| subclass-in-dl-test           |     5 |          0 |                     |
+| lint-oops-test                |    11 |          1 | Cluster C           |
+| corpus-test                   |     7 |          0 |                     |
+| corpus-oops-test              |     2 |          1 | Cluster C           |
+| lint-axiom-signature-test     |    12 |          0 |                     |
+| id-test                       |    53 |          0 |                     |
+| id-insert-test                |    34 |          1 | Cluster A           |
+| id-set-scheme-test            |    12 |          0 |                     |
+| id-rename-test                |    19 |          0 |                     |
+| hh-stale-test                 |    11 |          0 |                     |
+| tangle-blank-omn-row-test     |     9 |          0 |                     |
+| lint-blank-omn-row-test       |     9 |          0 |                     |
+| robot-test                    |    28 |          0 | ROBOT present       |
+| omn-validate-test             |    10 |          0 | ROBOT present       |
+| omn-report-test               |     8 |          0 | ROBOT present       |
+| gptel-diff-test               |     8 |          0 | ROBOT present       |
+| sparql-tool-test              |    25 |          0 | ROBOT present       |
+| reasoning-test                |    24 |          0 | ROBOT present       |
+
+All ROBOT-gated targets ran green (ROBOT was on PATH for this run).
+The only reds are the 3 clusters in Bucket 2.
+
+
 * Open items for the rest of Phase 0
 
-- Step 0.2: byte-compile / checkdoc / package-lint debt inventory.
-- Step 0.3: per-target ERT pass/fail/skip table (needs a test run).
+- Step 0.3: COMPLETE -- full table above.  Grand total across default
+  + bucket-4 runs: ~245 (default) + ~590 (bucket 4) tests; *9 red*, in
+  3 clusters (A insert-guard, B edit-axiom contract, C OOPS P08).
+  These become the Phase 1 P0 worklist.
 - Step 0.4: dependency-posture findings (gptel soft, ROBOT optional,
   single ROBOT process layer in elot-robot.el).

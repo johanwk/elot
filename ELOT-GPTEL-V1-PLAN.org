@@ -91,7 +91,7 @@ for Step 1.x.
 *Acceptance:* the toolsheet exists and every tool is accounted for in
 both the spec table and the dispatcher.
 
-** TODO Step 0.2 Establish the "does it build" baseline
+** DONE Step 0.2 Establish the "does it build" baseline
 
 Record, in the toolsheet, the current output of:
 
@@ -107,7 +107,7 @@ Phase 3.
 *Acceptance:* a written debt inventory (byte-compile warnings,
 checkdoc gripes, package-lint findings) exists.
 
-** TODO Step 0.3 Establish the "do the tests pass" baseline
+** DONE Step 0.3 Establish the "do the tests pass" baseline
 
 Run every ERT target in =test/Makefile=.  Record, per target:
 green / red / skipped-because-no-ROBOT.

@@ -191,7 +191,8 @@
 
 
 ;;; ---------------------------------------------------------------------------
-;;; Refusal: child under a Datatypes resource (level 3+)
+;;; Refusal: child under a Datatypes resource (level 3+);
+;;; but allowed under an Individual (author-chosen subheading relation)
 ;;; ---------------------------------------------------------------------------
 
 (ert-deftest elot-gptel-insert-test-child-refused-under-datatype ()
@@ -204,7 +205,11 @@
         (should (stringp out))
         (should (string-prefix-p "ERROR:" out))))))
 
-(ert-deftest elot-gptel-insert-test-child-refused-under-individual ()
+(ert-deftest elot-gptel-insert-test-child-allowed-under-individual ()
+  "Child insert under an individual is permitted.
+Unlike datatypes, individuals may carry sub-headings, which express an
+author-chosen object property (via the `:ELOT-subheading-relation:'
+heading property; SKOS `broader' is the initial use case)."
   (elot-gptel-insert-test--with-fixture path
     (let ((elot-gptel-allow-side-effects t)
           (default-directory elot-gptel-insert-test--repo-root))
@@ -212,7 +217,9 @@
                   (elot-gptel-insert-test--rel path)
                   "ex:spooky" '("sub"))))
         (should (stringp out))
-        (should (string-prefix-p "ERROR:" out))))))
+        (should (string-prefix-p "OK: inserted 1 child under ex:spooky" out)))
+      (let ((bytes (elot-gptel-insert-test--read path)))
+        (should (string-match-p "^\\*\\*\\*\\* sub (ex:sub)" bytes))))))
 
 
 ;;; ---------------------------------------------------------------------------

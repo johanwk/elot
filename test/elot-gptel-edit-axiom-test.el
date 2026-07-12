@@ -299,7 +299,7 @@
             (let ((out (elot-gptel-tool-edit-axiom
                         (elot-gptel-edit-axiom-test--rel path)
                         "ex:dog" "rdfs:comment" "\"x\"@en")))
-              (should (string-prefix-p "FAIL:" out))
+              (should (string-prefix-p "ERROR:" out))
               (should (string-match-p "rolled back" out)))
             ;; Bytes on disk unchanged.
             (should (equal before
