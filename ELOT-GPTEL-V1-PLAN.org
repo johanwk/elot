@@ -6,8 +6,10 @@
 
 This is the *single, authoritative* plan for finishing =elot-gptel=
 and shipping it as part of a new ELOT MELPA release.  It replaces the
-sprawling =ELOT-GPTEL-PLAN.org= (now retired -- see "Relationship to
-the old plan" below).
+sprawling =ELOT-GPTEL-PLAN.org=, which has been retired and archived
+(moved out of the git root -- see "Relationship to the old plan"
+below).  This document stands on its own; the archived plan is not
+required reading.
 
 The goal is deliberately narrow and conservative:
 
@@ -48,18 +50,23 @@ post-v1* (see "Deferred to post-v1").
 
 * Relationship to the old plan
 
-=ELOT-GPTEL-PLAN.org= is *retired*.  Do not add new work items to it.
-It remains in the repository only as a historical record of how the
-tool surface was built (Milestones 1--10) and as the source of truth
-for the /rationale/ behind individual tools.  When this v1 plan says
-"the X tool", the authoritative description of X's behaviour is its
-docstring + tool-spec in =elot-gptel.el=, with the old plan as
-background.
+=ELOT-GPTEL-PLAN.org= is *retired and archived* -- it has been moved
+out of the git root and out of the way.  This document does not depend
+on it: everything needed to finish and ship v1 is captured here.
+
+The old plan is kept only as a historical record of how the tool
+surface was built (its Milestones 1--10) and as background for the
+/rationale/ behind individual tools.  When this v1 plan says "the X
+tool", the authoritative description of X's behaviour is its
+docstring + tool-spec in =elot-gptel.el= -- *not* the archived plan.
+Do not add new work items to the archived plan; do not treat it as a
+live reference during v1 work.
 
 What the old plan called Milestones 11--15 (fuzzy search, resource
 move/rename ladder beyond what shipped, housekeeping lift,
 =elot_new_ontology=, ROBOT impact analysis) is *out of scope for v1*.
-See "Deferred to post-v1".
+Those ideas are summarised in full under "Deferred to post-v1" below,
+so the archived plan does not need to be consulted to recover them.
 
 * Phase 0 -- Establish the baseline (know where we stand)
 
@@ -374,7 +381,7 @@ is ticked.  This is the contract.
 
 - [ ] v1 roster decisions recorded (ship/hide/cut).
 - [ ] Deferred items recorded (below) and NOT registered as tools.
-- [ ] Old =ELOT-GPTEL-PLAN.org= marked retired.
+- [ ] Old =ELOT-GPTEL-PLAN.org= archived (moved out of the git root).
 
 ** TODO Step 5.5 Live smoke test (human-in-the-loop)
 
@@ -452,7 +459,7 @@ registered as a tool in the v1 roster.
 
 | Date       | Decision                                                          |
 |------------+-------------------------------------------------------------------|
-| (today)    | =ELOT-GPTEL-PLAN.org= retired; this document is the v1 authority.  |
+| (today)    | =ELOT-GPTEL-PLAN.org= archived out of the git root; this document is the self-contained v1 authority. |
 | (today)    | v1 = stabilise the existing surface; no new tools/args/schemes.    |
 | (today)    | Bias to /hide/ (deregister) any not-confidently-robust tool for v1.|
 | (pending)  | v1 tool roster (Step 2.1).                                         |
