@@ -472,5 +472,46 @@ The only reds are the 3 clusters in Bucket 2.
   + bucket-4 runs: ~245 (default) + ~590 (bucket 4) tests; *9 red*, in
   3 clusters (A insert-guard, B edit-axiom contract, C OOPS P08).
   These become the Phase 1 P0 worklist.
-- Step 0.4: dependency-posture findings (gptel soft, ROBOT optional,
-  single ROBOT process layer in elot-robot.el).
+- Step 0.4: COMPLETE -- findings below.
+
+* DONE Step 0.4 -- dependency-posture findings
+
+Read-only audit; no code changed.  Per posture:
+
+- *gptel is a soft dependency: CONFIRMED.* elot-gptel.el declares the
+  gptel entry points via `declare-function' and pulls gptel only at
+  tool *registration*: `elot-gptel-register-tools' calls
+  (require 'gptel nil 'noerror) and `user-error's with an install hint
+  when gptel is absent (elot-gptel.el ~l.8711-8713);
+  `elot-gptel-unregister-tools' guards on (featurep 'gptel); and the
+  `elot-gptel-confirm-mutations' setter re-registers only
+  (when (featurep 'gptel) ...).  There is no top-level (require 'gptel).
+  The analogous optional-deps load contract is covered by
+  test/elot-load-without-sparql-test.el, which shadows optional
+  packages unavailable in a child Emacs and asserts a clean load.
+- *ROBOT is optional: CONFIRMED.* `elot-robot-available-p' is a cheap
+  cached filesystem / exec-path probe (no JVM spawn); `elot-robot-run'
+  signals a clean `user-error' "ROBOT not available -- set
+  `elot-robot-jar-path' or install `robot' on PATH" rather than
+  crashing, and returns non-zero exits / timeouts in its result plist
+  for callers to classify.  ROBOT-absent degradation is exercised
+  across 11 test files: reasoning-test, omn-validate-test,
+  sparql-tool-test, gptel-check-test, gptel-diff-test,
+  gptel-omn-report-test, sources-test, sources-ttl-lang-test,
+  sparql-roundtrip-test, robot-test, ttl-prefix-test.
+- *Single ROBOT process layer in elot-robot.el: VIOLATIONS (legacy
+  paths).* elot-robot.el is the intended argv-based layer
+  (`elot-robot-run' via make-process / call-process[-region]), but
+  ROBOT is still invoked directly outside it in deprecated code:
+  elot.el `elot-robot-execute-query' uses (call-process "java" ...
+  "-jar" elot-robot-jar-path ...) (~l.260) and the deprecated
+  `elot-robot-command' uses `shell-command' (~l.384); elot-tangle.el
+  `elot-robot-omn-to-ttl--batch' uses `call-process' (~l.400) and
+  `elot-robot-omn-to-ttl--interactive' uses `make-process' (~l.444).
+  These predate `elot-robot-run' and are not yet routed through it, so
+  the single-layer posture is not fully met.  No stray
+  `shell-command-to-string' anywhere; the only "robot"/process-spawn
+  sites are the ones listed.  Migrating the four legacy call sites onto
+  `elot-robot-run' is a follow-up (not in Phase 0 scope).
+
+This closes Phase 0.

@@ -119,7 +119,7 @@ Split the result into three buckets:
 
 *Acceptance:* a per-target pass/fail/skip table exists.
 
-** TODO Step 0.4 Confirm the dependency posture
+** DONE Step 0.4 Confirm the dependency posture
 
 Verify (read-only) that:
 
@@ -419,6 +419,74 @@ read-only surface immediately.
 
 Open a =post-v1= tracking issue listing the deferred milestones (see
 below) so the retired plan's remaining ideas are not lost.
+
+* Phase 7 -- Unify ROBOT invocation on the shared layer
+
+Not essential for v1; captured here so it is not lost.  If it is not
+picked up before release, open a GitHub issue at that point.
+
+*Context (call-site audit, all Elisp files):*
+
+- =elot-robot.el= is the intended single process layer: =elot-robot-run=
+  (argv primitive), =elot-robot-invocation= (jar-vs-shim selection +
+  =elot-robot-jvm-args=), =elot-robot-classify= / =-classify-result=,
+  the timeout watchdog, and the workspace helper.
+- =elot-sources.el= (=elot-source--robot-run=) and all of =elot-gptel.el=
+  (the validate / SPARQL / reason tools) already go through
+  =elot-robot-run=.  No change needed.
+- =elot-tangle.el= is the sole outlier.  It invokes ROBOT three
+  independent ways that all bypass the shared layer:
+  1. =elot-robot-command= -- =shell-command= over =elot-robot-command-str=
+     (already annotated /Deprecated/).
+  2. =elot-robot-omn-to-ttl--batch= -- hand-built ="java" "-jar" ...=
+     argv, =call-process=, =kill-emacs 1= on failure, bespoke stderr
+     grepping.
+  3. =elot-robot-omn-to-ttl--interactive= -- its own =make-process=
+     with a duplicate Manchester-parser-error regex.
+  =elot-robot-omn-to-ttl= itself hardcodes ="java" "-jar"=.
+
+*Consequences of the tangle.el path:* it ignores the =robot= shim
+fallback, ignores =elot-robot-jvm-args=, cannot honour a =:timeout=,
+and re-implements error parsing instead of calling
+=elot-robot-classify=.  (=elot--parse-robot-error-location= already
+wraps the classifier -- the desired precedent.)
+
+** TODO Step 7.1 Route OMN -> TTL conversion through =elot-robot-run=
+
+Reimplement =elot-robot-omn-to-ttl= (and collapse or retire the
+=--batch= / =--interactive= helpers) on top of =elot-robot-run=, so it
+uses =elot-robot-invocation= (jar or shim), respects
+=elot-robot-jvm-args=, and can take a =:timeout=.  Preserve the current
+batch-vs-interactive behavioural contract (batch: skip silently when
+no jar, fail hard on parse error; interactive: async feedback buffer
+and error jump).
+
+*Acceptance:* tangling =examples/pets.org= to =.ttl= works via both the
+jar form and a =robot= shim, with no hardcoded ="java" "-jar"= left in
+the conversion path.
+
+** TODO Step 7.2 Replace bespoke stderr scraping with =elot-robot-classify=
+
+Drive the tangle error report and the OMN-error jump from
+=elot-robot-classify-result= (via the existing
+=elot--parse-robot-error-location= wrapper), removing the duplicated
+=ManchesterOWLSyntaxOntologyParser= / =Encountered= regexes in the two
+helpers.
+
+*Acceptance:* a deliberately malformed OMN still reports a
+line/column and jumps to the offending heading, now sourced from the
+shared classifier.
+
+** TODO Step 7.3 Retire the deprecated shell entry points
+
+Remove =elot-robot-command= and stop deriving =elot-robot-command-str=
+as a live invocation path, keeping only the backwards-compat
+=defvar=/alias documented as inert.  Confirm no remaining caller in
+=elot-package/= uses =shell-command= for ROBOT.
+
+*Acceptance:* =grep= for =shell-command= and =elot-robot-command-str= in
+=elot-package/= shows only the compatibility alias and its docstring;
+the full ERT suite (including tangle tests) stays green.
 
 * Deferred to post-v1 (explicitly NOT in scope)
 
