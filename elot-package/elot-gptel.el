@@ -815,7 +815,7 @@ a plain-text report."
         (require 'elot-robot)
         (unless (elot-robot-available-p)
           (user-error
-           "elot-gptel: ROBOT not available — set `elot-robot-jar-path'"))
+           "elot-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
         (when (and profile
                    (not (member (upcase profile)
                                 elot-gptel--omn-validate-profiles)))
@@ -1457,7 +1457,7 @@ permitted; everything else is refused regardless of
         (require 'elot-robot)
         (unless (elot-robot-available-p)
           (user-error
-           "elot-gptel: ROBOT not available — set `elot-robot-jar-path'"))
+           "elot-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
         (unless (and query (stringp query)
                      (not (string-empty-p (string-trim query))))
           (user-error "elot-gptel: missing or empty query"))
@@ -1683,7 +1683,7 @@ Returns one of:
         (require 'elot-robot)
         (unless (elot-robot-available-p)
           (user-error
-           "elot-gptel: ROBOT not available — set `elot-robot-jar-path'"))
+           "elot-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
         (let* ((r (downcase (or reasoner "hermit"))))
           (unless (member r elot-gptel--reasoners)
             (user-error
@@ -1789,7 +1789,7 @@ the ELOT DB has them)."
         (require 'elot-robot)
         (unless (elot-robot-available-p)
           (user-error
-           "elot-gptel: ROBOT not available — set `elot-robot-jar-path'"))
+           "elot-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
         (let* ((r (downcase (or reasoner "hermit"))))
           (unless (member r elot-gptel--reasoners)
             (user-error
