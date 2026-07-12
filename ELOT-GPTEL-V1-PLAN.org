@@ -73,7 +73,7 @@ so the archived plan does not need to be consulted to recover them.
 Before changing anything, we pin down the current reality of the
 branch.  This phase produces *findings*, not code changes.
 
-** TODO Step 0.1 Inventory the shipped tool surface
+** DONE Step 0.1 Inventory the shipped tool surface
 
 Produce =documentation/elot-gptel-toolsheet.org= (a working note, can
 be deleted before merge) listing, from =elot-gptel--tool-specs=:
@@ -139,7 +139,7 @@ violations of) each posture.
 
 Fix only what Phase 0 surfaced.  No scope creep.
 
-** TODO Step 1.1 Fix red tests
+** DONE Step 1.1 Fix red tests
 
 Turn every bucket-2 (red today) test green.  Each fix is its own
 commit with the failing assertion quoted in the message.  If a test

@@ -39,5 +39,7 @@
 :END:
 *** Twin one (ex:twin1)
  - rdfs:label :: "Twin"@en
+ - skos:definition :: The first of two classes deliberately sharing a label.
 *** Twin two (ex:twin2)
  - rdfs:label :: "Twin"@en
+ - skos:definition :: The second of two classes deliberately sharing a label.

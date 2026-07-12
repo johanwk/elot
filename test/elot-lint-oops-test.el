@@ -89,15 +89,30 @@
                       lines))))
 
 (ert-deftest elot-lint-oops-test-p08-silent-on-documented ()
-  "P08 does not fire on resources with rdfs:label / rdfs:comment /
-skos:definition / dcterms:description."
+  "P08 does not fire on resources with an authored rdfs:comment /
+skos:definition / dcterms:description.
+
+Note: rdfs:label alone does NOT count as documentation (the
+heading-title label is auto-derived), so ex:labelled is
+deliberately excluded here and covered by
+`elot-lint-oops-test-p08-fires-on-label-only'."
   (let* ((out (elot-lint-oops-test--lint))
          (lines (elot-lint-oops-test--lines-matching
                  out 'elot/oops-missing-annotations)))
-    (dolist (curie '("ex:labelled" "ex:described" "ex:defined"
+    (dolist (curie '("ex:described" "ex:defined"
                      "ex:annotatedOp"))
       (dolist (line lines)
         (should-not (string-match-p (regexp-quote curie) line))))))
+
+(ert-deftest elot-lint-oops-test-p08-fires-on-label-only ()
+  "P08 fires on a resource carrying only rdfs:label.
+rdfs:label is auto-derived from the heading title and does not
+count as authored documentation, so ex:labelled must be flagged."
+  (let* ((out (elot-lint-oops-test--lint))
+         (lines (elot-lint-oops-test--lines-matching
+                 out 'elot/oops-missing-annotations)))
+    (should (seq-some (lambda (l) (string-match-p "ex:labelled" l))
+                      lines))))
 
 ;; -- P24 Recursive definition ---------------------------------------------
 

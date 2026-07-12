@@ -40,4 +40,5 @@
 :END:
 *** Recursive (ex:recursive)
  - rdfs:label :: "Recursive"@en
+ - skos:definition :: A class defined by reference to itself (kept P08-clean so this fixture isolates P24).
  - SubClassOf :: ex:recursive

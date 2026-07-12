@@ -12,9 +12,9 @@
 #
 #   P08 fires on:
 #     - ex:undocumented   (no rdfs:label, no comment, no definition)
+#     - ex:labelled       (rdfs:label only -- auto-derived, does not count)
 #
 #   P08 does NOT fire on:
-#     - ex:labelled       (has rdfs:label)
 #     - ex:described      (has rdfs:comment)
 #     - ex:defined        (has skos:definition)
 #     - ex:annotatedOp    (has dcterms:description)
