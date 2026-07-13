@@ -8729,11 +8729,27 @@ unchanged; useful for try-before-commit.  Default false."))))
   "Each entry is (NAME . PLIST) where PLIST is forwarded to
 `gptel-make-tool' after light translation.")
 
+(defun elot-gptel--truthy (v)
+  "Normalise a JSON-decoded boolean V to an Elisp boolean.
+gptel/json marshals JSON `false' into the symbol `:json-false',
+which is *non-nil* in Elisp -- so a naive `(if flag ...)' test
+treats an explicit `false' as true.  This helper coerces the
+`:json-false' sentinel (and the literal string \"false\") to nil,
+leaving every genuinely true value untouched.  Apply it to every
+boolean tool argument before it reaches a predicate."
+  (cond ((eq v :json-false) nil)
+        ((and (stringp v) (string-equal v "false")) nil)
+        (t v)))
+
 (defun elot-gptel--tool-thunk (fn)
   "Return a lambda dispatching gptel's positional args to FN.
 gptel calls the tool function with positional arguments in the
 order declared by `:args' (see `gptel-make-tool' docs).  Map the
-known tool symbols to a lambda with the matching arity."
+known tool symbols to a lambda with the matching arity.
+
+Boolean arguments are normalised through `elot-gptel--truthy'
+so an explicit JSON `false' (marshalled as `:json-false', which
+is truthy in Elisp) is correctly treated as nil."
   (pcase fn
     ('elot-gptel-tool-conventions
      (lambda () (elot-gptel-tool-conventions)))
@@ -8783,7 +8799,9 @@ known tool symbols to a lambda with the matching arity."
     ('elot-gptel-tool-db-remove-source
      (lambda (source &optional data-source like allow-all dry-run)
        (elot-gptel-tool-db-remove-source
-        source data-source like allow-all dry-run)))
+        source data-source
+        (elot-gptel--truthy like) (elot-gptel--truthy allow-all)
+        (elot-gptel--truthy dry-run))))
     ('elot-gptel-tool-db-get-attributes
      (lambda (id &optional source)
        (elot-gptel-tool-db-get-attributes id source)))
@@ -8796,7 +8814,7 @@ known tool symbols to a lambda with the matching arity."
     ('elot-gptel-tool-db-search-label
      (lambda (query &optional kind source lang limit exact-only)
        (elot-gptel-tool-db-search-label
-        query kind source lang limit exact-only)))
+        query kind source lang limit (elot-gptel--truthy exact-only))))
     ('elot-gptel-tool-db-borrow-term
      (lambda (token) (elot-gptel-tool-db-borrow-term token)))
     ('elot-gptel-tool-borrow-term
@@ -8814,14 +8832,14 @@ known tool symbols to a lambda with the matching arity."
     ('elot-gptel-tool-axiom-check
      (lambda (file subject keyword fragment &optional consistency)
        (elot-gptel-tool-axiom-check file subject keyword fragment
-                                    consistency)))
+                                    (elot-gptel--truthy consistency))))
     ('elot-gptel-tool-edit-axiom
      (lambda (file subject keyword &optional fragment op match-fragment)
        (elot-gptel-tool-edit-axiom file subject keyword fragment
                                    op match-fragment)))
     ('elot-gptel-tool-edit-axioms
      (lambda (file edits &optional dry-run)
-       (elot-gptel-tool-edit-axioms file edits dry-run)))
+       (elot-gptel-tool-edit-axioms file edits (elot-gptel--truthy dry-run))))
     ('elot-gptel-tool-rename-resource
      (lambda (file source target &optional ontology target-iri new-label op)
        (elot-gptel-tool-rename-resource
@@ -8831,10 +8849,12 @@ known tool symbols to a lambda with the matching arity."
        (elot-gptel-tool-move-resource file source target as)))
     ('elot-gptel-tool-replace-with-parent
      (lambda (file subject &optional parent dry-run)
-       (elot-gptel-tool-replace-with-parent file subject parent dry-run)))
+       (elot-gptel-tool-replace-with-parent
+        file subject parent (elot-gptel--truthy dry-run))))
     ('elot-gptel-tool-delete-resource
      (lambda (file subject &optional cascade dry-run)
-       (elot-gptel-tool-delete-resource file subject cascade dry-run)))
+       (elot-gptel-tool-delete-resource
+        file subject cascade (elot-gptel--truthy dry-run))))
     ('elot-gptel-tool-insert-sibling-resource
      (lambda (file anchor labels)
        (elot-gptel-tool-insert-sibling-resource file anchor labels)))

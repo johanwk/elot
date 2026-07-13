@@ -764,5 +764,61 @@ requiring `keyword' or `fragment'."
   (let ((thunk (elot-gptel--tool-thunk 'elot-gptel-tool-edit-axioms)))
     (should (functionp thunk))))
 
+
+;;; ---------------------------------------------------------------------------
+;;; Thunk-level / JSON-false regression (follow-up (d)), ROBOT-free.
+;;;
+;;; Companion to the ROBOT-gated `elot-gptel-acceptance-test-thunk-
+;;; json-false-commits': that one exercises the dispatch seam on a real
+;;; ontology via `elot_replace_with_parent'; this one exercises the SAME
+;;; seam with a lightweight, lint-stubbed mutator (`elot_edit_axioms')
+;;; so the orthogonality guard also runs in a ROBOT-less CI.
+;;;
+;;; It drives the batch writer THROUGH `elot-gptel--tool-thunk' -- the
+;;; gptel dispatch layer -- passing `dry_run' as the marshalled JSON
+;;; sentinel `:json-false' (which is TRUTHY in Elisp).  Before the
+;;; follow-up (d) coercion, that explicit `false' selected the dry-run
+;;; branch and the file was left unchanged; after the fix it is coerced
+;;; to nil and the batch COMMITS.  With the side-effects gate armed and
+;;; `dry_run' explicitly false, the two independent controls compose so
+;;; the edit reaches disk.
+;;; ---------------------------------------------------------------------------
+
+(ert-deftest elot-gptel-edit-axioms-test-thunk-json-false-commits ()
+  "Driving the batch writer through `elot-gptel--tool-thunk' with
+`dry_run' given as the JSON-false sentinel `:json-false' must COMMIT,
+not dry-run: the dispatcher coerces the truthy sentinel to nil via
+`elot-gptel--truthy'.  ROBOT-free proof (lint stubbed) that the
+follow-up (d) fix is wired into the gptel dispatch seam."
+  (elot-gptel-edit-axioms-test--with-fixture path
+    (let ((elot-gptel-allow-side-effects t)
+          (default-directory elot-gptel-edit-axioms-test--repo-root)
+          (thunk (elot-gptel--tool-thunk 'elot-gptel-tool-edit-axioms)))
+      ;; gptel-style call: (file edits &optional dry-run), with dry-run
+      ;; as the marshalled JSON `false'.  The pairwise repair keeps the
+      ;; stubbed lint clean so the commit is not rolled back.
+      (let ((out (funcall
+                  thunk
+                  (elot-gptel-edit-axioms-test--rel path)
+                  (list (list :subject "ex:dog"
+                              :op "replace"
+                              :keyword "SubClassOf"
+                              :fragment "ex:chases some ex:cat"
+                              :match_fragment "ex:cat some value ex:chases")
+                        (list :subject "ex:snake"
+                              :op "replace"
+                              :keyword "EquivalentTo"
+                              :fragment "ex:elephant"
+                              :match_fragment "1 ex:elephant"))
+                  :json-false)))
+        (should (stringp out))
+        ;; Committed, NOT the dry-run envelope.
+        (should (string-prefix-p "OK: applied 2 edits" out))
+        (should-not (string-match-p "dry_run: file unchanged" out)))
+      ;; And the change actually reached disk.
+      (let ((bytes (elot-gptel-edit-axioms-test--read path)))
+        (should (string-match-p " - SubClassOf :: ex:chases some ex:cat" bytes))
+        (should-not (string-match-p "ex:cat some value ex:chases" bytes))))))
+
 (provide 'elot-gptel-edit-axioms-test)
 ;;; elot-gptel-edit-axioms-test.el ends here

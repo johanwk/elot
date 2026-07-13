@@ -378,5 +378,19 @@ and asserts a refusal string (never a raw signal, never an OK)."
              (format "%s: :args does not `eq'-share fragment %s"
                      tool sym))))))))
 
+(ert-deftest elot-gptel-registry-test-truthy-coerces-json-false ()
+  "`elot-gptel--truthy' maps the JSON-false sentinel to nil.
+Regression guard for the bug where an explicit JSON `false'
+(marshalled as `:json-false', which is non-nil in Elisp) made
+every boolean tool argument -- notably `dry_run' -- read as true,
+so mutators silently ran in dry-run mode and never edited the
+file."
+  (should (null (elot-gptel--truthy :json-false)))
+  (should (null (elot-gptel--truthy "false")))
+  (should (null (elot-gptel--truthy nil)))
+  ;; genuinely-true values pass through untouched
+  (should (eq t (elot-gptel--truthy t)))
+  (should (equal "true" (elot-gptel--truthy "true"))))
+
 (provide 'elot-gptel-registry-test)
 ;;; elot-gptel-registry-test.el ends here

@@ -193,7 +193,6 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: ex:chases some ex:mouse
 **** Elephant (ex:elephant)
  - SubClassOf :: ex:isAfraidOf some ex:mouse
-***** AsianElephant (ex:asianElephant)
 **** Mouse (ex:mouse)
  - SubClassOf :: ex:isAfraidOf some ex:cat
  - SubClassOf :: ex:isAfraidOf some ex:C_028TF72P2

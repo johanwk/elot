@@ -57,6 +57,21 @@
 ;;      of the now-unsatisfiable `ex:watercraft', making the whole
 ;;      ontology inconsistent.  Exercises the coda's INCONSISTENT
 ;;      WARNING branch.
+;;
+;;   5. THUNK-LEVEL / JSON-false regression (follow-up (d)): drive the
+;;      fold *through* `elot-gptel--tool-thunk' -- the same dispatch seam
+;;      gptel uses -- passing `dry_run' as the marshalled JSON sentinel
+;;      `:json-false' (which is TRUTHY in Elisp).  Asserts end-to-end
+;;      that the coercion is wired into the dispatcher: with the
+;;      side-effects gate armed and `dry_run' explicitly false, the tool
+;;      COMMITS (subject gone on disk) rather than silently dry-running.
+;;      This is the layer the unit test on `elot-gptel--truthy' cannot
+;;      reach -- it guards the plumbing that connects JSON `false' to the
+;;      tool body, which is exactly where the original bug lived.  It
+;;      also pins the intended composition of the two independent
+;;      controls: `elot-gptel-allow-side-effects' (user, session-wide)
+;;      and `dry_run' (LLM, per-call) stay orthogonal -- arming the gate
+;;      does not force `dry_run' off; an explicit `dry_run:false' commits.
 
 ;;; Code:
 
@@ -290,6 +305,51 @@ INCONSISTENT' line in the OK envelope."
       (should (string-match-p "WARNING: fold left the ontology INCONSISTENT" out))
       (let ((verdict (elot-gptel-tool-consistency name)))
         (should (string-prefix-p "INCONSISTENT" verdict))))))
+
+
+;;; ---------------------------------------------------------------------------
+;;; 5. Thunk-level / JSON-false regression (follow-up (d))
+;;; ---------------------------------------------------------------------------
+;;
+;; The unit test `elot-gptel-registry-test-truthy-coerces-json-false'
+;; proves `elot-gptel--truthy' in isolation.  This test proves the
+;; helper is actually *wired into the dispatcher*: it invokes the fold
+;; the way gptel does -- through the lambda returned by
+;; `elot-gptel--tool-thunk' -- with `dry_run' passed as the marshalled
+;; JSON sentinel `:json-false' (truthy in Elisp).  Before the fix, that
+;; explicit `false' selected the dry-run branch and the file was left
+;; unchanged; after the fix it is coerced to nil and the fold commits.
+;;
+;; It also documents the intended orthogonality of the two controls:
+;; `elot-gptel-allow-side-effects' (the user's session-wide ELOT-menu
+;; gate) and the per-call `dry_run' argument are independent.  Arming
+;; the gate expresses "I permit writes"; it does NOT force `dry_run'
+;; off.  So a call that arms the gate AND passes `dry_run:false' must
+;; commit -- which is the natural reading of a user who clicked "Allow
+;; LLM side-effects" and did not ask for a dry run.
+
+(ert-deftest elot-gptel-acceptance-test-thunk-json-false-commits ()
+  "Driving the fold through `elot-gptel--tool-thunk' with `dry_run'
+given as the JSON-false sentinel `:json-false' must COMMIT, not
+dry-run: the dispatcher coerces the truthy sentinel to nil via
+`elot-gptel--truthy'.  End-to-end proof that the follow-up (d) fix is
+wired into the gptel dispatch seam (the layer the unit test cannot
+reach).  With the side-effects gate armed and `dry_run' explicitly
+false, the subject heading is gone on disk afterwards."
+  (elot-gptel-acceptance-test--live-or-skip)
+  (elot-gptel-acceptance-test--in-copy path name
+    (let ((thunk (elot-gptel--tool-thunk 'elot-gptel-tool-replace-with-parent)))
+      ;; gptel-style call: (file subject &optional parent dry-run),
+      ;; with dry-run as the marshalled JSON `false'.
+      (let ((out (funcall thunk name "ex:asianElephant" nil :json-false)))
+        (should (stringp out))
+        ;; Committed (real merge), NOT the dry-run envelope.
+        (should (string-prefix-p "OK: merged ex:asianElephant into ex:elephant"
+                                 out))
+        (should-not (string-match-p "file unchanged on disk" out))
+        ;; And the change actually reached disk.
+        (let ((after (elot-gptel-acceptance-test--slurp path)))
+          (should-not (string-match-p "ex:asianElephant" after)))))))
 
 
 (provide 'elot-gptel-acceptance-test)

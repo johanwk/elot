@@ -585,6 +585,52 @@ the caller to run =elot_consistency= by hand.
     makes the whole ontology inconsistent; asserts the =WARNING: fold
     left the ontology INCONSISTENT= branch.
 
+***** Follow-up (d) -- DONE
+
+Bugfix surfaced during live use: =elot_replace_with_parent= (and the
+other =dry_run=-bearing mutators) *always* ran in dry-run mode when the
+caller passed =dry_run: false= explicitly, so the file was never
+edited.
+- Root cause: gptel/json marshals JSON =false= into the Elisp symbol
+  =:json-false=, which is *non-nil*, so a naive =(if flag ...)= test
+  reads an explicit =false= as true.  Every boolean tool argument was
+  affected, not just =dry_run=.
+- Fix (=elot-gptel.el=): new helper =elot-gptel--truthy= coerces the
+  =:json-false= sentinel (and the literal string "false") to nil while
+  leaving genuinely-true values untouched; =elot-gptel--tool-thunk=
+  now routes every boolean argument through it -- =dry_run=
+  (=elot_edit_axioms= / =elot_replace_with_parent= /
+  =elot_delete_resource=), =consistency= (=elot_axiom_check=),
+  =exact_only= (=elot_db_search_label=), and =like= / =allow_all= /
+  =dry_run= (=elot_db_remove_source=).  The dispatcher arm is the
+  single normalisation seam; no spec / arg-schema change.
+- Regression guard: =elot-gptel-registry-test-truthy-coerces-json-false=
+  (=test/elot-gptel-registry-test.el=) pins =:json-false= / "false"
+  -> nil and true-value passthrough.
+- End-to-end guard: =elot-gptel-acceptance-test-thunk-json-false-commits=
+  (=test/elot-gptel-acceptance-test.el=) drives the fold *through*
+  =elot-gptel--tool-thunk= -- the gptel dispatch seam the unit test
+  cannot reach -- with =dry_run= given as the =:json-false= sentinel,
+  and asserts the fold COMMITS (subject gone on disk; no "file unchanged
+  on disk" line).  This pins that the coercion is actually wired into
+  the dispatcher, not merely correct in isolation.
+- ROBOT-free end-to-end guard:
+  =elot-gptel-edit-axioms-test-thunk-json-false-commits=
+  (=test/elot-gptel-edit-axioms-test.el=) exercises the *same* dispatch
+  seam with a lint-stubbed mutator (=elot_edit_axioms=), so the
+  orthogonality guard also runs in a ROBOT-less CI: the batch is driven
+  through =elot-gptel--tool-thunk= with =dry_run= as =:json-false= and
+  asserted to COMMIT (edit on disk; no "dry_run: file unchanged" line).
+- Control orthogonality (confirmed): =elot-gptel-allow-side-effects=
+  (user, session-wide, set via the ELOT menu "Allow LLM side-effects")
+  and the per-call =dry_run= argument are *independent*.  Arming the
+  gate means "writes are permitted"; it does not force =dry_run= off.
+  So a call that arms the gate and passes =dry_run: false= commits --
+  the natural reading of a user who clicked "Allow LLM side-effects"
+  and did not request a dry run.  The gate only ever *blocks* a real
+  write when off (or when =dry_run= is nil and side-effects are
+  disallowed); it never *imposes* a dry run.
+
 *** Verdict (Step 2.2)
 
 Ship all seven (no hides).  Rationale: uniform error envelope, gate +
