@@ -151,7 +151,7 @@ post-v1 item -- but prefer fixing.
 *Acceptance:* all bucket-2 tests green; no test newly skipped without
 a recorded reason.
 
-** TODO Step 1.2 Dispatcher / spec consistency
+** DONE Step 1.2 Dispatcher / spec consistency
 
 Resolve any mismatch found in Step 0.1: every spec has a dispatcher
 arm, every dispatcher arm has a spec, arities agree, enums in specs

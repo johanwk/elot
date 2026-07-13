@@ -126,11 +126,13 @@ ELOT tools are already registered."
 
 (defcustom elot-gptel-confirm-mutations 'once-armed
   "Policy controlling per-call confirmation for mutating ELOT gptel tools.
-A mutating tool is one whose spec carries `:confirm t' -- the
-insert family (`elot_insert_sibling_resource',
-`elot_insert_child_resource', `elot_insert_resource_tree')
-currently does so by default; rename and move do not (recorded
-in the M9.3 Decisions Log).
+A mutating tool is one -- and exactly one -- whose spec carries
+`:confirm t'.  That flag on the spec is the single source of
+truth: this policy is applied uniformly to every such tool (the
+insert, rename, move, delete, replace-with-parent, edit-axiom,
+and db-remove-source families all qualify), and no separate list
+of mutating tools is maintained.  A spec that omits `:confirm'
+is never treated as mutating here.
 
 This defcustom is consulted by `elot-gptel--register-one' when
 the tool table is assembled.  Three values are recognised:
