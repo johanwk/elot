@@ -193,6 +193,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: ex:chases some ex:mouse
 **** Elephant (ex:elephant)
  - SubClassOf :: ex:isAfraidOf some ex:mouse
+***** AsianElephant (ex:asianElephant)
 **** Mouse (ex:mouse)
  - SubClassOf :: ex:isAfraidOf some ex:cat
  - SubClassOf :: ex:isAfraidOf some ex:C_028TF72P2
@@ -220,6 +221,13 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** OssifiedHyoid (ex:C_028TQA4FW)
  - SubClassOf :: ex:C_028T5CM1A
  - iof-av:naturalLanguageDefinition :: A hyoid structure in which all elements, including the epihyoid, are fully ossified into a rigid bony chain, mechanically supporting sustained purring vocalisation but precluding roaring.
+*** Vehicle (ex:vehicle)
+ - iof-av:naturalLanguageDefinition :: A means of transport.
+ - DisjointClasses :: ex:landVehicle, ex:watercraft
+**** LandVehicle (ex:landVehicle)
+ - iof-av:naturalLanguageDefinition :: A vehicle that travels on land.
+**** Watercraft (ex:watercraft)
+ - iof-av:naturalLanguageDefinition :: A vehicle that travels on water.
 ** Object properties
 :PROPERTIES:
 :ID:       my-ont-object-property-hierarchy
@@ -299,6 +307,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  
 The individual ~ex:spooky~ would render the ontology inconsistent if ~owl:Thing~ is replaced with ~ex:dog~.
  
+*** titanic (ex:titanic)
+ - Types :: ex:watercraft
 *** scooby (ex:scooby)
  - Types :: ex:dog 
-

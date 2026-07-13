@@ -6621,6 +6621,48 @@ returns parents in document order, deduplicated."
             (cl-pushnew val acc :test #'string=)))))
     (nreverse acc)))
 
+(defun elot-gptel--replace--consistency-coda (file subject chosen)
+  "Return the NOTE coda appended to a committed replace-with-parent OK envelope.
+
+Runs a reasoner consistency check on FILE (best-effort) so the
+covariance `promise gap' is closed by default: a contravariant
+regression that lint + OMN-parse cannot see is surfaced here
+instead of only via a manual follow-up.  SUBJECT and CHOSEN name
+the folded class and its parent, used in the advisory text.
+
+Degrades gracefully: if ROBOT is unavailable or the check itself
+errors, falls back to the advisory NOTE recommending a manual
+`elot_consistency' run rather than failing the (already
+committed) fold."
+  (let* ((base (concat "\n\nNOTE: " subject " folded into " chosen))
+         (verdict
+          (condition-case cerr
+              (elot-gptel-tool-consistency file)
+            (error (format "ERROR: %s" (error-message-string cerr))))))
+    (cond
+     ((string-prefix-p "INCONSISTENT" verdict)
+      (concat base
+              "\nWARNING: fold left the ontology INCONSISTENT -- "
+              "review contravariant uses (not/only/disjoint) of "
+              subject ".\n" verdict))
+     ((string-match-p "unsatisfiable class" verdict)
+      ;; `elot_consistency' returns an OK: line even when unsatisfiable
+      ;; classes remain -- that is still a reasoner-level regression here.
+      (concat base
+              "\nWARNING: fold left unsatisfiable class(es) -- "
+              "review contravariant uses (not/only/disjoint) of "
+              subject " and run elot_unsatisfiable.\n" verdict))
+     ((string-prefix-p "OK:" verdict)
+      (concat base
+              "\nNOTE: post-fold consistency check passed (" verdict ")"))
+     (t
+      ;; ROBOT missing or check errored: keep the old advisory.
+      (concat base
+              "\nNOTE: rewrite was global; review any contravariant"
+              " uses (not/only/disjoint) of " subject
+              " and run elot_consistency to confirm no reasoner-level"
+              " regression (auto-check unavailable: " verdict ")")))))
+
 (defun elot-gptel-tool-replace-with-parent (file subject &optional parent dry-run)
   "Implementation of the `elot_replace_with_parent' tool (M9.9.F1).
 
@@ -6634,6 +6676,38 @@ entirely to `elot-gptel-tool-rename-resource' with
 SOURCE=SUBJECT and TARGET=PARENT (or the auto-picked sole
 parent).  Appends a NOTE to the OK envelope pointing the
 caller at `elot_delete_resource' as the natural follow-up.
+
+WHEN TO USE -- the recurring motive is `this class turned out
+to be too specific': premature specialisation, a singleton
+subclass with no distinguishing axioms, a narrowed scope that
+retires fine-grained distinctions, a modelling error where
+SUBJECT stood in for its parent, or near-duplicate classes.
+It is also the primitive for *contracting* a subclass chain
+A -> B -> C: fold B into A (every use of B becomes A) so C
+attaches directly to A, leaving no loose ends; repeat once per
+intermediate level to flatten a longer chain.
+
+SCOPE LIMITS.  Single-file and *destructive*: SUBJECT is
+removed, not relocated.  It walks up exactly one level per
+call and PARENT must already exist as an immediate parent of
+SUBJECT.  It is therefore NOT the cross-module `pull up /
+promote a class to a shared ancestor and rewire importers'
+operation -- that spans several files plus import declarations
+and is a distinct, higher-level refactoring.
+
+CAVEAT -- covariance.  The `still true under PARENT' guarantee
+holds only for covariant occurrences of SUBJECT.  The inner
+rename rewrites every occurrence globally, including
+contravariant positions (`not SUBJECT', `only SUBJECT',
+negated/disjoint contexts) where the rewrite is a semantic
+*strengthening* and can introduce an inconsistency.  The
+parent-guard picks the target but does not narrow the rewrite
+scope.  The inner revalidation is lint + OMN-parse only (no
+reasoner); to close that gap a committed fold now runs
+`elot_consistency' by default and folds its verdict into the OK
+envelope (a WARNING line if the fold left the ontology
+inconsistent).  If ROBOT is unavailable the coda degrades to an
+advisory NOTE recommending a manual `elot_consistency' run.
 
 DRY_RUN snapshots the file bytes and the buffer contents,
 forces `elot-gptel-allow-side-effects' to t for the duration
@@ -6691,7 +6765,11 @@ or an `ERROR:' line on refusal / failure."
                     (car candidates)))
             (let* ((note (concat
                           "\n\nNOTE: " subject
-                          " folded into " chosen))
+                          " folded into " chosen
+                          "\nNOTE: rewrite was global; review any"
+                          " contravariant uses (not/only/disjoint) of "
+                          subject " and run elot_consistency to confirm"
+                          " no reasoner-level regression"))
                    (note-dry (concat note
                                      "  (dry_run: file unchanged on disk)"))
                    (run-rename
@@ -6743,7 +6821,9 @@ or an `ERROR:' line on refusal / failure."
                           (set-buffer-modified-p buf-mod)))))
                 (let ((result (funcall run-rename)))
                   (if (string-prefix-p "OK:" result)
-                      (concat result note)
+                      (concat result
+                              (elot-gptel--replace--consistency-coda
+                               file subject chosen))
                     result))))))))
     (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
@@ -7519,11 +7599,48 @@ then optionally delete SUBJECT.
 A pragmatic answer to the `closest replacement class' problem:
 when the right replacement for a class one wants to delete is
 one of its immediate parents, rewriting every use of SUBJECT
-to that PARENT is a safe semantic weakening (anything
-previously asserted as SUBJECT is still true under PARENT, by
-the SubClassOf semantics).  This tool is a thin composite
+to that PARENT is *often* a safe semantic weakening -- anything
+previously asserted as SUBJECT is still true under PARENT by
+the SubClassOf semantics.  This tool is a thin composite
 over `elot_rename_resource' with a parent-guard -- the guard
 is the whole value the wrapper adds over a bare rename.
+
+When to use -- the recurring motive is `this class turned out
+to be too specific':
+  - Premature specialisation / over-modelling: a fine-grained
+    class (e.g. `ex:asianElephant') that no axiom or datum
+    actually needs -- fold it into `ex:elephant'.
+  - Singleton subclass: a parent with exactly one child that
+    carries no distinguishing axioms -- redundant scaffolding.
+  - Scope narrowed: breed/species-level distinctions are no
+    longer of interest -- collapse them into the generic class.
+  - Modelling error: SUBJECT was used as a stand-in where the
+    parent was meant -- re-point every occurrence in one edit.
+  - Near-duplicate classes: keep the general one, fold the
+    narrower synonym into it (axioms + annotations preserved).
+  - Contracting a chain A -> B -> C: to cut the middle class B
+    out of the hierarchy without leaving loose ends, fold B
+    into A (every use of B becomes A); C then attaches directly
+    to A.  Run once per intermediate level to flatten a chain.
+
+CAVEAT -- covariance.  The `still true under PARENT' guarantee
+holds only for *covariant* occurrences of SUBJECT (bare
+superclass assertions, existential `some' fillers, domains, LHS
+of SubClassOf, etc.).  The underlying rename rewrites *every*
+occurrence globally, including *contravariant* positions where
+`PARENT ⊒ SUBJECT' makes the rewrite a semantic *strengthening*
+rather than a weakening: e.g. `not SUBJECT' (complement),
+`only SUBJECT' (universal), the RHS of an axiom whose SUBJECT
+sits under a negation, or a disjointness partner.  In such
+positions the fold can strengthen the ontology or even
+introduce an inconsistency.  The parent-enumeration
+conservatism does NOT narrow the rewrite scope -- it only
+picks the target.  To close this gap a committed fold now runs
+`elot_consistency' by default and folds the reasoner verdict
+into the OK envelope (a WARNING line if the fold left the
+ontology inconsistent or introduced an unsatisfiable class).
+Still, review contravariant uses of SUBJECT before committing
+(or run a `dry_run' first).
 
 Pipeline:
   1. Enumerate SUBJECT's immediate parents from two sources:
@@ -7542,8 +7659,16 @@ Pipeline:
      target=PARENT.  Inherits the full M9 write-back
      contract: gated by `elot-gptel-allow-side-effects',
      atomic apply with re-lint + OMN-parse, rollback on
-     revalidation failure.
-  4. Append a NOTE pointing at `elot_delete_resource' as the
+     revalidation failure.  NOTE: that inner revalidation is
+     lint + OMN-parse only -- it does NOT run a reasoner.
+  4. On a committed (non-dry-run) success, run `elot_consistency'
+     on the mutated file and fold the reasoner verdict into the
+     OK envelope: a WARNING line when the fold left the ontology
+     inconsistent or introduced an unsatisfiable class (the
+     contravariant regression the inner revalidation cannot
+     see), otherwise a NOTE that the check passed.  Degrades to
+     the old advisory NOTE when ROBOT is unavailable.
+  5. Append a NOTE pointing at `elot_delete_resource' as the
      natural follow-up (advisory only).
 
 DRY_RUN runs the full pipeline (rename + revalidate) and
@@ -7552,10 +7677,13 @@ afterwards, so the LLM gets the same OK / FAIL envelope a
 real commit would have produced while nothing on disk
 changes.  Bypasses the side-effects gate.
 
-Out of scope: walking up more than one level, picking among
-parents by a heuristic, replacing a property with its
-inverse, and the deletion itself (call `elot_delete_resource'
-in a follow-up call)."
+Out of scope: walking up more than one level in a single call
+(fold one level at a time to contract a longer chain), picking
+among parents by a heuristic, replacing a property with its
+inverse, cross-file / cross-module promotion of a class to a
+shared ancestor (this tool is single-file and destructive --
+it deletes SUBJECT rather than relocating it), and the deletion
+itself (call `elot_delete_resource' in a follow-up call)."
      :args
      (,elot-gptel--arg-file
       (:name "subject"

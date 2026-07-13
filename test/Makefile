@@ -19,12 +19,12 @@ define run-ert-test
 	  -f ert-run-tests-batch-and-exit
 endef
 
-.PHONY: all test gptel-registry-test test-helper-guard-test db-test prefix-test crud-test remove-source-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-14-test step-1-15-test step-1-16-1-test step-1-16-2-test step-1-16-3-test step-1-16-4-test step-1-16-5-test step-1-16-6-test step-1-16-7-test step-1-16-8-test step-2-1-test sparql-merge-prefixes-test sparql-exec-helpers-test sparql-advice-test sparql-roundtrip-test tangle-roundtrip-test load-without-sparql-test golden-test gptel-test robot-test omn-validate-test omn-report-test gptel-diff-test sparql-tool-test reasoning-test readonly-test db-query-tool-test db-schema-tool-test db-shims-test db-shims-wave-b-test db-search-test db-borrow-test db-borrow-compose-test conventions-test lint-content-test check-test subclass-in-dl-test lint-oops-test corpus-test corpus-oops-test lint-axiom-signature-test id-test id-insert-test id-set-scheme-test id-rename-test gptel-rename-test move-resource-test gptel-move-test gptel-insert-test gptel-confirm-mutations-test hh-stale-test tangle-blank-omn-row-test lint-blank-omn-row-test gptel-db-activate-source-test gptel-delete-reference-scan-test gptel-replace-parents-test gptel-replace-with-parent-test gptel-rename-merge-test gptel-delete-apply-test gptel-delete-resource-test clean help
+.PHONY: all test gptel-registry-test test-helper-guard-test db-test prefix-test crud-test remove-source-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-14-test step-1-15-test step-1-16-1-test step-1-16-2-test step-1-16-3-test step-1-16-4-test step-1-16-5-test step-1-16-6-test step-1-16-7-test step-1-16-8-test step-2-1-test sparql-merge-prefixes-test sparql-exec-helpers-test sparql-advice-test sparql-roundtrip-test tangle-roundtrip-test load-without-sparql-test golden-test gptel-test robot-test omn-validate-test omn-report-test gptel-diff-test sparql-tool-test reasoning-test readonly-test db-query-tool-test db-schema-tool-test db-shims-test db-shims-wave-b-test db-search-test db-borrow-test db-borrow-compose-test conventions-test lint-content-test check-test subclass-in-dl-test lint-oops-test corpus-test corpus-oops-test lint-axiom-signature-test id-test id-insert-test id-set-scheme-test id-rename-test gptel-rename-test move-resource-test gptel-move-test gptel-insert-test gptel-confirm-mutations-test hh-stale-test tangle-blank-omn-row-test lint-blank-omn-row-test gptel-db-activate-source-test gptel-delete-reference-scan-test gptel-replace-parents-test gptel-replace-with-parent-test gptel-acceptance-test gptel-rename-merge-test gptel-delete-apply-test gptel-delete-resource-test clean help
 
 all: test
 
 # Run the full ELOT ERT test suite.
-test: test-helper-guard-test db-test prefix-test crud-test remove-source-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-14-test step-1-15-test step-1-16-1-test step-1-16-2-test step-1-16-3-test step-1-16-4-test step-1-16-5-test step-1-16-6-test step-1-16-7-test step-1-16-8-test step-2-1-test sparql-merge-prefixes-test sparql-exec-helpers-test sparql-advice-test sparql-roundtrip-test tangle-roundtrip-test load-without-sparql-test golden-test gptel-test gptel-registry-test
+test: test-helper-guard-test db-test prefix-test crud-test remove-source-test sources-test register-test active-sources-test slurp-integration-test global-mode-test active-sources-ui-test ttl-prefix-test menu-test step-1-11-test step-1-12-test step-1-12-item-b-test step-1-13-test step-1-14-test step-1-15-test step-1-16-1-test step-1-16-2-test step-1-16-3-test step-1-16-4-test step-1-16-5-test step-1-16-6-test step-1-16-7-test step-1-16-8-test step-2-1-test sparql-merge-prefixes-test sparql-exec-helpers-test sparql-advice-test sparql-roundtrip-test tangle-roundtrip-test load-without-sparql-test golden-test gptel-test gptel-registry-test gptel-acceptance-test
 
 # Regression guard: verifies test-helper.el is loaded for every
 # batch run (elot-db-sync-on-slurp is nil; elot-db-file is under
@@ -514,6 +514,15 @@ gptel-replace-parents-test:
 gptel-replace-with-parent-test:
 	$(call run-ert-test,elot-gptel-replace-with-parent-test.el)
 
+# ELOT-GPTEL-V1-PLAN.org Step 2.2 follow-up (b): live end-to-end
+# acceptance tests for the resource-mutation family, driven against a
+# throwaway copy of the real, ROBOT-consistent `test/fixtures/pets.org'.
+# First users are the two `elot_replace_with_parent' cases (covariant
+# safe fold + contravariant unsafe fold).  Live tests skip cleanly when
+# ROBOT is unavailable.
+gptel-acceptance-test:
+	$(call run-ert-test,elot-gptel-acceptance-test.el)
+
 # ELOT-GPTEL-PLAN.org Milestone 9 Step 9.9 Slice A.3: `op=merge'
 # mode on `elot_rename_resource' / `elot-rename-resource' --
 # rewrite SOURCE -> TARGET when TARGET is already declared,
@@ -601,6 +610,7 @@ help:
 	@echo "  gptel-rename-test  run test/elot-gptel-rename-test.el (Milestone 12 Step 12.4 -- gptel tool)"
 	@echo "  move-resource-test run test/elot-move-resource-test.el (Milestone 12 Step 12.1)"
 	@echo "  gptel-move-test    run test/elot-gptel-move-test.el (Milestone 12 Step 12.1 -- gptel tool)"
+	@echo "  gptel-acceptance-test  run test/elot-gptel-acceptance-test.el (V1 Step 2.2 (b) -- live pets.org acceptance; ROBOT-gated)"
 	@echo "  gptel-insert-test  run test/elot-gptel-insert-test.el (Milestone 9 Step 9.3 -- gptel tools)"
 	@echo "  gptel-confirm-mutations-test  run test/elot-gptel-confirm-mutations-test.el (Milestone 9 Step 9.3.F5)"
 	@echo "  hh-stale-test  run test/elot-headline-hierarchy-stale-test.el (Milestone 9 Step 9.3.F8)"

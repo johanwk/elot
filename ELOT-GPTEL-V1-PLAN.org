@@ -422,15 +422,15 @@ or hidden, recorded in the Decisions Log.
 
 **** Test-coverage matrix
 
-| Tool                         | rollback test                              | dry_run                                          | live pets.org |
-|------------------------------+--------------------------------------------+--------------------------------------------------+---------------|
-| elot_rename_resource         | =rename-test-revalidation-rolls-back=      | n/a -- =dry_run= param exists in the defun but is NOT wired through the dispatcher/spec, so not caller-reachable | none          |
-| elot_move_resource           | =move-test-revalidation-rolls-back=        | n/a -- no =dry_run=                              | none          |
-| elot_delete_resource         | =dr-test-revalidation-rolls-back=          | =dr-test-dry-run-leaves-file-untouched=          | none          |
-| elot_replace_with_parent     | =rwp-tool-test-rollback-propagates=        | =rwp-tool-test-dry-run-round-trip=               | none          |
-| elot_insert_sibling_resource | =insert-test-revalidation-rolls-back= (shared insert path) | n/a -- no =dry_run=              | none          |
-| elot_insert_child_resource   | (shared insert revalidate/rollback path)   | n/a -- no =dry_run=                              | none          |
-| elot_insert_resource_tree    | (shared insert revalidate/rollback path)   | n/a -- no =dry_run=                              | none          |
+| Tool                         | rollback test                                            | dry_run                                                                                                        | live pets.org |
+|------------------------------+----------------------------------------------------------+----------------------------------------------------------------------------------------------------------------+---------------|
+| elot_rename_resource         | =rename-test-revalidation-rolls-back=                      | n/a -- =dry_run= param exists in the defun but is NOT wired through the dispatcher/spec, so not caller-reachable | none          |
+| elot_move_resource           | =move-test-revalidation-rolls-back=                        | n/a -- no =dry_run=                                                                                              | none          |
+| elot_delete_resource         | =dr-test-revalidation-rolls-back=                          | =dr-test-dry-run-leaves-file-untouched=                                                                          | none          |
+| elot_replace_with_parent     | =rwp-tool-test-rollback-propagates=                        | =rwp-tool-test-dry-run-round-trip=                                                                               | none          |
+| elot_insert_sibling_resource | =insert-test-revalidation-rolls-back= (shared insert path) | n/a -- no =dry_run=                                                                                              | none          |
+| elot_insert_child_resource   | (shared insert revalidate/rollback path)                 | n/a -- no =dry_run=                                                                                              | none          |
+| elot_insert_resource_tree    | (shared insert revalidate/rollback path)                 | n/a -- no =dry_run=                                                                                              | none          |
 
 All seven carry a green rollback test and a green gate-off refusal
 test (confirmed here and in Step 1.4).  =dry_run= is present and
@@ -490,15 +490,110 @@ contract-accuracy and defence-in-depth gaps.  Verdict: *ship, with
 the covariance caveat documented and (1)/(2) tracked* -- see
 decisions.
 
+***** Follow-up (a) -- DONE
+
+Weaknesses (1) and (2) addressed in-code (docs + advisory, no
+behaviour change):
+- =elot_replace_with_parent= spec description gained a *CAVEAT --
+  covariance* block explaining that the global rewrite is only a
+  weakening in covariant positions and can *strengthen* /
+  introduce inconsistency in contravariant ones (=not=, =only=,
+  disjoint/negated contexts), and that the parent-guard picks the
+  target but does not narrow the rewrite scope.
+- The pipeline step 3 note and the tool's Elisp docstring now state
+  that revalidation is lint + OMN-parse only (no reasoner), so a
+  contravariant regression commits silently.
+- The success (OK) envelope's =NOTE= now advises reviewing
+  contravariant uses of SUBJECT and running =elot_consistency= to
+  confirm no reasoner-level regression.
+Weakness (3) (write-then-restore =dry_run= durability edge) is left
+as documented residual risk for v1.
+
+***** Follow-up (b) -- DONE
+
+Live end-to-end acceptance on the real fixture (plan clause (c)),
+first users = the two most-scrutinised =elot_replace_with_parent=
+paths.  New test-owned infrastructure (no gptel-only Elisp file
+added for the shared plumbing):
+- =test/fixtures/pets.org= -- a committed, test-owned snapshot of the
+  user-facing =examples/pets.org= (decoupled so pedagogical edits to
+  the example cannot silently change the acceptance contract).
+- =elot-test-with-fixture-copy= macro added to the always-loaded
+  =test/test-helper.el= (general-purpose: copy a fixture to a
+  throwaway temp file, bind a path var, run body, delete the copy +
+  kill its visiting buffer on exit; reusable by any test type, not
+  just gptel).
+- =test/elot-gptel-acceptance-test.el= (new file -- the only new
+  Elisp, and it is a genuinely new /suite/, not shared plumbing) with
+  two ROBOT-gated live tests running the *real* pipeline over a temp
+  copy:
+  1. *Covariant safe fold* =ex:asianElephant -> ex:elephant=: OK
+     envelope + subject gone + a full live =elot_check= stays green.
+  2. *Contravariant unsafe fold* =ex:dog -> ex:animal= (dog occurs in
+     =DisjointClasses :: ex:dog, ex:cat=): regression LOCK for
+     weakness (1)/(2) -- the fold commits with an OK envelope + the
+     advisory NOTE because lint+OMN revalidation does not run a
+     reasoner, and an independent =elot_unsatisfiable= run is what
+     surfaces the resulting unsatisfiable/inconsistent class.
+- ROBOT policy: per decision, live tests assume ROBOT on PATH and
+  =ert-skip= cleanly when absent (mirroring the other live suites).
+  Wired into =make test= and a dedicated =gptel-acceptance-test=
+  target.
+
+***** Follow-up (c) -- DONE
+
+Shrink the =replace_with_parent= "promise gap" by running a reasoner
+consistency check by default after a *committed* (non-dry-run) fold and
+folding its verdict into the OK envelope, rather than merely advising
+the caller to run =elot_consistency= by hand.
+- New helper =elot-gptel--replace--consistency-coda= (=elot-gptel.el=):
+  after a committed success it calls =elot-gptel-tool-consistency= on
+  the mutated file and appends one of --
+  - =WARNING: fold left the ontology INCONSISTENT ...= (inconsistent),
+  - =WARNING: fold left unsatisfiable class(es) ...= (the
+    =elot_consistency= OK-with-unsat case -- exactly the
+    =ex:dog= / =DisjointClasses= scenario),
+  - =NOTE: post-fold consistency check passed ...= (clean),
+  and *degrades gracefully* to the old advisory NOTE when ROBOT is
+  unavailable or the check errors (the fold is already committed, so we
+  never fail it retroactively).
+- Runs on the *commit* path only; dry-run and refusal paths pay
+  nothing and are unchanged.  Advisory, not blocking: the fold has
+  already applied atomically via the inner rename, so a WARNING keeps
+  the caller honest without a rollback-after-commit hazard.
+- The spec =:description= and defun docstring gained an explicit
+  pipeline step 4 for the default consistency check; the covariance
+  CAVEAT now reflects the automatic verdict.
+- =test/elot-gptel-acceptance-test.el=: the contravariant test now
+  asserts the OK envelope carries =WARNING: fold left ...= (the
+  automatic catch) instead of only the manual advisory; a third,
+  non-leaf covariant case (=ex:elephant -> ex:animal=, an internal node
+  with subclass =ex:asianElephant=) was added; and two new fixture-driven
+  cases lock the regression down (see below).
+- =test/fixtures/pets.org=: extended with a small disjoint-siblings
+  vehicle taxonomy (=ex:vehicle= with =DisjointClasses ::
+  ex:landVehicle, ex:watercraft= and an individual =ex:titanic Types ::
+  ex:watercraft=) so a contravariant fold can induce *both* an
+  unsatisfiable class and an outright inconsistency, letting each coda
+  WARNING branch be exercised by a live test:
+  - =replace-induces-unsatisfiable= (fold =ex:watercraft -> ex:vehicle=):
+    makes =ex:landVehicle= unsatisfiable but the ontology stays
+    consistent; asserts the =WARNING: fold left unsatisfiable class(es)=
+    branch.
+  - =replace-induces-inconsistency= (fold =ex:landVehicle -> ex:vehicle=,
+    with =ex:titanic= a member of the now-unsatisfiable =ex:watercraft=):
+    makes the whole ontology inconsistent; asserts the =WARNING: fold
+    left the ontology INCONSISTENT= branch.
+
 *** Verdict (Step 2.2)
 
 Ship all seven (no hides).  Rationale: uniform error envelope, gate +
 =:confirm t=, green rollback + gate-off tests across the family; the
 =replace_with_parent= weaknesses are documentation/defence gaps, not
-failures of the tested behaviour.  Two acceptance gaps are escalated
-as decisions rather than resolved unilaterally inside this step:
- - the missing live =pets.org= acceptance check (clause (c)), and
- - the covariance caveat + no-reasoner-consistency-on-fold finding.
+failures of the tested behaviour.  The two escalated acceptance gaps
+are now both resolved: follow-up (a) documented the covariance /
+no-reasoner-consistency finding in-code, and follow-up (b) added the
+live =pets.org= acceptance suite (clause (c)).
 
 ** TODO Step 2.3 Defaults review
 
