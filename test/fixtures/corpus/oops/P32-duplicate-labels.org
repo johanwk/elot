@@ -36,6 +36,7 @@
 ** Classes
 :PROPERTIES:
 :resourcedefs: yes
+:ID:       corpus-p32-class-hierarchy
 :END:
 *** Twin one (ex:twin1)
  - rdfs:label :: "Twin"@en

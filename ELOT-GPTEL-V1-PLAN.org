@@ -631,6 +631,60 @@ edited.
   write when off (or when =dry_run= is nil and side-effects are
   disallowed); it never *imposes* a dry run.
 
+***** Follow-up (e) -- DONE
+
+Two refinements surfaced during live use of =elot_replace_with_parent=:
+
+(a) *Stale label-cache immunity.*  Three consecutive live folds of a
+validly heading-nested =ex:elephant= spuriously returned =ERROR: ...
+has no immediate parents=; a manual =elot-label-display-setup= (label
+cache + headline-hierarchy rebuild) fixed it on the next call.  Root
+cause: parent-enumeration walks the cached hierarchy, so a stale cache
+made the nested SUBJECT look parentless.  Fix
+(=elot-gptel-tool-replace-with-parent=): refresh
+=elot-update-headline-hierarchy= and =elot-label-display-setup=
+(best-effort, each guarded so headless late-step failures do not abort)
+at tool entry, *before* enumerating parents -- so a caller can never hit
+the stale-state trap.
+
+(b) *Discarded-rows NOTE de-noised.*  The dropped-rows NOTE listed the
+auto-synthesised scaffolding rows =rdf:type :: owl:Class= and
+=rdfs:label :: <title>= alongside genuine frame axioms, drowning the
+real signal (e.g. =SubClassOf :: ex:isAfraidOf some ex:mouse=).  New
+=elot-gptel--replace-boilerplate-keys= defconst; filtered out in
+=elot-gptel--replace--own-axiom-rows= so only authored rows (real
+information loss) are reported.
+
+***** Follow-up (f) -- DONE
+
+Two live-use refinements to the mutation-tool feedback envelope
+(user-friendliness, no change to the pass/fail contract):
+
+(a) *Errors-only lint report.*  The whole-file revalidation re-lint
+echoed *every* pre-existing lint WARNING into the tool envelope -- e.g.
+a =replace_with_parent= fold on =examples/pets.org= surfaced 6 OOPS P08
+"no authored annotation" warnings that had nothing to do with the edit,
+drowning the =Summary: 0 errors= / =OMN PARSE: OK= signal.  New helper
+=elot-gptel--lint-errors-only= (=elot-gptel.el=) strips =WARNING= lines
+from the lint report and rewrites the =Summary:= line to an errors-only
+count with a =(N pre-existing warnings suppressed; run elot_lint for
+detail)= tail; non-lint reports (=OK:= / =ERROR:=) pass through
+untouched.  Wired into both revalidation seams
+(=elot-gptel--rename-revalidate= on-disk commit path and
+=elot-gptel--axioms-revalidate-content= dry-run/=content== path), so
+every mutating tool routed through them (edit-axiom(s), rename, merge,
+move, delete, replace_with_parent, inserts) now reports only errors +
+the suppressed-count tail.  Failure detection is unaffected:
+=elot-gptel--check-lint-failed-p= keys off the errors count, which the
+filtered summary preserves.
+
+(b) *Confirmed default = commit, not dry-run.*  Live testing verified
+(follow-up (d)'s coercion working end-to-end) that a call omitting
+=dry_run= -- or passing =dry_run: false= / =:json-false= -- COMMITS,
+while =dry_run: true= previews.  No code change; recorded as the
+signalling contract for the user question "how do I signal a change is
+wanted, not a dry run?"
+
 *** Verdict (Step 2.2)
 
 Ship all seven (no hides).  Rationale: uniform error envelope, gate +
@@ -641,7 +695,7 @@ are now both resolved: follow-up (a) documented the covariance /
 no-reasoner-consistency finding in-code, and follow-up (b) added the
 live =pets.org= acceptance suite (clause (c)).
 
-** TODO Step 2.3 Defaults review
+** DONE Step 2.3 Defaults review
 
 Confirm the shipped defaults are the cautious ones:
 - =elot-gptel-allow-side-effects= default nil,
@@ -652,6 +706,31 @@ Confirm the shipped defaults are the cautious ones:
 Document each default and its rationale in the user docs (Phase 3).
 
 *Acceptance:* defaults table confirmed; no surprising default ships.
+
+*** Outcome
+
+All shipped defaults verified against =elot-gptel.el= source
+(=defcustom= forms).  Every one is the cautious choice; no surprising
+default ships.
+
+| Defcustom                        | Default          | Src line | Cautious? | Rationale                                                                 |
+|----------------------------------+------------------+----------+-----------+---------------------------------------------------------------------------|
+| =elot-gptel-allow-side-effects=    | =nil=              | l.108    | yes       | Read-only surface is the promise to first-time users; mutators refuse until explicitly armed. |
+| =elot-gptel-confirm-mutations=     | =once-armed=       | l.127    | yes       | Honours =:confirm t= until the session is armed, then one gate suffices -- no double-prompt, no silent commit before arming. |
+| =elot-gptel-robot-catalog=         | =nil=              | l.173    | yes       | No catalog assumed; import resolution opt-in only.                        |
+| =elot-gptel-content-arg-max-bytes= | 4 MiB            | l.243    | yes       | Belt-and-braces guard; every shipped ontology is <200 KiB, so the cap only trips on a pathological LLM draft. |
+| =elot-gptel-explain-timeout=       | 60 s             | l.1850   | yes       | Bounds the one open-ended ROBOT call; 0 disables.                         |
+| =elot-gptel-explain-max=           | 1                | l.1859   | yes       | Minimal justification set by default; per-call override available.        |
+
+Two independent pre-commit gates confirmed (Step 2.2 follow-up (d)):
+=elot-gptel-allow-side-effects= (session-wide "writes permitted") and
+the per-call =dry_run= argument are orthogonal -- arming the gate never
+imposes a dry run, and the gate off blocks all writes.  The
+=:confirm t= flag on each mutating spec is the single source of truth
+for the confirm policy.
+
+The rationale text is carried into the user docs in Phase 3
+(Step 3.1's safety-model section).
 
 * Phase 3 -- Documentation and code hygiene
 
@@ -669,6 +748,28 @@ Ensure =documentation/elot-gptel.org= is complete and matches the
   agent-loop workflow.
 
 Remove any documentation of hidden/cut tools.
+
+*Scope note (staleness audit, 2026-07-13):* =documentation/elot-gptel.org=
+is *substantially stale* -- it predates the entire mutation surface and
+is NOT a light accuracy pass but a *real rewrite*.  Concrete findings:
+- *Safety-model table is wrong*: it still says write-back tools are
+  "not yet landed / Reserved for Milestone 9" -- but all 9 mutators
+  shipped (Steps 2.1/2.2).
+- *~15 of 37 tools are undocumented*, including the entire mutating
+  family (=elot_edit_axiom(s)=, =rename=/=move=/=delete=/
+  =replace_with_parent=, the three =insert_*=), plus =elot_conventions=,
+  =elot_check=, =elot_omn_report=, =elot_diff=, composite
+  =elot_borrow_term=, =elot_mint_identifier=, =elot_verify_identifier=,
+  =elot_axiom_keywords=, =elot_axiom_check=, =elot_db_activate_source=,
+  =elot_db_remove_source=.
+- *"Milestones still to land" lists M7.5/M8/M9/M10/M11 as TODO* -- all
+  shipped; either delete the section or replace it with a one-line
+  pointer to this plan's /Deferred to post-v1/ list.
+- *Customisation table omits* =elot-gptel-confirm-mutations=,
+  =elot-gptel-content-arg-max-bytes=, =elot-gptel-robot-catalog=
+  (carry the Step 2.3 defaults table + rationale in here).
+- *References the retired =ELOT-GPTEL-PLAN.org=* in several places ->
+  repoint to =ELOT-GPTEL-V1-PLAN.org=.
 
 *Acceptance:* docs describe exactly the shipped roster, nothing more,
 nothing less; a new user can arm side effects and run one
@@ -930,3 +1031,4 @@ registered as a tool in the v1 roster.
 | (pending)  | Move/rename/delete family v1 status (Step 2.2): *ship all 7, hide none.*  All carry green rollback + gate-off tests; =dry_run= tested where exposed (delete, replace_with_parent); rename/move/insert expose no =dry_run= (clause (b) vacuous).  See Step 2.2 audit for the coverage matrix. |
 | (pending)  | Step 2.2 escalation A -- *live acceptance gap*: no family tool has an end-to-end check against a temp copy of =examples/pets.org= (plan clause (c)); all suites use synthetic fixtures + stubs.  DECISION NEEDED: add one live-acceptance test per mutating family tool, or formally relax clause (c) for v1. |
 | (pending)  | Step 2.2 escalation B -- =elot_replace_with_parent= *contract accuracy*: the "safe semantic weakening" claim holds only for covariant occurrences (fails for =not= / =only= / LHS positions), the global =op=merge= rewrite does not narrow to covariant sites, and post-fold revalidation is lint+OMN only (no reasoner consistency).  DECISION NEEDED: (i) add a covariance caveat to the tool description, and (ii) either add an =elot_consistency= stage to the fold's revalidation or document the residual risk. |
+| (today)    | Step 2.3 defaults review: all shipped defaults are the cautious ones (=allow-side-effects= nil, =confirm-mutations= once-armed, =robot-catalog= nil, content cap 4 MiB, explain-timeout 60 s, explain-max 1).  No surprising default ships; full table + rationale under Step 2.3.  Rationale carried into Phase 3 user docs. |

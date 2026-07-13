@@ -3375,6 +3375,47 @@ means `OK: no lint issues' (a clean run)."
             "^Summary: \\([0-9]+\\) errors?," report)
            (> (string-to-number (match-string 1 report)) 0)))))
 
+(defun elot-gptel--lint-errors-only (report)
+  "Strip WARNING lines from a lint REPORT, keeping errors only.
+Mutation-tool revalidation re-lints the WHOLE file, so pre-existing
+warnings unrelated to the edit (e.g. OOPS P08 missing-annotation
+notes) flood the envelope as noise.  Warnings never block a commit,
+so this drops every `... WARNING: ...' line and replaces the
+`Summary:' line with an errors-only count plus a suppressed-warning
+tail pointing at `elot_lint' for detail.  Returns REPORT unchanged
+when it is not a normal lint report (e.g. an `OK:'/`ERROR:' line)."
+  (if (or (not (stringp report))
+          (not (string-match-p "^Summary: " report)))
+      report
+    (let* ((lines (split-string report "\n"))
+           (suppressed 0)
+           (kept
+            (delq nil
+                  (mapcar
+                   (lambda (line)
+                     (cond
+                      ((string-match-p " WARNING: " line)
+                       (setq suppressed (1+ suppressed))
+                       nil)
+                      ((string-match-p "^Summary: " line)
+                       nil)
+                      (t line)))
+                   lines)))
+           (errors 0))
+      (when (string-match "^Summary: \\([0-9]+\\) errors?," report)
+        (setq errors (string-to-number (match-string 1 report))))
+      (string-join
+       (append
+        kept
+        (list (format "Summary: %d error%s%s"
+                      errors (if (= errors 1) "" "s")
+                      (if (> suppressed 0)
+                          (format " (%d pre-existing warning%s suppressed; \
+run elot_lint for detail)"
+                                  suppressed (if (= suppressed 1) "" "s"))
+                        ""))))
+       "\n"))))
+
 (defun elot-gptel--check-omn-failed-p (report)
   "Return non-nil when an OMN-validate REPORT did not parse cleanly."
   (and report (stringp report)
@@ -4307,7 +4348,7 @@ keyword %s's expected leaf kind."
 Returns a plist (:ok BOOL :report STRING).  REPORT is empty when
 :ok is t and there is nothing to surface; otherwise it carries
 the diagnostic body the LLM should see."
-  (let* ((lint (elot-gptel-tool-lint file))
+  (let* ((lint (elot-gptel--lint-errors-only (elot-gptel-tool-lint file)))
          (lint-err (or (string-prefix-p "ERROR:" lint)
                        (elot-gptel--check-lint-failed-p lint)))
          (robot-ok (condition-case _err
@@ -4336,7 +4377,8 @@ the diagnostic body the LLM should see."
 Mirrors `elot-gptel--rename-revalidate' but drives the read-only
 `content=' code path so DRAFT can be evaluated without touching
 the file on disk -- used by `dry_run' batches."
-  (let* ((lint (elot-gptel-tool-lint file nil nil draft))
+  (let* ((lint (elot-gptel--lint-errors-only
+                (elot-gptel-tool-lint file nil nil draft)))
          (lint-err (or (string-prefix-p "ERROR:" lint)
                        (elot-gptel--check-lint-failed-p lint)))
          (robot-ok (condition-case _err
@@ -6621,6 +6663,57 @@ returns parents in document order, deduplicated."
             (cl-pushnew val acc :test #'string=)))))
     (nreverse acc)))
 
+(defconst elot-gptel--replace-boilerplate-keys
+  '("rdf:type" "rdfs:label")
+  "Description-list keys re-synthesised on any resource heading.
+
+Rows with these keys carry no authored information -- ELOT
+regenerates `rdf:type :: owl:Class' and the heading-title
+`rdfs:label' automatically -- so they are noise in the
+fold's discarded-rows NOTE and are filtered out by
+`elot-gptel--replace--own-axiom-rows'.")
+
+(defun elot-gptel--replace--own-axiom-rows (node)
+  "Return list of `KEY :: VALUE' strings for NODE's own description rows.
+
+These are the rows discarded when NODE is folded into its parent
+via the merge-mode rename: heading-nested children survive (they
+are re-parented), but the folded class's own description-list
+rows -- frame axioms (SubClassOf / EquivalentTo / Domain / Range
+/ Characteristics / ...) and annotations alike -- go with the
+deleted heading and are NOT re-homed on the parent.  Surfacing
+them lets the caller see the data-dependent loss the rewrite
+counters cannot report.
+
+Boilerplate scaffolding rows whose key is in
+`elot-gptel--replace-boilerplate-keys' (`rdf:type :: owl:Class',
+the auto-derived `rdfs:label') are filtered out -- they are
+re-synthesised on any heading and so are not genuine information
+loss.  Returns nil when NODE has no reportable rows."
+  (let (acc)
+    (dolist (item (plist-get node :descriptions))
+      (when (and (consp item) (stringp (car item))
+                 (not (member (car item)
+                              elot-gptel--replace-boilerplate-keys)))
+        (push (format "%s :: %s" (car item)
+                      (if (stringp (cadr item))
+                          (string-trim (cadr item))
+                        ""))
+              acc)))
+    (nreverse acc)))
+
+(defun elot-gptel--replace--dropped-note (subject chosen rows)
+  "Return a NOTE listing ROWS discarded when SUBJECT folds into CHOSEN.
+ROWS is the list returned by `elot-gptel--replace--own-axiom-rows'.
+Returns the empty string when ROWS is nil, so it is safe to
+`concat' unconditionally."
+  (if (null rows)
+      ""
+    (concat "\nNOTE: " (number-to-string (length rows))
+            " own axiom/annotation row(s) on " subject
+            " discarded by the fold (not re-homed on " chosen "):"
+            (mapconcat (lambda (r) (concat "\n  - " r)) rows ""))))
+
 (defun elot-gptel--replace--consistency-coda (file subject chosen)
   "Return the NOTE coda appended to a committed replace-with-parent OK envelope.
 
@@ -6732,15 +6825,32 @@ or an `ERROR:' line on refusal / failure."
                (buf (or (find-buffer-visiting true-file)
                         (let ((inhibit-message t))
                           (find-file-noselect true-file 'nowarn))))
-               candidates chosen)
+               candidates chosen dropped-rows)
           (unless (buffer-live-p buf)
             (user-error "elot-gptel: cannot open %s" file))
           (with-current-buffer buf
             (unless (derived-mode-p 'org-mode)
               (let ((org-inhibit-startup t) (org-mode-hook nil))
                 (org-mode)))
+            ;; F8+ hardening: refresh the label cache / headline
+            ;; hierarchy up front so parent-enumeration never walks a
+            ;; stale cache.  A stale hierarchy made a validly-nested
+            ;; SUBJECT look parentless (spurious "has no immediate
+            ;; parents" ERROR); running the display setup rebuilds it.
+            ;; Best-effort: the late steps of `elot-label-display-setup'
+            ;; (fontification, timers) must not abort a headless call,
+            ;; so guard each refresh.
+            (when (fboundp 'elot-update-headline-hierarchy)
+              (condition-case _ (elot-update-headline-hierarchy)
+                (error nil)))
+            (when (fboundp 'elot-label-display-setup)
+              (condition-case _ (elot-label-display-setup) (error nil)))
             (setq candidates
-                  (elot-gptel--replace--immediate-parents subject)))
+                  (elot-gptel--replace--immediate-parents subject))
+            (let ((np (elot-gptel--replace--find-with-parent subject)))
+              (when (car np)
+                (setq dropped-rows
+                      (elot-gptel--replace--own-axiom-rows (car np))))))
           (cond
            ((null candidates)
             (format
@@ -6823,7 +6933,9 @@ or an `ERROR:' line on refusal / failure."
                   (if (string-prefix-p "OK:" result)
                       (concat result
                               (elot-gptel--replace--consistency-coda
-                               file subject chosen))
+                               file subject chosen)
+                              (elot-gptel--replace--dropped-note
+                               subject chosen dropped-rows))
                     result))))))))
     (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
