@@ -170,7 +170,7 @@ Add a *meta-test* =test/elot-gptel-registry-test.el= that walks
 *Acceptance:* the meta-test is green and would have caught the
 Step 0.1 mismatches.
 
-** TODO Step 1.3 Error-path uniformity audit
+** DONE Step 1.3 Error-path uniformity audit
 
 For every tool, confirm the failure contract:
 - refusals and internal errors return a single =ERROR:= (or =FAIL:=)
@@ -186,7 +186,7 @@ per tool family (read-only, DB, mutating, ROBOT-backed).
 *Acceptance:* a table (in the toolsheet) mapping each tool to its
 verified error contract; representative tests green.
 
-** TODO Step 1.4 Mutation-safety audit
+** DONE Step 1.4 Mutation-safety audit
 
 Re-read =elot-gptel--apply-mutation= and each mutating tool against
 the write-back contract:
@@ -204,6 +204,116 @@ insert-sibling, rename, move, delete, replace-with-parent.
 
 *Acceptance:* every mutating tool has a green rollback test and a
 green gate-off refusal test.
+
+* Phase 1.5 -- Structural refactor of the tool-spec table
+
+Not a correctness fix, but a *risk-reduction* step that should land
+before further work builds on the spec table.  The problem: the whole
+tool surface (37 tools) is declared as *one* 1734-line quasi-quoted
+=defconst elot-gptel--tool-specs= (=elot-gptel.el= ~l.6797).  A single
+misplaced paren, stray unquote-=,=, or unbalanced =[...]= deep inside
+that literal breaks the entire =defconst=, and the reader error
+surfaces far from its cause.  The current shape is not acceptable even
+for v1.
+
+The registry meta-test (Step 1.2) is the safety net: the assembled
+=elot-gptel--tool-specs= value must stay *behaviourally identical*
+(same tools, args, arities, =:confirm= flags) across this refactor, so
+=make gptel-registry-test= (plus =make byte-compile=) proves no
+regression.  This is a pure refactor -- no tool behaviour changes.
+
+*Call-site sizing (from a Step-1.5 scoping scan of =elot-gptel.el=):*
+
+- =:name= arg-plist entries total ~136 across the 37 specs.
+- The most-repeated args by name: =file= x24, =source= x8, =subject= x5,
+  =content= x4, =format= x4, =limit= x4, =reasoner= x4, =dry_run= x4,
+  plus =kind= / =lang= / =op= / =anchor= / =labels= recurring across the
+  insert and DB families.
+- The =file= description string "Path to an ELOT .org file, relative to
+  the project root." is byte-identical in 7 places; =dry_run= carries
+  near-identical boolean-plus-restore prose in its 4 sites.  These are
+  latent divergence bugs (the wordings can silently drift apart) as
+  well as line bloat.
+- The same idea is already expressed *two ways* in the current source:
+  "Path to an ELOT .org file, relative to the project root." vs the
+  shorter variant "Path to an ELOT .org file (project-relative)."
+  These must be harmonised to a single canonical wording *before* the
+  split (see Step 1.5.0), otherwise the factored-out fragment
+  (Step 1.5.2) would silently pick one and quietly change the other
+  tool's schema.
+
+*Shallow assessment of other size levers in =elot-gptel.el= (384 KB,
+~9000 lines), recorded so they are not lost -- NOT in scope here:*
+
+- The file is a flat single module: 37 tool implementations + the spec
+  table + registration in one =.el=.  A later split into topical files
+  (=elot-gptel-read.el= / =-db.el= / =-mutate.el= / =-robot.el=
+  wrappers + a thin =elot-gptel.el= that requires them and registers)
+  is the bigger structural win, but it is riskier and out of scope for
+  v1.  Logged as a post-v1 candidate.
+- Several long =:description= docstrings (30-60 lines each) dominate the
+  byte count.  Externalising them (as =elot-conventions.md= already is)
+  is possible but adds indirection and an ASCII/JSON-boundary concern;
+  deliberately NOT pursued now.
+- Do NOT introduce a spec-building =defmacro=: it would hide the
+  structure the meta-test relies on and make paren errors harder, not
+  easier, to localise.  Specs stay inert data.
+
+** TODO Step 1.5.0 Harmonise duplicated arg descriptions
+
+Before any structural change, converge the arg =:description= strings
+that mean the same thing onto a *single* canonical wording, so the
+later fragment extraction (Step 1.5.2) is a pure lift with nothing to
+choose between.  Known divergences to reconcile:
+
+- =file=: "Path to an ELOT .org file, relative to the project root."
+  vs "Path to an ELOT .org file (project-relative)." -> pick one
+  canonical form and apply it to every =file= arg.
+- Sweep the other recurring args (=source=, =dry_run=, =reasoner=,
+  =format=, =limit=, ...) for the same kind of near-duplicate wording
+  and normalise each to one phrasing.
+
+This is a text-only change to =:description= strings; no arg names,
+types, enums, or =:optional= flags change, so the tool schemas are
+externally unchanged.
+
+*Acceptance:* =make gptel-registry-test= green; a grep shows each
+harmonised arg description appears in exactly one canonical form (no
+surviving variants); assembled =elot-gptel--tool-specs= differs from
+the pre-change value only in =:description= text.
+
+** TODO Step 1.5.1 Split the spec table into per-tool literals
+
+Replace the single 1734-line =defconst elot-gptel--tool-specs= list
+literal with one small =defconst= per tool (each ~40 lines, placed
+next to or near its implementation function), then assemble:
+=(defconst elot-gptel--tool-specs (list elot-gptel--spec-lint ...))=.
+Each literal becomes independently byte-compilable, so a paren error
+is localised to one ~40-line form instead of the whole block.  The
+assembled value must be =equal= to the pre-refactor list.
+
+*Acceptance:* =make byte-compile= clean; =make gptel-registry-test=
+green (all 12 tests); the assembled =elot-gptel--tool-specs= is
+=equal= to a saved snapshot of the pre-refactor value (assert once,
+then drop the snapshot).
+
+** TODO Step 1.5.2 Factor out shared arg fragments
+
+Define the recurring arg plists once (=elot-gptel--arg-file=,
+=elot-gptel--arg-content=, =elot-gptel--arg-dry-run=,
+=elot-gptel--arg-reasoner=, =elot-gptel--arg-format=,
+=elot-gptel--arg-limit=, ...) and splice them into each spec's =:args=
+via =(list elot-gptel--arg-file ...)=.  This removes the duplicated
+wording and guarantees identical descriptions/enums across tools where
+they are meant to match.  Where a tool needs a variant (e.g. =file=
+that also accepts RDF), keep a named variant fragment rather than an
+inline copy.  Add a meta-test assertion that specs sharing a canonical
+arg reference the *same* fragment value.
+
+*Acceptance:* the spec-table region shrinks by several hundred lines;
+=make gptel-registry-test= green (including the new shared-arg
+assertion); assembled value still =equal= to the snapshot; no tool's
+externally visible arg schema changes.
 
 * Phase 2 -- Scope decisions (decide what ships)
 

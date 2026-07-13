@@ -1479,7 +1479,8 @@ permitted; everything else is refused regardless of
            ((and (elot-gptel--sparql-mutating-p query)
                  (not elot-gptel-allow-side-effects))
             (user-error
-             "elot-gptel: mutating SPARQL refused (set `elot-gptel-allow-side-effects')")))
+             "elot-gptel: mutating SPARQL refused -- side effects disabled \
+(set `elot-gptel-allow-side-effects' to t)")))
           (let* ((lim (min (max (or limit elot-gptel--sparql-limit-default) 0)
                            elot-gptel--sparql-limit-max))
                  (true-file (elot-gptel--resolve-file file)))
@@ -2504,7 +2505,7 @@ side-effects gate.  The real delete is gated by
           (user-error "elot-gptel: source must be a non-empty string"))
         (unless (or dry-run elot-gptel-allow-side-effects)
           (user-error
-           "elot-gptel: elot_db_remove_source refused -- mutating tool \
+           "elot-gptel: elot_db_remove_source refused -- side effects disabled \
 (set `elot-gptel-allow-side-effects' to t, or pass dry_run=true)"))
         (elot-gptel--db-ensure-open)
         (let* ((ds (cond ((and (stringp data-source)
@@ -5211,7 +5212,7 @@ a real commit, but FILE on disk is unchanged."
                  (length summaries)
                  (if (= (length summaries) 1) "" "s")
                  (elot-gptel--axioms-format-summary summaries)))))))
-    (user-error (format "FAIL at %s" (error-message-string err)))
+    (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
 
 ;;; ---------------------------------------------------------------------------

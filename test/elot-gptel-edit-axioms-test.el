@@ -243,13 +243,13 @@ fails lint, mirroring the pets.org chicken-and-egg case."
       (let ((out (elot-gptel-tool-edit-axioms
                   (elot-gptel-edit-axioms-test--rel path)
                   nil)))
-        (should (string-prefix-p "FAIL" out))
+        (should (string-prefix-p "ERROR" out))
         (should (string-match-p "non-empty" out)))
       ;; Vector form, empty:
       (let ((out (elot-gptel-tool-edit-axioms
                   (elot-gptel-edit-axioms-test--rel path)
                   [])))
-        (should (string-prefix-p "FAIL" out))))))
+        (should (string-prefix-p "ERROR" out))))))
 
 
 ;;; ---------------------------------------------------------------------------
@@ -742,7 +742,7 @@ requiring `keyword' or `fragment'."
                               :op "vandalise"
                               :keyword "rdfs:comment"
                               :fragment "x")))))
-        (should (string-prefix-p "FAIL" out))
+        (should (string-prefix-p "ERROR" out))
         (should (string-match-p "delete-empty" out))))))
 
 

@@ -18,6 +18,8 @@
 ;;   - non-parent rejection (parent= not an immediate parent)
 ;;   - 0-parent refusal
 ;;   - dry_run round-trip: file on disk unchanged
+;;   - gate-off refusal: inner rename refuses, envelope propagates (1.4)
+;;   - rollback propagation: inner revalidate failure propagates (1.4)
 ;;   - tool-spec registration
 ;;   - dispatcher arity
 ;;   - NOTE line present in OK envelope
@@ -221,6 +223,64 @@ OK line."
           (should (string-prefix-p "OK:" out))
           (should (string-match-p "dry_run: file unchanged on disk" out))))
       ;; File on disk is byte-identical to baseline.
+      (let ((after-bytes (with-temp-buffer
+                           (insert-file-contents path)
+                           (buffer-string))))
+        (should (string= before-bytes after-bytes))))))
+
+
+;;; ---------------------------------------------------------------------------
+;;; Gate-off refusal + rollback (Step 1.4)
+;;; ---------------------------------------------------------------------------
+
+(ert-deftest elot-gptel-rwp-tool-test-gate-off-refusal ()
+  "With the side-effects gate off and dry_run nil, the wrapper's
+non-dry-run path delegates to the inner rename, whose own gate
+refuses.  A gate-aware stub mimics `--apply-mutation''s refusal so
+the test pins genuine propagation (not the canned OK stub, which
+would be a tautology).  Nothing on disk changes."
+  (elot-gptel-rwp-tool-test--with-fixture path
+    (let ((elot-gptel-allow-side-effects nil)
+          (default-directory elot-gptel-rwp-tool-test--repo-root)
+          (before-bytes (with-temp-buffer
+                          (insert-file-contents path)
+                          (buffer-string))))
+      (cl-letf (((symbol-function 'elot-gptel-tool-rename-resource)
+                 (lambda (_file _source _target &rest _)
+                   (if elot-gptel-allow-side-effects
+                       "OK: renamed"
+                     "ERROR: rename refused -- side effects disabled (set `elot-gptel-allow-side-effects')"))))
+        (let ((out (elot-gptel-tool-replace-with-parent
+                    (elot-gptel-rwp-tool-test--rel path)
+                    "ex:dog")))
+          (should (string-prefix-p "ERROR:" out))
+          (should (string-match-p "side effects disabled" out))
+          ;; Refusal envelope propagates unchanged: no NOTE appended.
+          (should-not (string-match-p "NOTE:" out))))
+      (let ((after-bytes (with-temp-buffer
+                           (insert-file-contents path)
+                           (buffer-string))))
+        (should (string= before-bytes after-bytes))))))
+
+(ert-deftest elot-gptel-rwp-tool-test-rollback-propagates ()
+  "When the inner rename revalidates and rolls back, the wrapper
+returns that FAIL/ERROR envelope verbatim -- no NOTE line, since
+the fold never committed."
+  (elot-gptel-rwp-tool-test--with-fixture path
+    (let ((elot-gptel-allow-side-effects t)
+          (default-directory elot-gptel-rwp-tool-test--repo-root)
+          (before-bytes (with-temp-buffer
+                          (insert-file-contents path)
+                          (buffer-string))))
+      (cl-letf (((symbol-function 'elot-gptel-tool-rename-resource)
+                 (lambda (_file _source _target &rest _)
+                   "ERROR: revalidation failed -- changes rolled back")))
+        (let ((out (elot-gptel-tool-replace-with-parent
+                    (elot-gptel-rwp-tool-test--rel path)
+                    "ex:dog")))
+          (should (string-prefix-p "ERROR:" out))
+          (should (string-match-p "rolled back" out))
+          (should-not (string-match-p "NOTE:" out))))
       (let ((after-bytes (with-temp-buffer
                            (insert-file-contents path)
                            (buffer-string))))
