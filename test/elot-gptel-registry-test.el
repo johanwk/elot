@@ -332,5 +332,51 @@ and asserts a refusal string (never a raw signal, never an OK)."
   (dolist (tool elot-gptel-registry-test--mutating-tools)
     (should (assoc tool elot-gptel-registry-test--mutating-args))))
 
+;;; ---------------------------------------------------------------------------
+;;; Shared arg fragments are `eq'-shared, not copied (Step 1.5.2)
+;;; ---------------------------------------------------------------------------
+
+;; Each canonical arg fragment (defined once as
+;; `elot-gptel--arg-FOO') is spliced into every spec that uses it.
+;; Splicing the *same* object guarantees byte-identical
+;; descriptions/enums across tools; this test asserts the sharing is
+;; real (`eq'), so a future inline copy that drifts out of sync fails
+;; loudly here rather than silently diverging.
+
+(defconst elot-gptel-registry-test--shared-fragments
+  '((elot-gptel--arg-file
+     "elot_check" "elot_lint" "elot_omn_validate" "elot_omn_report"
+     "elot_unsatisfiable" "elot_consistency" "elot_explain"
+     "elot_rename_resource" "elot_move_resource" "elot_delete_resource"
+     "elot_replace_with_parent" "elot_insert_sibling_resource"
+     "elot_insert_child_resource" "elot_insert_resource_tree"
+     "elot_axiom_keywords" "elot_axiom_check"
+     "elot_edit_axiom" "elot_edit_axioms")
+    (elot-gptel--arg-file-rdf
+     "elot_sparql" "elot_sparql_select")
+    (elot-gptel--arg-reasoner
+     "elot_unsatisfiable" "elot_consistency")
+    (elot-gptel--arg-sparql-format
+     "elot_sparql" "elot_sparql_select")
+    (elot-gptel--arg-sparql-limit
+     "elot_sparql" "elot_sparql_select"))
+  "Map of canonical arg-fragment symbol -> tools expected to share it (`eq').")
+
+(ert-deftest elot-gptel-registry-test-shared-args-are-eq ()
+  "Specs sharing a canonical arg reference the *same* fragment (`eq')."
+  (dolist (entry elot-gptel-registry-test--shared-fragments)
+    (let* ((sym (car entry))
+           (tools (cdr entry))
+           (fragment (symbol-value sym)))
+      (dolist (tool tools)
+        (let* ((spec (assoc tool (elot-gptel-registry-test--specs)))
+               (args (plist-get (cdr spec) :args)))
+          (unless spec
+            (ert-fail (format "%s: tool not registered" tool)))
+          (unless (memq fragment args)
+            (ert-fail
+             (format "%s: :args does not `eq'-share fragment %s"
+                     tool sym))))))))
+
 (provide 'elot-gptel-registry-test)
 ;;; elot-gptel-registry-test.el ends here

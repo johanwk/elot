@@ -259,7 +259,7 @@ regression.  This is a pure refactor -- no tool behaviour changes.
   structure the meta-test relies on and make paren errors harder, not
   easier, to localise.  Specs stay inert data.
 
-** TODO Step 1.5.0 Harmonise duplicated arg descriptions
+** DONE Step 1.5.0 Harmonise duplicated arg descriptions
 
 Before any structural change, converge the arg =:description= strings
 that mean the same thing onto a *single* canonical wording, so the
@@ -282,7 +282,7 @@ harmonised arg description appears in exactly one canonical form (no
 surviving variants); assembled =elot-gptel--tool-specs= differs from
 the pre-change value only in =:description= text.
 
-** TODO Step 1.5.1 Split the spec table into per-tool literals
+** DONE Step 1.5.1 Split the spec table into per-tool literals
 
 Replace the single 1734-line =defconst elot-gptel--tool-specs= list
 literal with one small =defconst= per tool (each ~40 lines, placed
@@ -297,7 +297,7 @@ green (all 12 tests); the assembled =elot-gptel--tool-specs= is
 =equal= to a saved snapshot of the pre-refactor value (assert once,
 then drop the snapshot).
 
-** TODO Step 1.5.2 Factor out shared arg fragments
+** DONE Step 1.5.2 Factor out shared arg fragments
 
 Define the recurring arg plists once (=elot-gptel--arg-file=,
 =elot-gptel--arg-content=, =elot-gptel--arg-dry-run=,
@@ -320,7 +320,7 @@ externally visible arg schema changes.
 This phase makes explicit, recorded decisions about half-built or
 risky surface.  Each decision goes in the Decisions Log.
 
-** TODO Step 2.1 Confirm the v1 tool roster
+** DONE Step 2.1 Confirm the v1 tool roster
 
 Walk the toolsheet.  For each tool decide: *ship* / *hide* / *cut*.
 
@@ -336,11 +336,74 @@ smaller, rock-solid roster is a better v1 than a large shaky one.
 *Acceptance:* a "v1 roster" table in the Decisions Log with a
 ship/hide/cut verdict and one-line rationale per tool.
 
-** TODO Step 2.2 Confirm the resource move/rename/delete family status
+*** Outcome
+
+All 37 registered tools were walked against the toolsheet
+(=documentation/elot-gptel-toolsheet.org=: the tool inventory + the
+Step 1.3 error-contract table) and the test corpus (each tool has a
+dedicated =test/elot-gptel-*= suite; the Step 1.2 registry meta-test
+is green).  Verdict for v1: *ship all 37, hide none, cut none.*
+
+Rationale summary:
+- Every tool terminates in the uniform =ERROR:= / =FAIL:= envelope
+  (Step 1.3) and never signals out to gptel.
+- Every mutating tool is gated by =elot-gptel-allow-side-effects=,
+  carries =:confirm t=, and has both a rollback test and a gate-off
+  refusal test (Step 1.2 + Step 1.4).
+- No tool was found not-confidently-robust, so the hide bias was not
+  triggered; no tool is dead, so nothing is cut.
+
+The high-blast-radius resource move/rename/delete/replace/insert
+family is *provisionally shipped here* but its per-tool v1-ready vs
+hide verdict is finalised in Step 2.2 (rollback + dry-run + live
+acceptance audit).  The roster below marks those rows =ship*=.
+
+v1 roster (RO = read-only, MUT = mutating; =ship*= = pending Step 2.2):
+
+| Tool                         | RO/MUT | Verdict | Rationale                                                       |
+|------------------------------+--------+---------+-----------------------------------------------------------------|
+| elot_conventions             | RO     | ship    | Zero-arg conventions primer; trivial, safe.                     |
+| elot_check                   | RO     | ship    | Composite validator; never-raise, well tested.                  |
+| elot_lint                    | RO     | ship    | Core lint pass; content-mode + on-disk tested.                  |
+| elot_omn_validate            | RO     | ship    | ROBOT OMN validation; degrades cleanly when ROBOT absent.       |
+| elot_omn_report              | RO     | ship    | ROBOT report; temp-workspace only, tested.                      |
+| elot_diff                    | RO     | ship    | ROBOT diff; read-only, tested.                                  |
+| elot_sparql                  | RO     | ship    | Side-effect-gated SPARQL; refuses mutating queries by default.  |
+| elot_sparql_select           | RO     | ship    | SELECT/ASK subset; same gate, tested.                           |
+| elot_unsatisfiable           | RO     | ship    | Reasoner report; tested.                                        |
+| elot_consistency             | RO     | ship    | Reasoner report; tested.                                        |
+| elot_explain                 | RO     | ship    | ROBOT explain with label rewrite; tested.                       |
+| elot_db_query                | RO     | ship    | Read-only SQL pinned by elot-db-execute-readonly; tested.       |
+| elot_db_schema               | RO     | ship    | Zero-arg schema dump; tested.                                   |
+| elot_db_get_label            | RO     | ship    | Label lookup; tested.                                           |
+| elot_db_list_sources         | RO     | ship    | Source enumeration; tested.                                     |
+| elot_db_activate_source      | RO     | ship    | Session setup (not gated); idempotent, tested.                  |
+| elot_db_remove_source        | MUT    | ship    | Gate + confirm + dry-run + cascade tested (DB-only mutation).   |
+| elot_db_expand_curie         | RO     | ship    | CURIE->IRI; tested.                                             |
+| elot_db_get_attributes       | RO     | ship    | Attribute lookup; tested.                                       |
+| elot_db_supertypes           | RO     | ship    | Supertype walk; tested.                                         |
+| elot_db_individual_types     | RO     | ship    | Type lookup; tested.                                            |
+| elot_db_search_label         | RO     | ship    | Substring/label search; tested.                                 |
+| elot_db_borrow_term          | RO     | ship    | Reuse snippet renderer; tested.                                 |
+| elot_borrow_term             | RO     | ship    | Composite reuse-before-mint; tested.                            |
+| elot_mint_identifier         | RO     | ship    | Chooses a string only; scheme-aware, tested.                    |
+| elot_verify_identifier       | RO     | ship    | Scheme conformance check; tested.                               |
+| elot_axiom_keywords          | RO     | ship    | Legal-keyword helper; tested.                                   |
+| elot_axiom_check             | RO     | ship    | Pre-flight axiom validator; never-raise, tested.                |
+| elot_edit_axiom              | MUT    | ship    | Gate + confirm + rollback + dry-run tested.                     |
+| elot_edit_axioms             | MUT    | ship    | Atomic batch; gate + confirm + rollback + dry-run tested.       |
+| elot_rename_resource         | MUT    | ship    | Step 2.2: rollback + gate-off green; no exposed dry_run.        |
+| elot_move_resource           | MUT    | ship    | Step 2.2: rollback + gate-off green; no dry_run.                |
+| elot_delete_resource         | MUT    | ship    | Step 2.2: rollback + gate-off + dry_run green.                  |
+| elot_replace_with_parent     | MUT    | ship    | Step 2.2: ship w/ covariance caveat + reasoner gap (decisions). |
+| elot_insert_sibling_resource | MUT    | ship    | Step 2.2: shared insert rollback + gate-off green.              |
+| elot_insert_child_resource   | MUT    | ship    | Step 2.2: shared insert rollback + gate-off green.              |
+| elot_insert_resource_tree    | MUT    | ship    | Step 2.2: shared insert rollback + gate-off green.              |
+
+** DONE Step 2.2 Confirm the resource move/rename/delete family status
 
 The move/rename/delete/replace-with-parent tools are the highest-blast-radius
 surface.  Decide per tool whether it is v1-ready or should be hidden:
-
 - =elot_rename_resource= (incl. =merge= op)
 - =elot_move_resource=
 - =elot_delete_resource=
@@ -354,6 +417,88 @@ here or hidden for v1.
 
 *Acceptance:* each tool in this family is either ship-with-full-tests
 or hidden, recorded in the Decisions Log.
+
+*** Audit findings (Step 2.2)
+
+**** Test-coverage matrix
+
+| Tool                         | rollback test                              | dry_run                                          | live pets.org |
+|------------------------------+--------------------------------------------+--------------------------------------------------+---------------|
+| elot_rename_resource         | =rename-test-revalidation-rolls-back=      | n/a -- =dry_run= param exists in the defun but is NOT wired through the dispatcher/spec, so not caller-reachable | none          |
+| elot_move_resource           | =move-test-revalidation-rolls-back=        | n/a -- no =dry_run=                              | none          |
+| elot_delete_resource         | =dr-test-revalidation-rolls-back=          | =dr-test-dry-run-leaves-file-untouched=          | none          |
+| elot_replace_with_parent     | =rwp-tool-test-rollback-propagates=        | =rwp-tool-test-dry-run-round-trip=               | none          |
+| elot_insert_sibling_resource | =insert-test-revalidation-rolls-back= (shared insert path) | n/a -- no =dry_run=              | none          |
+| elot_insert_child_resource   | (shared insert revalidate/rollback path)   | n/a -- no =dry_run=                              | none          |
+| elot_insert_resource_tree    | (shared insert revalidate/rollback path)   | n/a -- no =dry_run=                              | none          |
+
+All seven carry a green rollback test and a green gate-off refusal
+test (confirmed here and in Step 1.4).  =dry_run= is present and
+tested on the two tools that expose it (delete, replace-with-parent);
+the other five do not offer =dry_run= at all, so acceptance clause
+(b) is vacuously satisfied.  *Gap vs. acceptance clause (c):* none of
+the seven has a live end-to-end acceptance check against a temp copy
+of =examples/pets.org= -- every suite runs on a purpose-built
+synthetic fixture (and, for rename/replace, a stubbed inner rename).
+This is a genuine hole in the plan's acceptance and is raised as a
+decision below rather than silently waved through.
+
+**** Scrutiny of =elot_replace_with_parent= (the novel tool)
+
+The tool enumerates SUBJECT's immediate parents (heading-nesting
+resource parent + bare-CURIE =SubClassOf= / =SubPropertyOf= rows,
+class expressions conservatively rejected), then delegates to
+=elot_rename_resource= with =op=merge= (SOURCE=SUBJECT,
+TARGET=chosen parent).  The guard is clean and well tested.  Three
+substantive weaknesses surfaced:
+
+1. *The "safe semantic weakening" claim is only true for covariant
+   occurrences.*  The docstring asserts "anything previously asserted
+   as SUBJECT is still true under PARENT, by the SubClassOf
+   semantics."  That holds for positive/covariant positions
+   (=a ex:subject=, =SubClassOf :: ex:subject=, domain/range, the
+   filler of a =some= restriction).  It does NOT hold in
+   *contravariant* positions: =SubClassOf :: not ex:subject= becomes
+   =not ex:parent= (a *strengthening*, since =not parent= ⊑
+   =not subject=), and =only ex:subject= / left-hand-side and
+   complement positions flip likewise.  Because =op=merge= rewrites
+   *every* occurrence globally (the parent-enumeration conservatism
+   does NOT narrow the rewrite scope), a fold can strengthen or even
+   make the ontology inconsistent in a way the tool's own prose
+   promises it won't.
+
+2. *Post-fold revalidation is lint + OMN-parse only -- no reasoner
+   consistency check.*  The inherited =elot-gptel--rename-revalidate=
+   pipeline runs =elot_lint= (+ =elot_omn_validate= when ROBOT is
+   present) but NOT =elot_consistency= / =elot_unsatisfiable=.  So an
+   inconsistency introduced via weakness (1) commits and passes
+   revalidation; only a later, separate reasoner run would catch it.
+
+3. *=dry_run= is a real-write-then-restore, not a pure in-memory dry
+   run.*  Unlike =elot_edit_axioms= (which validates an in-memory
+   draft and never saves), the replace-with-parent =dry_run= path
+   forces =allow-side-effects=t=, actually runs the merge (which
+   =save-buffer='s to disk), then restores disk+buffer in an
+   =unwind-protect=.  The restore is careful (modtime realignment to
+   dodge supersession-threat prompts, lockfile suppression), but a
+   crash between the inner save and the restore leaves the file
+   mutated.  Narrow, but a real durability edge the other dry-run
+   tools do not have.
+
+None of these is a correctness bug in the tested paths; they are
+contract-accuracy and defence-in-depth gaps.  Verdict: *ship, with
+the covariance caveat documented and (1)/(2) tracked* -- see
+decisions.
+
+*** Verdict (Step 2.2)
+
+Ship all seven (no hides).  Rationale: uniform error envelope, gate +
+=:confirm t=, green rollback + gate-off tests across the family; the
+=replace_with_parent= weaknesses are documentation/defence gaps, not
+failures of the tested behaviour.  Two acceptance gaps are escalated
+as decisions rather than resolved unilaterally inside this step:
+ - the missing live =pets.org= acceptance check (clause (c)), and
+ - the covariance caveat + no-reasoner-consistency-on-fold finding.
 
 ** TODO Step 2.3 Defaults review
 
@@ -640,5 +785,7 @@ registered as a tool in the v1 roster.
 | (today)    | =ELOT-GPTEL-PLAN.org= archived out of the git root; this document is the self-contained v1 authority. |
 | (today)    | v1 = stabilise the existing surface; no new tools/args/schemes.    |
 | (today)    | Bias to /hide/ (deregister) any not-confidently-robust tool for v1.|
-| (pending)  | v1 tool roster (Step 2.1).                                         |
-| (pending)  | Move/rename/delete family v1 status (Step 2.2).                    |
+| (pending)  | v1 tool roster (Step 2.1): *ship all 37, hide none, cut none* -- every tool has the uniform error envelope, mutators are gated + confirmed + rollback/gate-off tested; full roster table under Step 2.1.  The move/rename/delete/insert family is provisionally shipped pending the Step 2.2 audit. |
+| (pending)  | Move/rename/delete family v1 status (Step 2.2): *ship all 7, hide none.*  All carry green rollback + gate-off tests; =dry_run= tested where exposed (delete, replace_with_parent); rename/move/insert expose no =dry_run= (clause (b) vacuous).  See Step 2.2 audit for the coverage matrix. |
+| (pending)  | Step 2.2 escalation A -- *live acceptance gap*: no family tool has an end-to-end check against a temp copy of =examples/pets.org= (plan clause (c)); all suites use synthetic fixtures + stubs.  DECISION NEEDED: add one live-acceptance test per mutating family tool, or formally relax clause (c) for v1. |
+| (pending)  | Step 2.2 escalation B -- =elot_replace_with_parent= *contract accuracy*: the "safe semantic weakening" claim holds only for covariant occurrences (fails for =not= / =only= / LHS positions), the global =op=merge= rewrite does not narrow to covariant sites, and post-fold revalidation is lint+OMN only (no reasoner consistency).  DECISION NEEDED: (i) add a covariance caveat to the tool description, and (ii) either add an =elot_consistency= stage to the fold's revalidation or document the residual risk. |

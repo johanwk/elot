@@ -6795,8 +6795,56 @@ visible.  Pure read; never mutates the buffer."
 ;;; Tool registry
 ;;; ---------------------------------------------------------------------------
 
-(defconst elot-gptel--tool-specs
-  `(("elot_conventions"
+;; --- Shared argument fragments -----------------------------------------
+;; Recurring `:args' plists defined once and spliced (via backquote
+;; `,') into each spec's `:args' below.  Splicing the *same* object
+;; guarantees byte-identical descriptions/enums across every tool that
+;; shares a canonical argument, and keeps the spec table smaller.  The
+;; registry meta-test asserts that specs sharing a canonical arg
+;; reference the same fragment value (`eq').
+
+(defconst elot-gptel--arg-file
+  '(:name "file"
+          :type string
+          :description
+          "Path to an ELOT .org file, relative to the project root.")
+  "Canonical `file' arg: an ELOT .org file, project-relative.")
+
+(defconst elot-gptel--arg-file-rdf
+  '(:name "file"
+          :type string
+          :description
+          "Path to an ELOT .org file or an RDF file ROBOT can read.")
+  "Variant `file' arg accepting an ELOT .org file or any RDF file ROBOT reads.")
+
+(defconst elot-gptel--arg-reasoner
+  '(:name "reasoner"
+          :type string
+          :optional t
+          :enum ["hermit" "whelk"]
+          :description
+          "OWL reasoner to use (default `hermit').")
+  "Canonical `reasoner' arg (hermit / whelk, default hermit).")
+
+(defconst elot-gptel--arg-sparql-format
+  '(:name "format"
+          :type string
+          :optional t
+          :enum ["tsv" "csv" "json" "table"]
+          :description
+          "Result format (default tsv).  `table' renders an Org table.")
+  "Canonical SPARQL result-format arg.")
+
+(defconst elot-gptel--arg-sparql-limit
+  '(:name "limit"
+          :type integer
+          :optional t
+          :description
+          "Maximum number of data rows to return (default 200, max 5000).")
+  "Canonical SPARQL row-limit arg.")
+
+(defconst elot-gptel--spec-conventions
+  '("elot_conventions"
      :function elot-gptel-tool-conventions
      :description
      "Return the ELOT authoring-conventions cheat sheet as Markdown.
@@ -6817,8 +6865,10 @@ contained worked exemplar (a small `pets' ontology in a fenced
 `org' code block) demonstrating every idiom inline.
 
 Read-only; takes no arguments."
-     :args ())
-    ("elot_check"
+     :args ()))
+
+(defconst elot-gptel--spec-check
+  `("elot_check"
      :function elot-gptel-tool-check
      :description
      "Composite lint -> OMN parse -> consistency -> unsatisfiable
@@ -6850,10 +6900,7 @@ Use this as the default \"is my ontology OK?\" tool; reach for
 the atomic tools (`elot_lint', `elot_omn_validate', etc.) only
 when you need a single stage in isolation.  Read-only."
      :args
-     ((:name "file"
-             :type string
-             :description
-             "Path to an ELOT .org file, relative to the project root.")
+     (,elot-gptel--arg-file
       (:name "content"
              :type string
              :optional t
@@ -6874,8 +6921,10 @@ Same semantics as the `content' arg on `elot_lint' / \
              :enum ["hermit" "whelk"]
              :description
              "OWL reasoner for the consistency / unsatisfiable \
-stages (default `hermit').")))
-    ("elot_lint"
+stages (default `hermit')."))))
+
+(defconst elot-gptel--spec-lint
+  `("elot_lint"
      :function elot-gptel-tool-lint
      :description
      "Lint an ELOT .org ontology source file.  Runs the standard
@@ -6886,10 +6935,7 @@ each issue is one line `LINE:COL [CATEGORY/TRUST] MESSAGE',
 followed by a final `Summary: N errors, M warnings'.  Returns
 `OK: no lint issues' when the file is clean."
      :args
-     ((:name "file"
-             :type string
-             :description
-             "Path to an ELOT .org file, relative to the project root.")
+     (,elot-gptel--arg-file
       (:name "severity"
              :type string
              :optional t
@@ -6910,8 +6956,10 @@ followed by a final `Summary: N errors, M warnings'.  Returns
 bytes are linted in place of the on-disk contents of FILE.  Lets an \
 LLM lint its in-flight edits without asking the user to save first.  \
 FILE is still required and the project-traversal guard still \
-applies, but FILE need not exist on disk.")))
-    ("elot_omn_validate"
+applies, but FILE need not exist on disk."))))
+
+(defconst elot-gptel--spec-omn-validate
+  `("elot_omn_validate"
      :function elot-gptel-tool-omn-validate
      :description
      "Validate the OMN export of an ELOT .org file using ROBOT.
@@ -6928,10 +6976,7 @@ or a multi-line error report otherwise.  Requires ROBOT to be
 configured (`elot-robot-jar-path' or a `robot' executable on
 PATH).  Read-only -- writes only into a temporary workspace."
      :args
-     ((:name "file"
-             :type string
-             :description
-             "Path to an ELOT .org file, relative to the project root.")
+     (,elot-gptel--arg-file
       (:name "profile"
              :type string
              :optional t
@@ -6944,8 +6989,10 @@ PATH).  Read-only -- writes only into a temporary workspace."
              :description
              "Optional ELOT .org draft string.  When supplied, the \
 bytes are validated in place of the on-disk contents of FILE.  \
-Same semantics as the `content' arg on `elot_lint'.")))
-    ("elot_omn_report"
+Same semantics as the `content' arg on `elot_lint'."))))
+
+(defconst elot-gptel--spec-omn-report
+  `("elot_omn_report"
      :function elot-gptel-tool-omn-report
      :description
      "Run ROBOT's `report' against an ELOT .org file and return the report.
@@ -6971,10 +7018,7 @@ in the same way as on `elot_lint' / `elot_omn_validate'.
 Read-only -- writes only into a temporary workspace.  Requires
 ROBOT to be configured."
      :args
-     ((:name "file"
-             :type string
-             :description
-             "Path to an ELOT .org file, relative to the project root.")
+     (,elot-gptel--arg-file
       (:name "format"
              :type string
              :optional t
@@ -6986,8 +7030,10 @@ ROBOT to be configured."
              :optional t
              :description
              "Optional ELOT .org draft string; same semantics as on \
-`elot_lint' / `elot_omn_validate'.")))
-    ("elot_diff"
+`elot_lint' / `elot_omn_validate'."))))
+
+(defconst elot-gptel--spec-diff
+  '("elot_diff"
      :function elot-gptel-tool-diff
      :description
      "Show the structural diff between two ontologies using ROBOT.
@@ -7031,8 +7077,10 @@ of the same ontology).  Same accepted extensions as FILE.")
              :optional t
              :enum ["plain" "pretty" "markdown" "html"]
              :description
-             "ROBOT diff output format (default `plain').")))
-    ("elot_sparql"
+             "ROBOT diff output format (default `plain')."))))
+
+(defconst elot-gptel--spec-sparql
+  `("elot_sparql"
      :function elot-gptel-tool-sparql
      :description
      "Execute a SPARQL query against an ontology and return the results.
@@ -7055,25 +7103,15 @@ appended.  Mutating SPARQL (INSERT / DELETE / ...) is refused
 unless `elot-gptel-allow-side-effects' is non-nil.  Requires
 ROBOT to be configured."
      :args
-     ((:name "file"
-             :type string
-             :description
-             "Path to an ELOT .org file or an RDF file ROBOT can read.")
+     (,elot-gptel--arg-file-rdf
       (:name "query"
              :type string
              :description "SPARQL query text.")
-      (:name "format"
-             :type string
-             :optional t
-             :enum ["tsv" "csv" "json" "table"]
-             :description
-             "Result format (default tsv).  `table' renders an Org table.")
-      (:name "limit"
-             :type integer
-             :optional t
-             :description
-             "Maximum number of data rows to return (default 200, max 5000).")))
-    ("elot_sparql_select"
+      ,elot-gptel--arg-sparql-format
+      ,elot-gptel--arg-sparql-limit)))
+
+(defconst elot-gptel--spec-sparql-select
+  `("elot_sparql_select"
      :function elot-gptel-tool-sparql-select
      :description
      "Run a read-only SPARQL SELECT or ASK query against an ontology.
@@ -7087,25 +7125,15 @@ hard guarantee no mutating keyword can reach ROBOT.
 Arguments and return shape are identical to `elot_sparql'.
 Requires ROBOT to be configured."
      :args
-     ((:name "file"
-             :type string
-             :description
-             "Path to an ELOT .org file or an RDF file ROBOT can read.")
+     (,elot-gptel--arg-file-rdf
       (:name "query"
              :type string
              :description "SPARQL SELECT or ASK query text.")
-      (:name "format"
-             :type string
-             :optional t
-             :enum ["tsv" "csv" "json" "table"]
-             :description
-             "Result format (default tsv).  `table' renders an Org table.")
-      (:name "limit"
-             :type integer
-             :optional t
-             :description
-             "Maximum number of data rows to return (default 200, max 5000).")))
-    ("elot_unsatisfiable"
+      ,elot-gptel--arg-sparql-format
+      ,elot-gptel--arg-sparql-limit)))
+
+(defconst elot-gptel--spec-unsatisfiable
+  `("elot_unsatisfiable"
      :function elot-gptel-tool-unsatisfiable
      :description
      "Report unsatisfiable classes in an ontology using ROBOT's reasoner.
@@ -7126,17 +7154,11 @@ caller at `elot_consistency' for a clearer explanation.
 REASONER is one of `hermit' (default) or `whelk'.
 Requires ROBOT to be configured."
      :args
-     ((:name "file"
-             :type string
-             :description
-             "Path to an ELOT .org file, relative to the project root.")
-      (:name "reasoner"
-             :type string
-             :optional t
-             :enum ["hermit" "whelk"]
-             :description
-             "OWL reasoner to use (default `hermit').")))
-    ("elot_consistency"
+     (,elot-gptel--arg-file
+      ,elot-gptel--arg-reasoner)))
+
+(defconst elot-gptel--spec-consistency
+  `("elot_consistency"
      :function elot-gptel-tool-consistency
      :description
      "Check whether an ontology is consistent using ROBOT's reasoner.
@@ -7160,17 +7182,11 @@ Returns one of:
 REASONER is one of `hermit' (default) or `whelk'.
 Requires ROBOT to be configured."
      :args
-     ((:name "file"
-             :type string
-             :description
-             "Path to an ELOT .org file, relative to the project root.")
-      (:name "reasoner"
-             :type string
-             :optional t
-             :enum ["hermit" "whelk"]
-             :description
-             "OWL reasoner to use (default `hermit').")))
-    ("elot_explain"
+     (,elot-gptel--arg-file
+      ,elot-gptel--arg-reasoner)))
+
+(defconst elot-gptel--spec-explain
+  `("elot_explain"
      :function elot-gptel-tool-explain
      :description
      "Explain why an OWL axiom is entailed by an ontology.
@@ -7214,10 +7230,7 @@ call exceeds `elot-gptel-explain-timeout' (default 60 s).
 Read-only with respect to your project files.  Requires ROBOT
 to be configured."
      :args
-     ((:name "file"
-             :type string
-             :description
-             "Path to an ELOT .org file, relative to the project root.")
+     (,elot-gptel--arg-file
       (:name "axiom"
              :type string
              :description
@@ -7239,8 +7252,10 @@ ROBOT.  Examples: \"Dog SubClassOf: Animal\", \
              :optional t
              :description
              "Maximum number of distinct justifications to return \
-(default 1).")))
-    ("elot_rename_resource"
+(default 1)."))))
+
+(defconst elot-gptel--spec-rename-resource
+  `("elot_rename_resource"
      :function elot-gptel-tool-rename-resource
      :confirm t
      :description
@@ -7287,10 +7302,7 @@ Out of scope: description-list label edits beyond the heading
 title, cross-file rewrites, and rewrites of external projects
 that import this ontology."
      :args
-     ((:name "file"
-             :type string
-             :description
-             "Path to an ELOT .org file (project-relative).")
+     (,elot-gptel--arg-file
       (:name "source"
              :type string
              :description
@@ -7337,8 +7349,10 @@ path).  `merge' requires TARGET to be already declared: every \
 reference to SOURCE is rewritten to TARGET, SOURCE's heading is \
 removed, and SOURCE's heading-nested children are promoted one \
 outline level.  Use `merge' to fold one resource into an existing \
-co-extensive one (the workflow behind `elot_replace_with_parent').")))
-    ("elot_move_resource"
+co-extensive one (the workflow behind `elot_replace_with_parent')."))))
+
+(defconst elot-gptel--spec-move-resource
+  `("elot_move_resource"
      :function elot-gptel-tool-move-resource
      :confirm t
      :description
@@ -7385,10 +7399,7 @@ plan's Step 12.2), cross-file moves (Step 12.3), and CURIE
 rewrites that need to accompany a move (delegate to
 `elot_rename_resource')."
      :args
-     ((:name "file"
-             :type string
-             :description
-             "Path to an ELOT .org file (project-relative).")
+     (,elot-gptel--arg-file
       (:name "source"
              :type string
              :description
@@ -7410,8 +7421,10 @@ SOURCE becomes a child of TARGET) or `sibling' (SOURCE is \
 inserted right after TARGET's whole subtree, at TARGET's \
 level).  Ignored when TARGET is `top' -- the section-root \
 placement is always equivalent to a child of the section \
-heading.")))
-    ("elot_delete_resource"
+heading."))))
+
+(defconst elot-gptel--spec-delete-resource
+  `("elot_delete_resource"
      :function elot-gptel-tool-delete-resource
      :confirm t
      :description
@@ -7470,10 +7483,7 @@ Out of scope: cross-file deletion, prose-mention rewriting,
 auto-archival of the deleted subtree to a `deprecated'
 section (a separate first-class authoring move)."
      :args
-     ((:name "file"
-             :type string
-             :description
-             "Path to an ELOT .org file (project-relative).")
+     (,elot-gptel--arg-file
       (:name "subject"
              :type string
              :description
@@ -7496,8 +7506,10 @@ level; `delete' removes the whole subtree.")
              "When true, run the full pipeline but restore the \
 buffer afterwards.  Same OK / FAIL envelope; file unchanged on \
 disk.  Bypasses the side-effects gate (read-only by \
-construction).")))
-    ("elot_replace_with_parent"
+construction)."))))
+
+(defconst elot-gptel--spec-replace-with-parent
+  `("elot_replace_with_parent"
      :function elot-gptel-tool-replace-with-parent
      :confirm t
      :description
@@ -7545,10 +7557,7 @@ parents by a heuristic, replacing a property with its
 inverse, and the deletion itself (call `elot_delete_resource'
 in a follow-up call)."
      :args
-     ((:name "file"
-             :type string
-             :description
-             "Path to an ELOT .org file (project-relative).")
+     (,elot-gptel--arg-file
       (:name "subject"
              :type string
              :description
@@ -7569,8 +7578,10 @@ not an immediate parent of SUBJECT.")
              "When true, run the full pipeline but restore the \
 file on disk and the in-memory buffer afterwards.  Same \
 OK / FAIL envelope; file unchanged.  Bypasses the side-effects \
-gate (read-only by construction).")))
-    ("elot_insert_sibling_resource"
+gate (read-only by construction)."))))
+
+(defconst elot-gptel--spec-insert-sibling-resource
+  `("elot_insert_sibling_resource"
      :function elot-gptel-tool-insert-sibling-resource
      :confirm t
      :description
@@ -7613,10 +7624,7 @@ success returns:
   [== OMN PARSE ==
    ...]"
      :args
-     ((:name "file"
-             :type string
-             :description
-             "Path to an ELOT .org file (project-relative).")
+     (,elot-gptel--arg-file
       (:name "anchor"
              :type string
              :description
@@ -7626,8 +7634,10 @@ success returns:
              :type array
              :items (:type string)
              :description
-             "Array of plain rdfs:label strings (not `Label (curie)' headings); length = batch size.")))
-    ("elot_insert_child_resource"
+             "Array of plain rdfs:label strings (not `Label (curie)' headings); length = batch size."))))
+
+(defconst elot-gptel--spec-insert-child-resource
+  `("elot_insert_child_resource"
      :function elot-gptel-tool-insert-child-resource
      :confirm t
      :description
@@ -7650,10 +7660,7 @@ Same write-back contract as `elot_insert_sibling_resource':
 gated by `elot-gptel-allow-side-effects', auto-revalidate,
 rollback on failure."
      :args
-     ((:name "file"
-             :type string
-             :description
-             "Path to an ELOT .org file (project-relative).")
+     (,elot-gptel--arg-file
       (:name "anchor"
              :type string
              :description
@@ -7665,8 +7672,10 @@ resource of an empty resource section.")
              :type array
              :items (:type string)
              :description
-             "Array of plain rdfs:label strings (not `Label (curie)' headings); length = batch size.")))
-    ("elot_insert_resource_tree"
+             "Array of plain rdfs:label strings (not `Label (curie)' headings); length = batch size."))))
+
+(defconst elot-gptel--spec-insert-resource-tree
+  `("elot_insert_resource_tree"
      :function elot-gptel-tool-insert-resource-tree
      :confirm t
      :description
@@ -7712,10 +7721,7 @@ so the caller can address them in a follow-up call.  Each
 entry pairs the minted CURIE with its input label (F13) so
 the caller can unambiguously route follow-up renames."
      :args
-     ((:name "file"
-             :type string
-             :description
-             "Path to an ELOT .org file (project-relative).")
+     (,elot-gptel--arg-file
       (:name "anchor"
              :type string
              :description
@@ -7733,8 +7739,10 @@ the caller can unambiguously route follow-up renames."
              :enum ["sibling" "child"]
              :description
              "Placement of the top-level nodes relative to ANCHOR \
-(default `sibling').")))
-    ("elot_db_query"
+(default `sibling')."))))
+
+(defconst elot-gptel--spec-db-query
+  '("elot_db_query"
      :function elot-gptel-tool-db-query
      :description
      "Run a read-only SQL query against the ELOT label database.
@@ -7768,8 +7776,10 @@ appended."
              :optional t
              :description
              "Maximum number of data rows to return \
-(default 200, max 5000).")))
-    ("elot_db_schema"
+(default 200, max 5000)."))))
+
+(defconst elot-gptel--spec-db-schema
+  '("elot_db_schema"
      :function elot-gptel-tool-db-schema
      :description
      "Return the ELOT label DB schema (DDL + version).
@@ -7783,8 +7793,10 @@ code block.
 Call this once at the start of a session to let the model
 compose correct `elot_db_query' statements without having the
 schema hard-coded in the system prompt.  Read-only."
-     :args ())
-    ("elot_db_get_label"
+     :args ()))
+
+(defconst elot-gptel--spec-db-get-label
+  '("elot_db_get_label"
      :function elot-gptel-tool-db-get-label
      :description
      "Return the best rdfs:label the ELOT DB knows for TOKEN.
@@ -7804,8 +7816,10 @@ already labels the IRI you were about to mint, prefer reuse
              :type string
              :description
              "A CURIE, full IRI (with or without angle brackets), \
-or literal entity id to look up.")))
-    ("elot_db_list_sources"
+or literal entity id to look up."))))
+
+(defconst elot-gptel--spec-db-list-sources
+  '("elot_db_list_sources"
      :function elot-gptel-tool-db-list-sources
      :description
      "List every source currently registered in the ELOT label DB.
@@ -7815,8 +7829,10 @@ Returns a TSV with columns `source', `data_source', `type',
 buffer's active ones).  Useful as the first step of a reuse
 check: which ontologies has the user already encountered?
 Read-only."
-     :args ())
-    ("elot_db_activate_source"
+     :args ()))
+
+(defconst elot-gptel--spec-db-activate-source
+  '("elot_db_activate_source"
      :function elot-gptel-tool-db-activate-source
      :description
      "Register-if-needed and activate FILE as a label source.
@@ -7847,8 +7863,10 @@ where STATUS is one of `registered', `refreshed',
              :description
              "Path to an ELOT .org file (or any source ELOT's \
 parser dispatcher knows: .csv, .tsv, .json, .ttl, .rq), \
-project-relative.")))
-    ("elot_db_remove_source"
+project-relative."))))
+
+(defconst elot-gptel--spec-db-remove-source
+  '("elot_db_remove_source"
      :function elot-gptel-tool-db-remove-source
      :confirm t
      :description
@@ -7916,8 +7934,10 @@ whole-table deletion).  Ignored in exact mode.")
              :description
              "When true, preview the rows that would be \
 removed without performing the DELETE.  Bypasses the \
-side-effects gate.")))
-    ("elot_db_expand_curie"
+side-effects gate."))))
+
+(defconst elot-gptel--spec-db-expand-curie
+  '("elot_db_expand_curie"
      :function elot-gptel-tool-db-expand-curie
      :description
      "Expand CURIE (prefix:local) to a full IRI using the ELOT DB.
@@ -7933,8 +7953,10 @@ triangle.  Read-only."
              :type string
              :description
              "A CURIE of the form `prefix:local' (the prefix may \
-be empty for the default-prefix case).")))
-    ("elot_db_get_attributes"
+be empty for the default-prefix case)."))))
+
+(defconst elot-gptel--spec-db-get-attributes
+  '("elot_db_get_attributes"
      :function elot-gptel-tool-db-get-attributes
      :description
      "List all (prop, value, lang, source) rows for an entity ID.
@@ -7957,8 +7979,10 @@ is the natural way to ask \"what does the DB know about
              :type string
              :optional t
              :description
-             "Optional source name; restrict to a single source's rows.")))
-    ("elot_db_supertypes"
+             "Optional source name; restrict to a single source's rows."))))
+
+(defconst elot-gptel--spec-db-supertypes
+  '("elot_db_supertypes"
      :function elot-gptel-tool-db-supertypes
      :description
      "Return the direct supertypes asserted for ID.
@@ -7983,8 +8007,10 @@ a kind of?\").  Read-only."
              :type string
              :optional t
              :description
-             "Optional source name; restrict to a single source's rows.")))
-    ("elot_db_individual_types"
+             "Optional source name; restrict to a single source's rows."))))
+
+(defconst elot-gptel--spec-db-individual-types
+  '("elot_db_individual_types"
      :function elot-gptel-tool-db-individual-types
      :description
      "Return the asserted types of an individual ID.
@@ -8010,8 +8036,10 @@ or has no asserted type.  Read-only."
              :type string
              :optional t
              :description
-             "Optional source name; restrict to a single source's rows.")))
-    ("elot_db_search_label"
+             "Optional source name; restrict to a single source's rows."))))
+
+(defconst elot-gptel--spec-db-search-label
+  '("elot_db_search_label"
      :function elot-gptel-tool-db-search-label
      :description
      "Search the entire ELOT label database for entities matching QUERY.
@@ -8062,7 +8090,7 @@ signal to fall through to `elot_mint_identifier'.  Read-only."
              :type string
              :optional t
              :description
-             "Restrict to a single registered source name.")
+             "Optional source name; restrict to a single source's rows.")
       (:name "lang"
              :type string
              :optional t
@@ -8077,8 +8105,10 @@ signal to fall through to `elot_mint_identifier'.  Read-only."
              :type boolean
              :optional t
              :description
-             "When true, suppress the M11.1 cross-prefix local-name fallback and require strict id/label matching.")))
-    ("elot_db_borrow_term"
+             "When true, suppress the M11.1 cross-prefix local-name fallback and require strict id/label matching."))))
+
+(defconst elot-gptel--spec-db-borrow-term
+  '("elot_db_borrow_term"
      :function elot-gptel-tool-db-borrow-term
      :description
      "Return an ELOT description-list snippet for reusing a term.
@@ -8104,8 +8134,10 @@ borrowed term into the target ontology.  Read-only."
      ((:name "token"
              :type string
              :description
-             "CURIE, IRI, or angle-bracketed IRI known to the ELOT DB.")))
-    ("elot_borrow_term"
+             "CURIE, IRI, or angle-bracketed IRI known to the ELOT DB."))))
+
+(defconst elot-gptel--spec-borrow-term
+  '("elot_borrow_term"
      :function elot-gptel-tool-borrow-term
      :description
      "Composite reuse-before-mint: search the ELOT label DB and \
@@ -8159,13 +8191,15 @@ shaping.  Read-only."
              :type string
              :optional t
              :description
-             "Restrict to a single registered source name.")
+             "Optional source name; restrict to a single source's rows.")
       (:name "lang"
              :type string
              :optional t
              :description
-             "Require a label in this language tag.")))
-    ("elot_mint_identifier"
+             "Require a label in this language tag."))))
+
+(defconst elot-gptel--spec-mint-identifier
+  '("elot_mint_identifier"
      :function elot-gptel-tool-mint-identifier
      :description
      "Mint a fresh identifier (CURIE) conforming to this project's
@@ -8232,8 +8266,10 @@ names: `acme', `uuid', `slug', `counter'.  Specs: `counter GO_0000000' \
                     "annotation-property" "individual" "datatype"]
              :description
              "Entity kind; helps schemes that distinguish (e.g. `acme' \
-encodes a single TYPE letter).")))
-    ("elot_verify_identifier"
+encodes a single TYPE letter)."))))
+
+(defconst elot-gptel--spec-verify-identifier
+  '("elot_verify_identifier"
      :function elot-gptel-tool-verify-identifier
      :description
      "Verify that CURIE conforms to the project's identifier scheme.
@@ -8262,8 +8298,10 @@ is supplied explicitly it overrides that default.  Read-only."
              :type string
              :optional t
              :description
-             "Override the configured scheme by name.")))
-    ("elot_axiom_keywords"
+             "Override the configured scheme by name."))))
+
+(defconst elot-gptel--spec-axiom-keywords
+  `("elot_axiom_keywords"
      :function elot-gptel-tool-axiom-keywords
      :description
      "Return the legal OMN frame keywords for SUBJECT in FILE.
@@ -8308,16 +8346,15 @@ Returns an `OK:'-prefixed multi-line report on success, an
 Pairs with the future `elot_axiom_check' (9.2.b) and
 `elot_edit_axiom' (9.2.c)."
      :args
-     ((:name "file"
-             :type string
-             :description
-             "Path to an ELOT .org file (project-relative).")
+     (,elot-gptel--arg-file
       (:name "subject"
              :type string
              :description
              "CURIE (preferred) or rdfs:label of a resource \
-declared in FILE.")))
-    ("elot_axiom_check"
+declared in FILE."))))
+
+(defconst elot-gptel--spec-axiom-check
+  `("elot_axiom_check"
      :function elot-gptel-tool-axiom-check
      :description
      "Pre-flight validate a candidate `KEYWORD :: FRAGMENT' row on SUBJECT.
@@ -8349,10 +8386,7 @@ pass with the list of stages run, `FAIL:' with an actionable
 next step on any blocker, or `ERROR:' for malformed input
 (unknown subject, etc.).  Never mutates FILE."
      :args
-     ((:name "file"
-             :type string
-             :description
-             "Path to an ELOT .org file (project-relative).")
+     (,elot-gptel--arg-file
       (:name "subject"
              :type string
              :description
@@ -8375,8 +8409,10 @@ declared in FILE.")
              :description
              "When true, also run an in-memory `elot_consistency' \
 probe on the synthesised draft.  Costs one ROBOT run; off by \
-default to keep the loop cheap.")))
-    ("elot_edit_axiom"
+default to keep the loop cheap."))))
+
+(defconst elot-gptel--spec-edit-axiom
+  `("elot_edit_axiom"
      :function elot-gptel-tool-edit-axiom
      :confirm t
      :description
@@ -8422,10 +8458,7 @@ Out of scope: editing nested axiom-annotation rows (future
 9.2.d), batch / multi-row edits in one call, cross-file
 writes."
      :args
-     ((:name "file"
-             :type string
-             :description
-             "Path to an ELOT .org file (project-relative).")
+     (,elot-gptel--arg-file
       (:name "subject"
              :type string
              :description
@@ -8462,8 +8495,10 @@ the row to target.  Match is ASCII-normalised (whitespace \
 runs collapsed, ends trimmed).  Pass the empty string to \
 target a row whose value is empty / whitespace-only.  Omit \
 when KEYWORD alone is unique on SUBJECT.  Ignored for \
-`delete-empty'.")))
-    ("elot_edit_axioms"
+`delete-empty'."))))
+
+(defconst elot-gptel--spec-edit-axioms
+  `("elot_edit_axioms"
      :function elot-gptel-tool-edit-axioms
      :confirm t
      :description
@@ -8509,10 +8544,7 @@ Mutating tool: gated by `elot-gptel-allow-side-effects' (the
 gate is bypassed when DRY_RUN is true).  Out of scope: cross-file
 batches, partial-success / continue-on-error, reordering edits."
      :args
-     ((:name "file"
-             :type string
-             :description
-             "Path to an ELOT .org file (project-relative).")
+     (,elot-gptel--arg-file
       (:name "edits"
              :type array
              :items (:type object)
@@ -8527,7 +8559,46 @@ shape as `elot_edit_axiom' minus `file'.")
              "When true, run the full pipeline (apply + revalidate \
 via `content=') but skip the actual save.  File on disk \
 unchanged; useful for try-before-commit.  Default false."))))
-"Each entry is (NAME . PLIST) where PLIST is forwarded to
+
+(defconst elot-gptel--tool-specs
+  (list elot-gptel--spec-conventions
+        elot-gptel--spec-check
+        elot-gptel--spec-lint
+        elot-gptel--spec-omn-validate
+        elot-gptel--spec-omn-report
+        elot-gptel--spec-diff
+        elot-gptel--spec-sparql
+        elot-gptel--spec-sparql-select
+        elot-gptel--spec-unsatisfiable
+        elot-gptel--spec-consistency
+        elot-gptel--spec-explain
+        elot-gptel--spec-rename-resource
+        elot-gptel--spec-move-resource
+        elot-gptel--spec-delete-resource
+        elot-gptel--spec-replace-with-parent
+        elot-gptel--spec-insert-sibling-resource
+        elot-gptel--spec-insert-child-resource
+        elot-gptel--spec-insert-resource-tree
+        elot-gptel--spec-db-query
+        elot-gptel--spec-db-schema
+        elot-gptel--spec-db-get-label
+        elot-gptel--spec-db-list-sources
+        elot-gptel--spec-db-activate-source
+        elot-gptel--spec-db-remove-source
+        elot-gptel--spec-db-expand-curie
+        elot-gptel--spec-db-get-attributes
+        elot-gptel--spec-db-supertypes
+        elot-gptel--spec-db-individual-types
+        elot-gptel--spec-db-search-label
+        elot-gptel--spec-db-borrow-term
+        elot-gptel--spec-borrow-term
+        elot-gptel--spec-mint-identifier
+        elot-gptel--spec-verify-identifier
+        elot-gptel--spec-axiom-keywords
+        elot-gptel--spec-axiom-check
+        elot-gptel--spec-edit-axiom
+        elot-gptel--spec-edit-axioms)
+  "Each entry is (NAME . PLIST) where PLIST is forwarded to
 `gptel-make-tool' after light translation.")
 
 (defun elot-gptel--tool-thunk (fn)
