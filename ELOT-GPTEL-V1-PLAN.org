@@ -794,7 +794,7 @@ is NOT a light accuracy pass but a *real rewrite*.  Concrete findings:
 nothing less; a new user can arm side effects and run one
 edit/verify loop by following the docs.
 
-** TODO Step 3.2 README integration
+** DONE Step 3.2 README integration
 
 In =README.md= under /Optional integrations/, add a short paragraph +
 code block for =M-x elot-gptel-register-tools=, noting gptel and

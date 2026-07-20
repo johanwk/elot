@@ -489,6 +489,34 @@ full reference, including the `CONTEXT` plist surface and how to
 register a custom scheme.
 
 
+### Optional integration: AI-assisted authoring with gptel
+
+ELOT ships a set of tools that let a large language model (LLM)
+inspect, validate, and — with your confirmation — edit your ontology
+files, driven from a chat session inside Emacs. The tools are built
+on [gptel](https://github.com/karthink/gptel), the Emacs LLM client.
+
+Both gptel and ROBOT are **optional**: ELOT works fully without them.
+If gptel is installed, enable the tools with:
+
+```elisp
+(with-eval-after-load 'gptel
+  (require 'elot-gptel)
+  (elot-gptel-register-tools))
+```
+
+or interactively with `M-x elot-gptel-register-tools`. Read-only
+tools (lint, search, label lookup) work out of the box; tools that
+modify files are additionally gated behind the user option
+`elot-gptel-allow-side-effects`, and the reasoning/validation tools
+require ROBOT to be installed.
+
+See [documentation/elot-gptel.org](documentation/elot-gptel.org) for
+the full user guide — how to work with the LLM on an ELOT file,
+recommended workflows, the safety model, and a reference of all
+tools.
+
+
 ### Supported `#+call:` helpers (Library of Babel)
 
 ELOT ships a small Library of Babel file
