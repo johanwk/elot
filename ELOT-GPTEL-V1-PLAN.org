@@ -734,7 +734,8 @@ The rationale text is carried into the user docs in Phase 3
 
 * Phase 3 -- Documentation and code hygiene
 
-** TODO Step 3.1 User-facing documentation
+** DONE Step 3.1 User-facing documentation
+CLOSED: [2026-07-20 man. 17:16]
 
 Ensure =documentation/elot-gptel.org= is complete and matches the
 *shipped* roster (post Step 2.1):
@@ -770,6 +771,24 @@ is NOT a light accuracy pass but a *real rewrite*.  Concrete findings:
   (carry the Step 2.3 defaults table + rationale in here).
 - *References the retired =ELOT-GPTEL-PLAN.org=* in several places ->
   repoint to =ELOT-GPTEL-V1-PLAN.org=.
+- *Carry in the minted-CURIE forward-reference workarounds* from the
+  /Deferred to post-v1/ list (two-call sequence; safe re-issue on
+  atomic failure; prefer heading-nesting / already-declared subjects),
+  as a "known limitation + workaround" note in the agent-loop section.
+- *Document the inspection-gap workaround idioms* (see the deferred
+  "post-v1 M12: Tier-1 inspection tools" item).  v1 ships no
+  =elot_resources= / =elot_read_resource= / =elot_metrics=; the agent-loop
+  section must spell out the workarounds so v1 users are not stranded
+  and so the post-v1 tool requirements stay sharp:
+  1. /Enumerate declared resources/: call =elot_axiom_keywords= on any
+     known subject and read the *Buffer Signature* section (per-kind
+     CURIE -> label index for the whole file); or use
+     =elot_db_activate_source= + =elot_db_query= against the label DB.
+  2. /Inspect one resource's source rows/: call =elot_axiom_keywords=
+     on that subject and read the *Existing rows* section.
+  3. /Ontology size orientation/: use =elot_sparql_select= with a
+     COUNT query (requires ROBOT), or =elot_db_query= over the
+     entities table after activating the file as a source.
 
 *Acceptance:* docs describe exactly the shipped roster, nothing more,
 nothing less; a new user can arm side effects and run one
@@ -1008,6 +1027,59 @@ registered as a tool in the v1 roster.
 - *External-quality test corpus expansion* (old M8 remainder: the
   unimplemented OOPS! slivers and the OntoClean / modelling-pattern
   surface).
+- *post-v1 M12: Tier-1 inspection tools* (from a 2026-07 review
+  exchange with an external LLM analysing the frozen 37-tool roster;
+  recorded here so the analysis is not lost).  Three read-only tools
+  closing the "understand -> edit -> verify" loop's inspection gap,
+  ranked highest value-to-risk of the review's eight candidates:
+  1. =elot_resources= -- list all declared resources in a file (CURIE,
+     kind, label).  Pure Elisp wrapper over =elot-slurp= /
+     =elot-build-slurp=; no ROBOT, no gate.  Today reachable only
+     indirectly via =elot_axiom_keywords='s Buffer Signature section
+     or SPARQL.
+  2. =elot_read_resource= -- return the raw Org heading +
+     description-list for a given CURIE (the most common pre-edit
+     inspection step).  Pure Elisp walk of =elot-headline-hierarchy=;
+     no ROBOT, no gate.
+  3. =elot_metrics= -- ontology size/structure statistics wrapping
+     ROBOT =measure= (already exposed in the Library of Babel as
+     =robot-metrics=); follows the =elot_omn_report= pattern.
+  The review's Tier-2 =elot_classify= (inferred hierarchy feedback
+  loop) is noted as a candidate follow-on but needs more design;
+  Tier-2 prefix/import tools and Tier-3 (=elot_sparql_construct=
+  named-graph loading, =elot_annotation_fill= composite) are not
+  adopted.  Implementation discipline when picked up: each tool needs
+  a =defconst elot-gptel--spec-*= with shared arg fragments, an
+  error-contract table entry, a toolsheet row, a per-tool test suite,
+  a user-doc section, and checkdoc/package-lint cleanliness.  Do
+  =elot_resources= + =elot_read_resource= first (read-only, no ROBOT,
+  no gate).
+- *Minted-CURIE forward-reference in batch edits* (confirmed live
+  friction; see =briefings/ELOT-REGULATION-ONTOLOGY-DESIGN.org=,
+  "Minted-CURIE forward-reference").  A term minted via
+  =elot_insert_*= / =elot_mint_identifier= cannot be referenced as an
+  axiom *subject* in the same conceptual step, because the slurp
+  signature used by =elot_edit_axiom(s)= for subject resolution does
+  not yet include the new CURIE -- the batch fails atomically with
+  =subject ... not found=.  Preferred post-v1 fix (per the design
+  doc): let =elot_edit_axioms= accept a synthetic
+  =subject=$introduced[K]= reference resolving to the CURIE minted by
+  edit K, so a batch can mint + axiomatise in one atomic group.
+  Alternative: a composite =elot_mint_and_axiomatise= tool.  Neither
+  ships in v1.  *Documented v1 workarounds* (carry these into the
+  Step 3.1 user docs):
+  1. /Two-call sequence/: insert/mint first, read the minted CURIE
+     from the =OK:= envelope (=Minted CURIEs:= list), then issue the
+     axiom batch in a second =elot_edit_axioms= call using that exact
+     CURIE as =subject=.
+  2. /Re-issue on failure/: if a batch fails with =subject ... not
+     found= for a just-minted term, re-issue the same batch with the
+     minted CURIE substituted -- the failure is atomic, so the file
+     is untouched and the retry is safe.
+  3. /Order-independent rows first/: where possible, attach axioms to
+     the new term via rows on *already-declared* subjects (e.g. add
+     the =SubClassOf= via heading nesting at insert time) so no
+     same-batch forward reference is needed.
 
 * Working discipline (how to run each step in gptel)
 
@@ -1031,4 +1103,6 @@ registered as a tool in the v1 roster.
 | (pending)  | Move/rename/delete family v1 status (Step 2.2): *ship all 7, hide none.*  All carry green rollback + gate-off tests; =dry_run= tested where exposed (delete, replace_with_parent); rename/move/insert expose no =dry_run= (clause (b) vacuous).  See Step 2.2 audit for the coverage matrix. |
 | (pending)  | Step 2.2 escalation A -- *live acceptance gap*: no family tool has an end-to-end check against a temp copy of =examples/pets.org= (plan clause (c)); all suites use synthetic fixtures + stubs.  DECISION NEEDED: add one live-acceptance test per mutating family tool, or formally relax clause (c) for v1. |
 | (pending)  | Step 2.2 escalation B -- =elot_replace_with_parent= *contract accuracy*: the "safe semantic weakening" claim holds only for covariant occurrences (fails for =not= / =only= / LHS positions), the global =op=merge= rewrite does not narrow to covariant sites, and post-fold revalidation is lint+OMN only (no reasoner consistency).  DECISION NEEDED: (i) add a covariance caveat to the tool description, and (ii) either add an =elot_consistency= stage to the fold's revalidation or document the residual risk. |
+| (today)    | Minted-CURIE forward-reference (batch mint + same-batch subject use fails): deferred to post-v1 with the =$introduced[K]= synthetic-reference design as the preferred fix; three v1 workarounds documented in the Deferred list and to be carried into the Step 3.1 user docs.  No v1 code change. |
 | (today)    | Step 2.3 defaults review: all shipped defaults are the cautious ones (=allow-side-effects= nil, =confirm-mutations= once-armed, =robot-catalog= nil, content cap 4 MiB, explain-timeout 60 s, explain-max 1).  No surprising default ships; full table + rationale under Step 2.3.  Rationale carried into Phase 3 user docs. |
+| (today)    | Tool-roster freeze *upheld* against a reviewed proposal to add Tier-1 inspection tools (=elot_resources=, =elot_read_resource=, =elot_metrics=) before v1.  The gaps are reachable via documented workaround idioms (=elot_axiom_keywords= Buffer Signature / Existing rows; =elot_sparql_select= / =elot_db_query= for counts), so v1 stability beats v1 completeness.  Recorded as deferred item "post-v1 M12: Tier-1 inspection tools" (first post-v1 milestone); the workaround idioms are added to Step 3.1's documentation scope so the v1 docs mitigate the gap. |
