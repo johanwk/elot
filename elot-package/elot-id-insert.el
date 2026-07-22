@@ -84,8 +84,8 @@
 
 (defconst elot-id-insert--child-allowed-kinds
   '(class object-property data-property annotation-property individual)
-  "Kinds for which `elot-insert-child-resource' is permitted under a
-level-3+ heading.  Datatypes remain sibling-only under their
+  "Kinds for which `elot-insert-child-resource' is permitted.
+Applies under a level-3+ heading.  Datatypes remain sibling-only under their
 respective resources (OWL has no inherent datatype sub-relation),
 but a child insert directly on the level-2 section heading is
 always allowed (it seeds the first resource).  Individuals are
@@ -268,6 +268,7 @@ Assumes point is at (or will be moved back to) the current heading."
 
 (defun elot-id-insert--validate-kind (kind child-p cur-level section)
   "Signal `user-error' when KIND / CHILD-P / CUR-LEVEL are incompatible.
+SECTION names the enclosing level-2 resource section.
 A child insert on a level-2 section heading is always permitted
 \(it seeds the first resource of an empty section).  Below that,
 Datatypes refuse the child variant; nested headings under
@@ -277,7 +278,7 @@ semantic sub-relation between named individuals)."
              (>= cur-level 3)
              (not (memq kind elot-id-insert--child-allowed-kinds)))
     (user-error
-     "elot-insert: cannot insert child resource under section %S (kind %s); use sibling instead"
+     "ELOT-insert: cannot insert child resource under section %S (kind %s); use sibling instead"
      section kind)))
 
 (defun elot-id-insert--read-labels (n child-p)
@@ -308,11 +309,11 @@ Returns the list of minted CURIEs."
     (setq n (length labels)))
   (unless (and (integerp n) (> n 0)) (setq n 1))
   (unless (derived-mode-p 'org-mode)
-    (user-error "elot-insert: not in an Org buffer"))
+    (user-error "ELOT-insert: not in an Org buffer"))
   (save-excursion
     (unless (or (org-at-heading-p)
                 (ignore-errors (org-back-to-heading t) t))
-      (user-error "elot-insert: point is not inside an Org heading")))
+      (user-error "ELOT-insert: point is not inside an Org heading")))
   (let* ((section (elot-id-insert--section-name))
          (kind    (and section
                        (cdr (assoc section elot-id-insert--section-kind-alist))))
@@ -322,21 +323,21 @@ Returns the list of minted CURIEs."
     (cond
      ((null section)
       (user-error
-       "elot-insert: point is not inside an ELOT resource section (one of: %s)"
+       "ELOT-insert: point is not inside an ELOT resource section (one of: %s)"
        (mapconcat #'car elot-id-insert--section-kind-alist ", ")))
      ((null kind)
       (user-error
-       "elot-insert: section %S is not a recognised ELOT resource section"
+       "ELOT-insert: section %S is not a recognised ELOT resource section"
        section)))
     (elot-id-insert--validate-kind kind child-p cur-level section)
     (let* ((spec (or (elot-id-insert--scheme-spec)
                      (progn
                        (message
-                        "elot-insert: no :ELOT-id-scheme: declared; prompting for one...")
+                        "ELOT-insert: no :ELOT-id-scheme: declared; prompting for one...")
                        (call-interactively #'elot-id-set-scheme)
                        (or (elot-id-insert--scheme-spec)
                            (user-error
-                            "elot-insert: no :ELOT-id-scheme: declared on the ontology heading")))))
+                            "ELOT-insert: no :ELOT-id-scheme: declared on the ontology heading")))))
            (parsed (elot-id-parse-spec spec))
            (scheme-name (car parsed))
            (scheme-params (cdr parsed))
@@ -455,7 +456,7 @@ Signals `user-error' when the buffer contains no ontology heading."
         (cond
          ((null alist)
           (user-error
-           "elot-id-set-scheme: no `:ELOT-context-type: ontology' heading in buffer"))
+           "ELOT-id-set-scheme: no `:ELOT-context-type: ontology' heading in buffer"))
          ((= (length alist) 1) (cdar alist))
          (t (let ((name (completing-read
                          "Set scheme for ontology: "
@@ -494,7 +495,7 @@ function that returns the same shape."
       (let ((tmpl (read-string "Counter template (e.g. GO_0000000): "
                                nil nil "0000000")))
         (when (string-empty-p (string-trim tmpl))
-          (user-error "elot-id-set-scheme: template must be non-empty"))
+          (user-error "ELOT-id-set-scheme: template must be non-empty"))
         (list tmpl)))
      ((eq scheme-sym 'acme)
       (if (y-or-n-p "Include slug derived from label? ")
@@ -533,7 +534,7 @@ refreshed so subsequent inserts and gptel mint calls see the new
 value immediately."
   (interactive)
   (unless (derived-mode-p 'org-mode)
-    (user-error "elot-id-set-scheme: not in an Org buffer"))
+    (user-error "ELOT-id-set-scheme: not in an Org buffer"))
   (let* ((marker (elot-id-insert--pick-ontology-marker))
          (existing
           (save-excursion
@@ -558,7 +559,7 @@ value immediately."
                (not (y-or-n-p
                      (format "Overwrite `:ELOT-id-scheme: %s' with `%s'? "
                              existing spec))))
-      (user-error "elot-id-set-scheme: cancelled"))
+      (user-error "ELOT-id-set-scheme: cancelled"))
     (save-excursion
       (goto-char marker)
       (org-entry-put nil "ELOT-id-scheme" spec))
@@ -589,7 +590,7 @@ parsed, emit a `display-warning' and flag the echoed result
 as `[INVALID: ...]'."
   (interactive)
   (unless (derived-mode-p 'org-mode)
-    (user-error "elot-id-show-scheme: not in an Org buffer"))
+    (user-error "ELOT-id-show-scheme: not in an Org buffer"))
   (let* ((marker (elot-id-insert--pick-ontology-marker))
          (spec (save-excursion
                  (goto-char marker)
@@ -669,7 +670,7 @@ must have a string head; its tail is the list of child nodes."
    ((and (consp node) (stringp (car node)))
     (cons (string-trim (car node)) (cdr node)))
    (t (user-error
-       "elot-insert-labels-tree: malformed node %S (expected STRING or (LABEL CHILD...))"
+       "ELOT-insert-labels-tree: malformed node %S (expected STRING or (LABEL CHILD...))"
        node))))
 
 (defun elot-id-insert--goto-heading-for-curie (curie)
@@ -678,7 +679,7 @@ Searches the whole buffer.  Signals an error if not found."
   (goto-char (point-min))
   (unless (re-search-forward
            (elot-id-heading-curie-regexp curie) nil t)
-    (error "elot-insert-labels-tree: cannot locate inserted heading for %s"
+    (error "ELOT-insert-labels-tree: cannot locate inserted heading for %s"
            curie))
   (beginning-of-line))
 
@@ -752,7 +753,7 @@ the minibuffer for one rdfs:label per heading.  Refuses with
 `user-error' when invoked on a level-3+ heading whose section is
 Datatypes (no inherent subtype relation among datatypes).  Nested
 headings under Individuals are allowed as a visual / editing aid
-(OWL carries no semantic sub-relation between named individuals).
+\(OWL carries no semantic sub-relation between named individuals).
 Invoked on a level-2 section heading the child variant
 always succeeds and seeds the first resource."
   (interactive "p")

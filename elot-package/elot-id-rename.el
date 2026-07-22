@@ -110,7 +110,7 @@
 (defun elot-id-rename--split-curie (curie)
   "Return (PREFIX . LOCAL) for CURIE.  Signal `user-error' on malformed."
   (unless (and (stringp curie) (string-match elot-id-rename--curie-re curie))
-    (user-error "elot-rename-resource: not a valid CURIE: %S" curie))
+    (user-error "ELOT-rename-resource: not a valid CURIE: %S" curie))
   (cons (match-string 1 curie) (match-string 2 curie)))
 
 (defun elot-id-rename--token-boundary-regex (curie)
@@ -169,7 +169,7 @@ Re-aligns the table afterwards.  Signals when no prefix-table is
 in the buffer (callers should check `--read-prefix-table' first)."
   (save-excursion
     (unless (elot-id-rename--goto-prefix-table)
-      (error "elot-rename-resource: no prefix-table found in buffer"))
+      (error "ELOT-rename-resource: no prefix-table found in buffer"))
     ;; Move to end of table.
     (while (and (not (eobp)) (looking-at "^[ \t]*|"))
       (forward-line 1))
@@ -220,7 +220,7 @@ list so the LLM wrapper can surface it."
     target-iri)
    ((and noninteractive (null candidates))
     (user-error
-     "elot-rename-resource: undeclared prefix `%s:'; no candidates in elot-db; supply :target-iri"
+     "ELOT-rename-resource: undeclared prefix `%s:'; no candidates in elot-db; supply :target-iri"
      prefix))
    ((null candidates)
     (read-string (format "IRI expansion for `%s:': " prefix)))
@@ -230,11 +230,11 @@ list so the LLM wrapper can surface it."
              (format "Add prefix `%s:' -> <%s> to this ontology? "
                      prefix (car candidates))))
         (car candidates)
-      (user-error "elot-rename-resource: cancelled")))
+      (user-error "ELOT-rename-resource: cancelled")))
    (t
     (if noninteractive
         (user-error
-         "elot-rename-resource: undeclared prefix `%s:'; candidates: %s; supply :target-iri"
+         "ELOT-rename-resource: undeclared prefix `%s:'; candidates: %s; supply :target-iri"
          prefix (mapconcat (lambda (i) (format "<%s>" i)) candidates " | "))
       (completing-read
        (format "IRI expansion for `%s:': " prefix) candidates nil t)))))
@@ -294,7 +294,7 @@ success; signals `user-error' when the heading cannot be found."
     (unless (re-search-forward
              (elot-id-heading-curie-regexp curie) nil t)
       (user-error
-       "elot-id-rename: cannot locate heading for %s to rewrite label"
+       "ELOT-id-rename: cannot locate heading for %s to rewrite label"
        curie))
     (beginning-of-line)
     ;; Match: stars + space + LABEL + ` (CURIE)' + tail.  LABEL is
@@ -304,7 +304,7 @@ success; signals `user-error' when the heading cannot be found."
                            (regexp-quote curie) ")\\)")))
       (unless (re-search-forward line-re (line-end-position) t)
         (user-error
-         "elot-id-rename: heading for %s has unexpected shape; label not rewritten"
+         "ELOT-id-rename: heading for %s has unexpected shape; label not rewritten"
          curie))
       (replace-match (concat (match-string 1) new-label (match-string 3))
                      t t))))
@@ -374,16 +374,16 @@ found at the head of the table block."
            found))))
 
 (defconst elot-id-rename--curie-char-re "[A-Za-z0-9_:-]"
-  "Character class for chars that may appear inside a CURIE token
-for boundary-detection purposes.  The boundary check rejects
+  "Character class for chars that may appear inside a CURIE token.
+Used for boundary-detection purposes.  The boundary check rejects
 matches whose immediate neighbours are in this class (longer-
 token cases like `ex:dogfood').  Note: `.' is intentionally
-EXCLUDED -- a trailing period (sentence-end in prose, or after
+EXCLUDED -- a trailing period (sentence end in prose, or after
 an annotation value) should terminate a CURIE token.  CURIEs
 whose local-name contains an internal `.' (e.g. `ex:foo.bar')
 still match correctly as long as they are queried whole; partial
 overlap with a longer dotted token is the rare edge case we
-accept in exchange for sentence-end correctness.")
+accept in exchange for sentence end correctness.")
 
 (defun elot-id-rename--curie-char-p (ch)
   "Return non-nil when CH is a CURIE-name character."
@@ -478,6 +478,7 @@ Handles both `<...>' and bare forms; returns the replacement count."
 
 (defun elot-id-rename--rewrite-buffer (source target source-iri target-iri)
   "Perform the buffer-wide CURIE + full-IRI rewrite.
+Rewrite SOURCE to TARGET, and full IRI SOURCE-IRI to TARGET-IRI.
 Returns a plist with counts: `:curie-count' (number of CURIE
 rewrites), `:iri-count' (full-IRI rewrites), `:prose-skipped'
 \(prose lines containing SOURCE that were left alone)."
@@ -547,7 +548,7 @@ OP selects the rewrite mode (Slice A.3, briefing
 
 When NEW-LABEL is non-nil and differs from the current heading
 label, the resource-declaring heading's title is also rewritten
-to carry NEW-LABEL (inside the same atomic-change-group as the
+to carry NEW-LABEL (inside the same `atomic-change-group' as the
 CURIE rewrite).  This lets the interactive caller change the
 rdfs:label in the same operation as the identifier change --
 typical when the mint path prompts for a fresh label.
@@ -707,29 +708,29 @@ Returns a plist:
                (read-string "Target CURIE: ")))))
      (list src tgt :new-label tgt-new-label)))
   (unless (derived-mode-p 'org-mode)
-    (user-error "elot-rename-resource: not in an Org buffer"))
+    (user-error "ELOT-rename-resource: not in an Org buffer"))
   (elot-id-rename--split-curie source) ; shape-check; raises on bad input
   (elot-id-rename--split-curie target)
   (when (string= source target)
-    (user-error "elot-rename-resource: SOURCE equals TARGET"))
+    (user-error "ELOT-rename-resource: SOURCE equals TARGET"))
   (let* ((declared (elot-id-rename--declared-curies))
          (_ (unless (member source declared)
               (user-error
-               "elot-rename-resource: SOURCE %s is not a declared resource heading in this buffer"
+               "ELOT-rename-resource: SOURCE %s is not a declared resource heading in this buffer"
                source)))
          (target-declared-p (member target declared))
          (_ (pcase op
               ('rename
                (when target-declared-p
                  (user-error
-                  "elot-rename-resource: TARGET %s collides with an existing declaration"
+                  "ELOT-rename-resource: TARGET %s collides with an existing declaration"
                   target)))
               ('merge
                (unless target-declared-p
                  (user-error
-                  "elot-rename-resource: op=merge requires TARGET %s to be declared; use op=rename (or omit op) for the rewrite-and-declare path"
+                  "ELOT-rename-resource: op=merge requires TARGET %s to be declared; use op=rename (or omit op) for the rewrite-and-declare path"
                   target)))
-              (_ (user-error "elot-rename-resource: unknown op %S (expected `rename' or `merge')" op))))
+              (_ (user-error "ELOT-rename-resource: unknown op %S (expected `rename' or `merge')" op))))
          (prefix-table (elot-id-rename--read-prefix-table))
          (tgt-prefix (car (elot-id-rename--split-curie target)))
          (tgt-local  (cdr (elot-id-rename--split-curie target)))
@@ -745,7 +746,7 @@ Returns a plist:
     (if tgt-iri-base
         (setq resolved-tgt-iri (concat tgt-iri-base tgt-local))
       (when (eq op 'merge)
-        (error "elot-rename-resource: op=merge but TARGET prefix `%s:' is not in the prefix table (malformed input?)"
+        (error "ELOT-rename-resource: op=merge but TARGET prefix `%s:' is not in the prefix table (malformed input?)"
                tgt-prefix))
       (let* ((candidates (elot-id-rename--db-candidates tgt-prefix))
              (chosen (elot-id-rename--resolve-target-iri
@@ -769,7 +770,7 @@ Returns a plist:
           (setq source-heading-marker
                 (elot-id-rename--heading-marker-for-curie source))
           (unless source-heading-marker
-            (error "elot-rename-resource: op=merge cannot locate SOURCE heading for %s"
+            (error "ELOT-rename-resource: op=merge cannot locate SOURCE heading for %s"
                    source)))
         (setq counts
               (elot-id-rename--rewrite-buffer source target
@@ -802,7 +803,7 @@ Returns a plist:
          ((fboundp 'elot-update-headline-hierarchy)
           (ignore-errors (elot-update-headline-hierarchy)))))
       (let ((msg (format
-                  "elot-rename-resource: %s -> %s (%d CURIE, %d IRI; %d prose mention(s) skipped%s)"
+                  "ELOT-rename-resource: %s -> %s (%d CURIE, %d IRI; %d prose mention(s) skipped%s)"
                   source target
                   (plist-get counts :curie-count)
                   (plist-get counts :iri-count)

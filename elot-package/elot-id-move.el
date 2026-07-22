@@ -193,7 +193,8 @@ M12.2)."
 
 (defun elot-id-move--resolve-target (source-marker source-kind target)
   "Return (MODE . MARKER) for TARGET.
-MODE is one of: `heading' (TARGET is a resource heading) or
+SOURCE-MARKER points at the source heading and SOURCE-KIND is its
+kind.  MODE is one of: `heading' (TARGET is a resource heading) or
 `section-root' (TARGET = \"top\"); MARKER points at the
 resolved heading line.  Signals `user-error' on kind mismatch
 or when TARGET is not declared."
@@ -204,7 +205,7 @@ or when TARGET is not declared."
                        (elot-id-move--section-kind-at-point)))))
       (unless sect
         (user-error
-         "elot-move-resource: cannot resolve section root for SOURCE %s"
+         "ELOT-move-resource: cannot resolve section root for SOURCE %s"
          source-marker))
       (cons 'section-root sect)))
    ((elot-id-move--curie-p target)
@@ -229,7 +230,7 @@ or when TARGET is not declared."
              target))
           (unless (eq tkind source-kind)
             (user-error
-             "elot-move-resource: kind mismatch -- SOURCE is a %s, TARGET %s is a %s"
+             "ELOT-move-resource: kind mismatch -- SOURCE is a %s, TARGET %s is a %s"
              source-kind target tkind))
           (cons 'heading tm))))))
    (t
@@ -279,7 +280,7 @@ Moving SOURCE into its own descendant would be a malformed move."
 
 (defun elot-id-move--read-curie (prompt &optional include-top initial)
   "Prompt for a resource via label completion and return its CURIE.
-PROMPT is the completing-read prompt.  When INCLUDE-TOP is
+PROMPT is the `completing-read' prompt.  When INCLUDE-TOP is
 non-nil, a synthetic \"top\" candidate is offered and returned
 verbatim when selected (used for the TARGET prompt to express
 \"move under the section root\").  INITIAL pre-seeds the
@@ -402,7 +403,7 @@ section root)."
                                    nil t nil nil "child")))
      (list src tgt (intern as-str))))
   (unless (derived-mode-p 'org-mode)
-    (user-error "elot-move-resource: not in an Org buffer"))
+    (user-error "ELOT-move-resource: not in an Org buffer"))
   (setq as (or as 'child))
   (unless (memq as '(child sibling))
     (user-error "elot-move-resource: AS must be `child' or `sibling', got %S" as))
@@ -433,7 +434,7 @@ section root)."
                        (eq target-mode 'heading)
                        (memq source-kind '(datatype individual)))
               (user-error
-               "elot-move-resource: cannot insert a %s as a CHILD of another %s (no inherent sub-relationship); use AS=sibling, or TARGET=\"top\""
+               "ELOT-move-resource: cannot insert a %s as a CHILD of another %s (no inherent sub-relationship); use AS=sibling, or TARGET=\"top\""
                source-kind source-kind)))
          ;; No-op detection.
          (old-parent (save-excursion
@@ -460,7 +461,7 @@ section root)."
          (_ (when (elot-id-move--source-inside-target-p
                    source-marker target-marker)
               (user-error
-               "elot-move-resource: cannot move %s into its own subtree"
+               "ELOT-move-resource: cannot move %s into its own subtree"
                source)))
          ;; Capture parent labels for the result plist before mutating.
          (from-parent-label

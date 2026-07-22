@@ -77,7 +77,7 @@ conversion, SPARQL execution against Turtle, and OWL reasoning."
   "Path to the robot.jar file.
 When this names an existing file ROBOT is invoked as
 `java -jar PATH'.  When it is empty or missing, ELOT falls back
-to a `robot' executable on `exec-path' if available.
+to a `robot' executable on the variable `exec-path' if available.
 
 Set this variable, or install a `robot' shim, only if you intend
 to use the ROBOT-backed features (OMN -> TTL conversion, SPARQL
@@ -103,7 +103,7 @@ has `:exit' nil and `:timed-out' t, and `elot-robot-classify'
 returns the kind `:timeout'.
 
 Per-call `:timeout' on `elot-robot-run' overrides this default
-(including the explicit value 0, which disables the timeout for
+\(including the explicit value 0, which disables the timeout for
 that one call)."
   :group 'elot-robot
   :type '(choice (const :tag "No timeout" nil)
@@ -141,14 +141,14 @@ the probe result (t or nil).")
 (defvar elot-robot--invocation-cache nil
   "Cached argv prefix for invoking ROBOT.
 Either (\"java\" \"-jar\" JAR) when the jar form is configured,
-or (\"robot\") when the executable shim is on `exec-path',
+or (\"robot\") when the executable shim is on the variable `exec-path',
 or nil when ROBOT is not available.")
 
 (defun elot-robot--compute-invocation ()
   "Compute the argv prefix for invoking ROBOT.
 Returns a list of strings, or nil if no configuration works.
 Prefers `elot-robot-jar-path' when it names an existing file;
-falls back to a `robot' executable on `exec-path'."
+falls back to a `robot' executable on the variable `exec-path'."
   (cond
    ((and (stringp elot-robot-jar-path)
          (not (string-empty-p elot-robot-jar-path))
@@ -166,7 +166,7 @@ non-nil REFRESH to force re-evaluation, e.g. after the user has
 just set `elot-robot-jar-path' via `customize'.
 
 This is a *cheap* probe -- it only checks the filesystem and
-`exec-path'.  It does *not* spawn a JVM.  Use `elot-robot-version'
+the variable `exec-path'.  It does *not* spawn a JVM.  Use `elot-robot-version'
 when you need to verify ROBOT actually runs."
   (when (or refresh (eq elot-robot--available-cache 'unset))
     (setq elot-robot--invocation-cache (elot-robot--compute-invocation))
@@ -181,7 +181,7 @@ when you need to verify ROBOT actually runs."
 
 (defun elot-robot-reset-cache ()
   "Forget the cached ROBOT availability / invocation.
-Call this after changing `elot-robot-jar-path' or `exec-path'."
+Call this after changing `elot-robot-jar-path' or the variable `exec-path'."
   (interactive)
   (setq elot-robot--available-cache 'unset
         elot-robot--invocation-cache nil
@@ -206,7 +206,7 @@ timeout for this call\"."
    (t nil)))
 
 (defun elot-robot--strip-process-status-lines ()
-  "Strip Emacs process-sentinel status lines from the current buffer.
+  "Strip Emacs `process-sentinel' status lines from the current buffer.
 Belt-and-braces complement to `:sentinel #\\='ignore' on the ROBOT
 processes: removes any trailing line of the form
 \"Process elot-robot[-stderr] <status>\" that a future Emacs (or
@@ -306,7 +306,7 @@ timeout watchdog; TIMED-OUT is t in the latter case."
   "Run ROBOT synchronously with ARGS, a list of subcommand strings.
 
 ARGS supplies *only* the ROBOT subcommand and its options
-(e.g. (\"convert\" \"--input\" IN \"--output\" OUT)).  The argv
+\(e.g. (\"convert\" \"--input\" IN \"--output\" OUT)).  The argv
 prefix selecting `java -jar JAR' or the `robot' shim is provided
 automatically from `elot-robot-invocation'.
 
@@ -434,7 +434,7 @@ is cached.  Pass a non-nil REFRESH to re-probe."
     elot-robot--match-io-error)
   "Ordered list of classifier functions tried by `elot-robot-classify'.
 Each function receives STDERR (string) and returns either nil
-(no match) or a cons (KIND . PAYLOAD-PLIST).  The first matching
+\(no match) or a cons (KIND . PAYLOAD-PLIST).  The first matching
 classifier wins, so put more specific patterns first.")
 
 (defun elot-robot--match-syntax-error (stderr)
@@ -617,8 +617,8 @@ or does not name a directory."
 (defun elot-robot-call-with-workspace (fn &optional prefix)
   "Call FN with one argument, the path to a fresh workspace directory.
 
-A unique directory is created under `temporary-file-directory'
-(name prefix PREFIX, default \"elot-robot-ws-\"); its absolute
+A unique directory is created under the variable `temporary-file-directory'
+\(name prefix PREFIX, default \"elot-robot-ws-\"); its absolute
 path (with trailing slash) is passed to FN, and
 `default-directory' is bound to the same path for the duration of
 the call.  The directory is deleted recursively on exit, even
