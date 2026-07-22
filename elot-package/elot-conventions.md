@@ -93,7 +93,7 @@ A typical ELOT ontology document has this skeleton:
 :PROPERTIES:
 :ID: my-ontology
 :ELOT-context-type: ontology
-:ELOT-id-scheme: acme
+:ELOT-id-scheme: slug
 :ELOT-context-localname: my-ontology
 :ELOT-default-prefix: ex
 :header-args:omn: :tangle ./my-ontology.omn :noweb yes
