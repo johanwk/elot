@@ -200,7 +200,7 @@ Three modes:
 ROBOT resolves catalog-relative URIs against the catalog file's
 own location, so the file can be passed by absolute path from
 any working directory; the relative entries inside it
-(`uri=\"../src/itxm-core.ttl\"' and so on) keep working."
+\(`uri=\"../src/itxm-core.ttl\"' and so on) keep working."
   :type '(choice (const :tag "Auto-detect" nil)
                  (const :tag "Disable" none)
                  (file :tag "Explicit catalog path"))
@@ -388,7 +388,7 @@ call reads naturally inline."
 (defun elot-gptel--run-lint (file checker-names &optional logical-file)
   "Run CHECKER-NAMES on FILE.
 Return a list of plists (:line :col :severity :category :trust :message).
-LOGICAL-FILE, when non-nil, is used for `buffer-file-name' and
+LOGICAL-FILE, when non-nil, is used for the variables `buffer-file-name' and
 `default-directory' during the lint so checkers and Org-mode
 resolution behave as though the bytes lived there (used by the
 M7.5 `content' code path, where FILE is a workspace temp file
@@ -1090,7 +1090,7 @@ These are the formats ROBOT's `diff' subcommand emits.")
 ELOT .org files are tangled into a per-input subdirectory of
 WORKSPACE named TAG so the two sides do not clobber each
 other's OMN output paths.  RDF inputs are accepted verbatim
-(extension in `elot-gptel--sparql-rdf-extensions')."
+\(extension in `elot-gptel--sparql-rdf-extensions')."
   (let ((ext (downcase (or (file-name-extension file) ""))))
     (cond
      ((string= ext "org")
@@ -1252,7 +1252,7 @@ an Org table by `elot-gptel--sparql-format-result'.")
   "Hard upper bound on the `limit' argument to `elot_sparql'.")
 
 (defun elot-gptel--sparql-mutating-p (query)
-  "Return non-nil when QUERY contains an UPDATE keyword.
+  "Return non-nil when QUERY has an UPDATE keyword.
 Recognises the SPARQL 1.1 Update operations (INSERT, DELETE,
 LOAD, CLEAR, CREATE, DROP, COPY, MOVE, ADD).  The check is
 deliberately lexical -- a `# DELETE...' comment will be a false
@@ -1552,8 +1552,8 @@ for an LLM to consume row-by-row; use `elot_sparql' for those.
 
 Intended for confirm-free agent loops where the caller wants a
 hard guarantee that no UPDATE / INSERT / DELETE keyword can ever
-reach ROBOT.  Arguments and return shape are identical to
-`elot-gptel-tool-sparql'."
+reach ROBOT.  FILE, QUERY, FORMAT and LIMIT are as for
+`elot-gptel-tool-sparql', whose return shape is identical."
   (elot-gptel--sparql-run file query format limit :select-only t))
 
 ;;; ---------------------------------------------------------------------------
@@ -1579,7 +1579,8 @@ appears.")
 
 (defun elot-gptel--db-label-of (iri-or-curie)
   "Return a `(IRI \"label\")' style suffix string when a label is known.
-Best-effort lookup via `elot-db-get-label-any'; returns the bare
+Best-effort lookup of IRI-OR-CURIE via `elot-db-get-label-any';
+returns the bare
 token unchanged when the DB is unavailable, the lookup fails, or
 the label is empty."
   (let ((tok (or iri-or-curie "")))
@@ -1661,7 +1662,7 @@ NODE-INFO is a plist as produced by
   "Implementation of the `elot_consistency' tool.
 
 FILE is an ELOT .org file.  REASONER is one of \"hermit\"
-(default) or \"whelk\".
+\(default) or \"whelk\".
 
 Runs `robot reason --reasoner R' against each ontology node and
 reports whether the ontology is consistent (has at least one
@@ -2012,7 +2013,7 @@ an alist of (ORIGINAL . REPLACEMENT) pairs actually applied."
             "\n\n")))
 
 (defun elot-gptel--explain-augment (md)
-  "Append a disambiguation hint when MD contains \"No explanations found.\".
+  "Append a disambiguation hint when MD has \"No explanations found.\".
 
 ROBOT prints that sentence when its reasoner could not produce a
 justification: either the axiom is not entailed at all, or it is
@@ -2113,13 +2114,13 @@ Syntax axiom whose entailment is to be explained.
 ROBOT's `--axiom' parser resolves class/property names through
 the ontology's short-form provider, which by default is
 *label-based*.  Bare CURIEs (`ex:Dog') and angle-bracket IRIs
-(`<http://example.org/dog>') are therefore *not* accepted as
+\(`<http://example.org/dog>') are therefore *not* accepted as
 class or property names by `robot explain'.  This tool rewrites
 the axiom on the fly: any CURIE or IRI it can resolve to a known
 `rdfs:label' via the buffer's `elot-slurp' map (CURIE -> label
 in `elot-codelist-ht'; full IRIs contracted through
 `org-link-abbrev-alist-local') is substituted with the label
-(single-quoted when needed); tokens with no known label are left
+\(single-quoted when needed); tokens with no known label are left
 unchanged.  The substitution is reported as a NOTE
 prepended to the result so the caller can see what was actually
 sent to ROBOT.  Examples that work out of the box (case-sensitive
@@ -2135,14 +2136,14 @@ REASONER is one of \"hermit\" (default) or \"whelk\" (ROBOT's
 explain command also accepts \"elk\"; passed through verbatim
 when given, otherwise validated against `elot-gptel--reasoners').
 MAX is the maximum number of distinct justifications to return
-(default `elot-gptel-explain-max').
+\(default `elot-gptel-explain-max').
 
 Returns the Markdown explanation ROBOT produces, framed
 per-ontology when the file declares more than one ontology node.
 When ROBOT prints \"No explanations found.\" the tool appends a
 HINT pointing the caller at `elot_consistency' /
 `elot_unsatisfiable' to disambiguate the two trivial cases
-(not entailed vs. entailed by inconsistency).  On a wall-clock
+\(not entailed vs. entailed by inconsistency).  On a wall-clock
 overrun (`elot-gptel-explain-timeout', default 60 s) the tool
 returns a single `ERROR:' line citing the budget.
 
@@ -2451,7 +2452,7 @@ path or endpoint URL otherwise).  No arguments.  Read-only."
   "Register-if-needed and activate FILE as a label source.
 
 Wraps `elot-label-activate-source-for-file' under the
-project-root containment check.  Read-only with respect to the
+`project-root' containment check.  Read-only with respect to the
 =.org= source: only mutates the label DB and the default value
 of `elot-active-label-sources'.  Not gated by
 `elot-gptel-allow-side-effects' -- this is session setup, the
@@ -2548,7 +2549,7 @@ side-effects gate.  The real delete is gated by
 
 Consults the active sources' `prefixes' tables, then the
 shared `global_prefixes' table.  The default-prefix form
-(=:foo=) is supported via the empty-string prefix row.
+\(=:foo=) is supported via the empty-string prefix row.
 
 Returns the expanded IRI on success, or an =ERROR:= line when
 the prefix is unknown or CURIE is malformed.  Read-only."
@@ -2824,7 +2825,7 @@ LIMIT caps the number of returned rows (default
 
 EXACT-ONLY, when non-nil, suppresses the M11.1 cross-prefix
 local-name fallback.  By default, when QUERY looks like a CURIE
-(`prefix:localname') and the direct prefix:local lookup misses,
+\(`prefix:localname') and the direct prefix:local lookup misses,
 the search retries against the local-name part alone, matched
 against `substr(id, instr(id, ':')+1)' (the local-name of any
 stored id) and against the label column.  This catches the
@@ -2989,8 +2990,8 @@ exactly one pair of surrounding quotes."
     (concat "\"" s "\"")))
 
 (defun elot-gptel--db-borrow-format (citation)
-  "Render CITATION (a plist from `elot-db-entity-citation') as
-an ELOT heading + description list snippet.  ASCII-only.
+  "Render CITATION as an ELOT heading + description list snippet.
+CITATION is a plist from `elot-db-entity-citation'.  ASCII-only.
 
 Step 7.5.7: emits two contingent NOTE lines when the borrowed
 entity exhibits authoring rough edges.  (1) When the source uses
@@ -3309,8 +3310,9 @@ Quick reference for the LLM:
 
 For the full document, see `elot-conventions.md' in the package
 source tree."
-  "Embedded fallback for `elot_conventions' when the on-disk
-sibling `elot-conventions.md' cannot be located.  Kept concise on
+  "Embedded fallback for `elot_conventions'.
+Used when the on-disk sibling `elot-conventions.md' cannot be
+located.  Kept concise on
 purpose -- the authoritative source is the Markdown file, edited
 directly by developers; this fallback exists only as a defensive
 last resort.")
@@ -3365,7 +3367,7 @@ Read-only.  Never raises; on any internal error returns an
   (format "== %s ==" label))
 
 (defun elot-gptel--check-lint-failed-p (report)
-  "Return non-nil when a lint REPORT contains at least one error.
+  "Return non-nil when a lint REPORT has at least one error.
 REPORT is the string returned by `elot-gptel-tool-lint'.  The
 report's final `Summary:' line names the count; missing summary
 means `OK: no lint issues' (a clean run)."
@@ -3658,7 +3660,7 @@ into a single spec string consumable by `elot-id-parse-spec'."
        (t         nil)))))
 
 (defun elot-gptel--mint-build-context (file kind &optional scheme-params node)
-  "Build a CONTEXT plist for the identifier tools.
+  "Build a CONTEXT plist for the identifier tools from FILE and KIND.
 SCHEME-PARAMS, when non-nil, is forwarded under `:scheme-params'.
 NODE, when supplied, is the ontology headline node from
 `elot-headline-hierarchy'; its `:elot-default-prefix' seeds the
@@ -3710,7 +3712,7 @@ FILE is an ELOT .org file whose `:ELOT-default-prefix:' property
 and existing declarations seed the identifier-minting context.
 The file need not exist on disk yet (the LLM is often authoring a
 new ontology).  KIND is optional but recommended -- some schemes
-(notably `acme') encode it in the produced identifier.
+\(notably `acme') encode it in the produced identifier.
 
 The active identifier scheme is /project-defined/: different
 projects use radically different conventions (timestamp-encoded,
@@ -3872,8 +3874,8 @@ Filtered out of the `Existing rows' block returned by
     ("rdfs:Datatype"
      "rdfs:Datatype")
     ("owl:Ontology"))
-  "Per-kind list of signature buckets actually reachable from the
-subject's frame keywords.  Mitigation (1) from the M9.2 size
+  "Per-kind list of signature buckets reachable from frame keywords.
+Mitigation (1) from the M9.2 size
 discussion: a property-axiom author has no use for Individuals or
 APs in its frame fragments, so don't enumerate them.  Keyed by
 `rdf:type'; the fallback (unknown kind) is the union of all six
@@ -3904,7 +3906,7 @@ contexts the freshly-opened buffer would otherwise be in
 (defun elot-gptel--axiom-resolve-subject (subject slurp)
   "Resolve SUBJECT against SLURP; return its (CURIE LABEL ATTRS) row.
 Tries CURIE match first (car of each row), then label match
-(cadr).  Returns nil when no entry is found."
+\(cadr).  Returns nil when no entry is found."
   (or (assoc subject slurp)
       (cl-find-if (lambda (row) (equal (cadr row) subject)) slurp)))
 
@@ -4069,8 +4071,8 @@ Returns an `OK:'-prefixed multi-line report on success, an
     elot/omn-keyword-appropriateness
     elot/axiom-value-curies
     elot/axiom-keyword-range)
-  "Static checkers exercised by `elot_axiom_check' on the synthesised
-draft, in addition to the OMN parse.")
+  "Static checkers exercised by `elot_axiom_check' on the draft.
+Applied to the synthesised draft, in addition to the OMN parse.")
 
 (defvar elot-omn-all-keywords) ; from elot-tangle.el (used opportunistically)
 (declare-function elot-omn-keywords-for-kind "elot-lint" (kind))
@@ -4084,7 +4086,7 @@ draft, in addition to the OMN parse.")
 (defun elot-gptel--axiom-check-keyword-legal-p (keyword kind slurp)
   "Return non-nil when KEYWORD is legal as a description-list key for KIND.
 A keyword is legal when it is one of KIND's frame keywords
-(via `elot-omn-keywords-for-kind') or a declared annotation
+\(via `elot-omn-keywords-for-kind') or a declared annotation
 property in SLURP."
   (require 'elot-lint)
   (or (member keyword (elot-omn-keywords-for-kind kind))
@@ -4092,8 +4094,9 @@ property in SLURP."
 
 (defun elot-gptel--axiom-check-find-subject-heading (curie label)
   "Return buffer position of SUBJECT's resource heading line.
-Tries the CURIE-parenthetical heading form first (preferred),
-then a bare-label fallback for headings without a CURIE.
+CURIE and LABEL identify the subject.  Tries the
+CURIE-parenthetical heading form first (preferred), then a
+bare-LABEL fallback for headings without a CURIE.
 Signals `user-error' when neither matches."
   (require 'elot-id)
   (or (save-excursion
@@ -4113,6 +4116,7 @@ Signals `user-error' when neither matches."
 (defun elot-gptel--axiom-synthesise-draft
     (file-contents subject-curie subject-label keyword fragment)
   "Append `- KEYWORD :: FRAGMENT' under SUBJECT's heading in FILE-CONTENTS.
+SUBJECT-CURIE and SUBJECT-LABEL identify the subject heading.
 Returns a plist (:draft STRING :line N) where :line is the
 1-based line number of the synthesised row in the returned
 draft string."
@@ -4173,7 +4177,7 @@ Each element is a string -- the diagnostic message verbatim."
 (defun elot-gptel--axiom-check-consistency-on-draft (file draft reasoner)
   "Run `elot-gptel-tool-consistency' against DRAFT bytes.
 Writes DRAFT to a temp .org file next to FILE inside the
-project (so the project-root containment guard succeeds), runs
+project (so the `project-root' containment guard succeeds), runs
 consistency, then deletes the temp file.  Returns the report
 string."
   (let* ((dir (file-name-directory file))
@@ -4214,21 +4218,21 @@ and the future `elot_edit_axiom' (9.2.c)."
     (condition-case err
         (progn
           (unless (and (stringp subject) (not (string-empty-p subject)))
-            (user-error "subject must be a non-empty string"))
+            (user-error "Subject must be a non-empty string"))
           (unless (and (stringp keyword) (not (string-empty-p keyword)))
-            (user-error "keyword must be a non-empty string"))
+            (user-error "Keyword must be a non-empty string"))
           (unless (and (stringp fragment)
                        (not (string-empty-p (string-trim fragment))))
-            (user-error "fragment must be a non-empty string"))
+            (user-error "Fragment must be a non-empty string"))
           (let* ((true (elot-gptel--resolve-file file))
                  (slurp (elot-gptel--axiom-slurp-for-file true)))
             (unless slurp
               (user-error
-               "no resources declared in %s (elot-slurp empty)" file))
+               "No resources declared in %s (elot-slurp empty)" file))
             (let ((row (elot-gptel--axiom-resolve-subject subject slurp)))
               (unless row
                 (user-error
-                 "subject %s not found in elot-slurp \
+                 "Subject %s not found in elot-slurp \
 (try a declared CURIE or label)"
                  subject))
               (let* ((curie (car row))
@@ -4404,6 +4408,7 @@ the file on disk -- used by `dry_run' batches."
 
 (defun elot-gptel--apply-mutation (file dry-run callback)
   "Execute a side-effecting mutation on FILE via CALLBACK.
+DRY-RUN, when non-nil, previews the change without committing it.
 Handles side-effects gating, buffer setup, snapshotting, saving,
 auto-revalidation, and rollback on failure.
 
@@ -4434,7 +4439,7 @@ or ERROR/FAIL line)."
                   (success-header nil))
               (setq success-header (funcall callback))
               (unless (stringp success-header)
-                (error "elot-gptel--apply-mutation: callback must return a string"))
+                (error "ELOT-gptel--apply-mutation: callback must return a string"))
               
               (let ((after-text (buffer-substring-no-properties (point-min) (point-max))))
                 (if (equal before-text after-text)
@@ -4531,15 +4536,16 @@ whitespace).  Top-level rows carry a single leading space; nested
 annotation rows under an axiom row carry three or more.")
 
 (defconst elot-gptel--axiom-match-empty 'elot-gptel--match-empty-value
-  "Sentinel returned by `elot-gptel--axiom-normalise-fragment' for
-an empty / whitespace-only input string.  Distinct from nil (which
+  "Sentinel for an empty / whitespace-only input string.
+Returned by `elot-gptel--axiom-normalise-fragment'.  Distinct
+from nil (which
 means \"no matcher supplied\"), so the matcher in
 `elot-gptel--axiom-match-rows' can target rows whose value is
 empty or whitespace-only.  A symbol is used so it cannot collide
 with any string a caller might write as a fragment.")
 
 (defun elot-gptel--axiom-normalise-fragment (s)
-  "Return S with internal whitespace runs collapsed and trimmed.
+  "Return S with internal whitespace collapsed to single spaces and trimmed.
 
 Returns nil for nil or non-string input (= no matcher supplied),
 EXCEPT that `elot-gptel--axiom-match-empty' passes through
@@ -4606,7 +4612,8 @@ current buffer; SUBTREE-END caps the scan."
 
 (defun elot-gptel--axiom-find-rows
     (file-contents subject-curie subject-label)
-  "Return rows on SUBJECT's description list in FILE-CONTENTS."
+  "Return rows on SUBJECT's description list in FILE-CONTENTS.
+SUBJECT-CURIE and SUBJECT-LABEL identify the subject heading."
   (with-temp-buffer
     (insert file-contents)
     (let ((org-inhibit-startup t) (org-mode-hook nil))
@@ -4623,6 +4630,7 @@ current buffer; SUBTREE-END caps the scan."
 
 (defun elot-gptel--axiom-match-rows (rows keyword &optional match-fragment)
   "Return rows whose :keyword equals KEYWORD (and optionally :fragment matches).
+ROWS is the candidate list.
 Fragment match is ASCII-normalised (whitespace collapsed and
 trimmed) on both sides.  When MATCH-FRAGMENT is nil all rows
 with the matching keyword pass.  When MATCH-FRAGMENT normalises
@@ -4650,6 +4658,8 @@ row when a populated sibling exists under the same keyword."
     (file-contents subject-curie subject-label
                    op keyword fragment match-row)
   "Return (:draft STRING :verb STRING :nested-count N) for the edit.
+Apply to FILE-CONTENTS for SUBJECT-CURIE / SUBJECT-LABEL,
+setting KEYWORD to FRAGMENT.
 OP is one of `add', `replace', `delete'.  For `add' MATCH-ROW
 is ignored; for `replace' / `delete' it is the row plist
 returned by `elot-gptel--axiom-find-rows'."
@@ -4796,7 +4806,8 @@ the sweep."
 
 (defun elot-gptel-tool-edit-axiom
     (file subject keyword &optional fragment op match-fragment)
-  "Commit a single description-list row `- KEYWORD :: FRAGMENT' on SUBJECT.
+  "Commit a single description-list row `- KEYWORD :: FRAGMENT' on SUBJECT in FILE.
+MATCH-FRAGMENT, when supplied, selects which existing row to act on.
 
 Implementation of the `elot_edit_axiom' tool (Milestone 9 Step
 9.2.c).  Side-effecting -- gated by
@@ -4840,34 +4851,34 @@ diagnostic under a `FAIL:' header."
                ((stringp op) (intern op))
                ((symbolp op) op)
                (t (user-error
-                   "op must be `add', `replace', `delete', or `delete-empty': %S" op)))))
+                   "Op must be `add', `replace', `delete', or `delete-empty': %S" op)))))
         (unless (memq op-sym '(add replace delete delete-empty))
           (user-error
-           "op must be `add', `replace', `delete', or `delete-empty': %S" op))
+           "Op must be `add', `replace', `delete', or `delete-empty': %S" op))
         ;; `delete-empty' relaxes the keyword requirement (empty /
         ;; nil means "sweep every keyword").  Other ops still
         ;; require a non-empty keyword.
         (unless (eq op-sym 'delete-empty)
           (unless (and (stringp keyword) (not (string-empty-p keyword)))
-            (user-error "keyword must be a non-empty string")))
+            (user-error "Keyword must be a non-empty string")))
         (when (and (memq op-sym '(add replace))
                    (or (null fragment)
                        (and (stringp fragment)
                             (string-empty-p (string-trim fragment)))))
-          (user-error "fragment must be a non-empty string for %s"
+          (user-error "Fragment must be a non-empty string for %s"
                       (symbol-name op-sym)))
         (elot-gptel-with-mutation (file nil)
           (unless (and (stringp subject) (not (string-empty-p subject)))
-            (user-error "subject must be a non-empty string"))
+            (user-error "Subject must be a non-empty string"))
           (let* ((true (elot-gptel--resolve-file file))
                  (slurp (elot-gptel--axiom-slurp-for-file true)))
             (unless slurp
               (user-error
-               "no resources declared in %s (elot-slurp empty)" file))
+               "No resources declared in %s (elot-slurp empty)" file))
             (let ((row (elot-gptel--axiom-resolve-subject subject slurp)))
               (unless row
                 (user-error
-                 "subject %s not found in elot-slurp \
+                 "Subject %s not found in elot-slurp \
 (try a declared CURIE or label)"
                  subject))
               (let* ((curie (car row))
@@ -4923,7 +4934,7 @@ diagnostic under a `FAIL:' header."
                         (cond
                          ((null matches)
                           (user-error
-                           "no row matches keyword %S%s on %s"
+                           "No row matches keyword %S%s on %s"
                            keyword
                            (if matcher
                                (format " with fragment %S" matcher)
@@ -4931,7 +4942,7 @@ diagnostic under a `FAIL:' header."
                            curie))
                          ((> (length matches) 1)
                           (user-error
-                           "ambiguous; %d rows match keyword %S on %s; \
+                           "Ambiguous; %d rows match keyword %S on %s; \
 supply `match_fragment'"
                            (length matches) keyword curie))
                          (t (setq match-row (car matches))))))
@@ -5023,13 +5034,14 @@ so the validator surfaces the structured ERROR."
    (t edits)))
 
 (defun elot-gptel--axioms-normalise-edit (edit idx)
-  "Return a normalised plist
-(:subject :op :keyword :fragment :match-fragment) for EDIT.
+  "Return a normalised plist for EDIT.
+The plist has shape
+\(:subject :op :keyword :fragment :match-fragment).
 IDX is the 0-based position used in error messages.  Signals
 `user-error' with a `edits[IDX]:' prefix on shape problems so the
 caller can attribute the failure to a specific entry."
   (unless (or (hash-table-p edit) (listp edit))
-    (user-error "edits[%d]: must be an object, got %S" idx edit))
+    (user-error "Edits[%d]: must be an object, got %S" idx edit))
   (let* ((subject (elot-gptel--axioms-edit-get edit "subject"))
          (op      (elot-gptel--axioms-edit-get edit "op"))
          (keyword (elot-gptel--axioms-edit-get edit "keyword"))
@@ -5042,28 +5054,28 @@ caller can attribute the failure to a specific entry."
            ((stringp op) (intern op))
            ((symbolp op) op)
            (t (user-error
-               "edits[%d]: op must be `add', `replace', `delete', or `delete-empty': %S"
+               "Edits[%d]: op must be `add', `replace', `delete', or `delete-empty': %S"
                idx op)))))
     (unless (memq op-sym '(add replace delete delete-empty))
       (user-error
-       "edits[%d]: op must be `add', `replace', `delete', or `delete-empty': %S"
+       "Edits[%d]: op must be `add', `replace', `delete', or `delete-empty': %S"
        idx op))
     (unless (and (stringp subject) (not (string-empty-p subject)))
-      (user-error "edits[%d]: subject must be a non-empty string"
+      (user-error "Edits[%d]: subject must be a non-empty string"
                   idx))
     ;; `delete-empty' relaxes the keyword requirement (empty / nil
     ;; means "sweep every keyword on SUBJECT").  Other ops still
     ;; require a non-empty keyword.
     (unless (eq op-sym 'delete-empty)
       (unless (and (stringp keyword) (not (string-empty-p keyword)))
-        (user-error "edits[%d]: keyword must be a non-empty string"
+        (user-error "Edits[%d]: keyword must be a non-empty string"
                     idx)))
     (when (and (memq op-sym '(add replace))
                (or (null fragment)
                    (and (stringp fragment)
                         (string-empty-p (string-trim fragment)))))
       (user-error
-       "edits[%d]: fragment must be a non-empty string for %s"
+       "Edits[%d]: fragment must be a non-empty string for %s"
        idx (symbol-name op-sym)))
     (list :subject subject
           :op op-sym
@@ -5086,7 +5098,7 @@ Returns (:draft NEW :verb V :curie C :keyword K :nested N)."
          (row (elot-gptel--axiom-resolve-subject subject slurp)))
     (unless row
       (user-error
-       "edits[%d]: subject %s not found (try a declared CURIE or label)"
+       "Edits[%d]: subject %s not found (try a declared CURIE or label)"
        idx subject))
     (let* ((curie (car row))
            (label (cadr row)))
@@ -5118,13 +5130,13 @@ Returns (:draft NEW :verb V :curie C :keyword K :nested N)."
               (cond
                ((null matches)
                 (user-error
-                 "edits[%d]: no row matches keyword %S%s on %s"
+                 "Edits[%d]: no row matches keyword %S%s on %s"
                  idx keyword
                  (if matcher (format " with fragment %S" matcher) "")
                  curie))
                ((> (length matches) 1)
                 (user-error
-                 "edits[%d]: ambiguous; %d rows match keyword %S on %s; \
+                 "Edits[%d]: ambiguous; %d rows match keyword %S on %s; \
 supply `match_fragment'"
                  idx (length matches) keyword curie))
                (t (setq match-row (car matches))))))
@@ -5212,7 +5224,7 @@ a real commit, but FILE on disk is unchanged."
   (condition-case err
       (let* ((coerced (elot-gptel--axioms-coerce-edits edits)))
         (unless (and (listp coerced) coerced)
-          (user-error "edits must be a non-empty array"))
+          (user-error "Edits must be a non-empty array"))
         ;; Normalise every edit up front so shape errors surface
         ;; before we open the buffer or touch anything.
         (let* ((normalised
@@ -5226,7 +5238,7 @@ a real commit, but FILE on disk is unchanged."
                    (slurp (elot-gptel--axiom-slurp-for-file true)))
               (unless slurp
                 (user-error
-                 "no resources declared in %s (elot-slurp empty)" file))
+                 "No resources declared in %s (elot-slurp empty)" file))
               (let* ((draft (buffer-string))
                      (i -1)
                      (summaries nil))
@@ -5327,7 +5339,7 @@ rewrite; ignored when the prefix is already declared.
 
 NEW_LABEL, when supplied, also rewrites the rdfs:label carried
 in the resource-declaring heading's title (the text before the
-`(CURIE)' parenthetical), inside the same atomic-change-group
+`(CURIE)' parenthetical), inside the same `atomic-change-group'
 as the CURIE rewrite.  Empty or nil leaves the label untouched.
 Trailing statistics cookies and tags on the heading line are
 preserved verbatim.
@@ -5468,7 +5480,7 @@ or an `ERROR:' line on refusal / failure."
 (declare-function elot-id-heading-curie-regexp "elot-id" (curie))
 
 (defun elot-gptel--insert-curie-shape-p (s)
-  "Return non-nil when S looks like a CURIE (`prefix:local')."
+  "Return non-nil when S resembles a CURIE (`prefix:local')."
   (and (stringp s)
        (string-match-p
         "\\`[A-Za-z_][A-Za-z0-9_.-]*:[A-Za-z_][A-Za-z0-9_.-]*\\'"
@@ -5577,7 +5589,7 @@ inputs are returned unchanged so the validator can flag them."
 Example: \"identifier (dcterms:identifier)\".  The insert-resource
 GPT tools mint fresh identifiers, so accepting this shape is a footgun:
 the heading renderer would produce `identifier (dcterms:identifier)
-(rdl:minted)', while ELOT's heading parser treats the first
+\(rdl:minted)', while ELOT's heading parser treats the first
 parenthetical as the declaration CURIE."
   (and (stringp label)
        (string-match-p
@@ -5603,7 +5615,7 @@ report."
        "ELOT-gptel: every label must be a non-empty string (got %S)" l))
     (when (elot-gptel--insert-label-curie-parenthetical-p l)
       (user-error
-       "ELOT-gptel: labels are plain rdfs:label strings, not `Label (curie)' headings; got %S.  To reuse an existing CURIE, declare/borrow that resource explicitly instead of using an insert-* minting tool."
+       "ELOT-gptel: labels are plain rdfs:label strings, not `Label (curie)' headings; got %S.  To reuse an existing CURIE, declare/borrow that resource explicitly instead of using an insert-* minting tool"
        l))))
 
 (defun elot-gptel--insert-walk-tree-node (node path)
@@ -5684,7 +5696,7 @@ Format (F13): `  - ex:foo -- \"Foo\"' when both are present;
       pairs "\n"))))
 
 (defun elot-gptel--insert-do (file anchor child-p labels)
-  "Common driver for sibling / child insert.  Returns the formatted result.
+  "Drive sibling / child insert, returning the formatted result.
 FILE / ANCHOR / CHILD-P / LABELS as in the public tools.  Performs
 the gate check, opens the file, snapshots for rollback, positions
 point at ANCHOR, calls `elot-id-insert--do-insert', re-validates,
@@ -5731,7 +5743,7 @@ heading named by ANCHOR in FILE.  ANCHOR is a CURIE (preferred)
 or an unambiguous label.  Each LABEL becomes the `rdfs:label' of
 one new heading; its identifier is minted under the ontology
 heading's `:ELOT-id-scheme:' via `elot-id-mint-batch'
-(collision-aware against existing declarations).
+\(collision-aware against existing declarations).
 
 Gated by `elot-gptel-allow-side-effects'.  The file is saved and
 re-linted (plus OMN-parsed when ROBOT is configured); a
@@ -5749,7 +5761,7 @@ OMN-parse) reports."
 
 Inserts (length LABELS) new resource headings as first children
 of the heading named by ANCHOR in FILE.  ANCHOR is a CURIE
-(preferred) or an unambiguous label.  Inherits the level-2
+\(preferred) or an unambiguous label.  Inherits the level-2
 section refusal contract from the underlying Elisp command --
 ANCHOR under Datatypes (at level 3+) returns an
 `ERROR:' line citing the user-error.  Anchor directly on the
@@ -5777,7 +5789,7 @@ Gated by `elot-gptel-allow-side-effects'.  Returns
   OK: inserted N heading(s) under ANCHOR (as AS)
 
 followed by the list of minted CURIEs in level order
-(top-level siblings first, then each branch's children level
+\(top-level siblings first, then each branch's children level
 by level -- a direct consequence of `elot-insert-labels-tree'
 batch-minting one level at a time) and the lint (and
 OMN-parse) reports.
@@ -6215,7 +6227,7 @@ Both helpers must run inside an `atomic-change-group'; this
 function provides one so callers may invoke it directly.  Pure
 byte-level surgery -- no reference rewrite, no lint, no save.
 The caller wraps this in the standard write-back contract
-(snapshot, save, revalidate, rollback) before any tool envelope
+\(snapshot, save, revalidate, rollback) before any tool envelope
 is built.
 
 Returns a plist:
@@ -6236,7 +6248,7 @@ malformed CASCADE."
   (let ((marker (and (fboundp 'elot-id-rename--heading-marker-for-curie)
                      (elot-id-rename--heading-marker-for-curie subject))))
     (unless marker
-      (error "elot-gptel--delete-apply: cannot locate heading for %s"
+      (error "ELOT-gptel--delete-apply: cannot locate heading for %s"
              subject))
     (let (count)
       (atomic-change-group
@@ -6330,7 +6342,9 @@ malformed CASCADE."
 (defvar elot-slurp)
 
 (defun elot-gptel--delete-format-refusal (curie axiom-rows src-rows)
-  "Render an actionable refusal line listing dangling references."
+  "Render an actionable refusal line listing dangling references.
+CURIE is the subject; AXIOM-ROWS and SRC-ROWS are the dangling
+axiom and source references respectively."
   (let ((n (+ (length axiom-rows) (length src-rows))))
     (with-temp-buffer
       (insert
@@ -6366,7 +6380,7 @@ When ANNOTATION-ROWS is non-empty, a `NOTE:' block is
 appended after the OK line enumerating each row in the
 `line N  curie  KEY :: FRAGMENT' shape -- the same shape
 used by the dangling-reference refusal, but advisory only
-(OWL tolerates annotation values pointing at undeclared
+\(OWL tolerates annotation values pointing at undeclared
 IRIs).  The OK line itself also picks up an ` -- audit
 recommended' tail."
   (let* ((cascade-tail
@@ -6588,7 +6602,7 @@ or an `ERROR:' / `FAIL:' line on refusal / failure."
                          (elot-gptel--delete-format-ok
                           curie effective-cascade result prose-count
                           annotation-rows "")
-                         "\n\n" report)))))))))))) 
+                         "\n\n" report))))))))))))
     (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
 
@@ -6758,6 +6772,8 @@ committed) fold."
 
 (defun elot-gptel-tool-replace-with-parent (file subject &optional parent dry-run)
   "Implementation of the `elot_replace_with_parent' tool (M9.9.F1).
+FILE is the ontology source; SUBJECT the resource to reparent;
+PARENT the chosen parent; DRY-RUN previews without committing.
 
 Thin composite over `elot_rename_resource' with a parent-guard.
 Enumerates SUBJECT's immediate parents via
@@ -7471,7 +7487,7 @@ CURIE rewrite.  When TARGET_IRI is omitted in that case, this
 tool refuses with a structured `ERROR:' line listing the
 `elot-db' candidates for that prefix (format:
 `ERROR: undeclared prefix `p:'; candidates: <IRI1> | <IRI2>;
-retry with target_iri=<IRI>'); empty candidate list -> 
+retry with target_iri=<IRI>'); empty candidate list ->
 `candidates: (none)' with a hint to supply a brand-new
 target_iri.
 
@@ -8838,8 +8854,8 @@ unchanged; useful for try-before-commit.  Default false."))))
         elot-gptel--spec-axiom-check
         elot-gptel--spec-edit-axiom
         elot-gptel--spec-edit-axioms)
-  "Each entry is (NAME . PLIST) where PLIST is forwarded to
-`gptel-make-tool' after light translation.")
+  "List of tool specs, each entry (NAME . PLIST).
+PLIST is forwarded to `gptel-make-tool' after light translation.")
 
 (defun elot-gptel--truthy (v)
   "Normalise a JSON-decoded boolean V to an Elisp boolean.
@@ -9016,10 +9032,10 @@ spec-level `:confirm t', never adds one."
     (cons name tool)))
 
 (defun elot-gptel--refresh-active-selection ()
-  "Replace any stale ELOT tool objects currently in `gptel-tools'.
-`gptel-make-tool' updates the global registry, but `gptel-tools'
+  "Replace any stale ELOT tool objects currently in the variable `gptel-tools'.
+`gptel-make-tool' updates the global registry, but the variable `gptel-tools'
 \(the per-session selection driven by `gptel-menu') still points
-at the previous tool struct.  Walk `gptel-tools' and swap any
+at the previous tool struct.  Walk the variable `gptel-tools' and swap any
 ELOT entry for the freshly-registered one of the same name, so
 re-registration takes effect without the user toggling the tool
 in `gptel-menu'."
@@ -9039,7 +9055,7 @@ in `gptel-menu'."
 Errors with a helpful message when gptel is not available.  Safe
 to call repeatedly: re-registering replaces any previously
 registered ELOT tools, and refreshes any ELOT entries already
-selected in `gptel-tools' so the new definitions take effect
+selected in the variable `gptel-tools' so the new definitions take effect
 without toggling in `gptel-menu'."
   (interactive)
   (unless (require 'gptel nil 'noerror)
