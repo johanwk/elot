@@ -167,10 +167,10 @@ string like \"counter GO_0000000\" or \"acme slug:t\".  See
   "Register SCHEME (an `elot-id-scheme' struct) in `elot-id-schemes'.
 Replaces any prior entry with the same `name'.  Returns SCHEME."
   (unless (elot-id-scheme-p scheme)
-    (user-error "elot-id: not an elot-id-scheme: %S" scheme))
+    (user-error "ELOT-id: not an elot-id-scheme: %S" scheme))
   (let ((name (elot-id-scheme-name scheme)))
     (unless (symbolp name)
-      (user-error "elot-id: scheme name must be a symbol: %S" name))
+      (user-error "ELOT-id: scheme name must be a symbol: %S" name))
     (setq elot-id-schemes
           (cons (cons name scheme)
                 (assq-delete-all name elot-id-schemes))))
@@ -179,7 +179,7 @@ Replaces any prior entry with the same `name'.  Returns SCHEME."
 (defun elot-id-scheme-by-name (name)
   "Return the scheme registered under NAME, or signal `user-error'."
   (or (cdr (assq (if (stringp name) (intern name) name) elot-id-schemes))
-      (user-error "elot-id: scheme not registered: %s" name)))
+      (user-error "ELOT-id: scheme not registered: %s" name)))
 
 (defun elot-id--parse-spec-tokens (str)
   "Parse STR into a plist of scheme params.
@@ -214,7 +214,7 @@ treated as a bare scheme name.  Returns (nil . nil) on empty input."
         (cons (intern (car tokens))
               (elot-id--parse-spec-tokens
                (mapconcat #'identity (cdr tokens) " "))))))
-   (t (user-error "elot-id: cannot parse scheme spec: %S" spec))))
+   (t (user-error "ELOT-id: cannot parse scheme spec: %S" spec))))
 
 (defun elot-id-resolve-for-buffer (&optional buffer)
   "Resolve (SCHEME . PARAMS-PLIST) for BUFFER (defaults to current).
@@ -237,10 +237,10 @@ scheme-specific parameter tokens (see `elot-id-parse-spec')."
                      (cons (elot-id-scheme-name raw) nil))
                     ((or (symbolp raw) (stringp raw))
                      (elot-id-parse-spec raw))
-                    (t (user-error "elot-id: cannot resolve scheme: %S" raw))))
+                    (t (user-error "ELOT-id: cannot resolve scheme: %S" raw))))
            (name (car parsed)))
       (unless name
-        (user-error "elot-id: empty scheme spec"))
+        (user-error "ELOT-id: empty scheme spec"))
       (cons (elot-id-scheme-by-name name) (cdr parsed)))))
 
 (defun elot-id-scheme-for-buffer (&optional buffer)
@@ -281,7 +281,7 @@ retained for back-compat with pre-spec callers."
 CONTEXT's `:prefix' overrides SCHEME's default `prefix' slot."
   (or (plist-get context :prefix)
       (elot-id-scheme-prefix scheme)
-      (user-error "elot-id: no CURIE prefix in context or scheme")))
+      (user-error "ELOT-id: no CURIE prefix in context or scheme")))
 
 (defun elot-id--curie-collides-p (scheme curie context)
   "Return non-nil when CURIE collides under CONTEXT for SCHEME."
@@ -297,12 +297,12 @@ The scheme's mint-fn is responsible for collision handling; this
 wrapper merely resolves the scheme and validates the result is a
 non-empty string."
   (unless (and (stringp label) (not (string-empty-p label)))
-    (user-error "elot-id: label must be a non-empty string"))
+    (user-error "ELOT-id: label must be a non-empty string"))
   (let* ((scheme (elot-id--resolve-scheme scheme-or-name))
          (fn (elot-id-scheme-mint-fn scheme))
          (curie (funcall fn label context)))
     (unless (and (stringp curie) (not (string-empty-p curie)))
-      (user-error "elot-id: scheme %s returned an invalid CURIE: %S"
+      (user-error "ELOT-id: scheme %s returned an invalid CURIE: %S"
                   (elot-id-scheme-name scheme) curie))
     curie))
 
@@ -338,11 +338,11 @@ A scheme may override the per-call loop by populating its
 and must return a list of N non-empty CURIE strings.  The
 framework still validates the count and shape of the result."
   (unless (and (integerp n) (> n 0))
-    (user-error "elot-id: batch size must be a positive integer: %S" n))
+    (user-error "ELOT-id: batch size must be a positive integer: %S" n))
   (let* ((scheme (elot-id--resolve-scheme scheme-or-name))
          (labels (or labels (elot-id--placeholder-labels n context))))
     (unless (= (length labels) n)
-      (user-error "elot-id: labels length %d does not match batch size %d"
+      (user-error "ELOT-id: labels length %d does not match batch size %d"
                   (length labels) n))
     (let ((batch-fn (elot-id-scheme-mint-batch-fn scheme))
           (result nil))
@@ -351,12 +351,12 @@ framework still validates the count and shape of the result."
         (setq result (funcall batch-fn n context labels))
         (unless (and (listp result) (= (length result) n))
           (user-error
-           "elot-id: scheme %s mint-batch-fn returned %d items, expected %d"
+           "ELOT-id: scheme %s mint-batch-fn returned %d items, expected %d"
            (elot-id-scheme-name scheme) (length result) n))
         (dolist (c result)
           (unless (and (stringp c) (not (string-empty-p c)))
             (user-error
-             "elot-id: scheme %s mint-batch-fn returned invalid CURIE: %S"
+             "ELOT-id: scheme %s mint-batch-fn returned invalid CURIE: %S"
              (elot-id-scheme-name scheme) c))))
        (t
         (let* ((ctx (copy-sequence context))
@@ -373,7 +373,7 @@ framework still validates the count and shape of the result."
   "Return t when CURIE is well-formed under SCHEME-OR-NAME, nil otherwise.
 CONTEXT is forwarded to the scheme's verify-fn."
   (unless (and (stringp curie) (not (string-empty-p curie)))
-    (user-error "elot-id: curie must be a non-empty string"))
+    (user-error "ELOT-id: curie must be a non-empty string"))
   (let* ((scheme (elot-id--resolve-scheme scheme-or-name))
          (fn (elot-id-scheme-verify-fn scheme)))
     (and (funcall fn curie context) t)))
@@ -398,7 +398,7 @@ heading lines, all of which trail the title proper:
   - trailing whitespace.
 
 TODO keywords (`TODO', `DONE', etc.) and priority cookies
-(`[#A]') at the /start/ of the title are handled implicitly by
+\(`[#A]') at the /start/ of the title are handled implicitly by
 the `^\\*+ .*' prefix.  Group 0 covers the whole line; no
 sub-groups are exposed (callers use the regex purely as an
 anchor)."
@@ -414,7 +414,7 @@ anchor)."
 (defun elot-id--curie-split (curie)
   "Split CURIE into (PREFIX . LOCAL).  Signals on malformed input."
   (unless (string-match "\\`\\([A-Za-z_][A-Za-z0-9_-]*\\)?:\\(.+\\)\\'" curie)
-    (user-error "elot-id: not a CURIE: %s" curie))
+    (user-error "ELOT-id: not a CURIE: %s" curie))
   (cons (or (match-string 1 curie) "") (match-string 2 curie)))
 
 (defun elot-id--curie-prefix-matches-p (curie prefix)
@@ -431,12 +431,16 @@ anchor)."
   "Regexp matching the local-name portion of a UUID-scheme CURIE.")
 
 (defun elot-id--uuid-mint (_label context)
+  "Mint a UUID-scheme CURIE for CONTEXT.
+The label argument is ignored for this scheme."
   (require 'org-id)
   (let ((scheme (elot-id-scheme-by-name 'uuid)))
     (elot-id--make-curie (elot-id--context-prefix scheme context)
                          (downcase (org-id-uuid)))))
 
 (defun elot-id--uuid-verify (curie _context)
+  "Return non-nil when CURIE is a valid UUID-scheme identifier.
+The context argument is ignored for this scheme."
   (let ((parts (ignore-errors (elot-id--curie-split curie)))
         (case-fold-search nil))
     (and parts
@@ -465,6 +469,7 @@ in-string'), keeps a-z 0-9, joins runs of non-letters with `-'."
       (format "%s-%d" curie n))))
 
 (defun elot-id--slug-mint (label context)
+  "Mint a slug-scheme CURIE derived from LABEL for CONTEXT."
   (let* ((scheme (elot-id-scheme-by-name 'slug))
          (prefix (elot-id--context-prefix scheme context))
          (slug   (elot-id--slugify label))
@@ -473,6 +478,8 @@ in-string'), keeps a-z 0-9, joins runs of non-letters with `-'."
     (elot-id--slug-disambiguate curie existing)))
 
 (defun elot-id--slug-verify (curie _context)
+  "Return non-nil when CURIE is a valid slug-scheme identifier.
+The context argument is ignored for this scheme."
   (let ((parts (ignore-errors (elot-id--curie-split curie)))
         (case-fold-search nil))
     (and parts
@@ -498,14 +505,14 @@ TEMPLATE has the literal form of the desired local-name, e.g.
       (cons (match-string 1 template)
             (length (match-string 2 template)))
     (user-error
-     "elot-id: counter template must end in digits: %S" template)))
+     "ELOT-id: counter template must end in digits: %S" template)))
 
 (defun elot-id--counter-template (context scheme)
   "Return (ALPHA . PAD-WIDTH) for the counter scheme under CONTEXT.
 When CONTEXT carries a `:scheme-params' plist whose `:template'
 key -- or first bare positional token -- names a template literal,
 that template defines both the alpha prefix and pad width.
-Otherwise fall back to an empty alpha and the scheme's configured
+Otherwise fall back to an empty alpha and SCHEME's configured
 pad width."
   (let* ((params (plist-get context :scheme-params))
          (template (or (plist-get params :template)
@@ -526,6 +533,8 @@ pad width."
     max))
 
 (defun elot-id--counter-mint (_label context)
+  "Mint a counter-scheme CURIE for CONTEXT.
+The label argument is ignored for this scheme."
   (let* ((scheme (elot-id-scheme-by-name 'counter))
          (prefix (elot-id--context-prefix scheme context))
          (tpl    (elot-id--counter-template context scheme))
@@ -537,6 +546,7 @@ pad width."
     (elot-id--make-curie prefix local)))
 
 (defun elot-id--counter-verify (curie context)
+  "Return non-nil when CURIE is a valid counter-scheme identifier in CONTEXT."
   (let* ((scheme (elot-id-scheme-by-name 'counter))
          (tpl    (elot-id--counter-template context scheme))
          (alpha  (car tpl))
@@ -697,20 +707,20 @@ Signals when KIND is recognised by ELOT but absent from
   (let* ((k (cond ((null kind) 'class)
                   ((symbolp kind) kind)
                   ((stringp kind) (intern kind))
-                  (t (user-error "elot-id: bad :kind argument: %S" kind))))
+                  (t (user-error "ELOT-id: bad :kind argument: %S" kind))))
          (letter (cdr (assq k elot-id-acme-type-letters))))
     (unless letter
       (user-error
-       "elot-id: no acme TYPE letter for kind %s -- update `elot-id-acme-type-letters'"
+       "ELOT-id: no acme TYPE letter for kind %s -- update `elot-id-acme-type-letters'"
        k))
     letter))
 
 (defun elot-id--acme-slug-enabled-p (context)
   "Return non-nil when the acme scheme should include a label slug.
-Reads CONTEXT's `:scheme-params' plist key `:slug'; default is nil
-(slugless 11-char form).  String values `nil', `false', `no',
-`0', `off' (case-insensitive) read as nil; everything else (`t',
-`yes', `1', ...) reads as true."
+Read CONTEXT's `:scheme-params' plist key `:slug'; default is nil
+\(slugless 11-char form).  The string values \"nil\", \"false\",
+\"no\", \"0\", \"off\" and \"\" (case-insensitive) read as nil;
+every other string (\"t\", \"yes\", \"1\", ...) reads as non-nil."
   (let* ((params (plist-get context :scheme-params))
          (v (plist-get params :slug)))
     (cond
@@ -720,6 +730,7 @@ Reads CONTEXT's `:scheme-params' plist key `:slug'; default is nil
      (t (and v t)))))
 
 (defun elot-id--acme-mint (label context)
+  "Mint an acme-scheme CURIE derived from LABEL for CONTEXT."
   (let* ((scheme (elot-id-scheme-by-name 'acme))
          (prefix (elot-id--context-prefix scheme context))
          (kind   (plist-get context :kind))
@@ -738,7 +749,7 @@ Reads CONTEXT's `:scheme-params' plist key `:slug'; default is nil
             (throw 'done curie)))
         (setq attempt (1+ attempt)))
       (user-error
-       "elot-id: acme collision budget exhausted (slug=%s, label=%s); try a more specific label"
+       "ELOT-id: acme collision budget exhausted (slug=%s, label=%s); try a more specific label"
        (and slug-enabled (stringp label) (elot-acme-slug5 label))
        label))
     ;; Slug-loss disclosure only meaningful when slug is enabled.
@@ -753,6 +764,8 @@ Reads CONTEXT's `:scheme-params' plist key `:slug'; default is nil
     curie))
 
 (defun elot-id--acme-verify (curie _context)
+  "Return non-nil when CURIE is a valid acme-scheme identifier.
+The context argument is ignored for this scheme."
   (let ((parts (ignore-errors (elot-id--curie-split curie))))
     (and parts (elot-acme-verify (cdr parts)))))
 
