@@ -803,7 +803,8 @@ ROBOT are optional.
 *Acceptance:* README mentions elot-gptel with a copy-pasteable
 enable snippet.
 
-** TODO Step 3.3 checkdoc / package-lint clean
+** DONE Step 3.3 checkdoc / package-lint clean
+CLOSED: [2026-07-22 ons. 15:51]
 
 Clear the Phase 0 debt inventory:
 - =checkdoc= clean on =elot-gptel.el=, =elot-id*.el=, =elot-robot.el=,
@@ -817,7 +818,8 @@ violation on a public symbol), record it as a decision before acting.
 *Acceptance:* all three tools clean; captured in an updated debt
 inventory showing zero outstanding items.
 
-** TODO Step 3.4 Commentary and autoload sanity
+** DONE Step 3.4 Commentary and autoload sanity
+CLOSED: [2026-07-22 ons. 15:55]
 
 Confirm =elot-gptel.el= commentary block is accurate for v1, the
 =;;;###autoload= on =elot-gptel-register-tools= is present, and the
@@ -1080,6 +1082,27 @@ registered as a tool in the v1 roster.
      the new term via rows on *already-declared* subjects (e.g. add
      the =SubClassOf= via heading nesting at insert time) so no
      same-batch forward reference is needed.
+- *=uuid= identifier scheme mints XML-unsafe (leading-digit)
+  local-names* (confirmed live friction, 2026-07).  =elot-id--uuid-mint=
+  emits =(downcase (org-id-uuid))= with no alpha lead-in, so ~⅝ of
+  minted UUIDs begin with a hex digit.  A bare-digit-leading local part
+  is a valid Turtle =PN_LOCAL= but *not* a valid XML =NCName=, so it is
+  rejected by the RDF/XML and OWL/XML serialisations that ROBOT / the
+  OWLAPI use heavily (a leading digit is illegal for an =NCName= first
+  char).  This is why OBO IDs are =GO_0008150=, and why the LLM
+  spontaneously prepended =C_= when asked to mint UUID-style IDs in
+  =examples/pets.org= -- the workaround is correct, but the scheme
+  *default* should not require it.  The verify side compounds it:
+  =elot-id--uuid-localname-regexp= requires the bare =8-4-4-4-12= hex
+  form and would *reject* a =C_=-prefixed identifier.  Preferred
+  post-v1 fix: give the =uuid= scheme a configurable alpha lead-in
+  (default a safe prefix such as =C_=, via =:scheme-params= like the
+  acme =:slug= toggle already does) and widen the verify regexp to
+  accept it, so every minted UUID is XML-safe by construction.
+  Alternatives considered: keep raw UUIDs and document a Turtle-only
+  caveat (leaves an RDF/XML footgun).  No v1 code change -- both Step
+  3.3 (docstring/message-only) and Step 3.4 (packaging) are out of
+  scope for a mint-behaviour change.
 
 * Working discipline (how to run each step in gptel)
 
@@ -1105,4 +1128,5 @@ registered as a tool in the v1 roster.
 | (pending)  | Step 2.2 escalation B -- =elot_replace_with_parent= *contract accuracy*: the "safe semantic weakening" claim holds only for covariant occurrences (fails for =not= / =only= / LHS positions), the global =op=merge= rewrite does not narrow to covariant sites, and post-fold revalidation is lint+OMN only (no reasoner consistency).  DECISION NEEDED: (i) add a covariance caveat to the tool description, and (ii) either add an =elot_consistency= stage to the fold's revalidation or document the residual risk. |
 | (today)    | Minted-CURIE forward-reference (batch mint + same-batch subject use fails): deferred to post-v1 with the =$introduced[K]= synthetic-reference design as the preferred fix; three v1 workarounds documented in the Deferred list and to be carried into the Step 3.1 user docs.  No v1 code change. |
 | (today)    | Step 2.3 defaults review: all shipped defaults are the cautious ones (=allow-side-effects= nil, =confirm-mutations= once-armed, =robot-catalog= nil, content cap 4 MiB, explain-timeout 60 s, explain-max 1).  No surprising default ships; full table + rationale under Step 2.3.  Rationale carried into Phase 3 user docs. |
+| (today)    | =uuid= identifier scheme mints XML-unsafe (leading-digit) local-names (valid Turtle =PN_LOCAL= but invalid XML =NCName=, rejected by RDF/XML & OWL/XML via ROBOT/OWLAPI).  Surfaced live when the LLM prepended =C_= to UUID mints in =examples/pets.org=.  *Deferred to post-v1*: add a configurable alpha lead-in (default =C_=, via =:scheme-params=) + widen =elot-id--uuid-localname-regexp= on verify.  No v1 code change; recorded in the Deferred list.  Out of Step 3.3/3.4 scope. |
 | (today)    | Tool-roster freeze *upheld* against a reviewed proposal to add Tier-1 inspection tools (=elot_resources=, =elot_read_resource=, =elot_metrics=) before v1.  The gaps are reachable via documented workaround idioms (=elot_axiom_keywords= Buffer Signature / Existing rows; =elot_sparql_select= / =elot_db_query= for counts), so v1 stability beats v1 completeness.  Recorded as deferred item "post-v1 M12: Tier-1 inspection tools" (first post-v1 milestone); the workaround idioms are added to Step 3.1's documentation scope so the v1 docs mitigate the gap. |
