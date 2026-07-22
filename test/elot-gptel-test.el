@@ -94,7 +94,7 @@ which would otherwise cause the tangler to silently omit the
     ;; `error' filter -- output is either clean or contains only errors.
     (let ((out (elot-gptel-tool-lint file "error" nil)))
       (should (stringp out))
-      (should-not (string-prefix-p "ERROR: elot-gptel" out)))
+      (should-not (string-prefix-p "ERROR: ELOT-gptel" out)))
     ;; Bad severity value yields a structured error, not a backtrace.
     (let ((out (elot-gptel-tool-lint file "frobnicate" nil)))
       (should (string-prefix-p "ERROR:" out)))))

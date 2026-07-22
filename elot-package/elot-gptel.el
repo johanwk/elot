@@ -293,7 +293,7 @@ resulting path names an existing regular file -- intended for the
 M7.5 `content' arg, where the LLM lints an in-flight draft whose
 on-disk counterpart may not yet exist."
   (unless (and path (stringp path) (not (string-empty-p path)))
-    (user-error "elot-gptel: missing file argument"))
+    (user-error "ELOT-gptel: missing file argument"))
   (let* ((root (file-truename (elot-gptel--project-root)))
          (root-dir (file-name-as-directory root))
          (abs (expand-file-name path root-dir))
@@ -305,7 +305,7 @@ on-disk counterpart may not yet exist."
     (unless (or (string-prefix-p root-dir true)
                 (string= (directory-file-name true)
                          (directory-file-name root-dir)))
-      (user-error "elot-gptel: refusing path outside project: %s" path))
+      (user-error "ELOT-gptel: refusing path outside project: %s" path))
     true))
 
 (defun elot-gptel--resolve-file (path)
@@ -316,9 +316,9 @@ otherwise.  Symlinks are resolved before the containment check
 so escapes via symlink are refused."
   (let ((true (elot-gptel--resolve-file-path path)))
     (unless (file-exists-p true)
-      (user-error "elot-gptel: file not found: %s" path))
+      (user-error "ELOT-gptel: file not found: %s" path))
     (unless (file-regular-p true)
-      (user-error "elot-gptel: not a regular file: %s" path))
+      (user-error "ELOT-gptel: not a regular file: %s" path))
     true))
 
 (defun elot-gptel--check-content-size (content)
@@ -332,7 +332,7 @@ call reads naturally inline."
                     elot-gptel-content-arg-max-bytes)))
       (when (and cap (> bytes cap))
         (user-error
-         "elot-gptel: content argument too large (%d bytes > %d cap)"
+         "ELOT-gptel: content argument too large (%d bytes > %d cap)"
          bytes cap))))
   nil)
 
@@ -529,7 +529,7 @@ Returns a plain-text report.  See plan Milestones 1 and 7.5."
                 ((or 'nil "all" "")        'all)
                 (other
                  (user-error
-                  "elot-gptel: unknown severity %S (use error|warning|all)"
+                  "ELOT-gptel: unknown severity %S (use error|warning|all)"
                   other))))
              (checker-names
               (if categories
@@ -638,7 +638,7 @@ can be produced (e.g. malformed ontology-declaration heading)."
         (condition-case err
             (elot-update-headline-hierarchy)
           (error
-           (user-error "elot-gptel: failed to parse ontology hierarchy: %s"
+           (user-error "ELOT-gptel: failed to parse ontology hierarchy: %s"
                        (error-message-string err))))
         (let ((children (plist-get elot-headline-hierarchy :children))
               (idx 0))
@@ -668,7 +668,7 @@ can be produced (e.g. malformed ontology-declaration heading)."
                         nodes-info))))))))
     (when (null nodes-info)
       (user-error
-       "elot-gptel: no ontology OMN produced (check ontology-declaration heading?)"))
+       "ELOT-gptel: no ontology OMN produced (check ontology-declaration heading?)"))
     (nreverse nodes-info)))
 
 (defun elot-gptel--format-classify (kp omn-path &optional map org-file)
@@ -817,12 +817,12 @@ a plain-text report."
         (require 'elot-robot)
         (unless (elot-robot-available-p)
           (user-error
-           "elot-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
+           "ELOT-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
         (when (and profile
                    (not (member (upcase profile)
                                 elot-gptel--omn-validate-profiles)))
           (user-error
-           "elot-gptel: unknown profile %S (use DL|EL|QL|RL|Full)"
+           "ELOT-gptel: unknown profile %S (use DL|EL|QL|RL|Full)"
            profile))
         (let* ((content* (and content (stringp content)
                               (not (string-empty-p content))
@@ -990,11 +990,11 @@ executable on PATH)."
         (require 'elot-robot)
         (unless (elot-robot-available-p)
           (user-error
-           "elot-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
+           "ELOT-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
         (let* ((fmt (downcase (or format "tsv"))))
           (unless (member fmt elot-gptel--omn-report-formats)
             (user-error
-             "elot-gptel: unknown format %S (use %s)"
+             "ELOT-gptel: unknown format %S (use %s)"
              format
              (mapconcat #'identity elot-gptel--omn-report-formats "|")))
           (let* ((content* (and content (stringp content)
@@ -1108,7 +1108,7 @@ other's OMN output paths.  RDF inputs are accepted verbatim
       file)
      (t
       (user-error
-       "elot-gptel: unsupported input extension %S for %s (use .org or %s)"
+       "ELOT-gptel: unsupported input extension %S for %s (use .org or %s)"
        (or ext "(none)") file
        (mapconcat (lambda (e) (concat "." e))
                   elot-gptel--sparql-rdf-extensions ", "))))))
@@ -1143,14 +1143,14 @@ executable on PATH)."
         (require 'elot-robot)
         (unless (elot-robot-available-p)
           (user-error
-           "elot-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
+           "ELOT-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
         (unless (and baseline (stringp baseline)
                      (not (string-empty-p baseline)))
-          (user-error "elot-gptel: missing baseline argument"))
+          (user-error "ELOT-gptel: missing baseline argument"))
         (let ((fmt (downcase (or format "plain"))))
           (unless (member fmt elot-gptel--diff-formats)
             (user-error
-             "elot-gptel: unknown format %S (use %s)"
+             "ELOT-gptel: unknown format %S (use %s)"
              format
              (mapconcat #'identity elot-gptel--diff-formats "|")))
           (let* ((true-file     (elot-gptel--resolve-file file))
@@ -1324,7 +1324,7 @@ verbatim provided its extension is in
       file)
      (t
       (user-error
-       "elot-gptel: unsupported input extension %S (use .org or %s)"
+       "ELOT-gptel: unsupported input extension %S (use .org or %s)"
        (or ext "(none)")
        (mapconcat (lambda (e) (concat "." e))
                   elot-gptel--sparql-rdf-extensions
@@ -1459,13 +1459,13 @@ permitted; everything else is refused regardless of
         (require 'elot-robot)
         (unless (elot-robot-available-p)
           (user-error
-           "elot-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
+           "ELOT-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
         (unless (and query (stringp query)
                      (not (string-empty-p (string-trim query))))
-          (user-error "elot-gptel: missing or empty query"))
+          (user-error "ELOT-gptel: missing or empty query"))
         (let* ((fmt (downcase (or format "tsv"))))
           (unless (member fmt elot-gptel--sparql-result-formats)
-            (user-error "elot-gptel: unknown format %S (use %s)"
+            (user-error "ELOT-gptel: unknown format %S (use %s)"
                         format
                         (mapconcat #'identity
                                    elot-gptel--sparql-result-formats
@@ -1474,12 +1474,12 @@ permitted; everything else is refused regardless of
            (select-only
             (unless (elot-gptel--sparql-select-or-ask-p query)
               (user-error
-               "elot-gptel: elot_sparql_select accepts only SELECT or ASK queries (got %s)"
+               "ELOT-gptel: elot_sparql_select accepts only SELECT or ASK queries (got %s)"
                (or (elot-gptel--sparql-query-form query) "unknown form"))))
            ((and (elot-gptel--sparql-mutating-p query)
                  (not elot-gptel-allow-side-effects))
             (user-error
-             "elot-gptel: mutating SPARQL refused -- side effects disabled \
+             "ELOT-gptel: mutating SPARQL refused -- side effects disabled \
 (set `elot-gptel-allow-side-effects' to t)")))
           (let* ((lim (min (max (or limit elot-gptel--sparql-limit-default) 0)
                            elot-gptel--sparql-limit-max))
@@ -1686,11 +1686,11 @@ Returns one of:
         (require 'elot-robot)
         (unless (elot-robot-available-p)
           (user-error
-           "elot-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
+           "ELOT-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
         (let* ((r (downcase (or reasoner "hermit"))))
           (unless (member r elot-gptel--reasoners)
             (user-error
-             "elot-gptel: unknown reasoner %S (use %s)"
+             "ELOT-gptel: unknown reasoner %S (use %s)"
              reasoner
              (mapconcat #'identity elot-gptel--reasoners "|")))
           (let ((true-file (elot-gptel--resolve-file file)))
@@ -1792,11 +1792,11 @@ the ELOT DB has them)."
         (require 'elot-robot)
         (unless (elot-robot-available-p)
           (user-error
-           "elot-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
+           "ELOT-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
         (let* ((r (downcase (or reasoner "hermit"))))
           (unless (member r elot-gptel--reasoners)
             (user-error
-             "elot-gptel: unknown reasoner %S (use %s)"
+             "ELOT-gptel: unknown reasoner %S (use %s)"
              reasoner
              (mapconcat #'identity elot-gptel--reasoners "|")))
           (let ((true-file (elot-gptel--resolve-file file)))
@@ -2154,9 +2154,9 @@ deleted on exit."
         (require 'elot-robot)
         (unless (elot-robot-available-p)
           (user-error
-           "elot-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
+           "ELOT-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
         (unless (and axiom (stringp axiom) (not (string-empty-p (string-trim axiom))))
-          (user-error "elot-gptel: missing or empty axiom argument"))
+          (user-error "ELOT-gptel: missing or empty axiom argument"))
         (let* ((r-in (and reasoner (downcase reasoner)))
                (r    (or r-in "hermit")))
           ;; Allow `elk' as a pass-through for ROBOT's explain default;
@@ -2164,7 +2164,7 @@ deleted on exit."
           (unless (or (member r elot-gptel--reasoners)
                       (equal r "elk"))
             (user-error
-             "elot-gptel: unknown reasoner %S (use %s or elk)"
+             "ELOT-gptel: unknown reasoner %S (use %s or elk)"
              reasoner
              (mapconcat #'identity elot-gptel--reasoners "|")))
           (let* ((true-file (elot-gptel--resolve-file file))
@@ -2173,7 +2173,7 @@ deleted on exit."
                  (label-ht  (car ctx))
                  (prefixes  (cdr ctx)))
             (unless (and (integerp m) (>= m 1))
-              (user-error "elot-gptel: max must be a positive integer"))
+              (user-error "ELOT-gptel: max must be a positive integer"))
             (elot-robot-call-with-workspace
              (lambda (ws)
                (let* ((nodes   (elot-gptel--tangle-ontologies-to-workspace
@@ -2309,10 +2309,10 @@ when the gate refuses the query or the DB is unavailable."
                    ((null limit) elot-gptel--db-query-default-limit)
                    ((not (integerp limit))
                     (user-error
-                     "elot-gptel: limit must be an integer"))
+                     "ELOT-gptel: limit must be an integer"))
                    ((< limit 0)
                     (user-error
-                     "elot-gptel: limit must be non-negative"))
+                     "ELOT-gptel: limit must be non-negative"))
                    ((> limit elot-gptel--db-query-max-limit)
                     elot-gptel--db-query-max-limit)
                    (t limit))))
@@ -2416,7 +2416,7 @@ the DB has no entry for TOKEN.  Read-only."
   (condition-case err
       (progn
         (unless (and (stringp token) (not (string-empty-p token)))
-          (user-error "elot-gptel: token must be a non-empty string"))
+          (user-error "ELOT-gptel: token must be a non-empty string"))
         (elot-gptel--db-ensure-open)
         (let* ((bare  (elot-gptel--db-iri-from-bracketed token))
                (label (elot-db-get-label-any bare)))
@@ -2502,10 +2502,10 @@ side-effects gate.  The real delete is gated by
   (condition-case err
       (progn
         (unless (and (stringp source) (not (string-empty-p source)))
-          (user-error "elot-gptel: source must be a non-empty string"))
+          (user-error "ELOT-gptel: source must be a non-empty string"))
         (unless (or dry-run elot-gptel-allow-side-effects)
           (user-error
-           "elot-gptel: elot_db_remove_source refused -- side effects disabled \
+           "ELOT-gptel: elot_db_remove_source refused -- side effects disabled \
 (set `elot-gptel-allow-side-effects' to t, or pass dry_run=true)"))
         (elot-gptel--db-ensure-open)
         (let* ((ds (cond ((and (stringp data-source)
@@ -2555,7 +2555,7 @@ the prefix is unknown or CURIE is malformed.  Read-only."
   (condition-case err
       (progn
         (unless (and (stringp curie) (not (string-empty-p curie)))
-          (user-error "elot-gptel: curie must be a non-empty string"))
+          (user-error "ELOT-gptel: curie must be a non-empty string"))
         (elot-gptel--db-ensure-open)
         (let ((iri (elot-db-expand-curie curie elot-active-label-sources)))
           (or iri
@@ -2626,7 +2626,7 @@ through the M6.1 read-only gate."
   (condition-case err
       (progn
         (unless (and (stringp id) (not (string-empty-p id)))
-          (user-error "elot-gptel: id must be a non-empty string"))
+          (user-error "ELOT-gptel: id must be a non-empty string"))
         (elot-gptel--db-ensure-open)
         (let* ((sql (if source
                         "SELECT prop, value, lang, source, data_source
@@ -2663,7 +2663,7 @@ source(s) of interest.  Read-only."
   (condition-case err
       (progn
         (unless (and (stringp id) (not (string-empty-p id)))
-          (user-error "elot-gptel: id must be a non-empty string"))
+          (user-error "ELOT-gptel: id must be a non-empty string"))
         (elot-gptel--db-ensure-open)
         (let* ((placeholders
                 (mapconcat (lambda (_) "?")
@@ -2718,7 +2718,7 @@ or has no asserted type.  Read-only."
   (condition-case err
       (progn
         (unless (and (stringp id) (not (string-empty-p id)))
-          (user-error "elot-gptel: id must be a non-empty string"))
+          (user-error "ELOT-gptel: id must be a non-empty string"))
         (elot-gptel--db-ensure-open)
         (let* ((type-placeholders
                 (mapconcat (lambda (_) "?")
@@ -2855,10 +2855,10 @@ candidate for reuse before minting a fresh identifier."
                    ((null limit) elot-gptel--db-search-default-limit)
                    ((not (integerp limit))
                     (user-error
-                     "elot-gptel: limit must be an integer"))
+                     "ELOT-gptel: limit must be an integer"))
                    ((< limit 0)
                     (user-error
-                     "elot-gptel: limit must be non-negative"))
+                     "ELOT-gptel: limit must be non-negative"))
                    ((> limit elot-gptel--db-search-max-limit)
                     elot-gptel--db-search-max-limit)
                    ((= limit 0) elot-gptel--db-search-default-limit)
@@ -2871,7 +2871,7 @@ candidate for reuse before minting a fresh identifier."
                          lang))
              (exact-only* (and exact-only t)))
         (unless (and (stringp query) (not (string-empty-p query)))
-          (user-error "elot-gptel: query must be a non-empty string"))
+          (user-error "ELOT-gptel: query must be a non-empty string"))
         (elot-gptel--db-ensure-open)
         (let ((rows (elot-db-search-entities
                      query lim kind* source* lang* exact-only*)))
@@ -3123,7 +3123,7 @@ buffer.  When TOKEN is unknown, returns
   (condition-case err
       (progn
         (unless (and (stringp token) (not (string-empty-p token)))
-          (user-error "elot-gptel: token must be a non-empty string"))
+          (user-error "ELOT-gptel: token must be a non-empty string"))
         (elot-gptel--db-ensure-open)
         (let ((cit (elot-db-entity-citation token)))
           (if (null cit)
@@ -3218,13 +3218,13 @@ disambiguation stays with the caller.  Read-only."
                        "class")
                       ((stringp kind) kind)
                       (t (user-error
-                          "elot-gptel: kind must be a string"))))
+                          "ELOT-gptel: kind must be a string"))))
              (source* (and (stringp source) (not (string-empty-p source))
                            source))
              (lang*   (and (stringp lang) (not (string-empty-p lang))
                            lang)))
         (unless (and (stringp label*) (not (string-empty-p label*)))
-          (user-error "elot-gptel: label must be a non-empty string"))
+          (user-error "ELOT-gptel: label must be a non-empty string"))
         (elot-gptel--db-ensure-open)
         (let* ((rows (elot-db-search-entities
                       label* elot-gptel--borrow-default-limit
@@ -3588,14 +3588,14 @@ default."
     (or (and (boundp 'elot-id-default-scheme)
              (ignore-errors
                (cons (elot-id-scheme-by-name elot-id-default-scheme) nil)))
-        (user-error "elot-gptel: no scheme configured")))
+        (user-error "ELOT-gptel: no scheme configured")))
    ((or (stringp scheme-arg) (symbolp scheme-arg))
     (let* ((parsed (elot-id-parse-spec scheme-arg))
            (name (car parsed)))
       (unless name
-        (user-error "elot-gptel: empty scheme spec"))
+        (user-error "ELOT-gptel: empty scheme spec"))
       (cons (elot-id-scheme-by-name name) (cdr parsed))))
-   (t (user-error "elot-gptel: bad scheme argument: %S" scheme-arg))))
+   (t (user-error "ELOT-gptel: bad scheme argument: %S" scheme-arg))))
 
 (defun elot-gptel--mint-buffer-for-file (true-file)
   "Return a live buffer visiting TRUE-FILE, or nil.
@@ -3672,7 +3672,7 @@ existing IRIs."
                          ((symbolp kind) kind)
                          ((stringp kind)
                           (unless (member kind elot-gptel--mint-kinds)
-                            (user-error "elot-gptel: unknown kind: %s"
+                            (user-error "ELOT-gptel: unknown kind: %s"
                                         kind))
                           (intern kind)))))
     (append
@@ -3724,7 +3724,7 @@ or an `ERROR:' line.  Read-only with respect to the .org file."
       (progn
         (require 'elot-id)
         (unless (and (stringp label) (not (string-empty-p label)))
-          (user-error "elot-gptel: label must be a non-empty string"))
+          (user-error "ELOT-gptel: label must be a non-empty string"))
         (let* ((true (and file (elot-gptel--resolve-file-path file)))
                (hier (elot-gptel--mint-hierarchy-for-file true))
                (node (elot-gptel--mint-ontology-node hier))
@@ -3764,7 +3764,7 @@ or an `ERROR:' line.  Read-only."
       (progn
         (require 'elot-id)
         (unless (and (stringp curie) (not (string-empty-p curie)))
-          (user-error "elot-gptel: curie must be a non-empty string"))
+          (user-error "ELOT-gptel: curie must be a non-empty string"))
         (let* ((true (elot-gptel--resolve-file-path file))
                (hier (elot-gptel--mint-hierarchy-for-file true))
                (node (elot-gptel--mint-ontology-node hier))
@@ -4007,17 +4007,17 @@ Returns an `OK:'-prefixed multi-line report on success, an
   (condition-case err
       (progn
         (unless (and (stringp subject) (not (string-empty-p subject)))
-          (user-error "elot-gptel: subject must be a non-empty string"))
+          (user-error "ELOT-gptel: subject must be a non-empty string"))
         (let* ((true (elot-gptel--resolve-file file))
                (slurp (elot-gptel--axiom-slurp-for-file true)))
           (unless slurp
             (user-error
-             "elot-gptel: no resources declared in %s (elot-slurp empty)"
+             "ELOT-gptel: no resources declared in %s (elot-slurp empty)"
              file))
           (let ((row (elot-gptel--axiom-resolve-subject subject slurp)))
             (unless row
               (user-error
-               "elot-gptel: subject %s not found in elot-slurp \
+               "ELOT-gptel: subject %s not found in elot-slurp \
 (try a declared CURIE or label)"
                subject))
             (let* ((curie (car row))
@@ -4108,7 +4108,7 @@ Signals `user-error' when neither matches."
               (concat "^\\*+ " (regexp-quote label) "[ \t]*$") nil t)
              (line-beginning-position)))
       (user-error
-       "elot-gptel: cannot locate heading for %s in buffer" curie)))
+       "ELOT-gptel: cannot locate heading for %s in buffer" curie)))
 
 (defun elot-gptel--axiom-synthesise-draft
     (file-contents subject-curie subject-label keyword fragment)
@@ -4417,14 +4417,14 @@ or ERROR/FAIL line)."
       (progn
         (unless (or dry-run elot-gptel-allow-side-effects)
           (user-error
-           "elot-gptel: mutation refused -- side effects disabled \
+           "ELOT-gptel: mutation refused -- side effects disabled \
 (set `elot-gptel-allow-side-effects' to t, or pass dry_run=true)"))
         (let* ((true-file (elot-gptel--resolve-file file))
                (buf (or (find-buffer-visiting true-file)
                         (let ((inhibit-message t))
                           (find-file-noselect true-file 'nowarn)))))
           (unless (buffer-live-p buf)
-            (user-error "elot-gptel: cannot open %s" file))
+            (user-error "ELOT-gptel: cannot open %s" file))
           (with-current-buffer buf
             (unless (derived-mode-p 'org-mode)
               (let ((org-inhibit-startup t) (org-mode-hook nil))
@@ -4730,7 +4730,7 @@ returned by `elot-gptel--axiom-find-rows'."
                        (point-min) (point-max))
                :verb "deleted"
                :nested-count (plist-get match-row :nested-count)))
-        (_ (user-error "elot-gptel: unknown op: %S" op))))))
+        (_ (user-error "ELOT-gptel: unknown op: %S" op))))))
 
 (defun elot-gptel--axiom-row-empty-p (row)
   "Return non-nil when ROW's :fragment is nil or whitespace-only.
@@ -5348,9 +5348,9 @@ or an `ERROR:' line on refusal / failure."
   (ignore ontology)
   (elot-gptel-with-mutation (file dry-run)
     (unless (and (stringp source) (not (string-empty-p source)))
-      (user-error "elot-gptel: source must be a non-empty CURIE string"))
+      (user-error "ELOT-gptel: source must be a non-empty CURIE string"))
     (unless (and (stringp target) (not (string-empty-p target)))
-      (user-error "elot-gptel: target must be a non-empty CURIE string"))
+      (user-error "ELOT-gptel: target must be a non-empty CURIE string"))
     (require 'elot-id-rename)
     (setq op
           (cond
@@ -5360,7 +5360,7 @@ or an `ERROR:' line on refusal / failure."
                  (member op '("rename" "merge")))
             (intern op))
            (t (user-error
-               "elot-gptel: op must be `rename' or `merge' (got %S)"
+               "ELOT-gptel: op must be `rename' or `merge' (got %S)"
                op))))
     (unless (eq op 'merge)
       (let* ((tgt-parts (elot-id-rename--split-curie target))
@@ -5514,7 +5514,7 @@ heading."
       ((null matches) nil)
       ((= 1 (length matches)) (car matches))
       (t (user-error
-          "elot-gptel: anchor label %S is ambiguous (%d headings)"
+          "ELOT-gptel: anchor label %S is ambiguous (%d headings)"
           label (length matches)))))
    ;; Steps 2 + 3: property or plain-title match (9.3.F6 -- enables
    ;; section-root anchors).  One outline pass collects candidates
@@ -5535,7 +5535,7 @@ heading."
       ((null matches) nil)
       ((= 1 (length matches)) (car matches))
       (t (user-error
-          "elot-gptel: anchor label %S is ambiguous (%d headings)"
+          "ELOT-gptel: anchor label %S is ambiguous (%d headings)"
           label (length matches)))))))
 
 (defun elot-gptel--insert-goto-anchor (anchor)
@@ -5545,7 +5545,7 @@ or a section heading's `:ID:' / `:CUSTOM_ID:' property value.
 Signals `user-error' when no matching heading is found, or when
 a non-CURIE anchor matches more than one heading."
   (unless (and (stringp anchor) (not (string-empty-p anchor)))
-    (user-error "elot-gptel: anchor must be a non-empty string"))
+    (user-error "ELOT-gptel: anchor must be a non-empty string"))
   (cond
    ((elot-gptel--insert-curie-shape-p anchor)
     (condition-case _err
@@ -5553,12 +5553,12 @@ a non-CURIE anchor matches more than one heading."
           (elot-id-insert--goto-heading-for-curie anchor)
           (point))
       (error
-       (user-error "elot-gptel: no heading declares CURIE %s" anchor))))
+       (user-error "ELOT-gptel: no heading declares CURIE %s" anchor))))
    (t
     (let ((pos (elot-gptel--insert-find-heading-by-label anchor)))
       (unless pos
         (user-error
-         "elot-gptel: no heading with label %S found" anchor))
+         "ELOT-gptel: no heading with label %S found" anchor))
       (goto-char pos)
       pos))))
 
@@ -5596,14 +5596,14 @@ read the first parenthetical as the declared CURIE, producing a file
 whose actual declaration disagrees with the tool's \"Minted CURIEs\"
 report."
   (unless (and (listp labels) labels)
-    (user-error "elot-gptel: labels must be a non-empty array"))
+    (user-error "ELOT-gptel: labels must be a non-empty array"))
   (dolist (l labels)
     (unless (and (stringp l) (not (string-empty-p (string-trim l))))
       (user-error
-       "elot-gptel: every label must be a non-empty string (got %S)" l))
+       "ELOT-gptel: every label must be a non-empty string (got %S)" l))
     (when (elot-gptel--insert-label-curie-parenthetical-p l)
       (user-error
-       "elot-gptel: labels are plain rdfs:label strings, not `Label (curie)' headings; got %S.  To reuse an existing CURIE, declare/borrow that resource explicitly instead of using an insert-* minting tool."
+       "ELOT-gptel: labels are plain rdfs:label strings, not `Label (curie)' headings; got %S.  To reuse an existing CURIE, declare/borrow that resource explicitly instead of using an insert-* minting tool."
        l))))
 
 (defun elot-gptel--insert-walk-tree-node (node path)
@@ -5614,18 +5614,18 @@ walks arrays."
   (cond
    ((stringp node)
     (when (string-empty-p (string-trim node))
-      (user-error "elot-gptel: empty label at tree path %S" (nreverse path)))
+      (user-error "ELOT-gptel: empty label at tree path %S" (nreverse path)))
     (when (elot-gptel--insert-label-curie-parenthetical-p node)
       (user-error
-       "elot-gptel: tree labels are plain rdfs:label strings, not `Label (curie)' headings; got %S at path %S"
+       "ELOT-gptel: tree labels are plain rdfs:label strings, not `Label (curie)' headings; got %S at path %S"
        node (nreverse path)))
     node)
    ((and (listp node) node (stringp (car node)))
     (when (string-empty-p (string-trim (car node)))
-      (user-error "elot-gptel: empty label at tree path %S" (nreverse path)))
+      (user-error "ELOT-gptel: empty label at tree path %S" (nreverse path)))
     (when (elot-gptel--insert-label-curie-parenthetical-p (car node))
       (user-error
-       "elot-gptel: tree labels are plain rdfs:label strings, not `Label (curie)' headings; got %S at path %S"
+       "ELOT-gptel: tree labels are plain rdfs:label strings, not `Label (curie)' headings; got %S at path %S"
        (car node) (nreverse path)))
     (cons (car node)
           (let ((i 0))
@@ -5641,7 +5641,7 @@ walks arrays."
      (append node nil) path))
    (t
     (user-error
-     "elot-gptel: malformed tree node at path %S (expected string or [label, ...])"
+     "ELOT-gptel: malformed tree node at path %S (expected string or [label, ...])"
      (nreverse path)))))
 
 (defun elot-gptel--insert-walk-tree (tree)
@@ -5652,7 +5652,7 @@ shape."
   (let ((tree (if (vectorp tree) (append tree nil) tree)))
     (unless (and (listp tree) tree)
       (user-error
-       "elot-gptel: tree must be a non-empty array of nodes"))
+       "ELOT-gptel: tree must be a non-empty array of nodes"))
     (let ((i 0))
       (mapcar (lambda (node)
                 (elot-gptel--insert-walk-tree-node
@@ -5794,11 +5794,11 @@ the level-ordered sequence."
                    ((stringp as) (intern as))
                    ((symbolp as) as)
                    (t (user-error
-                       "elot-gptel: as must be \"child\" or \"sibling\": %S"
+                       "ELOT-gptel: as must be \"child\" or \"sibling\": %S"
                        as)))))
       (unless (memq as-sym '(child sibling))
         (user-error
-         "elot-gptel: as must be \"child\" or \"sibling\": %S" as))
+         "ELOT-gptel: as must be \"child\" or \"sibling\": %S" as))
       (require 'elot-id-insert)
       (let ((lisp-tree (elot-gptel--insert-walk-tree tree)))
         (let ((orig-fn (symbol-function 'elot-id-insert--do-insert))
@@ -5878,21 +5878,21 @@ On revalidation failure the pre-move bytes are restored and an
 precedes the diagnostic body."
   (elot-gptel-with-mutation (file nil)
     (unless (and (stringp source) (not (string-empty-p source)))
-      (user-error "elot-gptel: source must be a non-empty CURIE string"))
+      (user-error "ELOT-gptel: source must be a non-empty CURIE string"))
     (unless (and (stringp target) (not (string-empty-p target)))
       (user-error
-       "elot-gptel: target must be a non-empty CURIE string or \"top\""))
+       "ELOT-gptel: target must be a non-empty CURIE string or \"top\""))
     (let* ((as-sym (cond
                     ((null as) 'child)
                     ((and (stringp as) (string-empty-p as)) 'child)
                     ((stringp as) (intern as))
                     ((symbolp as) as)
                     (t (user-error
-                        "elot-gptel: as must be \"child\" or \"sibling\": %S"
+                        "ELOT-gptel: as must be \"child\" or \"sibling\": %S"
                         as)))))
       (unless (memq as-sym '(child sibling))
         (user-error
-         "elot-gptel: as must be \"child\" or \"sibling\": %S"
+         "ELOT-gptel: as must be \"child\" or \"sibling\": %S"
          as))
       (require 'elot-id-move)
       (let* ((move-result (elot-move-resource source target as-sym))
@@ -6455,11 +6455,11 @@ or an `ERROR:' / `FAIL:' line on refusal / failure."
       (progn
         (unless (or dry-run elot-gptel-allow-side-effects)
           (user-error
-           "elot-gptel: delete refused -- side effects disabled \
+           "ELOT-gptel: delete refused -- side effects disabled \
 (set `elot-gptel-allow-side-effects' to t, or pass dry_run=true)"))
         (unless (and (stringp subject) (not (string-empty-p subject)))
           (user-error
-           "elot-gptel: subject must be a non-empty CURIE or label"))
+           "ELOT-gptel: subject must be a non-empty CURIE or label"))
         (let* ((cascade-sym
                 (cond
                  ((null cascade) 'refuse)
@@ -6468,22 +6468,22 @@ or an `ERROR:' / `FAIL:' line on refusal / failure."
                   (if (member cascade '("refuse" "reparent" "delete"))
                       (intern cascade)
                     (user-error
-                     "elot-gptel: cascade must be \"refuse\", \"reparent\" or \"delete\": %S"
+                     "ELOT-gptel: cascade must be \"refuse\", \"reparent\" or \"delete\": %S"
                      cascade)))
                  ((symbolp cascade)
                   (if (memq cascade '(refuse reparent delete))
                       cascade
                     (user-error
-                     "elot-gptel: cascade must be `refuse', `reparent' or `delete': %S"
+                     "ELOT-gptel: cascade must be `refuse', `reparent' or `delete': %S"
                      cascade)))
                  (t (user-error
-                     "elot-gptel: invalid cascade %S" cascade))))
+                     "ELOT-gptel: invalid cascade %S" cascade))))
                (true-file (elot-gptel--resolve-file file))
                (buf (or (find-buffer-visiting true-file)
                         (let ((inhibit-message t))
                           (find-file-noselect true-file 'nowarn)))))
           (unless (buffer-live-p buf)
-            (user-error "elot-gptel: cannot open %s" file))
+            (user-error "ELOT-gptel: cannot open %s" file))
           (require 'elot-id-rename)
           (require 'elot-tangle nil 'noerror)
           (with-current-buffer buf
@@ -6819,7 +6819,7 @@ or an `ERROR:' line on refusal / failure."
   (condition-case err
       (progn
         (unless (and (stringp subject) (not (string-empty-p subject)))
-          (user-error "elot-gptel: subject must be a non-empty CURIE string"))
+          (user-error "ELOT-gptel: subject must be a non-empty CURIE string"))
         (require 'elot-id-rename)
         (let* ((true-file (elot-gptel--resolve-file file))
                (buf (or (find-buffer-visiting true-file)
@@ -6827,7 +6827,7 @@ or an `ERROR:' line on refusal / failure."
                           (find-file-noselect true-file 'nowarn))))
                candidates chosen dropped-rows)
           (unless (buffer-live-p buf)
-            (user-error "elot-gptel: cannot open %s" file))
+            (user-error "ELOT-gptel: cannot open %s" file))
           (with-current-buffer buf
             (unless (derived-mode-p 'org-mode)
               (let ((org-inhibit-startup t) (org-mode-hook nil))
@@ -8976,7 +8976,7 @@ is truthy in Elisp) is correctly treated as nil."
     ('elot-gptel-tool-insert-resource-tree
      (lambda (file anchor tree &optional as)
        (elot-gptel-tool-insert-resource-tree file anchor tree as)))
-    (_ (error "elot-gptel: no dispatcher for %S" fn))))
+    (_ (error "ELOT-gptel: no dispatcher for %S" fn))))
 
 (defun elot-gptel--confirm-effective-p (spec-confirm)
   "Return non-nil if the gptel `:confirm t' flag should be set.
@@ -8997,7 +8997,7 @@ spec-level `:confirm t', never adds one."
 (defun elot-gptel--register-one (spec)
   "Register a single SPEC via `gptel-make-tool' and return (NAME . TOOL)."
   (unless (featurep 'gptel)
-    (user-error "elot-gptel: gptel is not loaded"))
+    (user-error "ELOT-gptel: gptel is not loaded"))
   (let* ((name (car spec))
          (plist (cdr spec))
          (fn (plist-get plist :function))
@@ -9044,13 +9044,13 @@ without toggling in `gptel-menu'."
   (interactive)
   (unless (require 'gptel nil 'noerror)
     (user-error
-     "elot-gptel: gptel is not installed; M-x package-install RET gptel"))
+     "ELOT-gptel: gptel is not installed; M-x package-install RET gptel"))
   (elot-gptel-unregister-tools)
   (setq elot-gptel--tools
         (mapcar #'elot-gptel--register-one elot-gptel--tool-specs))
   (elot-gptel--refresh-active-selection)
   (when (called-interactively-p 'any)
-    (message "elot-gptel: registered %d tool%s"
+    (message "ELOT-gptel: registered %d tool%s"
              (length elot-gptel--tools)
              (if (= (length elot-gptel--tools) 1) "" "s")))
   elot-gptel--tools)
