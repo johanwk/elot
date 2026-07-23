@@ -1483,6 +1483,17 @@ permitted; everything else is refused regardless of
             (user-error
              "ELOT-gptel: mutating SPARQL refused -- side effects disabled \
 (set `elot-gptel-allow-side-effects' to t)")))
+          ;; Validate the input extension before probing ROBOT so the
+          ;; refusal is deterministic regardless of ROBOT availability.
+          (let ((ext (downcase (or (file-name-extension file) ""))))
+            (unless (or (string= ext "org")
+                        (member ext elot-gptel--sparql-rdf-extensions))
+              (user-error
+               "ELOT-gptel: unsupported input extension %S (use .org or %s)"
+               (or ext "(none)")
+               (mapconcat (lambda (e) (concat "." e))
+                          elot-gptel--sparql-rdf-extensions
+                          ", "))))
           (unless (elot-robot-available-p)
             (user-error
              "ELOT-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
