@@ -2170,6 +2170,9 @@ deleted on exit."
              "ELOT-gptel: unknown reasoner %S (use %s or elk)"
              reasoner
              (mapconcat #'identity elot-gptel--reasoners "|")))
+          (let ((m (or max elot-gptel-explain-max)))
+            (unless (and (integerp m) (>= m 1))
+              (user-error "ELOT-gptel: max must be a positive integer")))
           (unless (elot-robot-available-p)
             (user-error
              "ELOT-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
@@ -2178,8 +2181,6 @@ deleted on exit."
                  (ctx       (elot-gptel--slurp-label-context true-file))
                  (label-ht  (car ctx))
                  (prefixes  (cdr ctx)))
-            (unless (and (integerp m) (>= m 1))
-              (user-error "ELOT-gptel: max must be a positive integer"))
             (elot-robot-call-with-workspace
              (lambda (ws)
                (let* ((nodes   (elot-gptel--tangle-ontologies-to-workspace
