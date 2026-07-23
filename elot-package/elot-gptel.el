@@ -815,15 +815,15 @@ a plain-text report."
   (condition-case err
       (progn
         (require 'elot-robot)
-        (unless (elot-robot-available-p)
-          (user-error
-           "ELOT-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
         (when (and profile
                    (not (member (upcase profile)
                                 elot-gptel--omn-validate-profiles)))
           (user-error
            "ELOT-gptel: unknown profile %S (use DL|EL|QL|RL|Full)"
            profile))
+        (unless (elot-robot-available-p)
+          (user-error
+           "ELOT-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
         (let* ((content* (and content (stringp content)
                               (not (string-empty-p content))
                               content))
@@ -988,15 +988,15 @@ executable on PATH)."
   (condition-case err
       (progn
         (require 'elot-robot)
-        (unless (elot-robot-available-p)
-          (user-error
-           "ELOT-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
         (let* ((fmt (downcase (or format "tsv"))))
           (unless (member fmt elot-gptel--omn-report-formats)
             (user-error
              "ELOT-gptel: unknown format %S (use %s)"
              format
              (mapconcat #'identity elot-gptel--omn-report-formats "|")))
+          (unless (elot-robot-available-p)
+            (user-error
+             "ELOT-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
           (let* ((content* (and content (stringp content)
                                 (not (string-empty-p content))
                                 content))
@@ -1460,9 +1460,8 @@ permitted; everything else is refused regardless of
   (condition-case err
       (progn
         (require 'elot-robot)
-        (unless (elot-robot-available-p)
-          (user-error
-           "ELOT-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
+        ;; Validate arguments before probing ROBOT so these checks are
+        ;; deterministic regardless of ROBOT availability.
         (unless (and query (stringp query)
                      (not (string-empty-p (string-trim query))))
           (user-error "ELOT-gptel: missing or empty query"))
@@ -1484,6 +1483,9 @@ permitted; everything else is refused regardless of
             (user-error
              "ELOT-gptel: mutating SPARQL refused -- side effects disabled \
 (set `elot-gptel-allow-side-effects' to t)")))
+          (unless (elot-robot-available-p)
+            (user-error
+             "ELOT-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
           (let* ((lim (min (max (or limit elot-gptel--sparql-limit-default) 0)
                            elot-gptel--sparql-limit-max))
                  (true-file (elot-gptel--resolve-file file)))
@@ -1688,15 +1690,15 @@ Returns one of:
   (condition-case err
       (progn
         (require 'elot-robot)
-        (unless (elot-robot-available-p)
-          (user-error
-           "ELOT-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
         (let* ((r (downcase (or reasoner "hermit"))))
           (unless (member r elot-gptel--reasoners)
             (user-error
              "ELOT-gptel: unknown reasoner %S (use %s)"
              reasoner
              (mapconcat #'identity elot-gptel--reasoners "|")))
+          (unless (elot-robot-available-p)
+            (user-error
+             "ELOT-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
           (let ((true-file (elot-gptel--resolve-file file)))
             (elot-robot-call-with-workspace
              (lambda (ws)
@@ -1794,15 +1796,15 @@ the ELOT DB has them)."
   (condition-case err
       (progn
         (require 'elot-robot)
-        (unless (elot-robot-available-p)
-          (user-error
-           "ELOT-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
         (let* ((r (downcase (or reasoner "hermit"))))
           (unless (member r elot-gptel--reasoners)
             (user-error
              "ELOT-gptel: unknown reasoner %S (use %s)"
              reasoner
              (mapconcat #'identity elot-gptel--reasoners "|")))
+          (unless (elot-robot-available-p)
+            (user-error
+             "ELOT-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
           (let ((true-file (elot-gptel--resolve-file file)))
             (elot-robot-call-with-workspace
              (lambda (ws)
@@ -2156,9 +2158,6 @@ deleted on exit."
   (condition-case err
       (progn
         (require 'elot-robot)
-        (unless (elot-robot-available-p)
-          (user-error
-           "ELOT-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
         (unless (and axiom (stringp axiom) (not (string-empty-p (string-trim axiom))))
           (user-error "ELOT-gptel: missing or empty axiom argument"))
         (let* ((r-in (and reasoner (downcase reasoner)))
@@ -2171,6 +2170,9 @@ deleted on exit."
              "ELOT-gptel: unknown reasoner %S (use %s or elk)"
              reasoner
              (mapconcat #'identity elot-gptel--reasoners "|")))
+          (unless (elot-robot-available-p)
+            (user-error
+             "ELOT-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
           (let* ((true-file (elot-gptel--resolve-file file))
                  (m (or max elot-gptel-explain-max))
                  (ctx       (elot-gptel--slurp-label-context true-file))
