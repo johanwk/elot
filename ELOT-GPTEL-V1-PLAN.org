@@ -841,12 +841,17 @@ data files (=elot-conventions.md=, =schema.sql=).  Add gptel as an
 *Acceptance:* a local =package-install-file= (or MELPA sandbox build)
 produces a package that loads and registers tools.
 
-** TODO Step 4.2 CI: unit tests
+** TODO Step 4.2 CI: unit tests (Linux only; Windows deferred)
 
 Ensure the GitHub Actions workflow runs the full non-ROBOT ERT suite
-on Linux and Windows and is green.
+on Linux and is green.  *Windows CI is deferred to post-v1* (see the
+Decisions Log): MSYS2 is the supported Windows path, a bare
+=windows-latest= runner lacks the Unix tooling the toolchain assumes,
+and the maintainer lacks capacity to keep it green.  Cover
+path/line-ending regressions with OS-agnostic unit tests rather than
+an OS matrix.
 
-*Acceptance:* CI green on both OSes for the non-ROBOT targets.
+*Acceptance:* CI green on Linux for the non-ROBOT targets.
 
 ** TODO Step 4.3 CI: ROBOT job
 
@@ -876,7 +881,6 @@ is ticked.  This is the contract.
 ** TODO Step 5.1 Green board
 
 - [ ] Full ERT suite green on Linux (non-ROBOT) in CI.
-- [ ] Full ERT suite green on Windows (non-ROBOT) in CI.
 - [ ] ROBOT-gated suite green in the ROBOT CI job.
 - [ ] Registry meta-test green (Step 1.2).
 - [ ] Every mutating tool: rollback test + gate-off refusal test green.
@@ -1103,6 +1107,19 @@ registered as a tool in the v1 roster.
   caveat (leaves an RDF/XML footgun).  No v1 code change -- both Step
   3.3 (docstring/message-only) and Step 3.4 (packaging) are out of
   scope for a mint-behaviour change.
+- *Windows CI* (deferred from Step 4.2, 2026-07).  The v1 merge gate
+  runs GitHub Actions on Linux only (ubuntu-latest, Emacs 30.1).  A
+  =windows-latest= matrix entry was considered and *dropped*: MSYS2 is
+  the supported/tested Windows environment (it supplies the GNU
+  coreutils, POSIX shell, and Unix-style paths the ROBOT wrapper,
+  temp-file handling, and path resolution implicitly assume); a bare
+  =windows-latest= runner has none of that, so a green job would not
+  reflect real usage, and a red one would be a flaky gate the
+  maintainer has no capacity to diagnose without a Linux-tool-equipped
+  Windows box.  Path/line-ending regressions are better caught by
+  OS-agnostic unit tests than by an OS matrix.  Post-v1: if Windows CI
+  is revisited, base it on an MSYS2 environment, and note MSYS2 as the
+  recommended Windows setup in the docs.
 
 * Working discipline (how to run each step in gptel)
 
@@ -1129,4 +1146,5 @@ registered as a tool in the v1 roster.
 | (today)    | Minted-CURIE forward-reference (batch mint + same-batch subject use fails): deferred to post-v1 with the =$introduced[K]= synthetic-reference design as the preferred fix; three v1 workarounds documented in the Deferred list and to be carried into the Step 3.1 user docs.  No v1 code change. |
 | (today)    | Step 2.3 defaults review: all shipped defaults are the cautious ones (=allow-side-effects= nil, =confirm-mutations= once-armed, =robot-catalog= nil, content cap 4 MiB, explain-timeout 60 s, explain-max 1).  No surprising default ships; full table + rationale under Step 2.3.  Rationale carried into Phase 3 user docs. |
 | (today)    | =uuid= identifier scheme mints XML-unsafe (leading-digit) local-names (valid Turtle =PN_LOCAL= but invalid XML =NCName=, rejected by RDF/XML & OWL/XML via ROBOT/OWLAPI).  Surfaced live when the LLM prepended =C_= to UUID mints in =examples/pets.org=.  *Deferred to post-v1*: add a configurable alpha lead-in (default =C_=, via =:scheme-params=) + widen =elot-id--uuid-localname-regexp= on verify.  No v1 code change; recorded in the Deferred list.  Out of Step 3.3/3.4 scope. |
+| (today)    | *Windows CI deferred to post-v1.*  Step 4.2's Windows matrix is dropped from the v1 merge gate: MSYS2 is the supported Windows path (it supplies the GNU coreutils / POSIX shell / Unix paths the toolchain assumes), a bare =windows-latest= runner lacks that tooling, and the maintainer lacks capacity to keep such a job green.  CI stays Linux-only (ubuntu-latest, Emacs 30.1); path/line-ending regressions are covered by OS-agnostic unit tests instead.  MSYS2 to be noted as the recommended Windows setup.  Recorded in the Deferred list. |
 | (today)    | Tool-roster freeze *upheld* against a reviewed proposal to add Tier-1 inspection tools (=elot_resources=, =elot_read_resource=, =elot_metrics=) before v1.  The gaps are reachable via documented workaround idioms (=elot_axiom_keywords= Buffer Signature / Existing rows; =elot_sparql_select= / =elot_db_query= for counts), so v1 stability beats v1 completeness.  Recorded as deferred item "post-v1 M12: Tier-1 inspection tools" (first post-v1 milestone); the workaround idioms are added to Step 3.1's documentation scope so the v1 docs mitigate the gap. |
