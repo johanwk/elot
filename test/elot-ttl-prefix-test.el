@@ -64,8 +64,7 @@
      (elot-ttlpx-test--teardown)))
 
 (defun elot-ttlpx-test--robot-or-skip ()
-  (unless (elot-robot-available-p)
-    (ert-skip "ROBOT not available")))
+  (elot-test-robot-skip-unless-available))
 
 ;;; ---------------------------------------------------------------------------
 ;;; A. Pure harvester

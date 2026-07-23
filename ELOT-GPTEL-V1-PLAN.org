@@ -841,7 +841,7 @@ data files (=elot-conventions.md=, =schema.sql=).  Add gptel as an
 *Acceptance:* a local =package-install-file= (or MELPA sandbox build)
 produces a package that loads and registers tools.
 
-** TODO Step 4.2 CI: unit tests (Linux only; Windows deferred)
+** DONE Step 4.2 CI: unit tests (Linux only; Windows deferred)
 
 Ensure the GitHub Actions workflow runs the full non-ROBOT ERT suite
 on Linux and is green.  *Windows CI is deferred to post-v1* (see the
@@ -853,7 +853,32 @@ an OS matrix.
 
 *Acceptance:* CI green on Linux for the non-ROBOT targets.
 
-** TODO Step 4.3 CI: ROBOT job
+*Done (Phase 4).*  =test/Makefile= rewritten so the ERT target list is
+derived from disk: =TEST_FILES := $(wildcard elot-*-test.el)=, with
+=test: $(TEST_FILES)= and a single pattern recipe
+=$(TEST_FILES): ; $(call run-ert-test,$@)=.  The three hand-kept lists
+(=.PHONY= ~90, the =test:= prereq list ~52, and the per-target recipe
+stanzas) are gone; only the =help:= menu stays hand-written
+(documentation, no target-resolution logic).  Adding a new
+=elot-*-test.el= is now picked up automatically -- no drift.
+=elot-gptel-0.1= added to the workflow push branch filter
+(=.github/workflows/test.yml=) for per-commit feedback.
+
+*** Decision (Phase 4, Step 4.2): Derive the ERT target list from disk; gate ROBOT via a runtime flag rather than a separate target catalogue.
+
+/Context./ The audit (Step 0.3) recommended adding a =test-all= aggregate because =make test= runs only ~52 of the ~90 declared targets. On inspection, =test/Makefile= maintains /three hand-kept lists/ that have drifted: =.PHONY= (~90), the =test:= prerequisite list (~52), and the =help:= block. The gap is not ROBOT-specific — it drops pure-Elisp tests (=readonly-test=, the =db-*= shims, =id-*=, =lint-*=, =conventions-test=, etc.) as well as the ROBOT bucket. No mechanism keeps the lists in sync.
+
+/Options considered./
+1. Add =test-elisp= + =test-robot= aggregates (the audit's suggested shape) — introduces a 4th and 5th hand-curated list; multiplies the drift surface we're trying to close.
+2. /(Chosen)/ Make =make test= glob =elot-*-test.el= so the files on disk are the single source of truth. Every target is uniform (=$(call run-ert-test,elot-FOO-test.el)=), so this is a mechanical substitution. ROBOT-gated files already =skip-unless= cleanly, so the globbed suite stays green without Java. The CI ROBOT job runs the /same/ suite with =ELOT_REQUIRE_ROBOT=1=, flipping the ROBOT =skip-unless= into a hard failure — a real ROBOT gate with /zero duplicated test names/.
+
+/Consequence./ This revises the audit's "add =test-all=/=test-robot= aggregates" recommendation. Steps 4.2/4.3 become: (a) de-duplicate the two machine-relevant lists (=.PHONY= + =test:=) into one glob-derived list; (b) add the =ELOT_REQUIRE_ROBOT= gate flag used by the ROBOT CI job. =make test= regains its intended meaning ("all tests, ROBOT auto-skipping when absent"); the Elisp/ROBOT split moves from a maintained catalogue to a single runtime flag.
+
+/The =help:= block stays hand-written/ — it only =echo=s a menu of options and carries no target-resolution logic, so it is not a drift risk in the "which tests actually run" sense. It is documentation, kept deliberately out of the glob.
+
+/Scope guard./ Makefile + test-harness change only; no shipped-code behaviour change, no test semantics change (same assertions, same skip conditions). Roster stays frozen at 37 tools.
+
+** DONE Step 4.3 CI: ROBOT job
 
 Add (or confirm) a CI job that installs ROBOT and runs the
 ROBOT-gated targets (the bucket-3 tests from Step 0.3).
@@ -861,10 +886,31 @@ ROBOT-gated targets (the bucket-3 tests from Step 0.3).
 *Acceptance:* the ROBOT job is green; bucket-3 tests no longer only
 skip.
 
+*Done (Phase 4).*  The Elisp/ROBOT split is now a runtime flag, not a
+separate target catalogue.  =test/test-helper.el= gained
+=elot-test-require-robot-p= (reads =ELOT_REQUIRE_ROBOT=) and the shared
+=elot-test-robot-skip-unless-available= (=ert-skip= when ROBOT is
+absent by default; hard =error= when =ELOT_REQUIRE_ROBOT=1=).  The
+eleven ROBOT-gated live-or-skip helpers were routed through it in place
+of their inline =(unless (elot-robot-available-p) (ert-skip ...))=.  A
+new =robot= job in =.github/workflows/test.yml= installs Java + ROBOT
+and runs the *same* =make test= with =ELOT_REQUIRE_ROBOT=1=, so the
+bucket-3 tests execute (and fail loudly if ROBOT is present but broken)
+instead of skipping.  No duplicated test names.
+
 ** TODO Step 4.4 Version bump and changelog
 
-- Bump the =Version:= header in =elot-gptel.el= to the v1 release
-  number (coordinate with the ELOT package version).
+*Target version: =2.2.0=.*  MELPA-stable currently ships =2.1.0= (tag
+=2.1.0=, 2026-05-25).  This update adds optional "LLM assistance with
+elot-gptel"; because =elot-gptel= is *fully optional* and backwards
+compatible (no change to existing behaviour, opt-in via autoload), a
+*minor* bump to =2.2.0= is appropriate -- not a major bump.  (The
+"v1" language elsewhere in this plan is just shorthand for "the first
+elot-gptel to be merged into =main="; it does not imply a =1.x=
+version number.)
+
+- Bump the =Version:= header in =elot-gptel.el= to =2.2.0=
+  (coordinate with the ELOT package version).
 - Add a Changelog entry (in =ELOT-GPTEL-CHANGELOG.org= and/or the
   ELOT changelog) summarising the shipped roster and the safety
   model.

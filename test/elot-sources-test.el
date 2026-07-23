@@ -240,7 +240,15 @@
 ;;;; -------------------------------------------------------------------
 
 (ert-deftest test-parse-ttl-gated ()
-  "Live TTL parsing via ROBOT is gated by ELOT_TEST_NETWORK=1."
+  "Live TTL parsing via ROBOT is gated by ELOT_TEST_NETWORK=1.
+
+NOTE (post-v1 tidy): despite the \"live remote\" framing, this test
+body currently parses the *local* fixture `rq/data.ttl' -- the same
+file exercised by `test-parse-ttl-with-robot-local' below -- so it
+never actually contacts the network and is effectively a duplicate of
+that ROBOT-local test.  Either repoint it at a genuine remote SPARQL
+endpoint (justifying the ELOT_TEST_NETWORK gate) or drop it as
+redundant.  Kept gated for now so it does not run by default."
   (unless (getenv "ELOT_TEST_NETWORK")
     (ert-skip "ELOT_TEST_NETWORK not set; skipping live ROBOT test"))
   (unless (elot-robot-available-p)
@@ -259,8 +267,7 @@
 
 (defun elot-sources-test--robot-or-skip ()
   "Skip the current test unless ROBOT is available."
-  (unless (elot-robot-available-p)
-    (ert-skip "ROBOT not available (set elot-robot-jar-path or install robot)")))
+  (elot-test-robot-skip-unless-available))
 
 (ert-deftest test-parse-ttl-with-robot-local ()
   "ROBOT queries the local TTL fixture; multi-column CSV -> plist round-trip."

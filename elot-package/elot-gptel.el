@@ -3374,7 +3374,7 @@ means `OK: no lint issues' (a clean run)."
   (when (and report (stringp report))
     (let ((case-fold-search nil))
       (and (string-match
-            "^Summary: \\([0-9]+\\) errors?," report)
+            "^Summary: \\([0-9]+\\) errors?\\(?:,\\|$\\| \\)" report)
            (> (string-to-number (match-string 1 report)) 0)))))
 
 (defun elot-gptel--lint-errors-only (report)

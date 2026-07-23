@@ -200,7 +200,7 @@ fails lint, mirroring the pets.org chicken-and-egg case."
                         (list :subject "ex:ghost"
                               :keyword "rdfs:comment"
                               :fragment "\"nope\"")))))
-        (should (string-prefix-p "ERROR: edits[1]:" out))
+        (should (string-prefix-p "ERROR: Edits[1]:" out))
         (should (string-match-p "ex:ghost" out)))
       ;; Disk bytes unchanged.
       (should (equal before
@@ -538,7 +538,7 @@ the LLM should fall back to `delete-empty' + re-add for."
                                     :keyword "rdfs:seeAlso"
                                     :match_fragment ""
                                     :fragment "http://example.org/x")))))
-              (should (string-prefix-p "ERROR: edits[0]:" out))
+              (should (string-prefix-p "ERROR: Edits[0]:" out))
               (should (string-match-p "ambiguous" out)))
             ;; Atomic abort -- file untouched.
             (should (equal before

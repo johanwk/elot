@@ -42,9 +42,7 @@
 (require 'elot-robot)
 
 (defun elot-omn-validate-test--live-or-skip ()
-  (elot-robot-reset-cache)
-  (unless (elot-robot-available-p)
-    (ert-skip "ROBOT not available; set `elot-robot-jar-path' or install `robot'")))
+  (elot-test-robot-skip-unless-available))
 
 ;;; ---------------------------------------------------------------------------
 ;;; Pure tests (always run)

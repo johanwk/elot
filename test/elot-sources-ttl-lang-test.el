@@ -49,8 +49,7 @@
      (elot-s16-7--teardown)))
 
 (defun elot-s16-7--robot-or-skip ()
-  (unless (elot-robot-available-p)
-    (ert-skip "ROBOT not available")))
+  (elot-test-robot-skip-unless-available))
 
 (ert-deftest test-default-ttl-query-projects-lang ()
   "The default `elot-source-ttl-label-query' projects ?lang."

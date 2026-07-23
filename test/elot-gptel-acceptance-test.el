@@ -101,12 +101,7 @@
 
 (defun elot-gptel-acceptance-test--live-or-skip ()
   "Skip the current test unless ROBOT is available."
-  (when (fboundp 'elot-robot-reset-cache)
-    (ignore-errors (elot-robot-reset-cache)))
-  (unless (and (fboundp 'elot-robot-available-p)
-               (ignore-errors (elot-robot-available-p)))
-    (ert-skip
-     "ROBOT not available; set `elot-robot-jar-path' or install `robot'")))
+  (elot-test-robot-skip-unless-available))
 
 
 ;;; ---------------------------------------------------------------------------

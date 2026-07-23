@@ -112,5 +112,44 @@ whether BODY returns normally or non-locally."
          (when (file-exists-p ,path-var)
            (ignore-errors (delete-file ,path-var)))))))
 
+;; (4) Shared ROBOT skip/fail gate.
+;;
+;; Many test files exercise the live ROBOT pipeline (lint /
+;; OMN-validate / reasoning / sparql / diff).  When ROBOT is absent
+;; these tests `skip-unless' cleanly so the default `make test' stays
+;; green on machines (and CI runners) without Java/ROBOT installed.
+;;
+;; The ROBOT CI job (Step 4.3) runs the *same* suite with
+;; ELOT_REQUIRE_ROBOT=1 set in the environment.  In that mode a
+;; missing ROBOT is a hard failure instead of a skip, so a broken or
+;; mis-provisioned ROBOT install fails loudly rather than silently
+;; skipping the bucket-3 tests.  There is no separate `test-robot'
+;; target list: the gate is purely this env flag, so no test names are
+;; duplicated.
+;;
+;; ROBOT-gated test files should call
+;; `elot-test-robot-skip-unless-available' at the top of each live
+;; test (or from their local `--live-or-skip' helper) instead of
+;; calling `ert-skip' directly.
+
+(defun elot-test-require-robot-p ()
+  "Non-nil when ELOT_REQUIRE_ROBOT=1 (ROBOT-gated tests must not skip)."
+  (equal (getenv "ELOT_REQUIRE_ROBOT") "1"))
+
+(defun elot-test-robot-skip-unless-available ()
+  "Skip the current test unless ROBOT is available.
+
+When ELOT_REQUIRE_ROBOT=1 a missing ROBOT is a hard failure
+instead of a skip, so CI's ROBOT job fails loudly."
+  (when (fboundp 'elot-robot-reset-cache)
+    (ignore-errors (elot-robot-reset-cache)))
+  (unless (and (fboundp 'elot-robot-available-p)
+               (ignore-errors (elot-robot-available-p)))
+    (if (elot-test-require-robot-p)
+        (error "ELOT_REQUIRE_ROBOT=1 but ROBOT is not available: \
+set `elot-robot-jar-path' or install `robot'")
+      (ert-skip
+       "ROBOT not available; set `elot-robot-jar-path' or install `robot'"))))
+
 (provide 'test-helper)
 ;;; test-helper.el ends here

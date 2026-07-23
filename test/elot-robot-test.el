@@ -294,9 +294,7 @@ otherwise inject."
 ;;;; --------------------------------------------------------------
 
 (defun elot-robot-test--live-or-skip ()
-  (elot-robot-reset-cache)
-  (unless (elot-robot-available-p)
-    (ert-skip "ROBOT not available; set `elot-robot-jar-path' or install `robot'")))
+  (elot-test-robot-skip-unless-available))
 
 (ert-deftest elot-robot-test-live-version ()
   "ROBOT reports a version we can parse."
