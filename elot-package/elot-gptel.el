@@ -1141,9 +1141,9 @@ executable on PATH)."
   (condition-case err
       (progn
         (require 'elot-robot)
-        (unless (elot-robot-available-p)
-          (user-error
-           "ELOT-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
+        ;; Validate arguments before probing ROBOT so these checks are
+        ;; deterministic regardless of ROBOT availability (the
+        ;; `missing baseline' / `unknown format' contract is pure).
         (unless (and baseline (stringp baseline)
                      (not (string-empty-p baseline)))
           (user-error "ELOT-gptel: missing baseline argument"))
@@ -1153,6 +1153,9 @@ executable on PATH)."
              "ELOT-gptel: unknown format %S (use %s)"
              format
              (mapconcat #'identity elot-gptel--diff-formats "|")))
+          (unless (elot-robot-available-p)
+            (user-error
+             "ELOT-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
           (let* ((true-file     (elot-gptel--resolve-file file))
                  (true-baseline (elot-gptel--resolve-file baseline)))
             (elot-robot-call-with-workspace
