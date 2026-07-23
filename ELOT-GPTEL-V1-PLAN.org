@@ -841,7 +841,7 @@ data files (=elot-conventions.md=, =schema.sql=).  Add gptel as an
 *Acceptance:* a local =package-install-file= (or MELPA sandbox build)
 produces a package that loads and registers tools.
 
-** DONE Step 4.2 CI: unit tests (Linux only; Windows deferred)
+** WAITING Step 4.2 CI: unit tests (Linux only; Windows deferred)
 
 Ensure the GitHub Actions workflow runs the full non-ROBOT ERT suite
 on Linux and is green.  *Windows CI is deferred to post-v1* (see the
@@ -878,7 +878,7 @@ stanzas) are gone; only the =help:= menu stays hand-written
 
 /Scope guard./ Makefile + test-harness change only; no shipped-code behaviour change, no test semantics change (same assertions, same skip conditions). Roster stays frozen at 37 tools.
 
-** DONE Step 4.3 CI: ROBOT job
+** WAITING Step 4.3 CI: ROBOT job
 
 Add (or confirm) a CI job that installs ROBOT and runs the
 ROBOT-gated targets (the bucket-3 tests from Step 0.3).
