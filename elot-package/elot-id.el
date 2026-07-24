@@ -71,9 +71,9 @@
 
 (declare-function org-id-uuid "org-id")
 
-;;; ---------------------------------------------------------------------------
-;;; Customization
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Customization
+;;;; ---------------------------------------------------------------------------
 
 (defgroup elot-id nil
   "Pluggable identifier minting and verification for ELOT."
@@ -122,9 +122,9 @@ A scheme may override per-instance via its `metadata' plist
 When nil, resolution falls back to the Org file-local
 `:elot-id-scheme:' property and then to `elot-id-default-scheme'.")
 
-;;; ---------------------------------------------------------------------------
-;;; Scheme registry
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Scheme registry
+;;;; ---------------------------------------------------------------------------
 
 (cl-defstruct elot-id-scheme
   "Pluggable identifier-minting scheme.
@@ -265,9 +265,9 @@ retained for back-compat with pre-spec callers."
   (when (fboundp 'org-entry-get-with-inheritance)
     (ignore-errors (org-entry-get-with-inheritance prop))))
 
-;;; ---------------------------------------------------------------------------
-;;; Public mint / verify entry points
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Public mint / verify entry points
+;;;; ---------------------------------------------------------------------------
 
 (defun elot-id--resolve-scheme (scheme-or-name)
   "Coerce SCHEME-OR-NAME to an `elot-id-scheme' struct."
@@ -378,9 +378,9 @@ CONTEXT is forwarded to the scheme's verify-fn."
          (fn (elot-id-scheme-verify-fn scheme)))
     (and (funcall fn curie context) t)))
 
-;;; ---------------------------------------------------------------------------
-;;; CURIE helpers shared by built-in schemes
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; CURIE helpers shared by built-in schemes
+;;;; ---------------------------------------------------------------------------
 
 (defun elot-id--make-curie (prefix local)
   "Combine PREFIX and LOCAL into a CURIE string."
@@ -397,7 +397,7 @@ heading lines, all of which trail the title proper:
     end of line,
   - trailing whitespace.
 
-TODO keywords (`TODO', `DONE', etc.) and priority cookies
+TODO keywords (TODO, DONE, etc.) and priority cookies
 \(`[#A]') at the /start/ of the title are handled implicitly by
 the `^\\*+ .*' prefix.  Group 0 covers the whole line; no
 sub-groups are exposed (callers use the regex purely as an
@@ -422,9 +422,9 @@ anchor)."
   (let ((parts (ignore-errors (elot-id--curie-split curie))))
     (and parts (string= (car parts) prefix))))
 
-;;; ---------------------------------------------------------------------------
-;;; Built-in scheme: uuid
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Built-in scheme: uuid
+;;;; ---------------------------------------------------------------------------
 
 (defconst elot-id--uuid-localname-regexp
   "\\`[0-9a-f]\\{8\\}-[0-9a-f]\\{4\\}-[0-9a-f]\\{4\\}-[0-9a-f]\\{4\\}-[0-9a-f]\\{12\\}\\'"
@@ -446,9 +446,9 @@ The context argument is ignored for this scheme."
     (and parts
          (string-match-p elot-id--uuid-localname-regexp (cdr parts)))))
 
-;;; ---------------------------------------------------------------------------
-;;; Built-in scheme: slug
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Built-in scheme: slug
+;;;; ---------------------------------------------------------------------------
 
 (defun elot-id--slugify (label)
   "Return a kebab-case ASCII slug derived from LABEL.
@@ -486,9 +486,9 @@ The context argument is ignored for this scheme."
          (string-match-p "\\`[a-z0-9]+\\(?:-[a-z0-9]+\\)*\\'"
                          (cdr parts)))))
 
-;;; ---------------------------------------------------------------------------
-;;; Built-in scheme: counter
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Built-in scheme: counter
+;;;; ---------------------------------------------------------------------------
 
 (defun elot-id--counter-pad-width (scheme)
   "Return the pad width configured for SCHEME (defaults to global)."
@@ -564,26 +564,26 @@ The label argument is ignored for this scheme."
             (format "\\`%s[0-9]\\{%d,\\}\\'" (regexp-quote alpha) pad)
             local)))))
 
-;;; ---------------------------------------------------------------------------
-;;; Acme local-name backend
-;;;
-;;; Mint and verify 16-character local names of the form
-;;;
-;;;     T_sssssTTTTRRRRC
-;;;
-;;;   T     -- single uppercase TYPE letter
-;;;   _     -- literal separator
-;;;   sssss -- 5-char lowercase a-z slug (non-letters stripped,
-;;;            padded with `x' to length 5)
-;;;   TTTT  -- 4-char Crockford Base32 day count since 2020-01-01 UTC
-;;;   RRRR  -- 4-char Crockford Base32 random suffix (20 bits)
-;;;   C     -- single Crockford Base32 check character (mod-32 sum
-;;;            over the core, underscore ignored)
-;;;
-;;; `elot-acme-mint TYPE LABEL' returns the bare local name (no
-;;; prefix); `elot-acme-verify ID-STR' returns t when ID-STR has the
-;;; correct shape and a valid checksum.  Both functions are pure.
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Acme local-name backend
+;;;;
+;;;; Mint and verify 16-character local names of the form
+;;;;
+;;;;     T_sssssTTTTRRRRC
+;;;;
+;;;;   T     -- single uppercase TYPE letter
+;;;;   _     -- literal separator
+;;;;   sssss -- 5-char lowercase a-z slug (non-letters stripped,
+;;;;            padded with `x' to length 5)
+;;;;   TTTT  -- 4-char Crockford Base32 day count since 2020-01-01 UTC
+;;;;   RRRR  -- 4-char Crockford Base32 random suffix (20 bits)
+;;;;   C     -- single Crockford Base32 check character (mod-32 sum
+;;;;            over the core, underscore ignored)
+;;;;
+;;;; `elot-acme-mint TYPE LABEL' returns the bare local name (no
+;;;; prefix); `elot-acme-verify ID-STR' returns t when ID-STR has the
+;;;; correct shape and a valid checksum.  Both functions are pure.
+;;;; ---------------------------------------------------------------------------
 
 (defconst elot-acme-alph "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
   "Crockford Base32 alphabet used by the `acme' identifier backend.")
@@ -696,9 +696,9 @@ Accepts both the 16-char slug form T_sssssTTTTRRRRC and the
                (setq sum (+ sum val)))))))
      (= (mod sum 32) 0))))
 
-;;; ---------------------------------------------------------------------------
-;;; Built-in scheme: acme
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Built-in scheme: acme
+;;;; ---------------------------------------------------------------------------
 
 (defun elot-id--acme-type-letter (kind)
   "Return the single TYPE letter for KIND (defaulting to class).
@@ -769,9 +769,9 @@ The context argument is ignored for this scheme."
   (let ((parts (ignore-errors (elot-id--curie-split curie))))
     (and parts (elot-acme-verify (cdr parts)))))
 
-;;; ---------------------------------------------------------------------------
-;;; Built-in scheme registration
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Built-in scheme registration
+;;;; ---------------------------------------------------------------------------
 
 (defun elot-id--register-builtin-schemes ()
   "Register the four built-in identifier schemes.

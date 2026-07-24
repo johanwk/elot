@@ -93,9 +93,9 @@ included here even though OWL carries no semantic sub-relation
 between named individuals: nested headings under the Individuals
 section are permitted purely as a visual / editing aid.")
 
-;;; ---------------------------------------------------------------------------
-;;; Section + scheme + prefix lookup
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Section + scheme + prefix lookup
+;;;; ---------------------------------------------------------------------------
 
 (defun elot-id-insert--section-name ()
   "Return the level-2 ELOT resource section title at point, or nil.
@@ -124,9 +124,9 @@ Uses Org property inheritance so multi-ontology files work."
   (let ((p (org-entry-get-with-inheritance "ELOT-default-prefix")))
     (and p (not (string-empty-p (string-trim p))) (string-trim p))))
 
-;;; ---------------------------------------------------------------------------
-;;; Existing-IRI harvest (for collision-aware minting)
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Existing-IRI harvest (for collision-aware minting)
+;;;; ---------------------------------------------------------------------------
 
 (defun elot-id-insert--collect-iris-from-hierarchy ()
   "Walk `elot-headline-hierarchy' depth-first; return all :uri CURIEs.
@@ -157,9 +157,9 @@ on every entry."
     (ignore-errors (elot-update-headline-hierarchy))))
   (elot-id-insert--collect-iris-from-hierarchy))
 
-;;; ---------------------------------------------------------------------------
-;;; Description-list inheritance (blanked copy)
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Description-list inheritance (blanked copy)
+;;;; ---------------------------------------------------------------------------
 
 (defconst elot-id-insert--desc-line-re
   (concat "^ -[ \t]+"
@@ -224,9 +224,9 @@ OMN on tangle.  Annotation rows are inherited as before."
         (forward-line 1))
       (nreverse lines))))
 
-;;; ---------------------------------------------------------------------------
-;;; Heading composition + insertion-point navigation
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Heading composition + insertion-point navigation
+;;;; ---------------------------------------------------------------------------
 
 (defun elot-id-insert--make-heading-block (level curies labels desc-lines)
   "Return one string containing N stacked heading entries.
@@ -262,9 +262,9 @@ Assumes point is at (or will be moved back to) the current heading."
     (unless found
       (goto-char subtree-end))))
 
-;;; ---------------------------------------------------------------------------
-;;; Core insertion driver
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Core insertion driver
+;;;; ---------------------------------------------------------------------------
 
 (defun elot-id-insert--validate-kind (kind child-p cur-level section)
   "Signal `user-error' when KIND / CHILD-P / CUR-LEVEL are incompatible.
@@ -386,13 +386,13 @@ Returns the list of minted CURIEs."
         (elot-headline-hierarchy-mark-stale))
       curies-clean)))
 
-;;; ---------------------------------------------------------------------------
-;;; Public interactive commands
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Public interactive commands
+;;;; ---------------------------------------------------------------------------
 
-;;; ---------------------------------------------------------------------------
-;;; Per-ontology scheme picker (Step 10.7)
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Per-ontology scheme picker (Step 10.7)
+;;;; ---------------------------------------------------------------------------
 
 (defun elot-id-insert--ontology-heading-marker ()
   "Return a marker at the ontology heading containing point, or nil.
@@ -633,9 +633,9 @@ as `[INVALID: ...]'."
           (message "Ontology %s: scheme = %s" name spec))))))
     spec))
 
-;;; ---------------------------------------------------------------------------
-;;; Public interactive commands
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Public interactive commands
+;;;; ---------------------------------------------------------------------------
 
 ;;;###autoload
 (defun elot-insert-sibling-resource (&optional n labels)
@@ -657,9 +657,9 @@ resolution, description-list inheritance, kind restrictions)."
   (interactive "p")
   (elot-id-insert--do-insert nil (or n 1) labels))
 
-;;; ---------------------------------------------------------------------------
-;;; Tree builder
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Tree builder
+;;;; ---------------------------------------------------------------------------
 
 (defun elot-id-insert--normalize-tree-node (node)
   "Return NODE as a cons (LABEL . CHILDREN).

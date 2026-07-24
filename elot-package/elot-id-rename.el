@@ -99,9 +99,9 @@
 
 (defvar elot-db) ;; from elot-db.el; bound only when the DB is loaded.
 
-;;; ---------------------------------------------------------------------------
-;;; CURIE shape + boundary regexes
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; CURIE shape + boundary regexes
+;;;; ---------------------------------------------------------------------------
 
 (defconst elot-id-rename--curie-re
   "\\`\\([A-Za-z_][A-Za-z0-9_-]*\\):\\([A-Za-z_][A-Za-z0-9_.-]*\\)\\'"
@@ -125,9 +125,9 @@ the replacement."
           (regexp-quote curie)
           "\\([^A-Za-z0-9_:-]\\|$\\)"))
 
-;;; ---------------------------------------------------------------------------
-;;; Prefix table read / mutate
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Prefix table read / mutate
+;;;; ---------------------------------------------------------------------------
 
 (defun elot-id-rename--goto-prefix-table ()
   "Move point to the first data row of the `prefix-table' table.
@@ -178,9 +178,9 @@ in the buffer (callers should check `--read-prefix-table' first)."
     (insert (format "\n| %s: | %s |" prefix iri))
     (org-table-align)))
 
-;;; ---------------------------------------------------------------------------
-;;; IRI lookup
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; IRI lookup
+;;;; ---------------------------------------------------------------------------
 
 (defun elot-id-rename--expand-curie (curie prefix-table)
   "Return CURIE's full IRI via PREFIX-TABLE, or nil when undeclared."
@@ -239,9 +239,9 @@ list so the LLM wrapper can surface it."
       (completing-read
        (format "IRI expansion for `%s:': " prefix) candidates nil t)))))
 
-;;; ---------------------------------------------------------------------------
-;;; Source-heading lookup + collision detection
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Source-heading lookup + collision detection
+;;;; ---------------------------------------------------------------------------
 
 (defun elot-id-rename--declared-curies ()
   "Return every CURIE declared as a resource heading in the buffer.
@@ -309,9 +309,9 @@ success; signals `user-error' when the heading cannot be found."
       (replace-match (concat (match-string 1) new-label (match-string 3))
                      t t))))
 
-;;; ---------------------------------------------------------------------------
-;;; Region classification + rewriters
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Region classification + rewriters
+;;;; ---------------------------------------------------------------------------
 
 ;; `elot-id-remove-heading-promote-children' lives in `elot-id-move'
 ;; (the outline-surgery sibling module).  Declared here so the byte
@@ -440,9 +440,9 @@ Returns the number of replacements made on this line."
                          (length (match-string 2 orig)))))
         n))))
 
-;;; ---------------------------------------------------------------------------
-;;; Full-IRI rewriting
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Full-IRI rewriting
+;;;; ---------------------------------------------------------------------------
 
 (defconst elot-id-rename--iri-angle-re
   "<\\(https?://[^> \t\n]+\\)>")
@@ -472,9 +472,9 @@ Handles both `<...>' and bare forms; returns the replacement count."
           (setq n (1+ n)))))
     n))
 
-;;; ---------------------------------------------------------------------------
-;;; Buffer-wide rewrite driver
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Buffer-wide rewrite driver
+;;;; ---------------------------------------------------------------------------
 
 (defun elot-id-rename--rewrite-buffer (source target source-iri target-iri)
   "Perform the buffer-wide CURIE + full-IRI rewrite.
@@ -519,9 +519,9 @@ rewrites), `:iri-count' (full-IRI rewrites), `:prose-skipped'
           :iri-count iri-count
           :prose-skipped prose-skipped)))
 
-;;; ---------------------------------------------------------------------------
-;;; Public entry point
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Public entry point
+;;;; ---------------------------------------------------------------------------
 
 ;;;###autoload
 (cl-defun elot-rename-resource (source target &key target-iri new-label

@@ -86,9 +86,9 @@
 (declare-function elot-attriblist-label-value
                   "elot-label-display" (idstring prop))
 
-;;; ---------------------------------------------------------------------------
-;;; CURIE shape
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; CURIE shape
+;;;; ---------------------------------------------------------------------------
 
 (defconst elot-id-move--curie-re
   "\\`\\([A-Za-z_][A-Za-z0-9_-]*\\):\\([A-Za-z_][A-Za-z0-9_.-]*\\)\\'"
@@ -104,9 +104,9 @@
       (and (stringp target)
            (member (downcase (string-trim target)) '("top")))))
 
-;;; ---------------------------------------------------------------------------
-;;; Section + kind lookup
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Section + kind lookup
+;;;; ---------------------------------------------------------------------------
 
 (defun elot-id-move--section-kind-at-point ()
   "Return (KIND . SECTION-MARKER) for the resource heading at point.
@@ -148,9 +148,9 @@ Nil when no ontology ancestor exists."
           (unless (org-up-heading-safe)
             (throw 'found nil)))))))
 
-;;; ---------------------------------------------------------------------------
-;;; Heading lookup by CURIE
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Heading lookup by CURIE
+;;;; ---------------------------------------------------------------------------
 
 (defun elot-id-move--find-heading-markers (curie)
   "Return a list of markers for every heading declaring CURIE.
@@ -238,9 +238,9 @@ or when TARGET is not declared."
      "elot-move-resource: TARGET must be a CURIE or the literal \"top\": %S"
      target))))
 
-;;; ---------------------------------------------------------------------------
-;;; Geometry helpers
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Geometry helpers
+;;;; ---------------------------------------------------------------------------
 
 (defun elot-id-move--current-parent-marker ()
   "Return a marker at the parent heading of the heading at point.
@@ -268,9 +268,9 @@ Moving SOURCE into its own descendant would be a malformed move."
       (and (>= (marker-position target-marker) beg)
            (<  (marker-position target-marker) end)))))
 
-;;; ---------------------------------------------------------------------------
-;;; Interactive completion (label-lookup-backed)
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Interactive completion (label-lookup-backed)
+;;;; ---------------------------------------------------------------------------
 
 (defun elot-id-move--label-lookup-available-p ()
   "Return non-nil when buffer-local label-lookup data is populated."
@@ -317,9 +317,9 @@ Falls back to a plain `read-string' (with INITIAL as default) when
          (t (or (elot-attriblist-label-value selected "puri")
                 selected)))))))
 
-;;; ---------------------------------------------------------------------------
-;;; Public entry point
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Public entry point
+;;;; ---------------------------------------------------------------------------
 
 ;;;###autoload
 (defun elot-move-resource (source target &optional as)
@@ -520,9 +520,9 @@ section root)."
           :from-parent from-parent-label
           :to-parent to-parent-label)))
 
-;;; ---------------------------------------------------------------------------
-;;; Shared outline surgery -- heading removal with child promotion
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Shared outline surgery -- heading removal with child promotion
+;;;; ---------------------------------------------------------------------------
 
 ;; Used by:
 ;;   - `elot-rename-resource' op=merge (`elot-id-rename.el')
