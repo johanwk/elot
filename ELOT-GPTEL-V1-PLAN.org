@@ -841,7 +841,8 @@ data files (=elot-conventions.md=, =schema.sql=).  Add gptel as an
 *Acceptance:* a local =package-install-file= (or MELPA sandbox build)
 produces a package that loads and registers tools.
 
-** WAITING Step 4.2 CI: unit tests (Linux only; Windows deferred)
+** DONE Step 4.2 CI: unit tests (Linux only; Windows deferred)
+CLOSED: [2026-07-23]
 
 Ensure the GitHub Actions workflow runs the full non-ROBOT ERT suite
 on Linux and is green.  *Windows CI is deferred to post-v1* (see the
@@ -852,6 +853,12 @@ path/line-ending regressions with OS-agnostic unit tests rather than
 an OS matrix.
 
 *Acceptance:* CI green on Linux for the non-ROBOT targets.
+
+*Acceptance met:* both the Linux =test= job and the =robot= job are
+green on =elot-gptel-0.1= (GitHub Actions run, 2026-07-23), after a
+local ROBOT-off dry run (=mv ~/bin/robot.jar ~/bin/robot.jar.off; make
+-k test=) reproduced and cleared the CI failures without waiting on the
+runner.
 
 *Done (Phase 4).*  =test/Makefile= rewritten so the ERT target list is
 derived from disk: =TEST_FILES := $(wildcard elot-*-test.el)=, with
@@ -878,13 +885,19 @@ stanzas) are gone; only the =help:= menu stays hand-written
 
 /Scope guard./ Makefile + test-harness change only; no shipped-code behaviour change, no test semantics change (same assertions, same skip conditions). Roster stays frozen at 37 tools.
 
-** WAITING Step 4.3 CI: ROBOT job
+** DONE Step 4.3 CI: ROBOT job
+CLOSED: [2026-07-23]
 
 Add (or confirm) a CI job that installs ROBOT and runs the
 ROBOT-gated targets (the bucket-3 tests from Step 0.3).
 
 *Acceptance:* the ROBOT job is green; bucket-3 tests no longer only
 skip.
+
+*Acceptance met:* the =robot= CI job (Java 17 + ROBOT, =make test= with
+=ELOT_REQUIRE_ROBOT=1=) is green on =elot-gptel-0.1= (2026-07-23); the
+bucket-3 live-* tests execute (multi-second ROBOT subprocess runtimes)
+rather than skip.
 
 *Done (Phase 4).*  The Elisp/ROBOT split is now a runtime flag, not a
 separate target catalogue.  =test/test-helper.el= gained
@@ -1193,4 +1206,4 @@ registered as a tool in the v1 roster.
 | (today)    | Step 2.3 defaults review: all shipped defaults are the cautious ones (=allow-side-effects= nil, =confirm-mutations= once-armed, =robot-catalog= nil, content cap 4 MiB, explain-timeout 60 s, explain-max 1).  No surprising default ships; full table + rationale under Step 2.3.  Rationale carried into Phase 3 user docs. |
 | (today)    | =uuid= identifier scheme mints XML-unsafe (leading-digit) local-names (valid Turtle =PN_LOCAL= but invalid XML =NCName=, rejected by RDF/XML & OWL/XML via ROBOT/OWLAPI).  Surfaced live when the LLM prepended =C_= to UUID mints in =examples/pets.org=.  *Deferred to post-v1*: add a configurable alpha lead-in (default =C_=, via =:scheme-params=) + widen =elot-id--uuid-localname-regexp= on verify.  No v1 code change; recorded in the Deferred list.  Out of Step 3.3/3.4 scope. |
 | (today)    | *Windows CI deferred to post-v1.*  Step 4.2's Windows matrix is dropped from the v1 merge gate: MSYS2 is the supported Windows path (it supplies the GNU coreutils / POSIX shell / Unix paths the toolchain assumes), a bare =windows-latest= runner lacks that tooling, and the maintainer lacks capacity to keep such a job green.  CI stays Linux-only (ubuntu-latest, Emacs 30.1); path/line-ending regressions are covered by OS-agnostic unit tests instead.  MSYS2 to be noted as the recommended Windows setup.  Recorded in the Deferred list. |
-| (today)    | Tool-roster freeze *upheld* against a reviewed proposal to add Tier-1 inspection tools (=elot_resources=, =elot_read_resource=, =elot_metrics=) before v1.  The gaps are reachable via documented workaround idioms (=elot_axiom_keywords= Buffer Signature / Existing rows; =elot_sparql_select= / =elot_db_query= for counts), so v1 stability beats v1 completeness.  Recorded as deferred item "post-v1 M12: Tier-1 inspection tools" (first post-v1 milestone); the workaround idioms are added to Step 3.1's documentation scope so the v1 docs mitigate the gap. |
+| 2026-07-23 | *Invariant: validate arguments before the ROBOT probe.*  Steps 4.2/4.3 CI (ROBOT-off runner) surfaced an ordering bug in *seven* ROBOT-backed tools (=omn_validate=, =omn_report=, =diff=, =sparql=/=sparql_select=, =consistency=, =unsatisfiable=, =explain= incl. its =max= check): each ran =elot-robot-available-p= /before/ its pure argument-validation =user-error=s, so on a ROBOT-less machine the pure-validation tests got "ROBOT not available" instead of their intended message (invisible locally because the maintainer has =robot.jar=).  All seven reordered so pure arg checks precede the ROBOT probe.  Reproducer/guard: run =make -k test= with the jar hidden (=mv ~/bin/robot.jar ~/bin/robot.jar.off=) to mimic CI's no-ROBOT state.  Going forward, every ROBOT tool must validate its arguments before probing ROBOT. |\n| 2026-07-23 | Also folded into the Step 4.2/4.3 commit: edit-axioms test casing fix (assert capitalised =Edits[N]:= to match checkdoc-compliant error messages, not lowercase); =elot-gptel--check-lint-failed-p= =Summary:= regex widened to accept comma/EOL/space terminator (defensive; no currently-reachable bug); and a docstring NOTE on =test-parse-ttl-gated= flagging it as a =ELOT_TEST_NETWORK=-gated duplicate of =test-parse-ttl-with-robot-local= (parses a local fixture, not a remote endpoint) for post-v1 tidy. |\n| (today)    | Tool-roster freeze *upheld* against a reviewed proposal to add Tier-1 inspection tools (=elot_resources=, =elot_read_resource=, =elot_metrics=) before v1.  The gaps are reachable via documented workaround idioms (=elot_axiom_keywords= Buffer Signature / Existing rows; =elot_sparql_select= / =elot_db_query= for counts), so v1 stability beats v1 completeness.  Recorded as deferred item "post-v1 M12: Tier-1 inspection tools" (first post-v1 milestone); the workaround idioms are added to Step 3.1's documentation scope so the v1 docs mitigate the gap. |
