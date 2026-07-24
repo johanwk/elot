@@ -96,9 +96,9 @@
 (defvar elot-headline-hierarchy)
 (defvar elot-gptel--sparql-rdf-extensions)
 
-;;; ---------------------------------------------------------------------------
-;;; Customization
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Customization
+;;;; ---------------------------------------------------------------------------
 
 (defgroup elot-gptel nil
   "ELOT ontology-authoring tools exposed to gptel."
@@ -260,18 +260,18 @@ LLM draft."
 ;; variable; `elot-gptel' deliberately does not introduce a separate
 ;; ROBOT-program defcustom.
 
-;;; ---------------------------------------------------------------------------
-;;; Internal state
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Internal state
+;;;; ---------------------------------------------------------------------------
 
 (defvar elot-gptel--tools nil
   "Alist (NAME . TOOL) of tools registered by `elot-gptel-register-tools'.
 NAME is a string (the tool's external name); TOOL is whatever
 `gptel-make-tool' returns for that NAME.")
 
-;;; ---------------------------------------------------------------------------
-;;; Path resolution
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Path resolution
+;;;; ---------------------------------------------------------------------------
 
 (defun elot-gptel--project-root ()
   "Return the project root for the current context, or `default-directory'.
@@ -336,9 +336,9 @@ call reads naturally inline."
          bytes cap))))
   nil)
 
-;;; ---------------------------------------------------------------------------
-;;; elot_lint tool
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; elot_lint tool
+;;;; ---------------------------------------------------------------------------
 
 (defconst elot-gptel--lint-default-checkers
   '(elot/nodeclare-id-prefix-label
@@ -579,9 +579,9 @@ Returns a plain-text report.  See plan Milestones 1 and 7.5."
     (error
      (format "ERROR: %s" (error-message-string err)))))
 
-;;; ---------------------------------------------------------------------------
-;;; elot_omn_validate tool (Milestone 3)
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; elot_omn_validate tool (Milestone 3)
+;;;; ---------------------------------------------------------------------------
 ;;
 ;; Pipeline: tangle the .org file's ontology heading(s) to OMN inside a
 ;; throw-away workspace, then ask ROBOT to parse them.  ROBOT's full
@@ -871,9 +871,9 @@ a plain-text report."
     (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
 
-;;; ---------------------------------------------------------------------------
-;;; elot_omn_report tool (Milestone 8 Step 8.4)
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; elot_omn_report tool (Milestone 8 Step 8.4)
+;;;; ---------------------------------------------------------------------------
 ;;
 ;; Thin wrapper around ROBOT's `report' subcommand.  Tangles FILE the
 ;; same way `elot_omn_validate' does, then runs `robot report' once
@@ -1056,9 +1056,9 @@ executable on PATH)."
     (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
 
-;;; ---------------------------------------------------------------------------
-;;; elot_diff tool (Milestone 9 Step 9.5)
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; elot_diff tool (Milestone 9 Step 9.5)
+;;;; ---------------------------------------------------------------------------
 ;;
 ;; Thin wrapper around ROBOT's `diff' subcommand.  Given two
 ;; ontologies (FILE = the current state, BASELINE = an earlier
@@ -1214,9 +1214,9 @@ executable on PATH)."
     (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
 
-;;; ---------------------------------------------------------------------------
-;;; elot_sparql tool (Milestone 4)
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; elot_sparql tool (Milestone 4)
+;;;; ---------------------------------------------------------------------------
 ;;
 ;; Execute a SPARQL query against an ontology -- either an ELOT .org
 ;; file (tangled to OMN inside the workspace first) or an RDF file
@@ -1572,9 +1572,9 @@ reach ROBOT.  FILE, QUERY, FORMAT and LIMIT are as for
 `elot-gptel-tool-sparql', whose return shape is identical."
   (elot-gptel--sparql-run file query format limit :select-only t))
 
-;;; ---------------------------------------------------------------------------
-;;; elot_unsatisfiable tool (Milestone 5 Step 5.1)
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; elot_unsatisfiable tool (Milestone 5 Step 5.1)
+;;;; ---------------------------------------------------------------------------
 ;;
 ;; Run ROBOT's `reason' subcommand against each ontology node and
 ;; report any unsatisfiable classes found.  Pipeline mirrors
@@ -1847,9 +1847,9 @@ the ELOT DB has them)."
     (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
 
-;;; ---------------------------------------------------------------------------
-;;; elot_explain tool (Milestone 5 Step 5.3)
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; elot_explain tool (Milestone 5 Step 5.3)
+;;;; ---------------------------------------------------------------------------
 ;;
 ;; Run ROBOT's `explain' subcommand to surface a justification for
 ;; why a given axiom is (or is not) entailed by the ontology.  Same
@@ -2249,9 +2249,9 @@ deleted on exit."
     (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
 
-;;; ---------------------------------------------------------------------------
-;;; elot_db_query tool (Milestone 6 Step 6.2)
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; elot_db_query tool (Milestone 6 Step 6.2)
+;;;; ---------------------------------------------------------------------------
 
 (defconst elot-gptel--db-query-default-limit 200
   "Default LIMIT applied by `elot-gptel-tool-db-query' when unset.")
@@ -2344,9 +2344,9 @@ when the gate refuses the query or the DB is unavailable."
     (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
 
-;;; ---------------------------------------------------------------------------
-;;; elot_db_schema tool (Milestone 6 Step 6.3)
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; elot_db_schema tool (Milestone 6 Step 6.3)
+;;;; ---------------------------------------------------------------------------
 
 (declare-function elot-db--read-schema-sql "elot-db" ())
 (defvar elot-db-schema-version)
@@ -2393,9 +2393,9 @@ Read-only."
     (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
 
-;;; ---------------------------------------------------------------------------
-;;; Convenience shims (Milestone 6 Step 6.4 -- Wave A)
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Convenience shims (Milestone 6 Step 6.4 -- Wave A)
+;;;; ---------------------------------------------------------------------------
 
 (declare-function elot-db-get-label-any "elot-db" (token &optional active-sources))
 (declare-function elot-db-list-sources "elot-db" ())
@@ -2582,25 +2582,25 @@ the prefix is unknown or CURIE is malformed.  Read-only."
     (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
 
-;;; ---------------------------------------------------------------------------
-;;; Attribute-driven SQL-select shims (Milestone 6 Step 6.4 -- Wave B)
-;;; ---------------------------------------------------------------------------
-;;;
-;;; Three dedicated SELECTs that the LLM would otherwise have to
-;;; compose via `elot_db_query'.  Each is a one-purpose tool with a
-;;; stable, columnar output shape; all internally call
-;;; `elot-db-execute-readonly', so they inherit the M6.1 gate and the
-;;; `query_only' PRAGMA discipline for free.
-;;;
-;;; A subtlety pinned by the plan (Step 6.4 Wave B assessment): the
-;;; ELOT pipeline writes both OMN frame keywords (`SubClassOf',
-;;; `SubPropertyOf', `Types') and RDF property CURIEs
-;;; (`rdfs:subClassOf', `rdfs:subPropertyOf', `rdf:type') into
-;;; `attributes.prop' depending on the source's ingest path.  ELOT
-;;; `.org' tangle ingest uses the OMN spellings; TTL ingest uses the
-;;; RDF spellings.  The supertypes / individual-types shims therefore
-;;; accept BOTH spellings in their WHERE clauses so the LLM sees
-;;; uniform results regardless of how a given source was loaded.
+;;;; ---------------------------------------------------------------------------
+;;;; Attribute-driven SQL-select shims (Milestone 6 Step 6.4 -- Wave B)
+;;;; ---------------------------------------------------------------------------
+;;
+;; Three dedicated SELECTs that the LLM would otherwise have to
+;; compose via `elot_db_query'.  Each is a one-purpose tool with a
+;; stable, columnar output shape; all internally call
+;; `elot-db-execute-readonly', so they inherit the M6.1 gate and the
+;; `query_only' PRAGMA discipline for free.
+;;
+;; A subtlety pinned by the plan (Step 6.4 Wave B assessment): the
+;; ELOT pipeline writes both OMN frame keywords (`SubClassOf',
+;; `SubPropertyOf', `Types') and RDF property CURIEs
+;; (`rdfs:subClassOf', `rdfs:subPropertyOf', `rdf:type') into
+;; `attributes.prop' depending on the source's ingest path.  ELOT
+;; `.org' tangle ingest uses the OMN spellings; TTL ingest uses the
+;; RDF spellings.  The supertypes / individual-types shims therefore
+;; accept BOTH spellings in their WHERE clauses so the LLM sees
+;; uniform results regardless of how a given source was loaded.
 
 (defconst elot-gptel--db-supertype-props
   '("rdfs:subClassOf"
@@ -2796,19 +2796,19 @@ or has no asserted type.  Read-only."
     (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
 
-;;; ---------------------------------------------------------------------------
-;;; elot_db_search_label tool (Milestone 6 Step 6.5 -- reuse-before-mint)
-;;; ---------------------------------------------------------------------------
-;;;
-;;; First half of M6.5: search the *entire* DB (not just active
-;;; sources) for entities whose label or id matches a substring,
-;;; optionally filtered by kind / source / language.  The LLM
-;;; consults this BEFORE calling `elot_mint_identifier' so reuse of
-;;; existing identifiers is preferred over fresh minting.
-;;;
-;;; The second M6.5 tool (`elot_db_borrow_term') will produce an
-;;; ELOT description-list snippet -- including the `rdfs:isDefinedBy'
-;;; back-pointer -- to be embedded under a heading via `elot_add_term'.
+;;;; ---------------------------------------------------------------------------
+;;;; elot_db_search_label tool (Milestone 6 Step 6.5 -- reuse-before-mint)
+;;;; ---------------------------------------------------------------------------
+;;
+;; First half of M6.5: search the *entire* DB (not just active
+;; sources) for entities whose label or id matches a substring,
+;; optionally filtered by kind / source / language.  The LLM
+;; consults this BEFORE calling `elot_mint_identifier' so reuse of
+;; existing identifiers is preferred over fresh minting.
+;;
+;; The second M6.5 tool (`elot_db_borrow_term') will produce an
+;; ELOT description-list snippet -- including the `rdfs:isDefinedBy'
+;; back-pointer -- to be embedded under a heading via `elot_add_term'.
 
 (declare-function elot-db-search-entities "elot-db"
                   (query &optional limit kind source lang exact-only))
@@ -2900,23 +2900,23 @@ candidate for reuse before minting a fresh identifier."
     (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
 
-;;; ---------------------------------------------------------------------------
-;;; elot_db_borrow_term tool (Milestone 6 Step 6.5 -- second half)
-;;; ---------------------------------------------------------------------------
-;;;
-;;; Given an entity TOKEN (CURIE or IRI) known to the ELOT DB,
-;;; return a plain-text ELOT description-list snippet that the
-;;; LLM (or M9.3's `elot_add_term') can embed under a heading.
-;;; The snippet ALWAYS carries an `rdfs:isDefinedBy' back-pointer
-;;; to the source ontology IRI -- the citation is part of the
-;;; tool's output shape, not an instruction in its docstring, so
-;;; the LLM mechanically cannot forget the attribution.
-;;;
-;;; The level-1 `*' in the heading is a deliberate placeholder.
-;;; The caller is responsible for re-leveling it to match the
-;;; target ontology's structure (typically under a level-2
-;;; `:resourcedefs: yes' heading, or as a child of an existing
-;;; resource heading).
+;;;; ---------------------------------------------------------------------------
+;;;; elot_db_borrow_term tool (Milestone 6 Step 6.5 -- second half)
+;;;; ---------------------------------------------------------------------------
+;;
+;; Given an entity TOKEN (CURIE or IRI) known to the ELOT DB,
+;; return a plain-text ELOT description-list snippet that the
+;; LLM (or M9.3's `elot_add_term') can embed under a heading.
+;; The snippet ALWAYS carries an `rdfs:isDefinedBy' back-pointer
+;; to the source ontology IRI -- the citation is part of the
+;; tool's output shape, not an instruction in its docstring, so
+;; the LLM mechanically cannot forget the attribution.
+;;
+;; The level-1 `*' in the heading is a deliberate placeholder.
+;; The caller is responsible for re-leveling it to match the
+;; target ontology's structure (typically under a level-2
+;; `:resourcedefs: yes' heading, or as a child of an existing
+;; resource heading).
 
 (declare-function elot-db-entity-citation "elot-db" (token))
 (declare-function elot-db-list-prefixes "elot-db" (&optional source data-source))
@@ -3154,23 +3154,23 @@ buffer.  When TOKEN is unknown, returns
     (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
 
-;;; ---------------------------------------------------------------------------
-;;; elot_borrow_term tool (Milestone 9 Step 9.7 -- composite reuse-before-mint)
-;;; ---------------------------------------------------------------------------
-;;;
-;;; Composes the three M6.5 atomic tools (`elot_db_search_label' +
-;;; `elot_db_get_attributes' + `elot_db_borrow_term') into a single
-;;; round-trip so the LLM's canonical reuse-before-mint workflow
-;;; collapses from three tool calls to one.  Pipeline: search the
-;;; entire DB by LABEL (default KIND=class) -> branch on candidate
-;;; count.  Zero candidates -> stable fall-through signal pointing
-;;; at `elot_mint_identifier'.  One candidate -> auto-borrow
-;;; through `elot-gptel--db-borrow-format', with a one-line
-;;; provenance preface.  Multiple candidates -> ranked candidate
-;;; table plus a structured disambiguation prompt; the LLM (or
-;;; human) narrows via SOURCE or LANG, or calls
-;;; `elot_db_borrow_term' directly on the chosen id.  The
-;;; composite never silently picks a winner.
+;;;; ---------------------------------------------------------------------------
+;;;; elot_borrow_term tool (Milestone 9 Step 9.7 -- composite reuse-before-mint)
+;;;; ---------------------------------------------------------------------------
+;;
+;; Composes the three M6.5 atomic tools (`elot_db_search_label' +
+;; `elot_db_get_attributes' + `elot_db_borrow_term') into a single
+;; round-trip so the LLM's canonical reuse-before-mint workflow
+;; collapses from three tool calls to one.  Pipeline: search the
+;; entire DB by LABEL (default KIND=class) -> branch on candidate
+;; count.  Zero candidates -> stable fall-through signal pointing
+;; at `elot_mint_identifier'.  One candidate -> auto-borrow
+;; through `elot-gptel--db-borrow-format', with a one-line
+;; provenance preface.  Multiple candidates -> ranked candidate
+;; table plus a structured disambiguation prompt; the LLM (or
+;; human) narrows via SOURCE or LANG, or calls
+;; `elot_db_borrow_term' directly on the chosen id.  The
+;; composite never silently picks a winner.
 
 (defconst elot-gptel--borrow-default-limit 50
   "Default LIMIT for `elot-gptel-tool-borrow-term' searches.")
@@ -3280,21 +3280,21 @@ token=ID' directly with the chosen id."
     (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
 
-;;; ---------------------------------------------------------------------------
-;;; elot_conventions tool (Milestone 7.5 Step 7.5.1)
-;;; ---------------------------------------------------------------------------
-;;;
-;;; A zero-argument tool returning ELOT's authoring conventions as
-;;; LLM-friendly Markdown.  The prose lives in the sibling file
-;;; `elot-conventions.md' so developers can review and update it
-;;; without touching Elisp; the Elisp side is purely a path
-;;; resolver + a tool wrapper, mirroring how `elot-db.el' handles
-;;; its sibling `schema.sql'.
-;;;
-;;; The LLM is expected to call this once at the start of any
-;;; authoring session; the document covers heading-nesting,
-;;; description-list semantics, reuse via `rdfs:isDefinedBy', and
-;;; the (frequently misunderstood) `:nodeclare:' tag.
+;;;; ---------------------------------------------------------------------------
+;;;; elot_conventions tool (Milestone 7.5 Step 7.5.1)
+;;;; ---------------------------------------------------------------------------
+;;
+;; A zero-argument tool returning ELOT's authoring conventions as
+;; LLM-friendly Markdown.  The prose lives in the sibling file
+;; `elot-conventions.md' so developers can review and update it
+;; without touching Elisp; the Elisp side is purely a path
+;; resolver + a tool wrapper, mirroring how `elot-db.el' handles
+;; its sibling `schema.sql'.
+;;
+;; The LLM is expected to call this once at the start of any
+;; authoring session; the document covers heading-nesting,
+;; description-list semantics, reuse via `rdfs:isDefinedBy', and
+;; the (frequently misunderstood) `:nodeclare:' tag.
 
 (defconst elot-gptel--conventions-fallback
   "# ELOT authoring conventions
@@ -3368,9 +3368,9 @@ Read-only.  Never raises; on any internal error returns an
       (elot-gptel--read-conventions)
     (error (format "ERROR: %s" (error-message-string err)))))
 
-;;; ---------------------------------------------------------------------------
-;;; elot_check tool (Milestone 7.5 Step 7.5.6)
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; elot_check tool (Milestone 7.5 Step 7.5.6)
+;;;; ---------------------------------------------------------------------------
 ;;
 ;; Composite, fail-fast pipeline: LINT -> OMN PARSE -> CONSISTENCY ->
 ;; UNSATISFIABLE.  Each stage delegates to an existing atomic tool;
@@ -3580,15 +3580,15 @@ returned in the affected stage."
       (funcall push-section "SUMMARY" summary))
     (mapconcat #'identity (nreverse sections) "\n\n")))
 
-;;; ---------------------------------------------------------------------------
-;;; Identifier minting (Milestone 10)
-;;; ---------------------------------------------------------------------------
-;;;
-;;; Thin LLM-facing wrappers around `elot-id-mint' and `elot-id-verify'
-;;; (see `elot-id.el').  Identifier minting is read-only with respect
-;;; to the user's project: the tools only choose a string, they do not
-;;; write the .org file.  Therefore not gated by
-;;; `elot-gptel-allow-side-effects'.
+;;;; ---------------------------------------------------------------------------
+;;;; Identifier minting (Milestone 10)
+;;;; ---------------------------------------------------------------------------
+;;
+;; Thin LLM-facing wrappers around `elot-id-mint' and `elot-id-verify'
+;; (see `elot-id.el').  Identifier minting is read-only with respect
+;; to the user's project: the tools only choose a string, they do not
+;; write the .org file.  Therefore not gated by
+;; `elot-gptel-allow-side-effects'.
 
 (defconst elot-gptel--mint-kinds
   '("class" "object-property" "data-property"
@@ -3802,16 +3802,16 @@ or an `ERROR:' line.  Read-only."
     (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
 
-;;; ---------------------------------------------------------------------------
-;;; elot_axiom_keywords tool (Milestone 9 Step 9.2.a)
-;;; ---------------------------------------------------------------------------
-;;;
-;;; Read-only authoring helper.  Given a subject CURIE / label,
-;;; returns the legal OMN frame keywords for its kind (per static
-;;; table), the project's declared annotation properties (universal
-;;; rows), the buffer signature from `elot-slurp', and the
-;;; subject's existing description-list rows.  Pure: only consults
-;;; the buffer; no ROBOT, no DB.
+;;;; ---------------------------------------------------------------------------
+;;;; elot_axiom_keywords tool (Milestone 9 Step 9.2.a)
+;;;; ---------------------------------------------------------------------------
+;;
+;; Read-only authoring helper.  Given a subject CURIE / label,
+;; returns the legal OMN frame keywords for its kind (per static
+;; table), the project's declared annotation properties (universal
+;; rows), the buffer signature from `elot-slurp', and the
+;; subject's existing description-list rows.  Pure: only consults
+;; the buffer; no ROBOT, no DB.
 
 (defconst elot-gptel--axiom-frame-keywords
   '(("owl:Class"
@@ -4071,17 +4071,17 @@ Returns an `OK:'-prefixed multi-line report on success, an
     (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
 
-;;; ---------------------------------------------------------------------------
-;;; elot_axiom_check tool (Milestone 9 Step 9.2.b)
-;;; ---------------------------------------------------------------------------
-;;;
-;;; Read-only pre-flight validator for a candidate
-;;; `- KEYWORD :: FRAGMENT' row.  Synthesises the row inside the
-;;; subject's description list in an in-memory copy of FILE, then
-;;; runs the existing lint checkers (`elot/omn-keyword-appropri-
-;;; ateness', `elot/axiom-value-curies', `elot/axiom-keyword-range')
-;;; and ROBOT's OMN parser on the draft.  Optional consistency
-;;; probe via `elot_consistency'.
+;;;; ---------------------------------------------------------------------------
+;;;; elot_axiom_check tool (Milestone 9 Step 9.2.b)
+;;;; ---------------------------------------------------------------------------
+;;
+;; Read-only pre-flight validator for a candidate
+;; `- KEYWORD :: FRAGMENT' row.  Synthesises the row inside the
+;; subject's description list in an in-memory copy of FILE, then
+;; runs the existing lint checkers (`elot/omn-keyword-appropri-
+;; ateness', `elot/axiom-value-curies', `elot/axiom-keyword-range')
+;; and ROBOT's OMN parser on the draft.  Optional consistency
+;; probe via `elot_consistency'.
 
 (defconst elot-gptel--axiom-check-checkers
   '(elot/omn-syntax
@@ -4360,9 +4360,9 @@ keyword %s's expected leaf kind."
       (user-error (format "ERROR: %s" (error-message-string err)))
       (error      (format "ERROR: %s" (error-message-string err))))))
 
-;;; ---------------------------------------------------------------------------
-;;; Mutation HOF and Macro
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Mutation HOF and Macro
+;;;; ---------------------------------------------------------------------------
 
 (defun elot-gptel--rename-revalidate (file)
   "Re-run lint (+ OMN parse when ROBOT is up) against FILE.
@@ -4516,32 +4516,32 @@ BODY must return the success header string."
   (declare (indent 1) (debug (listp body)))
   `(elot-gptel--apply-mutation ,(car args) ,(cadr args) (lambda () ,@body)))
 
-;;; ---------------------------------------------------------------------------
-;;; elot_edit_axiom tool (Milestone 9 Step 9.2.c)
-;;; ---------------------------------------------------------------------------
-;;;
-;;; Writer counterpart of the 9.2.b pre-flight: commits a single
-;;; description-list row `- KEYWORD :: FRAGMENT' on SUBJECT to
-;;; FILE, with auto-revalidate + rollback.  Three operations:
-;;;   add     -- append a new row as the LAST top-level row of
-;;;              SUBJECT's description list.
-;;;   replace -- find the row matched by (keyword, match_fragment
-;;;              or fragment fallback) and rewrite its value to
-;;;              FRAGMENT.  Nested annotation children are
-;;;              preserved verbatim.
-;;;   delete  -- find the matched row and delete it together with
-;;;              its nested annotation children.
-;;;
-;;; Match resolution refuses on 0 or >1 hits with an actionable
-;;; ERROR: line.  Index-based addressing is deliberately absent
-;;; (silent invalidation between turns).
-;;;
-;;; Pre-flight handshake: 9.2.c does NOT re-run 9.2.b's static
-;;; checkers; the caller is expected to have run
-;;; `elot_axiom_check' first.  Post-commit revalidation is the
-;;; standard `elot-gptel--rename-revalidate' pipeline (lint +
-;;; OMN parse when ROBOT is configured).  Failure rolls the
-;;; buffer back to its pre-edit contents.
+;;;; ---------------------------------------------------------------------------
+;;;; elot_edit_axiom tool (Milestone 9 Step 9.2.c)
+;;;; ---------------------------------------------------------------------------
+;;
+;; Writer counterpart of the 9.2.b pre-flight: commits a single
+;; description-list row `- KEYWORD :: FRAGMENT' on SUBJECT to
+;; FILE, with auto-revalidate + rollback.  Three operations:
+;;   add     -- append a new row as the LAST top-level row of
+;;              SUBJECT's description list.
+;;   replace -- find the row matched by (keyword, match_fragment
+;;              or fragment fallback) and rewrite its value to
+;;              FRAGMENT.  Nested annotation children are
+;;              preserved verbatim.
+;;   delete  -- find the matched row and delete it together with
+;;              its nested annotation children.
+;;
+;; Match resolution refuses on 0 or >1 hits with an actionable
+;; ERROR: line.  Index-based addressing is deliberately absent
+;; (silent invalidation between turns).
+;;
+;; Pre-flight handshake: 9.2.c does NOT re-run 9.2.b's static
+;; checkers; the caller is expected to have run
+;; `elot_axiom_check' first.  Post-commit revalidation is the
+;; standard `elot-gptel--rename-revalidate' pipeline (lint +
+;; OMN parse when ROBOT is configured).  Failure rolls the
+;; buffer back to its pre-edit contents.
 
 (defconst elot-gptel--axiom-toplevel-row-re
   "^ - \\(?:\\[[^]]*\\] \\)?\\(\\S-+\\) ::\\(?:[ \t]+\\(.*\\)\\|[ \t]*\\)$"
@@ -4995,33 +4995,33 @@ supply `match_fragment'"
     (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
 
-;;; ---------------------------------------------------------------------------
-;;; elot_edit_axioms batch tool (Milestone 9 Step 9.2.c.1)
-;;; ---------------------------------------------------------------------------
-;;;
-;;; Batch counterpart of `elot_edit_axiom'.  Applies an ordered list
-;;; of (subject, op, keyword, fragment, match_fragment) edits to a
-;;; single FILE atomically: snapshot -> per-edit in-memory apply ->
-;;; save once -> single post-commit revalidate -> rollback on
-;;; failure.  Motivating use case: the chicken-and-egg case where
-;;; two independent OMN axiom errors block each other -- fixing
-;;; either one in isolation still triggers a revalidate rollback
-;;; because the other is still broken.  A batch fixes both in the
-;;; same revalidate window.
-;;;
-;;; Per-edit match resolution sees the buffer as the prior edits
-;;; left it, so a `replace' that follows an `add' of the same
-;;; keyword resolves against the running draft, not the original
-;;; bytes.  A failure at edit K (subject unknown, no row matches,
-;;; ambiguous match) aborts the batch with `FAIL at edits[K]:' and
-;;; leaves disk untouched.
-;;;
-;;; DRY_RUN runs the full pipeline (each edit applied to the
-;;; running draft, then `elot_lint' / `elot_omn_validate' invoked
-;;; with `content=DRAFT') but skips the actual `save-buffer'.  The
-;;; LLM gets back the same OK / FAIL envelope it would have got
-;;; from a real commit; the file on disk is byte-identical to its
-;;; pre-call state.
+;;;; ---------------------------------------------------------------------------
+;;;; elot_edit_axioms batch tool (Milestone 9 Step 9.2.c.1)
+;;;; ---------------------------------------------------------------------------
+;;
+;; Batch counterpart of `elot_edit_axiom'.  Applies an ordered list
+;; of (subject, op, keyword, fragment, match_fragment) edits to a
+;; single FILE atomically: snapshot -> per-edit in-memory apply ->
+;; save once -> single post-commit revalidate -> rollback on
+;; failure.  Motivating use case: the chicken-and-egg case where
+;; two independent OMN axiom errors block each other -- fixing
+;; either one in isolation still triggers a revalidate rollback
+;; because the other is still broken.  A batch fixes both in the
+;; same revalidate window.
+;;
+;; Per-edit match resolution sees the buffer as the prior edits
+;; left it, so a `replace' that follows an `add' of the same
+;; keyword resolves against the running draft, not the original
+;; bytes.  A failure at edit K (subject unknown, no row matches,
+;; ambiguous match) aborts the batch with `FAIL at edits[K]:' and
+;; leaves disk untouched.
+;;
+;; DRY_RUN runs the full pipeline (each edit applied to the
+;; running draft, then `elot_lint' / `elot_omn_validate' invoked
+;; with `content=DRAFT') but skips the actual `save-buffer'.  The
+;; LLM gets back the same OK / FAIL envelope it would have got
+;; from a real commit; the file on disk is byte-identical to its
+;; pre-call state.
 
 (defun elot-gptel--axioms-edit-get (edit key)
   "Return EDIT's value for KEY.
@@ -5286,28 +5286,28 @@ a real commit, but FILE on disk is unchanged."
     (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
 
-;;; ---------------------------------------------------------------------------
-;;; elot_rename_resource tool (Milestone 12 Step 12.4)
-;;; ---------------------------------------------------------------------------
-;;;
-;;; LLM-facing wrapper around `elot-rename-resource' (see
-;;; `elot-id-rename.el').  Side-effecting: mutates the user's .org
-;;; file in place, gated by `elot-gptel-allow-side-effects'.
-;;;
-;;; Pipeline:
-;;;   1. Gate check (side-effects, arg shape).
-;;;   2. Probe target prefix: when undeclared in the file's
-;;;      prefix-table and TARGET_IRI was not supplied, refuse with
-;;;      a structured ERROR: line carrying `elot-db' candidates so
-;;;      the LLM can retry.
-;;;   3. Snapshot buffer; run `elot-rename-resource' (programmatic
-;;;      path: passes :target-iri when supplied).
-;;;   4. Auto-revalidate via `elot_lint' (+ `elot_omn_validate'
-;;;      when ROBOT is configured).  On failure roll the buffer
-;;;      back to its pre-rewrite snapshot and save, returning the
-;;;      diagnostics.
-;;;   5. Otherwise save buffer, format the success line per the
-;;;      plan's Step 12.4 spec.
+;;;; ---------------------------------------------------------------------------
+;;;; elot_rename_resource tool (Milestone 12 Step 12.4)
+;;;; ---------------------------------------------------------------------------
+;;
+;; LLM-facing wrapper around `elot-rename-resource' (see
+;; `elot-id-rename.el').  Side-effecting: mutates the user's .org
+;; file in place, gated by `elot-gptel-allow-side-effects'.
+;;
+;; Pipeline:
+;;   1. Gate check (side-effects, arg shape).
+;;   2. Probe target prefix: when undeclared in the file's
+;;      prefix-table and TARGET_IRI was not supplied, refuse with
+;;      a structured ERROR: line carrying `elot-db' candidates so
+;;      the LLM can retry.
+;;   3. Snapshot buffer; run `elot-rename-resource' (programmatic
+;;      path: passes :target-iri when supplied).
+;;   4. Auto-revalidate via `elot_lint' (+ `elot_omn_validate'
+;;      when ROBOT is configured).  On failure roll the buffer
+;;      back to its pre-rewrite snapshot and save, returning the
+;;      diagnostics.
+;;   5. Otherwise save buffer, format the success line per the
+;;      plan's Step 12.4 spec.
 
 (declare-function elot-rename-resource "elot-id-rename"
                   (source target &rest keys))
@@ -5438,51 +5438,51 @@ or an `ERROR:' line on refusal / failure."
                  ""))))
         head))))
 
-;;; ---------------------------------------------------------------------------
-;;; elot_move_resource tool (Milestone 12 Step 12.1)
-;;; ---------------------------------------------------------------------------
-;;;
-;;; LLM-facing wrapper around `elot-move-resource' (see
-;;; `elot-id-move.el').  Side-effecting: mutates the user's .org
-;;; file in place, gated by `elot-gptel-allow-side-effects'.
-;;;
-;;; Pipeline (mirrors the M12.4 rename wrapper):
-;;;   1. Gate check (side-effects, arg shape).
-;;;   2. Open the buffer for FILE (visiting if necessary), put it in
-;;;      `org-mode' when it is not already.
-;;;   3. Snapshot the buffer text + modified flag for rollback.
-;;;   4. Call `elot-move-resource' (programmatic path); a `user-error'
-;;;      raised by the move command becomes the structured `ERROR:'
-;;;      line the LLM sees.
-;;;   5. Save the buffer.
-;;;   6. Re-run `elot-gptel--rename-revalidate' (lint + OMN parse
-;;;      when ROBOT is configured).  On revalidation failure, restore
-;;;      the pre-move bytes, save again, and return the diagnostics.
-;;;   7. On success format the result line per the plan's Step 12.1
-;;;      "Output" spec.
+;;;; ---------------------------------------------------------------------------
+;;;; elot_move_resource tool (Milestone 12 Step 12.1)
+;;;; ---------------------------------------------------------------------------
+;;
+;; LLM-facing wrapper around `elot-move-resource' (see
+;; `elot-id-move.el').  Side-effecting: mutates the user's .org
+;; file in place, gated by `elot-gptel-allow-side-effects'.
+;;
+;; Pipeline (mirrors the M12.4 rename wrapper):
+;;   1. Gate check (side-effects, arg shape).
+;;   2. Open the buffer for FILE (visiting if necessary), put it in
+;;      `org-mode' when it is not already.
+;;   3. Snapshot the buffer text + modified flag for rollback.
+;;   4. Call `elot-move-resource' (programmatic path); a `user-error'
+;;      raised by the move command becomes the structured `ERROR:'
+;;      line the LLM sees.
+;;   5. Save the buffer.
+;;   6. Re-run `elot-gptel--rename-revalidate' (lint + OMN parse
+;;      when ROBOT is configured).  On revalidation failure, restore
+;;      the pre-move bytes, save again, and return the diagnostics.
+;;   7. On success format the result line per the plan's Step 12.1
+;;      "Output" spec.
 
 (declare-function elot-move-resource "elot-id-move"
                   (source target &optional as))
 
-;;; ---------------------------------------------------------------------------
-;;; elot_insert_* tools (Milestone 9 Step 9.3)
-;;; ---------------------------------------------------------------------------
-;;;
-;;; Thin LLM-facing wrappers over the M10.6 interactive insert
-;;; commands in `elot-id-insert.el'.  Side-effecting: each call
-;;; mutates the user's .org file in place, gated by
-;;; `elot-gptel-allow-side-effects'.
-;;;
-;;; The underlying Elisp commands already do scheme + prefix
-;;; resolution, batch-aware identifier minting via
-;;; `elot-id-mint-batch', blanked description-list inheritance,
-;;; and kind-by-section refusal under Datatypes (Individuals
-;;; are allowed to nest as a visual / editing aid).
-;;; These wrappers are pure plumbing: anchor resolution + atomic
-;;; apply + auto-revalidate + rollback.  The result envelope
-;;; mirrors the M12.1 / M12.4 wrappers (OK: one-liner + lint/OMN
-;;; blocks).  Minted CURIEs are listed as a bulleted block in the
-;;; success body.
+;;;; ---------------------------------------------------------------------------
+;;;; elot_insert_* tools (Milestone 9 Step 9.3)
+;;;; ---------------------------------------------------------------------------
+;;
+;; Thin LLM-facing wrappers over the M10.6 interactive insert
+;; commands in `elot-id-insert.el'.  Side-effecting: each call
+;; mutates the user's .org file in place, gated by
+;; `elot-gptel-allow-side-effects'.
+;;
+;; The underlying Elisp commands already do scheme + prefix
+;; resolution, batch-aware identifier minting via
+;; `elot-id-mint-batch', blanked description-list inheritance,
+;; and kind-by-section refusal under Datatypes (Individuals
+;; are allowed to nest as a visual / editing aid).
+;; These wrappers are pure plumbing: anchor resolution + atomic
+;; apply + auto-revalidate + rollback.  The result envelope
+;; mirrors the M12.1 / M12.4 wrappers (OK: one-liner + lint/OMN
+;; blocks).  Minted CURIEs are listed as a bulleted block in the
+;; success body.
 
 (declare-function elot-insert-sibling-resource "elot-id-insert"
                   (&optional n labels))
@@ -5934,26 +5934,26 @@ precedes the diagnostic body."
          source from-parent to-parent
          (symbol-name as-sym))))))
 
-;;; ---------------------------------------------------------------------------
-;;; M9.9 -- reference-scan helper for resource deletion
-;;; ---------------------------------------------------------------------------
-;;;
-;;; Shared scanner that answers "what would dangle if I removed
-;;; SUBJECT?".  Foundation for `elot_delete_resource' and
-;;; `elot_delete_resource_tree' (Step 9.9), and explicitly designed
-;;; to be reusable by a future `elot_rename_resource --safe' mode,
-;;; which has the same dependency-picture question to answer before
-;;; rewriting external references.
-;;;
-;;; Reads the buffer-local `elot-headline-hierarchy' for the
-;;; subject's node + direct children -- so freshly inserted / moved
-;;; / renamed headings are picked up via the F8 staleness markers
-;;; (`elot-headline-hierarchy-ensure-fresh' is called up front).
-;;; Then makes a single buffer pass classifying each line via
-;;; `elot-id-rename--line-class' (the established desc-list /
-;;; src-block / prose classifier) and records axiom-row hits on
-;;; *other* subjects, OMN/SPARQL src-block hits, and a count of
-;;; prose mentions.  Pure read -- never mutates the buffer.
+;;;; ---------------------------------------------------------------------------
+;;;; M9.9 -- reference-scan helper for resource deletion
+;;;; ---------------------------------------------------------------------------
+;;
+;; Shared scanner that answers "what would dangle if I removed
+;; SUBJECT?".  Foundation for `elot_delete_resource' and
+;; `elot_delete_resource_tree' (Step 9.9), and explicitly designed
+;; to be reusable by a future `elot_rename_resource --safe' mode,
+;; which has the same dependency-picture question to answer before
+;; rewriting external references.
+;;
+;; Reads the buffer-local `elot-headline-hierarchy' for the
+;; subject's node + direct children -- so freshly inserted / moved
+;; / renamed headings are picked up via the F8 staleness markers
+;; (`elot-headline-hierarchy-ensure-fresh' is called up front).
+;; Then makes a single buffer pass classifying each line via
+;; `elot-id-rename--line-class' (the established desc-list /
+;; src-block / prose classifier) and records axiom-row hits on
+;; *other* subjects, OMN/SPARQL src-block hits, and a count of
+;; prose mentions.  Pure read -- never mutates the buffer.
 
 (declare-function elot-id-rename--line-class "elot-id-rename" ())
 (declare-function elot-headline-hierarchy-ensure-fresh "elot-tangle" ())
@@ -6200,17 +6200,17 @@ for reuse by a future `elot_rename_resource --safe' mode."
           :prose-count prose-count)))
 
 
-;;; ---------------------------------------------------------------------------
-;;; M9.9.B.1 -- `elot-gptel--delete-apply' core primitive
-;;; ---------------------------------------------------------------------------
-;;;
-;;; Pure buffer mutator over a resolved resource heading.  No tool spec
-;;; yet (that's B.2), no reference scan (caller's job, via
-;;; `elot-gptel--delete-reference-scan'), no revalidation (caller wraps
-;;; us in the standard `elot-gptel--rename-revalidate' envelope).  This
-;;; layer is intentionally thin: it picks the right outline-surgery
-;;; primitive from `elot-id-move' based on CASCADE and runs it inside
-;;; an `atomic-change-group' so a signal mid-surgery rolls back.
+;;;; ---------------------------------------------------------------------------
+;;;; M9.9.B.1 -- `elot-gptel--delete-apply' core primitive
+;;;; ---------------------------------------------------------------------------
+;;
+;; Pure buffer mutator over a resolved resource heading.  No tool spec
+;; yet (that's B.2), no reference scan (caller's job, via
+;; `elot-gptel--delete-reference-scan'), no revalidation (caller wraps
+;; us in the standard `elot-gptel--rename-revalidate' envelope).  This
+;; layer is intentionally thin: it picks the right outline-surgery
+;; primitive from `elot-id-move' based on CASCADE and runs it inside
+;; an `atomic-change-group' so a signal mid-surgery rolls back.
 
 (declare-function elot-id-remove-heading-promote-children
                   "elot-id-move" (marker))
@@ -6323,37 +6323,37 @@ malformed CASCADE."
             count))))
 
 
-;;; ---------------------------------------------------------------------------
-;;; M9.9.B.2 -- `elot_delete_resource' singleton tool wrapper
-;;; ---------------------------------------------------------------------------
-;;;
-;;; Thin LLM-facing wrapper over the B.1 core primitive.  Adds the
-;;; pre-flight reference scan (Slice A), the cascade branch
-;;; (`refuse' / `reparent' / `delete'), the M9 write-back contract
-;;; (side-effects gate, save + revalidate + rollback), and a
-;;; `dry_run' mode that validates against an in-memory draft and
-;;; restores the buffer afterwards.
-;;;
-;;; Refusal contract:
-;;;   - Any axiom-row or src-block reference to SUBJECT on *other*
-;;;     subjects -> refuse, regardless of cascade.  B.2 does not
-;;;     rewrite dependent rows; that is `elot_edit_axiom' /
-;;;     `elot_replace_with_parent' territory.  The diagnostic
-;;;     enumerates the dangling rows (file line + subject + keyword
-;;;     + fragment) so the LLM can compose the repair calls.
-;;;   - Children present + cascade=refuse (default) -> refuse with
-;;;     the child list and a cascade hint.
-;;;
-;;; Out of scope for v1 (deferred to a future slice):
-;;;   - Recursive per-descendant reference scan on cascade=delete.
-;;;     The current implementation scans SUBJECT only; if a
-;;;     descendant has unrelated incoming axiom-row references the
-;;;     revalidate step will surface the signature violation and
-;;;     roll the change back.  Acceptable for v1; revisitable when
-;;;     batch-aware deletion lands (`elot_delete_resource_tree').
-;;;   - Unified-diff envelope (the rename / move wrappers also
-;;;     return just lint+OMN reports; consistency wins over a
-;;;     bespoke shape).
+;;;; ---------------------------------------------------------------------------
+;;;; M9.9.B.2 -- `elot_delete_resource' singleton tool wrapper
+;;;; ---------------------------------------------------------------------------
+;;
+;; Thin LLM-facing wrapper over the B.1 core primitive.  Adds the
+;; pre-flight reference scan (Slice A), the cascade branch
+;; (`refuse' / `reparent' / `delete'), the M9 write-back contract
+;; (side-effects gate, save + revalidate + rollback), and a
+;; `dry_run' mode that validates against an in-memory draft and
+;; restores the buffer afterwards.
+;;
+;; Refusal contract:
+;;   - Any axiom-row or src-block reference to SUBJECT on *other*
+;;     subjects -> refuse, regardless of cascade.  B.2 does not
+;;     rewrite dependent rows; that is `elot_edit_axiom' /
+;;     `elot_replace_with_parent' territory.  The diagnostic
+;;     enumerates the dangling rows (file line + subject + keyword
+;;     + fragment) so the LLM can compose the repair calls.
+;;   - Children present + cascade=refuse (default) -> refuse with
+;;     the child list and a cascade hint.
+;;
+;; Out of scope for v1 (deferred to a future slice):
+;;   - Recursive per-descendant reference scan on cascade=delete.
+;;     The current implementation scans SUBJECT only; if a
+;;     descendant has unrelated incoming axiom-row references the
+;;     revalidate step will surface the signature violation and
+;;     roll the change back.  Acceptable for v1; revisitable when
+;;     batch-aware deletion lands (`elot_delete_resource_tree').
+;;   - Unified-diff envelope (the rename / move wrappers also
+;;     return just lint+OMN reports; consistency wins over a
+;;     bespoke shape).
 
 (declare-function elot-slurp-to-vars "elot-tangle" ())
 (defvar elot-slurp)
@@ -6624,15 +6624,15 @@ or an `ERROR:' / `FAIL:' line on refusal / failure."
     (error      (format "ERROR: %s" (error-message-string err)))))
 
 
-;;; ---------------------------------------------------------------------------
-;;; M9.9.F1 -- parent enumeration for `elot_replace_with_parent'
-;;; ---------------------------------------------------------------------------
-;;;
-;;; The parent-enumeration slice of M9.9.F1.  Pure read; no tool spec,
-;;; no dispatcher entry, no rename call, no `dry_run', no NOTE.  Just
-;;; the helper that answers "what are SUBJECT's immediate parents?" --
-;;; the guard whose presence is the whole value F1 adds over a bare
-;;; `elot_rename_resource' call.
+;;;; ---------------------------------------------------------------------------
+;;;; M9.9.F1 -- parent enumeration for `elot_replace_with_parent'
+;;;; ---------------------------------------------------------------------------
+;;
+;; The parent-enumeration slice of M9.9.F1.  Pure read; no tool spec,
+;; no dispatcher entry, no rename call, no `dry_run', no NOTE.  Just
+;; the helper that answers "what are SUBJECT's immediate parents?" --
+;; the guard whose presence is the whole value F1 adds over a bare
+;; `elot_rename_resource' call.
 
 (defconst elot-gptel--replace-parent-bare-curie-re
   "\\`[A-Za-z_][A-Za-z0-9_-]*:[A-Za-z_][A-Za-z0-9_.-]+\\'"
@@ -7016,9 +7016,9 @@ visible.  Pure read; never mutates the buffer."
         (nreverse acc)))))
 
 
-;;; ---------------------------------------------------------------------------
-;;; Tool registry
-;;; ---------------------------------------------------------------------------
+;;;; ---------------------------------------------------------------------------
+;;;; Tool registry
+;;;; ---------------------------------------------------------------------------
 
 ;; --- Shared argument fragments -----------------------------------------
 ;; Recurring `:args' plists defined once and spliced (via backquote
