@@ -841,6 +841,97 @@ data files (=elot-conventions.md=, =schema.sql=).  Add gptel as an
 *Acceptance:* a local =package-install-file= (or MELPA sandbox build)
 produces a package that loads and registers tools.
 
+*** Melpazoid vetting notes (Step 4.1)
+
+Melpazoid is run locally against the working tree (no push required)
+via the =LOCAL_REPO= mechanism, e.g.:
+
+#+begin_src bash
+make PACKAGE_NAME=elot \
+     LOCAL_REPO='/c/Data/elot' \
+     RECIPE='(elot :fetcher github :repo "johanwk/elot" :files ("elot-package/elot*.el"))' \
+     run
+#+end_src
+
+(=LOCAL_REPO= is the repo root; =:files= globs stay relative to it, so
+the melpazoid recipe is byte-identical to the MELPA recipe being
+verified.  A final =:branch "elot-gptel-0.1"= remote run confirms the
+pushed branch matches before merge.)
+
+**** Justified false positive: =error= / =user-error= in =condition-case= handler position
+
+Melpazoid/checkdoc flags 63 sites in =elot-gptel.el= with:
+
+: No `format' required; `error'/`user-error' takes an f-string
+
+*All 63 are false positives and must NOT be "fixed".*  Each is a
+=condition-case= /handler clause/, not a call:
+
+#+begin_src elisp
+(condition-case err
+    ...body...
+  (user-error (format "ERROR: %s" (error-message-string err)))
+  (error      (format "ERROR: %s" (error-message-string err))))
+#+end_src
+
+Here the =car= (=error= / =user-error=) is the /condition name/ being
+caught; the rest is the handler /body/, whose value is *returned*.  The
+=(format "ERROR: %s" ...)= builds the =ERROR:=-prefixed string that the
+tool returns to gptel (the uniform failure envelope from Step 1.3).
+The checkdoc heuristic only sees the textual pattern =(error (format
+...))= and cannot tell that =error= is in condition-name position, not
+call position.
+
+Removing =format= here is an *active regression*: the handler body
+becomes two forms (the format string discarded, the bare message
+returned), stripping the =ERROR:= prefix.  This exact edit broke
+=elot-gptel-axiom-check-test-empty-fragment= and
+=...-unknown-subject= during Step 4.1 vetting; it was reverted with
+=git restore=.
+
+Classification of the 63 hits (line numbers per the melpazoid run):
+- 31 =error= + 32 =user-error= entries; the flagged lines come in
+  mirrored =user-error= /N/ + =error= /N+1/ pairs at identical
+  indentation (577/579, 871/872, 1056/1057, ...), all with body
+  =(format "ERROR: %s" (error-message-string err))=.
+- The two unpaired entries (single-condition handlers) were inspected
+  individually and are likewise handler clauses.
+- *Verdict: zero real calls, 63 handler clauses.  Retain =format= in
+  all.*  This is a documented, justified class of checkdoc noise to
+  ignore, not silence in-code.
+
+/Triage rule for future edits./ The =(error (format ...))= ->
+=(error "..." ...)= rewrite is valid *only* where =error= /
+=user-error= are genuinely /called/.  When they appear as the =car= of
+a =condition-case= / =handler-case= clause they are condition names --
+keep the =format=.
+
+**** Justified ignore: =with-eval-after-load= in packages
+
+Package-lint warns:
+
+: `with-eval-after-load' is for use in configurations, and should
+: rarely be used in packages.
+
+Two sites are *intentionally retained*:
+- =elot-mode.el:699=
+- =elot-label-display.el:1265=
+
+Both defer optional integration with other packages (Org and
+friends) until those packages actually load, rather than forcing a
+hard load-order dependency at require time.  This is the correct use
+of =with-eval-after-load= for lazy, optional interop, not user
+configuration.  Retain.
+
+**** Justified ignore: package adds a hook on load
+
+Package-lint warns at =elot-mode.el:1018=:
+
+: Loading a package should rarely add hooks
+
+The hook is core to ELOT's mode behaviour (not a user-preference
+side effect), so establishing it on load is intentional.  Retain.
+
 ** DONE Step 4.2 CI: unit tests (Linux only; Windows deferred)
 CLOSED: [2026-07-23]
 
