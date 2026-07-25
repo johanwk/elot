@@ -11,9 +11,8 @@
 
 ;;; Commentary:
 
-;; ELOT-GPTEL-PLAN.org Milestone 12 Step 12.4 -- substitute one
-;; resource identifier (CURIE) for another, everywhere it appears in
-;; the ontology source.
+;; Substitute one resource identifier (CURIE) for another, everywhere
+;; it appears in the ontology source.
 ;;
 ;; Public entry points:
 ;;
@@ -42,7 +41,7 @@
 ;;     author can audit;
 ;;   - other src-block languages (`ttl', `sparql' .. -- actually we
 ;;     do touch `sparql' and `omn'; everything else is left alone);
-;;   - cross-file occurrences (single buffer only -- M12.3-cousin).
+;;   - cross-file occurrences (single buffer only).
 ;;
 ;; Prefix-resolution policy:
 ;;
@@ -86,7 +85,7 @@
 (declare-function elot-id-parse-spec "elot-id" (spec))
 (declare-function elot-id-mint "elot-id" (scheme-or-name label &optional context))
 
-;; M9.3.F8: cache-staleness helpers.
+;; Cache-staleness helpers.
 (declare-function elot-headline-hierarchy-mark-stale "elot-tangle" ())
 (declare-function elot-headline-hierarchy-ensure-fresh "elot-tangle" ())
 (declare-function elot-update-headline-hierarchy "elot-tangle" ())
@@ -789,7 +788,7 @@ Returns a plist:
         ;; level so they reattach to SOURCE's former outline parent.
         (when (eq op 'merge)
           (elot-id-remove-heading-promote-children source-heading-marker))
-        ;; M9.3.F8: O(1) staleness mark.  The next call into
+        ;; Staleness-marker optimisation: O(1) staleness mark.  The next call into
         ;; `elot-id-rename--declared-curies' /
         ;; `elot-id-insert--existing-iris' / etc. picks up the rewrite
         ;; via `elot-headline-hierarchy-ensure-fresh' on first read.

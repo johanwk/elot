@@ -11,7 +11,7 @@
 
 ;;; Commentary:
 
-;; ELOT-GPTEL-PLAN.org Milestone 12 Step 12.1 -- relocate a resource
+;; Relocate a resource
 ;; heading (with its whole subtree) to a new parent within the same
 ;; ontology, within the current file.  The CURIE is unchanged.
 ;;
@@ -46,7 +46,8 @@
 ;;     as a no-op.
 ;;   - SOURCE ambiguous (declared in more than one ontology subtree of
 ;;     the buffer): refused with a list of candidate ontology
-;;     localnames.  M12.2 will lift this; M12.1 is single-ontology.
+;;     localnames.  Multi-ontology moves are not yet supported; this
+;;     command is single-ontology.
 ;;
 ;; The move is performed inside `atomic-change-group' (cut-subtree +
 ;; paste-subtree with explicit LEVEL) so a mid-flight failure rolls
@@ -54,12 +55,10 @@
 ;; `elot-update-headline-hierarchy' is re-run so the buffer-local
 ;; cache reflects the new shape.
 ;;
-;; Out of scope for M12.1: cross-ontology moves in the same buffer
-;; (M12.2), cross-file moves (M12.3), CURIE rewrite for cross-prefix
-;; moves (delegate to `elot-rename-resource', Step 12.4).  The
-;; companion LLM-facing tool `elot_move_resource' wraps this command
-;; in a later milestone -- see the plan's Step 12.1 "LLM-facing tool"
-;; section.
+;; Out of scope: cross-ontology moves in the same buffer,
+;; cross-file moves, CURIE rewrite for cross-prefix
+;; moves (delegate to `elot-rename-resource').  The
+;; companion LLM-facing tool `elot_move_resource' wraps this command.
 
 ;;; Code:
 
@@ -71,7 +70,7 @@
 
 (defvar elot-headline-hierarchy)
 (declare-function elot-update-headline-hierarchy "elot-tangle" ())
-;; M9.3.F8: O(1) staleness markers.
+;; Staleness-marker optimisation: O(1) staleness markers.
 (declare-function elot-headline-hierarchy-mark-stale "elot-tangle" ())
 (declare-function elot-headline-hierarchy-ensure-fresh "elot-tangle" ())
 
@@ -164,9 +163,8 @@ heading line."
 (defun elot-id-move--resolve-source-marker (source)
   "Return the marker for the heading declaring SOURCE.
 Signals `user-error' when SOURCE is not declared, or when more
-than one ontology in the buffer declares it (M12.1 is
-single-ontology -- the user must split the call or wait for
-M12.2)."
+than one ontology in the buffer declares it (this command is
+single-ontology -- the user must split the call)."
   (let ((markers (elot-id-move--find-heading-markers source)))
     (cond
      ((null markers)
@@ -343,8 +341,7 @@ Refuses with `user-error' when:
 
   - SOURCE is not a declared resource heading;
   - SOURCE is declared in more than one ontology in the same
-    buffer (M12.1 is single-ontology; lift via M12.2 or split
-    the call);
+    buffer (this command is single-ontology; split the call);
   - TARGET is not a declared resource heading (and not `top');
   - SOURCE's section kind disagrees with TARGET's section kind;
   - SOURCE = TARGET, or TARGET already the current parent of
@@ -496,9 +493,10 @@ section root)."
          (t  ; sibling
           (org-end-of-subtree t t)
           (org-paste-subtree paste-level))))
-      ;; M9.3.F8: O(1) staleness mark so the cache is refreshed at
-      ;; the *next* read.  Previously this site unconditionally
-      ;; called the (potentially expensive) full reparse.
+      ;; Staleness-marker optimisation: O(1) staleness mark so the
+      ;; cache is refreshed at the *next* read. Previously this site
+      ;; unconditionally called the (potentially expensive) full
+      ;; reparse.
       (cond
        ((fboundp 'elot-headline-hierarchy-mark-stale)
         (elot-headline-hierarchy-mark-stale))
@@ -522,7 +520,7 @@ section root)."
 
 ;; Used by:
 ;;   - `elot-rename-resource' op=merge (`elot-id-rename.el')
-;;   - `elot-delete-resource' cascade=reparent (Slice B of M9.9)
+;;   - `elot-delete-resource' cascade=reparent (reference-scan slice)
 ;;
 ;; The operation is a pure outline-level move: take the heading at
 ;; MARKER, promote each of its direct heading-nested children one

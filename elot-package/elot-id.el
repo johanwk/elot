@@ -11,16 +11,15 @@
 
 ;;; Commentary:
 
-;; ELOT-GPTEL-PLAN.org Milestone 10 -- pluggable identifier-minting
-;; framework.  Different ontology projects use radically different
-;; identifier schemes (timestamp-encoded, OBO-style prefix+counter,
-;; UUID, human-readable slug, hash-based, ...).  Rather than baking
-;; one scheme into ELOT, this file provides a small registry of
-;; `elot-id-scheme' records: each scheme implements its own mint and
-;; verify functions, and the project selects the active scheme via
-;; the buffer-local `elot-id-scheme' variable, an Org file-local
-;; `#+ELOT_ID_SCHEME' / `:elot-id-scheme:' property, or the global
-;; `elot-id-default-scheme' defcustom.
+;; Pluggable identifier-minting framework. Different ontology projects
+;; use radically different identifier schemes (timestamp-encoded,
+;; OBO-style prefix+counter, UUID, human-readable slug, hash-based,
+;; ...). Rather than baking one scheme into ELOT, this file provides a
+;; small registry of `elot-id-scheme' records: each scheme implements
+;; its own mint and verify functions, and the project selects the
+;; active scheme via the buffer-local `elot-id-scheme' variable, an
+;; Org file-local `#+ELOT_ID_SCHEME' / `:elot-id-scheme:' property, or
+;; the global `elot-id-default-scheme' defcustom.
 ;;
 ;; Public API:
 ;;

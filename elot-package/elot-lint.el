@@ -436,7 +436,9 @@ TREE is the parsed Org element tree provided by `org-lint'."
     issues))
 
 
-;; the following not in use (yet), for warning about unknown prefixes in contents of annotations
+;; the following not in use (yet), for warning about unknown prefixes
+;; in contents of annotations.
+;;
 ;; (defun elot-check-annotation-value-prefixes (contents)
 ;;   "Check for unknown prefixes in annotation value CONTENTS.
 ;; Return a list of warning strings, or nil if no issues."

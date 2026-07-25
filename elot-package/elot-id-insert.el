@@ -11,8 +11,7 @@
 
 ;;; Commentary:
 
-;; ELOT-GPTEL-PLAN.org Milestone 10 Step 10.6 -- interactive
-;; insert-resource commands for ELOT outlines.
+;; Interactive insert-resource commands for ELOT outlines.
 ;;
 ;; Two interactive entry points:
 ;;
@@ -61,9 +60,10 @@
 (require 'elot-id)
 (require 'elot-tangle nil 'noerror)
 
-;; M9.3.F8: O(1) staleness markers for the shared headline-hierarchy
-;; cache.  Defined in `elot-tangle.el'; declared here so byte-compile
-;; is silent even when that module loads lazily.
+;; Staleness-marker optimisation: O(1) staleness markers for the
+;; shared headline-hierarchy cache. Defined in `elot-tangle.el';
+;; declared here so byte-compile is silent even when that module loads
+;; lazily.
 (declare-function elot-headline-hierarchy-mark-stale "elot-tangle" ())
 (declare-function elot-headline-hierarchy-ensure-fresh "elot-tangle" ())
 (declare-function elot-update-headline-hierarchy "elot-tangle" ())
@@ -208,8 +208,8 @@ OMN on tangle.  Annotation rows are inherited as before."
             ;; rows (rdfs:comment, iof-av:naturalLanguageDefinition,
             ;; ...) are still inherited blank, since an empty
             ;; annotation row tangles to a benign empty annotation
-            ;; and is exactly the "fill this in" prompt the M10.6
-            ;; design intended.
+            ;; and is exactly the "fill this in" prompt the
+            ;; insert-resource design intended.
             (unless (and (bound-and-true-p elot-omn-all-keywords)
                          (member tag elot-omn-all-keywords))
               (push (concat " - "
@@ -372,12 +372,13 @@ Returns the list of minted CURIEs."
       ;; Position point at end of the first inserted heading line.
       (goto-char insert-pos)
       (end-of-line)
-      ;; M9.3.F8: mark the buffer-local hierarchy cache stale so the
-      ;; next reader (e.g. `elot-id-insert--existing-iris' on the
-      ;; following tree level, or `elot-id-rename--declared-curies'
-      ;; in a chained rename call) rebuilds exactly once.  Without
-      ;; this the cache would still show the pre-insert view of the
-      ;; buffer until something explicitly rescans.
+      ;; Staleness-marker optimisation: mark the buffer-local
+      ;; hierarchy cache stale so the next reader (e.g.
+      ;; `elot-id-insert--existing-iris' on the following tree level,
+      ;; or `elot-id-rename--declared-curies' in a chained rename
+      ;; call) rebuilds exactly once. Without this the cache would
+      ;; still show the pre-insert view of the buffer until something
+      ;; explicitly rescans.
       (when (fboundp 'elot-headline-hierarchy-mark-stale)
         (elot-headline-hierarchy-mark-stale))
       curies-clean)))
@@ -559,9 +560,10 @@ value immediately."
     (save-excursion
       (goto-char marker)
       (org-entry-put nil "ELOT-id-scheme" spec))
-    ;; M9.3.F8: O(1) staleness mark.  Setting the property changes
-    ;; the ontology heading's :elot-id-scheme cell in the parsed
-    ;; hierarchy, but the next reader can rebuild on demand.
+    ;; Staleness-marker optimisation: O(1) staleness mark. Setting the
+    ;; property changes the ontology heading's :elot-id-scheme cell in
+    ;; the parsed hierarchy, but the next reader can rebuild on
+    ;; demand.
     (cond
      ((fboundp 'elot-headline-hierarchy-mark-stale)
       (elot-headline-hierarchy-mark-stale))

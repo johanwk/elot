@@ -228,9 +228,9 @@ letting the raw value through."
      ;; a URN without angles, explicitly treat as xsd:string
      ((string-match "\\`\\(urn:uuid[^ ]+\\)\\'" str)
       (concat "  \"" (match-string 1 str) "\"^^xsd:string"))
-     ;; true -- make it an explicit boolean (case-sensitive: "True" is a label, not a boolean)
+     ;; true -- make it an explicit boolean (case-sensitive: "True" is a label)
      ((let ((case-fold-search nil)) (string-match "\\`true\\'" str)) " \"true\"^^xsd:boolean")
-     ;; false -- make it an explicit boolean (case-sensitive: "False" is a label, not a boolean)
+     ;; false -- make it an explicit boolean (case-sensitive: "False" is a label)
      ((let ((case-fold-search nil)) (string-match "\\`false\\'" str)) " \"false\"^^xsd:boolean")
      ;; string with datatype -- return unchanged
      ((string-match "\\`\".*\"\\^\\^[-_[:alnum:]]*:[-_[:alnum:]]+\\'" str)
@@ -1209,7 +1209,8 @@ are skipped silently -- see `elot--omn-row-blank-axiom-p'."
     (dolist (y desc)
       (when (and (member (car y) elot-omn-misc-keywords)
                  (not (elot--omn-row-blank-axiom-p y)))
-        ;; elot-omn-format-restrictions with indent=0 works perfectly for top-level misc frames
+        ;; elot-omn-format-restrictions with indent=0 works perfectly
+        ;; for top-level misc frames
         (push (elot-omn-format-restrictions (list y) 0) misc-frames)))
     (nreverse misc-frames)))
 
