@@ -866,9 +866,9 @@ conventional suffix.  Only the first match per name is patched."
 Mutation primitives (insert / move / rename / set-scheme) set this
 in O(1) via `elot-headline-hierarchy-mark-stale'; readers consult
 it through `elot-headline-hierarchy-ensure-fresh', which performs
-exactly one rescan per pending edit batch.  See ELOT-GPTEL-PLAN.org
-Step 9.3.F8 for the design rationale (avoid repeated full rescans
-when several mutations chain through the gptel write-back path).")
+exactly one rescan per pending edit batch.  This staleness-marker
+optimisation avoids repeated full rescans when several mutations
+chain through the write-back path.")
 
 (defun elot-headline-hierarchy-mark-stale ()
   "Mark `elot-headline-hierarchy' as not reflecting buffer state.
@@ -1262,8 +1262,7 @@ overrides it for that node's subtree."
 ;; The OMN frames produced by `elot-omn-resource-frame' and friends are
 ;; generated text, not slices of the source.  The helpers below build a
 ;; modest "which Org heading produced which OMN frame" map suitable for
-;; mapping ROBOT diagnostics back to the source.  See Milestone 3 Step 3.3
-;; of ELOT-GPTEL-PLAN.org for the design rationale.
+;; mapping ROBOT diagnostics back to the source.
 
 (defun elot-omn-collect-uri-line-map (node &optional acc)
   "Walk NODE recursively and collect (URI . ORG-LINE) pairs into ACC.
