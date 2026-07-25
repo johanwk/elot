@@ -2,8 +2,6 @@
 #+AUTHOR: Johan W. Klüwer
 #+DESCRIPTION: Literate programming file for the ELOT minor mode
 
-#+PROPERTY: header-args:emacs-lisp  :tangle ./elot-package/elot-mode.el
-
 * Introduction
 
 This file defines =elot-mode=, a minor mode that activates when editing
