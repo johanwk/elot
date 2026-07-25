@@ -284,11 +284,171 @@ installs the binding in `elot-mode-map` and in the ELOT-managed
 
 ### Global label-display: labels everywhere, automatically
 
-The minor mode `elot-global-label-display-mode` renders readable
-labels in *any* buffer — `.ttl` files, SPARQL queries, CSV exports,
-source code and log files. Toggle from the *ELOT* menu or via `M-x
-elot-toggle-label-display` (or your chosen keystroke if you set one —
-see `elot-toggle-labels-key`).
+ELOT's label-display is no longer confined to Org buffers. The minor mode
+`elot-global-label-display-mode` lights up readable labels in *any* buffer
+— `.ttl` files, SPARQL queries, CSV exports, even source code and log files
+that mention ontology identifiers. Toggle from the *ELOT* menu or via
+`M-x elot-toggle-label-display` (or your chosen keystroke if you
+set one — see `elot-toggle-labels-key`).
+
+The feature that makes this practical in daily work: **id/label mappings are
+collected silently and automatically as you edit ELOT Org files**. Every
+ontology you open, tangle, or save contributes its declarations to a
+persistent SQLite index (`elot-db`) that lives across sessions. The more
+ontologies you touch, the richer the index becomes — with no explicit
+import step, no manual curation, and no rebuild when you come back
+tomorrow. Additional sources (TTL via ROBOT, SPARQL endpoints, CSV/TSV/JSON
+exports) can be registered per-buffer via `.dir-locals.el`.
+
+Beyond the visual overlays, the mode provides:
+
+-   **`elot-label-lookup`** (`C-c C-x r`) — Insert an existing resource
+    identifier by searching on its label. Scope is configurable (current
+    buffer only, external sources only, or a union of both). When many
+    identifiers share a label — common in industrial asset data — a
+    two-stage picker lets you drill down with full attribute context.
+-   **Attribute-driven hover** — Idle the cursor on any identifier to see
+    its `rdf:type`, definition, and source provenance in the echo area.
+-   **Language preferences** — Multi-lingual ontologies (e.g. English +
+    Korean) display the right variant based on `elot-preferred-languages`;
+    the default policy is untagged first, then `@en`, then alphabetical.
+
+See [README-global-label-display.org](README-global-label-display.org) for
+configuration, source registration, and language-preference details.
+
+
+### Identifier schemes (`ELOT-id-scheme`)
+
+Different ontology projects use very different conventions for the
+*local-name* part of their resource IRIs — OBO uses zero-padded
+counters like `GO_0000001`, ISO 15926-style libraries use prefixed
+counters like `RDS123456789`, some projects use UUIDs, some use
+human-readable slugs.  ELOT does not bake in a single convention.
+Instead, each ontology *declares* the scheme it uses, as a property
+of its top-level heading (sibling of `ELOT-default-prefix`):
+
+```org
+* my-ont
+:PROPERTIES:
+:ELOT-context-type:      ontology
+:ELOT-id-scheme:         counter GO_0000000
+:ELOT-context-localname: my-ont
+:ELOT-default-prefix:    ex
+:END:
+```
+
+The property value is `SCHEME [FORMAT...]`.  Four built-in schemes
+are available:
+
+| Spec                       | Sample local name              | Notes                                                |
+|----------------------------|-------------------------------|-----------------------------------------------------|
+| `uuid`                     | `9af6a481-c172-4858-9d44-...` | RFC 4122 UUID; maximum collision resistance         |
+| `slug`                     | `donkey`, `dog-2`             | kebab-case from label; numeric suffix on collision  |
+| `counter GO_0000000`       | `GO_0000001`, `GO_0000002`    | OBO/PCA-style: literal alpha part + zero-padded N   |
+| `acme`                     | `C_028QZQ8C4`                 | 11-char date+random+checksum, no project state      |
+| `acme slug:t`              | `C_dogxx028QZQ8C4`            | 16-char acme with 5-char label slug prepended       |
+
+The counter template *literally* shows the output shape: leading
+non-digit run = alpha prefix, trailing run of `0` s = pad width.
+Numeric-only counters (no alpha prefix) are technically invalid XML
+NCNames, so declaring a template such as `GO_0000000`, `ABC_00000`,
+or `CHEBI00000` is recommended.
+
+The declaration is consumed by ELOT's LLM-facing tools
+(`elot_mint_identifier`, `elot_verify_identifier` in
+[elot-gptel.el](elot-package/elot-gptel.el)) so that AI-assisted
+authoring produces identifiers matching the project's convention
+automatically.  When no scheme is declared the tools refuse to
+guess and direct the agent to ask the user.
+
+See [documentation/elot-id.org](documentation/elot-id.org) for the
+full reference, including the `CONTEXT` plist surface and how to
+register a custom scheme.
+
+
+### Optional integration: AI-assisted authoring with gptel
+
+ELOT ships a set of tools that let a large language model (LLM)
+inspect, validate, and — with your confirmation — edit your ontology
+files, driven from a chat session inside Emacs. The tools are built
+on [gptel](https://github.com/karthink/gptel), the Emacs LLM client.
+
+Both gptel and ROBOT are **optional**: ELOT works fully without them.
+If gptel is installed, enable the tools with:
+
+```elisp
+(with-eval-after-load 'gptel
+  (require 'elot-gptel)
+  (elot-gptel-register-tools))
+```
+
+or interactively with `M-x elot-gptel-register-tools`. Read-only
+tools (lint, search, label lookup) work out of the box; tools that
+modify files are additionally gated behind the user option
+`elot-gptel-allow-side-effects`, and the reasoning/validation tools
+require ROBOT to be installed.
+
+See [documentation/elot-gptel.org](documentation/elot-gptel.org) for
+the full user guide — how to work with the LLM on an ELOT file,
+recommended workflows, the safety model, and a reference of all
+tools.
+
+
+### Supported `#+call:` helpers (Library of Babel)
+
+ELOT ships a small Library of Babel file
+([`elot-package/elot-lob.org`](elot-package/elot-lob.org))
+that defines a handful of named source blocks intended to be invoked
+from your ontology Org files via Org's `#+call:` syntax. When
+`elot-mode` is enabled in a buffer, ELOT automatically ingests the
+file (via `org-babel-lob-ingest`) so the helpers below are available
+without any manual setup — no `M-x org-babel-lob-ingest` step
+required.
+
+The supported helpers are:
+
+- **`rdfpuml-block`** — render a Turtle (or SPARQL `CONSTRUCT`) source
+  block as an rdfpuml/PlantUML diagram. Takes the *name* of another
+  named block as its `ttlblock` argument, plus optional `config`,
+  `add-options`, `epilogue` and `format` arguments. Produces an
+  image file referenced from the surrounding caption.
+- **`kill-prefixes`** — strip leading `@prefix` / `PREFIX` declarations
+  from a Turtle string. Most commonly used as a `:post` hook on a
+  SPARQL `CONSTRUCT` block to keep the visible result compact.
+- **`robot-metrics`** — run `robot measure` on an OMN file and return
+  the resulting table.
+- **`robot-sparql-select`** — run a named SPARQL query through ROBOT
+  against a local OMN file and return the result as an Org table.
+- **`theme-elot`** — expands to the right
+  `#+SETUPFILE:` line for the HTML theme. 
+- **`current-date` / `current-datetime`** — format the current
+  date/time, useful in `pav:lastUpdateOn` annotations.
+
+A minimal example, taken from
+[`examples/pets.org`](examples/pets.org), showing
+`rdfpuml-block` consuming a CONSTRUCT block whose result is also
+post-processed by `kill-prefixes`:
+
+```org
+#+name: my-construct
+#+begin_src sparql :url "my-ont.omn" :format ttl :wrap "src ttl" \
+                  :cache yes :post kill-prefixes(data=*this*)
+  construct {
+    ?class a owl:Class .
+    ?subclass rdfs:subClassOf ?class .
+  } {
+    ?class a owl:Class .
+    optional { ?subclass rdfs:subClassOf ?class }
+  }
+#+end_src
+
+#+name: rdfpuml:my-construct
+#+call: rdfpuml-block(ttlblock="my-construct")
+#+caption: Animal diagram
+```
+
+Place point on the `#+call:` line and hit `C-c C-c` to render the
+diagram. See `examples/pets.org` for the complete working file.
 
 **id/label mappings are collected silently and automatically as you
 edit ELOT Org files**, into a persistent SQLite index (`elot-db`) that

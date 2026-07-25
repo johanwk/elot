@@ -76,9 +76,7 @@ advice has nothing to wrap, so the round-trip cannot run."
 (defun elot-spxrt-test--robot-or-skip ()
   "Skip the current ERT test unless ROBOT is available."
   (elot-spxrt-test--ob-sparql-or-skip)
-  (unless (and (fboundp 'elot-robot-available-p)
-               (elot-robot-available-p))
-    (ert-skip "ROBOT not available (set elot-robot-jar-path or install robot)")))
+  (elot-test-robot-skip-unless-available))
 
 
 ;;;; Workspace setup / teardown

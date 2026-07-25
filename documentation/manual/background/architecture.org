@@ -1,0 +1,5 @@
+# Architecture overview --- included from elot-manual.org
+
+TODO --- the tangle pipeline; the label DB; the SPARQL advice
+lifecycle; the relation between the literate =.org= sources and
+the tangled =elot-package/*.el=.

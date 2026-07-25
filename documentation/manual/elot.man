@@ -1,0 +1,571 @@
+.TH "ELOT --- Literate Ontology Tool for Emacs" "1" "" "" 
+.RS
+ELOT lets you author OWL ontologies in Org-mode, exporting to OWL
+Manchester Syntax, HTML and PDF documentation, and running SPARQL,
+ROBOT and rdfpuml against them from inside Emacs.
+
+.RE
+.SH "Preface"
+.PP
+ELOT --- the \fIEmacs Literate Ontology Tool\fP --- is a package for
+authoring OWL ontologies in Org-mode.  A single Org file is both the
+ontology source (tangled to OWL Manchester Syntax) and the published
+documentation (exported to HTML, PDF, or Info).
+.SS "Who this manual is for"
+.IP \(em 4
+\fBOntology authors\fP who want their ontology and its documentation to
+stay in sync, automatically.
+.IP \(em 4
+\fBEmacs users\fP curious about how literate programming applies to
+knowledge engineering.
+.IP \(em 4
+\fBNewcomers to OWL\fP who want a working ontology in front of them
+before reading a 400-page semantic-web textbook.
+.PP
+No prior experience with OWL or Org-mode is assumed for Part I.
+Parts II--IV assume you have completed the tutorial.
+.SS "How to read this manual"
+.PP
+This manual follows the https://diataxis.fr/ \fBat\fP \fIDiátaxis\fP structure:
+.IP \(em 4
+Read custom-id:part-tutorial \fBat\fP \fIPart I\fP front-to-back the first time.
+.IP \(em 4
+Dip into custom-id:part-howto \fBat\fP \fIPart II\fP when you have a specific task.
+.IP \(em 4
+Consult custom-id:part-reference \fBat\fP \fIPart III\fP for lookups.
+.IP \(em 4
+Read custom-id:part-background \fBat\fP \fIPart IV\fP when you want to know \fIwhy\fP.
+.SS "Conventions"
+.IP \(em 4
+\fIcode\fP face for CURIEs, IRIs, function names, file paths.
+.IP \(em 4
+\fI~C\-c C\-x r~\fP for keystrokes.
+.IP \(em 4
+\fIitalic\fP for new terms on first use.
+.IP \(em 4
+\fIM\-x command\-name\fP for interactive commands.
+.SS "Getting help"
+.IP \(em 4
+Project home: \fIhttps://github.com/johanwk/elot\fP
+.IP \(em 4
+Issues and discussion: the GitHub tracker.
+.IP \(em 4
+The ELOT menu in any \fIelot\-mode\fP buffer lists the main commands.
+.SH "Part I --- Tutorial"
+.PP
+This part is linear.  Read it in order; it walks a first-time user
+through installing ELOT and building a small ontology end-to-end.
+.SS "Installation"
+.PP
+The fastest path is via MELPA once ELOT is accepted there.  Until
+then, install from Git.
+.SS "Prerequisites"
+.IP \(em 4
+\fBEmacs 30.1 or later\fP.  ELOT uses \fIpeg.el\fP, which became a built-in
+library in 30.1.
+.IP \(em 4
+\fBJava 11 or later\fP, required by ROBOT.
+.IP \(em 4
+\fBhttps://github.com/ontodev/robot \fBat\fP \fIROBOT\fP\fP, an OWL command-line tool.  Download \fIrobot.jar\fP from the
+ROBOT releases page and note its path.
+.IP \(em 4
+\fBhttps://plantuml.com/ \fBat\fP \fIPlantUML\fP\fP (optional), for diagram rendering via \fIrdfpuml\fP.
+.IP \(em 4
+\fBProtégé 5.6\fP (optional), for cross-checking ontologies in a GUI.
+.SS "Install ELOT from MELPA"
+.PP
+When ELOT is on MELPA:
+.RS
+.nf
+\fC(use-package elot
+  :ensure t)
+\fP
+.fi
+.RE
+.PP
+That is the whole installation.  \fIelot\-mode\fP is autoloaded.
+.SS "Install ELOT from Git"
+.PP
+Until the MELPA recipe lands, clone the repository and add it to
+your load path:
+.RS
+.nf
+\fCgit clone https://github.com/johanwk/elot ~/src/elot
+\fP
+.fi
+.RE
+.PP
+In your \fIinit.el\fP:
+.RS
+.nf
+\fC(add-to-list 'load-path "~/src/elot/elot-package")
+(require 'elot)
+\fP
+.fi
+.RE
+.SS "Point ELOT at ROBOT"
+.PP
+Set \fIelot\-robot\-jar\-path\fP to the absolute path of your downloaded
+\fIrobot.jar\fP:
+.RS
+.nf
+\fC(setq elot-robot-jar-path "~/bin/robot.jar")
+\fP
+.fi
+.RE
+.PP
+You can also customize it via \fIM\-x customize\-variable RET
+elot\-robot\-jar\-path\fP.
+.SS "Verify"
+.PP
+Open an Org file and run \fIM\-x elot\-mode\fP.  The ELOT menu appears in
+the menu bar.  \fIM\-x elot\-version\fP prints the loaded version.
+.PP
+If something goes wrong, see custom-id:app-troubleshooting \fBat\fP \fITroubleshooting and FAQ\fP.
+.SS "Your first ontology"
+.PP
+In this chapter you build a tiny ontology of \fIpets\fP from scratch.
+By the end you will have:
+.IP \(em 4
+a working \fIpets.org\fP file you can re-tangle and re-export at will,
+.IP \(em 4
+a generated \fIpets.omn\fP ontology in OWL Manchester Syntax,
+.IP \(em 4
+the start of an HTML render of your ontology document.
+.PP
+Time required: 15--20 minutes.
+.SS "Create the file"
+.PP
+Create \fIpets.org\fP anywhere in your filesystem and paste the
+skeleton below.  Open it in Emacs and run \fIM\-x elot\-mode\fP.
+.RS
+.nf
+\fC#+TITLE: A tiny ontology of pets
+#+AUTHOR: Your Name
+
+* Prefixes
+,:PROPERTIES:
+,:header-args:emacs-lisp+: :tangle no
+,:END:
+
+#+name: prefix-table
+,| prefix | uri                                            |
+,|--------+------------------------------------------------|
+,| ex     | http://example.org/pets/                       |
+,| owl    | http://www.w3.org/2002/07/owl#                 |
+,| rdfs   | http://www.w3.org/2000/01/rdf-schema#          |
+,| skos   | http://www.w3.org/2004/02/skos/core#           |
+
+* ex:pets
+,:PROPERTIES:
+,:ID:       pets-ontology
+,:ontology-iri: http://example.org/pets/
+,:END:
+
+A small example ontology used by the ELOT tutorial.
+
+** Classes
+*** ex:Animal
+A living creature.
+
+*** ex:Dog
+,:PROPERTIES:
+,:subclass-of: ex:Animal
+,:END:
+A dog is an animal.
+
+*** ex:Cat
+,:PROPERTIES:
+,:subclass-of: ex:Animal
+,:END:
+A cat is an animal.
+\fP
+.fi
+.RE
+.SS "Tangle to OWL Manchester Syntax"
+.PP
+With point anywhere in \fIpets.org\fP, run \fIM\-x elot\-tangle\fP.  A file
+\fIpets.omn\fP appears next to your Org source.  Open it; you should
+see Manchester-syntax declarations for \fIex:Animal\fP, \fIex:Dog\fP and
+\fIex:Cat\fP.
+.SS "Sanity-check with ROBOT"
+.PP
+From a shell:
+.RS
+.nf
+\fCrobot report --input pets.omn --output pets-report.tsv
+\fP
+.fi
+.RE
+.PP
+ROBOT’s report should be empty (or contain only INFO entries).
+Errors mean ELOT generated something OWL does not like; see
+custom-id:howto-lint \fBat\fP \fILinting and syntax checking\fP.
+.SS "Where to next"
+.IP \(em 4
+custom-id:tut-axioms \fBat\fP \fIAdding axioms and annotations\fP --- give your classes proper
+definitions and relationships.
+.IP \(em 4
+custom-id:tut-export \fBat\fP \fIExporting to OWL and HTML\fP --- produce a polished document.
+.SS "Adding axioms and annotations"
+.PP
+TODO --- expand.
+.PP
+This chapter extends the \fIpets.org\fP ontology from
+custom-id:tut-first-ontology \fBat\fP \fIthe previous chapter\fP with:
+.IP \(em 4
+\fIrdfs:label\fP and \fIskos:definition\fP annotations on every class,
+.IP \(em 4
+a \fIdisjointWith\fP axiom between \fIex:Dog\fP and \fIex:Cat\fP,
+.IP \(em 4
+an object property \fIex:chases\fP with \fIrdfs:domain\fP and \fIrdfs:range\fP,
+.IP \(em 4
+an existential restriction: every \fIex:Dog\fP \fIchases some\fP \fIex:Cat\fP.
+.SS "Annotations"
+.PP
+Use the \fI:annotations:\fP drawer key to attach annotations to a class:
+.RS
+.nf
+\fC*** ex:Dog
+,:PROPERTIES:
+,:subclass-of: ex:Animal
+,:END:
+,:annotations:
+,- rdfs:label :: "Dog"@en
+,- skos:definition :: "A domesticated canine."@en
+,:end:
+\fP
+.fi
+.RE
+.SS "Object properties"
+.PP
+TODO --- show the property declaration and the existential restriction.
+.SS "Disjointness"
+.PP
+TODO --- show \fIdisjointWith\fP and how it appears in the tangled OMN.
+.SS "Exporting to OWL and HTML"
+.PP
+TODO --- expand.
+.PP
+This chapter walks through the two export targets that matter to
+most authors:
+.IP 1.  4
+\fBOWL Manchester Syntax\fP via \fIM\-x elot\-tangle\fP (you already saw
+this in custom-id:tut-first-ontology \fBat\fP \fIYour first ontology\fP).
+.IP 2.  4
+\fBHTML documentation\fP via Org’s standard exporter (\fIC\-c C\-e h h\fP)
+plus the bundled \fItheme\-readtheorg.setup\fP.
+.SS "Adding the theme"
+.PP
+Put this line near the top of your ontology Org file:
+.RS
+.nf
+\fC#+SETUPFILE: theme-readtheorg.setup
+\fP
+.fi
+.RE
+.PP
+Re-export with \fIC\-c C\-e h h\fP; the resulting HTML uses the ELOT
+theme.
+.SS "PDF and Info"
+.PP
+For PDF: \fIC\-c C\-e l p\fP.  For Info (Emacs help format):
+\fIC\-c C\-e i i\fP, then \fIinstall\-info\fP the result.
+.SS "Publishing to GitHub Pages"
+.PP
+TODO --- recipe.
+.SS "A first SPARQL query and rdfpuml diagram"
+.PP
+TODO --- expand.
+.PP
+This chapter introduces two of ELOT’s most-loved features:
+.IP \(em 4
+running \fBSPARQL\fP queries directly against your tangled \fI.omn\fP via
+embedded source blocks,
+.IP \(em 4
+generating \fBPlantUML diagrams\fP of selected triples via the
+\fIrdfpuml\-block\fP Library-of-Babel helper.
+.SS "A first SPARQL block"
+.PP
+Add this to \fIpets.org\fP, below the class definitions:
+.RS
+.nf
+\fC#+begin_src sparql :url "pets.omn"
+,select ?s ?o where { ?s rdfs:subClassOf ?o }
+#+end_src
+\fP
+.fi
+.RE
+.PP
+Press \fIC\-c C\-c\fP inside the block.  ELOT shells out to ROBOT and
+inserts the result table below the block.  No \fIPREFIX\fP boilerplate
+needed --- ELOT injects prefixes from your \fIprefix\-table\fP.
+.SS "A first diagram"
+.PP
+TODO --- \fIrdfpuml\-block\fP example.
+.PP
+See custom-id:howto-querying \fBat\fP \fIQuerying with SPARQL and ROBOT\fP and custom-id:howto-diagrams \fBat\fP \fIDiagrams with rdfpuml\fP for
+the full how-tos.
+.SH "Part II --- How-to guides"
+.PP
+Each guide is self-contained, task-oriented, and answers a single
+“how do I ...?” question.  Read only the ones you need.
+.SS "Authoring"
+.PP
+TODO --- task-oriented recipes for day-to-day authoring:
+.IP \(em 4
+structuring a large ontology across multiple sections,
+.IP \(em 4
+using description-list items for annotations,
+.IP \(em 4
+working with \fI:annotations:\fP drawers,
+.IP \(em 4
+tempo templates for fast class / property insertion,
+.IP \(em 4
+using the ELOT easymenu.
+.SS "Querying with SPARQL and ROBOT"
+.PP
+TODO.
+.PP
+Covers:
+.IP \(em 4
+the ELOT \fIorg\-babel\-execute:sparql\fP advice and how \fI:url\fP dispatches
+to ROBOT (for local \fI.omn\fP files) or to a remote endpoint,
+.IP \(em 4
+prefix injection from \fIorg\-link\-abbrev\-alist\-local\fP and the merge
+rules with inline \fIPREFIX\fP declarations,
+.IP \(em 4
+result formats (\fIcsv\fP vs \fIttl\fP),
+.IP \(em 4
+known gotchas (empty result sets, non-ASCII queries).
+.SS "Diagrams with rdfpuml and Library-of-Babel helpers"
+.PP
+TODO.
+.PP
+Covers \fIrdfpuml\-block\fP, \fIkill\-prefixes\fP, and the supported
+\fI#+call:\fP helpers in \fIelot\-lob.org\fP.
+.SS "Label display"
+.PP
+TODO --- migrate content from \fIREADME\-global\-label\-display.org\fP
+into this chapter.
+.PP
+Covers buffer-local label overlays, the global label-display mode,
+the label database, and label display in \fI*xref*\fP /
+\fI*ELOT Describe*\fP buffers.
+.SS "Importing existing OWL ontologies"
+.PP
+TODO --- ROBOT-based round-tripping of an existing ontology
+(\fI.owl\fP / \fI.ttl\fP / \fI.omn\fP) into an ELOT Org skeleton.
+.SS "Linting and syntax checking"
+.PP
+TODO --- \fIelot\-lint\fP, the OMN PEG grammar, the Flymake backend.
+.SS "Working with multiple ontologies and imports"
+.PP
+TODO --- \fIowl:imports\fP, catalog files, working tree layout for
+multi-ontology projects.
+.SS "Collaborating via Git"
+.PP
+TODO --- diff-friendly Org structure, recommended \fI.gitattributes\fP,
+review workflow for ontology PRs.
+.SH "Part III --- Reference"
+.PP
+Exhaustive lookup material.  Most of this part is auto-generated by
+\fImake manual\-reference\fP from the live ELOT sources; do not edit the
+generated files by hand.
+.SS "Commands and keybindings"
+.PP
+This chapter is auto-generated by \fImake manual\-reference\fP.  Do not
+edit by hand; edit the docstrings in the source instead.
+.TS
+ center,box;
+
+l l l .
+Command	Key	Description
+_
+\fIelot\-describe\-curie\-at\-point\fP	==	Pop up a \fBHelp\fP buffer describing CURIE at point (or prompt).
+\fIelot\-flymake\-setup\fP	==	Enable the ELOT Flymake backend in the current buffer.
+\fIelot\-global\-label\-display\-mode\fP	==	Display labels from ELOT active label sources in any buffer.
+\fIelot\-global\-label\-display\-setup\fP	==	One-shot: (re)build the DB-driven font-lock regexp in this buffer.
+\fIelot\-headings\-from\-table\fP	==	Convert the Org table at point to an ELOT outline.
+\fIelot\-label\-activate\-source\fP	==	Activate (SOURCE DATA-SOURCE) in `elot-active-label-sources’.
+\fIelot\-label\-active\-sources\-add\fP	==	Activate a registered source in the origin buffer.
+\fIelot\-label\-active\-sources\-mode\fP	==	Major mode for reordering `elot-active-label-sources’.
+\fIelot\-label\-active\-sources\-move\-down\fP	==	Move the entry at point one position down (toward lower priority).
+\fIelot\-label\-active\-sources\-move\-up\fP	==	Move the entry at point one position up (toward higher priority).
+\fIelot\-label\-active\-sources\-persist\fP	==	Persist the origin buffer’s `elot-active-label-sources’ to `.dir-locals.el’.
+\fIelot\-label\-active\-sources\-refresh\fP	==	Re-read the origin buffer’s active sources and redraw.
+\fIelot\-label\-active\-sources\-remove\fP	==	Remove the entry at point from `elot-active-label-sources’.
+\fIelot\-label\-deactivate\-source\fP	==	Remove (SOURCE DATA-SOURCE) from `elot-active-label-sources’.
+\fIelot\-label\-display\-setup\fP	==	Read identifier-label pairs and initialise label-display.
+\fIelot\-label\-list\-active\-sources\fP	==	Display a tabulated buffer for reordering `elot-active-label-sources’.
+\fIelot\-label\-list\-sources\fP	==	Display a tabulated list of all registered ELOT label sources.
+\fIelot\-label\-list\-sources\-refresh\fP	==	Rebuild the \fBELOT Label Sources\fP buffer from the DB.
+\fIelot\-label\-list\-sources\-refresh\-entry\fP	==	Force-refresh the source at point.
+\fIelot\-label\-list\-sources\-unregister\-entry\fP	==	Unregister the source at point.
+\fIelot\-label\-lookup\fP	\fIC\-c C\-x r\fP	Interactive lookup of resource identifier, with completion.
+\fIelot\-label\-lookup\-external\fP	==	Run `elot-label-lookup’ pinned to scope `external’.
+\fIelot\-label\-lookup\-local\fP	==	Run `elot-label-lookup’ pinned to scope `local’.
+\fIelot\-label\-move\-source\-down\fP	==	Move (SOURCE DATA-SOURCE) one position down (toward lower priority).
+\fIelot\-label\-move\-source\-up\fP	==	Move (SOURCE DATA-SOURCE) one position up (toward higher priority).
+\fIelot\-label\-refresh\-all\-sources\fP	==	Refresh every registered source, continuing past individual failures.
+\fIelot\-label\-refresh\-source\fP	==	Force a re-parse of SOURCE (optionally scoped to DATA-SOURCE).
+\fIelot\-label\-register\-current\-buffer\fP	==	Register the file visited by the current buffer as a label source.
+\fIelot\-label\-register\-source\fP	==	Register SOURCE (a file path) in the ELOT label cache.
+\fIelot\-label\-set\-active\-sources\fP	==	Replace `elot-active-label-sources’ with ENTRIES.
+\fIelot\-label\-sources\-mode\fP	==	Major mode for listing registered ELOT label sources.
+\fIelot\-label\-unregister\-source\fP	==	Remove SOURCE (optionally scoped to DATA-SOURCE) from the DB.
+\fIelot\-menu\fP	==	ELOT Ontology Authoring Menu
+\fIelot\-mode\fP	==	Minor mode for authoring OWL ontologies in Org-mode with ELOT.
+\fIelot\-open\-owl\fP	==	Open an OWL ontology from OWL-SOURCE by converting with `elot-exporter’.
+\fIelot\-org\-lint\fP	==	Refresh `elot-slurp’, then do `org-lint’
+\fIelot\-tangle\-buffer\-to\-omn\fP	==	Update hierarchy and export OMN for all ontologies to their tangle targets.
+\fIelot\-toggle\-label\-display\fP	==	Toggle between showing identifier or rdfs:label, using `elot-label-display’.
+\fIelot\-update\-headline\-hierarchy\fP	==	Update `elot-headline-hierarchy’ from the current org buffer.
+.TE
+.TB ""
+.SS "Customization variables"
+.PP
+Auto-generated by \fImake manual\-reference\fP.
+.TS
+ center,box;
+
+l l l l .
+Variable	Default	Group	Description
+_
+\fIelot\-db\-default\-global\-prefixes\fP	\fI(("rdf" . "http://www.w3.org/1999/02/22\-rdf\-syntax\-ns#") ("rdfs" . "http://www.w3.org/2000/01/rdf\-schema#") ("owl" . "http://www.w3.org/2002/07/owl#") ("xsd" . "http://www.w3.org/2001/XMLSchema#") ("skos" . "http://www.w3.org/2004/02/skos/core#") ("dcterms" . "http://purl.org/dc/terms/") ("foaf" . "http://xmlns.com/foaf/0.1/") ("obo" . "http://purl.obolibrary.org/obo/") ("sh" . "http://www.w3.org/ns/shacl#") ("prov" . "http://www.w3.org/ns/prov#"))\fP	\fIelot\fP	Seed entries for the `global\d\s-2prefixes\s+2\u’ table.
+\fIelot\-db\-file\fP	\fI"~/.emacs.d/elot\-cache.sqlite"\fP	\fIelot\fP	Path to the SQLite file backing the ELOT global-slurp cache.
+\fIelot\-default\-image\-path\fP	\fI"./images/"\fP	\fIelot\fP	ELOT default output directory for generated images.
+\fIelot\-exporter\-jar\-path\fP	\fI"c:/Users/jowik/bin/elot\-exporter.jar"\fP	\fIelot\fP	Path to the elot-exporter.jar file.
+\fIelot\-flymake\-checkers\fP	\fI(elot/nodeclare\-id\-prefix\-label elot/ontology\-header elot/prefix\-table elot/ontology\-presence elot/required\-sections elot/description\-list\-curies elot/axiom\-value\-curies elot/omn\-syntax)\fP	\fIelot\fP	List of `org-lint’ checker names to run via Flymake.
+\fIelot\-global\-label\-display\-eldoc\fP	\fIt\fP	\fIelot\fP	Whether `elot-global-label-display-mode’ registers an eldoc backend.
+\fIelot\-global\-label\-display\-max\-ids\fP	\fI10000\fP	\fIelot\fP	Soft cap on the number of ids fed to `regexp-opt’ by the global mode.
+\fIelot\-global\-label\-display\-mode\-hook\fP	\fInil\fP	\fIelot\fP	Hook run after entering or leaving `elot-global-label-display-mode’.
+\fIelot\-global\-label\-display\-show\-source\fP	\fIt\fP	\fIelot\fP	Whether the eldoc/hover summary carries a provenance marker.
+\fIelot\-label\-display\-face\fP	\fIelot\-label\-face\fP	\fIelot\fP	Customizable face used for ELOT label fontification.
+\fIelot\-label\-display\-size\-threshold\fP	\fI512000\fP	\fIelot\fP	Buffer size (bytes) above which `elot-mode’ asks before enabling label-display.
+\fIelot\-label\-lookup\-scope\fP	\fIboth\fP	\fIelot\fP	Which label sources `elot-label-lookup’ consults.
+\fIelot\-mode\-auto\-detect\fP	\fIt\fP	\fIelot\fP	When non-nil, automatically enable `elot-mode’ in ELOT buffers.
+\fIelot\-mode\-hook\fP	\fInil\fP	\fIelot\fP	Hook run after entering or leaving `elot-mode’.
+\fIelot\-preferred\-languages\fP	\fInil\fP	\fIelot\fP	Ordered list of preferred language tags for labels and annotations.
+\fIelot\-rdfpuml\-command\-str\fP	\fI"rdfpuml"\fP	\fIelot\fP	Command to execute `rdfpuml’.
+\fIelot\-rdfpuml\-options\fP	="hide empty members
+.TE
+.TB ""
+.PP
+hide circle
+skinparam classAttributeIconSize 0"= | \fIelot\fP | Default options for rdfpuml. |
+.TS
+ center,box;
+
+l l l l .
+\fIelot\-rdfpuml\-path\fP	\fI"c:/Users/jowik/bin/rdf2rml/bin/rdfpuml.pl"\fP	\fIelot\fP	Path to the rdfpuml Perl program.
+\fIelot\-robot\-jar\-path\fP	\fI"c:/Users/jowik/bin/robot.jar"\fP	\fIelot\fP	Path to the robot.jar file.
+\fIelot\-source\-rq\-cache\-dir\-name\fP	\fI".elot\-cache"\fP	\fIelot\fP	Directory name (relative to the project root) for cached .rq results.
+\fIelot\-source\-supported\-extensions\fP	\fI(("org" . elot\-source\-parse\-org) ("csv" . elot\-source\-parse\-csv) ("tsv" . elot\-source\-parse\-tsv) ("json" . elot\-source\-parse\-json) ("ttl" . elot\-source\-parse\-ttl) ("rq" . elot\-source\-parse\-rq))\fP	\fIelot\fP	Alist mapping source file extensions to parser functions.
+\fIelot\-source\-ttl\-label\-query\fP	="PREFIX rdfs: \fIhttp://www.w3.org/2000/01/rdf-schema#\fP
+.TE
+.TB ""
+.PP
+SELECT ?id ?label (LANG(?label) AS ?lang) WHERE {
+  ?id rdfs:label ?label .
+}"= | \fIelot\fP | SPARQL query used by `elot-source-parse-ttl’ to extract id/label pairs. |
+.TS
+ center,box;
+
+l l l l .
+\fIelot\-toggle\-labels\-key\fP	\fInil\fP	\fIelot\fP	Key sequence bound to `elot-toggle-label-display’ in ELOT-relevant buffers.
+.TE
+.TB ""
+.SS "File and header conventions"
+.PP
+TODO --- \fIprefix\-table\fP, \fI:ontology\-iri:\fP, \fI:subclass\-of:\fP,
+\fI:annotations:\fP drawers, the declaration-tree heading shape.
+.SS "\fI#+call:\fP helpers (Library of Babel)"
+.PP
+Auto-generated from \fIelot\-package/elot\-lob.org\fP by
+\fImake manual\-reference\fP.
+.TS
+ center,box;
+
+l l .
+Block	Description
+_
+\fItheme\-readtheorg\fP	
+\fItheme\-elot\fP	
+\fIcurrent\-date\fP	
+\fIcurrent\-datetime\fP	
+\fIrobot\-metrics\fP	
+\fIrobot\-sparql\-select\fP	
+\fIttl\-Class\-hierarchy\fP	
+\fIrdfpuml\-config\fP	
+\fIrdfpuml\-config\-rangedomaindown\fP	
+\fIrdfpuml\-config\-rangedown\fP	
+\fIrdfpuml\-block\fP	
+\fIexample\-ttl\fP	
+\fIfuseki\-for\-rdfpuml\-ttl\fP	
+\fIkill\-prefixes\fP	
+.TE
+.TB ""
+.SS "Manchester Syntax cheatsheet"
+.PP
+TODO --- import \fIexamples/manchester\-syntax\-quick\-reference.omn\fP
+with brief gloss on each construct.
+.SS "Glossary"
+.PP
+TODO --- short definitions of CURIE, IRI, OMN, TTL, OWL, RDF,
+ontology, axiom, restriction, annotation, tangle, prefix table,
+label source, declaration tree.
+.SH "Part IV --- Background"
+.PP
+Read these once.  They explain the \fIwhy\fP of design choices and the
+shape of the codebase --- useful when something is surprising.
+.SS "Why literate ontology engineering"
+.PP
+TODO --- the argument: ontology and documentation in one source;
+review-friendly plaintext format; reuse of Org tooling; experience
+from ISO 23726-3.
+.SS "Architecture overview"
+.PP
+TODO --- the tangle pipeline; the label DB; the SPARQL advice
+lifecycle; the relation between the literate \fI.org\fP sources and
+the tangled \fIelot\-package/*.el\fP.
+.SS "Relationship to other tools"
+.PP
+TODO --- where ELOT fits relative to Protégé, WIDOCO, ROBOT, OWL-CS,
+ontology editors in general.
+.SH "Appendices"
+.SS "VS Code extension parity"
+.PP
+TODO --- table of features available in the Emacs package vs the VS
+Code extension.  Mine \fICLI\-VS\-CODE\-PLAN.org\fP for content.
+.SS "Troubleshooting and FAQ"
+.PP
+TODO --- common pitfalls:
+.IP \(em 4
+\fIelot\-robot\-jar\-path\fP unset or wrong,
+.IP \(em 4
+Java not on \fIPATH\fP,
+.IP \(em 4
+\fIpeg\fP library missing on Emacs 29,
+.IP \(em 4
+label display broken in \fI*xref*\fP buffers (now fixed; left as
+example for future regressions),
+.IP \(em 4
+SPARQL block returns empty result set,
+.IP \(em 4
+tangled \fI.omn\fP fails ROBOT report.
+.SS "Changelog pointers"
+.PP
+See https://github.com/johanwk/elot/releases \fBat\fP \fIthe release notes on GitHub\fP for the version-by-version history.
+.SH "Indices"
+.SH "Copying"
+.PP
+This manual is for ELOT, the Emacs Literate Ontology Tool.
+.PP
+Copyright (C) 2024--2026 Johan W. Klüwer and contributors.
+.RS
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation.
+
+.RE

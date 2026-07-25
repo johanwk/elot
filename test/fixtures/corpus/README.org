@@ -1,0 +1,150 @@
+#+title: ELOT external-quality test corpus
+#+author: ELOT team
+
+* Purpose
+
+This tree holds /small, deliberately-faulty (and a few deliberately-
+clean) ontologies/, each citing a published authority for /why/ it
+is a known smell.  The fixtures are *test material*: things you
+point an ELOT checker at to see whether it correctly fires (or
+correctly stays silent).
+
+Fixtures are grouped by the /authority/ that named the pitfall, not
+by which tool checks them.  A single OOPS! P24 fixture may be
+exercised by:
+
+- the pure-Elisp lint sliver =elot/oops-recursive-definition=
+  (Milestone 8, sliver), and/or
+- the SPARQL-backed =elot-oops-run= (Milestone 8, full suite,
+  planned), and/or
+- ROBOT =verify= (Milestone 4) when wrapped as a query.
+
+The /checkers themselves/ live under =elot-package/= (Elisp) or
+under =elot-package/elot-oops/queries/= (SPARQL, when that module
+lands).  Do *not* store query files here.
+
+* Directory layout
+
+#+begin_src text
+test/fixtures/corpus/
++-- README.org                  ; this file
++-- oops/                       ; OOPS! pitfall catalogue
+|   +-- P32-duplicate-labels.org
+|   +-- ...
++-- rector/                     ; OWL Pizzas / common pitfalls (Rector et al.)
+|   +-- R01-only-without-some.org
+|   +-- R02-domain-range-intersection.org
+|   +-- R03-missing-disjointness.org
+|   +-- R04-open-world-no-closure.org
+|   +-- R05-primitive-vs-defined.org
+|   +-- R06-domain-as-constraint.org
++-- robot-report/               ; ROBOT report query coverage
+|   +-- clean-baseline.org      ; empty report expected
+|   +-- broken-multi.org        ; trips several report queries at once
++-- reasoning/                  ; inconsistency / unsatisfiability cases
++-- profile/                    ; OWL 2 DL profile violations
++-- clean/                      ; deliberately-clean controls
+    +-- minimal-ok.org
+#+end_src
+
+Each sub-tree may itself grow further structure later (e.g.
+=oops/P11/= for multiple fixtures of the same pitfall).  The
+meta-test (=test/elot-corpus-test.el=) walks the tree recursively.
+
+* Provenance drawer (citation policy)
+
+Every fixture file *must* begin with a property drawer of this shape:
+
+#+begin_src org
+:PROPERTIES:
+:corpus-source:    OOPS!
+:corpus-id:        P32
+:corpus-severity:  Minor
+:corpus-url:       https://oops.linkeddata.es/catalogue.jsp#P32
+:corpus-expects:   elot/oops-duplicate-labels
+:END:
+#+end_src
+
+Field reference:
+
+- =:corpus-source:= - short name of the authority (=OOPS!=, =Rector=,
+  =ROBOT-report=, =OBO=, =OWL2-Profile=, =OntoClean=, =clean=).
+- =:corpus-id:= - the authority's own identifier for the pitfall
+  (=P32=, =OP1=, =annotation_whitespace=, ...).
+- =:corpus-severity:= - the authority's severity label
+  (e.g. OOPS! uses =Critical= / =Important= / =Minor=).  Free
+  text; not used for control flow.
+- =:corpus-url:= - canonical URL for the cited pitfall.
+- =:corpus-expects:= - what ELOT is expected to detect.  Three
+  accepted shapes (see =elot-corpus-support.el=):
+  - an Elisp /checker symbol/ like =elot/oops-duplicate-labels=
+    (validated against =org-lint--checkers=);
+  - a /pitfall id/ like =oops/P32= (validated against
+    =elot-corpus--known-pitfalls=, a registry the OOPS!/ROBOT
+    backends populate as they come online);
+  - a /planned slug/ like =planned/rector-only-without-some=
+    for fixtures whose checker is not yet implemented.  Such
+    fixtures pass the meta-test but are skipped by
+    per-backend end-to-end harnesses.
+  For clean controls use =:corpus-expects: none=.
+- =:corpus-citation:= (optional) - free-text bibliographic
+  citation (paper, section, figure) for prose sources like the
+  Rector / OWL Pizzas tutorials, where =:corpus-url:= alone
+  (e.g. a DOI) under-specifies the reference.
+- =:corpus-rationale:= (optional) - one short sentence explaining
+  what the file demonstrates.
+
+ERT failure messages include the citation automatically via
+=elot-corpus-cite=.
+
+* Planned fixtures
+
+The table below tracks /intended/ corpus coverage.  Not all rows
+exist yet; the meta-test only walks files actually present.  Step
+8.1 ships the first two rows (and the clean control) so the
+meta-test exercises a non-empty list from first commit.
+
+| Sub-tree     | File                          | Source       | ID  | Expects                          | Status  |
+|--------------+-------------------------------+--------------+-----+----------------------------------+---------|
+| oops/        | P32-duplicate-labels.org      | OOPS!        | P32 | elot/oops-duplicate-labels       | present |
+| oops/        | P24-recursive-definition.org  | OOPS!        | P24 | elot/oops-recursive-definition   | present |
+| oops/        | P08-missing-annotations.org   | OOPS!        | P08 | elot/oops-missing-annotations    | present |
+| oops/        | P10-missing-disjointness.org  | OOPS!        | P10 | oops/P10                         | planned |
+| oops/        | P11-missing-domain-range.org  | OOPS!        | P11 | oops/P11                         | planned |
+| rector/      | R01-only-without-some.org              | Rector | R01 | planned/rector-only-without-some           | present |
+| rector/      | R02-domain-range-intersection.org      | Rector | R02 | planned/rector-domain-range-intersection   | present |
+| rector/      | R03-missing-disjointness.org           | Rector | R03 | planned/rector-missing-disjointness        | present |
+| rector/      | R04-open-world-no-closure.org          | Rector | R04 | planned/rector-missing-closure             | present |
+| rector/      | R05-primitive-vs-defined.org           | Rector | R05 | planned/rector-primitive-vs-defined        | present |
+| rector/      | R06-domain-as-constraint.org           | Rector | R06 | planned/rector-domain-as-constraint        | present |
+| robot-report/| clean-baseline.org            | ROBOT-report | -   | none                             | present |
+| robot-report/| broken-multi.org              | ROBOT-report | -   | planned/robot-report-multi-violations | present |
+| reasoning/   | disjoint-membership.omn       | reasoner     | C1  | elot_unsatisfiable               | planned |
+| profile/     | non-simple-asymmetric.org     | OWL2-DL      | P1  | (TBD)                            | planned |
+| clean/       | minimal-ok.org                | clean        | -   | none                             | present |
+
+* Local numbering schemes
+
+Where the cited authority publishes canonical pitfall ids
+(OOPS! =P01..P41=, ROBOT-report query names), the corpus uses
+them verbatim.  Where the authority is prose (Rector / OWL
+Pizzas tutorials, OntoClean, reasoner-debugging notes), the
+corpus uses a /local/ id scheme so file names stay short and
+table rows sort sensibly:
+
+- =rector/Rxx-slug.org= - Rector / OWL Pizzas pitfalls.  The
+  =Rxx= ids are local to this corpus; the binding to the
+  cited section/figure of the published source lives in the
+  fixture's =:corpus-citation:= field.
+
+New local-id schemes (=OCxx= for OntoClean, =RSxx= for reasoner
+stretches, ...) should be added to this section as those
+sub-trees come online.
+
+* Notes
+
+- Fixtures must be self-contained and small: a reader should be
+  able to see the smell at a glance.
+- Use the =ex:= prefix for fictitious resources; never hijack a
+  real ontology IRI in a faulty fixture.
+- ASCII-only.  No diagrams.  Keep each file under ~60 lines.

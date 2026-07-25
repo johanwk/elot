@@ -4,23 +4,10 @@
 
 ;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
 ;; URL: https://github.com/johanwk/elot
-;; Version: 2.0.0
-;; Keywords: tools, hypermedia, data
+;; Keywords: tools hypermedia data
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;; This file is not part of GNU Emacs.
-
-;; This program is free software; you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation, either version 3 of the License, or
-;; (at your option) any later version.
-
-;; This program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
-
-;; You should have received a copy of the GNU General Public License
-;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 
@@ -56,6 +43,8 @@
 (declare-function elot-update-headline-hierarchy "elot-tangle" ())
 (defvar elot-robot-jar-path)
 
+(require 'elot-robot)  ; shared ROBOT process layer
+
 (defgroup elot-sources nil
   "Parsers for label sources consumed by ELOT's global-slurp cache."
   :group 'elot
@@ -64,57 +53,32 @@
 ;;;; ------------------------------------------------------------------
 ;;;; ROBOT availability + invocation
 ;;;; ------------------------------------------------------------------
-
-(defun elot-robot-available-p ()
-  "Return non-nil if ROBOT is usable on this machine.
-Checks `elot-robot-jar-path' (the canonical ELOT setting, pointing
-at a `robot.jar' invoked via `java -jar') first, and falls back to
-a `robot' executable on PATH for users with a shell shim."
-  (require 'elot-tangle nil t)
-  (or (and (bound-and-true-p elot-robot-jar-path)
-           (stringp elot-robot-jar-path)
-           (not (string-empty-p elot-robot-jar-path))
-           (file-exists-p elot-robot-jar-path))
-      (and (executable-find "robot") t)))
+;;
+;; `elot-robot-available-p' is provided by `elot-robot.el'.  This
+;; module formerly defined its own probe; the shared one supersedes
+;; it.  We keep `elot-source--robot-run' as a thin wrapper that fixes
+;; the `query' subcommand, for backwards compatibility with the rest
+;; of this file.
 
 (defun elot-source--robot-run (query-file input-file output-file)
   "Run ROBOT's `query' subcommand: QUERY-FILE against INPUT-FILE -> OUTPUT-FILE.
 OUTPUT-FILE's extension determines the result format (CSV when it
 ends in `.csv', which is what the callers in this module use).
 
-Prefers `java -jar elot-robot-jar-path'; falls back to a `robot'
-executable on PATH.  Non-zero exit status raises `user-error'
-with ROBOT's stderr captured from the process buffer."
-  (require 'elot-tangle nil t)
+Delegates to `elot-robot-run' (argv-based) from `elot-robot.el'.
+Non-zero exit status raises `user-error' with ROBOT's stderr."
   (unless (elot-robot-available-p)
     (user-error
      "elot-sources: ROBOT not available (set `elot-robot-jar-path' or install `robot')"))
-  (let* ((use-jar (and (bound-and-true-p elot-robot-jar-path)
-                       (stringp elot-robot-jar-path)
-                       (not (string-empty-p elot-robot-jar-path))
-                       (file-exists-p elot-robot-jar-path)))
-         (program (if use-jar "java" (executable-find "robot")))
-         (args    (append
-                   (if use-jar
-                       (list "-jar" elot-robot-jar-path)
-                     nil)
-                   (list "query"
-                         "--input"  (expand-file-name input-file)
-                         "--query"  (expand-file-name query-file)
-                         (expand-file-name output-file))))
-         (err-buf (generate-new-buffer " *elot-robot-stderr*"))
-         exit)
-    (unwind-protect
-        (progn
-          (setq exit (apply #'call-process program nil
-                            (list err-buf t) nil args))
-          (unless (and (integerp exit) (zerop exit))
-            (let ((msg (with-current-buffer err-buf
-                         (buffer-substring-no-properties
-                          (point-min) (point-max)))))
-              (user-error "ROBOT query failed (exit %s): %s"
-                          exit (string-trim msg)))))
-      (when (buffer-live-p err-buf) (kill-buffer err-buf)))))
+  (let* ((result (elot-robot-run
+                  (list "query"
+                        "--input"  (expand-file-name input-file)
+                        "--query"  (expand-file-name query-file)
+                        (expand-file-name output-file))))
+         (exit (plist-get result :exit)))
+    (unless (and (integerp exit) (zerop exit))
+      (user-error "ROBOT query failed (exit %s): %s"
+                  exit (string-trim (or (plist-get result :stderr) ""))))))
 
 ;;;; ------------------------------------------------------------------
 ;;;; Dispatcher
@@ -485,17 +449,16 @@ buffer whose ids are stored as full IRIs."
   (unless (elot-robot-available-p)
     (user-error
      "elot-sources: ROBOT not available; set `elot-robot-jar-path'"))
-  (let* ((query-tmp  (make-temp-file "elot-ttl-query-" nil ".rq"))
-         (output-tmp (make-temp-file "elot-ttl-out-"   nil ".csv")))
-    (unwind-protect
-        (progn
-          (with-temp-file query-tmp
-            (insert elot-source-ttl-label-query))
-          (elot-source--robot-run query-tmp file output-tmp)
-          (list :entries  (elot-source-parse-csv output-tmp)
-                :prefixes (elot-source--harvest-prefixes file)))
-      (ignore-errors (delete-file query-tmp))
-      (ignore-errors (delete-file output-tmp)))))
+  (elot-robot-call-with-workspace
+   (lambda (ws)
+     (let ((query-tmp  (expand-file-name "query.rq" ws))
+           (output-tmp (expand-file-name "out.csv"  ws)))
+       (with-temp-file query-tmp
+         (insert elot-source-ttl-label-query))
+       (elot-source--robot-run query-tmp file output-tmp)
+       (list :entries  (elot-source-parse-csv output-tmp)
+             :prefixes (elot-source--harvest-prefixes file))))
+   "elot-ttl-"))
 
 ;;;; ------------------------------------------------------------------
 ;;;; SPARQL .rq
@@ -780,7 +743,7 @@ Interactively, completes over registered sources."
                 "Unregister source: ")))
      (list (car pair) (cdr pair))))
   (elot-source--ensure-db)
-  (let ((removed (elot-db-remove-source source data-source)))
+  (let ((removed (> (elot-db-remove-source source data-source) 0)))
     (if removed
         (message "elot-sources: unregistered %s%s"
                  source
@@ -830,6 +793,70 @@ include the error message for each failing source."
                           (nreverse errors) "; ")))
     (list :ok ok :failed fail :errors (nreverse errors))))
 
+;;;###autoload
+(defun elot-label-activate-source-for-file (file)
+  "Register-if-needed and activate FILE as a label source.
+
+FILE is a file path; it is expanded to an absolute path before
+DB lookup.  When FILE is not yet registered (or its mtime has
+advanced since the last ingest) the source is parsed via
+`elot-source--do-register' (no FORCE -- mtime-fresh files are
+silently skipped).  The resulting (SOURCE nil) entry is then
+moved to the head of the *default value* of
+`elot-active-label-sources' so that subsequent gptel tool calls
+in any buffer see the activation.  Any buffer currently visiting
+FILE also has its buffer-local `elot-active-label-sources'
+updated.  Idempotent: a second call on an already-fresh,
+already-active source returns the same plist with
+`:status :already-active'.
+
+Returns a plist:
+  (:source ABSOLUTE-PATH
+   :status :registered | :refreshed | :already-up-to-date | :already-active
+   :entities N
+   :was-active BOOL)."
+  (let* ((abs (expand-file-name file))
+         (_   (unless (file-exists-p abs)
+                (user-error "ELOT-sources: file not found: %s" abs)))
+         (_   (unless (elot-source--type-for abs)
+                (user-error
+                 "ELOT-sources: no parser for %s (extension %S)"
+                 abs (or (elot-source--extension abs) "(none)"))))
+         (_   (elot-source--ensure-db))
+         (was-registered (elot-db-source-exists-p abs nil))
+         (reg-result     (elot-source--do-register abs nil nil))
+         (reg-status     (car reg-result))
+         (status         (cond
+                          ((and (eq reg-status :skipped) was-registered)
+                           :already-up-to-date)
+                          ((eq reg-status :written)
+                           (if was-registered :refreshed :registered))
+                          (t reg-status)))
+         (entry          (list abs nil))
+         (current        (default-value 'elot-active-label-sources))
+         (already-active (cl-some (lambda (e)
+                                    (equal (car e) abs))
+                                  current))
+         (rest           (cl-remove-if
+                          (lambda (e) (equal (car e) abs))
+                          current)))
+    (setq-default elot-active-label-sources (cons entry rest))
+    ;; Also update any live buffer visiting FILE.
+    (let ((buf (get-file-buffer abs)))
+      (when buf
+        (with-current-buffer buf
+          (setq elot-active-label-sources
+                (cons entry
+                      (cl-remove-if (lambda (e) (equal (car e) abs))
+                                    elot-active-label-sources))))))
+    (list :source abs
+          :status (if (and already-active
+                           (eq status :already-up-to-date))
+                      :already-active
+                    status)
+          :entities (elot-db-source-entity-count abs nil)
+          :was-active already-active)))
+
 ;;;; Tabulated source listing
 
 (defvar elot-label-sources-mode-map
@@ -861,7 +888,7 @@ include the error message for each failing source."
 (defun elot-label--format-time (time)
   "Format a `float-time' TIME for display in the source list."
   (if (and time (numberp time) (> time 0))
-      (format-time-string "%Y-%m-%d %H:%M" (seconds-to-time time))
+      (format-time-string "%F %R" (seconds-to-time time))
     "-"))
 
 (defun elot-label--build-entries ()

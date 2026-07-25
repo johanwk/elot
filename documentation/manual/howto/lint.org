@@ -1,0 +1,3 @@
+# Linting and syntax checking --- included from elot.org
+
+TODO --- =elot-lint=, the OMN PEG grammar, the Flymake backend.

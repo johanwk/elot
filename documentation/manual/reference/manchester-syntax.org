@@ -1,0 +1,4 @@
+# Manchester Syntax cheatsheet --- included from elot.org
+
+TODO --- import =examples/manchester-syntax-quick-reference.omn=
+with brief gloss on each construct.

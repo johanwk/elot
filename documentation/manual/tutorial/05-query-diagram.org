@@ -1,0 +1,31 @@
+# A first SPARQL query and rdfpuml diagram --- included from elot.org
+
+TODO --- expand.
+
+This chapter introduces two of ELOT's most-loved features:
+
+- running *SPARQL* queries directly against your tangled =.omn= via
+  embedded source blocks,
+- generating *PlantUML diagrams* of selected triples via the
+  =rdfpuml-block= Library-of-Babel helper.
+
+* A first SPARQL block
+
+Add this to =pets.org=, below the class definitions:
+
+#+begin_src org :exports code
+,#+begin_src sparql :url "pets.omn"
+,select ?s ?o where { ?s rdfs:subClassOf ?o }
+,#+end_src
+#+end_src
+
+Press =C-c C-c= inside the block.  ELOT shells out to ROBOT and
+inserts the result table below the block.  No =PREFIX= boilerplate
+needed --- ELOT injects prefixes from your =prefix-table=.
+
+* A first diagram
+
+TODO --- =rdfpuml-block= example.
+
+See [[#howto-querying][Querying with SPARQL and ROBOT]] and [[#howto-diagrams][Diagrams with rdfpuml]] for
+the full how-tos.

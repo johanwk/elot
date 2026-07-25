@@ -1,0 +1,50 @@
+:PROPERTIES:
+:corpus-source:   ROBOT-report
+:corpus-id:       clean-baseline
+:corpus-severity: -
+:corpus-url:      https://robot.obolibrary.org/report
+:corpus-expects:  none
+:corpus-rationale: Known-clean control for `elot_omn_report'.  ROBOT
+ report should come back empty (no violations) regardless of which
+ default queries it happens to run.
+:END:
+#+title: ROBOT report -- clean baseline
+
+* corpus-rr-clean
+:PROPERTIES:
+:ID: corpus-rr-clean
+:ELOT-context-type: ontology
+:ELOT-context-localname: corpus-rr-clean
+:ELOT-default-prefix: ex:
+:header-args:omn: :tangle no
+:END:
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+| prefix | uri                                   |
+|--------+---------------------------------------|
+| owl:   | http://www.w3.org/2002/07/owl#        |
+| rdfs:  | http://www.w3.org/2000/01/rdf-schema# |
+| ex:    | http://example.org/corpus/rr-clean/   |
+
+** corpus-rr-clean ontology (ex:corpus-rr-clean ex:corpus-rr-clean/0.0)
+:PROPERTIES:
+:resourcedefs: yes
+:END:
+ - owl:versionInfo :: 0.0
+ - rdfs:label :: "ROBOT report clean baseline"@en
+ - rdfs:comment :: A small clean ontology used to verify that the
+   `elot_omn_report' integration returns an empty report for an
+   ontology with no known ROBOT-report violations.
+
+** Classes
+:PROPERTIES:
+:resourcedefs: yes
+:END:
+*** Animal (ex:Animal)
+ - rdfs:label :: "Animal"@en
+ - rdfs:comment :: A clean class with a label and comment.
+**** Dog (ex:Dog)
+ - rdfs:label :: "Dog"@en
+ - rdfs:comment :: Subclass of Animal.

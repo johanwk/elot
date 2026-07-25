@@ -1,0 +1,40 @@
+# Preface --- included from elot.org
+
+ELOT --- the /Emacs Literate Ontology Tool/ --- is a package for
+authoring OWL ontologies in Org-mode.  A single Org file is both the
+ontology source (tangled to OWL Manchester Syntax) and the published
+documentation (exported to HTML, PDF, or Info).
+
+* Who this manual is for
+
+- *Ontology authors* who want their ontology and its documentation to
+  stay in sync, automatically.
+- *Emacs users* curious about how literate programming applies to
+  knowledge engineering.
+- *Newcomers to OWL* who want a working ontology in front of them
+  before reading a 400-page semantic-web textbook.
+
+No prior experience with OWL or Org-mode is assumed for Part I.
+Parts II--IV assume you have completed the tutorial.
+
+* How to read this manual
+
+This manual follows the [[https://diataxis.fr/][Diátaxis]] structure:
+
+- Read [[#part-tutorial][Part I]] front-to-back the first time.
+- Dip into [[#part-howto][Part II]] when you have a specific task.
+- Consult [[#part-reference][Part III]] for lookups.
+- Read [[#part-background][Part IV]] when you want to know /why/.
+
+* Conventions
+
+- =code= face for CURIEs, IRIs, function names, file paths.
+- =~C-c C-x r~= for keystrokes.
+- /italic/ for new terms on first use.
+- =M-x command-name= for interactive commands.
+
+* Getting help
+
+- Project home: https://github.com/johanwk/elot
+- Issues and discussion: the GitHub tracker.
+- The ELOT menu in any =elot-mode= buffer lists the main commands.

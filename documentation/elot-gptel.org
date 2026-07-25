@@ -1,0 +1,664 @@
+#+title: ELOT with gptel: LLM-assisted ontology authoring
+#+author: ELOT Contributors
+#+startup: overview
+
+* What this is
+
+=elot-gptel.el= exposes ELOT's ontology-authoring capabilities to
+large language models through the [[https://github.com/karthink/gptel][gptel]] tool protocol.  The tools
+give the LLM access to the same machinery -- lint checkers, SPARQL
+query engine, reasoners for the Web Ontology Language (OWL),
+identifier schemes, label cache -- that
+ELOT's interactive commands use.  You do not call the tools
+yourself: you describe what you want in ordinary language, and the
+LLM chooses and calls the tools on your behalf (asking for your
+confirmation before it changes anything -- see /Safety model/).
+
+The LLM can, with your permission, run the full authoring loop on an
+ELOT =.org= file:
+
+1. *Understand* -- read the conventions primer, enumerate what the
+   ontology declares, query the label database and -- via [[https://robot.obolibrary.org/][ROBOT]], the
+   command-line ontology toolkit -- the ontology itself with SPARQL
+   (the standard query language for the Resource Description
+   Framework, RDF).
+2. *Edit* -- insert new resource headings with freshly minted
+   identifiers, add / replace / delete axiom rows, rename, move,
+   merge, or delete resources.
+3. *Verify* -- every mutation is followed by an automatic re-lint and
+   a re-parse of the OWL Manchester Syntax (OMN) export, with
+   rollback on failure; the LLM can additionally
+   run consistency checks, unsatisfiability reports, entailment
+   explanations, and structural diffs.
+
+Everything is optional.  Users who do not run gptel see no
+behavioural change.  ROBOT, too, is optional: only conversion,
+SPARQL, reasoning, and report tools require a configured ROBOT
+(=elot-robot-jar-path= or a =robot= executable on =exec-path=); the
+lint, label-DB, identifier, and structural-editing tools are pure
+Emacs Lisp.
+
+** Loading and registering
+
+#+begin_src elisp
+(require 'gptel)
+(require 'elot-gptel)
+(elot-gptel-register-tools)
+#+end_src
+
+Then enable some or all =elot_*= tools in =gptel-menu= (or
+programmatically via =gptel-tools=).  Registration is idempotent;
+=elot-gptel-unregister-tools= removes them again.
+
+All 37 tools ship enabled-for-registration; none is hidden.  You
+choose per session which ones the LLM may call.
+
+** Working with the LLM on an ELOT file
+
+The tools operate on files, so the main thing a session needs is
+agreement between you and the LLM about /which/ file you are
+working on.  Two common ways of working:
+
+- *Chat about an open file.*  Open the ELOT =.org= file, run
+  =gptel-add= (=M-x gptel-add= with point in the buffer) so its
+  contents are included in the LLM's context, then open a chat
+  buffer (=M-x gptel=) and ask for changes in plain language:
+  "make ex:cat disjoint with ex:dog, then check consistency".
+  The LLM reads the file from context, calls the editing tools
+  against it on disk, and reports back in the chat.  This is the
+  recommended default.
+
+- *Work inside the file.*  Mark a region (say, one resource's
+  heading and description list) and use =gptel-rewrite= or a
+  prompt from =gptel-menu= to request a change to just that part.
+  The tools are still available to the LLM for validation and
+  lookups while it composes the rewrite.
+
+In both modes, mention the file by its project-relative name when
+there could be any doubt -- every tool takes an explicit =file=
+argument, and the LLM fills it in from what you say.
+
+* Safety model
+
+The tool surface has three protection layers, from outermost in:
+
+** Project-scoped paths
+
+Every =file= argument is canonicalised and required to resolve under
+the current project (=project-current=, falling back to
+=default-directory=).  Paths outside the project are refused with
+=elot-gptel: refusing path outside project:=.  There is no way for a
+tool call to read or write a file elsewhere on disk.
+
+** The side-effects gate
+
+=elot-gptel-allow-side-effects= (default =nil=) is the session-wide
+"writes permitted" switch.  While it is =nil=:
+
+- all 9 mutating authoring tools (=elot_edit_axiom=,
+  =elot_edit_axioms=, =elot_rename_resource=, =elot_move_resource=,
+  =elot_replace_with_parent=, =elot_delete_resource=, and the three
+  =elot_insert_*= tools) refuse with
+  =... refused -- side effects disabled ...=,
+- mutating SPARQL (INSERT / DELETE / LOAD / ...) through
+  =elot_sparql= is refused,
+- =elot_db_remove_source= (which mutates the label cache, not your
+  files) is refused.
+
+Turn it on deliberately, per session:
+
+#+begin_src elisp
+(setq elot-gptel-allow-side-effects t)
+#+end_src
+
+Several mutating tools accept a =dry_run= argument that runs the
+full pipeline -- apply, lint, OMN parse -- without saving.  A dry
+run changes nothing, so it is allowed even when the gate is off.
+The gate and =dry_run= are independent settings: enabling the gate
+does not force a dry run, and =dry_run=true= works with the gate
+off.  A useful pattern is to let the LLM try destructive operations
+freely with =dry_run= and require the gate only for actual changes.
+
+** The confirm policy
+
+Every mutating tool spec carries gptel's =:confirm= flag, moderated
+by =elot-gptel-confirm-mutations= (default =once-armed=): gptel
+asks you to confirm each mutating call until you have enabled the
+side-effects gate; after that, the gate alone is enough.  You are
+never asked twice for the same permission, and nothing is written
+before you have opted in.
+
+** What happens when the LLM changes your file
+
+Every file-mutating tool follows the same steps:
+
+1. Snapshot the buffer.
+2. Apply the edit(s) in memory.
+3. Save once.
+4. Revalidate: ELOT lint (errors only -- pre-existing warnings do
+   not flood the report) plus a whole-file OMN parse when ROBOT is
+   configured.
+5. If revalidation fails: restore the file exactly as it was before
+   the call and return =FAIL:= / =ERROR:= with the diagnostics.
+6. On success: return =OK:= plus the revalidation report.
+
+So a mutating call either leaves the file valid or leaves it
+untouched.  Note that revalidation means lint + parse, /not/
+reasoning; checking that the ontology still makes sense semantically
+is a separate step, done with =elot_consistency= afterwards (though
+=elot_replace_with_parent= runs that check itself).
+
+** Temporary workspaces vs. your source file
+
+Two different senses of "the ontology" appear in the tool surface:
+
+- *The mutating tools* operate on your ELOT =.org= source file --
+  the single source of truth.  These are the gated tools above.
+- *ROBOT-backed read tools* (=elot_sparql=, =elot_consistency=,
+  =elot_diff=, ...) tangle the =.org= file to OMN inside a
+  /temporary workspace/ that is discarded after the call.  Nothing
+  they do -- not even a mutating SPARQL query, were one permitted --
+  ever touches your source.  Editing the ontology always means
+  editing the =.org= file.
+
+** Result conventions
+
+Every tool returns plain text the LLM can quote back to you:
+
+- =OK: <one-line summary>= on success (often followed by a report).
+- =ERROR: <message>= when a call is refused or fails.  Tools do not
+  signal Lisp errors to gptel; the LLM always receives a readable
+  line it can act on.
+- The composite checkers (=elot_check=, =elot_axiom_check=) return a
+  report with a message for each stage; a failing stage is prefixed
+  =FAIL:= or =FAIL at stage:=.  Like all other tools, they report
+  problems in the returned text rather than by signalling an error.
+- Tabular output is tab-separated values (TSV) with a header row; truncation is announced
+  with =... N more rows omitted=.
+- ASCII only throughout.
+
+* Recommended workflows
+
+This section describes how to actually use the tools.  Start every
+authoring session by letting the LLM call =elot_conventions= once --
+it returns the ELOT authoring cheat sheet (heading nesting carries
+SubClassOf; =- key :: value= rows carry annotations and axioms;
+reuse goes via =rdfs:isDefinedBy=; a worked example) and prevents
+most malformed edits and the retries they would cause.
+
+** Orientation: what does this ontology contain?
+
+v1 ships no dedicated "list all resources" tool (see /Known
+limitations/ below), but the information is still available:
+
+1. /Enumerate declared resources/: call =elot_axiom_keywords= on any
+   known subject and read its *Buffer Signature* section -- a
+   per-kind index from CURIE (Compact URI, e.g. =ex:dog=) to label for the whole file.  Alternatively
+   =elot_db_activate_source= on the file, then =elot_db_query=
+   against the =entities= table.
+2. /Inspect one resource's source rows/: =elot_axiom_keywords= on
+   that subject; read the *Existing rows* section.
+3. /How large is the ontology?/: an =elot_sparql_select= COUNT query
+   (needs
+   ROBOT), or =elot_db_query= over =entities= after activating the
+   file as a source.
+
+Activating the file as a label source
+(=elot_db_activate_source file=...=) at session start is cheap and
+also lets =elot_explain= resolve your CURIEs to labels.
+
+** Introducing a new term: reuse before mint
+
+1. =elot_borrow_term label=<concept>= -- one call that searches the
+   label DB across every source you have ever registered.  A unique
+   match returns a ready-to-embed snippet with the
+   =rdfs:isDefinedBy= back-pointer; multiple matches return a ranked
+   candidate table; no match returns a fixed "no candidates" line,
+   the signal to mint a new identifier instead.
+2. When there is no match: =elot_insert_sibling_resource= /
+   =elot_insert_child_resource= / =elot_insert_resource_tree= mint
+   fresh identifiers under the ontology's configured
+   =:ELOT-id-scheme:= and insert the headings in one gated,
+   revalidated operation.  (=elot_mint_identifier= exists for
+   choosing an identifier without inserting; the insert tools call
+   the same machinery internally.)
+3. Axiomatise the new term with =elot_edit_axiom= /
+   =elot_edit_axioms= -- but see the forward-reference limitation
+   below.
+
+If the project has not configured an identifier scheme, the insert
+tools return an =ERROR:= pointing at =elot-id-set-scheme=; the LLM
+cannot prompt for it, so set it yourself first.
+
+** The edit/verify loop
+
+For each axiom edit:
+
+1. =elot_axiom_keywords file subject= -- which frame keywords are
+   legal for this subject, which annotation properties are declared,
+   which identifiers may be referenced (Manchester syntax requires
+   every name to be declared), and what rows already exist.
+2. =elot_axiom_check file subject keyword fragment= -- a fast
+   (sub-second) check of the candidate row before committing it (no
+   ROBOT by default; pass =consistency=true= to also run the
+   reasoner).
+3. =elot_edit_axiom= (single row) or =elot_edit_axioms= (several
+   rows in one atomic operation; use it when two broken rows block
+   each other) -- a gated commit with automatic revalidation and
+   rollback.
+4. Verify semantics: =elot_check= (lint -> OMN parse -> consistency
+   -> unsatisfiable, stopping at the first failure), or the
+   individual tools; =elot_explain= when a result is surprising;
+   =elot_diff= against a snapshot to confirm only the intended
+   axioms changed.
+
+Example gptel prompt:
+
+#+begin_example
+In pets.org, make ex:cat disjoint with ex:dog, then check the
+ontology is still consistent.
+#+end_example
+
+** Restructuring
+
+- =elot_rename_resource= -- rewrite a CURIE everywhere (headings,
+  axiom rows, OMN/SPARQL blocks, full-IRI forms), optionally
+  changing the label, optionally =op=merge= to fold a resource into
+  an existing one.
+- =elot_move_resource= -- relocate a heading subtree (heading
+  nesting carries SubClassOf, so this /is/ a taxonomy edit).
+- =elot_replace_with_parent= -- fold an over-specific class into one
+  of its immediate parents (guard: the target must be an immediate
+  parent), followed by a consistency check.  Try it with =dry_run=
+  first: in positions such as =not=, =only=, and disjointness
+  axioms, replacing a class with its parent makes the ontology
+  /stronger/ rather than weaker, which can introduce errors.
+- =elot_delete_resource= -- delete a heading; refuses while dangling
+  references exist, with explicit =cascade=reparent= / =delete=
+  opt-ins for dependents.  Supports =dry_run=.
+
+** Known limitations (v1) and workarounds
+
+*** Minted-CURIE forward-reference in batch edits
+
+A term minted by =elot_insert_*= cannot be used as an axiom
+/subject/ in the same step: the list of known subjects that
+=elot_edit_axiom(s)= consults does not yet include the new
+CURIE, so the batch fails (leaving the file unchanged) with
+=subject ... not found=.
+Workarounds:
+
+1. /Two-call sequence/: insert first, read the minted CURIE from the
+   =OK:= result's =Minted CURIEs:= list, then issue the axiom
+   batch in a second call using that exact CURIE.
+2. /Safe re-issue/: if a batch fails with =subject ... not found=
+   for a just-minted term, simply send it again with the minted
+   CURIE substituted -- the failed batch changed nothing, so the
+   file is untouched.
+3. /Prefer already-declared subjects/: attach axioms via heading
+   nesting at insert time (SubClassOf comes free), or as rows on
+   already-declared subjects, so no same-batch forward reference is
+   needed.
+
+*** No dedicated inspection tools yet
+
+=elot_resources= / =elot_read_resource= / =elot_metrics= are
+deferred to post-v1; use the workarounds described under
+/Orientation/ above.
+
+* Tool reference
+
+37 tools, grouped by the question they answer.  *RO* = read-only;
+*MUT* = mutating (side-effects gate + confirm policy apply).
+*ROBOT* = requires a configured ROBOT.
+
+** Conventions and composite checking
+
+*** =elot_conventions= (RO)
+
+Zero-argument.  Returns the ELOT authoring-conventions cheat sheet
+as Markdown, with a worked example ontology.  Call once per
+authoring session before composing edits.
+
+*** =elot_check= (RO; ROBOT stages skipped without ROBOT)
+
+Composite "is my ontology OK?" pipeline: lint -> OMN parse ->
+consistency -> unsatisfiable.  The pipeline stops at the first
+failing stage and ends with a =SUMMARY= block.  Lint warnings never
+block.
+
+| Arg        | Required | Description                                      |
+|------------+----------+--------------------------------------------------|
+| =file=     | yes      | ELOT =.org= file                                 |
+| =content=  | no       | Draft string checked in place of the disk file   |
+| =profile=  | no       | OWL 2 profile for the parse stage (=DL= ...)     |
+| =reasoner= | no       | =hermit= (default) / =whelk=                     |
+
+Prefer this over the individual tools unless you need one stage in
+isolation.
+
+** Validation
+
+*** =elot_lint= (RO)
+
+Standard =org-lint= checkers plus the ELOT-specific ones (prefix
+table, ontology header, required sections, description-list CURIEs,
+OMN syntax, ...).
+
+| Arg          | Required | Description                                    |
+|--------------+----------+------------------------------------------------|
+| =file=       | yes      | ELOT =.org= file                               |
+| =severity=   | no       | =error= / =warning= / =all= (default)          |
+| =categories= | no       | Subset of checker names                        |
+| =content=    | no       | Draft string linted in place of the disk file  |
+
+Output: =LINE:COL [CATEGORY/TRUST] MESSAGE= lines plus
+=Summary: N errors, M warnings=; =OK: no lint issues= when clean.
+
+The =content= argument (also on =elot_omn_validate=,
+=elot_omn_report=, =elot_check=) lets the LLM validate an in-flight
+draft without touching disk; size-capped by
+=elot-gptel-content-arg-max-bytes=.
+
+*** =elot_omn_validate= (RO, ROBOT)
+
+Tangles each ontology node to OMN and runs =robot convert= -- the
+full OWL API parser (the Java library ROBOT is built on), catching
+whole-file errors per-axiom lint cannot
+(e.g. an object property in class position).  Optional
+=profile= (=DL= / =EL= / =QL= / =RL= / =Full=) adds
+=validate-profile=; use =DL= to catch non-simple-property pitfalls.
+Args: =file=, [=profile=, =content=].
+
+*** =elot_omn_report= (RO, ROBOT)
+
+Runs ROBOT =report= (the quality-query catalogue of the Open
+Biological and Biomedical Ontologies (OBO) community) and returns
+the report body verbatim.  Args: =file=, [=format= (tsv default /
+csv / yaml / json / html / md), =content=].
+
+*** =elot_diff= (RO, ROBOT)
+
+Structural diff via =robot diff --labels true= between =file= and a
+=baseline= snapshot (both may be ELOT =.org= files or RDF files).  The
+verification half of an edit/verify cycle: snapshot, edit, diff,
+confirm only the intended axioms changed.  Args: =file=,
+=baseline=, [=format= (plain / pretty / markdown / html)].
+
+** Reasoning
+
+All accept =reasoner= (=hermit= default, strict OWL 2 DL; =whelk=
+EL-oriented, can report clashes on ontologies HermiT refuses;
+=elot_explain= also accepts =elk=).
+
+*** =elot_consistency= (RO, ROBOT)
+
+Args: =file=, [=reasoner=].  Returns =OK: ontology is consistent
+...=, =OK: ... but has unsatisfiable classes ...= (pointer at
+=elot_unsatisfiable=), or =INCONSISTENT: <explanation>=.
+
+*** =elot_unsatisfiable= (RO, ROBOT)
+
+Args: =file=, [=reasoner=].  Lists classes with no possible
+instances, labels resolved via the ELOT DB when available.  Reports
+=INCONSISTENT= (with a pointer at =elot_consistency=) when the whole
+ontology has no model.
+
+*** =elot_explain= (RO, ROBOT)
+
+Justify an entailment -- "why does the ontology entail AXIOM?".
+Args: =file=, =axiom=, [=reasoner=, =max=].  Debug
+unsatisfiability with =Foo SubClassOf: owl:Nothing=, inconsistency
+with =owl:Thing SubClassOf: owl:Nothing=.
+
+ROBOT resolves axiom names through /labels/; the tool
+auto-translates CURIEs and full IRIs (Internationalized Resource
+Identifiers, written =<...>=) to labels first (reported as a
+NOTE), so =Dog SubClassOf: Animal=, =ex:dog SubClassOf: ex:animal=,
+and full-IRI forms all work.  Guarded by
+=elot-gptel-explain-timeout=.
+
+** SPARQL
+
+*** =elot_sparql_select= (RO, ROBOT)
+
+SELECT or ASK only; every other query form is refused, even when
+the side-effects gate is on.  Use this variant when you want a
+guarantee that no query can change anything.  Args: =file= (ELOT
+=.org= or any RDF file ROBOT
+reads), =query=, [=format= (tsv default / csv / json / table),
+=limit= (200 default, 5000 max)].
+
+*** =elot_sparql= (RO*, ROBOT)
+
+Same argument shape; additionally permits CONSTRUCT / DESCRIBE, and
+mutating SPARQL only when the side-effects gate is enabled.  Note
+that against an =.org= input the query runs on a discarded temporary
+workspace, so a SPARQL update can never change your source file.
+
+** Label database (cross-session cache)
+
+ELOT keeps a SQLite cache of every ontology source you have
+registered.  These tools support /lookup before edit/: existing
+labels and identifiers, provenance, citation targets.  All are
+read-only (mutating SQL is refused at parse time and the connection
+is opened read-only), except =elot_db_remove_source=.
+
+| Tool                       | Args                                              | Purpose                                                        |
+|----------------------------+---------------------------------------------------+----------------------------------------------------------------|
+| =elot_db_schema=           | ()                                                | Schema definition (DDL) + version, for composing correct SQL   |
+| =elot_db_query=            | =sql=, [=limit=]                                  | Arbitrary SELECT / WITH...SELECT; TSV out                      |
+| =elot_db_list_sources=     | ()                                                | Every registered source (provenance, timestamps)               |
+| =elot_db_activate_source=  | =file=                                            | Register-if-needed + refresh + activate a file as label source |
+| =elot_db_remove_source=    | =source=, [=data_source=, =like=, =allow_all=, =dry_run=] | *MUT* (label cache only); delete a source + cascade   |
+| =elot_db_get_label=        | =token=                                           | Best label for a CURIE / IRI / id                              |
+| =elot_db_expand_curie=     | =curie=                                           | CURIE -> full IRI                                              |
+| =elot_db_get_attributes=   | =id=, [=source=]                                  | All (prop, value, lang, source) rows for an entity             |
+| =elot_db_supertypes=       | =id=, [=source=]                                  | Direct SubClassOf / SubPropertyOf (RDF and OMN spellings)      |
+| =elot_db_individual_types= | =id=, [=source=]                                  | Asserted types of a named individual                           |
+| =elot_db_search_label=     | =query=, [=kind=, =source=, =lang=, =limit=, =exact_only=] | Whole-DB substring search; =via= column marks match kind |
+| =elot_db_borrow_term=      | =token=                                           | Reuse snippet (heading + =rdfs:isDefinedBy=) for a known term  |
+
+=elot_db_search_label= includes a cross-prefix local-name fallback:
+a CURIE-shaped query like =ex:Margherita= also finds =:Margherita=
+declared under another prefix, tagged =via=local-name= so the
+imperfect match is visible; =exact_only=true= suppresses it.
+
+*** =elot_borrow_term= (RO, composite)
+
+The default "borrow a term" entry point: search + auto-borrow in one
+call.  Args: =label=, [=kind= (default =class=), =source=,
+=lang=].  No candidates -> a fixed "no candidates" line, the
+signal to mint a new identifier instead; one -> provenance + the
+borrow snippet; several -> a ranked
+candidate table plus a =SELECT:= block -- the tool never picks among
+candidates silently.  Use the lower-level
+=elot_db_search_label= / =elot_db_borrow_term= only for open-ended
+exploration.
+
+** Identifiers
+
+*** =elot_mint_identifier= (RO)
+
+Mint a fresh CURIE under the project's identifier scheme
+(=:ELOT-id-scheme:= property, =elot-id-default-scheme=, ...;
+built-ins =uuid= / =slug= / =counter= / =acme=).  Args: =file=,
+=label=, [=scheme=, =kind=].  Avoids collisions with declared
+CURIEs.  Only chooses a string -- inserting is a separate step.
+When the project's scheme is unknown, /ask the user/ rather than
+guessing (the insert tools error out in that case).
+
+*** =elot_verify_identifier= (RO)
+
+Check that a CURIE conforms to the project's scheme -- useful before
+adopting an external identifier, or as an automated check.  Args:
+=file=, =curie=, [=scheme=].  Result: =OK:= / =FAIL:= / =ERROR:=.
+
+** Axiom helpers (inspection and checking before an edit)
+
+*** =elot_axiom_keywords= (RO)
+
+Args: =file=, =subject=.  Four-section report: legal *frame
+keywords* for the subject's kind; *universal annotation rows* (every
+declared annotation property); the *buffer signature* (per-kind
+CURIE -> label index -- also the recommended way to enumerate all
+resources in v1); and
+the subject's *existing rows*.  The standard first call before any
+axiom edit.
+
+*** =elot_axiom_check= (RO)
+
+Args: =file=, =subject=, =keyword=, =fragment=,
+[=consistency=].  A fast (sub-second) check of a candidate row
+before committing it: keyword legality, CURIE resolution,
+keyword/value range checks, and an optional reasoner run.  Never
+changes the file; the whole-file OMN parse happens later, when
+=elot_edit_axiom= commits the row.
+
+** Mutating authoring tools
+
+All of these require the side-effects gate and the confirm policy,
+and follow the same apply / save / revalidate / roll-back-on-failure
+steps (see /What happens when the LLM changes your file/ under
+/Safety model/).
+
+*** =elot_edit_axiom= (MUT)
+
+One description-list row on one subject.  Args: =file=, =subject=,
+=keyword=, [=fragment=, =op=, =match_fragment=].  Ops:
+
+- =add= (default) -- append =- KEYWORD :: FRAGMENT=.
+- =replace= -- rewrite the matched row; nested axiom-annotation
+  children preserved.
+- =delete= -- remove the matched row and its annotation children.
+- =delete-empty= -- sweep empty-valued rows (idempotent).
+
+Match resolution refuses when 0 or more than 1 rows match; supply
+=match_fragment= to disambiguate (empty string targets an
+empty-valued row).
+
+*** =elot_edit_axioms= (MUT)
+
+Several such edits applied together, saved and revalidated once.
+Use it when two errors block each other, so that neither can be
+fixed alone with the single-row tool.  Args:
+=file=, =edits= (ordered array of =elot_edit_axiom=-shaped objects
+minus =file=), [=dry_run=].  If edit K fails, the whole batch is
+abandoned with
+=FAIL at edits[K]:= and the file is left exactly as it was.  Later
+edits see the buffer as earlier edits left it.
+
+*** =elot_insert_sibling_resource=, =elot_insert_child_resource= (MUT)
+
+Insert new resource headings with freshly minted CURIEs, after
+(sibling) or as first children of (child) an =anchor= heading.
+Args: =file=, =anchor= (CURIE / title / section id), =labels=
+(array of plain =rdfs:label= strings -- never =Label (curie)=
+titles; reuse goes via the borrow workflow).  Heading nesting
+carries SubClassOf / SubPropertyOf.  Description-list keys of the
+anchor are inherited blank.  Child inserts under Datatypes at level
+3+ are refused (no subtype relation); nesting under Individuals is
+allowed as a visual aid.
+
+*** =elot_insert_resource_tree= (MUT)
+
+Batch-insert a whole forest: =tree= is a JSON array where each node
+is a label string or =[LABEL, CHILD, ...]= recursively; =as= is
+=sibling= (default) or =child= relative to =anchor=.  Example:
+=[["Mammal", "Mouse", "Whale"], "Bird"]=.
+
+*** =elot_rename_resource= (MUT)
+
+Rewrite a CURIE everywhere in the file: heading parentheticals,
+description-list rows (tags and OMN bodies), =omn= / =sparql= source
+blocks, full-IRI occurrences (shape-preserving).  Prose is left
+alone (mention count reported).  Args: =file=, =source=,
+=target=, [=target_iri= (declares an unknown prefix in the same
+operation),
+=new_label= (rewrite the heading label in the same operation),
+=op= (=rename= default -- refuses if target exists; =merge= --
+requires target exists, removes source's heading, promotes its
+children), =ontology= (reserved)].
+
+*** =elot_move_resource= (MUT)
+
+Relocate a heading subtree within its ontology.  Args: =file=,
+=source=, =target= (a CURIE or literal =top= for the section root),
+[=as= (=child= default / =sibling=)].  Kind-compatibility, no-op,
+and inside-own-subtree moves are refused; no CURIE rewriting (use
+rename for that).
+
+*** =elot_replace_with_parent= (MUT)
+
+Fold an over-specific resource into one of its /immediate/ parents:
+every use of =subject= is rewritten to the parent, subject's heading
+merged away.  Args: =file=, =subject=, [=parent= (required when
+several immediate parents), =dry_run=].  Motivating cases:
+premature specialisation, singleton subclasses, chain contraction,
+near-duplicates.  *Caveat*: the rewrite replaces /every/ occurrence
+of the subject, including positions such as =not=, =only=, and
+disjointness axioms, where substituting the parent makes the
+ontology stronger rather than weaker and can introduce errors.  For
+this reason a committed fold also runs =elot_consistency= and
+includes the result in the =OK:= report (with a WARNING on
+inconsistency or unsatisfiability).  Use =dry_run= first when in
+doubt.
+
+*** =elot_delete_resource= (MUT)
+
+Remove a resource heading.  Args: =file=, =subject=,
+[=cascade=, =dry_run=].  A reference scan runs first, and the tool
+refuses while
+other subjects still reference the resource (fix via
+=elot_edit_axiom(s)= or =elot_replace_with_parent= first).
+=cascade= governs semantic dependents: =refuse= (default),
+=reparent= (promote direct children one level; SubClassOf preserved
+via nesting), =delete= (remove the whole subtree).
+
+* Customisation
+
+Every default is the cautious choice (reviewed in the v1 plan,
+Step 2.3):
+
+| Variable                           | Default      | Purpose and rationale                                                                                              |
+|------------------------------------+--------------+--------------------------------------------------------------------------------------------------------------------|
+| =elot-gptel-allow-side-effects=    | =nil=        | Session-wide writes-permitted gate.  A read-only tool surface is the promise to first-time users; mutating tools refuse until the gate is explicitly enabled. |
+| =elot-gptel-confirm-mutations=     | =once-armed= | Confirm policy for =:confirm t= tools.  Prompts until the side-effects gate is enabled, then the gate alone suffices -- no double prompt, and nothing is written before you opt in. |
+| =elot-gptel-robot-catalog=         | =nil=        | Import-resolution catalog for ROBOT.  No catalog assumed; opt-in only.                                             |
+| =elot-gptel-content-arg-max-bytes= | 4 MiB        | Size limit on the =content= draft argument.  A precaution; only an absurdly large draft would exceed it.           |
+| =elot-gptel-explain-timeout=       | 60           | Wall-clock budget (s) for =elot_explain=, the one open-ended ROBOT call.  0 disables.                              |
+| =elot-gptel-explain-max=           | 1            | Default justification count; per-call override via =max=.                                                          |
+| =elot-robot-jar-path=              | =nil=        | Path to =robot.jar=; falls back to a =robot= executable on =exec-path=.                                            |
+| =elot-robot-jvm-args=              | =nil=        | Extra flags for the Java virtual machine (JVM).                                                                                                   |
+| =elot-robot-default-timeout=       | =nil=        | Per-call wall-clock budget for all ROBOT invocations.                                                              |
+| =elot-robot-timeout-grace=         | 2.0          | SIGTERM -> SIGKILL gap for the ROBOT watchdog.                                                                     |
+| =elot-db-busy-timeout-ms=          | 5000         | SQLite =busy_timeout= applied at every =elot-db-init=.                                                             |
+
+* Performance notes
+
+- ROBOT's JVM startup dominates the ROBOT-backed tools: ~1--3 s per
+  call on typical hardware, more for large ontologies and for
+  =reason= / =explain=.
+- Label-DB tools read an indexed SQLite cache and return almost
+  instantly.
+- The pure-Elisp helpers (=elot_axiom_keywords=, =elot_axiom_check=
+  without =consistency=, the insert/edit machinery apart from the
+  OMN parse) run in under a second.  This is why the recommended
+  loop uses them for the early, exploratory steps and saves the
+  slower ROBOT calls for verifying a finished edit.
+
+* See also
+
+- =documentation/elot-gptel-toolsheet.org= -- compact reference
+  tables: the full tool inventory (names, functions, arguments)
+  and the per-tool error contract.  This document is the guide
+  (how and why to use the tools); the toolsheet is the lookup
+  table (exact argument lists and failure behaviour).
+- =ELOT-GPTEL-V1-PLAN.org= -- the v1 implementation plan, including
+  the Decisions Log and the /Deferred to post-v1/ list (planned
+  inspection tools, minted-CURIE forward-reference fix, fuzzy label
+  search, ...).
+- =examples/pets.org= -- a deliberately broken ontology used as a
+  worked example for the reasoning tools.
+- =examples/org/pizza.org= -- the classic OWL Pizzas ontology;
+  =:IceCream= is unsatisfiable by design.

@@ -1,0 +1,50 @@
+:PROPERTIES:
+:corpus-source:   ROBOT-report
+:corpus-id:       broken-multi
+:corpus-severity: -
+:corpus-url:      https://robot.obolibrary.org/report_queries/
+:corpus-expects:  planned/robot-report-multi-violations
+:corpus-rationale: Deliberately trips several ROBOT report queries at
+ once (missing label, missing definition, duplicate label).  Doubles
+ as the worked example for the M7 documentation screenshot.  ELOT
+ lint and ROBOT `convert' must succeed; only `robot report' should
+ flag violations.
+:END:
+#+title: ROBOT report -- multi-violation fixture
+
+* corpus-rr-broken
+:PROPERTIES:
+:ID: corpus-rr-broken
+:ELOT-context-type: ontology
+:ELOT-context-localname: corpus-rr-broken
+:ELOT-default-prefix: ex:
+:header-args:omn: :tangle no
+:END:
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+| prefix | uri                                   |
+|--------+---------------------------------------|
+| owl:   | http://www.w3.org/2002/07/owl#        |
+| rdfs:  | http://www.w3.org/2000/01/rdf-schema# |
+| ex:    | http://example.org/corpus/rr-broken/  |
+
+** corpus-rr-broken ontology (ex:corpus-rr-broken ex:corpus-rr-broken/0.0)
+:PROPERTIES:
+:resourcedefs: yes
+:END:
+ - owl:versionInfo :: 0.0
+
+** Classes
+:PROPERTIES:
+:resourcedefs: yes
+:END:
+*** Twin one (ex:twin1)
+ - rdfs:label :: "Twin"@en
+*** Twin two (ex:twin2)
+ - rdfs:label :: "Twin"@en
+*** Unlabelled (ex:unlabelled)
+ - rdfs:comment :: A class deliberately missing rdfs:label.
+*** Undefined (ex:undefined)
+ - rdfs:label :: "Undefined"@en

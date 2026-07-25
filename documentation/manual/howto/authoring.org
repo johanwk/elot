@@ -1,0 +1,9 @@
+# Authoring --- included from elot.org
+
+TODO --- task-oriented recipes for day-to-day authoring:
+
+- structuring a large ontology across multiple sections,
+- using description-list items for annotations,
+- working with =:annotations:= drawers,
+- tempo templates for fast class / property insertion,
+- using the ELOT easymenu.

@@ -1,0 +1,5 @@
+# Why literate ontology engineering --- included from elot.org
+
+TODO --- the argument: ontology and documentation in one source;
+review-friendly plaintext format; reuse of Org tooling; experience
+from ISO 23726-3.

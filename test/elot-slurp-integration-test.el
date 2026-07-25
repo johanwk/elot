@@ -107,7 +107,8 @@
      ;; Point elot-db-path at our isolated DB (elot-db-init already opened it,
      ;; but `elot-slurp-to-vars' may call `elot-db-init' again; make sure it
      ;; re-opens the same file).
-     (let ((elot-db-file elot-si-test--tmp-db))
+     (let ((elot-db-file elot-si-test--tmp-db)
+           (elot-db-sync-on-slurp t))
        (with-current-buffer (find-file-noselect org)
          (unwind-protect
              (let ((bfn buffer-file-name))

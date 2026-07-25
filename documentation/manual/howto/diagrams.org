@@ -1,0 +1,6 @@
+# Diagrams with rdfpuml and Library-of-Babel helpers --- included from elot.org
+
+TODO.
+
+Covers =rdfpuml-block=, =kill-prefixes=, and the supported
+=#+call:= helpers in =elot-lob.org=.

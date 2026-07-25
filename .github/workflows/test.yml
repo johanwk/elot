@@ -1,15 +1,23 @@
 name: CI
 
-# Minimal Linux-only CI for ELOT.  Runs byte-compile, the ERT suite,
-# the load smoke test, and package-lint on every push and pull request.
-# ROBOT-gated tests skip cleanly on these runners (no Java / ROBOT installed).
-
-permissions:
-  contents: read
+# CI for ELOT.  On every push / pull request:
+#   - `test`  : byte-compile, the full ERT suite, and the load smoke
+#               test on Linux.  ROBOT-gated tests skip cleanly here
+#               (no Java / ROBOT installed).
+#   - `robot` : the SAME ERT suite with ELOT_REQUIRE_ROBOT=1, on a
+#               runner that has Java + ROBOT installed, so the
+#               ROBOT-gated tests execute (and fail loudly if ROBOT is
+#               broken) rather than skipping.
+#   - `lint`  : package-lint, stripping the two documented
+#               with-eval-after-load warnings.
+#
+# Windows CI is deliberately deferred to post-v1 (MSYS2 is the
+# supported Windows path; a bare windows-latest runner lacks the Unix
+# tooling the ROBOT wrapper assumes).
 
 on:
   push:
-    branches: [main, elpa-submission]
+    branches: [main, elpa-submission, elot-gptel-0.1]
   pull_request:
     branches: [main]
 
@@ -41,6 +49,47 @@ jobs:
 
       - name: Load smoke test
         run: make smoke
+
+  robot:
+    name: ERT suite with ROBOT (ELOT_REQUIRE_ROBOT=1)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Emacs
+        uses: purcell/setup-emacs@master
+        with:
+          version: "30.1"
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install ROBOT
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.local/bin"
+          curl -L -o "$HOME/.local/bin/robot.jar" \
+            https://github.com/ontodev/robot/releases/latest/download/robot.jar
+          curl -L -o "$HOME/.local/bin/robot" \
+            https://raw.githubusercontent.com/ontodev/robot/master/bin/robot
+          chmod +x "$HOME/.local/bin/robot"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Show ROBOT version
+        run: robot --version
+
+      - name: Run ERT suite with ROBOT gate
+        # Same suite as the `test` job, but ELOT_REQUIRE_ROBOT=1 turns
+        # the ROBOT `skip-unless' guards into hard failures, so the
+        # bucket-3 ROBOT-gated tests execute (and fail loudly if ROBOT
+        # is present but broken) instead of silently skipping.
+        env:
+          ELOT_REQUIRE_ROBOT: "1"
+        run: make test
 
   lint:
     name: package-lint

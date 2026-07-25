@@ -7,21 +7,9 @@
 ;; Version: 2.0.0
 ;; Package-Requires: ((emacs "30.1"))
 ;; Keywords: languages outlines tools org ontology
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;; This file is not part of GNU Emacs.
-
-;; This program is free software; you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation, either version 3 of the License, or
-;; (at your option) any later version.
-
-;; This program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
-
-;; You should have received a copy of the GNU General Public License
-;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 
@@ -48,6 +36,10 @@
 ;;  - `ob-plantuml'  -- PlantUML rendering used by `rdfpuml-block'
 ;;  - `htmlize'      -- source-block fontification on HTML export
 ;;  - `omn-mode'     -- major mode for tangled `.omn' files
+;;  - `gptel'        -- LLM tool-protocol bridge.  When present, the
+;;                      user can opt in via `M-x elot-gptel-register-tools'
+;;                      to expose ELOT's lint/validate/reason/query
+;;                      capabilities to an LLM (see `elot-gptel').
 
 ;; Please consult the package Github site for more information:
 ;;        <https://github.com/johanwk/elot>

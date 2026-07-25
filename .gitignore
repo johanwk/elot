@@ -209,6 +209,9 @@ _minted*
 # svg
 svg-inkscape/
 
+# a set of MCP tools for OBO ROBOT
+vendor/
+
 # sympy
 *.sout
 *.sympy
@@ -310,3 +313,4 @@ TSWLatexianTemp*
 # Uncomment the next line to have this generated file ignored.
 #*Notes.bib
 .aider*
+*-PLAN.org

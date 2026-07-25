@@ -1,0 +1,17 @@
+(elot
+ :fetcher github
+ :repo "johanwk/elot"
+ ;; Optional integration: elot-gptel.el registers ELOT's authoring/
+ ;; validation tools with `gptel' when it is present.  gptel is a SOFT
+ ;; dependency -- it is loaded lazily via (require 'gptel nil 'noerror)
+ ;; at tool-registration time and is deliberately NOT listed in
+ ;; Package-Requires, so installing ELOT does not pull in gptel.  Users
+ ;; who want the LLM assistance install gptel separately.
+ :files ("elot-package/*.el"
+         "elot-package/schema.sql"
+         "elot-package/elot-conventions.md"
+         "elot-package/elot-lob.org"
+         "elot-package/*.css"
+         "elot-package/*.js"
+         "elot-package/*.setup"))
+

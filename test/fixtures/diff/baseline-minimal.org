@@ -1,0 +1,56 @@
+# Baseline snapshot used by the `elot_diff' integration tests
+# (ELOT-GPTEL-PLAN.org Milestone 9 Step 9.5).  Paired with
+# `current-minimal.org' the diff should surface one added subclass
+# axiom (ex:Cat) and one rewritten rdfs:comment on ex:Animal.
+
+#+title: ELOT diff baseline fixture
+#+author: ELOT test suite
+
+* diff-min.owl
+:PROPERTIES:
+:ID:       diff-min.owl
+:ELOT-context-type: ontology
+:ELOT-context-localname: diff-min.owl
+:header-args:omn: :tangle ../diff-baseline.omn :noweb yes
+:ELOT-default-prefix: ex
+:END:
+
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+
+| prefix | uri                                         |
+|--------+---------------------------------------------|
+| ex:    | http://example.org/diff-min/                |
+| owl:   | http://www.w3.org/2002/07/owl#              |
+| rdf:   | http://www.w3.org/1999/02/22-rdf-syntax-ns# |
+| rdfs:  | http://www.w3.org/2000/01/rdf-schema#       |
+| skos:  | http://www.w3.org/2004/02/skos/core#        |
+| dc11:  | http://purl.org/dc/elements/1.1/            |
+
+** diff-min.owl ontology (http://example.org/diff-min/diff-min.owl)
+:PROPERTIES:
+:ID:       diff-min.owl-ontology-declaration
+:resourcedefs: yes
+:END:
+
+ - dc11:title :: ELOT diff baseline snapshot
+
+** Classes
+:PROPERTIES:
+:ID:       diff-min.owl-class-hierarchy
+:resourcedefs: yes
+:END:
+*** Animal (ex:Animal)
+ - rdfs:label :: Animal
+ - rdfs:comment :: A living organism.
+**** Dog (ex:Dog)
+ - rdfs:label :: Dog
+
+** Annotation properties
+:PROPERTIES:
+:ID:       diff-min.owl-annotation-property-hierarchy
+:resourcedefs: yes
+:END:
+*** dc11:title

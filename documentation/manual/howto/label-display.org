@@ -1,0 +1,8 @@
+# Label display --- included from elot.org
+
+TODO --- migrate content from =README-global-label-display.org=
+into this chapter.
+
+Covers buffer-local label overlays, the global label-display mode,
+the label database, and label display in =*xref*= /
+=*ELOT Describe*= buffers.

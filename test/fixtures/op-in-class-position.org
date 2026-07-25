@@ -1,0 +1,90 @@
+# Fixture for Step 3.4 of ELOT-GPTEL-PLAN.org.
+#
+# Demonstrates a class of OMN error that ELOT's per-axiom lint cannot
+# catch but ROBOT does: an object property used where a class is
+# expected.  Here, `ex:hasPart` is declared as an ObjectProperty, then
+# referenced as the superclass of `ex:Foo` (`SubClassOf :: ex:hasPart`).
+#
+# Expectations:
+#   - elot_lint                              : OK (the CURIE is declared,
+#                                              not an annotation property,
+#                                              and Manchester syntax for
+#                                              the value parses cleanly).
+#   - elot_omn_validate FILE nil             : ERROR (ROBOT convert
+#                                              rejects an ObjectProperty
+#                                              in class position).
+
+#+title: Object property in class position
+#+author: ELOT test suite
+
+* op-in-class
+:PROPERTIES:
+:ID:       op-in-class
+:ELOT-context-type: ontology
+:ELOT-context-localname: op-in-class
+:header-args:omn: :tangle ./op-in-class.omn :noweb yes
+:ELOT-default-prefix: ex
+:END:
+
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+
+#+name: prefix-table
+| prefix | uri                                         |
+|--------+---------------------------------------------|
+| ex:    | http://example.org/                         |
+| owl:   | http://www.w3.org/2002/07/owl#              |
+| rdf:   | http://www.w3.org/1999/02/22-rdf-syntax-ns# |
+| rdfs:  | http://www.w3.org/2000/01/rdf-schema#       |
+| skos:  | http://www.w3.org/2004/02/skos/core#        |
+
+** op-in-class ontology (ex:op-in-class ex:op-in-class/0.0)
+:PROPERTIES:
+:ID:       op-in-class-ontology-declaration
+:resourcedefs: yes
+:END:
+
+ - rdfs:comment :: Deliberately misuses an object property in class position.
+
+** Classes
+:PROPERTIES:
+:ID:       op-in-class-class-hierarchy
+:resourcedefs: yes
+:END:
+*** Foo (ex:Foo)
+ - rdfs:label :: Foo
+ - SubClassOf :: ex:hasPart
+
+** Object properties
+:PROPERTIES:
+:ID:       op-in-class-object-property-hierarchy
+:resourcedefs: yes
+:END:
+*** hasPart (ex:hasPart)
+ - rdfs:label :: has part
+
+** Data properties
+:PROPERTIES:
+:ID:       op-in-class-data-property-hierarchy
+:resourcedefs: yes
+:END:
+
+** Annotation properties
+:PROPERTIES:
+:ID:       op-in-class-annotation-property-hierarchy
+:resourcedefs: yes
+:END:
+
+** Individuals
+:PROPERTIES:
+:ID:       op-in-class-individuals
+:resourcedefs: yes
+:END:
+
+** Datatypes
+:PROPERTIES:
+:ID:       op-in-class-datatypes
+:resourcedefs: yes
+:END:

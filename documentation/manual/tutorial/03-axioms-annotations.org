@@ -1,0 +1,34 @@
+# Adding axioms and annotations --- included from elot.org
+
+TODO --- expand.
+
+This chapter extends the =pets.org= ontology from
+[[#tut-first-ontology][the previous chapter]] with:
+
+- =rdfs:label= and =skos:definition= annotations on every class,
+- a =disjointWith= axiom between =ex:Dog= and =ex:Cat=,
+- an object property =ex:chases= with =rdfs:domain= and =rdfs:range=,
+- an existential restriction: every =ex:Dog= /chases some/ =ex:Cat=.
+
+* Annotations
+
+Use the =:annotations:= drawer key to attach annotations to a class:
+
+#+begin_src org :exports code
+,*** ex:Dog
+,:PROPERTIES:
+,:subclass-of: ex:Animal
+,:END:
+,:annotations:
+,- rdfs:label :: "Dog"@en
+,- skos:definition :: "A domesticated canine."@en
+,:end:
+#+end_src
+
+* Object properties
+
+TODO --- show the property declaration and the existential restriction.
+
+* Disjointness
+
+TODO --- show =disjointWith= and how it appears in the tangled OMN.

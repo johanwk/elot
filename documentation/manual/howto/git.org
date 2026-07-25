@@ -1,0 +1,4 @@
+# Collaborating via Git --- included from elot.org
+
+TODO --- diff-friendly Org structure, recommended =.gitattributes=,
+review workflow for ontology PRs.

@@ -1,0 +1,100 @@
+#+title: Fixture: SubClassOf in description list (Step 7.5.4)
+#+author: ELOT test suite
+
+# Fixture for elot/subclass-in-description-list (Step 7.5.4).
+#
+# - ex:Apple is a level-3 child of Classes; carries `SubClassOf :: ex:Fruit'
+#   pointing at a *named* class declared elsewhere in the file as a
+#   heading -- should fire the new warning.
+# - ex:Sour is also a level-3 child of Classes; carries `SubClassOf ::
+#   ex:Fruit and ex:hasTaste some xsd:string' -- an *anonymous* class
+#   expression that happens to mention ex:Fruit but is not a bare CURIE.
+#   Should NOT fire.
+# - ex:Pear is a level-3 child of Classes; carries `SubClassOf ::
+#   ex:Unknown' where ex:Unknown is NOT declared anywhere -- should NOT
+#   fire (declared-elsewhere is part of the contract; unknown CURIE is
+#   the axiom-value-curies checker's business).
+# - ex:Pippin is a *level-4* child (under ex:Apple, not under Classes
+#   directly); carries `SubClassOf :: ex:Apple' -- should NOT fire
+#   because the heading is not a direct child of a :resourcedefs: section.
+
+* my-ont
+:PROPERTIES:
+:ID: my-ont
+:ELOT-context-type: ontology
+:ELOT-context-localname: my-ont
+:ELOT-default-prefix: ex
+:header-args:omn: :tangle ./my-ont.omn :noweb yes
+:END:
+
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+
+#+name: prefix-table
+| prefix | uri                                         |
+|--------+---------------------------------------------|
+| owl:   | http://www.w3.org/2002/07/owl#              |
+| rdf:   | http://www.w3.org/1999/02/22-rdf-syntax-ns# |
+| rdfs:  | http://www.w3.org/2000/01/rdf-schema#       |
+| xsd:   | http://www.w3.org/2001/XMLSchema#           |
+| skos:  | http://www.w3.org/2004/02/skos/core#        |
+| ex:    | http://example.org/                         |
+| exo:   | http://example.org/ont/                     |
+
+** my-ont ontology (exo:my-ont exo:my-ont/0.0)
+:PROPERTIES:
+:ID: my-ont-ontology-declaration
+:resourcedefs: yes
+:END:
+
+ - rdfs:comment :: A test ontology.
+
+** Datatypes
+:PROPERTIES:
+:ID: my-ont-datatypes
+:resourcedefs: yes
+:END:
+
+** Classes
+:PROPERTIES:
+:ID: my-ont-class-hierarchy
+:resourcedefs: yes
+:END:
+*** Fruit (ex:Fruit)
+ - rdfs:label :: Fruit
+*** Apple (ex:Apple)
+ - SubClassOf :: ex:Fruit
+**** Pippin (ex:Pippin)
+ - SubClassOf :: ex:Apple
+*** Sour (ex:Sour)
+ - SubClassOf :: ex:Fruit and ex:hasTaste some xsd:string
+*** Pear (ex:Pear)
+ - SubClassOf :: ex:Unknown
+
+** Object properties
+:PROPERTIES:
+:ID: my-ont-object-property-hierarchy
+:resourcedefs: yes
+:END:
+*** hasTaste (ex:hasTaste)
+ - rdfs:label :: hasTaste
+
+** Data properties
+:PROPERTIES:
+:ID: my-ont-data-property-hierarchy
+:resourcedefs: yes
+:END:
+
+** Annotation properties
+:PROPERTIES:
+:ID: my-ont-annotation-property-hierarchy
+:resourcedefs: yes
+:END:
+
+** Individuals
+:PROPERTIES:
+:ID: my-ont-individuals
+:resourcedefs: yes
+:END:

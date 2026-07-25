@@ -1,0 +1,4 @@
+# Working with multiple ontologies and imports --- included from elot.org
+
+TODO --- =owl:imports=, catalog files, working tree layout for
+multi-ontology projects.

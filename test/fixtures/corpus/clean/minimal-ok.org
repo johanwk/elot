@@ -1,0 +1,42 @@
+:PROPERTIES:
+:corpus-source:   clean
+:corpus-id:       minimal-ok
+:corpus-severity: -
+:corpus-url:      -
+:corpus-expects:  none
+:corpus-rationale: Minimal deliberately-clean control: no OOPS!
+ pitfalls should fire on this file.
+:END:
+#+title: Clean control -- minimal ontology
+
+* corpus-clean
+:PROPERTIES:
+:ID: corpus-clean
+:ELOT-context-type: ontology
+:ELOT-context-localname: corpus-clean
+:ELOT-default-prefix: ex:
+:header-args:omn: :tangle no
+:END:
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+| prefix | uri                                         |
+|--------+---------------------------------------------|
+| owl:   | http://www.w3.org/2002/07/owl#              |
+| rdfs:  | http://www.w3.org/2000/01/rdf-schema#       |
+| ex:    | http://example.org/corpus/clean/            |
+
+** corpus-clean ontology (ex:corpus-clean ex:corpus-clean/0.0)
+:PROPERTIES:
+:resourcedefs: yes
+:END:
+ - owl:versionInfo :: 0.0
+
+** Classes
+:PROPERTIES:
+:resourcedefs: yes
+:END:
+*** Thing one (ex:thing1)
+ - rdfs:label :: "Thing one"@en
+ - rdfs:comment :: A perfectly ordinary class.

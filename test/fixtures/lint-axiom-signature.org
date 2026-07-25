@@ -1,0 +1,119 @@
+#+title: Fixture: signature/keyword lint diagnostics (Step 9.2.b.0)
+#+author: ELOT test suite
+
+# Exercises the existing elot-lint checkers that 9.2.b.0 reframes
+# as its source of truth:
+#
+# - elot/omn-keyword-appropriateness (keyword-kind ERRORs)
+# - elot/axiom-value-curies         (undeclared-CURIE WARNINGs +
+#                                    suggested-fix message)
+#
+# Rows of interest:
+#
+# - ex:Apple has  Domain :: ex:Fruit
+#   Class section, but Domain is OP/DP-only -> keyword-appropriateness
+#   ERROR.
+#
+# - ex:hasOwner (data property) has  SubPropertyChain :: ex:foo o ex:bar
+#   Data-property section, but SubPropertyChain is OP-only ->
+#   keyword-appropriateness ERROR.
+#
+# - ex:Pear has  SubClassOf :: ex:wolf
+#   ex:wolf is undeclared -> axiom-value-curies WARNING with the
+#   actionable-fix wording.
+#
+# - ex:ageInYears (data property) has  Range :: xsd:string
+#   xsd:string is a built-in datatype -> clean.
+#
+# - ex:ageInYears has  Range :: ex:cat
+#   ex:cat is declared so axiom-value-curies stays clean, but the
+#   keyword-range checker (9.2.b.0.iv) flags it: a Class given where
+#   a Datatype is expected.
+#
+# - ex:Pear has  SubClassOf :: ex:isAfraidOf
+#   ex:isAfraidOf is declared as ObjectProperty -> 9.2.b.0.iv
+#   keyword-range WARNING (Class expected, ObjectProperty given).
+
+* my-ont
+:PROPERTIES:
+:ID: my-ont
+:ELOT-context-type: ontology
+:ELOT-context-localname: my-ont
+:ELOT-default-prefix: ex
+:header-args:omn: :tangle ./my-ont.omn :noweb yes
+:END:
+
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+
+#+name: prefix-table
+| prefix | uri                                         |
+|--------+---------------------------------------------|
+| owl:   | http://www.w3.org/2002/07/owl#              |
+| rdf:   | http://www.w3.org/1999/02/22-rdf-syntax-ns# |
+| rdfs:  | http://www.w3.org/2000/01/rdf-schema#       |
+| xsd:   | http://www.w3.org/2001/XMLSchema#           |
+| ex:    | http://example.org/                         |
+| exo:   | http://example.org/ont/                     |
+
+** my-ont ontology (exo:my-ont exo:my-ont/0.0)
+:PROPERTIES:
+:ID: my-ont-ontology-declaration
+:resourcedefs: yes
+:END:
+
+ - rdfs:comment :: Fixture for Step 9.2.b.0 lint diagnostics.
+
+** Datatypes
+:PROPERTIES:
+:ID: my-ont-datatypes
+:resourcedefs: yes
+:END:
+
+** Classes
+:PROPERTIES:
+:ID: my-ont-class-hierarchy
+:resourcedefs: yes
+:END:
+*** Fruit (ex:Fruit)
+ - rdfs:label :: Fruit
+*** Apple (ex:Apple)
+ - Domain :: ex:Fruit
+*** Pear (ex:Pear)
+ - SubClassOf :: ex:wolf
+ - SubClassOf :: ex:isAfraidOf
+*** Cat (ex:cat)
+ - rdfs:label :: Cat
+
+** Object properties
+:PROPERTIES:
+:ID: my-ont-object-property-hierarchy
+:resourcedefs: yes
+:END:
+*** isAfraidOf (ex:isAfraidOf)
+ - rdfs:label :: isAfraidOf
+
+** Data properties
+:PROPERTIES:
+:ID: my-ont-data-property-hierarchy
+:resourcedefs: yes
+:END:
+*** hasOwner (ex:hasOwner)
+ - SubPropertyChain :: ex:foo o ex:bar
+*** ageInYears (ex:ageInYears)
+ - Range :: xsd:string
+ - Range :: ex:cat
+
+** Annotation properties
+:PROPERTIES:
+:ID: my-ont-annotation-property-hierarchy
+:resourcedefs: yes
+:END:
+
+** Individuals
+:PROPERTIES:
+:ID: my-ont-individuals
+:resourcedefs: yes
+:END:

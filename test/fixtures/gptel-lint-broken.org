@@ -1,0 +1,21 @@
+# Fixture for elot-gptel lint tests.
+# Top-level ontology heading without prefix table -- should trigger
+# the elot/prefix-table checker.
+
+#+title: Broken Ontology
+#+author: ELOT test suite
+
+* broken
+:PROPERTIES:
+:ID:       broken
+:ELOT-context-type: ontology
+:ELOT-context-localname: broken
+:header-args:omn: :tangle ./broken.omn :noweb yes
+:ELOT-default-prefix: ex
+:END:
+
+** broken ontology (http://example.org/ex/broken)
+:PROPERTIES:
+:ID:       broken-ontology-declaration
+:resourcedefs: yes
+:END:
