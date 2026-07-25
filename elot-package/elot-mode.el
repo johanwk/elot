@@ -130,7 +130,7 @@ Treats `:' and `_' as word-constituent characters.")
                        '("#+title: " (p "Document title: " doctitle) > n
                        "#+subtitle: An OWL ontology" > n
                        "#+author: " (p "Author name: " authname) > n
-                       "#+date: Created " (format-time-string "%Y-%m-%d %H:%M") > n
+                       "#+date: Created " (format-time-string "%F %R") > n
                        "#+call: theme-elot()" n n)
                        "<odh"
                        "ELOT document header"

@@ -903,7 +903,7 @@ Step 9.1 of ELOT-GPTEL-PLAN.org."
 (defun elot-label--format-time (time)
   "Format a `float-time' TIME for display in the source list."
   (if (and time (numberp time) (> time 0))
-      (format-time-string "%Y-%m-%d %H:%M" (seconds-to-time time))
+      (format-time-string "%F %R" (seconds-to-time time))
     "-"))
 
 (defun elot-label--build-entries ()
