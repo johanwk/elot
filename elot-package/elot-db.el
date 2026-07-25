@@ -76,8 +76,9 @@ scope at this stage."
   :group 'elot-db)
 
 (defcustom elot-db-sync-on-slurp t
-  "When non-nil (default), `elot-slurp-to-vars' writes the slurp
-into the ELOT label DB (`elot-db-file').
+  "Whether `elot-slurp-to-vars' writes slurps into the ELOT label DB.
+When non-nil (the default), the slurp is written into the DB
+\(`elot-db-file').
 
 Set to nil in test harnesses or other ephemeral contexts to keep
 short-lived fixture files out of the user's global label cache.
@@ -87,7 +88,7 @@ sync is suppressed.
 
 Disable from the command line via:
 
-    emacs --batch --eval \"(setq elot-db-sync-on-slurp nil)\" ..."
+    Emacs --batch --eval \"(setq elot-db-sync-on-slurp nil)\" ..."
   :type 'boolean
   :group 'elot-db)
 
@@ -730,7 +731,7 @@ string for non-SPARQL sources)."
 (defun elot-db-list-sources-like (source-pattern &optional data-source-pattern)
   "Return rows from `sources' matching SQL LIKE patterns.
 SOURCE-PATTERN and DATA-SOURCE-PATTERN follow SQLite LIKE syntax
-(`%' matches any sequence of characters; `_' matches a single
+\(`%' matches any sequence of characters; `_' matches a single
 character).  DATA-SOURCE-PATTERN defaults to `\"%\"' (match any
 data_source).  Returns rows in the same shape as
 `elot-db-list-sources': (SOURCE DATA-SOURCE TYPE LAST-MODIFIED
@@ -785,7 +786,7 @@ removed (0 when nothing matches)."
     (when (and pattern-mode
                (not allow-all)
                (member src '("" "%")))
-      (error "elot-db-remove-source: refusing to delete every source (SOURCE=%S) without ALLOW-ALL"
+      (error "ELOT-db-remove-source: refusing to delete every source (SOURCE=%S) without ALLOW-ALL"
              src))
     (sqlite-transaction elot-db)
     (unwind-protect
@@ -1318,15 +1319,15 @@ Designed as the single read-only SQL gate used by the
 Milestone 6 gptel tools (`elot_db_query', `elot_db_search_label',
 `elot_db_borrow_term')."
   (unless (and (stringp sql) (not (string-empty-p (string-trim sql))))
-    (user-error "elot-db: empty SQL"))
+    (user-error "ELOT-db: empty SQL"))
   (let ((tok (elot-db--sql-first-token sql)))
     (unless (member tok '("SELECT" "WITH"))
       (user-error
-       "elot-db: read-only gate refuses non-SELECT statement \
+       "ELOT-db: read-only gate refuses non-SELECT statement \
 (first token: %s)"
        (or tok "<none>"))))
   (unless (and elot-db (sqlitep elot-db))
-    (user-error "elot-db: no open connection (call `elot-db-init')"))
+    (user-error "ELOT-db: no open connection (call `elot-db-init')"))
   (unwind-protect
       (progn
         (sqlite-pragma elot-db "query_only = 1")
@@ -1367,10 +1368,10 @@ when KIND is non-empty but unknown."
   (cond
    ((or (null kind) (and (stringp kind) (string-empty-p kind))) nil)
    ((not (stringp kind))
-    (user-error "elot-db: kind must be a string"))
+    (user-error "ELOT-db: kind must be a string"))
    (t (or (cdr (assoc (downcase kind) elot-db--search-kind-map))
           (user-error
-           "elot-db: unknown kind %S (expected one of: %s)"
+           "ELOT-db: unknown kind %S (expected one of: %s)"
            kind
            (mapconcat #'car elot-db--search-kind-map ", "))))))
 
@@ -1406,7 +1407,7 @@ no wildcards.
 LIMIT caps the number of rows returned (default 50; nil = 50;
 0 or negative = no cap).  KIND, when non-nil, restricts the
 result to entities asserted with the corresponding `rdf:type'
-(class / object-property / data-property / annotation-property
+\(class / object-property / data-property / annotation-property
 / individual / datatype / ontology -- see
 `elot-db--search-kind-map').  SOURCE, when non-nil, restricts
 to a single registered source.  LANG, when non-nil, requires
@@ -1442,7 +1443,7 @@ Read-only over the entire database; runs through the M6.1
 access path for `elot_db_search_label' (and, in a follow-up,
 `elot_db_borrow_term')."
   (unless (and (stringp query) (not (string-empty-p query)))
-    (user-error "elot-db: query must be a non-empty string"))
+    (user-error "ELOT-db: query must be a non-empty string"))
   (let* ((q-bare query)
          (q     (if (string-match-p "%" query)
                     query
@@ -1452,7 +1453,7 @@ access path for `elot_db_search_label' (and, in a follow-up,
                  ((and (integerp limit) (<= limit 0)) nil)
                  ((integerp limit) limit)
                  (t (user-error
-                     "elot-db: limit must be an integer"))))
+                     "ELOT-db: limit must be an integer"))))
          (kind-curie (elot-db--search-kind-curie kind))
          (extra-clauses nil)
          (extra-params  nil))
@@ -1555,9 +1556,9 @@ access path for `elot_db_search_label' (and, in a follow-up,
               merged)))))))
 
 
-;;; --------------------------------------------------------------------
-;;; Entity citation -- M6.5 second half (reuse-before-mint)
-;;; --------------------------------------------------------------------
+;;;; --------------------------------------------------------------------
+;;;; Entity citation -- M6.5 second half (reuse-before-mint)
+;;;; --------------------------------------------------------------------
 
 (defun elot-db-entity-citation (token)
   "Return citation metadata for TOKEN, or nil when unknown.
@@ -1583,7 +1584,7 @@ Returns nil when TOKEN does not name a known entity.  Read-only;
 runs through the M6.1 `elot-db-execute-readonly' gate.  This is
 the sole DB access path for `elot_db_borrow_term'."
   (unless (and (stringp token) (not (string-empty-p token)))
-    (user-error "elot-db: token must be a non-empty string"))
+    (user-error "ELOT-db: token must be a non-empty string"))
   (let* ((id (if (and (string-prefix-p "<" token)
                       (string-suffix-p ">" token)
                       (> (length token) 2))
