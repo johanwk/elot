@@ -814,9 +814,7 @@ Returns a plist:
   (:source ABSOLUTE-PATH
    :status :registered | :refreshed | :already-up-to-date | :already-active
    :entities N
-   :was-active BOOL)
-
-Step 9.1 of ELOT-GPTEL-PLAN.org."
+   :was-active BOOL)."
   (let* ((abs (expand-file-name file))
          (_   (unless (file-exists-p abs)
                 (user-error "ELOT-sources: file not found: %s" abs)))

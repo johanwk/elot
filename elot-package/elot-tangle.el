@@ -1144,7 +1144,7 @@ Returns nil if NODE does not define a resource or is tagged :nodeclare:."
     (when (and uri (stringp uri) (not (member "nodeclare" tags)))
       ;; 1. Partition descriptions into restrictions and annotations.
       ;;    Blank OMN-axiom rows (e.g. `Domain ::' with no value, inherited
-      ;;    from the M10.6 sibling/child insert template) are silently
+      ;;    from the sibling/child insert template) are silently
       ;;    dropped here -- emitting them would produce malformed OMN
       ;;    (`Domain:' with no class expression) and ROBOT's OWLAPI
       ;;    parser refuses the whole file.  The companion

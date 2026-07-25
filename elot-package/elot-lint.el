@@ -1277,7 +1277,7 @@ This checker consumes `elot-headline-hierarchy' (refreshed via
 ;; EquivalentClasses, ...) and whose VALUE is empty after string-trim.
 ;;
 ;; F2 prevents such rows from producing malformed OMN, but they are
-;; almost always an authoring mistake (M10.6 description-list
+;; almost always an authoring mistake (description-list
 ;; inheritance leftovers, interrupted edits, or template copy-paste
 ;; that the author meant to fill in).  Severity `warning' rather than
 ;; `error' because the OMN output is now well-formed; the lint surface

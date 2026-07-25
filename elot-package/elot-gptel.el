@@ -48,7 +48,7 @@
 (declare-function project-root "project")
 (declare-function elot-org-lint "elot-lint")
 (declare-function elot-update-headline-hierarchy "elot-tangle")
-;; M9.3.F8: O(1) staleness markers.
+;; O(1) staleness markers.
 (declare-function elot-headline-hierarchy-mark-stale "elot-tangle" ())
 (declare-function elot-headline-hierarchy-ensure-fresh "elot-tangle" ())
 (declare-function elot-get-ontology-node-omn "elot-tangle")
@@ -139,8 +139,7 @@ the tool table is assembled.  Three values are recognised:
 
   `never'       Suppress `:confirm t' unconditionally.  The
                 side-effects flag is the sole pre-commit gate.
-                Closes the rename/move-vs-insert asymmetry the
-                M9.3 changelog records.
+                Closes the rename/move-vs-insert asymmetry.
 
 Changing this defcustom via the customisation mechanism
 re-registers ELOT's tool table automatically when gptel is
@@ -230,7 +229,7 @@ in ORG-FILE's directory."
 (defcustom elot-gptel-content-arg-max-bytes (* 4 1024 1024)
   "Soft cap on the `content' argument size, in bytes.
 Applies to the optional `content' string accepted by
-`elot_lint' and `elot_omn_validate' (M7.5 Step 7.5.2).  When
+`elot_lint' and `elot_omn_validate'.  When
 the supplied draft exceeds this many bytes (measured as
 `string-bytes'), the tool refuses with a structured
 `ERROR:' line instead of writing the content to the
@@ -277,7 +276,7 @@ signals `user-error' otherwise.  Symlinks are resolved on the
 parent directory chain so symlink-based escapes are refused.
 Unlike `elot-gptel--resolve-file', this does *not* check that the
 resulting path names an existing regular file -- intended for the
-M7.5 `content' arg, where the LLM lints an in-flight draft whose
+the `content' arg, where the LLM lints an in-flight draft whose
 on-disk counterpart may not yet exist."
   (unless (and path (stringp path) (not (string-empty-p path)))
     (user-error "ELOT-gptel: missing file argument"))
@@ -342,7 +341,7 @@ call reads naturally inline."
     elot/facts-punning
     elot/blank-omn-axiom-row
     elot/subclass-in-description-list
-    ;; OOPS!-derived sliver (M8 follow-up); the full SPARQL-backed
+    ;; OOPS!-derived sliver; the full SPARQL-backed
     ;; OOPS! suite remains available via `elot-oops-run' for cases
     ;; the cheap Elisp sliver cannot see.
     elot/oops-missing-annotations
@@ -378,7 +377,7 @@ Return a list of plists (:line :col :severity :category :trust :message).
 LOGICAL-FILE, when non-nil, is used for the variables `buffer-file-name' and
 `default-directory' during the lint so checkers and Org-mode
 resolution behave as though the bytes lived there (used by the
-M7.5 `content' code path, where FILE is a workspace temp file
+the `content' code path, where FILE is a workspace temp file
 but diagnostics should be framed against the user's intended
 path)."
   (require 'org)
@@ -594,7 +593,7 @@ Returns a plain-text report.  See plan Milestones 1 and 7.5."
 
 Reads bytes from SOURCE-FILE when supplied, otherwise from
 ORG-FILE.  In either case the OMN frames and sidecar map record
-ORG-FILE as the logical source -- the M7.5 `content' code path
+ORG-FILE as the logical source -- the `content' code path
 uses SOURCE-FILE to point at a workspace temp file while
 ORG-FILE remains the user's intended path for diagnostics.
 
@@ -867,7 +866,7 @@ a plain-text report."
 ;; per ontology node and surfaces the report verbatim in the standard
 ;; ELOT envelope.
 ;;
-;; Scope deliberately narrow (M8.4 rewrite, see plan): we do NOT
+;; Scope deliberately narrow: we do NOT
 ;; vendor ROBOT's report-query catalogue, we do NOT assert which
 ;; queries fire on which inputs, and we do NOT batch / re-rank by
 ;; severity.  The catalogue is documented at
@@ -915,7 +914,7 @@ ontology is clean)."
                       (point-min) (point-max)))))
     (unless (and (numberp exit) (zerop exit))
       ;; `robot report' prints diagnostics on stderr (or stdout in
-      ;; some failure modes); reuse the M3 stdout/stderr fallback.
+      ;; some failure modes); reuse the stdout/stderr fallback.
       (let* ((err-raw (or (plist-get res :stderr) ""))
              (out-raw (or (plist-get res :stdout) ""))
              (effective (if (string-empty-p (string-trim err-raw))
@@ -1565,10 +1564,10 @@ reach ROBOT.  FILE, QUERY, FORMAT and LIMIT are as for
 ;;
 ;; Run ROBOT's `reason' subcommand against each ontology node and
 ;; report any unsatisfiable classes found.  Pipeline mirrors
-;; `elot_omn_validate' (M3): tangle inside a workspace, run ROBOT,
+;; `elot_omn_validate': tangle inside a workspace, run ROBOT,
 ;; classify the result.  The classifier already recognises
 ;; `:unsatisfiable-classes' and `:inconsistent-ontology' kinds, so
-;; this tool reuses the M3 stderr/stdout fallback trick rather than
+;; this tool reuses the stderr/stdout fallback trick rather than
 ;; extending the classifier.
 
 (defconst elot-gptel--reasoners
@@ -1626,7 +1625,7 @@ NODE-INFO is a plist as produced by
     (let* ((exit (plist-get res :exit))
            ;; ROBOT prints `reason' diagnostics on stdout for some
            ;; failure modes (e.g. "There are N unsatisfiable
-           ;; classes"); reuse the M3 fallback trick.
+           ;; classes"); reuse the stderr/stdout fallback trick.
            (err-raw (or (plist-get res :stderr) ""))
            (out-raw (or (plist-get res :stdout) ""))
            (effective (if (string-empty-p (string-trim err-raw))
@@ -1849,7 +1848,7 @@ the ELOT DB has them)."
 ;; deleted on exit.  It is therefore *not* gated behind
 ;; `elot-gptel-allow-side-effects'.  Wall-clock cost is bounded by
 ;; `elot-gptel-explain-timeout' (default 60 s); pathological calls
-;; abort cleanly via the M2 timeout mechanism.
+;; abort cleanly via the timeout mechanism.
 
 (defcustom elot-gptel-explain-timeout 60
   "Wall-clock budget for `elot_explain', in seconds.
@@ -2576,7 +2575,7 @@ the prefix is unknown or CURIE is malformed.  Read-only."
 ;; Three dedicated SELECTs that the LLM would otherwise have to
 ;; compose via `elot_db_query'.  Each is a one-purpose tool with a
 ;; stable, columnar output shape; all internally call
-;; `elot-db-execute-readonly', so they inherit the M6.1 gate and the
+;; `elot-db-execute-readonly', so they inherit the read-only gate and the
 ;; `query_only' PRAGMA discipline for free.
 ;;
 ;; A subtlety pinned by the plan (Step 6.4 Wave B assessment): the
@@ -2627,7 +2626,7 @@ Returns a TSV with columns `prop', `value', `lang', `source',
 `data_source', or =OK: no rows= when nothing is stored.
 
 Read-only; uses `elot-db-execute-readonly' so the call goes
-through the M6.1 read-only gate."
+through the read-only gate."
   (condition-case err
       (progn
         (unless (and (stringp id) (not (string-empty-p id)))
@@ -2787,13 +2786,13 @@ or has no asserted type.  Read-only."
 ;;;; elot_db_search_label tool (Milestone 6 Step 6.5 -- reuse-before-mint)
 ;;;; ---------------------------------------------------------------------------
 ;;
-;; First half of M6.5: search the *entire* DB (not just active
+;; First half of the borrow-term flow: search the *entire* DB (not just active
 ;; sources) for entities whose label or id matches a substring,
 ;; optionally filtered by kind / source / language.  The LLM
 ;; consults this BEFORE calling `elot_mint_identifier' so reuse of
 ;; existing identifiers is preferred over fresh minting.
 ;;
-;; The second M6.5 tool (`elot_db_borrow_term') will produce an
+;; The second borrow-term tool (`elot_db_borrow_term') will produce an
 ;; ELOT description-list snippet -- including the `rdfs:isDefinedBy'
 ;; back-pointer -- to be embedded under a heading via `elot_add_term'.
 
@@ -2827,7 +2826,7 @@ LIMIT caps the number of returned rows (default
 `elot-gptel--db-search-default-limit', max
 `elot-gptel--db-search-max-limit').
 
-EXACT-ONLY, when non-nil, suppresses the M11.1 cross-prefix
+EXACT-ONLY, when non-nil, suppresses the cross-prefix
 local-name fallback.  By default, when QUERY looks like a CURIE
 \(`prefix:localname') and the direct prefix:local lookup misses,
 the search retries against the local-name part alone, matched
@@ -2850,7 +2849,7 @@ source's `owl:Ontology' declaration -- the citation target for
 an `rdfs:isDefinedBy' back-pointer when the LLM borrows the
 term into a new ontology (see `elot_db_borrow_term').
 
-Read-only; uses `elot-db-execute-readonly' under the M6.1
+Read-only; uses `elot-db-execute-readonly' under the
 read-only gate.  The whole DB is searched, *not* just the
 buffer's active label sources -- the cache accumulates every
 ontology you have ever registered, and any of those is a
@@ -2893,7 +2892,7 @@ candidate for reuse before minting a fresh identifier."
 ;;
 ;; Given an entity TOKEN (CURIE or IRI) known to the ELOT DB,
 ;; return a plain-text ELOT description-list snippet that the
-;; LLM (or M9.3's `elot_add_term') can embed under a heading.
+;; LLM (or `elot_add_term') can embed under a heading.
 ;; The snippet ALWAYS carries an `rdfs:isDefinedBy' back-pointer
 ;; to the source ontology IRI -- the citation is part of the
 ;; tool's output shape, not an instruction in its docstring, so
@@ -3115,8 +3114,8 @@ mechanical reuse always carries the attribution.
 
 When the source ontology has no `owl:Ontology' declaration in
 the DB, `rdfs:isDefinedBy' falls back to a `(source: NAME)'
-note.  The leading `*' is a placeholder -- callers (M9.3's
-`elot_add_term', or the user) re-level it to match the target
+note.  The leading `*' is a placeholder -- callers (`elot_add_term',
+or the user) re-level it to match the target
 ontology's structure.
 
 Returns a plain-text snippet (no JSON, no escaping beyond ELOT
@@ -3143,7 +3142,7 @@ buffer.  When TOKEN is unknown, returns
 ;;;; elot_borrow_term tool (Milestone 9 Step 9.7 -- composite reuse-before-mint)
 ;;;; ---------------------------------------------------------------------------
 ;;
-;; Composes the three M6.5 atomic tools (`elot_db_search_label' +
+;; Composes the three atomic borrow-term tools (`elot_db_search_label' +
 ;; `elot_db_get_attributes' + `elot_db_borrow_term') into a single
 ;; round-trip so the LLM's canonical reuse-before-mint workflow
 ;; collapses from three tool calls to one.  Pipeline: search the
@@ -3198,7 +3197,7 @@ required label language tag).
 
 Pipeline:
 - Zero rows  -> returns
-    OK: no candidates -- fall through to elot_mint_identifier (M10)
+    OK: no candidates -- fall through to elot_mint_identifier
   on a single line.  Stable signal the LLM can match on.
 - One row    -> auto-borrow: a one-line provenance preface
   followed by the same ELOT description-list snippet
@@ -3238,7 +3237,7 @@ disambiguation stays with the caller.  Read-only."
            ((= n 0)
             (concat
              "OK: no candidates -- fall through to "
-             "elot_mint_identifier (M10)"))
+             "elot_mint_identifier"))
            ;; Exactly one candidate: auto-borrow.
            ((= n 1)
             (let* ((row (car rows))
@@ -3877,7 +3876,7 @@ Filtered out of the `Existing rows' block returned by
      "rdfs:Datatype")
     ("owl:Ontology"))
   "Per-kind list of signature buckets reachable from frame keywords.
-Mitigation (1) from the M9.2 size
+Mitigation (1) from the tool-output size
 discussion: a property-axiom author has no use for Individuals or
 APs in its frame fragments, so don't enumerate them.  Keyed by
 `rdf:type'; the fallback (unknown kind) is the union of all six
@@ -3950,7 +3949,7 @@ default `eq' -- two equal strings are not `eq'."
   "Render the per-kind buffer signature derived from SLURP.
 When KIND is non-nil, restrict the enumerated buckets to those
 frame keywords for KIND can actually reference (mitigation (1)
-from the M9.2 size discussion).  An unknown / nil KIND falls
+from the tool-output size discussion).  An unknown / nil KIND falls
 back to the full six-bucket render."
   (let ((kinds (or (cdr (assoc kind elot-gptel--axiom-signature-kinds-for))
                    elot-gptel--axiom-signature-all-kinds)))
@@ -5431,7 +5430,7 @@ or an `ERROR:' line on refusal / failure."
 ;; `elot-id-move.el').  Side-effecting: mutates the user's .org
 ;; file in place, gated by `elot-gptel-allow-side-effects'.
 ;;
-;; Pipeline (mirrors the M12.4 rename wrapper):
+;; Pipeline (mirrors the rename wrapper):
 ;;   1. Gate check (side-effects, arg shape).
 ;;   2. Open the buffer for FILE (visiting if necessary), put it in
 ;;      `org-mode' when it is not already.
@@ -5453,7 +5452,7 @@ or an `ERROR:' line on refusal / failure."
 ;;;; elot_insert_* tools (Milestone 9 Step 9.3)
 ;;;; ---------------------------------------------------------------------------
 ;;
-;; Thin LLM-facing wrappers over the M10.6 interactive insert
+;; Thin LLM-facing wrappers over the interactive insert
 ;; commands in `elot-id-insert.el'.  Side-effecting: each call
 ;; mutates the user's .org file in place, gated by
 ;; `elot-gptel-allow-side-effects'.
@@ -5465,7 +5464,7 @@ or an `ERROR:' line on refusal / failure."
 ;; are allowed to nest as a visual / editing aid).
 ;; These wrappers are pure plumbing: anchor resolution + atomic
 ;; apply + auto-revalidate + rollback.  The result envelope
-;; mirrors the M12.1 / M12.4 wrappers (OK: one-liner + lint/OMN
+;; mirrors the other insert/rename wrappers (OK: one-liner + lint/OMN
 ;; blocks).  Minted CURIEs are listed as a bulleted block in the
 ;; success body.
 
@@ -5920,7 +5919,7 @@ precedes the diagnostic body."
          (symbol-name as-sym))))))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; M9.9 -- reference-scan helper for resource deletion
+;;;; reference-scan helper for resource deletion
 ;;;; ---------------------------------------------------------------------------
 ;;
 ;; Shared scanner that answers "what would dangle if I removed
@@ -6186,7 +6185,7 @@ for reuse by a future `elot_rename_resource --safe' mode."
 
 
 ;;;; ---------------------------------------------------------------------------
-;;;; M9.9.B.1 -- `elot-gptel--delete-apply' core primitive
+;;;; `elot-gptel--delete-apply' core primitive
 ;;;; ---------------------------------------------------------------------------
 ;;
 ;; Pure buffer mutator over a resolved resource heading.  No tool spec
@@ -6309,12 +6308,12 @@ malformed CASCADE."
 
 
 ;;;; ---------------------------------------------------------------------------
-;;;; M9.9.B.2 -- `elot_delete_resource' singleton tool wrapper
+;;;; `elot_delete_resource' singleton tool wrapper
 ;;;; ---------------------------------------------------------------------------
 ;;
 ;; Thin LLM-facing wrapper over the B.1 core primitive.  Adds the
 ;; pre-flight reference scan (Slice A), the cascade branch
-;; (`refuse' / `reparent' / `delete'), the M9 write-back contract
+;; (`refuse' / `reparent' / `delete'), the write-back contract
 ;; (side-effects gate, save + revalidate + rollback), and a
 ;; `dry_run' mode that validates against an in-memory draft and
 ;; restores the buffer afterwards.
@@ -6424,7 +6423,7 @@ recommended' tail."
 
 (defun elot-gptel-tool-delete-resource
     (file subject &optional cascade dry-run)
-  "Implementation of the `elot_delete_resource' tool (M9.9 B.2).
+  "Implementation of the `elot_delete_resource' tool.
 
 Removes the resource heading SUBJECT (CURIE preferred or
 unambiguous label) from FILE, with collateral handling
@@ -6610,10 +6609,10 @@ or an `ERROR:' / `FAIL:' line on refusal / failure."
 
 
 ;;;; ---------------------------------------------------------------------------
-;;;; M9.9.F1 -- parent enumeration for `elot_replace_with_parent'
+;;;; parent enumeration for `elot_replace_with_parent'
 ;;;; ---------------------------------------------------------------------------
 ;;
-;; The parent-enumeration slice of M9.9.F1.  Pure read; no tool spec,
+;; The parent-enumeration slice.  Pure read; no tool spec,
 ;; no dispatcher entry, no rename call, no `dry_run', no NOTE.  Just
 ;; the helper that answers "what are SUBJECT's immediate parents?" --
 ;; the guard whose presence is the whole value F1 adds over a bare
@@ -6773,7 +6772,7 @@ committed) fold."
               " regression (auto-check unavailable: " verdict ")")))))
 
 (defun elot-gptel-tool-replace-with-parent (file subject &optional parent dry-run)
-  "Implementation of the `elot_replace_with_parent' tool (M9.9.F1).
+  "Implementation of the `elot_replace_with_parent' tool.
 FILE is the ontology source; SUBJECT the resource to reparent;
 PARENT the chosen parent; DRY-RUN previews without committing.
 
@@ -7786,7 +7785,7 @@ Pipeline:
      PARENT supplied but not in the candidate set -> refuse
        with the candidate list.
   3. Defer to `elot_rename_resource' with source=SUBJECT and
-     target=PARENT.  Inherits the full M9 write-back
+     target=PARENT.  Inherits the full write-back
      contract: gated by `elot-gptel-allow-side-effects',
      atomic apply with re-lint + OMN-parse, rollback on
      revalidation failure.  NOTE: that inner revalidation is
@@ -8302,7 +8301,7 @@ or has no asserted type.  Read-only."
      :description
      "Search the entire ELOT label database for entities matching QUERY.
 
-Use this BEFORE minting a fresh identifier (M10's
+Use this BEFORE minting a fresh identifier (via
 `elot_mint_identifier'): if the cache already contains a term
 labelled `Snake' from some past project, reuse that identifier
 (and cite the source ontology via `rdfs:isDefinedBy') rather
@@ -8325,7 +8324,7 @@ Returns a TSV with columns: id, label, kind (the asserted
 `rdfs:isDefinedBy'), source, data_source, via.  The `via'
 column marks how each row was found: `exact' (id equals the
 query), `label-substring' (LIKE-substring hit), or
-`local-name' (M11.1 cross-prefix fallback -- QUERY looked
+`local-name' (cross-prefix fallback -- QUERY looked
 like `prefix:local' but the entity was found under a
 different prefix; inspect before adopting as a reuse).
 
@@ -8363,7 +8362,7 @@ signal to fall through to `elot_mint_identifier'.  Read-only."
              :type boolean
              :optional t
              :description
-             "When true, suppress the M11.1 cross-prefix local-name fallback and require strict id/label matching."))))
+             "When true, suppress the cross-prefix local-name fallback and require strict id/label matching."))))
 
 (defconst elot-gptel--spec-db-borrow-term
   '("elot_db_borrow_term"
@@ -8386,7 +8385,7 @@ re-level it to match the target ontology's structure
 child of an existing resource heading).
 
 Use this AFTER `elot_db_search_label' has produced a
-matching CURIE, BEFORE `elot_add_term' (M9.3) embeds the
+matching CURIE, BEFORE `elot_add_term' embeds the
 borrowed term into the target ontology.  Read-only."
      :args
      ((:name "token"
@@ -8403,7 +8402,7 @@ borrow the unique match in one call.
 
 Pipeline:
 - Zero candidates -> a single line
-    OK: no candidates -- fall through to elot_mint_identifier (M10)
+    OK: no candidates -- fall through to elot_mint_identifier
   Stable signal that no reuse is possible.
 - Exactly one candidate -> auto-borrow: a one-line provenance
   preface (kind / source / via) followed by the same ELOT

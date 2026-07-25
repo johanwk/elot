@@ -1366,7 +1366,7 @@ when KIND is non-empty but unknown."
   "\\`[A-Za-z_][A-Za-z0-9_-]*:.+\\'"
   "Regexp matching a CURIE-shaped QUERY (`prefix:localname').
 Used by `elot-db-search-entities' to decide when to issue the
-M11.1 cross-prefix local-name fallback SELECT.")
+cross-prefix local-name fallback SELECT.")
 
 (defun elot-db--search-curie-shaped-p (query)
   "Non-nil when QUERY looks like a CURIE (`prefix:local').
@@ -1401,7 +1401,7 @@ to a single registered source.  LANG, when non-nil, requires
 the entity to carry at least one `rdfs:label' row with that
 language tag.
 
-EXACT-ONLY, when non-nil, suppresses the M11.1 cross-prefix
+EXACT-ONLY, when non-nil, suppresses the cross-prefix
 local-name fallback (described below).  Use this when strict
 equality semantics are required (e.g. `elot-db-entity-citation'
 already matches on the id column exactly and does not want
@@ -1416,7 +1416,7 @@ declaration in the same source -- the citation target for an
 indicating how the row was found:
   `exact'           id column matched the (un-wrapped) query exactly.
   `label-substring' label or id matched as a LIKE substring.
-  `local-name'      cross-prefix fallback (M11.1): QUERY was
+  `local-name'      cross-prefix fallback: QUERY was
                     CURIE-shaped, the direct prefix:local lookup
                     missed, but an entity in some source carries
                     the same local-name under a different prefix.
@@ -1425,7 +1425,7 @@ appears only when QUERY looks like `prefix:local' and
 EXACT-ONLY is nil.  Rows found by both passes are reported
 once with their primary-pass VIA value (no duplication).
 
-Read-only over the entire database; runs through the M6.1
+Read-only over the entire database; runs through the
 `elot-db-execute-readonly' gate.  Designed as the sole DB
 access path for `elot_db_search_label' (and, in a follow-up,
 `elot_db_borrow_term')."
@@ -1499,7 +1499,7 @@ access path for `elot_db_search_label' (and, in a follow-up,
                            (elot-db--search-curie-localname q-bare))))
       (if (not localname)
           primary
-        ;; M11.1 fallback: cross-prefix local-name match.  Use the
+        ;; Cross-prefix fallback: local-name match.  Use the
         ;; CURIE local-name to match either the id column's
         ;; local-name part (after the last `:') or the label column
         ;; exactly (case-insensitive).  Rows already returned by the
@@ -1544,7 +1544,7 @@ access path for `elot_db_search_label' (and, in a follow-up,
 
 
 ;;;; --------------------------------------------------------------------
-;;;; Entity citation -- M6.5 second half (reuse-before-mint)
+;;;; Entity citation (reuse-before-mint)
 ;;;; --------------------------------------------------------------------
 
 (defun elot-db-entity-citation (token)
@@ -1568,7 +1568,7 @@ Returns a plist with keys
   :ontology-title -- `dcterms:title' of the ontology id (or nil)
 
 Returns nil when TOKEN does not name a known entity.  Read-only;
-runs through the M6.1 `elot-db-execute-readonly' gate.  This is
+runs through the `elot-db-execute-readonly' gate.  This is
 the sole DB access path for `elot_db_borrow_term'."
   (unless (and (stringp token) (not (string-empty-p token)))
     (user-error "ELOT-db: token must be a non-empty string"))
