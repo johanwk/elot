@@ -1,17 +1,33 @@
-#+title: ELOT documentation
+#+title: ELOT documentation -- status
 
-* More documentation is needed
+* ⚠️ Work in progress
 
- - installation
- - simple use -- editing and exporting an ontology
- - typical use cases
- - advanced use
-   - including illustrations
-   - exporting to formats other than HTML
-   - including SPARQL queries and generating diagrams
-   - reporting and QA
-   - use in a "modular" ontology with various imports
-   - integrating templates for generated ontology content
+This =documentation/= tree is under active construction and is *incomplete*.
+Several files under =manual/= are stubs or drafts and may be inaccurate.
+
+** What is reliable today
+- =README.md= (repository root) -- installation and overview.
+- =documentation/elot-gptel.org= -- the gptel AI-assisted authoring integration.
+- =documentation/elot-gptel-toolsheet.org= -- tool + error reference.
+- =documentation/elot-id.org= -- identifier schemes.
+
+** In progress
+- =manual/= -- the long-form ELOT manual (tutorial / how-to / reference).
+  The structure is in place; prose is being filled in.
+
+** Still needed
+- installation
+- simple use -- editing and exporting an ontology
+- typical use cases
+- advanced use
+  - including illustrations
+  - exporting to formats other than HTML
+  - including SPARQL queries and generating diagrams
+  - reporting and QA
+  - use in a "modular" ontology with various imports
+  - integrating templates for generated ontology content
+
+Corrections and contributions welcome.
 
 * Introductory presentation, 2024
 
@@ -21,4 +37,4 @@ This presentation can be a good starting point for a quick look at main features
 
 * Installation
 
-For Windows users who don't have the Emacs editor installed, [[file:readme_installation.md]] (2024) documents how to get started. This walkthrough is however unfinished.
+For Windows users who don't have the Emacs editor installed, [[file:readme_installation.org]] (2024) documents how to get started. This walkthrough is however unfinished.
