@@ -17,7 +17,7 @@
 ;;   - `elot-tangle.el'  -- post-tangle OMN -> Turtle conversion
 ;;   - `elot-sources.el' -- SPARQL queries against Turtle sources
 ;;   - `elot-gptel.el'   -- LLM-callable validation, SPARQL and
-;;                          reasoning tools (Milestones 3-5)
+;;                          reasoning tools
 ;;
 ;; *ROBOT is optional for ELOT.*  Manchester Syntax (OMN) output
 ;; from ELOT itself is pure Emacs Lisp.  ROBOT is only needed for:

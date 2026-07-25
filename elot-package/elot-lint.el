@@ -1344,7 +1344,7 @@ Annotation rows (e.g. `rdfs:comment ::') are not in scope."
 ;; (https://oops.linkeddata.es/catalogue.jsp), reimplemented as pure
 ;; Elisp org-lint checkers so they run inline at authoring time
 ;; alongside the rest of `elot-org-lint'.  The full SPARQL-backed
-;; OOPS! suite (planned under Milestone 8) remains the source of
+;; OOPS! suite remains the source of
 ;; truth for the catalogue at large; the three checkers below are
 ;; the subset that maps cleanly to patterns already visible in
 ;; `elot-headline-hierarchy', so no new index machinery is needed.

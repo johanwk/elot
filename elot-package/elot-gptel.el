@@ -31,7 +31,7 @@
 ;;      to `project-current' (or `default-directory') and refused if
 ;;      they escape the project root.
 ;;   4. gptel is a soft dependency; ROBOT (where used) is invoked via
-;;      a separate process layer (Milestone 2).
+;;      a separate process layer.
 ;;
 ;; Entry point:
 ;;
@@ -505,7 +505,7 @@ project-traversal guard applies and the path may not yet exist
 on disk).  Lets an LLM agent re-lint its own in-flight edits
 without a save roundtrip.
 
-Returns a plain-text report.  See plan Milestones 1 and 7.5."
+Returns a plain-text report."
   (condition-case err
       (let* ((sev-key (and severity (downcase severity)))
              (sev-sym
@@ -566,7 +566,7 @@ Returns a plain-text report.  See plan Milestones 1 and 7.5."
      (format "ERROR: %s" (error-message-string err)))))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; elot_omn_validate tool (Milestone 3)
+;;;; elot_omn_validate tool
 ;;;; ---------------------------------------------------------------------------
 ;;
 ;; Pipeline: tangle the .org file's ontology heading(s) to OMN inside a
@@ -858,7 +858,7 @@ a plain-text report."
     (error      (format "ERROR: %s" (error-message-string err)))))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; elot_omn_report tool (Milestone 8 Step 8.4)
+;;;; elot_omn_report tool
 ;;;; ---------------------------------------------------------------------------
 ;;
 ;; Thin wrapper around ROBOT's `report' subcommand.  Tangles FILE the
@@ -1043,7 +1043,7 @@ executable on PATH)."
     (error      (format "ERROR: %s" (error-message-string err)))))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; elot_diff tool (Milestone 9 Step 9.5)
+;;;; elot_diff tool
 ;;;; ---------------------------------------------------------------------------
 ;;
 ;; Thin wrapper around ROBOT's `diff' subcommand.  Given two
@@ -1201,7 +1201,7 @@ executable on PATH)."
     (error      (format "ERROR: %s" (error-message-string err)))))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; elot_sparql tool (Milestone 4)
+;;;; elot_sparql tool
 ;;;; ---------------------------------------------------------------------------
 ;;
 ;; Execute a SPARQL query against an ontology -- either an ELOT .org
@@ -1559,7 +1559,7 @@ reach ROBOT.  FILE, QUERY, FORMAT and LIMIT are as for
   (elot-gptel--sparql-run file query format limit :select-only t))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; elot_unsatisfiable tool (Milestone 5 Step 5.1)
+;;;; elot_unsatisfiable tool
 ;;;; ---------------------------------------------------------------------------
 ;;
 ;; Run ROBOT's `reason' subcommand against each ontology node and
@@ -1834,7 +1834,7 @@ the ELOT DB has them)."
     (error      (format "ERROR: %s" (error-message-string err)))))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; elot_explain tool (Milestone 5 Step 5.3)
+;;;; elot_explain tool
 ;;;; ---------------------------------------------------------------------------
 ;;
 ;; Run ROBOT's `explain' subcommand to surface a justification for
@@ -2236,7 +2236,7 @@ deleted on exit."
     (error      (format "ERROR: %s" (error-message-string err)))))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; elot_db_query tool (Milestone 6 Step 6.2)
+;;;; elot_db_query tool
 ;;;; ---------------------------------------------------------------------------
 
 (defconst elot-gptel--db-query-default-limit 200
@@ -2331,7 +2331,7 @@ when the gate refuses the query or the DB is unavailable."
     (error      (format "ERROR: %s" (error-message-string err)))))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; elot_db_schema tool (Milestone 6 Step 6.3)
+;;;; elot_db_schema tool
 ;;;; ---------------------------------------------------------------------------
 
 (declare-function elot-db--read-schema-sql "elot-db" ())
@@ -2380,7 +2380,7 @@ Read-only."
     (error      (format "ERROR: %s" (error-message-string err)))))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; Convenience shims (Milestone 6 Step 6.4 -- Wave A)
+;;;; Convenience shims -- Wave A
 ;;;; ---------------------------------------------------------------------------
 
 (declare-function elot-db-get-label-any "elot-db" (token &optional active-sources))
@@ -2569,7 +2569,7 @@ the prefix is unknown or CURIE is malformed.  Read-only."
     (error      (format "ERROR: %s" (error-message-string err)))))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; Attribute-driven SQL-select shims (Milestone 6 Step 6.4 -- Wave B)
+;;;; Attribute-driven SQL-select shims -- Wave B
 ;;;; ---------------------------------------------------------------------------
 ;;
 ;; Three dedicated SELECTs that the LLM would otherwise have to
@@ -2783,7 +2783,7 @@ or has no asserted type.  Read-only."
     (error      (format "ERROR: %s" (error-message-string err)))))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; elot_db_search_label tool (Milestone 6 Step 6.5 -- reuse-before-mint)
+;;;; elot_db_search_label tool -- reuse-before-mint
 ;;;; ---------------------------------------------------------------------------
 ;;
 ;; First half of the borrow-term flow: search the *entire* DB (not just active
@@ -2887,7 +2887,7 @@ candidate for reuse before minting a fresh identifier."
     (error      (format "ERROR: %s" (error-message-string err)))))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; elot_db_borrow_term tool (Milestone 6 Step 6.5 -- second half)
+;;;; elot_db_borrow_term tool -- reuse-before-mint (second half)
 ;;;; ---------------------------------------------------------------------------
 ;;
 ;; Given an entity TOKEN (CURIE or IRI) known to the ELOT DB,
@@ -3139,7 +3139,7 @@ buffer.  When TOKEN is unknown, returns
     (error      (format "ERROR: %s" (error-message-string err)))))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; elot_borrow_term tool (Milestone 9 Step 9.7 -- composite reuse-before-mint)
+;;;; elot_borrow_term tool -- composite reuse-before-mint
 ;;;; ---------------------------------------------------------------------------
 ;;
 ;; Composes the three atomic borrow-term tools (`elot_db_search_label' +
@@ -3265,7 +3265,7 @@ token=ID' directly with the chosen id."
     (error      (format "ERROR: %s" (error-message-string err)))))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; elot_conventions tool (Milestone 7.5 Step 7.5.1)
+;;;; elot_conventions tool
 ;;;; ---------------------------------------------------------------------------
 ;;
 ;; A zero-argument tool returning ELOT's authoring conventions as
@@ -3353,7 +3353,7 @@ Read-only.  Never raises; on any internal error returns an
     (error (format "ERROR: %s" (error-message-string err)))))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; elot_check tool (Milestone 7.5 Step 7.5.6)
+;;;; elot_check tool
 ;;;; ---------------------------------------------------------------------------
 ;;
 ;; Composite, fail-fast pipeline: LINT -> OMN PARSE -> CONSISTENCY ->
@@ -3565,7 +3565,7 @@ returned in the affected stage."
     (mapconcat #'identity (nreverse sections) "\n\n")))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; Identifier minting (Milestone 10)
+;;;; Identifier minting
 ;;;; ---------------------------------------------------------------------------
 ;;
 ;; Thin LLM-facing wrappers around `elot-id-mint' and `elot-id-verify'
@@ -3787,7 +3787,7 @@ or an `ERROR:' line.  Read-only."
     (error      (format "ERROR: %s" (error-message-string err)))))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; elot_axiom_keywords tool (Milestone 9 Step 9.2.a)
+;;;; elot_axiom_keywords tool
 ;;;; ---------------------------------------------------------------------------
 ;;
 ;; Read-only authoring helper.  Given a subject CURIE / label,
@@ -4056,7 +4056,7 @@ Returns an `OK:'-prefixed multi-line report on success, an
     (error      (format "ERROR: %s" (error-message-string err)))))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; elot_axiom_check tool (Milestone 9 Step 9.2.b)
+;;;; elot_axiom_check tool
 ;;;; ---------------------------------------------------------------------------
 ;;
 ;; Read-only pre-flight validator for a candidate
@@ -4195,7 +4195,7 @@ string."
     (file subject keyword fragment &optional consistency)
   "Pre-flight validate a candidate `KEYWORD :: FRAGMENT' row on SUBJECT.
 
-Read-only.  Milestone 9 Step 9.2.b.  Resolves SUBJECT against
+Read-only.  Resolves SUBJECT against
 the buffer's `elot-slurp', checks that KEYWORD is legal on the
 subject's kind (frame keyword for the subject's `rdf:type', or
 an annotation property declared in FILE), synthesises the row
@@ -4501,7 +4501,7 @@ BODY must return the success header string."
   `(elot-gptel--apply-mutation ,(car args) ,(cadr args) (lambda () ,@body)))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; elot_edit_axiom tool (Milestone 9 Step 9.2.c)
+;;;; elot_edit_axiom tool
 ;;;; ---------------------------------------------------------------------------
 ;;
 ;; Writer counterpart of the 9.2.b pre-flight: commits a single
@@ -4810,8 +4810,7 @@ the sweep."
   "Commit a single description-list row `- KEYWORD :: FRAGMENT' on SUBJECT in FILE.
 MATCH-FRAGMENT, when supplied, selects which existing row to act on.
 
-Implementation of the `elot_edit_axiom' tool (Milestone 9 Step
-9.2.c).  Side-effecting -- gated by
+Implementation of the `elot_edit_axiom' tool.  Side-effecting -- gated by
 `elot-gptel-allow-side-effects'.
 
 OP is one of `add' (default), `replace', `delete', `delete-empty':
@@ -4980,7 +4979,7 @@ supply `match_fragment'"
     (error      (format "ERROR: %s" (error-message-string err)))))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; elot_edit_axioms batch tool (Milestone 9 Step 9.2.c.1)
+;;;; elot_edit_axioms batch tool
 ;;;; ---------------------------------------------------------------------------
 ;;
 ;; Batch counterpart of `elot_edit_axiom'.  Applies an ordered list
@@ -5188,8 +5187,7 @@ supply `match_fragment'"
 (defun elot-gptel-tool-edit-axioms (file edits &optional dry-run)
   "Commit a batch of description-list-row edits to FILE atomically.
 
-Implementation of the `elot_edit_axioms' tool (Milestone 9 Step
-9.2.c.1).  Side-effecting -- gated by
+Implementation of the `elot_edit_axioms' tool.  Side-effecting -- gated by
 `elot-gptel-allow-side-effects' unless DRY-RUN is non-nil.
 
 EDITS is an ordered list (or JSON array) of edit objects; each
@@ -5271,7 +5269,7 @@ a real commit, but FILE on disk is unchanged."
     (error      (format "ERROR: %s" (error-message-string err)))))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; elot_rename_resource tool (Milestone 12 Step 12.4)
+;;;; elot_rename_resource tool
 ;;;; ---------------------------------------------------------------------------
 ;;
 ;; LLM-facing wrapper around `elot-rename-resource' (see
@@ -5423,7 +5421,7 @@ or an `ERROR:' line on refusal / failure."
         head))))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; elot_move_resource tool (Milestone 12 Step 12.1)
+;;;; elot_move_resource tool
 ;;;; ---------------------------------------------------------------------------
 ;;
 ;; LLM-facing wrapper around `elot-move-resource' (see
@@ -5449,7 +5447,7 @@ or an `ERROR:' line on refusal / failure."
                   (source target &optional as))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; elot_insert_* tools (Milestone 9 Step 9.3)
+;;;; elot_insert_* tools
 ;;;; ---------------------------------------------------------------------------
 ;;
 ;; Thin LLM-facing wrappers over the interactive insert
@@ -8067,7 +8065,7 @@ passes (CURIE<->IRI).
 Returns the label on one line, or `(no label)' when nothing is
 known.  Use this before introducing a new term: if the DB
 already labels the IRI you were about to mint, prefer reuse
-(see `elot_db_borrow_term', Milestone 6 Step 6.5).  Read-only."
+(see `elot_db_borrow_term').  Read-only."
      :args
      ((:name "token"
              :type string
@@ -8498,7 +8496,7 @@ Returns a single line:
   OK: minted CURIE (scheme=NAME, label=...)
 or an `ERROR:' line.  Read-only with respect to the .org file --
 this tool only chooses a string.  Compose with `elot_add_term'
-(Milestone 9) to actually introduce the term."
+to actually introduce the term."
      :args
      ((:name "file"
              :type string
@@ -8563,7 +8561,7 @@ is supplied explicitly it overrides that default.  Read-only."
      :description
      "Return the legal OMN frame keywords for SUBJECT in FILE.
 
-Read-only authoring helper (Milestone 9 Step 9.2.a).  Resolves
+Read-only authoring helper.  Resolves
 SUBJECT against the buffer's `elot-slurp' (CURIE preferred,
 label fallback), reads its `rdf:type', and returns a structured
 report with four sections:
@@ -8616,7 +8614,7 @@ declared in FILE."))))
      :description
      "Pre-flight validate a candidate `KEYWORD :: FRAGMENT' row on SUBJECT.
 
-Read-only authoring helper (Milestone 9 Step 9.2.b).  The cheap
+Read-only authoring helper.  The cheap
 iteration loop that confirms a proposed description-list row is
 well-formed against the buffer's signature and ROBOT's OMN
 parser *before* committing it via `elot_edit_axiom' (9.2.c).
@@ -8675,8 +8673,7 @@ default to keep the loop cheap."))))
      :description
      "Commit a single description-list row `- KEYWORD :: FRAGMENT' on SUBJECT.
 
-Writer counterpart of `elot_axiom_check' (Milestone 9 Step
-9.2.c).  Mutates FILE: gated by `elot-gptel-allow-side-effects'.
+Writer counterpart of `elot_axiom_check'.  Mutates FILE: gated by `elot-gptel-allow-side-effects'.
 Caller is expected to have run `elot_axiom_check' first; this
 tool trusts its input and does not re-run those static checks.
 
@@ -8761,7 +8758,7 @@ when KEYWORD alone is unique on SUBJECT.  Ignored for \
      :description
      "Commit a BATCH of description-list-row edits to FILE atomically.
 
-Batch counterpart of `elot_edit_axiom' (Milestone 9 Step 9.2.c.1).
+Batch counterpart of `elot_edit_axiom'.
 Motivating case: two independent OMN axiom errors in the same
 file that block each other under the singleton tool (fixing one
 in isolation triggers a revalidate rollback because the other

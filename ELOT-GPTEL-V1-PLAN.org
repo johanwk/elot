@@ -832,7 +832,8 @@ a clean load; conventions + schema files resolve.
 
 * Phase 4 -- Packaging and CI
 
-** TODO Step 4.1 MELPA recipe verification
+** DONE Step 4.1 MELPA recipe verification
+CLOSED: [2026-07-25 lør. 16:45]
 
 Confirm the recipe globs pick up =elot-gptel.el= and the sibling
 data files (=elot-conventions.md=, =schema.sql=).  Add gptel as an
@@ -841,7 +842,42 @@ data files (=elot-conventions.md=, =schema.sql=).  Add gptel as an
 *Acceptance:* a local =package-install-file= (or MELPA sandbox build)
 produces a package that loads and registers tools.
 
-*** Melpazoid vetting notes (Step 4.1)
+*Acceptance met (2026-07-25).*  All three strands closed:
+
+1. *Recipe globs* -- =elot-package/MELPA-RECIPE= =:files= spec ships
+   =elot-gptel.el= and all sibling data assets.  Verified concretely by
+   a =package-build= tarball build (the exact machinery MELPA uses,
+   reading the recipe verbatim): =tar tf= on the produced
+   =elot-2.1.0.0.20260725.83.tar= lists all 16 =.el= files *and* the
+   data siblings =schema.sql=, =elot-conventions.md=, =elot-lob.org=,
+   =elot-style.css=, =elot-nav.js=, =theme-elot.setup= -- no glob miss.
+2. *gptel optional* -- present only as an optional-dependency comment
+   in the recipe, never in =Package-Requires=; the soft-dep load path
+   (=(require 'gptel nil 'noerror)=) degrades gracefully.
+3. *Local package-ready install test* -- built from the pushed
+   =elot-gptel-0.1= branch tip, installed into a package dir via
+   =package-install-file=: all 16 files byte-compile clean, =(require
+   'elot)= -> =t=, =(require 'elot-gptel)= -> =t= from the installed
+   package (autoload / load-order path works), and
+   =elot-gptel-register-tools= registers *37 tools*
+   (=registered tools: 37=).
+
+Repeatable harness recorded in
+=documentation/local-package-build-test.org= (personal, local-use):
+=package-build= build step (=recipes/elot=, branch-pinned) + install /
+load / register step (reusing =~/.emacs.d/elpa= so gptel + compat are
+present) + the corrected nested-alist =gptel--known-tools= tool count.
+Gotchas captured: =gptel--known-tools= is a nested alist (category .
+((name . tool))); =compat 31.0= needs GNU ELPA reachable (a
+failed-=gnu=-archive download blocks gptel install in a clean sandbox);
+"newer than byte-compiled" warnings are harmless stale =.elc=.
+
+*No version bump / tag this session* -- the built tar is versioned
+=2.1.0.0.20260725.83= (dev/dated), which deliberately does NOT trigger
+a =2.2.0= MELPA-stable cut.  Version bump stays deferred to Step 4.4.
+
+*** DONE Melpazoid vetting notes (Step 4.1)
+CLOSED: [2026-07-25 lør. 16:10]
 
 Melpazoid is run locally against the working tree (no push required)
 via the =LOCAL_REPO= mechanism, e.g.:

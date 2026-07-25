@@ -12,7 +12,7 @@
 # The two named blocks =resource-declarations= and
 # =resource-taxonomy= that previously lived under "export" have
 # been retired together with the legacy LOB pipeline functions in
-# =elot.el= (see ELPA-SUBMISSION-PLAN.org Milestone 2).  The new
+# =elot.el=.  The new
 # tangle pipeline in =elot-tangle.el= produces OMN directly from
 # the Org outline and does not need those blocks.
 

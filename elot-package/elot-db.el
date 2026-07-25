@@ -1224,7 +1224,7 @@ winning source."
        (mapcar (lambda (r) (cons (nth 0 r) (nth 1 r))) rows)))))
 
 ;;;; -------------------------------------------------------------------
-;;;; Milestone 6 Step 6.1: read-only SQL gate
+;;;; Read-only SQL gate
 ;;;; -------------------------------------------------------------------
 
 (defun elot-db--sql-strip-comments (sql)
@@ -1303,7 +1303,7 @@ result rows exactly as `sqlite-select' would.  Signals
 `elot-db-init' first).
 
 Designed as the single read-only SQL gate used by the
-Milestone 6 gptel tools (`elot_db_query', `elot_db_search_label',
+Database-backed gptel tools (`elot_db_query', `elot_db_search_label',
 `elot_db_borrow_term')."
   (unless (and (stringp sql) (not (string-empty-p (string-trim sql))))
     (user-error "ELOT-db: empty SQL"))
@@ -1331,7 +1331,7 @@ Milestone 6 gptel tools (`elot_db_query', `elot_db_search_label',
 
 
 ;;;; -------------------------------------------------------------------
-;;;; Milestone 6 Step 6.5: cross-ontology identifier reuse
+;;;; Cross-ontology identifier reuse
 ;;;; -------------------------------------------------------------------
 
 (defconst elot-db--search-kind-map
