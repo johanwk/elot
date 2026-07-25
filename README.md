@@ -40,6 +40,7 @@ Marketplace](https://marketplace.visualstudio.com/items?itemName=johanwk.elot).
 | **Go to definition** |  F12 / Ctrl+Click |  M-. (xref) |
 | **IntelliSense** |  Ctrl+Space |  `completing-read` |
 | **SPARQL queries** | — (planned) |  `org-babel` |
+| **AI-assisted authoring** | — (planned) |  `elot-gptel` (LLM tools) |
 | **Diagrams** | — (planned) |  rdfpuml integration |
 | **HTML export** |  Built-in (Pandoc) |  `org-export` |
 
@@ -75,8 +76,11 @@ add a definition and a Manchester-Syntax restriction:
 ``` 
 
 This plain-text source pairs well with any chat-based or in-editor AI
-assistant. Specialised tools for LLM-assisted authoring are under
-development.
+assistant. In Emacs, ELOT now ships **dedicated tools for LLM-assisted
+authoring** via [`elot-gptel`](documentation/elot-gptel.org) — an LLM
+can inspect, validate, and (with your confirmation) edit your ontology
+from a chat session. See the [enable snippet](#optional-integration-ai-assisted-authoring-with-gptel)
+below.
 
 ## Main features
 
@@ -106,6 +110,14 @@ development.
     for SPARQL `SELECT`/`CONSTRUCT` queries, and render
     rdfpuml/PlantUML diagrams directly in the document (Emacs only for
     now).
+-   **AI-assisted authoring (Emacs)** — `elot-gptel` exposes a roster
+    of tools that let an LLM inspect, lint, reason over, and edit ELOT
+    files from a [gptel](https://github.com/karthink/gptel) chat
+    session. Read-only tools work out of the box; file-modifying tools
+    are gated behind explicit user confirmation
+    (`elot-gptel-allow-side-effects`), and every edit is revalidated
+    with automatic rollback on failure. See
+    [documentation/elot-gptel.org](documentation/elot-gptel.org).
 -   **Editor-independent CLI** — `elot-cli` (TypeScript/WASM) provides
     the Org→OWL pipeline and HTML export outside any editor, plus a `db`
     sub-command that manages the shared label index. Source in
