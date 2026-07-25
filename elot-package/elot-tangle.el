@@ -374,11 +374,11 @@ non-nil, return NIL.  Otherwise raise an error."
 
 (defun elot-robot-command (cmd)
   "Execute ROBOT command CMD using `shell-command'.
-  Check whether `elot-robot-jar-path` is set and points to an existing file.
-  It not set, return an error.
+Check whether `elot-robot-jar-path` is set and points to an existing file.
+It not set, return an error.
 
-  Deprecated: prefer `elot-robot-run' from `elot-robot.el', which
-  uses an argv-based invocation and avoids shell quoting issues."
+Deprecated: prefer `elot-robot-run' from `elot-robot.el', which
+uses an argv-based invocation and avoids shell quoting issues."
   (if (or (string= elot-robot-jar-path "") (not (file-exists-p elot-robot-jar-path)))
       (error "ROBOT not found.  Set elot-robot-jar-path with M-x customize-variable"))
   (shell-command (concat elot-robot-command-str " " cmd)))

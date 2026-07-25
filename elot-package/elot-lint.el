@@ -345,6 +345,7 @@ TREE is the parsed Org element tree provided by `org-lint'."
 
 (defun elot-check-ontology-declaration-heading (tree)
   "ELOT rule: the ontology-declaration heading title must declare an identifier.
+TREE is the parsed Org element tree provided by `org-lint'.
 The heading whose :ID: ends with -ontology-declaration carries the
 ontology IRI (and optional version IRI) inside its title, e.g.
 \"** my-ont ontology (exo:my-ont exo:my-ont/0.0)\".  If the
@@ -410,7 +411,7 @@ catches that class of typo at lint time."
 Covers the RDFS and OWL 2 built-ins that the OWL specification treats as
 pre-declared annotation properties.  Any other CURIE used as a description-list
 tag must be declared as an `owl:AnnotationProperty' in the active sources
-(slurped into `elot-slurp') or the lint checker
+\(slurped into `elot-slurp') or the lint checker
 `elot/description-list-curies' will warn.")
 
 (defun elot-check-description-list-curies (tree)
@@ -858,8 +859,8 @@ Derived from the OWL 2 Manchester Syntax specification, Section 2.5.")
     ("owl:DatatypeProperty"    . "-data-property-hierarchy")
     ("owl:AnnotationProperty"  . "-annotation-property-hierarchy")
     ("owl:NamedIndividual"     . "-individuals"))
-  "Bridge between `rdf:type' CURIEs and `elot-omn-keywords-by-section'
-suffixes.  Single source of truth shared by `elot-lint' (section-keyed,
+  "Bridge `rdf:type' CURIEs to `elot-omn-keywords-by-section' suffixes.
+Single source of truth shared by `elot-lint' (section-keyed,
 fires at the row's line/column) and `elot-gptel' (kind-keyed, drives
 the LLM authoring helper `elot_axiom_keywords').  Step 9.2.b.0.i.")
 
@@ -996,7 +997,7 @@ Headings tagged :nodeclare: are skipped."
   "Per-section map of OMN frame keyword -> expected leaf `rdf:type'.
 Drives `elot/axiom-keyword-range'.  Keywords absent from a
 section's inner alist are deliberately not category-checked
-(e.g. `HasKey' mixes OPs and DPs; `Facts' is a prop+value pair;
+\(e.g. `HasKey' mixes OPs and DPs; `Facts' is a prop+value pair;
 annotation-property Domain/Range accept any IRI).  Built-in
 datatype CURIEs from `elot-owl-builtin-resources' are accepted
 wherever `rdfs:Datatype' is expected.")
@@ -1021,7 +1022,7 @@ Leaves not matching this are deferred to the PEG grammar.")
   "Split CONTENTS into bare-CURIE leaves for KEYWORD.
 Returns a list of trimmed CURIE strings that match
 `elot--axiom-bare-curie-re'.  Conjuncts that aren't bare CURIEs
-(class expressions, IRIs, literals) are silently dropped --
+\(class expressions, IRIs, literals) are silently dropped --
 they are deferred to the PEG grammar."
   (let* ((sep (if (string= keyword "SubPropertyChain")
                   "[[:space:]]+o[[:space:]]+"
@@ -1036,6 +1037,7 @@ they are deferred to the PEG grammar."
 
 (defun elot-check-axiom-keyword-range (tree)
   "ELOT rule: check the OWL category of bare-CURIE leaves in axiom values.
+TREE is the parsed Org element tree provided by `org-lint'.
 For each description-list row whose KEY appears in
 `elot-omn-keyword-value-kind' for the enclosing section, walk the
 bare-CURIE leaves of the value and compare each leaf's declared
@@ -1159,7 +1161,7 @@ TREE is the parsed Org element tree provided by `org-lint'."
                         (when (and (gethash word classes)
                                    (not (gethash word individuals))
                                    ;; Facts keyword can contain properties; SameAs/DifferentFrom only individuals.
-                                   ;; We avoid flagging a Class that is also a Property in a Facts row, 
+                                   ;; We avoid flagging a Class that is also a Property in a Facts row,
                                    ;; as it might be used in the property position.
                                    (not (and (equal term "Facts")
                                              (gethash word properties))))
@@ -1300,6 +1302,7 @@ This checker consumes `elot-headline-hierarchy' (refreshed via
 
 (defun elot-check-blank-omn-axiom-row (tree)
   "ELOT rule: warn on blank OMN-axiom description-list rows.
+TREE is the parsed Org element tree provided by `org-lint'.
 Flags any `- KEY :: VALUE' description-list row inside an ELOT
 ontology scope where KEY is a member of `elot-omn-all-keywords' and
 VALUE (after `string-trim') is empty.  Companion to the 9.3.F2
@@ -1384,8 +1387,8 @@ is insufficient to satisfy the pitfall."
 (defconst elot--oops-p24-axiom-keys
   '("SubClassOf" "EquivalentTo" "DisjointWith" "DisjointUnionOf"
     "SubPropertyOf")
-  "Description-list keys whose values are scanned for recursive
-self-reference (OOPS! P24).")
+  "Keys whose values are scanned for recursive self-reference (OOPS! P24).
+Applies to description-list keys.")
 
 (defun elot--oops-walk-resources (node fn)
   "Call FN on every resource node in NODE's subtree.
@@ -1523,6 +1526,7 @@ Does not descend into child headlines or nested items."
 
 (defun elot-check-oops-missing-annotations (tree)
   "ELOT/OOPS! P08: warn on resource headings with no authored documentation.
+TREE is the parsed Org element tree provided by `org-lint'.
 A resource heading (one whose title carries a CURIE in parentheses)
 is flagged when none of its *authored* description-list keys is in
 `elot-oops-p08-annotation-keys'.  Headings under a `:nodeclare:'

@@ -832,10 +832,10 @@ Returns a plist:
 Step 9.1 of ELOT-GPTEL-PLAN.org."
   (let* ((abs (expand-file-name file))
          (_   (unless (file-exists-p abs)
-                (user-error "elot-sources: file not found: %s" abs)))
+                (user-error "ELOT-sources: file not found: %s" abs)))
          (_   (unless (elot-source--type-for abs)
                 (user-error
-                 "elot-sources: no parser for %s (extension %S)"
+                 "ELOT-sources: no parser for %s (extension %S)"
                  abs (or (elot-source--extension abs) "(none)"))))
          (_   (elot-source--ensure-db))
          (was-registered (elot-db-source-exists-p abs nil))

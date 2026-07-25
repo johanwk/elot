@@ -3097,11 +3097,9 @@ snippet output."
                          (t "PREFIX"))))
         (push "" lines)
         (push (format
-               (concat
-                "NOTE: source uses default-prefix form `%s'; before "
-                "inserting, add a matching prefix row to the borrowing "
-                "ontology's prefix table (e.g. `%s:' -> %s) and use "
-                "the CURIE `%s:%s' in the heading.")
+               "NOTE: source uses default-prefix form `%s'; before \
+inserting, add a matching prefix row to the borrowing ontology's \
+prefix table (e.g. `%s:' -> %s) and use the CURIE `%s:%s' in the heading."
                id
                suggested
                (if expansion (format "<%s>" expansion) "<TODO-IRI>")
@@ -4745,7 +4743,7 @@ returned by `elot-gptel--axiom-find-rows'."
                               (min (point-max)
                                    (1+ (line-end-position)))))
              ;; Eat blank lines immediately preceding the cut.
-             (while (and (> (point) (point-min))
+             (while (and (not (bobp))
                          (save-excursion
                            (forward-line -1)
                            (looking-at "^[ \t]*$")))
@@ -7373,7 +7371,7 @@ finds none, or a per-node block listing each offending IRI
 (with `rdfs:label' resolved via the ELOT DB when available).
 
 If the ontology is *inconsistent* (every class is trivially
-unsatisfiable), this tool reports `INCONSISTENT' and points the
+unsatisfiable), this tool reports INCONSISTENT and points the
 caller at `elot_consistency' for a clearer explanation.
 
 REASONER is one of `hermit' (default) or `whelk'.
@@ -8429,7 +8427,7 @@ Pipeline:
 - Multiple candidates -> a ranked candidate TSV (same columns
   as `elot_db_search_label': id, label, kind, ontology_iri,
   source, data_source, via) followed by a
-    SELECT: N candidates match `LABEL' ...
+    SELECT: N candidates match LABEL ...
   block telling the caller how to disambiguate: re-call with
   `source' (and optionally `lang') narrowed to one row, or
   call `elot_db_borrow_term' directly with the chosen id.
