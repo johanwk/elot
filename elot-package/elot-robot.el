@@ -199,7 +199,7 @@ Returns either a positive number of seconds or nil.  An explicit
 TIMEOUT (including 0) overrides the default; 0 means \"no
 timeout for this call\"."
   (cond
-   ((eq timeout nil)
+   ((null timeout)
     (let ((d elot-robot-default-timeout))
       (and (numberp d) (> d 0) d)))
    ((and (numberp timeout) (> timeout 0)) timeout)
