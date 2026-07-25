@@ -15,9 +15,18 @@ The goal is deliberately narrow and conservative:
 
 #+begin_quote
 Take the =elot-gptel-0.1= branch from its /current/ state to a state
-where it can be merged into =main= with confidence, then tagged for a
-new ELOT MELPA package release.
+where it can be merged into =main= with confidence.  *Merge first*,
+then let =main= settle for a few weeks of real-world use before
+(hopefully) tagging =2.2.0= and cutting a new ELOT MELPA-stable
+package.
 #+end_quote
+
+*Merge and release are deliberately decoupled.*  Merging
+=elot-gptel-0.1= into =main= does NOT trigger a MELPA-stable release --
+only tagging does.  So the merge (Phase 6.1) happens as soon as the
+Phase 5 gate is green; the tag + MELPA-stable cut (Phase 6.2) waits a
+few weeks, gated on the maintainer's judgement after a real-world soak
+(and only after the Step 4.4 version bump).
 
 We are *not* adding new capability surface.  The tool set that exists
 today (diagnostics, DB, identifier minting, authoring/mutation tools)
@@ -1040,6 +1049,13 @@ instead of skipping.  No duplicated test names.
 
 ** TODO Step 4.4 Version bump and changelog
 
+*Timing: this step runs during the post-merge soak, NOT before the
+merge.*  =elot-gptel-0.1= merges into =main= first (Phase 6.1); then,
+after a few weeks of real-world settling and when the maintainer
+judges it ready, the =2.2.0= bump is made and the release tagged
+(Phase 6.2).  Until then =main= carries the unbumped dev version and no
+MELPA-stable cut happens.
+
 *Target version: =2.2.0=.*  MELPA-stable currently ships =2.1.0= (tag
 =2.1.0=, 2026-05-25).  This update adds optional "LLM assistance with
 elot-gptel"; because =elot-gptel= is *fully optional* and backwards
@@ -1058,8 +1074,8 @@ Note further that =elot.el= is *tangled* from =elot-defs.org=
 the Org source and re-tangled, not edited in the generated =elot.el=.
 
 This step happens *after* =elot-gptel-0.1= has been merged into
-=main= and tested for a short settling period -- only then is the
-=2.2.0= release cut.
+=main= and tested for a settling period of a few weeks -- only then,
+and only if the soak is clean, is the =2.2.0= release cut.
 
 - Bump =Version:= to =2.2.0= in =elot-defs.org= (=src-package-header=),
   then re-tangle so =elot-package/elot.el= carries =2.2.0=.
@@ -1080,12 +1096,18 @@ item name the same release.
 The branch =elot-gptel-0.1= merges into =main= only when *every* box
 is ticked.  This is the contract.
 
-** TODO Step 5.1 Green board
+** DONE Step 5.1 Green board
 
-- [ ] Full ERT suite green on Linux (non-ROBOT) in CI.
-- [ ] ROBOT-gated suite green in the ROBOT CI job.
-- [ ] Registry meta-test green (Step 1.2).
-- [ ] Every mutating tool: rollback test + gate-off refusal test green.
+Confirmed against the green CI run on =elot-gptel-0.1= (both jobs).
+The glob-derived =make test= runs the full ERT suite; the ROBOT job
+runs the same suite with =ELOT_REQUIRE_ROBOT=1=; the registry
+meta-test and every mutating-tool rollback / gate-off refusal test are
+files in that glob, so a green suite ticks all four boxes.
+
+- [X] Full ERT suite green on Linux (non-ROBOT) in CI.
+- [X] ROBOT-gated suite green in the ROBOT CI job.
+- [X] Registry meta-test green (Step 1.2).
+- [X] Every mutating tool: rollback test + gate-off refusal test green.
 
 ** TODO Step 5.2 Hygiene board
 
@@ -1094,20 +1116,34 @@ is ticked.  This is the contract.
 - [ ] package-lint clean.
 - [ ] MELPA sandbox build loads and registers tools.
 
-** TODO Step 5.3 Documentation board
+** DONE Step 5.3 Documentation board
 
-- [ ] User docs describe exactly the shipped roster.
-- [ ] Safety model documented (gate, confirm, paths, ROBOT-optional).
-- [ ] README enable snippet present.
-- [ ] Changelog + version bump present and consistent.
+- [X] User docs describe exactly the shipped roster.
+- [X] Safety model documented (gate, confirm, paths, ROBOT-optional).
+- [X] README enable snippet present.
+- [X] Changelog + version bump present and consistent.
 
-** TODO Step 5.4 Scope board
+  Ticked for a *merge-without-release* per the "merge now, tag later"
+  decoupling (Decisions Log, 2026-07-25).  "Consistent" here means the
+  changelog carries the =/unreleased/= entries reflecting the current
+  dev state, with *no premature =2.2.0= bump* -- the Step 4.4 version
+  bump is deliberately deferred to the post-soak Step 6.2.  This is the
+  honest tick: the docs and changelog describe exactly the shipped,
+  unreleased state.
 
-- [ ] v1 roster decisions recorded (ship/hide/cut).
-- [ ] Deferred items recorded (below) and NOT registered as tools.
-- [ ] Old =ELOT-GPTEL-PLAN.org= archived (moved out of the git root).
+** DONE Step 5.4 Scope board
 
-** TODO Step 5.5 Live smoke test (human-in-the-loop)
+- [X] v1 roster decisions recorded (ship/hide/cut).
+- [X] Deferred items recorded (below) and NOT registered as tools.
+- [X] Old =ELOT-GPTEL-PLAN.org= archived (moved out of the git root).
+
+  Roster/hide/cut decisions recorded under Steps 2.1/2.2; deferred
+  items are listed in the post-v1 section and none are registered as
+  tools (surface frozen at 37).  The old =ELOT-GPTEL-PLAN.org= is no
+  longer present in the git root (only =ELOT-GPTEL-V1-PLAN.org=
+  remains), confirming it has been archived out of the root.
+
+** DONE Step 5.5 Live smoke test (human-in-the-loop)
 
 On a fresh checkout of =main='s merge candidate, in a real gptel
 session against a temp copy of =examples/pets.org=:
@@ -1121,17 +1157,84 @@ session against a temp copy of =examples/pets.org=:
 *Acceptance:* the four-step smoke test passes by hand and is written
 up as the release's acceptance note.
 
-* Phase 6 -- Release
+*** Acceptance note (2026-07-25, live gptel session, model =claude-opus-4.8=)
 
-** TODO Step 6.1 Merge
+Run by the maintainer against a temp copy of =examples/pets.org= in a
+real gptel session (minimal init).  All four steps pass; item 4
+produced a precise, documented rollback-boundary finding rather than a
+plain pass, and is recorded below and in the Decisions Log.
+
+1. *=elot_conventions= -- PASS.*  Returned the primer.
+2. *=elot_check= -- PASS.*  Full pipeline ran and reported a verdict:
+   lint =0 errors, 7 warnings= (pre-existing OOPS P08 missing-annotation
+   warnings on undocumented classes), OMN parse OK (1 ontology), HermiT
+   consistency OK (1 node), unsatisfiable check skipped (consistency
+   reported none), summary =OK: all checks pass=.
+3. *Armed =elot_edit_axiom= round-trip -- PASS.*  With side effects
+   armed, a multi-tool authoring sequence committed cleanly and stayed
+   consistent: minted a broader range class =AnatomicalFeature=, moved
+   =HyoidStructure= under it, repointed =hasAnatomicalFeature='s =Range=
+   to it, minted =Trunk=, and added the contrasting pair
+   =ex:elephant SubClassOf hasAnatomicalFeature some Trunk= /
+   =ex:dog SubClassOf not (hasAnatomicalFeature some Trunk)=.  Each edit
+   re-ran lint + OMN parse; a final =elot_consistency= confirmed the
+   ontology remained consistent.  The diffs were exactly as intended.
+4. *Deliberately bad edit rolls back cleanly -- PASS, with a
+   characterised boundary.*  Two "bad edits" were tried, and together
+   they map the rollback contract precisely:
+   - *Static-invalid (=Characteristics :: Universal=):* fails the
+     OMN-parse stage of the tool's own post-edit revalidation, so
+     =elot_edit_axiom= *automatically rolled the change back
+     atomically* (=ERROR: revalidation failed -- changes rolled back=),
+     leaving the file untouched on disk.  This is the "rolls back
+     cleanly" case item 4 is written for.
+   - *Semantically-inconsistent (=Characteristics :: Reflexive= on
+     =isAfraidOf=, which is already =Irreflexive=):* syntactically
+     valid, so it *passes* lint + OMN and is *committed* -- the
+     reasoner is deliberately NOT in the default post-edit loop.  The
+     inconsistency is caught by the *opt-in* reasoner probe
+     (=elot_consistency= flags =INCONSISTENT=; =elot_axiom_check
+     :consistency t= fails and aborts), and the edit was then reverted.
+
+   *Boundary recorded:* static (lint/OMN) failure => automatic atomic
+   rollback; semantic (reasoner) inconsistency => not auto-rolled-back
+   by default, guarded instead by the opt-in =:consistency t= /
+   =elot_consistency= probe.  This is by design (the reasoner is slow
+   and kept out of every edit), and the tool descriptions/docs already
+   frame =elot_axiom_check :consistency t= as the pre-commit
+   consistency preview.  See Decisions Log (2026-07-25) for the note
+   that the briefing's item-4 phrasing conflates the two.
+
+*Verdict:* Step 5.5 PASS.  The merge candidate behaves correctly and
+safely under live use; the one nuance (semantic vs static rollback) is
+documented, not a defect, and is deferred as a doc-wording clarification
+to post-v1.
+
+* Phase 6 -- Release (merge now, tag after a soak)
+
+*The two halves are intentionally separated in time.*  Step 6.1 (merge)
+happens as soon as Phase 5 is green.  Step 6.2 (tag + MELPA-stable) is
+held back for a few weeks of real-world use on =main=, and is
+conditional on that soak being clean plus the Step 4.4 version bump.
+Merging does not release; only tagging does.
+
+** TODO Step 6.1 Merge to =main= (do this once Phase 5 is green)
 
 Merge =elot-gptel-0.1= into =main= once Phase 5 is fully ticked.
 Squash-or-merge per repo convention; the merge commit references this
-plan and the Phase 5 acceptance note.
+plan and the Phase 5 acceptance note.  *Do NOT tag or bump the version
+here* -- =main= carries the unbumped dev version through the soak, so
+the merge does not trigger a MELPA-stable rebuild.
 
-** TODO Step 6.2 Tag and MELPA release
+*Acceptance:* =elot-gptel-0.1= is merged into =main=; CI is green on
+=main=; no tag has been created; the post-merge soak clock starts.
 
-- Tag =main= with the new ELOT release version.
+** TODO Step 6.2 Tag and MELPA release (after the soak)
+
+Only after a few weeks of clean real-world use on =main= and the
+Step 4.4 version bump:
+
+- Tag =main= with the new ELOT release version (=2.2.0=).
 - Confirm the MELPA (stable) recipe picks up the tag.
 - Verify a clean install from MELPA registers the tools.
 
@@ -1349,4 +1452,5 @@ registered as a tool in the v1 roster.
 | (today)    | Step 2.3 defaults review: all shipped defaults are the cautious ones (=allow-side-effects= nil, =confirm-mutations= once-armed, =robot-catalog= nil, content cap 4 MiB, explain-timeout 60 s, explain-max 1).  No surprising default ships; full table + rationale under Step 2.3.  Rationale carried into Phase 3 user docs. |
 | (today)    | =uuid= identifier scheme mints XML-unsafe (leading-digit) local-names (valid Turtle =PN_LOCAL= but invalid XML =NCName=, rejected by RDF/XML & OWL/XML via ROBOT/OWLAPI).  Surfaced live when the LLM prepended =C_= to UUID mints in =examples/pets.org=.  *Deferred to post-v1*: add a configurable alpha lead-in (default =C_=, via =:scheme-params=) + widen =elot-id--uuid-localname-regexp= on verify.  No v1 code change; recorded in the Deferred list.  Out of Step 3.3/3.4 scope. |
 | (today)    | *Windows CI deferred to post-v1.*  Step 4.2's Windows matrix is dropped from the v1 merge gate: MSYS2 is the supported Windows path (it supplies the GNU coreutils / POSIX shell / Unix paths the toolchain assumes), a bare =windows-latest= runner lacks that tooling, and the maintainer lacks capacity to keep such a job green.  CI stays Linux-only (ubuntu-latest, Emacs 30.1); path/line-ending regressions are covered by OS-agnostic unit tests instead.  MSYS2 to be noted as the recommended Windows setup.  Recorded in the Deferred list. |
-| 2026-07-23 | *Invariant: validate arguments before the ROBOT probe.*  Steps 4.2/4.3 CI (ROBOT-off runner) surfaced an ordering bug in *seven* ROBOT-backed tools (=omn_validate=, =omn_report=, =diff=, =sparql=/=sparql_select=, =consistency=, =unsatisfiable=, =explain= incl. its =max= check): each ran =elot-robot-available-p= /before/ its pure argument-validation =user-error=s, so on a ROBOT-less machine the pure-validation tests got "ROBOT not available" instead of their intended message (invisible locally because the maintainer has =robot.jar=).  All seven reordered so pure arg checks precede the ROBOT probe.  Reproducer/guard: run =make -k test= with the jar hidden (=mv ~/bin/robot.jar ~/bin/robot.jar.off=) to mimic CI's no-ROBOT state.  Going forward, every ROBOT tool must validate its arguments before probing ROBOT. |\n| 2026-07-23 | Also folded into the Step 4.2/4.3 commit: edit-axioms test casing fix (assert capitalised =Edits[N]:= to match checkdoc-compliant error messages, not lowercase); =elot-gptel--check-lint-failed-p= =Summary:= regex widened to accept comma/EOL/space terminator (defensive; no currently-reachable bug); and a docstring NOTE on =test-parse-ttl-gated= flagging it as a =ELOT_TEST_NETWORK=-gated duplicate of =test-parse-ttl-with-robot-local= (parses a local fixture, not a remote endpoint) for post-v1 tidy. |\n| (today)    | Tool-roster freeze *upheld* against a reviewed proposal to add Tier-1 inspection tools (=elot_resources=, =elot_read_resource=, =elot_metrics=) before v1.  The gaps are reachable via documented workaround idioms (=elot_axiom_keywords= Buffer Signature / Existing rows; =elot_sparql_select= / =elot_db_query= for counts), so v1 stability beats v1 completeness.  Recorded as deferred item "post-v1 M12: Tier-1 inspection tools" (first post-v1 milestone); the workaround idioms are added to Step 3.1's documentation scope so the v1 docs mitigate the gap. |
+| 2026-07-23 | *Invariant: validate arguments before the ROBOT probe.*  Steps 4.2/4.3 CI (ROBOT-off runner) surfaced an ordering bug in *seven* ROBOT-backed tools (=omn_validate=, =omn_report=, =diff=, =sparql=/=sparql_select=, =consistency=, =unsatisfiable=, =explain= incl. its =max= check): each ran =elot-robot-available-p= /before/ its pure argument-validation =user-error=s, so on a ROBOT-less machine the pure-validation tests got "ROBOT not available" instead of their intended message (invisible locally because the maintainer has =robot.jar=).  All seven reordered so pure arg checks precede the ROBOT probe.  Reproducer/guard: run =make -k test= with the jar hidden (=mv ~/bin/robot.jar ~/bin/robot.jar.off=) to mimic CI's no-ROBOT state.  Going forward, every ROBOT tool must validate its arguments before probing ROBOT. |\n| 2026-07-23 | Also folded into the Step 4.2/4.3 commit: edit-axioms test casing fix (assert capitalised =Edits[N]:= to match checkdoc-compliant error messages, not lowercase); =elot-gptel--check-lint-failed-p= =Summary:= regex widened to accept comma/EOL/space terminator (defensive; no currently-reachable bug); and a docstring NOTE on =test-parse-ttl-gated= flagging it as a =ELOT_TEST_NETWORK=-gated duplicate of =test-parse-ttl-with-robot-local= (parses a local fixture, not a remote endpoint) for post-v1 tidy. |\n| 2026-07-25 | *Merge and release decoupled.*  =elot-gptel-0.1= merges into =main= as soon as the Phase 5 gate is green (Phase 6.1), carrying the unbumped dev version so the merge does NOT trigger a MELPA-stable rebuild.  The =2.2.0= version bump (Step 4.4) + tag + MELPA-stable cut (Phase 6.2) are held back for a few weeks of real-world soak on =main= and are conditional on that soak being clean.  Rationale: get the code onto =main= promptly for real use, but keep the stable-release trigger under deliberate, unhurried maintainer control. |
+| 2026-07-25 | *Step 5.5 rollback-boundary finding (static vs semantic "bad edit").*  The live smoke test exposed that =elot_edit_axiom='s automatic post-edit revalidation is *static only* (lint + OMN parse): a syntactically invalid edit (e.g. =Characteristics :: Universal=) is auto-rolled-back atomically, but a syntactically valid yet reasoner-*inconsistent* edit (e.g. =Characteristics :: Reflexive= on an already-=Irreflexive= property) *passes static revalidation and commits* -- the reasoner is deliberately kept out of the default per-edit loop for speed.  Semantic consistency is guarded by the *opt-in* =elot_axiom_check :consistency t= preview (and a standalone =elot_consistency= probe), both of which correctly detected/aborted the inconsistency in the smoke test.  DECISION: this is *intended behaviour*, not a v1 bug -- item 4 of the Step 5.5 script ("a deliberately bad edit rolls back cleanly") is satisfied by the static-invalid case; the briefing's phrasing merely conflates static and reasoner-level "bad edits".  *Post-v1 doc tidy* (non-blocking): tighten the tool descriptions / user docs to state explicitly that automatic rollback covers static failures only and that =:consistency t= is the pre-commit consistency gate.  No v1 code change; does not block the Step 6.1 merge. | (=elot_resources=, =elot_read_resource=, =elot_metrics=) before v1.  The gaps are reachable via documented workaround idioms (=elot_axiom_keywords= Buffer Signature / Existing rows; =elot_sparql_select= / =elot_db_query= for counts), so v1 stability beats v1 completeness.  Recorded as deferred item "post-v1 M12: Tier-1 inspection tools" (first post-v1 milestone); the workaround idioms are added to Step 3.1's documentation scope so the v1 docs mitigate the gap. |

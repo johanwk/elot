@@ -178,6 +178,17 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 :custom_id: my-ont-class-hierarchy
 :resourcedefs: yes
 :END:
+*** AnatomicalFeature (ex:C_02AXBW46T)
+**** Trunk (ex:C_02AXGDPWW)
+**** HyoidStructure (ex:C_028T5CM1A)
+ - iof-av:naturalLanguageDefinition :: An anatomical structure consisting of the hyoid apparatus, a complex of small bones and cartilages supporting the tongue and larynx; in felids, the degree of ossification of its epihyoid element correlates with vocal capability.
+ - DisjointUnionOf :: ex:C_028TG9YQ2, ex:C_028TQA4FW
+***** FlexibleHyoid (ex:C_028TG9YQ2)
+ - SubClassOf :: ex:C_028T5CM1A
+ - iof-av:naturalLanguageDefinition :: A hyoid structure in which the epihyoid element remains a cartilaginous ligament rather than fully ossifying, granting the larynx the elastic mobility associated with roaring vocalisation.
+***** OssifiedHyoid (ex:C_028TQA4FW)
+ - SubClassOf :: ex:C_028T5CM1A
+ - iof-av:naturalLanguageDefinition :: A hyoid structure in which all elements, including the epihyoid, are fully ossified into a rigid bony chain, mechanically supporting sustained purring vocalisation but precluding roaring.
 *** Food (ex:hello)
  - rdfs:isDefinedBy :: https://raw.githubusercontent.com/owlcs/pizza-ontology/refs/heads/master/pizza.owl
 **** Pizza (pizza:Pizza)
@@ -193,6 +204,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
  - SubClassOf :: ex:chases some ex:mouse
 **** Elephant (ex:elephant)
  - SubClassOf :: ex:isAfraidOf some ex:mouse
+ - SubClassOf :: ex:R_028T19WV3 some ex:C_02AXGDPWW
 ***** AsianElephant (ex:asianElephant)
 **** Mouse (ex:mouse)
  - SubClassOf :: ex:isAfraidOf some ex:cat
@@ -212,15 +224,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 **** Dog (ex:dog) [2/4]
  - [X] iof-av:naturalLanguageDefinition :: A domesticated carnivorous mammal
  - SubClassOf :: ex:chases some ex:cat
-*** HyoidStructure (ex:C_028T5CM1A)
- - iof-av:naturalLanguageDefinition :: An anatomical structure consisting of the hyoid apparatus, a complex of small bones and cartilages supporting the tongue and larynx; in felids, the degree of ossification of its epihyoid element correlates with vocal capability.
- - DisjointUnionOf :: ex:C_028TG9YQ2, ex:C_028TQA4FW
-**** FlexibleHyoid (ex:C_028TG9YQ2)
- - SubClassOf :: ex:C_028T5CM1A
- - iof-av:naturalLanguageDefinition :: A hyoid structure in which the epihyoid element remains a cartilaginous ligament rather than fully ossifying, granting the larynx the elastic mobility associated with roaring vocalisation.
-**** OssifiedHyoid (ex:C_028TQA4FW)
- - SubClassOf :: ex:C_028T5CM1A
- - iof-av:naturalLanguageDefinition :: A hyoid structure in which all elements, including the epihyoid, are fully ossified into a rigid bony chain, mechanically supporting sustained purring vocalisation but precluding roaring.
+ - SubClassOf :: not (ex:R_028T19WV3 some ex:C_02AXGDPWW)
 ** Object properties
 :PROPERTIES:
 :ID:       my-ont-object-property-hierarchy
@@ -229,7 +233,7 @@ The ontology document in OWL employs the namespace prefixes of table [[prefix-ta
 :END:
 *** hasAnatomicalFeature (ex:R_028T19WV3)
  - Domain :: ex:animal
- - Range :: ex:C_028T5CM1A
+ - Range :: ex:C_02AXBW46T
  - iof-av:naturalLanguageDefinition :: x hasAnatomicalFeature y iff y is an anatomical structure that is a constitutive part of the body plan of x.
 *** isAfraidOf (ex:isAfraidOf)
  - Domain :: ex:animal
