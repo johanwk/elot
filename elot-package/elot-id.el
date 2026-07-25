@@ -1,23 +1,13 @@
 ;;; elot-id.el --- Pluggable identifier minting and verification for ELOT  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2026 Johan W. Kluwer
+;; Copyright (C) 2026 Johan W. Klüwer
 
-;; Author: Johan W. Kluwer
+;; Author: Johan W. Klüwer <johan.w.kluwer@gmail.com>
 ;; URL: https://github.com/johanwk/elot
-;; Version: 2.0.0
-;; Keywords: languages tools org ontology ai
+;; Keywords: languages tools org ontology
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;; This file is not part of GNU Emacs.
-
-;; This program is free software; you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation, either version 3 of the License, or
-;; (at your option) any later version.
-
-;; This program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
 
 ;;; Commentary:
 

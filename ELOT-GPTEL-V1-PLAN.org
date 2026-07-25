@@ -1013,15 +1013,31 @@ compatible (no change to existing behaviour, opt-in via autoload), a
 elot-gptel to be merged into =main="; it does not imply a =1.x=
 version number.)
 
-- Bump the =Version:= header in =elot-gptel.el= to =2.2.0=
-  (coordinate with the ELOT package version).
+*Single source of version truth.*  The =Version:= header now lives in
+*only one file*: =elot-package/elot.el= (the MELPA main file).  All
+sibling files -- including =elot-gptel.el= -- have had their
+=Version:= headers stripped, so there is nothing to bump in them.
+Note further that =elot.el= is *tangled* from =elot-defs.org=
+(=src-package-header=); the version bump must therefore be made in
+the Org source and re-tangled, not edited in the generated =elot.el=.
+
+This step happens *after* =elot-gptel-0.1= has been merged into
+=main= and tested for a short settling period -- only then is the
+=2.2.0= release cut.
+
+- Bump =Version:= to =2.2.0= in =elot-defs.org= (=src-package-header=),
+  then re-tangle so =elot-package/elot.el= carries =2.2.0=.
+- Confirm no sibling file reintroduces a =Version:= header on
+  re-tangle.
 - Add a Changelog entry (in =ELOT-GPTEL-CHANGELOG.org= and/or the
   ELOT changelog) summarising the shipped roster and the safety
   model.
 - Add a short README news item.
+- Tag the release =2.2.0= on =main= once merged and settled.
 
-*Acceptance:* version header, changelog, and README news item all
-name the same release.
+*Acceptance:* =elot-package/elot.el= (via =elot-defs.org=) is the
+sole version-naming file, reading =2.2.0=; changelog and README news
+item name the same release.
 
 * Phase 5 -- Merge gate (the go/no-go checklist)
 
