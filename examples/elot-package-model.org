@@ -1,0 +1,619 @@
+#+title: An ontology of the ELOT package
+#+subtitle: An OWL ontology
+#+author: johanw
+#+date: Created 2026-07-26 18:54
+#+call: theme-elot()
+
+
+* elot-package
+:PROPERTIES:
+:ID: elot-package
+:ELOT-context-type: ontology
+:ELOT-context-localname: elot-package
+:ELOT-default-prefix: ex
+:header-args:omn: :tangle ./elot-package.omn :noweb yes
+:header-args:emacs-lisp: :tangle no :exports results
+:header-args: :padline yes
+:ELOT-id-scheme: slug
+:END:
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+
+#+name: prefix-table
+#+caption: OWL ontology prefixes
+| prefix   | uri                                           |
+|----------+-----------------------------------------------|
+| owl:     | http://www.w3.org/2002/07/owl#                |
+| rdf:     | http://www.w3.org/1999/02/22-rdf-syntax-ns#   |
+| xml:     | http://www.w3.org/XML/1998/namespace          |
+| xsd:     | http://www.w3.org/2001/XMLSchema#             |
+| rdfs:    | http://www.w3.org/2000/01/rdf-schema#         |
+| skos:    | http://www.w3.org/2004/02/skos/core#          |
+| dc:      | http://purl.org/dc/elements/1.1/              |
+| dcterms: | http://purl.org/dc/terms/                     |
+| ex:      | http://example.org/resource/                  |
+| ex-ont:  | http://example.org/ont/                       |
+| lis:     | http://rds.posccaesar.org/ontology/lis14/rdl/ |
+| lis-ont: | http://rds.posccaesar.org/ontology/lis14/ont/ |
+
+** elot-package ontology (ex-ont:elot-package ex-ont:elot-package/0.0)
+:PROPERTIES:
+:ID:       elot-package-ontology-declaration
+:custom_id: elot-package-ontology-declaration
+:resourcedefs: yes
+:END:
+ - owl:versionInfo :: 0.0 start of elot-package
+ - dcterms:title :: "elot-package ontology"@en
+ - dcterms:license :: [[https://creativecommons.org/licenses/by-sa/4.0/]]
+ - dcterms:creator :: {{{author}}}
+ - dcterms:modified ::  {{{time("%Y-%m-%d",t)}}}^^xsd:date
+ - dcterms:publisher :: https://example.org/thepublisher
+ - dc:rights :: Copyright info here
+ - dcterms:description :: The elot-package ontology is ...
+ - rdfs:comment :: The elot-package ontology is ...
+ - Import :: lis-ont:core
+ - rdfs:comment :: Imports the Industrial Data Ontology (IDO, ISO 23726-3), non-versioned, as the upper layer.
+** Datatypes
+:PROPERTIES:
+:ID:       elot-package-datatypes
+:custom_id: elot-package-datatypes
+:resourcedefs: yes
+:END:
+** Classes
+:PROPERTIES:
+:ID:       elot-package-class-hierarchy
+:custom_id: elot-package-class-hierarchy
+:resourcedefs: yes
+:END:
+*** information object (lis:InformationObject)
+ - rdfs:isDefinedBy :: lis-ont:core
+ - rdfs:comment :: Information object, imported from the Industrial Data Ontology (IDO, ISO 23726-3). The common superclass for the package's file-kind classes.
+**** software package (ex:software-package)
+ - rdfs:comment :: The ELOT Emacs package itself, considered as an information object composed of its constituent files (Elisp modules, tangle sources, documentation, assets).
+ - skos:definition :: An information object that is a distributable software package, whose content and functional parts are its constituent files.
+**** test artifact (ex:test-artifact)
+ - rdfs:comment :: An ERT test file (test/*.el) that tests one or more modules of the package.
+ - skos:definition :: An information object realised as an Emacs Lisp file under test/ containing ERT deftest forms exercising one or more modules of the package.
+**** tangle source (ex:tangle-source)
+ - rdfs:comment :: An Org-mode source file whose emacs-lisp code blocks are tangled (extracted) into one or more .el modules of the package. This is ELOT's literate-programming source.
+ - skos:definition :: An information object realised as an Org-mode file that, via org-babel tangling, generates one or more Elisp (.el) modules.
+**** Elisp module (ex:elisp-module)
+ - rdfs:comment :: An Emacs Lisp source file (a .el module) that is part of the ELOT package. Modelled as an information object per IDO.
+ - skos:definition :: An information object realised as a single Emacs Lisp (.el) source file forming a loadable unit of the package.
+**** stylesheet (ex:stylesheet)
+ - rdfs:comment :: A CSS stylesheet used to style ELOT's HTML output.
+**** script (ex:script)
+ - rdfs:comment :: A client-side JavaScript file used in ELOT's HTML output.
+**** SQL schema (ex:sql-schema)
+ - rdfs:comment :: A SQL schema definition file (schema.sql) for the ELOT label database.
+**** setup file (ex:setup-file)
+ - rdfs:comment :: An Org export setup file (.setup) providing reusable configuration.
+**** documentation (ex:documentation)
+ - rdfs:comment :: A human-readable documentation file (e.g. Markdown) about the package.
+**** recipe (ex:recipe)
+ - rdfs:comment :: A package-manager recipe describing how to build/install the package (e.g. a MELPA recipe).
+**** image (ex:image)
+ - rdfs:comment :: A raster image file used in the package's documentation or output.
+**** Org library (ex:org-library)
+ - rdfs:comment :: An Org-mode file providing a library of reusable code blocks (a library of Babel).
+**** repository folder (ex:repository-folder)
+ - rdfs:comment :: A directory in the ELOT Git repository, modelled as an information object that contains files. Grounded against the committed GitHub tree (not the local working copy, which may hold backups and uncommitted files).
+ - skos:definition :: An information object realised as a directory within the repository, characterised by the number and total size of the files it contains as committed to GitHub.
+**** data table (ex:data-table)
+ - rdfs:comment :: A tab- or comma-separated values file used as reference or test-driver data (e.g. a .tsv listing).
+**** shell script (ex:shell-script)
+ - rdfs:comment :: A shell script (.sh) used for build, test, or reporting automation.
+*** Function (lis:Function)
+ - rdfs:isDefinedBy :: lis-ont:core
+ - rdfs:comment :: A capability that meets a design requirement, imported from IDO. The purpose a module is intended to serve, distinct from the activity that realizes it.
+*** Activity (lis:Activity)
+ - rdfs:isDefinedBy :: lis-ont:core
+ - rdfs:comment :: A temporal entity in which one or more physical objects participate, imported from IDO. The superclass for the kinds of work (checking, tangling, testing, ...) that realize a module's function.
+** Object properties
+:PROPERTIES:
+:ID:       elot-package-object-property-hierarchy
+:custom_id: elot-package-object-property-hierarchy
+:resourcedefs: yes
+:END:
+*** hasContentPart (lis:hasContentPart)
+ - rdfs:isDefinedBy :: lis-ont:core
+ - rdfs:comment :: Content-level composition (IDO): the subject has the object as a content part. A generic parthood relation with many uses; in this ontology it is applied, among other things, to folder containment (a folder has its sub-folders as content parts).
+*** hasFunction (lis:hasFunction)
+ - rdfs:isDefinedBy :: lis-ont:core
+ - rdfs:comment :: Imported from IDO: relates an object to a function it has (a capability meeting a design requirement). Used here to attach a per-individual function to a specific Elisp module.
+ - Domain :: lis:InformationObject
+ - Range :: lis:Function
+*** realizedIn (lis:realizedIn)
+ - rdfs:isDefinedBy :: lis-ont:core
+ - rdfs:comment :: Imported from IDO, inverse of realizes: a function is realized in an activity. Kept for completeness; ex:realizes is expected to be asserted directly and this follows by the reasoner.
+ - Domain :: lis:Function
+ - Range :: lis:Activity
+*** realizes (lis:realizes)
+ - rdfs:isDefinedBy :: lis-ont:core
+ - rdfs:comment :: Imported from IDO, inverse of realizedIn: an activity realizes a function/potential. Used to link a Checking/Tangling/Testing/... activity individual to the Function it realizes.
+ - Domain :: lis:Activity
+ - Range :: lis:Function
+*** hasParticipant (lis:hasParticipant)
+ - rdfs:isDefinedBy :: lis-ont:core
+ - rdfs:comment :: Imported from IDO: relates an activity to an object that participates in it. Used to link an Activity individual to the module(s)/tools it operates on.
+ - Domain :: lis:Activity
+*** hasFunctionalPart (lis:hasFunctionalPart)
+ - rdfs:isDefinedBy :: lis-ont:core
+ - rdfs:comment :: Functional-level composition (IDO): the subject (a system) has the object as a functional part -- the object has a function that contributes to the subject's function. Used here to relate the ELOT software package to its Elisp modules.
+*** depends on (ex:depends-on)
+ - Characteristics :: Transitive
+ - rdfs:comment :: Generic, abstract dependency between package artifacts. A depends on B when A's correct operation requires B in some way. Specialised by more specific dependency relations such as ex:requires-module.
+**** requires module (ex:requires-module)
+ - Domain :: ex:elisp-module
+ - Range :: ex:elisp-module
+ - rdfs:comment :: Holds between two Elisp modules when the first names the second in a top-level (require 'feature) form, i.e. a load-time feature dependency. Grounded in the actual require forms in the source.
+ - skos:definition :: A load-time dependency of one Elisp module on another, corresponding to a (require 'FEATURE) form where FEATURE is the second module's provided feature.
+*** depended on by (ex:depended-on-by)
+ - InverseOf :: ex:depends-on
+ - Characteristics :: Transitive
+ - rdfs:seeAlso :: ex:depends-on
+ - rdfs:comment :: Inverse of ex:depends-on. B is depended on by A when A depends on B.
+**** required by module (ex:required-by-module)
+ - InverseOf :: ex:requires-module
+ - rdfs:seeAlso :: ex:requires-module
+ - rdfs:comment :: Inverse of ex:requires-module. B is required by module A when A requires module B.
+*** tangled from (ex:tangled-from)
+ - InverseOf :: ex:tangles-to
+ - rdfs:seeAlso :: ex:tangles-to
+ - rdfs:comment :: Inverse of ex:tangles-to. An Elisp module is tangled from the Org source that generates it.
+*** tangles to (ex:tangles-to)
+ - Domain :: ex:tangle-source
+ - Range :: ex:elisp-module
+ - rdfs:comment :: Holds between an Org tangle source and an Elisp module it generates, corresponding to a :tangle ./path.el header argument. One source may tangle to several modules.
+**** tests (ex:tests)
+ - rdfs:comment :: Holds between a test artifact and the module it tests.
+ - Domain :: ex:test-artifact
+ - Range :: lis:InformationObject
+**** tested by (ex:tested-by)
+ - InverseOf :: ex:tests
+ - rdfs:comment :: Inverse of ex:tests: a module is tested by the test artifact(s) that exercise it.
+** Data properties
+:PROPERTIES:
+:ID:       elot-package-data-property-hierarchy
+:custom_id: elot-package-data-property-hierarchy
+:resourcedefs: yes
+:END:
+*** file count (ex:file-count)
+ - Domain :: ex:repository-folder
+ - Range :: xsd:nonNegativeInteger
+ - Characteristics :: Functional
+ - rdfs:comment :: Number of files the folder contains as committed to GitHub (recursive, tracked files only).
+*** size in KB (ex:size-in-kb)
+ - Domain :: ex:repository-folder
+ - Range :: xsd:decimal
+ - Characteristics :: Functional
+ - rdfs:comment :: Approximate total size, in kilobytes, of the folder's committed contents on GitHub.
+** Annotation properties
+:PROPERTIES:
+:ID:       elot-package-annotation-property-hierarchy
+:custom_id: elot-package-annotation-property-hierarchy
+:resourcedefs: yes
+:END:
+*** repository path (ex:repository-path)
+ - rdfs:comment :: The path of the file backing this individual, relative to the Git repository root, using forward slashes (e.g. elot-package/elot-lint.el).
+ - skos:definition :: States where the file corresponding to an individual lives within the repository, as a slash-separated path relative to the Git repository root.
+*** owl:versionInfo
+*** dcterms:title
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dcterms:license
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dcterms:creator
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dcterms:modified
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dcterms:publisher
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dcterms:description
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dc:rights
+ - rdfs:isDefinedBy :: http://purl.org/dc/elements/1.1/
+*** skos:example
+ - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
+*** skos:prefLabel
+ - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
+*** skos:altLabel
+ - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
+*** skos:definition
+ - rdfs:isDefinedBy :: http://www.w3.org/2004/02/skos/core
+** Individuals
+:PROPERTIES:
+:ID:       elot-package-individuals
+:custom_id: elot-package-individuals
+:resourcedefs: yes
+:END:
+*** elot-robot-test.el (ex:elot-robot-test-el)
+ - Types :: ex:test-artifact
+ - ex:repository-path :: test/elot-robot-test.el
+ - Facts :: ex:tests ex:elot-robot-el
+ - rdfs:comment :: ERT test file for elot-robot.el.
+*** elot-id-test.el (ex:elot-id-test-el)
+ - Types :: ex:test-artifact
+ - ex:repository-path :: test/elot-id-test.el
+ - Facts :: ex:tests ex:elot-id-el
+ - rdfs:comment :: ERT test file for elot-id.el.
+*** elot-id-rename-test.el (ex:elot-id-rename-test-el)
+ - Types :: ex:test-artifact
+ - ex:repository-path :: test/elot-id-rename-test.el
+ - Facts :: ex:tests ex:elot-id-rename-el
+ - rdfs:comment :: ERT test file for elot-id-rename.el.
+*** elot-id-insert-test.el (ex:elot-id-insert-test-el)
+ - Types :: ex:test-artifact
+ - ex:repository-path :: test/elot-id-insert-test.el
+ - Facts :: ex:tests ex:elot-id-insert-el
+ - rdfs:comment :: ERT test file for elot-id-insert.el.
+*** elot-db-test.el (ex:elot-db-test-el)
+ - Types :: ex:test-artifact
+ - ex:repository-path :: test/elot-db-test.el
+ - Facts :: ex:tests ex:elot-db-el
+ - rdfs:comment :: ERT test file for elot-db.el.
+*** elot-gptel-test.el (ex:elot-gptel-test-el)
+ - Types :: ex:test-artifact
+ - ex:repository-path :: test/elot-gptel-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el.
+*** elot-sources-test.el (ex:elot-sources-test-el)
+ - Types :: ex:test-artifact
+ - ex:repository-path :: test/elot-sources-test.el
+ - Facts :: ex:tests ex:elot-sources-el
+ - rdfs:comment :: ERT test file for elot-sources.el.
+*** elot-move-resource-test.el (ex:elot-move-resource-test-el)
+ - Types :: ex:test-artifact
+ - ex:repository-path :: test/elot-move-resource-test.el
+ - Facts :: ex:tests ex:elot-id-move-el
+ - rdfs:comment :: ERT test file for elot-id-move.el (the move-resource feature).
+*** elot-label-display-hover-test.el (ex:elot-label-display-hover-test-el)
+ - Types :: ex:test-artifact
+ - ex:repository-path :: test/elot-label-display-hover-test.el
+ - Facts :: ex:tests ex:elot-label-display-el
+ - rdfs:comment :: ERT test file for elot-label-display.el (hover-label behaviour).
+*** elot-lint-oops-test.el (ex:elot-lint-oops-test-el)
+ - Types :: ex:test-artifact
+ - ex:repository-path :: test/elot-lint-oops-test.el
+ - Facts :: ex:tests ex:elot-lint-el
+ - rdfs:comment :: ERT test file for elot-lint.el (a lint-oops regression case).
+*** ELOT package (ex:elot-package-2)
+ - Types :: ex:software-package
+ - rdfs:comment :: The ELOT Emacs package as a whole, the software artifact distributed to users (e.g. via MELPA), composed of the elot-package/ payload plus its tangle sources, tests, and documentation.
+ - skos:definition :: The individual standing for the ELOT software package itself, linked to its constituent files via lis:hasContentPart / lis:hasFunctionalPart.
+ - Facts :: lis:hasFunctionalPart ex:elot-el
+ - Facts :: lis:hasFunctionalPart ex:elot-tangle-el
+ - Facts :: lis:hasFunctionalPart ex:elot-mode-el
+ - Facts :: lis:hasFunctionalPart ex:elot-gptel-el
+ - Facts :: lis:hasFunctionalPart ex:elot-lint-el
+ - Facts :: lis:hasFunctionalPart ex:elot-db-el
+ - Facts :: lis:hasFunctionalPart ex:elot-sources-el
+ - Facts :: lis:hasFunctionalPart ex:elot-robot-el
+ - Facts :: lis:hasFunctionalPart ex:elot-owl-grammar-el
+ - Facts :: lis:hasFunctionalPart ex:elot-flymake-el
+ - Facts :: lis:hasFunctionalPart ex:elot-label-display-el
+ - Facts :: lis:hasFunctionalPart ex:elot-id-el
+ - Facts :: lis:hasFunctionalPart ex:elot-id-rename-el
+ - Facts :: lis:hasFunctionalPart ex:elot-id-move-el
+ - Facts :: lis:hasFunctionalPart ex:elot-id-insert-el
+ - Facts :: lis:hasFunctionalPart ex:elot-defaults-el
+ - Facts :: lis:hasContentPart ex:elot-style-css
+ - Facts :: lis:hasContentPart ex:elot-nav-js
+ - Facts :: lis:hasContentPart ex:schema-sql
+ - Facts :: lis:hasContentPart ex:theme-elot-setup
+ - Facts :: lis:hasContentPart ex:elot-conventions-md
+ - Facts :: lis:hasContentPart ex:melpa-recipe
+ - Facts :: lis:hasContentPart ex:readme-md
+ - Facts :: lis:hasContentPart ex:elot-defs-org
+ - Facts :: lis:hasContentPart ex:elot-mode-org
+ - Facts :: lis:hasContentPart ex:elot-label-display-org
+ - Facts :: lis:hasContentPart ex:elot-tangling-org
+*** Repository folders                                            :nodeclare:
+Individuals standing for directories in the committed Git tree.  File
+counts and sizes are grounded against =git ls-files= (the committed
+tree), not the local working copy.
+**** elot-package/ (ex:elot-package)
+ - Types :: ex:repository-folder
+ - ex:repository-path :: elot-package/
+ - skos:definition :: The Emacs-package payload: the .el modules and their bundled assets (CSS, JS, SQL schema, setup, recipe, images). This is what MELPA installs.
+ - Facts :: ex:file-count "23"^^xsd:nonNegativeInteger
+ - Facts :: ex:size-in-kb "1061.9"^^xsd:decimal
+**** examples/ (ex:examples)
+ - Types :: ex:repository-folder
+ - ex:repository-path :: examples/
+ - skos:definition :: Example ELOT ontologies used for demonstration and testing, including this self-model.
+ - Facts :: ex:file-count "9"^^xsd:nonNegativeInteger
+ - Facts :: ex:size-in-kb "74.2"^^xsd:decimal
+**** test/ (ex:test)
+ - Types :: ex:repository-folder
+ - ex:repository-path :: test/
+ - skos:definition :: The ERT test suite and its fixtures for the ELOT package.
+ - Facts :: ex:file-count "138"^^xsd:nonNegativeInteger
+ - Facts :: ex:size-in-kb "987.1"^^xsd:decimal
+ - Facts :: lis:hasContentPart ex:test-fixtures
+**** documentation/ (ex:documentation-2)
+ - Types :: ex:repository-folder
+ - ex:repository-path :: documentation/
+ - skos:definition :: User-facing documentation: the manual, tutorials, and tool references.
+ - Facts :: ex:file-count "52"^^xsd:nonNegativeInteger
+ - Facts :: ex:size-in-kb "5914.9"^^xsd:decimal
+ - Facts :: lis:hasContentPart ex:documentation-manual
+ - Facts :: lis:hasContentPart ex:documentation-images
+**** documentation/manual/ (ex:documentation-manual)
+ - Types :: ex:repository-folder
+ - ex:repository-path :: documentation/manual/
+ - skos:definition :: The Texinfo/Org user manual: preface, tutorial, how-to guides, reference, background, and appendices, plus generated .info/.html/.texi outputs.
+ - Facts :: ex:file-count "35"^^xsd:nonNegativeInteger
+ - Facts :: ex:size-in-kb "258.7"^^xsd:decimal
+**** documentation/images/ (ex:documentation-images)
+ - Types :: ex:repository-folder
+ - ex:repository-path :: documentation/images/
+ - skos:definition :: Screenshots and diagrams used in the documentation.
+ - Facts :: ex:file-count "12"^^xsd:nonNegativeInteger
+ - Facts :: ex:size-in-kb "1452.3"^^xsd:decimal
+**** syntax/ (ex:syntax)
+ - Types :: ex:repository-folder
+ - ex:repository-path :: syntax/
+ - skos:definition :: The OWL Manchester syntax grammar: the Peggy PEG grammar, its Elisp generator, and grammar test cases.
+ - Facts :: ex:file-count "7"^^xsd:nonNegativeInteger
+ - Facts :: ex:size-in-kb "66.8"^^xsd:decimal
+**** test/fixtures/ (ex:test-fixtures)
+ - Types :: ex:repository-folder
+ - ex:repository-path :: test/fixtures/
+ - skos:definition :: Static input files (ontologies, label sources, corpora, golden outputs) consumed by the ERT test suite.
+ - Facts :: ex:file-count "46"^^xsd:nonNegativeInteger
+ - Facts :: ex:size-in-kb "87.2"^^xsd:decimal
+**** tools/ (ex:tools)
+ - Types :: ex:repository-folder
+ - ex:repository-path :: tools/
+ - skos:definition :: Auxiliary tooling shipped alongside but outside the Emacs package: the VS Code CLI/extension and the Java exporter.
+ - Facts :: ex:file-count "175"^^xsd:nonNegativeInteger
+ - Facts :: ex:size-in-kb "1331.7"^^xsd:decimal
+ - Facts :: lis:hasContentPart ex:tools-elot-cli
+ - Facts :: lis:hasContentPart ex:tools-elot-exporter
+**** tools/elot-cli/ (ex:tools-elot-cli)
+ - Types :: ex:repository-folder
+ - ex:repository-path :: tools/elot-cli/
+ - skos:definition :: A TypeScript reimplementation of ELOT as a VS Code extension and command-line tool, with a Rust Org parser and its own test suite.
+ - Facts :: ex:file-count "152"^^xsd:nonNegativeInteger
+ - Facts :: ex:size-in-kb "1195.4"^^xsd:decimal
+**** tools/elot-exporter/ (ex:tools-elot-exporter)
+ - Types :: ex:repository-folder
+ - ex:repository-path :: tools/elot-exporter/
+ - skos:definition :: A Java (OWLAPI-based) tool that formats an OWL ontology into ELOT Org-mode source.
+ - Facts :: ex:file-count "23"^^xsd:nonNegativeInteger
+ - Facts :: ex:size-in-kb "136.3"^^xsd:decimal
+**** .github/ (ex:github)
+ - Types :: ex:repository-folder
+ - ex:repository-path :: .github/
+ - skos:definition :: GitHub metadata: CI workflows (test suite and README updates) and issue templates.
+ - Facts :: ex:file-count "3"^^xsd:nonNegativeInteger
+ - Facts :: ex:size-in-kb "10.1"^^xsd:decimal
+**** .vscode/ (ex:vscode)
+ - Types :: ex:repository-folder
+ - ex:repository-path :: .vscode/
+ - skos:definition :: VS Code workspace configuration for the repository.
+ - Facts :: ex:file-count "1"^^xsd:nonNegativeInteger
+ - Facts :: ex:size-in-kb "0.2"^^xsd:decimal
+*** On modelling the =require= graph as flat Facts             :nodeclare:
+The =ex:requires-module= edges below are asserted as explicit =Facts=
+rows on each module individual, rather than encoded through heading
+nesting.  ELOT's =:ELOT-subheading-relation:= feature (used for
+SKOS-style =skos:broader= trees, e.g. in =dnv-risk-taxonomy.org=) lets
+outline nesting emit a relational =Fact= to the immediate parent --
+but that machinery encodes exactly *one parent per node*, so it fits a
+relation only when the underlying graph is a forest (a tree).
+
+The intra-package =require= graph is emphatically *not* a forest:
+
+- *Multiple parents in both directions.*  Most non-leaf modules
+  =require= several others (=elot-gptel= -> 9, =elot-mode= -> 8,
+  =elot= -> 7), and hub modules are =require='d by many (=elot-tangle=
+  and =elot-db= are each pulled in by ~9 modules).  Because the
+  fan-out is heavy in *both* orientations, neither =requires-module=
+  nor a hypothetical inverse =required-by-module= reduces the graph to
+  a tree -- inverting an edge only relocates the fan-out to a
+  different node.
+- *A genuine cycle.*  =elot-mode= requires =elot= and =elot= requires
+  =elot-mode= (the latter via the soft =(require 'elot nil t)= form).
+  No outline, in either orientation, can represent a cycle at all.
+
+So "outliner thinking" buys us nothing here: any tree encoding would
+have to drop most edges or duplicate module headings, breaking the
+grounding discipline (one heading = one real file).  The flat,
+per-type individual listing plus explicit =Facts= edges captures the
+full multi-parent DAG (and the cycle) faithfully, while
+=ex:depends-on= being =Transitive= still yields the reasoned
+dependency closure for free.
+
+**** Is this much internal coupling healthy?                   :nodeclare:
+Offered as engineering commentary, not as asserted ontology:
+
+- *A dense internal =require= web is common* for medium-to-large Elisp
+  packages.  Emacs Lisp has no module or namespace system beyond
+  features, so =require= is the *only* mechanism for load ordering and
+  cross-file use; a package split across ~24 files will naturally
+  accumulate many edges.  The count itself is unremarkable.
+- *Hub modules are normal and largely healthy.*  A shared base
+  (=elot-tangle=, =elot-db=) that many callers require is ordinary
+  layering, not a smell -- it is exactly what you want if the base is
+  cohesive and stable.
+- *The one real wart is the cycle* =elot= <-> =elot-mode=.  Mutual
+  =require= is a recognised Elisp anti-pattern; here it only loads
+  because one side uses the soft, error-tolerant =(require 'elot nil
+  t)=.  Such cycles usually indicate that a small shared core wants
+  extracting into a third file that both sides can depend on
+  one-directionally.  Worth flagging, not urgent -- and precisely the
+  kind of finding a machine-checkable model of the package is good at
+  surfacing.
+*** Elisp modules                                                :nodeclare:
+**** elot.el (ex:elot-el)
+ - Types :: ex:elisp-module
+ - ex:repository-path :: elot-package/elot.el
+ - Facts :: ex:requires-module ex:elot-tangle-el
+ - Facts :: ex:requires-module ex:elot-mode-el
+ - Facts :: ex:requires-module ex:elot-label-display-el
+ - Facts :: ex:requires-module ex:elot-flymake-el
+ - Facts :: ex:requires-module ex:elot-owl-grammar-el
+ - Facts :: ex:requires-module ex:elot-db-el
+ - Facts :: ex:requires-module ex:elot-sources-el
+**** elot-tangle.el (ex:elot-tangle-el)
+ - Types :: ex:elisp-module
+ - ex:repository-path :: elot-package/elot-tangle.el
+ - Facts :: ex:requires-module ex:elot-robot-el
+ - Facts :: ex:requires-module ex:elot-db-el
+**** elot-sources.el (ex:elot-sources-el)
+ - Types :: ex:elisp-module
+ - ex:repository-path :: elot-package/elot-sources.el
+ - Facts :: ex:requires-module ex:elot-robot-el
+ - Facts :: ex:requires-module ex:elot-tangle-el
+ - Facts :: ex:requires-module ex:elot-db-el
+**** elot-robot.el (ex:elot-robot-el)
+ - Types :: ex:elisp-module
+ - ex:repository-path :: elot-package/elot-robot.el
+**** elot-owl-grammar.el (ex:elot-owl-grammar-el)
+ - Types :: ex:elisp-module
+ - ex:repository-path :: elot-package/elot-owl-grammar.el
+**** elot-mode.el (ex:elot-mode-el)
+ - Types :: ex:elisp-module
+ - ex:repository-path :: elot-package/elot-mode.el
+ - Facts :: ex:requires-module ex:elot-tangle-el
+ - Facts :: ex:requires-module ex:elot-db-el
+ - Facts :: ex:requires-module ex:elot-sources-el
+ - Facts :: ex:requires-module ex:elot-label-display-el
+ - Facts :: ex:requires-module ex:elot-id-insert-el
+ - Facts :: ex:requires-module ex:elot-id-rename-el
+ - Facts :: ex:requires-module ex:elot-id-move-el
+ - Facts :: ex:requires-module ex:elot-el
+**** elot-lint.el (ex:elot-lint-el)
+ - Types :: ex:elisp-module
+ - ex:repository-path :: elot-package/elot-lint.el
+ - Facts :: ex:requires-module ex:elot-tangle-el
+ - Facts :: ex:requires-module ex:elot-label-display-el
+ - Facts :: ex:requires-module ex:elot-owl-grammar-el
+**** elot-label-display.el (ex:elot-label-display-el)
+ - Types :: ex:elisp-module
+ - ex:repository-path :: elot-package/elot-label-display.el
+ - Facts :: ex:requires-module ex:elot-tangle-el
+**** elot-id.el (ex:elot-id-el)
+ - Types :: ex:elisp-module
+ - ex:repository-path :: elot-package/elot-id.el
+**** elot-id-rename.el (ex:elot-id-rename-el)
+ - Types :: ex:elisp-module
+ - ex:repository-path :: elot-package/elot-id-rename.el
+ - Facts :: ex:requires-module ex:elot-id-el
+ - Facts :: ex:requires-module ex:elot-tangle-el
+ - Facts :: ex:requires-module ex:elot-id-move-el
+ - Facts :: ex:requires-module ex:elot-id-insert-el
+**** elot-id-move.el (ex:elot-id-move-el)
+ - Types :: ex:elisp-module
+ - ex:repository-path :: elot-package/elot-id-move.el
+ - Facts :: ex:requires-module ex:elot-id-insert-el
+ - Facts :: ex:requires-module ex:elot-tangle-el
+ - Facts :: ex:requires-module ex:elot-label-display-el
+**** elot-id-insert.el (ex:elot-id-insert-el)
+ - Types :: ex:elisp-module
+ - ex:repository-path :: elot-package/elot-id-insert.el
+ - Facts :: ex:requires-module ex:elot-id-el
+ - Facts :: ex:requires-module ex:elot-tangle-el
+**** elot-gptel.el (ex:elot-gptel-el)
+ - Types :: ex:elisp-module
+ - ex:repository-path :: elot-package/elot-gptel.el
+ - Facts :: ex:requires-module ex:elot-lint-el
+ - Facts :: ex:requires-module ex:elot-robot-el
+ - Facts :: ex:requires-module ex:elot-tangle-el
+ - Facts :: ex:requires-module ex:elot-db-el
+ - Facts :: ex:requires-module ex:elot-sources-el
+ - Facts :: ex:requires-module ex:elot-id-el
+ - Facts :: ex:requires-module ex:elot-id-rename-el
+ - Facts :: ex:requires-module ex:elot-id-insert-el
+ - Facts :: ex:requires-module ex:elot-id-move-el
+**** elot-flymake.el (ex:elot-flymake-el)
+ - Types :: ex:elisp-module
+ - ex:repository-path :: elot-package/elot-flymake.el
+ - Facts :: ex:requires-module ex:elot-lint-el
+**** elot-defaults.el (ex:elot-defaults-el)
+ - Types :: ex:elisp-module
+ - ex:repository-path :: elot-package/elot-defaults.el
+**** elot-db.el (ex:elot-db-el)
+ - Types :: ex:elisp-module
+ - ex:repository-path :: elot-package/elot-db.el
+*** Stylesheets                                                   :nodeclare:
+**** elot-style.css (ex:elot-style-css)
+ - Types :: ex:stylesheet
+ - ex:repository-path :: elot-package/elot-style.css
+*** Scripts                                                       :nodeclare:
+**** elot-nav.js (ex:elot-nav-js)
+ - Types :: ex:script
+ - ex:repository-path :: elot-package/elot-nav.js
+ - skos:definition :: Client-side JavaScript that provides interactive navigation behaviour (e.g. section folding and cross-reference jumping) in ELOT's exported HTML output.
+*** SQL schemas                                                   :nodeclare:
+**** schema.sql (ex:schema-sql)
+ - Types :: ex:sql-schema
+ - ex:repository-path :: elot-package/schema.sql
+ - skos:definition :: The SQL schema (table and index definitions) for the ELOT cross-session label database consulted by elot-db.el.
+*** Setup files                                                   :nodeclare:
+**** theme-elot.setup (ex:theme-elot-setup)
+ - Types :: ex:setup-file
+ - ex:repository-path :: elot-package/theme-elot.setup
+ - skos:definition :: An Org export setup file providing reusable HTML-export configuration (the theme-elot() call in ELOT documents pulls it in).
+*** Documentation                                                 :nodeclare:
+**** elot-conventions.md (ex:elot-conventions-md)
+ - Types :: ex:documentation
+ - ex:repository-path :: elot-package/elot-conventions.md
+ - skos:definition :: A Markdown document describing ELOT's authoring conventions (heading nesting, description-list keys, file skeleton), served to LLM authoring sessions as a cheat sheet.
+**** README.md (ex:readme-md)
+ - Types :: ex:documentation
+ - ex:repository-path :: README.md
+ - skos:definition :: The top-level README for the ELOT repository: the entry-point documentation introducing the package, its installation, and usage.
+ - Facts :: ex:depends-on ex:example-ttl-png
+*** Recipes                                                       :nodeclare:
+**** MELPA-RECIPE (ex:melpa-recipe)
+ - Types :: ex:recipe
+ - ex:repository-path :: elot-package/MELPA-RECIPE
+*** Images                                                        :nodeclare:
+**** example-ttl.png (ex:example-ttl-png)
+ - Types :: ex:image
+ - ex:repository-path :: elot-package/images/example-ttl.png
+ - skos:definition :: A raster screenshot illustrating example Turtle (.ttl) output, used to illustrate the package's documentation (notably the README).
+*** Org libraries                                                 :nodeclare:
+**** elot-lob.org (ex:elot-lob-org)
+ - Types :: ex:org-library
+ - ex:repository-path :: elot-package/elot-lob.org
+*** Tangle sources                                                :nodeclare:
+The literate Org sources at the repository root whose emacs-lisp code
+blocks are tangled into the =.el= modules under =elot-package/=.  Each
+=ex:tangles-to= edge is grounded in a real =:tangle ./elot-package/NAME.el=
+header argument.
+**** elot-defs.org (ex:elot-defs-org)
+ - Types :: ex:tangle-source
+ - ex:repository-path :: elot-defs.org
+ - Facts :: ex:tangles-to ex:elot-el
+ - Facts :: ex:tangles-to ex:elot-defaults-el
+**** elot-label-display.org (ex:elot-label-display-org)
+ - Types :: ex:tangle-source
+ - ex:repository-path :: elot-label-display.org
+ - Facts :: ex:tangles-to ex:elot-label-display-el
+ - Facts :: ex:tangles-to ex:elot-label-display-el
+**** elot-mode.org (ex:elot-mode-org)
+ - Types :: ex:tangle-source
+ - ex:repository-path :: elot-mode.org
+ - Facts :: ex:tangles-to ex:elot-mode-el
+ - Facts :: ex:tangles-to ex:elot-mode-el
+**** elot-tangling.org (ex:elot-tangling-org)
+ - Types :: ex:tangle-source
+ - ex:repository-path :: elot-tangling.org
+ - Facts :: ex:tangles-to ex:elot-tangle-el
+ - Facts :: ex:tangles-to ex:elot-tangle-el
+*** Roundtrip-test files                                         :nodeclare:
+Input and driver files under =examples/= used by the round-trip test
+harness (tangle/export/re-import consistency checks).
+**** ontology-list.tsv (ex:ontology-list-tsv)
+ - Types :: ex:data-table
+ - ex:repository-path :: examples/ontology-list.tsv
+ - skos:definition :: A TSV listing of the example ontologies that drive the examples/ round-trip test harness.
+**** generate-roundtrip-report.sh (ex:generate-roundtrip-report-sh)
+ - Types :: ex:shell-script
+ - ex:repository-path :: examples/generate-roundtrip-report.sh
+ - skos:definition :: A shell script that regenerates the examples round-trip report, exercising ELOT's tangle/export round trip over the ontologies listed in ontology-list.tsv.
