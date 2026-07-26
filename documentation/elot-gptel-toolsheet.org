@@ -23,6 +23,7 @@ mutating (carries =:confirm t= and honours the side-effects gate).
 | elot_lint          | lint                        | file, [severity, categories, content] | RO   |
 | elot_omn_validate  | omn-validate                | file, [profile, content]              | RO   |
 | elot_omn_report    | omn-report                  | file, [format, content]               | RO   |
+| elot_metrics       | metrics                     | file, [metrics, format, content]      | RO   |
 | elot_diff          | diff                        | file, baseline, [format]              | RO   |
 | elot_sparql        | sparql                      | file, query, [format, limit]          | RO   |
 | elot_sparql_select | sparql-select               | file, query, [format, limit]          | RO   |
@@ -117,6 +118,7 @@ ROBOT is absent; G = honours the side-effects gate.
 | elot_lint                    | ERROR:   | T      |                                                           |
 | elot_omn_validate            | ERROR:   | T,R    |                                                           |
 | elot_omn_report              | ERROR:   | T,R    |                                                           |
+| elot_metrics                 | ERROR:   | T,R    |                                                           |
 | elot_diff                    | ERROR:   | T,R    |                                                           |
 | elot_sparql                  | ERROR:   | T,R,G  | mutating SPARQL refused (side effects disabled)           |
 | elot_sparql_select           | ERROR:   | T,R,G  | non-SELECT/ASK always refused                             |

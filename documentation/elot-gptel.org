@@ -300,15 +300,20 @@ Workarounds:
    already-declared subjects, so no same-batch forward reference is
    needed.
 
-*** =elot_metrics= not yet available
+*** =elot_metrics= (RO, ROBOT)
 
-Ontology size/structure statistics (a ROBOT =measure= wrapper)
-are deferred to post-v1.  Use =elot_sparql_select= with a COUNT
-query, or =elot_resources= for a quick per-kind inventory.
+Ontology size/structure statistics -- a wrapper around ROBOT's
+=measure=.  Args: =file=, optional =metrics= (=essential= (default) /
+=extended= / =all=), optional =format= (=tsv= (default) / =csv= /
+=json= / =yaml=), optional =content= draft.  Returns a per-node block
+of axiom counts, class / property / individual counts, expressivity
+(the DL name), and -- at the higher levels -- structural measures.
+Use it for size orientation before drilling in with =elot_resources=
+/ =elot_read_resource=.
 
 * Tool reference
 
-39 tools, grouped by the question they answer.  *RO* = read-only;
+40 tools, grouped by the question they answer.  *RO* = read-only;
 *MUT* = mutating (side-effects gate + confirm policy apply).
 *ROBOT* = requires a configured ROBOT.
 

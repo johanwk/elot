@@ -1043,6 +1043,161 @@ executable on PATH)."
     (error      (format "ERROR: %s" (error-message-string err)))))
 
 ;;;; ---------------------------------------------------------------------------
+;;;; elot_metrics tool
+;;;; ---------------------------------------------------------------------------
+;;
+;; Thin wrapper around ROBOT's `measure' subcommand.  Tangles each
+;; ontology node in an ELOT .org file to a temporary OMN file and
+;; runs `robot measure' to compute ontology size/structure metrics
+;; (axiom counts, class/property/individual counts, expressivity/DL
+;; name, and -- at higher metric levels -- structural measures).
+;; Read-only with respect to the user's project (writes only into
+;; the temporary workspace).
+
+(defconst elot-gptel--metrics-formats
+  '("tsv" "csv" "json" "yaml")
+  "Recognised values for the optional `format' arg of `elot_metrics'.")
+
+(defconst elot-gptel--metrics-levels
+  '("essential" "extended" "all")
+  "Recognised values for the optional `metrics' arg of `elot_metrics'.")
+
+(defun elot-gptel--metrics-node (node-info format level)
+  "Run `robot measure' against NODE-INFO with FORMAT and LEVEL.
+NODE-INFO is a plist (:name :path :map :org-file) as produced by
+`elot-gptel--tangle-ontologies-to-workspace'.  LEVEL is one of
+\"essential\", \"extended\", \"all\".  Returns a plist
+\(:name :ok-p :report :messages :duration-s).  REPORT is the
+text ROBOT wrote to its output file."
+  (let* ((name     (plist-get node-info :name))
+         (omn-path (plist-get node-info :path))
+         (org-file (plist-get node-info :org-file))
+         (ws-dir   (file-name-directory omn-path))
+         (out-path (expand-file-name
+                    (concat name "-metrics." format) ws-dir))
+         (t0       (current-time))
+         (catalog-args (elot-gptel--catalog-args org-file))
+         (res      (elot-robot-run
+                    (append catalog-args
+                            (list "measure"
+                                  "--input"   omn-path
+                                  "--metrics" level
+                                  "--format"  format
+                                  "--output"  out-path))))
+         (exit     (plist-get res :exit))
+         (msgs     '())
+         (report   ""))
+    (when (file-readable-p out-path)
+      (with-temp-buffer
+        (insert-file-contents out-path)
+        (setq report (buffer-substring-no-properties
+                      (point-min) (point-max)))))
+    (unless (and (numberp exit) (zerop exit))
+      (let* ((err-raw (or (plist-get res :stderr) ""))
+             (out-raw (or (plist-get res :stdout) ""))
+             (effective (if (string-empty-p (string-trim err-raw))
+                            out-raw err-raw))
+             (res-eff (plist-put (copy-sequence res)
+                                 :stderr effective)))
+        (push (elot-gptel--format-classify
+               (elot-robot-classify-result res-eff)
+               omn-path nil org-file)
+              msgs)))
+    (list :name name
+          :ok-p (and (numberp exit) (zerop exit))
+          :report report
+          :messages (nreverse msgs)
+          :duration-s (float-time (time-subtract (current-time) t0)))))
+
+(defun elot-gptel-tool-metrics (file &optional metrics format content)
+  "Implementation of the `elot_metrics' tool.
+
+FILE is the path to an ELOT .org file.  METRICS is one of
+\"essential\" (default), \"extended\", \"all\" -- the ROBOT
+`measure' metric level.  FORMAT is one of \"tsv\" (default),
+\"csv\", \"json\", \"yaml\".  CONTENT, when supplied, is an
+ELOT .org draft string that replaces the on-disk contents of
+FILE -- same semantics as the `content' arg on `elot_lint' /
+`elot_omn_report'.
+
+Tangles each ontology node in FILE to a temporary OMN file and
+runs `robot measure --metrics METRICS --format FORMAT --output
+...' to compute ontology size/structure statistics (axiom
+counts, class/property/individual counts, expressivity/DL name,
+and -- at higher levels -- structural measures).  Multiple
+ontology nodes are framed per-name.
+
+Returns a per-node block carrying the metrics body, or an
+`ERROR:' line surfaced via the same classifier as
+`elot_omn_validate'.
+
+Read-only -- writes only into a temporary workspace.  Requires
+ROBOT to be configured (`elot-robot-jar-path' or a `robot'
+executable on PATH)."
+  (condition-case err
+      (progn
+        (require 'elot-robot)
+        (let* ((fmt   (downcase (or format "tsv")))
+               (level (downcase (or metrics "essential"))))
+          (unless (member fmt elot-gptel--metrics-formats)
+            (user-error
+             "ELOT-gptel: unknown format %S (use %s)"
+             format
+             (mapconcat #'identity elot-gptel--metrics-formats "|")))
+          (unless (member level elot-gptel--metrics-levels)
+            (user-error
+             "ELOT-gptel: unknown metrics level %S (use %s)"
+             metrics
+             (mapconcat #'identity elot-gptel--metrics-levels "|")))
+          (unless (elot-robot-available-p)
+            (user-error
+             "ELOT-gptel: ROBOT not available -- set `elot-robot-jar-path'"))
+          (let* ((content* (and content (stringp content)
+                                (not (string-empty-p content))
+                                content))
+                 (logical (if content*
+                              (elot-gptel--resolve-file-path file)
+                            (elot-gptel--resolve-file file))))
+            (when content*
+              (elot-gptel--check-content-size content*))
+            (elot-robot-call-with-workspace
+             (lambda (ws)
+               (let* ((src (when content*
+                             (let ((p (expand-file-name
+                                       (file-name-nondirectory logical)
+                                       ws)))
+                               (with-temp-file p (insert content*))
+                               p)))
+                      (nodes   (elot-gptel--tangle-ontologies-to-workspace
+                                logical ws src))
+                      (results (mapcar
+                                (lambda (n)
+                                  (elot-gptel--metrics-node n fmt level))
+                                nodes)))
+                 (mapconcat
+                  (lambda (r)
+                    (let* ((name (plist-get r :name))
+                           (ok-p (plist-get r :ok-p))
+                           (rep  (plist-get r :report))
+                           (msgs (plist-get r :messages)))
+                      (concat
+                       (format "Ontology %s (metrics=%s, format=%s):\n"
+                               name level fmt)
+                       (cond
+                        ((not ok-p)
+                         (if msgs
+                             (mapconcat #'identity msgs "\n")
+                           (format "  ERROR (no diagnostic output)")))
+                        ((string-empty-p (string-trim (or rep "")))
+                         "  (no metrics produced)")
+                        (t rep)))))
+                  results
+                  "\n\n")))
+             "elot-metrics-"))))
+    (user-error (format "ERROR: %s" (error-message-string err)))
+    (error      (format "ERROR: %s" (error-message-string err)))))
+
+;;;; ---------------------------------------------------------------------------
 ;;;; elot_diff tool
 ;;;; ---------------------------------------------------------------------------
 ;;
@@ -7596,6 +7751,48 @@ ROBOT to be configured."
              "Optional ELOT .org draft string; same semantics as on \
 `elot_lint' / `elot_omn_validate'."))))
 
+(defconst elot-gptel--spec-metrics
+  `("elot_metrics"
+     :function elot-gptel-tool-metrics
+     :description
+     "Compute ontology size/structure metrics via ROBOT's `measure'.
+
+Tangles each ontology node in FILE to a temporary OMN file and
+runs `robot measure' against each, returning the metrics body
+verbatim.  Metrics include axiom counts, class / property /
+individual counts, expressivity (the DL name), and -- at the
+`extended' / `all' levels -- structural measures.  Use it for
+ontology size orientation (\"how big / how complex is this
+ontology?\") before drilling in with `elot_resources' /
+`elot_read_resource'.  Multiple ontology nodes are framed
+per-name.
+
+CONTENT, when supplied, replaces the on-disk contents of FILE
+in the same way as on `elot_lint' / `elot_omn_report'.
+
+Read-only -- writes only into a temporary workspace.  Requires
+ROBOT to be configured."
+     :args
+     (,elot-gptel--arg-file
+      (:name "metrics"
+             :type string
+             :optional t
+             :enum ["essential" "extended" "all"]
+             :description
+             "ROBOT metric level (default `essential').")
+      (:name "format"
+             :type string
+             :optional t
+             :enum ["tsv" "csv" "json" "yaml"]
+             :description
+             "ROBOT measure output format (default `tsv').")
+      (:name "content"
+             :type string
+             :optional t
+             :description
+             "Optional ELOT .org draft string; same semantics as on \
+`elot_lint' / `elot_omn_report'."))))
+
 (defconst elot-gptel--spec-diff
   '("elot_diff"
      :function elot-gptel-tool-diff
@@ -9262,6 +9459,7 @@ unchanged; useful for try-before-commit.  Default false."))))
         elot-gptel--spec-lint
         elot-gptel--spec-omn-validate
         elot-gptel--spec-omn-report
+        elot-gptel--spec-metrics
         elot-gptel--spec-diff
         elot-gptel--spec-sparql
         elot-gptel--spec-sparql-select
@@ -9354,6 +9552,9 @@ is truthy in Elisp) is correctly treated as nil."
     ('elot-gptel-tool-omn-report
      (lambda (file &optional format content)
        (elot-gptel-tool-omn-report file format content)))
+    ('elot-gptel-tool-metrics
+     (lambda (file &optional metrics format content)
+       (elot-gptel-tool-metrics file metrics format content)))
     ('elot-gptel-tool-diff
      (lambda (file baseline &optional format)
        (elot-gptel-tool-diff file baseline format)))

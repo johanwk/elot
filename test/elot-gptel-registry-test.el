@@ -346,6 +346,7 @@ and asserts a refusal string (never a raw signal, never an OK)."
 (defconst elot-gptel-registry-test--shared-fragments
   '((elot-gptel--arg-file
      "elot_check" "elot_lint" "elot_omn_validate" "elot_omn_report"
+     "elot_metrics"
      "elot_unsatisfiable" "elot_consistency" "elot_explain"
      "elot_rename_resource" "elot_move_resource" "elot_delete_resource"
      "elot_replace_with_parent" "elot_insert_sibling_resource"
