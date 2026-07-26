@@ -351,6 +351,7 @@ and asserts a refusal string (never a raw signal, never an OK)."
      "elot_replace_with_parent" "elot_insert_sibling_resource"
      "elot_insert_child_resource" "elot_insert_resource_tree"
      "elot_axiom_keywords" "elot_axiom_check"
+     "elot_resources" "elot_read_resource"
      "elot_edit_axiom" "elot_edit_axioms")
     (elot-gptel--arg-file-rdf
      "elot_sparql" "elot_sparql_select")
@@ -359,7 +360,9 @@ and asserts a refusal string (never a raw signal, never an OK)."
     (elot-gptel--arg-sparql-format
      "elot_sparql" "elot_sparql_select")
     (elot-gptel--arg-sparql-limit
-     "elot_sparql" "elot_sparql_select"))
+     "elot_sparql" "elot_sparql_select")
+    (elot-gptel--arg-limit
+     "elot_resources" "elot_read_resource"))
   "Map of canonical arg-fragment symbol -> tools expected to share it (`eq').")
 
 (ert-deftest elot-gptel-registry-test-shared-args-are-eq ()
@@ -391,6 +394,25 @@ file."
   ;; genuinely-true values pass through untouched
   (should (eq t (elot-gptel--truthy t)))
   (should (equal "true" (elot-gptel--truthy "true"))))
+
+(ert-deftest elot-gptel-registry-test-as-limit-coerces ()
+  "`elot-gptel--as-limit' coerces float / numeric-string limits to int.
+Regression guard for the bug where a caller-supplied `limit: 10'
+was marshalled as a float (10.0) or a string (\"10\"), failed the
+downstream `integerp' guard, and silently fell back to the tool
+default (200)."
+  ;; genuine integers pass through
+  (should (= 10 (elot-gptel--as-limit 10)))
+  ;; floats are truncated to int
+  (should (= 10 (elot-gptel--as-limit 10.0)))
+  (should (= 10 (elot-gptel--as-limit 10.7)))
+  ;; numeric strings (with surrounding whitespace) are parsed
+  (should (= 10 (elot-gptel--as-limit "10")))
+  (should (= 10 (elot-gptel--as-limit " 10 ")))
+  ;; omitted / non-numeric -> nil (tool applies its own default)
+  (should (null (elot-gptel--as-limit nil)))
+  (should (null (elot-gptel--as-limit "all")))
+  (should (null (elot-gptel--as-limit :json-false))))
 
 (provide 'elot-gptel-registry-test)
 ;;; elot-gptel-registry-test.el ends here

@@ -188,16 +188,16 @@ most malformed edits and the retries they would cause.
 
 ** Orientation: what does this ontology contain?
 
-v1 ships no dedicated "list all resources" tool (see /Known
-limitations/ below), but the information is still available:
-
-1. /Enumerate declared resources/: call =elot_axiom_keywords= on any
-   known subject and read its *Buffer Signature* section -- a
-   per-kind index from CURIE (Compact URI, e.g. =ex:dog=) to label for the whole file.  Alternatively
-   =elot_db_activate_source= on the file, then =elot_db_query=
-   against the =entities= table.
-2. /Inspect one resource's source rows/: =elot_axiom_keywords= on
-   that subject; read the *Existing rows* section.
+1. /Enumerate declared resources/: call =elot_resources= -- a
+   compact CURIE / kind / label / definition table for the whole
+   file, with =kind= / =match= / =prefix= / =limit= filters.  (For
+   cross-session enumeration use =elot_db_activate_source= on the
+   file, then =elot_db_query= against the =entities= table.)
+2. /Inspect one resource/: =elot_read_resource= on that subject
+   returns its outline context (parent + children) and full
+   description-list rows with meta-annotations preserved.
+   =elot_axiom_keywords= additionally lists the legal frame
+   keywords before an edit.
 3. /How large is the ontology?/: an =elot_sparql_select= COUNT query
    (needs
    ROBOT), or =elot_db_query= over =entities= after activating the
@@ -300,15 +300,15 @@ Workarounds:
    already-declared subjects, so no same-batch forward reference is
    needed.
 
-*** No dedicated inspection tools yet
+*** =elot_metrics= not yet available
 
-=elot_resources= / =elot_read_resource= / =elot_metrics= are
-deferred to post-v1; use the workarounds described under
-/Orientation/ above.
+Ontology size/structure statistics (a ROBOT =measure= wrapper)
+are deferred to post-v1.  Use =elot_sparql_select= with a COUNT
+query, or =elot_resources= for a quick per-kind inventory.
 
 * Tool reference
 
-37 tools, grouped by the question they answer.  *RO* = read-only;
+39 tools, grouped by the question they answer.  *RO* = read-only;
 *MUT* = mutating (side-effects gate + confirm policy apply).
 *ROBOT* = requires a configured ROBOT.
 
@@ -494,6 +494,32 @@ Check that a CURIE conforms to the project's scheme -- useful before
 adopting an external identifier, or as an automated check.  Args:
 =file=, =curie=, [=scheme=].  Result: =OK:= / =FAIL:= / =ERROR:=.
 
+** Inspection
+
+*** =elot_resources= (RO)
+
+Args: =file=, [=kind=, =match=, =prefix=, =limit=].  Lists the
+resources declared in the file as a compact table with columns
+CURIE / KIND / LABEL / DEFINITION (the first of
+=iof-av:naturalLanguageDefinition= / =skos:definition= /
+=rdfs:comment=, truncated).  Filters compose (AND): =kind= is a
+display kind (=Class=, =ObjectProperty=, =DataProperty=,
+=AnnotationProperty=, =Individual=, =Datatype=, =Ontology=) or
+=all=; =match= is a case-insensitive regexp over the CURIE or
+label (so =^ex:C_= finds minted identifiers); =prefix= keeps only
+CURIEs beginning with =PREFIX:=; =limit= caps the rows (default
+200).  The recommended way to orient in an unfamiliar ontology.
+
+*** =elot_read_resource= (RO)
+
+Args: =file=, =subject=.  A faithful render of one resource: a
+header with its CURIE, label, and kind; outline context (parent
+resource CURIE and the direct child resources); and the full
+description-list rows, with nested meta-annotations (axiom
+annotations) preserved.  Reads the rich headline hierarchy rather
+than the flattened slurp, so it shows structure =elot_axiom_keywords=
+cannot.  The common pre-edit inspection step.
+
 ** Axiom helpers (inspection and checking before an edit)
 
 *** =elot_axiom_keywords= (RO)
@@ -501,10 +527,9 @@ adopting an external identifier, or as an automated check.  Args:
 Args: =file=, =subject=.  Four-section report: legal *frame
 keywords* for the subject's kind; *universal annotation rows* (every
 declared annotation property); the *buffer signature* (per-kind
-CURIE -> label index -- also the recommended way to enumerate all
-resources in v1); and
+CURIE -> label index); and
 the subject's *existing rows*.  The standard first call before any
-axiom edit.
+axiom edit.  (To simply enumerate resources, prefer =elot_resources=.)
 
 *** =elot_axiom_check= (RO)
 

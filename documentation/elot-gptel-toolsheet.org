@@ -10,7 +10,7 @@
 
 * Tool inventory
 
-37 tools registered in =elot-gptel--tool-specs=.  Every spec has a
+39 tools registered in =elot-gptel--tool-specs=.  Every spec has a
 matching arm in =elot-gptel--tool-thunk=.  RO = read-only, MUT =
 mutating (carries =:confirm t= and honours the side-effects gate).
 
@@ -56,6 +56,13 @@ mutating (carries =:confirm t= and honours the side-effects gate).
 | elot_verify_identifier | verify-identifier           | file, curie, [scheme]                           | RO   |
 | elot_axiom_keywords    | axiom-keywords              | file, subject                                   | RO   |
 | elot_axiom_check       | axiom-check                 | file, subject, keyword, fragment, [consistency] | RO   |
+
+** Inspection tools
+
+| Tool               | Function (elot-gptel-tool-) | Args (dispatcher order)               | Kind |
+|--------------------+-----------------------------+---------------------------------------+------|
+| elot_resources     | resources                   | file, [kind, match, prefix, limit]    | RO   |
+| elot_read_resource | read-resource               | file, subject                         | RO   |
 
 ** Mutating authoring tools
 
@@ -133,6 +140,8 @@ ROBOT is absent; G = honours the side-effects gate.
 | elot_verify_identifier       | ERROR:   | T      | per-line OK:/FAIL: result inside an OK: report            |
 | elot_axiom_keywords          | ERROR:   | T      |                                                           |
 | elot_axiom_check             | ERROR:   | T,R    | FAIL: <blocker> lines inside the report                   |
+| elot_resources               | ERROR:   | T      | reads elot-slurp; kind/match/prefix/limit filters compose |
+| elot_read_resource           | ERROR:   | T      | reads elot-headline-hierarchy; nested meta-annotations    |
 | elot_edit_axiom              | MUT      | T,R,G  |                                                           |
 | elot_edit_axioms             | MUT      | T,R,G  | batch failure: FAIL at edits[K]:, file unchanged          |
 | elot_rename_resource         | MUT      | T,R,G  |                                                           |

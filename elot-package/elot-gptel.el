@@ -4056,6 +4056,355 @@ Returns an `OK:'-prefixed multi-line report on success, an
     (error      (format "ERROR: %s" (error-message-string err)))))
 
 ;;;; ---------------------------------------------------------------------------
+;;;; elot_resources tool (post-v1 M12 Tier-1 inspection)
+;;;; ---------------------------------------------------------------------------
+;;
+;; Read-only enumeration of the resources declared in an ELOT file,
+;; one row per resource (CURIE / KIND / LABEL / short definition),
+;; with composable filters (kind / match / prefix / limit).  Pure
+;; Elisp over the buffer-local `elot-slurp'; no ROBOT, no gate.
+
+(defconst elot-gptel--resources-default-limit 200
+  "Default row cap for `elot_resources' when LIMIT is omitted.")
+
+(defconst elot-gptel--resources-definition-keys
+  '("iof-av:naturalLanguageDefinition" "skos:definition" "rdfs:comment")
+  "Ordered annotation keys tried to produce a resource's short definition.
+The first key present on a resource (with a non-empty string value)
+supplies the DEFINITION column of `elot_resources'.")
+
+(defun elot-gptel--resource-definition (row)
+  "Return a short definition string for slurp ROW, or nil.
+Tries `elot-gptel--resources-definition-keys' in order."
+  (let ((plist (nth 2 row))
+        (result nil))
+    (cl-dolist (k elot-gptel--resources-definition-keys)
+      (let ((v (plist-get plist k #'equal)))
+        (when (and v (stringp v) (not (string-empty-p v)))
+          (setq result v)
+          (cl-return))))
+    result))
+
+(defun elot-gptel--pad (str width)
+  "Return STR right-padded with spaces to at least WIDTH characters."
+  (let ((s (or str "")))
+    (if (< (length s) width)
+        (concat s (make-string (- width (length s)) ?\s))
+      s)))
+
+(defun elot-gptel--resource-kind-pretty (row)
+  "Return the display KIND for slurp ROW, or \"(unknown)\"."
+  (or (cdr (assoc (elot-gptel--axiom-row-kind row)
+                  elot-gptel--axiom-kind-pretty))
+      "(unknown)"))
+
+(defun elot-gptel--label-or-dash (curie label)
+  "Return LABEL for display beside CURIE, or \"--\".
+Falls back to \"--\" when LABEL is empty or merely echoes CURIE (as
+happens for full-IRI resources that carry no `rdfs:label')."
+  (let ((label (or label ""))
+        (curie (or curie "")))
+    (if (or (string-empty-p label)
+            (string= label curie))
+        "--"
+      label)))
+
+(defun elot-gptel--resource-label-display (row)
+  "Return the display LABEL for slurp ROW, or \"--\".
+Falls back to \"--\" when the label is empty or merely echoes the
+resource's own identifier (as happens for full-IRI resources that
+carry no `rdfs:label')."
+  (elot-gptel--label-or-dash (car row) (cadr row)))
+
+(defun elot-gptel-tool-resources (file &optional kind match prefix limit)
+  "List the resources declared in FILE, one row per resource.
+
+Read-only inspection helper (post-v1 M12).  Reads the buffer's
+`elot-slurp' and returns a compact plain-text table with columns
+CURIE / KIND / LABEL / DEFINITION, where DEFINITION is the first
+of `iof-av:naturalLanguageDefinition' / `skos:definition' /
+`rdfs:comment' present (truncated), or `--' when none.
+
+Optional filters compose (logical AND):
+  KIND    a display kind (`Class', `ObjectProperty',
+          `DataProperty', `AnnotationProperty', `Individual',
+          `Datatype', `Ontology') or `all' (default).
+  MATCH   a regexp (case-insensitive) matched against each
+          resource's CURIE OR label.
+  PREFIX  an exact CURIE prefix (e.g. `ex', `iof-av') -- keep only
+          resources whose CURIE begins with `PREFIX:'.
+  LIMIT   maximum rows to return (default 200); when the filtered
+          set is larger a `... N more' trailer is appended.
+
+Returns an `OK:'-prefixed report on success, an `ERROR:'-prefixed
+single line otherwise.  Never mutates FILE."
+  (condition-case err
+      (let* ((true (elot-gptel--resolve-file file))
+             (slurp (elot-gptel--axiom-slurp-for-file true)))
+        (unless slurp
+          (user-error
+           "ELOT-gptel: no resources declared in %s (elot-slurp empty)"
+           file))
+        (let* ((kind-filter
+                (and kind (stringp kind) (not (string-empty-p kind))
+                     (not (string-equal-ignore-case kind "all"))
+                     kind))
+               (want-type
+                (and kind-filter
+                     (or (car (cl-find-if
+                               (lambda (pair)
+                                 (string-equal-ignore-case
+                                  (cdr pair) kind-filter))
+                               elot-gptel--axiom-kind-pretty))
+                         (user-error
+                          "ELOT-gptel: unknown kind %S (use one of %s, or all)"
+                          kind
+                          (mapconcat #'cdr elot-gptel--axiom-kind-pretty
+                                     ", ")))))
+               (prefix-filter
+                (and prefix (stringp prefix) (not (string-empty-p prefix))
+                     prefix))
+               (match-filter
+                (and match (stringp match) (not (string-empty-p match))
+                     match))
+               (rows
+                (cl-remove-if-not
+                 (lambda (row)
+                   (let* ((curie (car row))
+                          (label (or (cadr row) ""))
+                          (rtype (elot-gptel--axiom-row-kind row)))
+                     (and (or (null want-type) (equal rtype want-type))
+                          (or (null prefix-filter)
+                              (let ((idx (string-search ":" curie)))
+                                (and idx
+                                     (string= (substring curie 0 idx)
+                                              prefix-filter))))
+                          (or (null match-filter)
+                              (let ((case-fold-search t))
+                                (or (string-match-p match-filter curie)
+                                    (string-match-p match-filter label)))))))
+                 slurp))
+               (total (length rows))
+               (cap (if (and (integerp limit) (> limit 0))
+                        limit
+                      elot-gptel--resources-default-limit))
+               (shown (if (> total cap) (seq-take rows cap) rows))
+               (n (length shown))
+               (cw (apply #'max 5 (mapcar (lambda (r) (length (car r))) shown)))
+               (kw (apply #'max 4
+                          (mapcar #'length
+                                  (mapcar #'elot-gptel--resource-kind-pretty
+                                          shown))))
+               (lw (apply #'max 5
+                          (mapcar (lambda (r)
+                                    (length (elot-gptel--resource-label-display r)))
+                                  shown)))
+               (lines '()))
+          (dolist (row shown)
+            (let* ((curie (car row))
+                   (label (elot-gptel--resource-label-display row))
+                   (pretty (elot-gptel--resource-kind-pretty row))
+                   (def (elot-gptel--resource-definition row))
+                   (def* (cond ((null def) "--")
+                               ((> (length def) 80)
+                                (concat (substring def 0 77) "..."))
+                               (t def))))
+              (push (concat (elot-gptel--pad curie cw) "  "
+                            (elot-gptel--pad pretty kw) "  "
+                            (elot-gptel--pad label lw) "  " def*)
+                    lines)))
+          (concat
+           (format "OK: %d resource(s) in %s (showing %d)\n"
+                   total (file-name-nondirectory true) n)
+           (concat (elot-gptel--pad "CURIE" cw) "  "
+                   (elot-gptel--pad "KIND" kw) "  "
+                   (elot-gptel--pad "LABEL" lw) "  DEFINITION\n")
+           (if shown
+               (mapconcat #'identity (nreverse lines) "\n")
+             "  (no resources match the given filters)")
+           (when (> total cap)
+             (format "\n... %d more resource(s) omitted (raise `limit')"
+                     (- total cap))))))
+    (user-error (format "ERROR: %s" (error-message-string err)))
+    (error      (format "ERROR: %s" (error-message-string err)))))
+
+;;;; ---------------------------------------------------------------------------
+;;;; elot_read_resource tool (post-v1 M12 Tier-1 inspection)
+;;;; ---------------------------------------------------------------------------
+;;
+;; Read-only, faithful render of one resource: its outline context
+;; (parent CURIE + direct child resources) plus its full
+;; description-list rows with meta-annotation nesting preserved.
+;; Walks the rich `elot-headline-hierarchy' (NOT the flattened
+;; `elot-slurp', which promotes meta-annotations away).
+
+(defun elot-gptel--hierarchy-for-file (file)
+  "Open FILE (without selecting), refresh, return `elot-headline-hierarchy'.
+Mirrors `elot-gptel--axiom-slurp-for-file' but returns the rich
+hierarchy tree rather than the flattened slurp."
+  (with-current-buffer (find-file-noselect file)
+    (require 'elot-tangle nil 'noerror)
+    (unless (derived-mode-p 'org-mode)
+      (delay-mode-hooks (org-mode)))
+    (when (fboundp 'elot-update-headline-hierarchy)
+      (condition-case _ (elot-update-headline-hierarchy) (error nil)))
+    (and (boundp 'elot-headline-hierarchy) elot-headline-hierarchy)))
+
+(defun elot-gptel--hierarchy-find (pred hierarchy)
+  "Depth-first search HIERARCHY for the first node satisfying PRED.
+Returns the node plist, or nil."
+  (let ((stack (list hierarchy)))
+    (catch 'found
+      (while stack
+        (let ((node (pop stack)))
+          (when (funcall pred node)
+            (throw 'found node))
+          (setq stack (append (plist-get node :children) stack))))
+      nil)))
+
+(defun elot-gptel--hierarchy-uri-token (node subject)
+  "Non-nil when NODE's `:uri' matches SUBJECT.
+Matches the whole `:uri' or its first whitespace-delimited token,
+so the ontology-declaration node (whose `:uri' is
+\"exo:my-ont exo:my-ont/0.0\") resolves from `exo:my-ont'."
+  (let ((u (plist-get node :uri)))
+    (and (stringp u)
+         (or (string= u subject)
+             (string= (car (split-string u)) subject)))))
+
+(defun elot-gptel--read-resolve-node (subject hierarchy)
+  "Resolve SUBJECT to a node in HIERARCHY (CURIE first, then label)."
+  (or (elot-gptel--hierarchy-find
+       (lambda (n) (elot-gptel--hierarchy-uri-token n subject))
+       hierarchy)
+      (elot-gptel--hierarchy-find
+       (lambda (n) (equal (plist-get n :label) subject))
+       hierarchy)))
+
+(defun elot-gptel--hierarchy-parent (node hierarchy)
+  "Return the parent node of NODE within HIERARCHY, or nil.
+Matched by object identity against each node's `:children'."
+  (elot-gptel--hierarchy-find
+   (lambda (n) (memq node (plist-get n :children)))
+   hierarchy))
+
+(defun elot-gptel--read-format-desc-entry (entry indent)
+  "Render description-list ENTRY (KEY VAL . META) at INDENT.
+Returns a list of lines; nested meta-annotations are rendered
+recursively at a deeper indent (preserving the axiom-annotation
+structure that the flattened slurp discards)."
+  (let* ((ind (make-string (+ 2 indent) ?\s))
+         (k (car entry))
+         (v (cadr entry))
+         (meta (cddr entry))
+         (lines (list (format "%s- %s :: %s" ind k v))))
+    (dolist (m meta)
+      (setq lines (append lines
+                          (elot-gptel--read-format-desc-entry m (+ indent 2)))))
+    lines))
+
+(defun elot-gptel--read-format-descriptions (descs)
+  "Render DESCS (a node's `:descriptions'), skipping intrinsic rows.
+`rdfs:label' / `rdf:type' are omitted (shown in the header)."
+  (let ((out '()))
+    (dolist (entry descs)
+      (unless (member (car entry) '("rdfs:label" "rdf:type"))
+        (setq out (append out (elot-gptel--read-format-desc-entry entry 0)))))
+    (if out
+        (mapconcat #'identity out "\n")
+      "  (no description-list rows)")))
+
+(defun elot-gptel-tool-read-resource (file subject &optional limit)
+  "Return a faithful render of resource SUBJECT declared in FILE.
+
+Read-only inspection helper (post-v1 M12) -- the common pre-edit
+step.  Resolves SUBJECT against the buffer's
+`elot-headline-hierarchy' (CURIE preferred, label fallback) and
+returns:
+
+  - a header line with SUBJECT's CURIE, label, and kind;
+  - outline context: the parent resource CURIE (the heading-nesting
+    SubClassOf / SubPropertyOf parent) and the direct child
+    resources;
+  - the full description-list rows, with nested meta-annotations
+    (axiom annotations) preserved -- unlike `elot_axiom_keywords',
+    which reads the flattened slurp.
+
+LIMIT caps the number of child resources listed in the outline
+context (default 200); when SUBJECT has more, a `... N more
+children' trailer is appended, mirroring `elot_resources'.  This
+guards against multi-kilobyte one-line children dumps on
+taxonomy-root classes in large ontologies.
+
+Returns an `OK:'-prefixed multi-line report on success, an
+`ERROR:'-prefixed single line otherwise.  Never mutates FILE."
+  (condition-case err
+      (progn
+        (unless (and (stringp subject) (not (string-empty-p subject)))
+          (user-error "ELOT-gptel: subject must be a non-empty string"))
+        (let* ((cap (if (and (integerp limit) (> limit 0)) limit 200))
+               (true (elot-gptel--resolve-file file))
+               (hierarchy (elot-gptel--hierarchy-for-file true)))
+          (unless hierarchy
+            (user-error
+             "ELOT-gptel: no headline hierarchy parsed for %s" file))
+          (let ((node (elot-gptel--read-resolve-node subject hierarchy)))
+            (unless node
+              (user-error
+               "ELOT-gptel: subject %s not found in %s \
+(try a declared CURIE or label)"
+               subject file))
+            (let* ((curie (plist-get node :uri))
+                   (label (plist-get node :label))
+                   (rtype (car (cdr (assoc "rdf:type"
+                                           (plist-get node :descriptions)))))
+                   (pretty (or (cdr (assoc rtype
+                                           elot-gptel--axiom-kind-pretty))
+                               rtype "(unknown)"))
+                   (parent (elot-gptel--hierarchy-parent node hierarchy))
+                   (parent-uri (and parent (plist-get parent :uri)))
+                   (parent-label (and parent (plist-get parent :label)))
+                   (children (cl-remove-if-not
+                              (lambda (c) (plist-get c :uri))
+                              (plist-get node :children)))
+                   (total (length children))
+                   (shown (if (> total cap) (cl-subseq children 0 cap)
+                            children)))
+              (mapconcat
+               #'identity
+               (list
+                (format "OK: %s (label %S), kind %s"
+                        curie label (or pretty "(unknown)"))
+                (if parent-uri
+                    (format "Parent: %s (%s)" parent-uri
+                            (elot-gptel--label-or-dash
+                             parent-uri parent-label))
+                  "Parent: (none -- top-level resource)")
+                (if children
+                    (format "Children (%d): %s%s"
+                            total
+                            (mapconcat
+                             (lambda (c)
+                               (format "%s (%s)"
+                                       (plist-get c :uri)
+                                       (elot-gptel--label-or-dash
+                                        (plist-get c :uri)
+                                        (plist-get c :label))))
+                             shown ", ")
+                            (if (> total cap)
+                                (format ", ... %d more child(ren) \
+(raise `limit')" (- total cap))
+                              ""))
+                  "Children: (none)")
+                ""
+                "== Description-list rows =="
+                (elot-gptel--read-format-descriptions
+                 (plist-get node :descriptions)))
+               "\n")))))
+    (user-error (format "ERROR: %s" (error-message-string err)))
+    (error      (format "ERROR: %s" (error-message-string err)))))
+
+;;;; ---------------------------------------------------------------------------
 ;;;; elot_axiom_check tool
 ;;;; ---------------------------------------------------------------------------
 ;;
@@ -7050,6 +7399,14 @@ visible.  Pure read; never mutates the buffer."
           "Maximum number of data rows to return (default 200, max 5000).")
   "Canonical SPARQL row-limit arg.")
 
+(defconst elot-gptel--arg-limit
+  '(:name "limit"
+          :type integer
+          :optional t
+          :description
+          "Maximum number of rows to return (default 200).")
+  "Canonical row-limit arg for inspection tools (default 200).")
+
 (defconst elot-gptel--spec-conventions
   '("elot_conventions"
      :function elot-gptel-tool-conventions
@@ -8608,6 +8965,91 @@ Pairs with the future `elot_axiom_check' (9.2.b) and
              "CURIE (preferred) or rdfs:label of a resource \
 declared in FILE."))))
 
+(defconst elot-gptel--spec-resources
+  `("elot_resources"
+     :function elot-gptel-tool-resources
+     :description
+     "List the resources declared in an ELOT .org file, one row per
+resource.
+
+Read-only orientation helper.  Returns a compact plain-text table
+with columns CURIE / KIND / LABEL / DEFINITION, drawn from the
+buffer's `elot-slurp'.  DEFINITION is the first of
+`iof-av:naturalLanguageDefinition' / `skos:definition' /
+`rdfs:comment' present on the resource (truncated to ~80 chars),
+or `--' when none.  KIND is the display kind: Class,
+ObjectProperty, DataProperty, AnnotationProperty, Individual,
+Datatype, or Ontology.
+
+Optional filters compose (logical AND):
+  - KIND: a display kind (as above) or `all' (default).
+  - MATCH: a regexp, case-insensitive, matched against each
+    resource's CURIE OR label -- so `^ex:C_' finds minted
+    identifiers you cannot recall by label.
+  - PREFIX: an exact CURIE prefix (e.g. `ex', `iof-av') -- keep
+    only resources whose CURIE begins with `PREFIX:'.
+  - LIMIT: maximum rows (default 200); a `... N more' trailer is
+    appended when the filtered set is larger.
+
+Prefer this over enumerating the buffer signature by hand.  For
+cross-session / cross-source enumeration use `elot_db_search_label'
+instead.  Never mutates FILE."
+     :args
+     (,elot-gptel--arg-file
+      (:name "kind"
+             :type string
+             :optional t
+             :enum ["all" "Class" "ObjectProperty" "DataProperty"
+                    "AnnotationProperty" "Individual" "Datatype" "Ontology"]
+             :description
+             "Restrict to one display kind, or `all' (default).")
+      (:name "match"
+             :type string
+             :optional t
+             :description
+             "Case-insensitive regexp matched against each \
+resource's CURIE or label.")
+      (:name "prefix"
+             :type string
+             :optional t
+             :description
+             "Exact CURIE prefix (e.g. `ex', `iof-av'); keep only \
+resources whose CURIE begins with `PREFIX:'.")
+      ,elot-gptel--arg-limit)))
+
+(defconst elot-gptel--spec-read-resource
+  `("elot_read_resource"
+     :function elot-gptel-tool-read-resource
+     :description
+     "Return a faithful render of one resource declared in an ELOT
+.org file -- the common pre-edit inspection step.
+
+Read-only.  Resolves SUBJECT against the buffer's
+`elot-headline-hierarchy' (CURIE preferred, unambiguous label
+fallback) and returns:
+  - a header line with the resource's CURIE, label, and kind;
+  - outline context: the parent resource CURIE (the heading-nesting
+    SubClassOf / SubPropertyOf parent) and the direct child
+    resources;
+  - the full description-list rows, with nested meta-annotations
+    (axiom annotations) preserved.
+
+Unlike `elot_axiom_keywords' (which reads the flattened
+`elot-slurp'), this reads the rich hierarchy, so per-axiom
+annotation rows are shown in their true nested shape.  Use it to
+inspect a resource before composing an `elot_edit_axiom(s)' call.
+The optional LIMIT caps how many child resources are listed in
+the outline context (default 200); extra children are elided with
+a `... N more children' trailer.  Never mutates FILE."
+     :args
+     (,elot-gptel--arg-file
+      (:name "subject"
+             :type string
+             :description
+             "CURIE (preferred) or unambiguous rdfs:label of a \
+resource declared in FILE.")
+      ,elot-gptel--arg-limit)))
+
 (defconst elot-gptel--spec-axiom-check
   `("elot_axiom_check"
      :function elot-gptel-tool-axiom-check
@@ -8849,6 +9291,8 @@ unchanged; useful for try-before-commit.  Default false."))))
         elot-gptel--spec-mint-identifier
         elot-gptel--spec-verify-identifier
         elot-gptel--spec-axiom-keywords
+        elot-gptel--spec-resources
+        elot-gptel--spec-read-resource
         elot-gptel--spec-axiom-check
         elot-gptel--spec-edit-axiom
         elot-gptel--spec-edit-axioms)
@@ -8866,6 +9310,25 @@ boolean tool argument before it reaches a predicate."
   (cond ((eq v :json-false) nil)
         ((and (stringp v) (string-equal v "false")) nil)
         (t v)))
+
+(defun elot-gptel--as-limit (v)
+  "Normalise a JSON-decoded numeric limit V to an Elisp integer or nil.
+gptel/json may marshal a JSON number as an Elisp float (e.g. 10.0)
+or, for a loosely-typed model, as a numeric string (\"10\").  A
+downstream `(integerp limit)' guard rejects both and silently
+falls back to the tool default, so an explicit `limit: 10' is
+ignored.  This helper coerces floats and numeric strings to an
+integer, leaving nil (arg omitted) and genuinely non-numeric
+values as nil.  Apply it to every integer tool argument before it
+reaches an `integerp' predicate."
+  (cond ((null v) nil)
+        ((integerp v) v)
+        ((floatp v) (truncate v))
+        ((and (stringp v)
+              (string-match-p "\\`[+-]?[0-9]+\\(\\.[0-9]+\\)?\\'"
+                              (string-trim v)))
+         (truncate (string-to-number (string-trim v))))
+        (t nil)))
 
 (defun elot-gptel--tool-thunk (fn)
   "Return a lambda dispatching gptel's positional args to FN.
@@ -8955,6 +9418,14 @@ is truthy in Elisp) is correctly treated as nil."
     ('elot-gptel-tool-axiom-keywords
      (lambda (file subject)
        (elot-gptel-tool-axiom-keywords file subject)))
+    ('elot-gptel-tool-resources
+     (lambda (file &optional kind match prefix limit)
+       (elot-gptel-tool-resources file kind match prefix
+                                  (elot-gptel--as-limit limit))))
+    ('elot-gptel-tool-read-resource
+     (lambda (file subject &optional limit)
+       (elot-gptel-tool-read-resource file subject
+                                      (elot-gptel--as-limit limit))))
     ('elot-gptel-tool-axiom-check
      (lambda (file subject keyword fragment &optional consistency)
        (elot-gptel-tool-axiom-check file subject keyword fragment
