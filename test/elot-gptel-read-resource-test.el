@@ -64,6 +64,8 @@
    "**** <http://example.org/wild> (<http://example.org/wild>)\n"
    "*** Species (ex:species)\n"
    " - rdfs:comment :: A biological species (also a named individual)\n"
+   "*** \"role\"@en (<http://example.org/role>)\n"
+   " - rdfs:comment :: A realizable entity, lang-tagged label\n"
    "** Object properties\n"
    ":PROPERTIES:\n"
    ":ID:       my-ont-object-property-hierarchy\n"
@@ -137,6 +139,23 @@
       (should (string-prefix-p "OK:" out))
       (should (string-match-p "ex:chases" out))
       (should (string-match-p "kind ObjectProperty" out)))))
+
+(ert-deftest elot-gptel-read-resource-test-by-bare-iri ()
+  "A bare full IRI resolves a resource whose `:uri' is stored in
+angle-bracketed form (`<...>')."
+  (elot-gptel-read-resource-test--with-fixture path
+    (let ((out (elot-gptel-read-resource-test--run
+                path "http://example.org/role")))
+      (should (string-prefix-p "OK:" out))
+      (should (string-match-p "realizable entity, lang-tagged" out)))))
+
+(ert-deftest elot-gptel-read-resource-test-by-lang-tagged-label ()
+  "A plain label resolves a resource whose stored `:label' carries a
+surrounding pair of quotes and an `@lang' tag (e.g. `\"role\"@en')."
+  (elot-gptel-read-resource-test--with-fixture path
+    (let ((out (elot-gptel-read-resource-test--run path "role")))
+      (should (string-prefix-p "OK:" out))
+      (should (string-match-p "realizable entity, lang-tagged" out)))))
 
 (ert-deftest elot-gptel-read-resource-test-unknown ()
   (elot-gptel-read-resource-test--with-fixture path

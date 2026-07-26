@@ -143,7 +143,7 @@ ROBOT is absent; G = honours the side-effects gate.
 | elot_axiom_keywords          | ERROR:   | T      |                                                           |
 | elot_axiom_check             | ERROR:   | T,R    | FAIL: <blocker> lines inside the report                   |
 | elot_resources               | ERROR:   | T      | reads elot-slurp; kind/match/prefix/limit filters compose |
-| elot_read_resource           | ERROR:   | T      | reads elot-headline-hierarchy; nested meta-annotations; multiple declarations surfaced, impermissible OWL 2 DL punning WARNING |
+| elot_read_resource           | ERROR:   | T      | reads elot-headline-hierarchy; nested meta-annotations; multiple declarations surfaced, impermissible OWL 2 DL punning WARNING; resolves by CURIE, bare/angle-bracketed IRI, or plain/lang-tagged label |
 | elot_edit_axiom              | MUT      | T,R,G  |                                                           |
 | elot_edit_axioms             | MUT      | T,R,G  | batch failure: FAIL at edits[K]:, file unchanged          |
 | elot_rename_resource         | MUT      | T,R,G  |                                                           |

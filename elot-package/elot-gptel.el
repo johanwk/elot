@@ -4429,15 +4429,59 @@ Returns nodes in document (depth-first, pre-order) order."
         (setq stack (append (plist-get node :children) stack))))
     (nreverse acc)))
 
+(defun elot-gptel--strip-angle-brackets (s)
+  "Strip a single surrounding pair of angle brackets from string S.
+Returns S unchanged when it is not wrapped in `<...>'.  Used so a
+bare IRI resolves against a `:uri' stored in angle-bracketed form
+\(and vice versa)."
+  (if (and (stringp s)
+           (> (length s) 1)
+           (eq (aref s 0) ?<)
+           (eq (aref s (1- (length s))) ?>))
+      (substring s 1 -1)
+    s))
+
 (defun elot-gptel--hierarchy-uri-token (node subject)
   "Non-nil when NODE's `:uri' matches SUBJECT.
 Matches the whole `:uri' or its first whitespace-delimited token,
 so the ontology-declaration node (whose `:uri' is
-\"exo:my-ont exo:my-ont/0.0\") resolves from `exo:my-ont'."
-  (let ((u (plist-get node :uri)))
+\"exo:my-ont exo:my-ont/0.0\") resolves from `exo:my-ont'.
+Surrounding angle brackets are normalised away on both sides, so a
+bare full IRI resolves a `:uri' stored as `<...>' (and vice versa)."
+  (let ((u (plist-get node :uri))
+        (subj (elot-gptel--strip-angle-brackets subject)))
     (and (stringp u)
-         (or (string= u subject)
-             (string= (car (split-string u)) subject)))))
+         (let ((ub (elot-gptel--strip-angle-brackets u)))
+           (or (string= ub subj)
+               (string= (elot-gptel--strip-angle-brackets
+                         (car (split-string ub)))
+                        subj))))))
+
+(defun elot-gptel--label-normalise (s)
+  "Normalise label string S for lenient matching.
+Strips a single surrounding pair of double quotes, a trailing
+`@lang' language tag or `^^type' datatype suffix, and downcases,
+so a plain `role' resolves a `:label' stored as `\"role\"@en'."
+  (when (stringp s)
+    (let ((str s))
+      ;; Strip a trailing @lang or ^^datatype suffix (outside quotes).
+      (setq str (replace-regexp-in-string
+                 "\\(@[[:alnum:]-]+\\|\\^\\^.*\\)\\'" "" str))
+      ;; Strip a single surrounding pair of double quotes.
+      (when (and (> (length str) 1)
+                 (eq (aref str 0) ?\")
+                 (eq (aref str (1- (length str))) ?\"))
+        (setq str (substring str 1 -1)))
+      (downcase str))))
+
+(defun elot-gptel--label-match (node subject)
+  "Non-nil when NODE's `:label' matches SUBJECT leniently.
+Uses `elot-gptel--label-normalise' on both sides so a plain
+`role' resolves a lang-tagged `\"role\"@en' label."
+  (let ((lab (plist-get node :label)))
+    (and (stringp lab)
+         (equal (elot-gptel--label-normalise lab)
+                (elot-gptel--label-normalise subject)))))
 
 (defun elot-gptel--read-resolve-node (subject hierarchy)
   "Resolve SUBJECT to a node in HIERARCHY (CURIE first, then label)."
@@ -4445,7 +4489,7 @@ so the ontology-declaration node (whose `:uri' is
        (lambda (n) (elot-gptel--hierarchy-uri-token n subject))
        hierarchy)
       (elot-gptel--hierarchy-find
-       (lambda (n) (equal (plist-get n :label) subject))
+       (lambda (n) (elot-gptel--label-match n subject))
        hierarchy)))
 
 (defun elot-gptel--read-resolve-nodes (subject hierarchy)
@@ -4459,7 +4503,7 @@ individual) therefore surfaces every declaration."
        (lambda (n) (elot-gptel--hierarchy-uri-token n subject))
        hierarchy)
       (elot-gptel--hierarchy-find-all
-       (lambda (n) (equal (plist-get n :label) subject))
+       (lambda (n) (elot-gptel--label-match n subject))
        hierarchy)))
 
 (defun elot-gptel--hierarchy-parent (node hierarchy)
