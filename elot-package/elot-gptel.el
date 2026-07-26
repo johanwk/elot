@@ -4417,6 +4417,18 @@ Returns the node plist, or nil."
           (setq stack (append (plist-get node :children) stack))))
       nil)))
 
+(defun elot-gptel--hierarchy-find-all (pred hierarchy)
+  "Depth-first collect every node in HIERARCHY satisfying PRED.
+Returns nodes in document (depth-first, pre-order) order."
+  (let ((stack (list hierarchy))
+        (acc '()))
+    (while stack
+      (let ((node (pop stack)))
+        (when (funcall pred node)
+          (push node acc))
+        (setq stack (append (plist-get node :children) stack))))
+    (nreverse acc)))
+
 (defun elot-gptel--hierarchy-uri-token (node subject)
   "Non-nil when NODE's `:uri' matches SUBJECT.
 Matches the whole `:uri' or its first whitespace-delimited token,
@@ -4433,6 +4445,20 @@ so the ontology-declaration node (whose `:uri' is
        (lambda (n) (elot-gptel--hierarchy-uri-token n subject))
        hierarchy)
       (elot-gptel--hierarchy-find
+       (lambda (n) (equal (plist-get n :label) subject))
+       hierarchy)))
+
+(defun elot-gptel--read-resolve-nodes (subject hierarchy)
+  "Resolve SUBJECT to ALL matching nodes in HIERARCHY.
+Returns every node whose `:uri' matches SUBJECT (CURIE); only when
+that yields nothing does it fall back to label matching.  A CURIE
+declared more than once (OWL punning -- e.g. an IRI typed as both
+an object and a data property, or a class doubling as a named
+individual) therefore surfaces every declaration."
+  (or (elot-gptel--hierarchy-find-all
+       (lambda (n) (elot-gptel--hierarchy-uri-token n subject))
+       hierarchy)
+      (elot-gptel--hierarchy-find-all
        (lambda (n) (equal (plist-get n :label) subject))
        hierarchy)))
 
@@ -4469,13 +4495,91 @@ structure that the flattened slurp discards)."
         (mapconcat #'identity out "\n")
       "  (no description-list rows)")))
 
+(defun elot-gptel--read-node-kind (node)
+  "Return the pretty kind string for NODE from its `rdf:type' row."
+  (let ((rtype (car (cdr (assoc "rdf:type" (plist-get node :descriptions))))))
+    (or (cdr (assoc rtype elot-gptel--axiom-kind-pretty))
+        rtype "(unknown)")))
+
+(defconst elot-gptel--property-kinds
+  '("ObjectProperty" "DataProperty" "AnnotationProperty")
+  "Pretty kind names OWL 2 DL treats as mutually exclusive property kinds.
+A name may be used for at most one of these; see URL
+`https://www.w3.org/TR/owl2-new-features/#F12:_Punning'.")
+
+(defun elot-gptel--punning-violations (kinds)
+  "Return OWL 2 DL punning-violation message strings for KINDS.
+KINDS is a list of pretty kind strings (duplicates tolerated).  An
+empty result means the punning -- if any -- is permitted in OWL 2 DL
+\(e.g. a class doubling as a named individual).  The two forbidden
+cases per URL `https://www.w3.org/TR/owl2-new-features/#F12:_Punning'
+are: a name used for more than one kind of property, and a name used
+for both a class and a datatype."
+  (let* ((uniq (delete-dups (copy-sequence kinds)))
+         (props (cl-remove-if-not
+                 (lambda (k) (member k elot-gptel--property-kinds))
+                 uniq))
+         (out '()))
+    (when (> (length props) 1)
+      (push (format "a name can only be used for one kind of property (%s)"
+                    (mapconcat #'identity props " + "))
+            out))
+    (when (and (member "Class" uniq) (member "Datatype" uniq))
+      (push "a name cannot be used for both a class and a datatype" out))
+    (nreverse out)))
+
+(defun elot-gptel--read-render-node (node hierarchy cap &optional heading)
+  "Render one NODE (within HIERARCHY) as a list of report lines.
+CAP limits the children listed.  When HEADING is non-nil it is used
+as the block header line (for one declaration among several); when
+nil the single-declaration `OK: ...' header is emitted."
+  (let* ((curie (plist-get node :uri))
+         (label (plist-get node :label))
+         (pretty (elot-gptel--read-node-kind node))
+         (parent (elot-gptel--hierarchy-parent node hierarchy))
+         (parent-uri (and parent (plist-get parent :uri)))
+         (parent-label (and parent (plist-get parent :label)))
+         (children (cl-remove-if-not
+                    (lambda (c) (plist-get c :uri))
+                    (plist-get node :children)))
+         (total (length children))
+         (shown (if (> total cap) (cl-subseq children 0 cap) children)))
+    (list
+     (or heading
+         (format "OK: %s (label %S), kind %s"
+                 curie label (or pretty "(unknown)")))
+     (if parent-uri
+         (format "Parent: %s (%s)" parent-uri
+                 (elot-gptel--label-or-dash parent-uri parent-label))
+       "Parent: (none -- top-level resource)")
+     (if children
+         (format "Children (%d): %s%s"
+                 total
+                 (mapconcat
+                  (lambda (c)
+                    (format "%s (%s)"
+                            (plist-get c :uri)
+                            (elot-gptel--label-or-dash
+                             (plist-get c :uri)
+                             (plist-get c :label))))
+                  shown ", ")
+                 (if (> total cap)
+                     (format ", ... %d more child(ren) (raise `limit')"
+                             (- total cap))
+                   ""))
+       "Children: (none)")
+     ""
+     "== Description-list rows =="
+     (elot-gptel--read-format-descriptions
+      (plist-get node :descriptions)))))
+
 (defun elot-gptel-tool-read-resource (file subject &optional limit)
   "Return a faithful render of resource SUBJECT declared in FILE.
 
 Read-only inspection helper (post-v1 M12) -- the common pre-edit
 step.  Resolves SUBJECT against the buffer's
 `elot-headline-hierarchy' (CURIE preferred, label fallback) and
-returns:
+returns, for EACH declaration of SUBJECT:
 
   - a header line with SUBJECT's CURIE, label, and kind;
   - outline context: the parent resource CURIE (the heading-nesting
@@ -4485,8 +4589,20 @@ returns:
     (axiom annotations) preserved -- unlike `elot_axiom_keywords',
     which reads the flattened slurp.
 
+When SUBJECT is declared more than once -- OWL punning, e.g. an IRI
+typed as both an object and a data property (as several FOAF
+contact-id properties are), or a class doubling as a named
+individual -- ALL declarations are returned.  A `PUNNED' header
+line names the multiplicity and enumerates the kinds up front, then
+each declaration is rendered in its own framed block, so the
+multiple OWL typing is evident immediately.  When the combination
+is one OWL 2 DL forbids -- a name used for more than one kind of
+property, or for both a class and a datatype -- a `WARNING:' line
+flags the impermissible punning (permitted puns, such as a class
+doubling as a named individual, are reported without a warning).
+
 LIMIT caps the number of child resources listed in the outline
-context (default 200); when SUBJECT has more, a `... N more
+context (default 200); when a declaration has more, a `... N more
 children' trailer is appended, mirroring `elot_resources'.  This
 guards against multi-kilobyte one-line children dumps on
 taxonomy-root classes in large ontologies.
@@ -4503,59 +4619,59 @@ Returns an `OK:'-prefixed multi-line report on success, an
           (unless hierarchy
             (user-error
              "ELOT-gptel: no headline hierarchy parsed for %s" file))
-          (let ((node (elot-gptel--read-resolve-node subject hierarchy)))
-            (unless node
+          (let ((nodes (elot-gptel--read-resolve-nodes subject hierarchy)))
+            (unless nodes
               (user-error
                "ELOT-gptel: subject %s not found in %s \
 (try a declared CURIE or label)"
                subject file))
-            (let* ((curie (plist-get node :uri))
-                   (label (plist-get node :label))
-                   (rtype (car (cdr (assoc "rdf:type"
-                                           (plist-get node :descriptions)))))
-                   (pretty (or (cdr (assoc rtype
-                                           elot-gptel--axiom-kind-pretty))
-                               rtype "(unknown)"))
-                   (parent (elot-gptel--hierarchy-parent node hierarchy))
-                   (parent-uri (and parent (plist-get parent :uri)))
-                   (parent-label (and parent (plist-get parent :label)))
-                   (children (cl-remove-if-not
-                              (lambda (c) (plist-get c :uri))
-                              (plist-get node :children)))
-                   (total (length children))
-                   (shown (if (> total cap) (cl-subseq children 0 cap)
-                            children)))
-              (mapconcat
-               #'identity
-               (list
-                (format "OK: %s (label %S), kind %s"
-                        curie label (or pretty "(unknown)"))
-                (if parent-uri
-                    (format "Parent: %s (%s)" parent-uri
-                            (elot-gptel--label-or-dash
-                             parent-uri parent-label))
-                  "Parent: (none -- top-level resource)")
-                (if children
-                    (format "Children (%d): %s%s"
-                            total
-                            (mapconcat
-                             (lambda (c)
-                               (format "%s (%s)"
-                                       (plist-get c :uri)
-                                       (elot-gptel--label-or-dash
-                                        (plist-get c :uri)
-                                        (plist-get c :label))))
-                             shown ", ")
-                            (if (> total cap)
-                                (format ", ... %d more child(ren) \
-(raise `limit')" (- total cap))
-                              ""))
-                  "Children: (none)")
-                ""
-                "== Description-list rows =="
-                (elot-gptel--read-format-descriptions
-                 (plist-get node :descriptions)))
-               "\n")))))
+            (if (= (length nodes) 1)
+                ;; Single declaration: original, byte-stable output.
+                (mapconcat #'identity
+                           (elot-gptel--read-render-node
+                            (car nodes) hierarchy cap)
+                           "\n")
+              ;; Multiple declarations (punning): announce up front,
+              ;; then render each face in its own framed block.
+              (let* ((curie (plist-get (car nodes) :uri))
+                     (label (plist-get (car nodes) :label))
+                     (kinds (mapcar #'elot-gptel--read-node-kind nodes))
+                     (n (length nodes))
+                     (blocks '()))
+                (let ((i 0))
+                  (dolist (node nodes)
+                    (setq i (1+ i))
+                    (setq blocks
+                          (append
+                           blocks
+                           (list ""
+                                 (format "-- declaration %d/%d: kind %s --"
+                                         i n
+                                         (elot-gptel--read-node-kind node)))
+                           (elot-gptel--read-render-node
+                            node hierarchy cap
+                            ;; Suppress the per-block OK: header; the
+                            ;; top header already carries CURIE/label.
+                            (format "Declaration: %s (label %S)"
+                                    (plist-get node :uri)
+                                    (plist-get node :label)))))))
+                (mapconcat
+                 #'identity
+                 (append
+                  (list
+                   (format "OK: %s (label %S) declared %dx (PUNNED): %s"
+                           curie label n
+                           (mapconcat #'identity kinds ", ")))
+                  (let ((violations (elot-gptel--punning-violations kinds)))
+                    (when violations
+                      (list
+                       (concat
+                        "WARNING: not permitted in OWL 2 DL -- "
+                        (mapconcat #'identity violations "; ")
+                        " (see \
+https://www.w3.org/TR/owl2-new-features/#F12:_Punning)"))))
+                  blocks)
+                 "\n"))))))
     (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
 
@@ -9223,13 +9339,24 @@ resources whose CURIE begins with `PREFIX:'.")
 
 Read-only.  Resolves SUBJECT against the buffer's
 `elot-headline-hierarchy' (CURIE preferred, unambiguous label
-fallback) and returns:
+fallback) and returns, for EACH declaration of SUBJECT:
   - a header line with the resource's CURIE, label, and kind;
   - outline context: the parent resource CURIE (the heading-nesting
     SubClassOf / SubPropertyOf parent) and the direct child
     resources;
   - the full description-list rows, with nested meta-annotations
     (axiom annotations) preserved.
+
+When SUBJECT is declared more than once (OWL punning -- e.g. an IRI
+typed as both an object and a data property, or a class doubling as
+a named individual), ALL declarations are returned: a `PUNNED'
+header enumerates the kinds up front and each declaration is
+rendered in its own framed block, so the multiple OWL typing is
+evident immediately.  When the combination is one OWL 2 DL forbids
+-- a name used for more than one kind of property, or for both a
+class and a datatype -- a `WARNING:' line flags the impermissible
+punning (per URL
+`https://www.w3.org/TR/owl2-new-features/#F12:_Punning').
 
 Unlike `elot_axiom_keywords' (which reads the flattened
 `elot-slurp'), this reads the rich hierarchy, so per-axiom
