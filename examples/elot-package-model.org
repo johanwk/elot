@@ -51,7 +51,7 @@
  - dcterms:modified ::  {{{time("%Y-%m-%d",t)}}}^^xsd:date
  - dcterms:publisher :: https://example.org/thepublisher
  - dc:rights :: Copyright info here
- - dcterms:description :: The elot-package ontology is ...
+ - dcterms:description :: A self-describing ontology of the ELOT Emacs package (the elot-package/*.el modules, their literate tangle sources, their ERT test suite, and the examples/ round-trip test harness driven by examples/Makefile), deliberately scoped to the Emacs Lisp codebase only. It models files as lis:InformationObject individuals typed by role (Elisp module, tangle source, test artifact, ...), their real dependency/part/test relations, and, per module, the lis:Function it serves and the lis:Activity that realizes it, drawing on the Industrial Data Ontology (IDO, ISO 23726-3). It deliberately excludes ELOT's other codebases (the elot-cli/VS Code extension and the elot-exporter Java tool), which are separate languages and tool ecosystems better modelled as their own future slice. The result demonstrates ELOT's own authoring tools applied reflexively to describe ELOT itself, and is intended as a reusable pattern for functional, reasoner-checkable modelling of any software package.
  - rdfs:comment :: The elot-package ontology is ...
  - Import :: lis-ont:core
  - rdfs:comment :: Imports the Industrial Data Ontology (IDO, ISO 23726-3), non-versioned, as the upper layer.
@@ -76,6 +76,16 @@
 **** test artifact (ex:test-artifact)
  - rdfs:comment :: An ERT test file (test/*.el) that tests one or more modules of the package.
  - skos:definition :: An information object realised as an Emacs Lisp file under test/ containing ERT deftest forms exercising one or more modules of the package.
+***** ERT test (ex:ert-test)
+ - rdfs:comment ::
+ - skos:definition ::
+ - rdfs:comment :: An ERT (Emacs Lisp Regression Testing) file under test/ containing ert-deftest forms that exercise one or more modules of the package -- the executable half of test-artifact.
+ - skos:definition :: An information object realised as an Emacs Lisp file under test/ containing ERT deftest forms, distinguished from a test-fixture by being executable rather than static input data.
+***** test fixture (ex:test-fixture)
+ - rdfs:comment ::
+ - skos:definition ::
+ - rdfs:comment :: A static input file (an ontology, label source, corpus sample, or golden output) consumed by the ERT test suite rather than itself containing test logic.
+ - skos:definition :: An information object realised as static data (fixtures, golden files, corpora) that an ERT test reads or compares against, as opposed to an ert-test which contains the executable assertions.
 **** tangle source (ex:tangle-source)
  - rdfs:comment :: An Org-mode source file whose emacs-lisp code blocks are tangled (extracted) into one or more .el modules of the package. This is ELOT's literate-programming source.
  - skos:definition :: An information object realised as an Org-mode file that, via org-babel tangling, generates one or more Elisp (.el) modules.
@@ -105,12 +115,212 @@
  - rdfs:comment :: A tab- or comma-separated values file used as reference or test-driver data (e.g. a .tsv listing).
 **** shell script (ex:shell-script)
  - rdfs:comment :: A shell script (.sh) used for build, test, or reporting automation.
+**** build automation script (ex:build-automation-script)
+ - rdfs:comment ::
+ - rdfs:comment :: A GNU Make build-automation script driving a multi-step pipeline (download/fetch, baseline conversion, Org export, tangle, diff, report) rather than a single linear shell script.
 *** Function (lis:Function)
  - rdfs:isDefinedBy :: lis-ont:core
  - rdfs:comment :: A capability that meets a design requirement, imported from IDO. The purpose a module is intended to serve, distinct from the activity that realizes it.
+**** authoring assistance function (ex:authoring-assistance-function)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - SubClassOf :: lis:realizedIn only ex:authoring-assistance-activity
+ - rdfs:comment :: The function of providing reusable authoring conveniences to a human author.
+**** optional integration function (ex:optional-integration-function)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - SubClassOf :: lis:realizedIn only ex:optional-integration-activity
+ - rdfs:comment :: The function of detecting and wiring up optional third-party package integration.
+**** translation function (ex:translation-function)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - SubClassOf :: lis:realizedIn only ex:translation-activity
+ - rdfs:comment :: The function of converting a representation of information from one structural form to another.
+**** persistence function (ex:persistence-function)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - SubClassOf :: lis:realizedIn only ex:data-persistence-activity
+ - rdfs:comment :: The function of storing, retrieving, or migrating structured data durably across sessions.
+**** source ingestion function (ex:source-ingestion-function)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - SubClassOf :: lis:realizedIn only ex:source-ingestion-activity
+ - rdfs:comment :: The function of reading an external source of a known format and normalising it for storage.
+**** tool invocation function (ex:tool-invocation-function)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - SubClassOf :: lis:realizedIn only ex:external-tool-invocation-activity
+ - rdfs:comment :: The function of invoking an external command-line process and mediating its input/output.
+**** parsing function (ex:parsing-function)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - SubClassOf :: lis:realizedIn only ex:parsing-activity
+ - rdfs:comment :: The function of reading a source text and constructing a structured representation of it.
+**** orchestration function (ex:orchestration-function)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - SubClassOf :: lis:realizedIn only ex:orchestration-activity
+ - rdfs:comment :: The function of coordinating several other modules/activities into a coherent interactive whole.
+**** validation function (ex:validation-function)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - SubClassOf :: lis:realizedIn only ex:validation-activity
+ - rdfs:comment :: The function of checking a representation against well-formedness/semantic rules and reporting violations.
+**** presentation function (ex:presentation-function)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - SubClassOf :: lis:realizedIn only ex:presentation-activity
+ - rdfs:comment :: The function of altering how a document is displayed without altering its underlying content.
+**** identifier minting function (ex:identifier-minting-function)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - SubClassOf :: lis:realizedIn only ex:identifier-minting-activity
+ - rdfs:comment :: The function of generating a fresh identifier conforming to a configured scheme.
+**** identifier verification function (ex:identifier-verification-function)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - SubClassOf :: lis:realizedIn only ex:identifier-verification-activity
+ - rdfs:comment :: The function of checking whether a given identifier conforms to a configured naming scheme.
+**** renaming function (ex:renaming-function)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - SubClassOf :: lis:realizedIn only ex:renaming-activity
+ - rdfs:comment :: The function of rewriting every occurrence of an identifier across a document to a new identifier.
+**** relocating function (ex:relocating-function)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - SubClassOf :: lis:realizedIn only ex:relocating-activity
+ - rdfs:comment :: The function of moving an existing structural element to a new position while preserving its identity.
+**** insertion function (ex:insertion-function)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - SubClassOf :: lis:realizedIn only ex:insertion-activity
+ - rdfs:comment :: The function of adding one or more new structural elements into a document at a specified location.
+**** interface exposure function (ex:interface-exposure-function)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - SubClassOf :: lis:realizedIn only ex:interface-exposure-activity
+ - rdfs:comment :: The function of exposing existing functionality through a new calling protocol/interface.
+**** diagnostic reporting function (ex:diagnostic-reporting-function)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - SubClassOf :: lis:realizedIn only ex:diagnostic-reporting-activity
+ - rdfs:comment :: The function of surfacing validation diagnostics to the author in-context.
+**** compatibility delegation function (ex:compatibility-delegation-function)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - SubClassOf :: lis:realizedIn only ex:compatibility-delegation-activity
+ - rdfs:comment :: The function of preserving a legacy entry point by delegating unconditionally to the current implementation.
 *** Activity (lis:Activity)
  - rdfs:isDefinedBy :: lis-ont:core
  - rdfs:comment :: A temporal entity in which one or more physical objects participate, imported from IDO. The superclass for the kinds of work (checking, tangling, testing, ...) that realize a module's function.
+**** authoring assistance activity (ex:authoring-assistance-activity)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - rdfs:comment :: Providing reusable authoring conveniences to a human author -- boilerplate templates/snippets, menu entries -- that reduce the effort of writing correct source text, without themselves parsing, validating, or transforming existing content.
+ - ex:idef0-participant-note :: Input: an authoring context (buffer position, invoked template/menu command). Output: inserted boilerplate text or an executed menu action. Control: the template definitions (tempo snippets, easymenu structure). Mechanism: elot.el.
+**** optional integration activity (ex:optional-integration-activity)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - rdfs:comment :: Detecting whether an optional third-party package is available and, if so, wiring up interoperability glue for it, degrading gracefully (no error, reduced functionality) when it is absent.
+ - ex:idef0-participant-note :: Input: the Emacs feature/package environment (is sparql-mode/ob-sparql/ob-plantuml/htmlize/gptel loaded?). Output: conditionally-registered integration hooks/handlers. Control: featurep/require-with-noerror guards. Mechanism: elot.el.
+**** translation activity (ex:translation-activity)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - rdfs:comment :: Converting a representation of information from one structural form to another while preserving its content, e.g. Org outline to OWL Manchester Syntax. Comparable to AST-to-AST or AST-to-text lowering/codegen in compiler pipelines.
+ - ex:idef0-participant-note :: Input: source representation (e.g. Org buffer AST). Output: target representation (e.g. OMN text). Control: the mapping/grammar rules defining the translation. Mechanism: the translating module (e.g. elot-tangle.el).
+***** parsing activity (ex:parsing-activity)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - rdfs:comment :: Reading a source text and constructing a structured (typically tree-shaped) representation of it -- the analysis half of a translation pipeline. Comparable to lexing/parsing in compiler front-ends.
+ - ex:idef0-participant-note :: Input: raw source text (e.g. an ELOT Org buffer, or an OMN axiom fragment). Output: a structured representation (AST / parse tree). Control: the grammar the parser implements. Mechanism: the parsing module (e.g. elot-tangle.el's headline-hierarchy reader, elot-owl-grammar.el's generated parser).
+****** source ingestion activity (ex:source-ingestion-activity)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - rdfs:comment ::
+ - ex:idef0-participant-note ::
+ - rdfs:comment :: Reading an external source of a specific known format (Org, CSV, TSV, JSON, TTL, a SPARQL endpoint) and normalising it into a common shape for downstream storage. A format-specific specialisation of parsing-activity, distinguished by feeding a persistence step rather than an in-memory AST.
+ - ex:idef0-participant-note :: Input: a source file/endpoint of a known type (org/csv/tsv/json/ttl/sparql). Output: a normalised (id label plist) record ready for DB storage. Control: the per-format parsing rules. Mechanism: elot-sources.el's per-source-type parser functions.
+***** generation activity (ex:generation-activity)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - rdfs:comment :: Producing a target text or structure from a structured representation -- the synthesis half of a translation pipeline. Comparable to code generation / pretty-printing.
+ - ex:idef0-participant-note :: Input: a structured representation (AST). Output: generated text (e.g. OMN, HTML). Control: the target grammar/serialization rules. Mechanism: the generating module.
+**** structural editing activity (ex:structural-editing-activity)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - rdfs:comment :: Modifying the structure of a document (its outline/heading tree, or its identifier references) without changing what it says at the content level -- comparable to refactoring operations on an abstract syntax tree (rename, move/relocate node, insert node) in IDE/refactoring-tool literature.
+ - ex:idef0-participant-note :: Input: the document/outline before the edit, plus an edit specification (what/where/how). Output: the document/outline after the edit. Control: structural well-formedness rules (e.g. section-kind guards, uniqueness of CURIEs). Mechanism: the editing module.
+***** relocating activity (ex:relocating-activity)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - rdfs:comment :: Moving an existing structural element (e.g. a resource heading with its subtree) to a new position in the outline while preserving its identity. The ELOT counterpart of relocating a node within an AST, as done by refactoring tools' move-node/move-declaration operations.
+ - ex:idef0-participant-note :: Input: source heading/subtree, target parent location. Output: relocated heading/subtree (same CURIE, new outline position). Control: section-kind compatibility guards (a class cannot move under Datatypes, etc). Mechanism: elot-id-move.el.
+***** renaming activity (ex:renaming-activity)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - rdfs:comment :: Rewriting every occurrence of an identifier across a document to a new identifier while preserving reference integrity. The ELOT counterpart of a rename-symbol/rename-identifier refactoring.
+ - ex:idef0-participant-note :: Input: old CURIE, new CURIE (and IRI when adopting an external prefix), the whole document's occurrences. Output: document with every occurrence rewritten. Control: uniqueness/collision checks, prefix-table consistency. Mechanism: elot-id-rename.el.
+***** insertion activity (ex:insertion-activity)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - rdfs:comment :: Adding one or more new structural elements (headings, description-list rows) into a document at a specified location. The ELOT counterpart of AST node insertion.
+ - ex:idef0-participant-note :: Input: label(s)/content to insert, anchor location. Output: document with new heading(s)/row(s) inserted. Control: identifier-scheme rules (minting), kind-legality of the anchor. Mechanism: elot-id-insert.el.
+**** validation activity (ex:validation-activity)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - rdfs:comment :: Checking a representation against a set of well-formedness or semantic rules and reporting whether -- and where -- it fails them, without modifying it. Comparable to static analysis / linting passes in software tool-chains.
+ - ex:idef0-participant-note :: Input: the document/ontology under check. Output: a pass/fail verdict plus located diagnostics. Control: the rule set (checkers, OWL profile, grammar). Mechanism: the checking module.
+***** diagnostic reporting activity (ex:diagnostic-reporting-activity)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - rdfs:comment :: Surfacing validation diagnostics to the author in-context (e.g. in-buffer squiggly lines) as opposed to producing a batch report. A presentation-layer specialisation of validation reporting.
+ - ex:idef0-participant-note :: Input: diagnostics produced by a validation activity. Output: in-buffer visual annotations (overlays). Control: Flymake's diagnostic-severity/backend protocol. Mechanism: elot-flymake.el.
+**** identifier management activity (ex:identifier-management-activity)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - rdfs:comment :: Any activity concerned with the lifecycle of resource identifiers (CURIEs/IRIs) -- minting fresh ones, verifying conformance to a naming scheme, or otherwise governing identifier identity across a document.
+ - ex:idef0-participant-note :: Input: a naming-scheme specification and/or a candidate identifier. Output: a minted or verified identifier. Control: the configured identifier scheme. Mechanism: elot-id.el's scheme registry.
+***** identifier minting activity (ex:identifier-minting-activity)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - rdfs:comment :: Generating a fresh identifier conforming to a configured scheme, avoiding collision with identifiers already declared in the target document.
+ - ex:idef0-participant-note :: Input: label, kind, scheme spec. Output: a fresh CURIE. Control: collision-avoidance against the file's declared identifiers. Mechanism: elot-id.el / elot-id-insert.el.
+***** identifier verification activity (ex:identifier-verification-activity)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - rdfs:comment :: Checking whether a given identifier conforms to a project's configured naming scheme, without generating a new one.
+ - ex:idef0-participant-note :: Input: a candidate CURIE, the configured scheme. Output: a conformance verdict. Control: the scheme's grammar. Mechanism: elot-id.el.
+**** data persistence activity (ex:data-persistence-activity)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - rdfs:comment :: Storing, retrieving, or migrating structured data in a durable backing store across sessions -- here, the SQLite-backed label/attribute cache.
+ - ex:idef0-participant-note :: Input: label/attribute rows to store, or a lookup key. Output: stored rows, or retrieved rows for a query. Control: the DB schema. Mechanism: elot-db.el.
+**** external tool invocation activity (ex:external-tool-invocation-activity)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - rdfs:comment :: Invoking an external command-line process and mediating its input/output, so the invoking module's callers need not know the process protocol. Comparable to a shell-out/adapter layer.
+ - ex:idef0-participant-note :: Input: a command plus arguments/payload (e.g. an OMN file, a SPARQL query). Output: the external tool's result (converted RDF, query results, reasoner verdict). Control: the tool's CLI contract. Mechanism: elot-robot.el wrapping the ROBOT jar/executable.
+**** presentation activity (ex:presentation-activity)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - rdfs:comment :: Altering how a document is displayed to the author without altering its underlying content -- e.g. substituting labels for raw identifiers in the buffer view.
+ - ex:idef0-participant-note :: Input: the underlying buffer text (CURIEs). Output: overlay-based display substitutions (labels). Control: the toggle state and save/refresh hooks. Mechanism: elot-label-display.el.
+**** orchestration activity (ex:orchestration-activity)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - rdfs:comment :: Coordinating several other modules/activities into a coherent interactive whole -- wiring keybindings, hooks, and mode state rather than performing any single transformation itself.
+ - ex:idef0-participant-note :: Input: user interactive commands/keystrokes. Output: dispatched calls into the coordinated modules (tangle, id-insert, id-rename, id-move, label-display). Control: mode keymap and hook configuration. Mechanism: elot-mode.el.
+**** interface exposure activity (ex:interface-exposure-activity)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - rdfs:comment :: Exposing existing functionality through a new calling protocol/interface for a different class of caller -- here, wrapping ELOT's authoring operations as gptel tool definitions callable by an LLM.
+ - ex:idef0-participant-note :: Input: an LLM tool-call request (name + args). Output: a tool result string, or a mutation gated by user confirmation. Control: the side-effect confirmation gate. Mechanism: elot-gptel.el.
+**** compatibility delegation activity (ex:compatibility-delegation-activity)
+ - rdfs:isDefinedBy ::
+ - rdfs:comment ::
+ - rdfs:comment :: Preserving a legacy entry point by delegating unconditionally to the current implementation, so old callers keep working without duplicating behaviour.
+ - ex:idef0-participant-note :: Input: a legacy require/load call. Output: the main library loaded as a side effect. Control: none beyond the require form itself. Mechanism: elot-defaults.el.
 ** Object properties
 :PROPERTIES:
 :ID:       elot-package-object-property-hierarchy
@@ -167,11 +377,11 @@
  - Domain :: ex:tangle-source
  - Range :: ex:elisp-module
  - rdfs:comment :: Holds between an Org tangle source and an Elisp module it generates, corresponding to a :tangle ./path.el header argument. One source may tangle to several modules.
-**** tests (ex:tests)
+*** tests (ex:tests)
  - rdfs:comment :: Holds between a test artifact and the module it tests.
  - Domain :: ex:test-artifact
  - Range :: lis:InformationObject
-**** tested by (ex:tested-by)
+*** tested by (ex:tested-by)
  - InverseOf :: ex:tests
  - rdfs:comment :: Inverse of ex:tests: a module is tested by the test artifact(s) that exercise it.
 ** Data properties
@@ -196,6 +406,12 @@
 :custom_id: elot-package-annotation-property-hierarchy
 :resourcedefs: yes
 :END:
+*** IDEF0 participant note (ex:idef0-participant-note)
+ - rdfs:comment :: An IDEF0-style plaintext note on an Activity subclass recording its typical Input (consumed/transformed data), Output (produced data), Control (rules/constraints governing how the activity is performed), and Mechanism (the resource/tool that performs it, e.g. the Elisp module itself or an external tool). Precedes formal per-instance hasParticipant modelling.
+ - skos:definition :: An annotation recording IDEF0-style Input/Control/Output/Mechanism roles for an Activity subclass, in plain text, ahead of formal hasParticipant assertions.
+*** function statement (ex:function-statement)
+ - rdfs:comment :: A natural-language statement of the purpose an individual (typically an Elisp module) is intended to serve -- what it is for, distinct from how it is implemented. Precedes formal lis:hasFunction/lis:Function/lis:Activity modelling; a per-individual annotation, not a class-level claim.
+ - skos:definition :: An annotation stating the intended purpose of the file or artifact it annotates, as a precursor to formal IDO Function/Activity modelling.
 *** repository path (ex:repository-path)
  - rdfs:comment :: The path of the file backing this individual, relative to the Git repository root, using forward slashes (e.g. elot-package/elot-lint.el).
  - skos:definition :: States where the file corresponding to an individual lives within the repository, as a slash-separated path relative to the Git repository root.
@@ -228,56 +444,447 @@
 :custom_id: elot-package-individuals
 :resourcedefs: yes
 :END:
-*** elot-robot-test.el (ex:elot-robot-test-el)
- - Types :: ex:test-artifact
+*** examples Makefile (ex:examples-makefile)
+ - Types :: ex:build-automation-script
+ - ex:repository-path :: examples/Makefile
+ - rdfs:comment :: The round-trip test-suite driver for examples/: for each ontology listed in ontology-list.tsv it downloads/copies the source, converts it to a baseline OMN via ROBOT, exports it to ELOT Org via elot-exporter, tangles the Org back to OMN via elot-mode (Emacs batch) and optionally via elot-cli (TypeScript), then diffs baseline vs round-tripped OMN (and Elisp-tangled vs CLI-tangled OMN) and writes per-ontology JSON/HTML reports plus a summary roundtrip-report.md.
+ - skos:definition :: A GNU Make build file implementing ELOT's round-trip regression test: fetch -> baseline -> export-to-Org -> tangle-to-OMN -> diff, confirming that Org-Mode <-> OWL Manchester Syntax conversion is lossless for a curated list of example ontologies.
+ - Facts :: ex:depends-on ex:ontology-list-tsv
+ - Facts :: ex:depends-on ex:generate-roundtrip-report-sh
+*** Functions                                                    :nodeclare:
+:PROPERTIES:
+:ID: elot-package-functions
+:custom_id: elot-package-functions
+:END:
+Named =lis:Function= individuals, one per distinct function a module
+serves (a module may have more than one).  Each is wired to its
+owning module via =Facts :: lis:hasFunction= on the module
+individual (see the module headings below), and will receive a
+=Types :: lis:realizedIn only ex:<activity-class>= restriction in a
+follow-up pass.
+
+**** elot.el optional integration function (ex:elot-el-optional-integration-function)
+ - Types :: ex:optional-integration-function
+**** elot.el authoring assistance function (ex:elot-el-authoring-assistance-function)
+ - Types :: ex:authoring-assistance-function
+**** elot-tangle.el translation function (ex:elot-tangle-el-translation-function)
+ - Types :: ex:translation-function
+**** elot-db.el persistence function (ex:elot-db-el-persistence-function)
+ - Types :: ex:persistence-function
+**** elot-sources.el source ingestion function (ex:elot-sources-el-source-ingestion-function)
+ - Types :: ex:source-ingestion-function
+**** elot-robot.el tool invocation function (ex:elot-robot-el-tool-invocation-function)
+ - Types :: ex:tool-invocation-function
+**** elot-owl-grammar.el parsing function (ex:elot-owl-grammar-el-parsing-function)
+ - Types :: ex:parsing-function
+**** elot-mode.el orchestration function (ex:elot-mode-el-orchestration-function)
+ - Types :: ex:orchestration-function
+**** elot-lint.el validation function (ex:elot-lint-el-validation-function)
+ - Types :: ex:validation-function
+**** elot-label-display.el presentation function (ex:elot-label-display-el-presentation-function)
+ - Types :: ex:presentation-function
+**** elot-id.el identifier minting function (ex:elot-id-el-identifier-minting-function)
+ - Types :: ex:identifier-minting-function
+**** elot-id.el identifier verification function (ex:elot-id-el-identifier-verification-function)
+ - Types :: ex:identifier-verification-function
+**** elot-id-rename.el renaming function (ex:elot-id-rename-el-renaming-function)
+ - Types :: ex:renaming-function
+**** elot-id-move.el relocating function (ex:elot-id-move-el-relocating-function)
+ - Types :: ex:relocating-function
+**** elot-id-insert.el insertion function (ex:elot-id-insert-el-insertion-function)
+ - Types :: ex:insertion-function
+**** elot-gptel.el interface exposure function (ex:elot-gptel-el-interface-exposure-function)
+ - Types :: ex:interface-exposure-function
+**** elot-flymake.el diagnostic reporting function (ex:elot-flymake-el-diagnostic-reporting-function)
+ - Types :: ex:diagnostic-reporting-function
+**** elot-defaults.el compatibility delegation function (ex:elot-defaults-el-compatibility-delegation-function)
+ - Types :: ex:compatibility-delegation-function
+*** Test artifacts                                                :nodeclare:
+Individuals standing for ERT test files under =test/=, grouped here for
+navigability (these are top-level resource declarations; the heading
+nesting under this narrative node carries no SubClassOf/SubPropertyOf
+semantics, per the =:nodeclare:= idiom).
+**** elot-robot-test.el (ex:elot-robot-test-el)
+ - Types :: ex:ert-test
  - ex:repository-path :: test/elot-robot-test.el
  - Facts :: ex:tests ex:elot-robot-el
  - rdfs:comment :: ERT test file for elot-robot.el.
-*** elot-id-test.el (ex:elot-id-test-el)
- - Types :: ex:test-artifact
+**** elot-id-test.el (ex:elot-id-test-el)
+ - Types :: ex:ert-test
  - ex:repository-path :: test/elot-id-test.el
  - Facts :: ex:tests ex:elot-id-el
  - rdfs:comment :: ERT test file for elot-id.el.
-*** elot-id-rename-test.el (ex:elot-id-rename-test-el)
- - Types :: ex:test-artifact
+**** elot-id-rename-test.el (ex:elot-id-rename-test-el)
+ - Types :: ex:ert-test
  - ex:repository-path :: test/elot-id-rename-test.el
  - Facts :: ex:tests ex:elot-id-rename-el
  - rdfs:comment :: ERT test file for elot-id-rename.el.
-*** elot-id-insert-test.el (ex:elot-id-insert-test-el)
- - Types :: ex:test-artifact
+**** elot-id-insert-test.el (ex:elot-id-insert-test-el)
+ - Types :: ex:ert-test
  - ex:repository-path :: test/elot-id-insert-test.el
  - Facts :: ex:tests ex:elot-id-insert-el
  - rdfs:comment :: ERT test file for elot-id-insert.el.
-*** elot-db-test.el (ex:elot-db-test-el)
- - Types :: ex:test-artifact
+**** elot-db-test.el (ex:elot-db-test-el)
+ - Types :: ex:ert-test
  - ex:repository-path :: test/elot-db-test.el
  - Facts :: ex:tests ex:elot-db-el
  - rdfs:comment :: ERT test file for elot-db.el.
-*** elot-gptel-test.el (ex:elot-gptel-test-el)
- - Types :: ex:test-artifact
+**** elot-gptel-test.el (ex:elot-gptel-test-el)
+ - Types :: ex:ert-test
  - ex:repository-path :: test/elot-gptel-test.el
  - Facts :: ex:tests ex:elot-gptel-el
  - rdfs:comment :: ERT test file for elot-gptel.el.
-*** elot-sources-test.el (ex:elot-sources-test-el)
- - Types :: ex:test-artifact
+**** elot-sources-test.el (ex:elot-sources-test-el)
+ - Types :: ex:ert-test
  - ex:repository-path :: test/elot-sources-test.el
  - Facts :: ex:tests ex:elot-sources-el
  - rdfs:comment :: ERT test file for elot-sources.el.
-*** elot-move-resource-test.el (ex:elot-move-resource-test-el)
- - Types :: ex:test-artifact
+**** elot-move-resource-test.el (ex:elot-move-resource-test-el)
+ - Types :: ex:ert-test
  - ex:repository-path :: test/elot-move-resource-test.el
  - Facts :: ex:tests ex:elot-id-move-el
  - rdfs:comment :: ERT test file for elot-id-move.el (the move-resource feature).
-*** elot-label-display-hover-test.el (ex:elot-label-display-hover-test-el)
- - Types :: ex:test-artifact
+**** elot-label-display-hover-test.el (ex:elot-label-display-hover-test-el)
+ - Types :: ex:ert-test
  - ex:repository-path :: test/elot-label-display-hover-test.el
  - Facts :: ex:tests ex:elot-label-display-el
  - rdfs:comment :: ERT test file for elot-label-display.el (hover-label behaviour).
-*** elot-lint-oops-test.el (ex:elot-lint-oops-test-el)
- - Types :: ex:test-artifact
+**** elot-lint-oops-test.el (ex:elot-lint-oops-test-el)
+ - Types :: ex:ert-test
  - ex:repository-path :: test/elot-lint-oops-test.el
  - Facts :: ex:tests ex:elot-lint-el
  - rdfs:comment :: ERT test file for elot-lint.el (a lint-oops regression case).
+**** elot-gptel-acceptance-test.el (ex:elot-gptel-acceptance-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-acceptance-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (end-to-end acceptance).
+**** elot-gptel-axiom-check-test.el (ex:elot-gptel-axiom-check-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-axiom-check-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_axiom_check tool).
+**** elot-gptel-axiom-keywords-test.el (ex:elot-gptel-axiom-keywords-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-axiom-keywords-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_axiom_keywords tool).
+**** elot-gptel-check-test.el (ex:elot-gptel-check-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-check-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_check composite tool).
+**** elot-gptel-confirm-mutations-test.el (ex:elot-gptel-confirm-mutations-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-confirm-mutations-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (side-effect confirmation gate).
+**** elot-gptel-conventions-test.el (ex:elot-gptel-conventions-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-conventions-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_conventions tool).
+**** elot-gptel-db-activate-source-test.el (ex:elot-gptel-db-activate-source-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-db-activate-source-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_db_activate_source tool).
+**** elot-gptel-db-borrow-compose-test.el (ex:elot-gptel-db-borrow-compose-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-db-borrow-compose-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_borrow_term composite tool).
+**** elot-gptel-db-borrow-test.el (ex:elot-gptel-db-borrow-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-db-borrow-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_db_borrow_term tool).
+**** elot-gptel-db-query-test.el (ex:elot-gptel-db-query-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-db-query-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_db_query tool).
+**** elot-gptel-db-schema-test.el (ex:elot-gptel-db-schema-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-db-schema-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_db_schema tool).
+**** elot-gptel-db-search-test.el (ex:elot-gptel-db-search-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-db-search-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_db_search_label tool).
+**** elot-gptel-db-shims-test.el (ex:elot-gptel-db-shims-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-db-shims-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (DB-tool shim layer).
+**** elot-gptel-db-shims-wave-b-test.el (ex:elot-gptel-db-shims-wave-b-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-db-shims-wave-b-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (DB-tool shim layer, second wave).
+**** elot-gptel-delete-apply-test.el (ex:elot-gptel-delete-apply-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-delete-apply-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_delete_resource apply path).
+**** elot-gptel-delete-reference-scan-test.el (ex:elot-gptel-delete-reference-scan-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-delete-reference-scan-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_delete_resource pre-flight reference scan).
+**** elot-gptel-delete-resource-test.el (ex:elot-gptel-delete-resource-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-delete-resource-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_delete_resource tool).
+**** elot-gptel-diff-test.el (ex:elot-gptel-diff-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-diff-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_diff tool).
+**** elot-gptel-edit-axiom-test.el (ex:elot-gptel-edit-axiom-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-edit-axiom-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_edit_axiom tool).
+**** elot-gptel-edit-axioms-test.el (ex:elot-gptel-edit-axioms-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-edit-axioms-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_edit_axioms batch tool).
+**** elot-gptel-insert-test.el (ex:elot-gptel-insert-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-insert-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_insert_* tools).
+**** elot-gptel-lint-content-test.el (ex:elot-gptel-lint-content-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-lint-content-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_lint content= draft path).
+**** elot-gptel-metrics-test.el (ex:elot-gptel-metrics-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-metrics-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_metrics tool).
+**** elot-gptel-move-test.el (ex:elot-gptel-move-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-move-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_move_resource tool).
+**** elot-gptel-omn-report-test.el (ex:elot-gptel-omn-report-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-omn-report-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_omn_report tool).
+**** elot-gptel-read-resource-test.el (ex:elot-gptel-read-resource-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-read-resource-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_read_resource tool).
+**** elot-gptel-registry-test.el (ex:elot-gptel-registry-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-registry-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (tool-definition registry).
+**** elot-gptel-rename-merge-test.el (ex:elot-gptel-rename-merge-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-rename-merge-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_rename_resource merge op).
+**** elot-gptel-rename-test.el (ex:elot-gptel-rename-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-rename-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_rename_resource tool).
+**** elot-gptel-replace-parents-test.el (ex:elot-gptel-replace-parents-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-replace-parents-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (multi-parent enumeration in elot_replace_with_parent).
+**** elot-gptel-replace-with-parent-test.el (ex:elot-gptel-replace-with-parent-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-replace-with-parent-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_replace_with_parent tool).
+**** elot-gptel-resources-test.el (ex:elot-gptel-resources-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-gptel-resources-test.el
+ - Facts :: ex:tests ex:elot-gptel-el
+ - rdfs:comment :: ERT test file for elot-gptel.el (elot_resources tool).
+**** elot-omn-validate-test.el (ex:elot-omn-validate-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-omn-validate-test.el
+ - Facts :: ex:tests ex:elot-robot-el
+ - rdfs:comment :: ERT test file for elot-robot.el (OMN validate/convert via ROBOT).
+**** elot-reasoning-test.el (ex:elot-reasoning-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-reasoning-test.el
+ - Facts :: ex:tests ex:elot-robot-el
+ - rdfs:comment :: ERT test file for elot-robot.el (consistency/reasoner invocation).
+**** elot-corpus-oops-test.el (ex:elot-corpus-oops-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-corpus-oops-test.el
+ - Facts :: ex:tests ex:elot-lint-el
+ - rdfs:comment :: ERT test file for elot-lint.el (OOPS-pattern corpus regression).
+**** elot-corpus-test.el (ex:elot-corpus-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-corpus-test.el
+ - Facts :: ex:tests ex:elot-lint-el
+ - rdfs:comment :: ERT test file for elot-lint.el (lint-corpus regression suite).
+**** elot-db-crud-test.el (ex:elot-db-crud-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-db-crud-test.el
+ - Facts :: ex:tests ex:elot-db-el
+ - rdfs:comment :: ERT test file for elot-db.el (CRUD operations).
+**** elot-db-golden-test.el (ex:elot-db-golden-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-db-golden-test.el
+ - Facts :: ex:tests ex:elot-db-el
+ - rdfs:comment :: ERT test file for elot-db.el (golden-file regression).
+**** elot-db-lang-picker-test.el (ex:elot-db-lang-picker-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-db-lang-picker-test.el
+ - Facts :: ex:tests ex:elot-db-el
+ - rdfs:comment :: ERT test file for elot-db.el (language picker).
+**** elot-db-lang-read-test.el (ex:elot-db-lang-read-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-db-lang-read-test.el
+ - Facts :: ex:tests ex:elot-db-el
+ - rdfs:comment :: ERT test file for elot-db.el (language-tagged read).
+**** elot-db-lang-write-test.el (ex:elot-db-lang-write-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-db-lang-write-test.el
+ - Facts :: ex:tests ex:elot-db-el
+ - rdfs:comment :: ERT test file for elot-db.el (language-tagged write).
+**** elot-db-prefixes-test.el (ex:elot-db-prefixes-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-db-prefixes-test.el
+ - Facts :: ex:tests ex:elot-db-el
+ - rdfs:comment :: ERT test file for elot-db.el (prefix table handling).
+**** elot-db-readonly-test.el (ex:elot-db-readonly-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-db-readonly-test.el
+ - Facts :: ex:tests ex:elot-db-el
+ - rdfs:comment :: ERT test file for elot-db.el (read-only query mode).
+**** elot-db-remove-source-test.el (ex:elot-db-remove-source-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-db-remove-source-test.el
+ - Facts :: ex:tests ex:elot-db-el
+ - rdfs:comment :: ERT test file for elot-db.el (source removal).
+**** elot-db-schema-sql-test.el (ex:elot-db-schema-sql-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-db-schema-sql-test.el
+ - Facts :: ex:tests ex:elot-db-el
+ - rdfs:comment :: ERT test file for elot-db.el (schema.sql conformance).
+**** elot-db-schema-v3-test.el (ex:elot-db-schema-v3-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-db-schema-v3-test.el
+ - Facts :: ex:tests ex:elot-db-el
+ - rdfs:comment :: ERT test file for elot-db.el (schema v3 migration).
+**** elot-id-set-scheme-test.el (ex:elot-id-set-scheme-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-id-set-scheme-test.el
+ - Facts :: ex:tests ex:elot-id-el
+ - rdfs:comment :: ERT test file for elot-id.el (scheme selection).
+**** elot-sources-register-test.el (ex:elot-sources-register-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-sources-register-test.el
+ - Facts :: ex:tests ex:elot-sources-el
+ - rdfs:comment :: ERT test file for elot-sources.el (source registration).
+**** elot-sources-lang-test.el (ex:elot-sources-lang-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-sources-lang-test.el
+ - Facts :: ex:tests ex:elot-sources-el
+ - rdfs:comment :: ERT test file for elot-sources.el (language tagging).
+**** elot-sources-ttl-lang-test.el (ex:elot-sources-ttl-lang-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-sources-ttl-lang-test.el
+ - Facts :: ex:tests ex:elot-sources-el
+ - rdfs:comment :: ERT test file for elot-sources.el (TTL source language handling).
+**** elot-tangle-roundtrip-test.el (ex:elot-tangle-roundtrip-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-tangle-roundtrip-test.el
+ - Facts :: ex:tests ex:elot-tangle-el
+ - rdfs:comment :: ERT test file for elot-tangle.el (tangle/export round-trip).
+**** elot-tangle-blank-omn-row-test.el (ex:elot-tangle-blank-omn-row-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-tangle-blank-omn-row-test.el
+ - Facts :: ex:tests ex:elot-tangle-el
+ - rdfs:comment :: ERT test file for elot-tangle.el (blank OMN row regression).
+**** elot-subheading-relation-test.el (ex:elot-subheading-relation-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-subheading-relation-test.el
+ - Facts :: ex:tests ex:elot-tangle-el
+ - rdfs:comment :: ERT test file for elot-tangle.el (:ELOT-subheading-relation: handling).
+**** elot-headline-hierarchy-stale-test.el (ex:elot-headline-hierarchy-stale-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-headline-hierarchy-stale-test.el
+ - Facts :: ex:tests ex:elot-tangle-el
+ - rdfs:comment :: ERT test file for elot-tangle.el (stale headline-hierarchy cache).
+**** elot-slurp-integration-test.el (ex:elot-slurp-integration-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-slurp-integration-test.el
+ - Facts :: ex:tests ex:elot-tangle-el
+ - rdfs:comment :: ERT test file for elot-tangle.el (slurp integration).
+**** elot-label-lookup-lang-suffix-test.el (ex:elot-label-lookup-lang-suffix-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-label-lookup-lang-suffix-test.el
+ - Facts :: ex:tests ex:elot-label-display-el
+ - rdfs:comment :: ERT test file for elot-label-display.el (language-suffix label lookup).
+**** elot-label-lookup-scope-test.el (ex:elot-label-lookup-scope-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-label-lookup-scope-test.el
+ - Facts :: ex:tests ex:elot-label-display-el
+ - rdfs:comment :: ERT test file for elot-label-display.el (lookup scope).
+**** elot-label-lookup-stage-test.el (ex:elot-label-lookup-stage-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-label-lookup-stage-test.el
+ - Facts :: ex:tests ex:elot-label-display-el
+ - rdfs:comment :: ERT test file for elot-label-display.el (lookup pipeline staging).
+**** elot-label-lookup-test.el (ex:elot-label-lookup-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-label-lookup-test.el
+ - Facts :: ex:tests ex:elot-label-display-el
+ - rdfs:comment :: ERT test file for elot-label-display.el (label lookup).
+**** elot-lint-blank-omn-row-test.el (ex:elot-lint-blank-omn-row-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-lint-blank-omn-row-test.el
+ - Facts :: ex:tests ex:elot-lint-el
+ - rdfs:comment :: ERT test file for elot-lint.el (blank OMN row regression).
+**** elot-lint-subclass-in-dl-test.el (ex:elot-lint-subclass-in-dl-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-lint-subclass-in-dl-test.el
+ - Facts :: ex:tests ex:elot-lint-el
+ - rdfs:comment :: ERT test file for elot-lint.el (SubClassOf in description-list checker).
+**** elot-lint-axiom-signature-test.el (ex:elot-lint-axiom-signature-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-lint-axiom-signature-test.el
+ - Facts :: ex:tests ex:elot-lint-el
+ - rdfs:comment :: ERT test file for elot-lint.el (axiom-value-curies signature checker).
+**** elot-menu-test.el (ex:elot-menu-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-menu-test.el
+ - Facts :: ex:tests ex:elot-mode-el
+ - rdfs:comment :: ERT test file for elot-mode.el (easymenu wiring).
+**** elot-menu-item-b-test.el (ex:elot-menu-item-b-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-menu-item-b-test.el
+ - Facts :: ex:tests ex:elot-mode-el
+ - rdfs:comment :: ERT test file for elot-mode.el (a specific menu item).
+**** elot-global-mode-test.el (ex:elot-global-mode-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-global-mode-test.el
+ - Facts :: ex:tests ex:elot-mode-el
+ - rdfs:comment :: ERT test file for elot-mode.el (global-mode activation).
+**** elot-load-without-sparql-test.el (ex:elot-load-without-sparql-test-el)
+ - Types :: ex:ert-test
+ - ex:repository-path :: test/elot-load-without-sparql-test.el
+ - Facts :: ex:tests ex:elot-mode-el
+ - rdfs:comment :: ERT test file for elot-mode.el (graceful load without sparql-mode).
+
 *** ELOT package (ex:elot-package-2)
  - Types :: ex:software-package
  - rdfs:comment :: The ELOT Emacs package as a whole, the software artifact distributed to users (e.g. via MELPA), composed of the elot-package/ payload plus its tangle sources, tests, and documentation.
@@ -396,7 +1003,8 @@ tree), not the local working copy.
  - skos:definition :: VS Code workspace configuration for the repository.
  - Facts :: ex:file-count "1"^^xsd:nonNegativeInteger
  - Facts :: ex:size-in-kb "0.2"^^xsd:decimal
-*** On modelling the =require= graph as flat Facts             :nodeclare:
+*** Elisp modules                                                :nodeclare:
+**** On modelling the =require= graph as flat Facts               :nodeclare:
 The =ex:requires-module= edges below are asserted as explicit =Facts=
 rows on each module individual, rather than encoded through heading
 nesting.  ELOT's =:ELOT-subheading-relation:= feature (used for
@@ -427,7 +1035,7 @@ full multi-parent DAG (and the cycle) faithfully, while
 =ex:depends-on= being =Transitive= still yields the reasoned
 dependency closure for free.
 
-**** Is this much internal coupling healthy?                   :nodeclare:
+***** Is this much internal coupling healthy?                  :nodeclare:
 Offered as engineering commentary, not as asserted ontology:
 
 - *A dense internal =require= web is common* for medium-to-large Elisp
@@ -447,7 +1055,6 @@ Offered as engineering commentary, not as asserted ontology:
   one-directionally.  Worth flagging, not urgent -- and precisely the
   kind of finding a machine-checkable model of the package is good at
   surfacing.
-*** Elisp modules                                                :nodeclare:
 **** elot.el (ex:elot-el)
  - Types :: ex:elisp-module
  - ex:repository-path :: elot-package/elot.el
@@ -458,23 +1065,34 @@ Offered as engineering commentary, not as asserted ontology:
  - Facts :: ex:requires-module ex:elot-owl-grammar-el
  - Facts :: ex:requires-module ex:elot-db-el
  - Facts :: ex:requires-module ex:elot-sources-el
+ - ex:function-statement :: Top-level entry point of the package -- provides authoring templates (tempo snippets for headers/ontology skeletons), the ELOT easymenu, and optional integration glue for sparql-mode/ob-sparql/ob-plantuml/htmlize/gptel, degrading gracefully when those are absent.
+ - Facts :: lis:hasFunction ex:elot-el-authoring-assistance-function
+ - Facts :: lis:hasFunction ex:elot-el-optional-integration-function
 **** elot-tangle.el (ex:elot-tangle-el)
  - Types :: ex:elisp-module
  - ex:repository-path :: elot-package/elot-tangle.el
  - Facts :: ex:requires-module ex:elot-robot-el
  - Facts :: ex:requires-module ex:elot-db-el
+ - ex:function-statement :: Parse an ELOT Org buffer's headline hierarchy into an AST and tangle it into OWL Manchester Syntax (OMN) output -- the core structural-to-OWL translation step required by elot-mode and most other modules.
+ - Facts :: lis:hasFunction ex:elot-tangle-el-translation-function
 **** elot-sources.el (ex:elot-sources-el)
  - Types :: ex:elisp-module
  - ex:repository-path :: elot-package/elot-sources.el
  - Facts :: ex:requires-module ex:elot-robot-el
  - Facts :: ex:requires-module ex:elot-tangle-el
  - Facts :: ex:requires-module ex:elot-db-el
+ - ex:function-statement :: Implement one parser per external source type (org, csv, tsv, json, ttl, sparql query) that normalises each into a common (id label plist) shape for ingestion into the label database, without performing the DB writes itself.
+ - Facts :: lis:hasFunction ex:elot-sources-el-source-ingestion-function
 **** elot-robot.el (ex:elot-robot-el)
  - Types :: ex:elisp-module
  - ex:repository-path :: elot-package/elot-robot.el
+ - ex:function-statement :: Provide a shared process layer wrapping the external ROBOT command-line tool, used for OMN-to-RDF conversion, SPARQL query execution, and OWL reasoning (consistency/explanation); ROBOT itself is an optional dependency.
+ - Facts :: lis:hasFunction ex:elot-robot-el-tool-invocation-function
 **** elot-owl-grammar.el (ex:elot-owl-grammar-el)
  - Types :: ex:elisp-module
  - ex:repository-path :: elot-package/elot-owl-grammar.el
+ - ex:function-statement :: Supply a generated PEG grammar for parsing OWL Manchester Syntax expressions, consumed by the lint checkers to validate axiom fragments; generated from owl-manchester.peggy and not hand-edited.
+ - Facts :: lis:hasFunction ex:elot-owl-grammar-el-parsing-function
 **** elot-mode.el (ex:elot-mode-el)
  - Types :: ex:elisp-module
  - ex:repository-path :: elot-package/elot-mode.el
@@ -486,19 +1104,28 @@ Offered as engineering commentary, not as asserted ontology:
  - Facts :: ex:requires-module ex:elot-id-rename-el
  - Facts :: ex:requires-module ex:elot-id-move-el
  - Facts :: ex:requires-module ex:elot-el
+ - ex:function-statement :: Provide the elot-mode minor mode that ties the whole package together for interactive authoring -- syntax table, tangling/save hooks, label-display overlays, and keybindings for the id-insert/rename/move commands.
+ - Facts :: lis:hasFunction ex:elot-mode-el-orchestration-function
 **** elot-lint.el (ex:elot-lint-el)
  - Types :: ex:elisp-module
  - ex:repository-path :: elot-package/elot-lint.el
  - Facts :: ex:requires-module ex:elot-tangle-el
  - Facts :: ex:requires-module ex:elot-label-display-el
  - Facts :: ex:requires-module ex:elot-owl-grammar-el
+ - ex:function-statement :: Statically check an ELOT Org buffer for authoring errors -- register org-lint checkers for heading identifiers, prefix tables, required sections, description-list CURIEs, and OMN axiom validity -- before OMN/ROBOT-level validation runs.
+ - Facts :: lis:hasFunction ex:elot-lint-el-validation-function
 **** elot-label-display.el (ex:elot-label-display-el)
  - Types :: ex:elisp-module
  - ex:repository-path :: elot-package/elot-label-display.el
  - Facts :: ex:requires-module ex:elot-tangle-el
+ - ex:function-statement :: Display rdfs:label strings in place of raw resource identifiers while editing an ontology buffer, toggled (default F5) and refreshed on save, to make dense CURIE-laden source human-readable.
+ - Facts :: lis:hasFunction ex:elot-label-display-el-presentation-function
 **** elot-id.el (ex:elot-id-el)
  - Types :: ex:elisp-module
  - ex:repository-path :: elot-package/elot-id.el
+ - ex:function-statement :: Provide a pluggable identifier-minting and verification framework -- a registry of interchangeable ID schemes (uuid, slug, counter, acme, ...) selected per-project, used by every module that mints new CURIEs.
+ - Facts :: lis:hasFunction ex:elot-id-el-identifier-minting-function
+ - Facts :: lis:hasFunction ex:elot-id-el-identifier-verification-function
 **** elot-id-rename.el (ex:elot-id-rename-el)
  - Types :: ex:elisp-module
  - ex:repository-path :: elot-package/elot-id-rename.el
@@ -506,17 +1133,23 @@ Offered as engineering commentary, not as asserted ontology:
  - Facts :: ex:requires-module ex:elot-tangle-el
  - Facts :: ex:requires-module ex:elot-id-move-el
  - Facts :: ex:requires-module ex:elot-id-insert-el
+ - ex:function-statement :: Rewrite a resource's CURIE everywhere it appears in the ontology source (heading, description-list rows, OMN/SPARQL src-blocks, matching full-IRI occurrences), keeping identifiers consistent after a rename.
+ - Facts :: lis:hasFunction ex:elot-id-rename-el-renaming-function
 **** elot-id-move.el (ex:elot-id-move-el)
  - Types :: ex:elisp-module
  - ex:repository-path :: elot-package/elot-id-move.el
  - Facts :: ex:requires-module ex:elot-id-insert-el
  - Facts :: ex:requires-module ex:elot-tangle-el
  - Facts :: ex:requires-module ex:elot-label-display-el
+ - ex:function-statement :: Relocate a resource heading (with its subtree) to a new parent within the same ontology file, preserving its CURIE, with section-kind guards preventing cross-kind moves.
+ - Facts :: lis:hasFunction ex:elot-id-move-el-relocating-function
 **** elot-id-insert.el (ex:elot-id-insert-el)
  - Types :: ex:elisp-module
  - ex:repository-path :: elot-package/elot-id-insert.el
  - Facts :: ex:requires-module ex:elot-id-el
  - Facts :: ex:requires-module ex:elot-tangle-el
+ - ex:function-statement :: Provide interactive commands (elot-insert-sibling-resource / elot-insert-child-resource) that mint fresh identifiers and insert new resource headings into an ELOT outline, prompting for labels and inferring kind from context.
+ - Facts :: lis:hasFunction ex:elot-id-insert-el-insertion-function
 **** elot-gptel.el (ex:elot-gptel-el)
  - Types :: ex:elisp-module
  - ex:repository-path :: elot-package/elot-gptel.el
@@ -529,16 +1162,24 @@ Offered as engineering commentary, not as asserted ontology:
  - Facts :: ex:requires-module ex:elot-id-rename-el
  - Facts :: ex:requires-module ex:elot-id-insert-el
  - Facts :: ex:requires-module ex:elot-id-move-el
+ - ex:function-statement :: Expose ELOT's ontology-authoring capabilities (checks, queries, edits, reasoning) as gptel tools callable by an LLM, as thin wrappers around existing ELOT Elisp with a side-effect confirmation gate.
+ - Facts :: lis:hasFunction ex:elot-gptel-el-interface-exposure-function
 **** elot-flymake.el (ex:elot-flymake-el)
  - Types :: ex:elisp-module
  - ex:repository-path :: elot-package/elot-flymake.el
  - Facts :: ex:requires-module ex:elot-lint-el
+ - ex:function-statement :: Bridge ELOT's org-lint checkers to Emacs's Flymake framework, providing live in-buffer squiggly-line diagnostics (errors/warnings) as an ontology is authored.
+ - Facts :: lis:hasFunction ex:elot-flymake-el-diagnostic-reporting-function
 **** elot-defaults.el (ex:elot-defaults-el)
  - Types :: ex:elisp-module
  - ex:repository-path :: elot-package/elot-defaults.el
+ - ex:function-statement :: Backward-compatible shim -- loads the main elot library for older Org files that file-locally require elot-defaults, preserving load compatibility without adding new behaviour.
+ - Facts :: lis:hasFunction ex:elot-defaults-el-compatibility-delegation-function
 **** elot-db.el (ex:elot-db-el)
  - Types :: ex:elisp-module
  - ex:repository-path :: elot-package/elot-db.el
+ - ex:function-statement :: Provide the SQLite-backed label/attribute cache -- the sole module that talks SQL -- exposing schema init, migration, prefix expansion, and read/write primitives (elot-db-get-label, elot-db-update-source, ...) consumed by every other module needing cross-session label lookup.
+ - Facts :: lis:hasFunction ex:elot-db-el-persistence-function
 *** Stylesheets                                                   :nodeclare:
 **** elot-style.css (ex:elot-style-css)
  - Types :: ex:stylesheet
@@ -617,3 +1258,4 @@ harness (tangle/export/re-import consistency checks).
  - Types :: ex:shell-script
  - ex:repository-path :: examples/generate-roundtrip-report.sh
  - skos:definition :: A shell script that regenerates the examples round-trip report, exercising ELOT's tangle/export round trip over the ontologies listed in ontology-list.tsv.
+ - Facts :: ex:depended-on-by ex:examples-makefile
