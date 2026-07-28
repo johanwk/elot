@@ -2766,7 +2766,7 @@ frame-keyword form.")
       "OK: no rows"
     (elot-gptel--db-format-rows header rows nil)))
 
-(defun elot-gptel-tool-db-get-attributes (id &optional source)
+(defun elot-gptel-tool-db-get-attributes (id &optional source distinct)
   "Return all (prop, value, lang, source) rows for entity ID.
 
 When SOURCE is non-nil, restrict the SELECT to that single
@@ -2776,6 +2776,12 @@ a CURIE (=ex:dog=) or a full IRI -- matching exactly how the
 source ingested it.  Use `elot_db_get_label' or
 `elot_db_expand_curie' first if you are not sure which form a
 source uses.
+
+When DISTINCT is non-nil, collapse to one row per distinct
+\(prop, value) pair, keeping only the alphabetically-earliest
+source for each pair -- useful for confirming a well-known
+term's current shape without wading through near-duplicate
+historical re-assertions.
 
 Returns a TSV with columns `prop', `value', `lang', `source',
 `data_source', or =OK: no rows= when nothing is stored.
@@ -2787,15 +2793,30 @@ through the read-only gate."
         (unless (and (stringp id) (not (string-empty-p id)))
           (user-error "ELOT-gptel: id must be a non-empty string"))
         (elot-gptel--db-ensure-open)
-        (let* ((sql (if source
-                        "SELECT prop, value, lang, source, data_source
-                           FROM attributes
-                          WHERE id = ? AND source = ?
-                          ORDER BY source, prop, value"
-                      "SELECT prop, value, lang, source, data_source
-                         FROM attributes
-                        WHERE id = ?
-                        ORDER BY source, prop, value"))
+        (let* ((sql
+                (cond
+                 ((and source distinct)
+                  "SELECT prop, value, lang, MIN(source) AS source, data_source
+                     FROM attributes
+                    WHERE id = ? AND source = ?
+                    GROUP BY prop, value
+                    ORDER BY prop, value")
+                 (source
+                  "SELECT prop, value, lang, source, data_source
+                     FROM attributes
+                    WHERE id = ? AND source = ?
+                    ORDER BY source, prop, value")
+                 (distinct
+                  "SELECT prop, value, lang, MIN(source) AS source, data_source
+                     FROM attributes
+                    WHERE id = ?
+                    GROUP BY prop, value
+                    ORDER BY prop, value")
+                 (t
+                  "SELECT prop, value, lang, source, data_source
+                     FROM attributes
+                    WHERE id = ?
+                    ORDER BY source, prop, value")))
                (params (if source (list id source) (list id)))
                (rows (elot-db-execute-readonly sql params)))
           (elot-gptel--db-shim-format
@@ -9010,6 +9031,15 @@ ID is the form ELOT stores in `entities.id' -- either a CURIE
 When SOURCE is supplied, restrict the listing to that single
 source row; otherwise return rows from every source.
 
+When DISTINCT is true, collapse to one row per distinct
+(prop, value) pair -- use this for the common \"just confirm
+this term's current Domain/Range/shape\" case, where a
+well-known imported term may have near-duplicate rows from
+every historical source that ever declared it.  Each collapsed
+row reports only the first (alphabetically-earliest) source
+that asserted it.  Leave DISTINCT false (the default) for full
+provenance auditing across sources.
+
 Returns a TSV with columns `prop', `value', `lang', `source',
 `data_source', or `OK: no rows' when nothing is stored.  This
 is the natural way to ask \"what does the DB know about
@@ -9028,7 +9058,14 @@ rows.  Must be the *exact* registered source identifier -- the \
 full path or IRI as stored, e.g. \
 `c:/Data/elot/examples/IDO-4.2.org', not a bare filename or \
 substring (the filter is SQL equality, `source = ?', not LIKE).  \
-Call `elot_db_list_sources' first to read the exact strings."))))
+Call `elot_db_list_sources' first to read the exact strings.")
+      (:name "distinct"
+             :type boolean
+             :optional t
+             :description
+             "When true, collapse rows to one per distinct (prop, \
+value) pair, dropping duplicate re-assertions from multiple \
+historical sources.  Default false (full history)."))))
 
 (defconst elot-gptel--spec-db-supertypes
   '("elot_db_supertypes"
@@ -9872,8 +9909,8 @@ is truthy in Elisp) is correctly treated as nil."
         (elot-gptel--truthy like) (elot-gptel--truthy allow-all)
         (elot-gptel--truthy dry-run))))
     ('elot-gptel-tool-db-get-attributes
-     (lambda (id &optional source)
-       (elot-gptel-tool-db-get-attributes id source)))
+     (lambda (id &optional source distinct)
+       (elot-gptel-tool-db-get-attributes id source (elot-gptel--truthy distinct))))
     ('elot-gptel-tool-db-supertypes
      (lambda (id &optional source)
        (elot-gptel-tool-db-supertypes id source)))
