@@ -38,10 +38,14 @@
 ;;     classes only land under classes, properties only under
 ;;     properties of the same kind, etc.  Mismatch -> `user-error'
 ;;     naming both kinds.
-;;   - Datatypes and Individuals are sibling-only at level 3+ -- the
-;;     `child' variant under those sections is refused /unless/ TARGET
-;;     is the section root itself (the same "seed an empty section"
-;;     exemption already in `elot-id-insert').
+;;   - Datatypes are sibling-only at level 3+ -- the `child' variant
+;;     under that section is refused /unless/ TARGET is the section
+;;     root itself (the same "seed an empty section" exemption
+;;     already in `elot-id-insert').  Individuals are exempted from
+;;     this refusal: nested headings under Individuals (e.g. SKOS
+;;     concept hierarchies) are a useful visual / editing aid, so
+;;     `child' is permitted there at any depth even though OWL
+;;     carries no semantic sub-relation between named individuals.
 ;;   - SOURCE = TARGET, or TARGET already the current parent: refused
 ;;     as a no-op.
 ;;   - SOURCE ambiguous (declared in more than one ontology subtree of
@@ -347,9 +351,13 @@ Refuses with `user-error' when:
   - SOURCE = TARGET, or TARGET already the current parent of
     SOURCE (no-op);
   - the move would place SOURCE inside its own subtree;
-  - under Datatypes / Individuals, AS=`child' is requested with
+  - under Datatypes, AS=`child' is requested with
     a level-3+ TARGET (no inherent sub-relationship -- TARGET
-    must be the section root in those sections).
+    must be the section root in that section).  Individuals are
+    exempted: nested `child' placement is permitted at any depth
+    as a visual / editing aid (e.g. SKOS concept hierarchies),
+    even though OWL carries no semantic sub-relation between
+    named individuals.
 
 Returns a plist:
   (:source S :target T :as AS
@@ -421,11 +429,16 @@ section root)."
           (elot-id-move--resolve-target source-marker source-kind target))
          (target-mode (car target-resolution))
          (target-marker (cdr target-resolution))
-         ;; Datatypes / Individuals: child under a level-3+ target is
-         ;; refused (no inherent sub-relationship).
+         ;; Datatypes: child under a level-3+ target is refused (no
+         ;; inherent sub-relationship among datatypes).  Individuals
+         ;; are exempted from this refusal: nested headings under
+         ;; Individuals are a real, useful authoring pattern (e.g.
+         ;; SKOS concept hierarchies), so `child' is permitted there
+         ;; as a visual / editing aid even though OWL carries no
+         ;; semantic sub-relation between named individuals.
          (_ (when (and (eq as 'child)
                        (eq target-mode 'heading)
-                       (memq source-kind '(datatype individual)))
+                       (memq source-kind '(datatype)))
               (user-error
                "ELOT-move-resource: cannot insert a %s as a CHILD of another %s (no inherent sub-relationship); use AS=sibling, or TARGET=\"top\""
                source-kind source-kind)))

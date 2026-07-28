@@ -661,6 +661,10 @@ authoring-only group by a wide margin.
  - rdfs:comment :: A GNU Make build-automation script driving a multi-step pipeline (download/fetch, baseline conversion, Org export, tangle, diff, report) rather than a single linear shell script.
 ***** JavaScript file (ex:javascript-file)
  - rdfs:comment :: A client-side JavaScript file used in ELOT's HTML output.
+ - rdfs:seeAlso :: LLM: this is an entry added just for test of empty row insertion
+***** CoffeeScript file (ex:coffeescript-file)
+ - rdfs:comment :: A client-side CoffeeScript file used in ELOT's HTML output.
+ - rdfs:seeAlso :: LLM: this is an entry added just for test of empty row insertion
 ***** shell script (ex:shell-script)
  - rdfs:comment :: A shell script (.sh) used for build, test, or reporting automation.
 **** software package (ex:software-package)

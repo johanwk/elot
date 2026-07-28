@@ -74,7 +74,8 @@
    ":ID:       my-ont-individuals\n"
    ":resourcedefs: yes\n"
    ":END:\n"
-   "*** scooby (ex:scooby)\n"))
+   "*** scooby (ex:scooby)\n"
+   "*** rex (ex:rex)\n"))
 
 (defmacro elot-id-move-test--with (&rest body)
   (declare (indent 0))
@@ -207,6 +208,17 @@ target heading via `elot-id-heading-curie-regexp'."
   (elot-id-move-test--with
     (elot-move-resource "ex:dog" 'top)
     (should (= 3 (elot-id-move-test--heading-level "ex:dog")))))
+
+(ert-deftest elot-id-move-test-individual-child-allowed ()
+  "Under Individuals, AS=child with a level-3+ target is permitted
+\(nested individual headings, e.g. SKOS concept hierarchies, are a
+useful visual / editing aid even though OWL carries no semantic
+sub-relation between named individuals)."
+  (elot-id-move-test--with
+    (elot-move-resource "ex:rex" "ex:scooby" 'child)
+    (should (= 4 (elot-id-move-test--heading-level "ex:rex")))
+    (should (string= "ex:scooby"
+                     (elot-id-move-test--parent-curie "ex:rex")))))
 
 (ert-deftest elot-id-move-test-datatype-to-top-allowed ()
   "Datatype move to TARGET=\"top\" is permitted (the section-root

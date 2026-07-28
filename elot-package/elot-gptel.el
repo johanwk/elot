@@ -4284,7 +4284,8 @@ Optional filters compose (logical AND):
   KIND    a display kind (`Class', `ObjectProperty',
           `DataProperty', `AnnotationProperty', `Individual',
           `Datatype', `Ontology') or `all' (default).
-  MATCH   a regexp (case-insensitive) matched against each
+  MATCH   an Emacs-style regexp (case-insensitive; alternation
+          is `\\|', a bare `|' is literal) matched against each
           resource's CURIE OR label.
   PREFIX  an exact CURIE prefix (e.g. `ex', `iof-av') -- keep only
           resources whose CURIE begins with `PREFIX:'.
@@ -6139,7 +6140,7 @@ or an `ERROR:' line on refusal / failure."
 (declare-function elot-id-insert--goto-heading-for-curie
                   "elot-id-insert" (curie))
 (declare-function elot-id-insert--do-insert "elot-id-insert"
-                  (child-p n &optional labels))
+                  (child-p n &optional labels no-blank-desc))
 (declare-function elot-id-heading-curie-regexp "elot-id" (curie))
 
 (defun elot-gptel--insert-curie-shape-p (s)
@@ -6373,12 +6374,20 @@ restores the pre-insert bytes."
       (save-excursion
         (elot-gptel--insert-goto-anchor anchor)
         (atomic-change-group
+          ;; NO-BLANK-DESC is hardcoded non-nil for tool-driven
+          ;; inserts: blank description-list rows are never useful
+          ;; when an LLM is driving the edits and just require a
+          ;; follow-up delete-empty sweep (see
+          ;; briefings/tool-improvements-before-melpa-2.2.0.org).
+          ;; Interactive `M-x elot-insert-*-resource' keeps the old
+          ;; default (blank copies inherited) since a human may want
+          ;; to fill them in by hand.
           (setq curies
                 (if child-p
                     (elot-id-insert--do-insert
-                     t (length labels) labels)
+                     t (length labels) labels t)
                   (elot-id-insert--do-insert
-                   nil (length labels) labels)))))
+                   nil (length labels) labels t)))))
       (let* ((n (length curies))
              (head
               (format
@@ -6484,8 +6493,13 @@ the level-ordered sequence."
           ;; The walker preserves level-order across calls, so
           ;; the concatenated pair list also matches level order.
           (cl-letf (((symbol-function 'elot-id-insert--do-insert)
-                     (lambda (child-p n &optional labels)
-                       (let* ((cs (funcall orig-fn child-p n labels))
+                     (lambda (child-p n &optional labels _no-blank-desc)
+                       ;; NO-BLANK-DESC is forced non-nil regardless
+                       ;; of what the (unused) internal caller
+                       ;; passes -- tool-driven tree inserts never
+                       ;; want blank description-list rows (see
+                       ;; briefings/tool-improvements-before-melpa-2.2.0.org).
+                       (let* ((cs (funcall orig-fn child-p n labels t))
                               (these (cl-mapcar #'cons cs labels)))
                          (setq collected (append collected these))
                          cs))))
@@ -6536,8 +6550,10 @@ Refuses (returning an `ERROR:' line) when:
   - SOURCE's section kind disagrees with TARGET's section kind;
   - the move is a no-op (TARGET already SOURCE's parent) or
     would place SOURCE inside its own subtree;
-  - under Datatypes / Individuals, AS=`\"child\"' was requested
+  - under Datatypes, AS=`\"child\"' was requested
     with a level-3+ TARGET (no inherent sub-relationship).
+    Individuals are exempted: nested `child' placement is
+    permitted at any depth (e.g. SKOS concept hierarchies).
 
 On success the file is saved, lint and OMN-validate are
 re-run, and the response has the shape:
@@ -7743,7 +7759,19 @@ skeleton, reuse via `rdfs:isDefinedBy', the often-misunderstood
 contained worked exemplar (a small `pets' ontology in a fenced
 `org' code block) demonstrating every idiom inline.
 
-Read-only; takes no arguments."
+Read-only; takes no arguments.
+
+NOTE ON WORKSPACE SEARCH (external tool): if a `search_in_workspace'
+tool is also available in this session, it is provided by the
+separate *Macher* package (`macher.el'), NOT by elot-gptel, and it
+interprets its PATTERN as an *Emacs-style regexp* -- alternation is
+`\\|' (a bare `|' is a literal pipe), grouping / repetition are
+`\\(...\\)' / `\\{...\\}' / `\\+' / `\\?'.  Writing a PCRE/ERE-style
+`A|B' there silently searches for the literal string `A|B' and
+returns no matches.  Many gptel users have Macher installed, but it
+is not required by elot-gptel; when in doubt prefer elot-gptel's own
+read-only inspectors (`elot_read_resource', `elot_resources') as the
+authoritative presence/absence oracle."
      :args ()))
 
 (defconst elot-gptel--spec-check
@@ -8300,8 +8328,8 @@ class / under the Classes section root; same shape for the
 other kinds), when SOURCE is declared in more than one ontology
 in FILE, when the move is a no-op (TARGET already SOURCE's
 parent), or when it would place SOURCE inside its own subtree.
-Under Datatypes / Individuals, `as=child' with a level-3+
-TARGET is refused -- those sections have no inherent
+Under Datatypes, `as=child' with a level-3+
+TARGET is refused -- that section has no inherent
 sub-relationship, so siblings or `target=top' are the only
 legal placements.
 
@@ -8948,7 +8976,12 @@ is the natural way to ask \"what does the DB know about
              :type string
              :optional t
              :description
-             "Optional source name; restrict to a single source's rows."))))
+             "Optional source name; restrict to a single source's \
+rows.  Must be the *exact* registered source identifier -- the \
+full path or IRI as stored, e.g. \
+`c:/Data/elot/examples/IDO-4.2.org', not a bare filename or \
+substring (the filter is SQL equality, `source = ?', not LIKE).  \
+Call `elot_db_list_sources' first to read the exact strings."))))
 
 (defconst elot-gptel--spec-db-supertypes
   '("elot_db_supertypes"
@@ -8976,7 +9009,12 @@ a kind of?\").  Read-only."
              :type string
              :optional t
              :description
-             "Optional source name; restrict to a single source's rows."))))
+             "Optional source name; restrict to a single source's \
+rows.  Must be the *exact* registered source identifier -- the \
+full path or IRI as stored, e.g. \
+`c:/Data/elot/examples/IDO-4.2.org', not a bare filename or \
+substring (the filter is SQL equality, `source = ?', not LIKE).  \
+Call `elot_db_list_sources' first to read the exact strings."))))
 
 (defconst elot-gptel--spec-db-individual-types
   '("elot_db_individual_types"
@@ -9005,7 +9043,12 @@ or has no asserted type.  Read-only."
              :type string
              :optional t
              :description
-             "Optional source name; restrict to a single source's rows."))))
+             "Optional source name; restrict to a single source's \
+rows.  Must be the *exact* registered source identifier -- the \
+full path or IRI as stored, e.g. \
+`c:/Data/elot/examples/IDO-4.2.org', not a bare filename or \
+substring (the filter is SQL equality, `source = ?', not LIKE).  \
+Call `elot_db_list_sources' first to read the exact strings."))))
 
 (defconst elot-gptel--spec-db-search-label
   '("elot_db_search_label"
@@ -9059,7 +9102,12 @@ signal to fall through to `elot_mint_identifier'.  Read-only."
              :type string
              :optional t
              :description
-             "Optional source name; restrict to a single source's rows.")
+             "Optional source name; restrict to a single source's \
+rows.  Must be the *exact* registered source identifier -- the \
+full path or IRI as stored, e.g. \
+`c:/Data/elot/examples/IDO-4.2.org', not a bare filename or \
+substring (the filter is SQL equality, `source = ?', not LIKE).  \
+Call `elot_db_list_sources' first to read the exact strings.")
       (:name "lang"
              :type string
              :optional t
@@ -9134,8 +9182,10 @@ LABEL is matched case-insensitively as a substring against
 both `entities.label' and `entities.id'.  KIND defaults to
 `class' (the common authoring case); pass another kind to
 borrow a property / individual / datatype.  SOURCE restricts
-to a single registered source; LANG requires a label in the
-given language tag.
+to a single registered source (the exact stored path/IRI, e.g.
+`c:/Data/elot/examples/IDO-4.2.org' -- an equality match, not a
+substring; see `elot_db_list_sources'); LANG requires a label in
+the given language tag.
 
 The composite never silently picks among candidates --
 disambiguation stays with the caller (LLM or human).  Use this
@@ -9160,7 +9210,12 @@ shaping.  Read-only."
              :type string
              :optional t
              :description
-             "Optional source name; restrict to a single source's rows.")
+             "Optional source name; restrict to a single source's \
+rows.  Must be the *exact* registered source identifier -- the \
+full path or IRI as stored, e.g. \
+`c:/Data/elot/examples/IDO-4.2.org', not a bare filename or \
+substring (the filter is SQL equality, `source = ?', not LIKE).  \
+Call `elot_db_list_sources' first to read the exact strings.")
       (:name "lang"
              :type string
              :optional t
@@ -9340,9 +9395,12 @@ Datatype, or Ontology.
 
 Optional filters compose (logical AND):
   - KIND: a display kind (as above) or `all' (default).
-  - MATCH: a regexp, case-insensitive, matched against each
-    resource's CURIE OR label -- so `^ex:C_' finds minted
-    identifiers you cannot recall by label.
+  - MATCH: an Emacs-style regexp, case-insensitive, matched
+    against each resource's CURIE OR label -- so `^ex:C_' finds
+    minted identifiers you cannot recall by label.  This is an
+    Emacs regexp, not PCRE/ERE: write alternation as `\\|' (a
+    bare `|' is a literal pipe), and grouping / repetition as
+    `\\(...\\)' / `\\{...\\}' / `\\+' / `\\?'.
   - PREFIX: an exact CURIE prefix (e.g. `ex', `iof-av') -- keep
     only resources whose CURIE begins with `PREFIX:'.
   - LIMIT: maximum rows (default 200); a `... N more' trailer is
@@ -9364,8 +9422,11 @@ instead.  Never mutates FILE."
              :type string
              :optional t
              :description
-             "Case-insensitive regexp matched against each \
-resource's CURIE or label.")
+             "Case-insensitive Emacs-style regexp matched against \
+each resource's CURIE or label.  This is an Emacs regexp (not \
+PCRE/ERE): alternation is `\\|' (a bare `|' is literal), and \
+grouping / repetition are `\\(...\\)' / `\\{...\\}' / `\\+' / \
+`\\?'.  Prefer a plain substring when unsure.")
       (:name "prefix"
              :type string
              :optional t

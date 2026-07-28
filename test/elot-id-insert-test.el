@@ -257,6 +257,29 @@ malformed OMN."
            (text (buffer-substring-no-properties start end)))
       (should-not (string-match-p "^ -" text)))))
 
+(ert-deftest elot-id-insert-test-no-blank-desc-suppresses-inheritance ()
+  "NO-BLANK-DESC non-nil skips description-list inheritance entirely.
+Tool-driven callers pass this so no empty annotation rows are ever
+created (see briefings/tool-improvements-before-melpa-2.2.0.org)."
+  (elot-id-insert-test--with-buffer "slug" "^\\*\\*\\* Animal"
+    (require 'elot-tangle)
+    (elot-id-insert--do-insert nil 1 '("Plant") t)
+    (let* ((start (line-beginning-position))
+           (end (save-excursion (org-end-of-subtree t t) (point)))
+           (text (buffer-substring-no-properties start end)))
+      (should-not (string-match-p "^ -" text)))))
+
+(ert-deftest elot-id-insert-test-no-blank-desc-default-nil-preserves-legacy ()
+  "Omitting NO-BLANK-DESC (nil) preserves the historical blanked-copy behavior."
+  (elot-id-insert-test--with-buffer "slug" "^\\*\\*\\* Animal"
+    (require 'elot-tangle)
+    (elot-id-insert--do-insert nil 1 '("Plant"))
+    (let* ((start (line-beginning-position))
+           (end (save-excursion (org-end-of-subtree t t) (point)))
+           (text (buffer-substring-no-properties start end)))
+      (should (string-match-p
+               "^ - \\[ \\] iof-av:naturalLanguageDefinition ::$" text)))))
+
 (ert-deftest elot-id-insert-test-nested-rows-not-replicated ()
   "Nested annotation rows under top-level keys are NOT replicated.
 The top-level OMN axiom keyword (`Domain') is also dropped per

@@ -291,7 +291,7 @@ re-prompts.  CHILD-P only affects the prompt wording."
         (push (string-trim s) labels)))
     (nreverse labels)))
 
-(defun elot-id-insert--do-insert (child-p n &optional labels)
+(defun elot-id-insert--do-insert (child-p n &optional labels no-blank-desc)
   "Insert resource headings (CHILD-P controls sibling vs child).
 When LABELS is a non-empty list of strings, its length determines
 the number of headings inserted and the numeric N argument is
@@ -300,6 +300,14 @@ user is prompted in the minibuffer for one rdfs:label per heading.
 Labels are forwarded to `elot-id-mint-batch' (so `slug' and `acme
 slug:t' derive their local names from them) and rendered verbatim
 in the heading title before the (prefix:localname) suffix.
+
+When NO-BLANK-DESC is non-nil, the anchor's description-list is not
+inherited at all -- new headings are born with no description-list
+rows instead of a blanked copy of the anchor's keys.  This avoids the
+empty description-list row byproduct that a later `delete-empty'
+sweep would otherwise have to clean up (see
+briefings/tool-improvements-before-melpa-2.2.0.org).  Default (nil)
+preserves the historical blanked-copy-inheritance behaviour.
 Returns the list of minted CURIEs."
   (when (and labels (listp labels))
     (setq n (length labels)))
@@ -339,7 +347,7 @@ Returns the list of minted CURIEs."
            (scheme-params (cdr parsed))
            (prefix (elot-id-insert--prefix))
            (existing (elot-id-insert--existing-iris))
-           (desc-lines (elot-id-insert--blank-desc-lines))
+           (desc-lines (unless no-blank-desc (elot-id-insert--blank-desc-lines)))
            (labels (or labels (elot-id-insert--read-labels n child-p)))
            (_ (unless (and (listp labels)
                            (= (length labels) n)
@@ -636,7 +644,7 @@ as `[INVALID: ...]'."
 ;;;; ---------------------------------------------------------------------------
 
 ;;;###autoload
-(defun elot-insert-sibling-resource (&optional n labels)
+(defun elot-insert-sibling-resource (&optional n labels no-blank-desc)
   "Insert resource headings as siblings of the heading at point.
 When LABELS is a non-empty list of strings, its length determines
 the number of headings inserted and N is ignored -- useful when
@@ -651,9 +659,12 @@ into the configured identifier scheme and rendered verbatim in
 the heading title.  The new headings appear after the current
 heading's subtree, at the same outline level.  See
 `elot-id-insert' Commentary for the full contract (scheme
-resolution, description-list inheritance, kind restrictions)."
+resolution, description-list inheritance, kind restrictions).
+
+When NO-BLANK-DESC is non-nil, the anchor's description-list keys
+are not inherited at all (see `elot-id-insert--do-insert')."
   (interactive "p")
-  (elot-id-insert--do-insert nil (or n 1) labels))
+  (elot-id-insert--do-insert nil (or n 1) labels no-blank-desc))
 
 ;;;; ---------------------------------------------------------------------------
 ;;;; Tree builder
@@ -682,7 +693,7 @@ Searches the whole buffer.  Signals an error if not found."
   (beginning-of-line))
 
 ;;;###autoload
-(defun elot-insert-labels-tree (tree &optional as)
+(defun elot-insert-labels-tree (tree &optional as no-blank-desc)
   "Insert a tree of new resource headings described by TREE.
 TREE is a list of nodes.  Each node is either a bare LABEL string
 \(leaf) or a list (LABEL CHILD-NODE ...) whose tail is recursively
@@ -714,7 +725,11 @@ the error at the offending recursive call).  Nested headings
 under Individuals are permitted as a visual / editing aid.
 
 When called from code, returns the list of CURIEs minted at the
-top level (the buffer carries the full tree at point of return)."
+top level (the buffer carries the full tree at point of return).
+
+When NO-BLANK-DESC is non-nil, no description-list keys are
+inherited at any level of the tree (see
+`elot-id-insert--do-insert')."
   (interactive
    (let* ((default
             "(\"Animal\" (\"Dog\" \"Beagle\" \"Poodle\") \"Cat\" \"Snake\")")
@@ -726,18 +741,18 @@ top level (the buffer carries the full tree at point of return)."
   (let* ((nodes (mapcar #'elot-id-insert--normalize-tree-node tree))
          (labels (mapcar #'car nodes))
          (curies (elot-id-insert--do-insert
-                  (eq as 'child) (length labels) labels)))
+                  (eq as 'child) (length labels) labels no-blank-desc)))
     (save-excursion
       (cl-loop for node in nodes
                for curie in curies
                for children = (cdr node)
                when children
                do (elot-id-insert--goto-heading-for-curie curie)
-                  (elot-insert-labels-tree children 'child)))
+                  (elot-insert-labels-tree children 'child no-blank-desc)))
     curies))
 
 ;;;###autoload
-(defun elot-insert-child-resource (&optional n labels)
+(defun elot-insert-child-resource (&optional n labels no-blank-desc)
   "Insert resource headings as first children of the heading at point.
 When LABELS is a non-empty list of strings, its length determines
 the number of headings inserted and N is ignored -- useful when
@@ -753,9 +768,12 @@ Datatypes (no inherent subtype relation among datatypes).  Nested
 headings under Individuals are allowed as a visual / editing aid
 \(OWL carries no semantic sub-relation between named individuals).
 Invoked on a level-2 section heading the child variant
-always succeeds and seeds the first resource."
+always succeeds and seeds the first resource.
+
+When NO-BLANK-DESC is non-nil, the anchor's description-list keys
+are not inherited at all (see `elot-id-insert--do-insert')."
   (interactive "p")
-  (elot-id-insert--do-insert t (or n 1) labels))
+  (elot-id-insert--do-insert t (or n 1) labels no-blank-desc))
 
 (provide 'elot-id-insert)
 ;;; elot-id-insert.el ends here
