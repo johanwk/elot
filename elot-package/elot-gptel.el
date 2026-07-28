@@ -5294,6 +5294,23 @@ SUBJECT-CURIE and SUBJECT-LABEL identify the subject heading."
               (point))))
       (elot-gptel--axiom-find-rows-in-buffer heading-pos subtree-end))))
 
+(defun elot-gptel--axiom-format-matching-rows (rows)
+  "Render ROWS (as returned by `elot-gptel--axiom-match-rows') as a
+short diagnostic list of `line N: FRAGMENT' entries, so an
+ambiguous-match error names the actual conflicting rows instead
+of just their count -- lets the caller see at a glance whether
+the ambiguity is a genuine pre-existing duplicate (byte-identical
+fragments) or distinct values that only share a keyword."
+  (mapconcat
+   (lambda (r)
+     (format "line %s: %S"
+             (or (plist-get r :start-line) "?")
+             (let ((v (plist-get r :fragment)))
+               (if (and (stringp v) (not (string-empty-p (string-trim v))))
+                   v
+                 "(empty)"))))
+   rows "; "))
+
 (defun elot-gptel--axiom-match-rows (rows keyword &optional match-fragment)
   "Return rows whose :keyword equals KEYWORD (and optionally :fragment matches).
 ROWS is the candidate list.
@@ -5602,14 +5619,18 @@ diagnostic under a `FAIL:' header."
                            "No row matches keyword %S%s on %s"
                            keyword
                            (if matcher
-                               (format " with fragment %S" matcher)
+                               (format " with fragment %s"
+                                       (if (eq matcher elot-gptel--axiom-match-empty)
+                                           "(empty/whitespace-only value)"
+                                         (format "%S" matcher)))
                              "")
                            curie))
                          ((> (length matches) 1)
                           (user-error
                            "Ambiguous; %d rows match keyword %S on %s; \
-supply `match_fragment'"
-                           (length matches) keyword curie))
+supply `match_fragment'; matching rows: %s"
+                           (length matches) keyword curie
+                           (elot-gptel--axiom-format-matching-rows matches)))
                          (t (setq match-row (car matches))))))
                     (let* ((edit (elot-gptel--axiom-apply-edit
                                   before-text curie label
@@ -5797,14 +5818,20 @@ Returns (:draft NEW :verb V :curie C :keyword K :nested N)."
                 (user-error
                  "Edits[%d]: no row matches keyword %S%s on %s"
                  idx keyword
-                 (if matcher (format " with fragment %S" matcher) "")
+                 (if matcher
+                     (format " with fragment %s"
+                             (if (eq matcher elot-gptel--axiom-match-empty)
+                                 "(empty/whitespace-only value)"
+                               (format "%S" matcher)))
+                   "")
                  curie))
                ((> (length matches) 1)
                 (user-error
                  "Edits[%d]: ambiguous; %d rows match keyword %S on %s; \
-supply `match_fragment'"
-                 idx (length matches) keyword curie))
-               (t (setq match-row (car matches))))))
+supply `match_fragment'; matching rows: %s"
+                 idx (length matches) keyword curie
+                 (elot-gptel--axiom-format-matching-rows matches)))
+                (t (setq match-row (car matches))))))
           (let ((result (elot-gptel--axiom-apply-edit
                          draft curie label op keyword fragment match-row)))
             (list :draft (plist-get result :draft)
