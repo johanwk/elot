@@ -6535,9 +6535,13 @@ Arguments:
   SOURCE  -- CURIE of the resource heading to move
              (e.g. `\"ex:dog\"').
   TARGET  -- CURIE of the new parent / previous-sibling
-             (e.g. `\"ex:mammal\"'), or the literal string
-             `\"top\"' to place SOURCE directly under the
-             section root of its kind.
+             (e.g. `\"ex:mammal\"'), a bare Org heading title
+             naming a narrative, non-resource-declaring heading
+             (e.g. `\"Function individuals\"', typically tagged
+             `:nodeclare:' -- resolved by exact title match,
+             first depth-first hit, scoped to SOURCE's own kind
+             section), or the literal string `\"top\"' to place
+             SOURCE directly under the section root of its kind.
   AS      -- `\"child\"' (default) or `\"sibling\"'.
 
 Refuses (returning an `ERROR:' line) when:
@@ -6545,9 +6549,12 @@ Refuses (returning an `ERROR:' line) when:
   - `elot-gptel-allow-side-effects' is nil;
   - SOURCE is not a declared resource heading in FILE, or is
     declared in more than one ontology in the buffer;
-  - TARGET is not a declared resource heading (and not the
-    literal `\"top\"');
-  - SOURCE's section kind disagrees with TARGET's section kind;
+  - TARGET is not a declared resource heading, a matching
+    narrative heading title (under SOURCE's own kind section),
+    or the literal `\"top\"';
+  - SOURCE's section kind disagrees with TARGET's section kind
+    (a narrative heading's kind is inferred from its enclosing
+    level-2 section);
   - the move is a no-op (TARGET already SOURCE's parent) or
     would place SOURCE inside its own subtree;
   - under Datatypes, AS=`\"child\"' was requested
@@ -8314,10 +8321,14 @@ this is a pure subtree relocation.  Use `elot_rename_resource'
 when the CURIE needs to change.
 
 TARGET is either the CURIE of an existing resource heading
-inside FILE, or the literal string `top' meaning `place
-SOURCE directly under the section root of its kind' (the
-level-2 section heading: Classes / Object properties / Data
-properties / Annotation properties / Datatypes / Individuals).
+inside FILE, a bare Org heading title naming a narrative,
+non-resource-declaring heading (e.g. a `:nodeclare:' grouping
+heading like `Function individuals' -- resolved by exact title
+match, first depth-first hit, scoped to SOURCE's own kind
+section), or the literal string `top' meaning `place SOURCE
+directly under the section root of its kind' (the level-2
+section heading: Classes / Object properties / Data properties
+/ Annotation properties / Datatypes / Individuals).
 AS is `child' (default; SOURCE becomes a child of TARGET) or
 `sibling' (SOURCE is placed right after TARGET's subtree, at
 TARGET's level).
@@ -8325,9 +8336,15 @@ TARGET's level).
 The move is rejected when SOURCE's section kind disagrees with
 TARGET's section kind (a class can only move under another
 class / under the Classes section root; same shape for the
-other kinds), when SOURCE is declared in more than one ontology
-in FILE, when the move is a no-op (TARGET already SOURCE's
-parent), or when it would place SOURCE inside its own subtree.
+other kinds -- a narrative TARGET's kind is inferred from its
+enclosing level-2 section), when SOURCE is declared in more
+than one ontology in FILE, when the move is a no-op (TARGET
+already SOURCE's parent), or when it would place SOURCE inside
+its own subtree.  A bare-title TARGET not found anywhere under
+SOURCE's own kind section is refused; duplicate narrative
+headings sharing a title within that section are not
+disambiguated automatically -- give them distinct titles, or
+address the target by CURIE instead.
 Under Datatypes, `as=child' with a level-3+
 TARGET is refused -- that section has no inherent
 sub-relationship, so siblings or `target=top' are the only
@@ -8357,9 +8374,12 @@ rewrites that need to accompany a move (delegate to
       (:name "target"
              :type string
              :description
-             "CURIE of the target heading (e.g. `ex:mammal'), or \
-the literal string `top' to place SOURCE directly under the \
-section root of its kind.")
+             "CURIE of the target heading (e.g. `ex:mammal'), a \
+bare Org heading title naming a narrative (non-resource-declaring) \
+heading such as a `:nodeclare:' grouping heading (resolved by exact \
+title match, first depth-first hit, scoped to SOURCE's own kind \
+section), or the literal string `top' to place SOURCE directly \
+under the section root of its kind.")
       (:name "as"
              :type string
              :optional t

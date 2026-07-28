@@ -662,9 +662,6 @@ authoring-only group by a wide margin.
 ***** JavaScript file (ex:javascript-file)
  - rdfs:comment :: A client-side JavaScript file used in ELOT's HTML output.
  - rdfs:seeAlso :: LLM: this is an entry added just for test of empty row insertion
-***** CoffeeScript file (ex:coffeescript-file)
- - rdfs:comment :: A client-side CoffeeScript file used in ELOT's HTML output.
- - rdfs:seeAlso :: LLM: this is an entry added just for test of empty row insertion
 ***** shell script (ex:shell-script)
  - rdfs:comment :: A shell script (.sh) used for build, test, or reporting automation.
 **** software package (ex:software-package)
@@ -2011,3 +2008,4 @@ harness (tangle/export/re-import consistency checks).
  - ex:repository-path :: examples/generate-roundtrip-report.sh
  - skos:definition :: A shell script that regenerates the examples round-trip report, exercising ELOT's tangle/export round trip over the ontologies listed in ontology-list.tsv.
  - Facts :: ex:depended-on-by ex:examples-makefile
+

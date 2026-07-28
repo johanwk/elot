@@ -56,6 +56,7 @@
    "**** Dog (ex:dog)\n"
    "**** Cat (ex:cat)\n"
    "*** Plant (ex:plant)\n"
+   "*** Test classes                                            :nodeclare:\n"
    "** Object properties\n"
    ":PROPERTIES:\n"
    ":ID:       my-ont-object-property-hierarchy\n"
@@ -75,7 +76,8 @@
    ":resourcedefs: yes\n"
    ":END:\n"
    "*** scooby (ex:scooby)\n"
-   "*** rex (ex:rex)\n"))
+   "*** rex (ex:rex)\n"
+   "*** Function individuals                                    :nodeclare:\n"))
 
 (defmacro elot-id-move-test--with (&rest body)
   (declare (indent 0))
@@ -227,6 +229,28 @@ child placement is allowed)."
   (elot-id-move-test--with
     (elot-move-resource "ex:otherType" "top")
     (should (= 3 (elot-id-move-test--heading-level "ex:otherType")))))
+
+(ert-deftest elot-id-move-test-narrative-target-allowed ()
+  "A bare narrative (`:nodeclare:') heading title is accepted as
+TARGET, scoped to SOURCE's own kind section."
+  (elot-id-move-test--with
+    (elot-move-resource "ex:rex" "Function individuals" 'child)
+    (should (string= ":section: Function individuals"
+                     (elot-id-move-test--parent-curie "ex:rex")))))
+
+(ert-deftest elot-id-move-test-narrative-target-kind-mismatch ()
+  "A narrative heading living in a different kind's section is
+refused with a kind-mismatch error, not silently matched."
+  (elot-id-move-test--with
+    (should-error (elot-move-resource "ex:dog" "Function individuals" 'child)
+                  :type 'user-error)))
+
+(ert-deftest elot-id-move-test-narrative-target-not-found ()
+  "A bare-title TARGET not found under SOURCE's own kind section
+is refused."
+  (elot-id-move-test--with
+    (should-error (elot-move-resource "ex:dog" "No such heading" 'child)
+                  :type 'user-error)))
 
 
 ;;; ---------------------------------------------------------------------------

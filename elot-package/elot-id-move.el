@@ -22,7 +22,10 @@
 ;;
 ;; SOURCE is a CURIE string (e.g. `ex:dog') declared on a resource
 ;; heading inside a `:resourcedefs: yes' subtree.  TARGET is either
-;; another CURIE string (the new parent or previous-sibling), or the
+;; another CURIE string (the new parent or previous-sibling), a bare
+;; Org heading title (a narrative, non-resource-declaring heading --
+;; typically tagged `:nodeclare:' -- resolved by exact title match,
+;; first depth-first hit, scoped to SOURCE's own kind section), or the
 ;; literal string "top" / the symbol `top' to mean "move to the
 ;; section root of SOURCE's kind".  AS is `child' (default; the moved
 ;; subtree becomes a child of TARGET) or `sibling' (the moved subtree
@@ -36,8 +39,15 @@
 ;;     `Annotation properties' / `Datatypes' / `Individuals').
 ;;   - TARGET's section kind must equal SOURCE's section kind --
 ;;     classes only land under classes, properties only under
-;;     properties of the same kind, etc.  Mismatch -> `user-error'
-;;     naming both kinds.
+;;     properties of the same kind, etc. -- whether TARGET is a
+;;     resource heading or a bare narrative heading (the narrative
+;;     heading's kind is inferred from its enclosing level-2 section).
+;;     Mismatch -> `user-error' naming both kinds.
+;;   - A bare-title TARGET not found anywhere under SOURCE's own kind
+;;     section is refused; duplicate narrative-heading titles within
+;;     that section are not disambiguated automatically ("first
+;;     match after resource X" is deferred) -- give them distinct
+;;     titles, or address the target by CURIE instead.
 ;;   - Datatypes are sibling-only at level 3+ -- the `child' variant
 ;;     under that section is refused /unless/ TARGET is the section
 ;;     root itself (the same "seed an empty section" exemption
@@ -102,6 +112,30 @@
   (or (eq target 'top)
       (and (stringp target)
            (member (downcase (string-trim target)) '("top")))))
+
+(defun elot-id-move--find-heading-by-title-in-section (section-marker title)
+  "Return a marker for the first heading matching TITLE under SECTION-MARKER.
+Searches SECTION-MARKER's whole subtree in buffer (depth-first)
+order and returns the first heading whose title text (sans tags
+/ TODO / priority cookies) equals TITLE exactly (trimmed).
+Returns nil when no heading matches.  Used to resolve a bare
+narrative (non-resource-declaring) heading -- e.g. a `:nodeclare:'
+grouping heading like \"Function individuals\" -- as an
+`elot-move-resource' TARGET, scoped to SOURCE's own kind section
+so a narrative heading belonging to a different kind's section can
+never be matched (see the kind-mismatch guard at the call site)."
+  (save-excursion
+    (goto-char section-marker)
+    (let ((end (save-excursion (org-end-of-subtree t t) (point))))
+      (forward-line 1)
+      (catch 'found
+        (while (re-search-forward "^\\*+ " end t)
+          (let ((heading-title (org-get-heading t t t t)))
+            (when (and heading-title
+                       (string= (string-trim heading-title)
+                                (string-trim title)))
+              (throw 'found (copy-marker (line-beginning-position))))))
+        nil))))
 
 ;;;; ---------------------------------------------------------------------------
 ;;;; Section + kind lookup
@@ -231,9 +265,31 @@ or when TARGET is not declared."
              "ELOT-move-resource: kind mismatch -- SOURCE is a %s, TARGET %s is a %s"
              source-kind target tkind))
           (cons 'heading tm))))))
+   ;; Bare narrative (non-resource-declaring) heading, e.g. a
+   ;; `:nodeclare:' grouping heading like "Function individuals".
+   ;; Resolved by exact title match, first depth-first hit, scoped to
+   ;; SOURCE's own kind section -- so a same-titled narrative heading
+   ;; living in a different kind's section can never be matched.  This
+   ;; deliberately does not support "first match after resource X"
+   ;; (deferred; caller must give narrative headings distinct titles
+   ;; to disambiguate, per the briefing).
+   ((stringp target)
+    (let* ((sect (cdr (save-excursion
+                        (goto-char source-marker)
+                        (elot-id-move--section-kind-at-point))))
+           (_ (unless sect
+                (user-error
+                 "ELOT-move-resource: cannot resolve section root for SOURCE %s"
+                 source-marker)))
+           (tm (elot-id-move--find-heading-by-title-in-section sect target)))
+      (unless tm
+        (user-error
+         "elot-move-resource: TARGET %S (narrative heading) not found under SOURCE's section"
+         target))
+      (cons 'heading tm)))
    (t
     (user-error
-     "elot-move-resource: TARGET must be a CURIE or the literal \"top\": %S"
+     "elot-move-resource: TARGET must be a CURIE, a heading title, or the literal \"top\": %S"
      target))))
 
 ;;;; ---------------------------------------------------------------------------
@@ -329,6 +385,16 @@ current buffer (e.g. `\"ex:dog\"').  TARGET is one of:
   - a CURIE string (e.g. `\"ex:mammal\"') -- the new parent (when
     AS is `child', the default) or the previous sibling (when
     AS is `sibling');
+  - a bare Org heading title (e.g. `\"Function individuals\"') --
+    a narrative, non-resource-declaring heading (typically tagged
+    `:nodeclare:').  Resolved by exact title match, first
+    depth-first hit, scoped to SOURCE's own kind section (a
+    same-titled heading in a different kind's section is never
+    matched).  Refused when SOURCE's kind disagrees with the
+    heading's enclosing section, exactly as for a CURIE target.
+    Ambiguity across same-titled narrative headings in the same
+    section is not resolved automatically -- give them distinct
+    titles, or use a CURIE target instead;
   - the literal string `\"top\"' (or the symbol `top') -- place
     the moved subtree at the top of SOURCE's section, directly
     under the level-2 section heading.
@@ -411,9 +477,10 @@ section root)."
   (unless (elot-id-move--curie-p source)
     (user-error "elot-move-resource: SOURCE is not a valid CURIE: %S" source))
   (unless (or (elot-id-move--top-target-p target)
-              (elot-id-move--curie-p target))
+              (elot-id-move--curie-p target)
+              (and (stringp target) (not (string-empty-p (string-trim target)))))
     (user-error
-     "elot-move-resource: TARGET must be a CURIE or \"top\": %S" target))
+     "elot-move-resource: TARGET must be a CURIE, a heading title, or \"top\": %S" target))
   ;; Resolve source heading + its section kind.
   (let* ((source-marker (elot-id-move--resolve-source-marker source))
          (source-info
