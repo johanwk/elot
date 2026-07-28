@@ -770,6 +770,10 @@ authoring-only group by a wide margin.
 **** compatibility delegation function (ex:compatibility-delegation-function)
  - SubClassOf :: lis:realizedIn only ex:compatibility-delegation-activity
  - rdfs:comment :: The function of preserving a legacy entry point by delegating unconditionally to the current implementation.
+*** Event (lis:Event)
+ - rdfs:isDefinedBy :: lis-ont:core/4.2
+*** Disposition (lis:Disposition)
+ - rdfs:isDefinedBy :: lis-ont:core/4.2
 *** Activity (lis:Activity)
  - rdfs:isDefinedBy :: lis-ont:core
  - rdfs:comment :: A temporal entity in which one or more physical objects participate, imported from IDO. The superclass for the kinds of work (checking, tangling, testing, ...) that realize a module's function.

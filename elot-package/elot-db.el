@@ -1564,7 +1564,12 @@ Returns a plist with keys
   :data-source    -- the data_source string
   :ontology-iri   -- id of the same source's owl:Ontology declaration
                      (the citation target for `rdfs:isDefinedBy'),
-                     or nil if the source has no such declaration
+                     or nil if the source has no such declaration.
+                     When the ontology heading uses ELOT's composite
+                     \"<unversioned-IRI> <versioned-IRI>\" form, only
+                     the versionIRI (last whitespace-separated token)
+                     is returned here, per the convention of citing
+                     the versionIRI alone when one is recorded.
   :ontology-title -- `dcterms:title' of the ontology id (or nil)
 
 Returns nil when TOKEN does not name a known entity.  Read-only;
@@ -1609,20 +1614,32 @@ the sole DB access path for `elot_db_borrow_term'."
                           WHERE id = ? AND source = ? AND data_source = ?
                             AND prop = 'skos:definition' LIMIT 1"
                        (list id* source data)))
-             (ont-iri
+             (ont-iri-raw
               (funcall one
                        "SELECT id FROM attributes
                           WHERE source = ? AND data_source = ?
                             AND prop = 'rdf:type'
                             AND value = 'owl:Ontology' LIMIT 1"
                        (list source data)))
+             ;; The ontology heading's `id' may be a composite
+             ;; "<unversioned-IRI> <versioned-IRI>" form (ELOT's
+             ;; "iri version-iri" heading convention -- see
+             ;; `elot-entity-from-header').  `rdfs:isDefinedBy'
+             ;; wants a single value, and the accepted convention is
+             ;; to cite the versionIRI alone when one is recorded,
+             ;; falling back to the plain ontology IRI otherwise.
+             ;; Split on whitespace and keep the *last* token (the
+             ;; versionIRI when present, else the sole IRI).
+             (ont-iri
+              (and ont-iri-raw
+                   (car (last (split-string ont-iri-raw "[ \t]+" t)))))
              (ont-title
-              (and ont-iri
+              (and ont-iri-raw
                    (funcall one
                             "SELECT value FROM attributes
                                WHERE id = ? AND source = ? AND data_source = ?
                                  AND prop = 'dcterms:title' LIMIT 1"
-                            (list ont-iri source data)))))
+                            (list ont-iri-raw source data)))))
         (list :id            id*
               :label         label
               :label-lang    label-lang
