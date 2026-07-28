@@ -85,6 +85,7 @@ dispatcher arm."
     "elot_insert_resource_tree"
     "elot_edit_axiom"
     "elot_edit_axioms"
+    "elot_declare_resource"
     "elot_db_remove_source")
   "Tool names expected to be mutating (side-effect-gated, `:confirm t').")
 
@@ -104,6 +105,7 @@ dispatcher arm."
     ("elot_edit_axiom"               "<FILE>" "ex:dog" "rdfs:comment" "\"x\"@en")
     ("elot_edit_axioms"              "<FILE>"
      ((:subject "ex:dog" :keyword "rdfs:comment" :fragment "\"x\"@en")))
+    ("elot_declare_resource"         "<FILE>" "ex:dog" "Hound" "ex:hound")
     ("elot_db_remove_source"         "elot-registry-test-no-such-source"))
   "Per-tool positional args for the gate-off refusal smoke-test.")
 

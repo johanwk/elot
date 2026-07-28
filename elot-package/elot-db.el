@@ -891,7 +891,17 @@ and DATA is ingested.  Returns the number of entity rows written."
               (let* ((cell  (gethash id merged))
                      (label (nth 0 cell))
                      (plist (nth 1 cell))
-                     (kind  (or (plist-get plist :kind) "unknown"))
+                     ;; `entities.kind' records the identifier *form*
+                     ;; ("uri"/"curie"/"unknown"), not the resource
+                     ;; category (that lives in `attributes' as
+                     ;; `rdf:type'; see `elot-db--search-kind-map').
+                     ;; Ingest paths do not carry a `:kind' plist key,
+                     ;; so derive the form from ID itself when absent.
+                     (kind  (or (plist-get plist :kind)
+                                (cond
+                                 ((elot-db--looks-like-uri-p id) "uri")
+                                 ((elot-db--looks-like-curie-p id) "curie")
+                                 (t "unknown"))))
                      ;; When the plist carries `rdfs:label' rows
                      ;; with language info (emitted by
                      ;; multi-row-per-id ingestors like the ROBOT

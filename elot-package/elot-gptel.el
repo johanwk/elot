@@ -6567,6 +6567,123 @@ the level-ordered sequence."
                 head
               (concat head "\n\n" block))))))))
 
+(defun elot-gptel-tool-declare-resource
+    (file anchor label curie &optional iri as)
+  "Implementation of the `elot_declare_resource' tool.
+
+Declare a NEW resource heading whose identifier is an
+ALREADY-KNOWN external CURIE (not a freshly-minted local one),
+in one atomic operation.  This is the \"mint locally, but under
+an already-known external IRI\" case that otherwise required
+`elot_insert_sibling_resource' (to mint a placeholder) followed
+by `elot_rename_resource' (to adopt the external identifier) --
+two tool calls and two lint / OMN revalidations for what is
+conceptually a single declaration.
+
+FILE / ANCHOR / AS behave as in `elot_insert_sibling_resource':
+ANCHOR is a CURIE (preferred), heading title, or section
+`:ID:' / `:CUSTOM_ID:'; AS is `\"sibling\"' (default) or
+`\"child\"'.  LABEL is the `rdfs:label' the new heading carries.
+CURIE is the external identifier to adopt (e.g. `lis:Event').
+
+IRI, when supplied, is the full IRI expansion for CURIE's
+prefix; it is required only when that prefix is not already
+declared in FILE's prefix table (same contract as
+`elot_rename_resource''s TARGET_IRI).  When the prefix is
+undeclared and IRI is omitted, the tool refuses with the same
+structured `ERROR:' line listing `elot-db' candidates that
+`elot_rename_resource' produces.
+
+Internally the wrapper mints a throwaway placeholder heading
+under ANCHOR (so identifier-scheme / prefix context is set up),
+then renames it to CURIE -- both inside a single mutation, so
+there is exactly one save and one revalidation.  Note this
+declares only the heading + `rdfs:label'; to also pull in a
+`skos:definition' and an `rdfs:isDefinedBy' back-pointer from a
+cached source, use `elot_borrow_term' / `elot_db_borrow_term'
+instead.
+
+Gated by `elot-gptel-allow-side-effects'.  On success returns:
+
+  OK: declared LABEL (CURIE) under ANCHOR (as AS)[; (declared
+  prefix p: -> <IRI>)]
+  == LINT ==
+  ...
+  [== OMN PARSE ==
+   ...]
+
+On revalidation failure the pre-declaration bytes are restored."
+  (elot-gptel-with-mutation (file nil)
+    (unless (and (stringp anchor) (not (string-empty-p anchor)))
+      (user-error "ELOT-gptel: anchor must be a non-empty string"))
+    (unless (and (stringp label) (not (string-empty-p (string-trim label))))
+      (user-error "ELOT-gptel: label must be a non-empty string"))
+    (unless (elot-gptel--insert-curie-shape-p curie)
+      (user-error
+       "ELOT-gptel: curie must be a CURIE of the form `prefix:local' (got %S)"
+       curie))
+    (when (elot-gptel--insert-label-curie-parenthetical-p label)
+      (user-error
+       "ELOT-gptel: label is a plain rdfs:label string, not a `Label (curie)' heading; got %S"
+       label))
+    (require 'elot-id-insert)
+    (require 'elot-id-rename)
+    (let* ((as-sym (cond
+                    ((or (null as) (and (stringp as) (string-empty-p as)))
+                     'sibling)
+                    ((stringp as) (intern as))
+                    ((symbolp as) as)
+                    (t (user-error
+                        "ELOT-gptel: as must be \"child\" or \"sibling\": %S"
+                        as)))))
+      (unless (memq as-sym '(child sibling))
+        (user-error
+         "ELOT-gptel: as must be \"child\" or \"sibling\": %S" as))
+      ;; Pre-flight the prefix check up front (mirrors
+      ;; `elot-gptel-tool-rename-resource'): refuse with the
+      ;; structured candidate-list ERROR before mutating anything
+      ;; when CURIE's prefix is undeclared and no IRI was supplied.
+      (let* ((tgt-parts (elot-id-rename--split-curie curie))
+             (tgt-prefix (car tgt-parts))
+             (prefix-table (elot-id-rename--read-prefix-table))
+             (declared-p (assoc tgt-prefix prefix-table)))
+        (when (and (not declared-p)
+                   (or (null iri)
+                       (and (stringp iri) (string-empty-p iri))))
+          (let ((candidates
+                 (ignore-errors
+                   (elot-id-rename--db-candidates tgt-prefix))))
+            (user-error
+             "%s"
+             (elot-gptel--rename-format-candidates
+              tgt-prefix candidates)))))
+      (let ((tiri (and (stringp iri) (not (string-empty-p iri)) iri))
+            placeholder rename-result)
+        (save-excursion
+          (elot-gptel--insert-goto-anchor anchor)
+          (atomic-change-group
+            (let ((minted (elot-id-insert--do-insert
+                           (eq as-sym 'child) 1 (list label) t)))
+              (setq placeholder (car minted)))))
+        (unless (and (stringp placeholder)
+                     (not (string-empty-p placeholder)))
+          (user-error "ELOT-gptel: failed to declare placeholder heading"))
+        ;; Adopt the external identifier.  `elot-rename-resource'
+        ;; runs its own `atomic-change-group'; on any failure the
+        ;; outer mutation wrapper rolls the whole buffer back.
+        (setq rename-result
+              (apply #'elot-rename-resource placeholder curie
+                     (append (and tiri (list :target-iri tiri))
+                             (list :op 'rename))))
+        (let* ((decl (plist-get rename-result :declared-prefix)))
+          (format
+           "OK: declared %s (%s) under %s (as %s)%s"
+           label curie anchor (symbol-name as-sym)
+           (if decl
+               (format " (declared prefix %s: -> <%s>)"
+                       (car decl) (cdr decl))
+             "")))))))
+
 (defun elot-gptel-tool-move-resource
     (file source target &optional as)
   "Implementation of the `elot_move_resource' tool.
@@ -8806,6 +8923,99 @@ the caller can unambiguously route follow-up renames."
              "Placement of the top-level nodes relative to ANCHOR \
 (default `sibling')."))))
 
+(defconst elot-gptel--spec-declare-resource
+  `("elot_declare_resource"
+     :function elot-gptel-tool-declare-resource
+     :confirm t
+     :description
+     "Declare a new resource heading under an already-known external CURIE, atomically.
+
+The \"mint locally, but under an already-known external IRI\"
+case: you know the exact CURIE / IRI a new heading should carry
+(e.g. a term from an imported ontology you are adopting by
+identifier only), so minting a fresh local identifier and then
+renaming it is two calls too many.  This tool does the
+declare-and-adopt in ONE mutation (one save, one lint / OMN
+revalidation).
+
+This tool brings in only the bare heading + `rdfs:label', so it
+is TYPICALLY FOLLOWED BY `elot_edit_axioms' (or `elot_edit_axiom')
+to attach the axiom / annotation rows the new resource needs
+(`SubClassOf', `Domain', `skos:definition', ...).  A common
+authoring sequence is therefore: `elot_declare_resource' to
+create and adopt the heading, then a single `elot_edit_axioms'
+batch to populate its description-list rows.
+
+Distinct from the borrow tools: `elot_declare_resource' brings
+in ONLY the heading + `rdfs:label' (and, when needed, a prefix
+row).  When you also want the source's cached `skos:definition'
+and an `rdfs:isDefinedBy' back-pointer, use `elot_borrow_term'
+/ `elot_db_borrow_term' instead.  Distinct from the insert
+tools, which always MINT a fresh local identifier -- here you
+supply the CURIE.
+
+ANCHOR identifies the existing heading the new declaration
+attaches to (CURIE preferred, or heading title, or section
+`:ID:' / `:CUSTOM_ID:').  AS is `sibling' (default) or `child'.
+LABEL is the plain rdfs:label (not a `Label (curie)' heading).
+CURIE is the external identifier to adopt.
+
+When CURIE's prefix is not declared in the file's prefix table,
+IRI must be supplied; the prefix row is added inside the same
+atomic operation.  When IRI is omitted in that case, the tool
+refuses with a structured `ERROR:' line listing the `elot-db'
+candidates for that prefix (same shape as `elot_rename_resource').
+
+Gated by `elot-gptel-allow-side-effects'.  After the
+declaration the file is saved and re-linted (plus OMN-parsed
+when ROBOT is configured); revalidation failure rolls the
+buffer back.  On success returns:
+
+  OK: declared LABEL (CURIE) under ANCHOR (as AS)[; (declared prefix p: -> <IRI>)]
+  == LINT ==
+  ...
+  [== OMN PARSE ==
+   ...]
+
+Out of scope: pulling in the source term's annotations (use
+`elot_borrow_term'), minting a fresh local identifier (use
+`elot_insert_sibling_resource' / `elot_insert_child_resource'),
+and cross-file declaration."
+     :args
+     (,elot-gptel--arg-file
+      (:name "anchor"
+             :type string
+             :description
+             "CURIE (preferred), heading title, or section :ID: / \
+:CUSTOM_ID: of the heading the new declaration attaches to.")
+      (:name "label"
+             :type string
+             :description
+             "Plain rdfs:label for the new heading (not a \
+`Label (curie)' heading title).")
+      (:name "curie"
+             :type string
+             :description
+             "External identifier to adopt, a CURIE of the form \
+`prefix:local' (e.g. `lis:Event').")
+      (:name "iri"
+             :type string
+             :optional t
+             :description
+             "Full IRI for CURIE's prefix when that prefix is not \
+declared in the file.  When supplied, the declaration adds the \
+new prefix row to the prefix table in the same atomic \
+operation.  Ignored when the prefix is already declared (so it \
+can be passed defensively).")
+      (:name "as"
+             :type string
+             :optional t
+             :enum ["sibling" "child"]
+             :description
+             "Placement relative to ANCHOR: `sibling' (default; \
+placed after ANCHOR's subtree, at ANCHOR's level) or `child' \
+(first child of ANCHOR)."))))
+
 (defconst elot-gptel--spec-db-query
   '("elot_db_query"
      :function elot-gptel-tool-db-query
@@ -9789,6 +9999,7 @@ unchanged; useful for try-before-commit.  Default false."))))
         elot-gptel--spec-insert-sibling-resource
         elot-gptel--spec-insert-child-resource
         elot-gptel--spec-insert-resource-tree
+        elot-gptel--spec-declare-resource
         elot-gptel--spec-db-query
         elot-gptel--spec-db-schema
         elot-gptel--spec-db-get-label
@@ -9978,6 +10189,9 @@ is truthy in Elisp) is correctly treated as nil."
     ('elot-gptel-tool-insert-resource-tree
      (lambda (file anchor tree &optional as)
        (elot-gptel-tool-insert-resource-tree file anchor tree as)))
+    ('elot-gptel-tool-declare-resource
+     (lambda (file anchor label curie &optional iri as)
+       (elot-gptel-tool-declare-resource file anchor label curie iri as)))
     (_ (error "ELOT-gptel: no dispatcher for %S" fn))))
 
 (defun elot-gptel--confirm-effective-p (spec-confirm)

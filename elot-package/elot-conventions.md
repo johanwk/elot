@@ -187,6 +187,36 @@ gives downstream consumers the attribution.
 The `elot_db_borrow_term` tool emits exactly this shape, ready to be
 re-leveled and pasted under a `:resourcedefs: yes` heading.
 
+### 5.1 Do not re-axiomatise imported resources
+
+**Advisory (not lint-enforced).** Before adding a semantic restriction
+-- `Domain ::`, `Range ::`, `SubClassOf ::`, `Characteristics ::`,
+`EquivalentTo ::`, etc. -- to a resource that carries an
+`rdfs:isDefinedBy` pointing at another ontology, consider *where that
+ontology sits relative to yours*:
+
+- **The source is imported** (its axioms already reach your reasoner
+  via `owl:imports`, directly or transitively): **do not** add local
+  semantic restrictions. Redefining a term declared higher up the
+  imports hierarchy is bad practice -- it silently strengthens, and can
+  contradict, the owner's axioms, producing surprising inferences or an
+  inconsistency that only the reasoner (`elot_check`'s consistency
+  stage) will catch. Cite the term with `rdfs:isDefinedBy` and use it
+  as-is; annotations (labels, definitions, comments) are fine, logical
+  axioms are not.
+
+- **The source is *not* imported** (you are borrowing the identifier
+  only, without pulling in its axioms): local semantic constraints
+  *are* normally needed for the term to behave -- and should mirror the
+  source ontology's own axioms **as closely as possible**. Before
+  asserting Domain/Range, check what the source already says, e.g.
+  `elot_db_get_attributes id=<curie> source=<the source file>`, and
+  reproduce those constraints rather than inventing narrower ones.
+
+In both cases, checking the source's existing axioms first (via
+`elot_db_get_attributes`) is the cheap pre-flight step that avoids
+accidental over-constraint.
+
 ## 6. The `:nodeclare:` tag is for informative purposes
 
 A heading tagged `:nodeclare:` is **suppressed from declaration**.

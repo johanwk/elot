@@ -608,20 +608,21 @@ authoring-only group by a wide margin.
 
 #+name: prefix-table
 #+caption: OWL ontology prefixes
-| prefix   | uri                                           |
-|----------+-----------------------------------------------|
-| owl:     | http://www.w3.org/2002/07/owl#                |
-| rdf:     | http://www.w3.org/1999/02/22-rdf-syntax-ns#   |
-| xml:     | http://www.w3.org/XML/1998/namespace          |
-| xsd:     | http://www.w3.org/2001/XMLSchema#             |
-| rdfs:    | http://www.w3.org/2000/01/rdf-schema#         |
-| skos:    | http://www.w3.org/2004/02/skos/core#          |
-| dc:      | http://purl.org/dc/elements/1.1/              |
-| dcterms: | http://purl.org/dc/terms/                     |
-| ex:      | http://example.org/resource/                  |
-| ex-ont:  | http://example.org/ont/                       |
-| lis:     | http://rds.posccaesar.org/ontology/lis14/rdl/ |
-| lis-ont: | http://rds.posccaesar.org/ontology/lis14/ont/ |
+| prefix   | uri                                                                            |
+|----------+--------------------------------------------------------------------------------|
+| owl:     | http://www.w3.org/2002/07/owl#                                                 |
+| rdf:     | http://www.w3.org/1999/02/22-rdf-syntax-ns#                                    |
+| xml:     | http://www.w3.org/XML/1998/namespace                                           |
+| xsd:     | http://www.w3.org/2001/XMLSchema#                                              |
+| rdfs:    | http://www.w3.org/2000/01/rdf-schema#                                          |
+| skos:    | http://www.w3.org/2004/02/skos/core#                                           |
+| dc:      | http://purl.org/dc/elements/1.1/                                               |
+| dcterms: | http://purl.org/dc/terms/                                                      |
+| ex:      | http://example.org/resource/                                                   |
+| ex-ont:  | http://example.org/ont/                                                        |
+| lis:     | http://rds.posccaesar.org/ontology/lis14/rdl/                                  |
+| lis-ont: | http://rds.posccaesar.org/ontology/lis14/ont/                                  |
+| iof-av:  | https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/ |
 
 ** elot-package ontology (ex-ont:elot-package ex-ont:elot-package/0.0)
 :PROPERTIES:
@@ -704,6 +705,22 @@ authoring-only group by a wide margin.
  - skos:definition :: An information object realised as a directory within the repository, characterised by the number and total size of the files it contains as committed to GitHub.
 **** data table (ex:data-table)
  - rdfs:comment :: A tab- or comma-separated values file used as reference or test-driver data (e.g. a .tsv listing).
+*** FunctionalObject (lis:FunctionalObject)
+ - rdfs:isDefinedBy :: lis-ont:core/4.2
+ - SubClassOf :: lis:hasFunction some lis:Function
+ - iof-av:naturalLanguageDefinition :: An 'Object' that provides a required 'Function'.
+ - iof-av:explanatoryNote :: ISO 15926-2:2003, p. 110, states, "A functional_physical_object is a physical_object that has functional, rather than material, continuity as its basis for identity. Adjacent temporal parts of a functional_physical_object need not have common matter or energy, provided the matter or energy of each temporal part fulfils the same function."
+ - iof-av:usageNote :: A "tag", when included in an IDO asset model, should in general have a type that is subclass of both 'functional object' and 'physical artefact'.
+ - iof-av:usageNote :: Artefact types tend to be described primarily in terms of 'function'; for example, the "minimal" definition of a pump would be, "a physical artefact, the function of which is to pump (to be the active participant in a pumping activity)". This kind of definition places no restriction on physical make-up and is suitable for a subclass of 'functional object'. Note that the activity type of 'pumping' is here a precursor to the definition of the physical object type 'pump'. A taxonomy of pump classes should extend from a class 'pump' defined solely in terms of function, as above.
+ - iof-av:usageNote :: Most artefacts are both physical and functional objects as a functional object is any object that has a function.
+ - iof-av:usageNote :: Note that it is possible to model without explicitly using this class, as any object that has a function can be inferred to be a functional object.
+ - iof-av:usageNote :: This class can be used as a root class for functional classification of objects, including physical objects.
+ - rdfs:seeAlso :: ISO 15926-2:2003 'functional_physical_object'
+ - skos:example :: A password is concretized when it is entered, and it allows the computer to be unlocked. The password participates in the unlocking process through its concretization.
+ - skos:example :: A pump, a hammer, a password.
+**** System (lis:System)
+ - rdfs:isDefinedBy :: lis-ont:core
+
 *** Function (lis:Function)
  - rdfs:isDefinedBy :: lis-ont:core
  - rdfs:comment :: A capability that meets a design requirement, imported from IDO. The purpose a module is intended to serve, distinct from the activity that realizes it.
@@ -770,6 +787,8 @@ authoring-only group by a wide margin.
 **** compatibility delegation function (ex:compatibility-delegation-function)
  - SubClassOf :: lis:realizedIn only ex:compatibility-delegation-activity
  - rdfs:comment :: The function of preserving a legacy entry point by delegating unconditionally to the current implementation.
+*** Potential (lis:Potential)
+ - rdfs:isDefinedBy :: lis-ont:core/4.2
 *** Event (lis:Event)
  - rdfs:isDefinedBy :: lis-ont:core/4.2
 *** Disposition (lis:Disposition)
@@ -934,6 +953,9 @@ authoring-only group by a wide margin.
 *** function statement (ex:function-statement)
  - rdfs:comment :: A natural-language statement of the purpose an individual (typically an Elisp module) is intended to serve -- what it is for, distinct from how it is implemented. Precedes formal lis:hasFunction/lis:Function/lis:Activity modelling; a per-individual annotation, not a class-level claim.
  - skos:definition :: An annotation stating the intended purpose of the file or artifact it annotates, as a precursor to formal IDO Function/Activity modelling.
+*** naturalLanguageDefinition (iof-av:naturalLanguageDefinition)
+*** explanatoryNote (iof-av:explanatoryNote)
+*** usageNote (iof-av:usageNote)
 *** repository path (ex:repository-path)
  - rdfs:comment :: The path of the file backing this individual, relative to the Git repository root, using forward slashes (e.g. elot-package/elot-lint.el).
  - skos:definition :: States where the file corresponding to an individual lives within the repository, as a slash-separated path relative to the Git repository root.
