@@ -155,21 +155,6 @@ those IDO classes for the umbrella use-case.
  - rdfs:isDefinedBy :: lis-ont:core
 ***** Scale (lis:Scale)
  - rdfs:isDefinedBy :: lis-ont:core
-****** Metre (unit:M)
- - rdfs:isDefinedBy :: <http://qudt.org/vocab/unit/>
- - skos:definition :: "The SI base unit of length."@en
-****** Centimetre (unit:CentiM)
- - rdfs:isDefinedBy :: <http://qudt.org/vocab/unit/>
- - skos:definition :: "A unit of length equal to one hundredth of a metre."@en
-****** Millimetre (unit:MilliM)
- - rdfs:isDefinedBy :: <http://qudt.org/vocab/unit/>
- - skos:definition :: "A unit of length equal to one thousandth of a metre."@en
-****** Gram (unit:GM)
- - rdfs:isDefinedBy :: <http://qudt.org/vocab/unit/>
- - skos:definition :: "A metric unit of mass equal to one thousandth of a kilogram."@en
-****** Kilogram (unit:KiloGM)
- - rdfs:isDefinedBy :: <http://qudt.org/vocab/unit/>
- - skos:definition :: "The SI base unit of mass."@en
 ** Object properties
 :PROPERTIES:
 :ID: umbrella-object-property-hierarchy
@@ -199,12 +184,16 @@ Object properties borrowed from the IDO / LIS-14 core, cited with
  - rdfs:isDefinedBy :: lis-ont:core
 **** datum UOM (lis:datumUOM)
  - rdfs:isDefinedBy :: lis-ont:core
+**** has quality quantified as (lis:hasQualityQuantifiedAs)
+ - rdfs:isDefinedBy :: lis-ont:core
 ** Data properties
 :PROPERTIES:
 :ID: umbrella-data-property-hierarchy
 :resourcedefs: yes
 :END:
 *** datum value (lis:datumValue)
+ - rdfs:isDefinedBy :: lis-ont:core
+*** quality quantity value (lis:qualityQuantityValue)
  - rdfs:isDefinedBy :: lis-ont:core
 
 ** Annotation properties
@@ -220,3 +209,41 @@ Object properties borrowed from the IDO / LIS-14 core, cited with
 :ID: umbrella-individuals
 :resourcedefs: yes
 :END:
+*** Units of measure                                             :nodeclare:
+In an IDO-compliant ontology a unit of measure is an *individual* -- an
+instance of =lis:UnitOfMeasure= (or its subclass =lis:Scale=) -- not a
+class.  IDO's =lis:datumUOM= relates a =lis:ScalarQuantityDatum= to a
+unit *individual*, so the units must be declared here in the Individuals
+section, each typed with =Types :: lis:UnitOfMeasure=.
+
+The units are borrowed from QUDT and cited with =rdfs:isDefinedBy ::
+unit:=.  Note that the QUDT vocabularies are *not* imported with
+=owl:imports=: QUDT is not OWL DL, so importing it as-is would take the
+umbrella ontology out of the DL profile.  We therefore reuse the QUDT
+identifiers (and a =qudt:symbol= annotation) while asserting the IDO
+typing locally.
+**** Metre (unit:M)
+ - Types :: lis:UnitOfMeasure
+ - rdfs:isDefinedBy :: unit:
+ - qudt:symbol :: m
+ - skos:definition :: "The SI base unit of length."@en
+**** Centimetre (unit:CentiM)
+ - Types :: lis:UnitOfMeasure
+ - rdfs:isDefinedBy :: unit:
+ - qudt:symbol :: cm
+ - skos:definition :: "A unit of length equal to one hundredth of a metre."@en
+**** Millimetre (unit:MilliM)
+ - Types :: lis:UnitOfMeasure
+ - rdfs:isDefinedBy :: unit:
+ - qudt:symbol :: mm
+ - skos:definition :: "A unit of length equal to one thousandth of a metre."@en
+**** Gram (unit:GM)
+ - Types :: lis:UnitOfMeasure
+ - rdfs:isDefinedBy :: unit:
+ - qudt:symbol :: g
+ - skos:definition :: "A metric unit of mass equal to one thousandth of a kilogram."@en
+**** Kilogram (unit:KiloGM)
+ - Types :: lis:UnitOfMeasure
+ - rdfs:isDefinedBy :: unit:
+ - qudt:symbol :: kg
+ - skos:definition :: "The SI base unit of mass."@en
