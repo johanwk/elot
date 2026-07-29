@@ -1,0 +1,222 @@
+#+title: Umbrella Ontology
+#+author: ELOT
+#+date: 2024
+
+* umbrella
+:PROPERTIES:
+:ID: umbrella
+:ELOT-context-type: ontology
+:ELOT-id-scheme: slug
+:ELOT-context-localname: umbrella
+:ELOT-default-prefix: umb
+:header-args:omn: :tangle ./umbrella.omn :noweb yes
+:END:
+
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+#+name: prefix-table
+| prefix        | uri                                                                            |
+|---------------+--------------------------------------------------------------------------------|
+| owl:          | http://www.w3.org/2002/07/owl#                                                 |
+| rdf:          | http://www.w3.org/1999/02/22-rdf-syntax-ns#                                    |
+| rdfs:         | http://www.w3.org/2000/01/rdf-schema#                                          |
+| xsd:          | http://www.w3.org/2001/XMLSchema#                                              |
+| skos:         | http://www.w3.org/2004/02/skos/core#                                           |
+| iof-av:       | https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/ |
+| lis:          | http://rds.posccaesar.org/ontology/lis14/rdl/                                  |
+| lis-ont:      | http://rds.posccaesar.org/ontology/lis14/ont/                                  |
+| umb:          | http://example.org/umbrella/                                                   |
+| qudt:         | http://qudt.org/schema/qudt/                                                   |
+| quantitykind: | http://qudt.org/vocab/quantitykind/                                            |
+| unit:         | http://qudt.org/vocab/unit/                                                    |
+
+** umbrella ontology (umb:umbrella umb:umbrella/0.1)
+:PROPERTIES:
+:ID: umbrella-ontology-declaration
+:resourcedefs: yes
+:END:
+ - rdfs:comment :: "An ontology of umbrellas and their parts."@en
+ - Import :: lis-ont:core
+
+** Datatypes
+:PROPERTIES:
+:ID: umbrella-datatypes
+:resourcedefs: yes
+:END:
+
+** Classes
+:PROPERTIES:
+:ID: umbrella-class-hierarchy
+:resourcedefs: yes
+:END:
+*** IDO core vocabulary (imported from LIS-14)                    :nodeclare:
+The classes below are borrowed from the Industrial Data Ontology (IDO /
+LIS-14) core, which the umbrella ontology imports (see =owl:imports
+lis-ont:core=).  They are cited with =rdfs:isDefinedBy= and used as-is;
+no local logical axioms are added to them.  The QUDT quantity kinds and
+units nested beneath =lis:PhysicalQuantity= and =lis:Scale= specialise
+those IDO classes for the umbrella use-case.
+**** Object (lis:Object)
+ - rdfs:isDefinedBy :: lis-ont:core
+***** Physical Object (lis:PhysicalObject)
+ - rdfs:isDefinedBy :: lis-ont:core
+****** MateriallyClassifiedObject (lis:Compound)
+******* Material (umb:material)
+ - skos:definition :: "An object or component that is made of a physical substance."@en
+******** Wood (umb:wood)
+ - skos:definition :: "An object or component that is made of wood."@en
+******** Plastic (umb:plastic)
+ - skos:definition :: "An object or component that is made of plastic."@en
+********* Recycled Plastic (umb:recycled-plastic)
+ - skos:definition :: "An object or component that is made of recycled plastic."@en
+******** Metal (umb:metal)
+ - skos:definition :: "An object or component that is made of metal."@en
+********* Steel (umb:steel)
+ - skos:definition :: "An object or component that is made of steel."@en
+********* Aluminum (umb:aluminum)
+ - skos:definition :: "An object or component that is made of aluminum."@en
+******** Fabric (umb:fabric)
+ - skos:definition :: "An object or component that is made of fabric."@en
+********* Nylon (umb:nylon)
+ - skos:definition :: "An object or component that is made of nylon."@en
+********* Polyester (umb:polyester)
+ - skos:definition :: "An object or component that is made of polyester."@en
+****** Physical Artefact (lis:PhysicalArtefact)
+ - rdfs:isDefinedBy :: lis-ont:core
+******* Umbrella (umb:umbrella)
+ - skos:definition :: "A portable device used for protection against rain or sunlight."@en
+******** Storm Umbrella (umb:storm-umbrella)
+ - skos:definition :: "A heavy-duty umbrella designed to withstand strong winds and severe weather conditions."@en
+ - SubClassOf :: umb:has-part some (umb:rib and umb:steel)
+ - rdfs:label :: "Parapluie de tempête"@fr
+ - rdfs:label :: "Paraguas de tormenta"@es
+******** Eco-Friendly Umbrella (umb:eco-friendly-umbrella)
+ - skos:definition :: "An umbrella manufactured with sustainability in mind, utilizing recycled materials."@en
+ - EquivalentTo :: umb:umbrella and (umb:has-part some umb:recycled-plastic)
+ - rdfs:label :: "Parapluie écoresponsable"@fr
+ - rdfs:label :: "Paraguas ecológico"@es
+******** Wooden Handled Umbrella (umb:wooden-handled-umbrella)
+ - skos:definition :: "An umbrella characterized by having a handle made of wood, often positioned as a premium catalogue item."@en
+ - EquivalentTo :: umb:umbrella and (umb:has-handle some umb:wood)
+ - rdfs:label :: "Parapluie à manche en bois"@fr
+ - rdfs:label :: "Paraguas con mango de madera"@es
+******** Compact Umbrella (umb:compact-umbrella)
+ - skos:definition :: "A small, collapsible umbrella designed for easy carrying and storage."@en
+ - rdfs:label :: "Parapluie compact"@fr
+ - rdfs:label :: "Paraguas compacto"@es
+********* Lightweight Travel Umbrella (umb:lightweight-travel-umbrella)
+ - skos:definition :: "A compact umbrella specifically designed for travelers, utilizing lightweight materials like an aluminum shaft and nylon canopy."@en
+ - SubClassOf :: umb:has-canopy some umb:nylon
+ - SubClassOf :: umb:has-part some (umb:shaft and umb:aluminum)
+ - rdfs:label :: "Parapluie de voyage léger"@fr
+ - rdfs:label :: "Paraguas de viaje ligero"@es
+******** Golf Umbrella (umb:golf-umbrella)
+ - skos:definition :: "A large umbrella designed to protect the user and their equipment from rain or sun."@en
+ - rdfs:label :: "Parapluie de golf"@fr
+ - rdfs:label :: "Paraguas de golf"@es
+******** Parasol (umb:parasol)
+ - skos:definition :: "A lightweight umbrella primarily used to provide shade from the sun."@en
+ - rdfs:label :: "Parasol"@fr
+ - rdfs:label :: "Sombrilla"@es
+******** Bubble Umbrella (umb:bubble-umbrella)
+ - skos:definition :: "An umbrella with a deep, dome-shaped canopy that offers protection from wind and rain."@en
+ - rdfs:label :: "Parapluie cloche"@fr
+ - rdfs:label :: "Paraguas burbuja"@es
+******* Umbrella Part (umb:umbrella-part)
+ - skos:definition :: "A constituent component or piece of an umbrella."@en
+******** Handle (umb:handle)
+ - skos:definition :: "The part of an umbrella designed to be held by the user."@en
+******** Canopy (umb:canopy)
+ - skos:definition :: "The fabric or plastic cover of an umbrella that provides protection from weather."@en
+******** Shaft (umb:shaft)
+ - skos:definition :: "The central pole or stem of an umbrella that supports the canopy."@en
+******** Rib (umb:rib)
+
+ - skos:definition :: "One of the structural supports extending from the shaft to stretch and hold the canopy of an umbrella."@en
+**** Activity (lis:Activity)
+ - rdfs:isDefinedBy :: lis-ont:core
+**** Quality (lis:Quality)
+ - rdfs:isDefinedBy :: lis-ont:core
+***** Physical Quantity (lis:PhysicalQuantity)
+ - rdfs:isDefinedBy :: lis-ont:core
+****** Length (quantitykind:Length)
+ - rdfs:isDefinedBy :: <http://qudt.org/vocab/quantitykind/>
+ - skos:definition :: "The one-dimensional extent of an object (e.g. shaft length, rib span)."@en
+****** Mass (quantitykind:Mass)
+ - rdfs:isDefinedBy :: <http://qudt.org/vocab/quantitykind/>
+ - skos:definition :: "A measure of the amount of matter in an object (e.g. the mass of an umbrella)."@en
+**** Quality Datum (lis:QualityDatum)
+ - rdfs:isDefinedBy :: lis-ont:core
+***** Scalar Quantity Datum (lis:ScalarQuantityDatum)
+ - rdfs:isDefinedBy :: lis-ont:core
+**** Unit of Measure (lis:UnitOfMeasure)
+ - rdfs:isDefinedBy :: lis-ont:core
+***** Scale (lis:Scale)
+ - rdfs:isDefinedBy :: lis-ont:core
+****** Metre (unit:M)
+ - rdfs:isDefinedBy :: <http://qudt.org/vocab/unit/>
+ - skos:definition :: "The SI base unit of length."@en
+****** Centimetre (unit:CentiM)
+ - rdfs:isDefinedBy :: <http://qudt.org/vocab/unit/>
+ - skos:definition :: "A unit of length equal to one hundredth of a metre."@en
+****** Millimetre (unit:MilliM)
+ - rdfs:isDefinedBy :: <http://qudt.org/vocab/unit/>
+ - skos:definition :: "A unit of length equal to one thousandth of a metre."@en
+****** Gram (unit:GM)
+ - rdfs:isDefinedBy :: <http://qudt.org/vocab/unit/>
+ - skos:definition :: "A metric unit of mass equal to one thousandth of a kilogram."@en
+****** Kilogram (unit:KiloGM)
+ - rdfs:isDefinedBy :: <http://qudt.org/vocab/unit/>
+ - skos:definition :: "The SI base unit of mass."@en
+** Object properties
+:PROPERTIES:
+:ID: umbrella-object-property-hierarchy
+:resourcedefs: yes
+:END:
+*** has part (umb:has-part)
+ - Domain :: umb:umbrella
+ - Range :: umb:umbrella-part
+ - skos:definition :: "A relation indicating that an umbrella includes a specific part."@en
+**** has handle (umb:has-handle)
+ - Range :: umb:handle
+ - skos:definition :: "A relation indicating that an umbrella has a specific handle."@en
+**** has canopy (umb:has-canopy)
+ - Range :: umb:canopy
+
+ - skos:definition :: "A relation indicating that an umbrella has a specific canopy."@en
+*** IDO core relations (imported from LIS-14)                     :nodeclare:
+Object properties borrowed from the IDO / LIS-14 core, cited with
+=rdfs:isDefinedBy= and used as-is.
+**** has participant (lis:hasParticipant)
+ - rdfs:isDefinedBy :: lis-ont:core
+**** has quality (lis:hasQuality)
+ - rdfs:isDefinedBy :: lis-ont:core
+**** has physical quantity (lis:hasPhysicalQuantity)
+ - rdfs:isDefinedBy :: lis-ont:core
+**** quality quantified as (lis:qualityQuantifiedAs)
+ - rdfs:isDefinedBy :: lis-ont:core
+**** datum UOM (lis:datumUOM)
+ - rdfs:isDefinedBy :: lis-ont:core
+** Data properties
+:PROPERTIES:
+:ID: umbrella-data-property-hierarchy
+:resourcedefs: yes
+:END:
+*** datum value (lis:datumValue)
+ - rdfs:isDefinedBy :: lis-ont:core
+
+** Annotation properties
+:PROPERTIES:
+:ID: umbrella-annotation-property-hierarchy
+:resourcedefs: yes
+:END:
+*** skos:definition
+ - rdfs:isDefinedBy :: <http://www.w3.org/2004/02/skos/core>
+
+** Individuals
+:PROPERTIES:
+:ID: umbrella-individuals
+:resourcedefs: yes
+:END:
