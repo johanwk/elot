@@ -256,7 +256,31 @@ When in doubt, run `elot_lint` first -- it catches the bulk of
 structural mistakes (missing required sections, undeclared CURIEs in
 axioms, malformed prefix table) before ROBOT ever sees the file.
 
-## 9. Worked exemplar
+## 9. Workspace/patch-review tools (e.g. macher): stop and let the patch be applied
+
+**The rule:** as soon as you use a *workspace* tool that **writes** to a
+file (e.g. Macher's `edit_file_in_workspace`, `write_file_in_workspace`,
+`multi_edit_file_in_workspace`, `move_file_in_workspace`,
+`delete_file_in_workspace`), stop editing that file and hand the patch
+back to the user. Do not make further changes to it -- with workspace
+tools *or* elot-gptel mutators -- until the patch has been applied.
+
+**Why:** workspace tools stage edits in memory and never touch disk;
+the user reviews and applies a patch afterwards. Elot-gptel mutators
+write to disk immediately. If both touch the same file, edits can be
+silently lost (an elot-gptel rollback discarding a pending workspace
+edit, or a patch computed against text that has since changed).
+
+**What is still fine:**
+- Ordinary elot-gptel mutations -- as many as you like, on any file --
+  as long as no workspace tool has written to that file. Elot-gptel's
+  own save + revalidate + rollback keeps these safe.
+- Read-only inspection at any time, including `elot_check` / `elot_lint`
+  against the pending draft (a sanity check on the *unapplied* draft --
+  re-validate after the user applies the patch).
+- Continuing to work on *other* files.
+
+## 10. Worked exemplar
 
 The following is a single self-contained ELOT ontology that
 demonstrates every idiom covered above.  Inline comments
