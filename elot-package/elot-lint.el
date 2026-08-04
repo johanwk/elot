@@ -272,7 +272,9 @@ TREE is the parsed Org element tree provided by `org-lint'."
 
 (defun elot-check-required-sections (tree)
   "ELOT rule: check all required section headers for ontology.
-TREE is the parsed Org element tree provided by `org-lint'."
+TREE is the parsed Org element tree provided by `org-lint'.
+Note: the Datatypes section is not required, as most ontologies do not
+need to declare custom datatypes."
   (let (localname issues)
     ;; Find top-level ontology headline to get localname
     (org-element-map tree 'headline
@@ -285,7 +287,7 @@ TREE is the parsed Org element tree provided by `org-lint'."
 
     (when localname
       (let* ((suffixes '("-ontology-declaration"
-                         "-datatypes"
+                         ;; "-datatypes" ;; not required: most ontologies need no custom datatypes
                          "-class-hierarchy"
                          "-object-property-hierarchy"
                          "-data-property-hierarchy"
