@@ -105,7 +105,7 @@ iof-constr:DesignativeInformationContentEntity
 
 
 #+name: rdfpuml:pattern-information-about-all
-#+call: rdfpuml-block(ttlblock="pattern-information-about-all") :eval never-export :var add-options=""
+#+call: rdfpuml-block(ttlblock="pattern-information-about-all") :eval never-export :var add-options="top to bottom direction"
 #+caption: Information about an entity
 #+results: rdfpuml:pattern-information-about-all
 [[file:./images/pattern-information-about-all.svg]]
