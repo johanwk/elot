@@ -28,6 +28,7 @@
 | lis:          | http://rds.posccaesar.org/ontology/lis14/rdl/                                  |
 | lis-ont:      | http://rds.posccaesar.org/ontology/lis14/ont/                                  |
 | umb:          | http://example.org/umbrella/                                                   |
+| pattern:      | http://example.org/pattern/                                                    |
 | qudt:         | http://qudt.org/schema/qudt/                                                   |
 | quantitykind: | http://qudt.org/vocab/quantitykind/                                            |
 | unit:         | http://qudt.org/vocab/unit/                                                    |
@@ -39,12 +40,6 @@
 :END:
  - rdfs:comment :: "An ontology of umbrellas and their parts."@en
  - Import :: lis-ont:core
-
-** Datatypes
-:PROPERTIES:
-:ID: umbrella-datatypes
-:resourcedefs: yes
-:END:
 
 ** Classes
 :PROPERTIES:
@@ -60,9 +55,18 @@ units nested beneath =lis:PhysicalQuantity= and =lis:Scale= specialise
 those IDO classes for the umbrella use-case.
 *** Object (lis:Object)
  - rdfs:isDefinedBy :: lis-ont:core
+**** Information Object (lis:InformationObject)
+ - rdfs:isDefinedBy :: lis-ont:core
+***** Document (umb:document)
+ - skos:definition :: "An information object that is recorded on a medium and can be circulated, read and referred to."@en
+****** Assembly Specification (umb:assembly-specification)
+ - skos:definition :: "A document that prescribes how the parts of an artefact are to be fitted together. In IDEF0 terms, the canonical Control for an assembly activity."@en
 **** Physical Object (lis:PhysicalObject)
  - rdfs:isDefinedBy :: lis-ont:core
+***** Person (lis:Person)
+ - rdfs:isDefinedBy :: lis-ont:core
 ***** MateriallyClassifiedObject (lis:Compound)
+ - rdfs:isDefinedBy :: lis-ont:core
 ****** Material (umb:material)
  - skos:definition :: "An object or component that is made of a physical substance."@en
 ******* Wood (umb:wood)
@@ -89,12 +93,12 @@ those IDO classes for the umbrella use-case.
  - skos:definition :: "A portable device used for protection against rain or sunlight."@en
 ******* Storm Umbrella (umb:storm-umbrella)
  - skos:definition :: "A heavy-duty umbrella designed to withstand strong winds and severe weather conditions."@en
- - SubClassOf :: umb:has-part some (umb:rib and umb:steel)
+ - SubClassOf :: umb:has-umbrella-part some (umb:rib and umb:steel)
  - rdfs:label :: "Parapluie de tempête"@fr
  - rdfs:label :: "Paraguas de tormenta"@es
 ******* Eco-Friendly Umbrella (umb:eco-friendly-umbrella)
  - skos:definition :: "An umbrella manufactured with sustainability in mind, utilizing recycled materials."@en
- - EquivalentTo :: umb:umbrella and (umb:has-part some umb:recycled-plastic)
+ - EquivalentTo :: umb:umbrella and (umb:has-umbrella-part some umb:recycled-plastic)
  - rdfs:label :: "Parapluie écoresponsable"@fr
  - rdfs:label :: "Paraguas ecológico"@es
 ******* Wooden Handled Umbrella (umb:wooden-handled-umbrella)
@@ -102,6 +106,10 @@ those IDO classes for the umbrella use-case.
  - EquivalentTo :: umb:umbrella and (umb:has-handle some umb:wood)
  - rdfs:label :: "Parapluie à manche en bois"@fr
  - rdfs:label :: "Paraguas con mango de madera"@es
+******** Umbrellas-Are-Us Extra Long Wide Umbrella (umb:umbrellas-are-us-extra-long-wide-umbrella)
+ - skos:definition :: "An extra-long, extra-wide wooden-handled umbrella made by Umbrellas-Are-Us, with a 90 cm shaft and a 200 cm canopy diameter."@en
+ - SubClassOf :: umb:has-shaft some (umb:shaft and (umb:shaft-length-in-centimetres value 90))
+ - SubClassOf :: umb:has-canopy some (umb:canopy and (umb:canopy-diameter-in-centimetres value 200))
 ******* Compact Umbrella (umb:compact-umbrella)
  - skos:definition :: "A small, collapsible umbrella designed for easy carrying and storage."@en
  - rdfs:label :: "Parapluie compact"@fr
@@ -109,7 +117,7 @@ those IDO classes for the umbrella use-case.
 ******** Lightweight Travel Umbrella (umb:lightweight-travel-umbrella)
  - skos:definition :: "A compact umbrella specifically designed for travelers, utilizing lightweight materials like an aluminum shaft and nylon canopy."@en
  - SubClassOf :: umb:has-canopy some umb:nylon
- - SubClassOf :: umb:has-part some (umb:shaft and umb:aluminum)
+ - SubClassOf :: umb:has-umbrella-part some (umb:shaft and umb:aluminum)
  - rdfs:label :: "Parapluie de voyage léger"@fr
  - rdfs:label :: "Paraguas de viaje ligero"@es
 ******* Golf Umbrella (umb:golf-umbrella)
@@ -133,9 +141,24 @@ those IDO classes for the umbrella use-case.
 ******* Shaft (umb:shaft)
  - skos:definition :: "The central pole or stem of an umbrella that supports the canopy."@en
 ******* Rib (umb:rib)
-
  - skos:definition :: "One of the structural supports extending from the shaft to stretch and hold the canopy of an umbrella."@en
 *** Activity (lis:Activity)
+ - rdfs:isDefinedBy :: lis-ont:core
+**** Rain Shielding (umb:rain-shielding)
+ - skos:definition :: "An activity in which a canopy is interposed between falling rain and what is sheltered, so that the rain is intercepted."@en
+ - pattern:appliedPattern :: pattern:IDO-pattern-function
+**** Umbrella Assembly (umb:umbrella-assembly)
+ - skos:definition :: "An activity in which the parts of an umbrella are fitted together."@en
+ - pattern:appliedPattern :: pattern:IDO-pattern-idef0
+ - SubClassOf :: umb:has-input some umb:handle
+ - SubClassOf :: umb:has-input some umb:shaft
+ - SubClassOf :: umb:has-input some umb:canopy
+ - SubClassOf :: umb:has-output some umb:umbrella
+ - SubClassOf :: umb:has-mechanism some lis:Person
+ - SubClassOf :: umb:has-control some umb:assembly-specification
+*** Capability (lis:Capability)
+ - rdfs:isDefinedBy :: lis-ont:core
+**** Function (lis:Function)
  - rdfs:isDefinedBy :: lis-ont:core
 *** Quality (lis:Quality)
  - rdfs:isDefinedBy :: lis-ont:core
@@ -147,6 +170,12 @@ those IDO classes for the umbrella use-case.
 ***** Mass (quantitykind:Mass)
  - rdfs:isDefinedBy :: <http://qudt.org/vocab/quantitykind/>
  - skos:definition :: "A measure of the amount of matter in an object (e.g. the mass of an umbrella)."@en
+***** Thickness (quantitykind:Thickness)
+ - rdfs:isDefinedBy :: <http://qudt.org/vocab/quantitykind/>
+ - skos:definition :: "The extent of a material through its smallest dimension (e.g. canopy fabric thickness)."@en
+***** Circumference (umb:Circumference)
+ - skos:definition :: "The distance around the boundary of a closed curve, e.g. the length around a person's head as used for hat sizing."@en
+ - rdfs:comment :: "This is a locally-minted umb: quantity kind, not a QUDT term: QUDT's quantitykind vocabulary has no Circumference entry (circumference is dimensionally a length, and QUDT covers it only via quantitykind:Length / quantitykind:InverseLength-adjacent kinds). Introduced here so the shortcut-object pattern's qudt:hasQuantityKind annotation has a distinct concept for hat-sizing measurements."@en
 *** Quality Datum (lis:QualityDatum)
  - rdfs:isDefinedBy :: lis-ont:core
 **** Scalar Quantity Datum (lis:ScalarQuantityDatum)
@@ -160,30 +189,70 @@ those IDO classes for the umbrella use-case.
 :ID: umbrella-object-property-hierarchy
 :resourcedefs: yes
 :END:
+*** physical quantity of (lis:physicalQuantityOf)
+ - rdfs:isDefinedBy :: lis-ont:core
 *** IDO core relations (imported from LIS-14)                   :nodeclare:
 Object properties borrowed from the IDO / LIS-14 core, cited with
 =rdfs:isDefinedBy= and used as-is.
-*** has part (umb:has-part)
+*** has participant (lis:hasParticipant)
+ - rdfs:isDefinedBy :: lis-ont:core
+**** has control (umb:has-control)
+ - skos:definition :: "IDEF0 Control (C): a specification, plan or rule that governs the activity without being transformed by it. Nested directly under lis:hasParticipant -- a control neither acts nor is acted upon."@en
+ - pattern:appliedPattern :: pattern:IDO-pattern-idef0
+ - Domain :: lis:Activity
+ - Range :: lis:Object
+ - rdfs:comment :: "Range deliberately left at lis:Object: a control need not be an information object -- a digital process controller or a jig fixing allowed motion is equally a Control."@en
+**** has active participant (lis:hasActiveParticipant)
+ - rdfs:isDefinedBy :: lis-ont:core
+***** has mechanism (umb:has-mechanism)
+ - skos:definition :: "IDEF0 Mechanism (M): the agent, tool or resource that performs the activity. Nested under lis:hasActiveParticipant."@en
+ - pattern:appliedPattern :: pattern:IDO-pattern-idef0
+**** has passive participant (lis:hasPassiveParticipant)
+ - rdfs:isDefinedBy :: lis-ont:core
+***** has input (umb:has-input)
+ - skos:definition :: "IDEF0 Input (I): an entity consumed or transformed by the activity. Nested under lis:hasPassiveParticipant."@en
+ - pattern:appliedPattern :: pattern:IDO-pattern-idef0
+***** has output (umb:has-output)
+ - skos:definition :: "IDEF0 Output (O): an entity produced by the activity. Nested under lis:hasPassiveParticipant."@en
+ - pattern:appliedPattern :: pattern:IDO-pattern-idef0
+*** has capability (lis:hasCapability)
+ - rdfs:isDefinedBy :: lis-ont:core
+**** has function (lis:hasFunction)
+ - rdfs:isDefinedBy :: lis-ont:core
+*** realized in (lis:realizedIn)
+ - rdfs:isDefinedBy :: lis-ont:core
+*** has arranged part (lis:hasArrangedPart)
+ - rdfs:isDefinedBy :: lis-ont:core
+**** has umbrella part (umb:has-umbrella-part)
  - Domain :: umb:umbrella
  - Range :: umb:umbrella-part
  - skos:definition :: "A relation indicating that an umbrella includes a specific part."@en
-**** has handle (umb:has-handle)
+***** has shaft (umb:has-shaft)
+ - Range :: umb:shaft
+ - skos:definition :: "A relation indicating that an umbrella has a specific shaft."@en
+ - Characteristics :: Functional
+***** has handle (umb:has-handle)
  - Range :: umb:handle
  - skos:definition :: "A relation indicating that an umbrella has a specific handle."@en
-**** has canopy (umb:has-canopy)
+***** has canopy (umb:has-canopy)
  - Range :: umb:canopy
 
  - skos:definition :: "A relation indicating that an umbrella has a specific canopy."@en
-*** has participant (lis:hasParticipant)
- - rdfs:isDefinedBy :: lis-ont:core
 *** has quality (lis:hasQuality)
  - rdfs:isDefinedBy :: lis-ont:core
 **** has physical quantity (lis:hasPhysicalQuantity)
  - rdfs:isDefinedBy :: lis-ont:core
 *** quality quantified as (lis:qualityQuantifiedAs)
  - rdfs:isDefinedBy :: lis-ont:core
+*** quantifies quality (lis:quantifiesQuality)
+ - rdfs:isDefinedBy :: lis-ont:core
 *** has quality quantified as (lis:hasQualityQuantifiedAs)
  - rdfs:isDefinedBy :: lis-ont:core
+**** has head circumference (umb:has-head-circumference)
+ - Domain :: lis:Person
+ - Range :: lis:ScalarQuantityDatum
+ - skos:definition :: "Shortcut relation from a person to the scalar quantity datum recording the circumference of their head, as used for hat sizing."@en
+ - qudt:hasQuantityKind :: umb:Circumference
 *** datum UOM (lis:datumUOM)
  - rdfs:isDefinedBy :: lis-ont:core
 ** Data properties
@@ -196,6 +265,21 @@ Object properties borrowed from the IDO / LIS-14 core, cited with
 *** quality quantity value (lis:qualityQuantityValue)
  - rdfs:isDefinedBy :: lis-ont:core
 
+**** height in centimetres (umb:height_cm)
+ - Domain :: lis:PhysicalObject
+ - Range :: xsd:decimal
+ - skos:definition :: "Shortcut relation giving the height of a physical object as a bare number, in centimetres (quantity kind quantitykind:Length, unit unit:CentiM)."@en
+ - qudt:symbol :: cm
+**** shaft length in centimetres (umb:shaft-length-in-centimetres)
+ - Domain :: umb:shaft
+ - Range :: xsd:decimal
+ - skos:definition :: "Shortcut relation giving the length of a shaft as a bare number, in centimetres (quantity kind quantitykind:Length, unit unit:CentiM)."@en
+ - qudt:symbol :: cm
+**** canopy diameter in centimetres (umb:canopy-diameter-in-centimetres)
+ - Domain :: umb:canopy
+ - Range :: xsd:decimal
+ - skos:definition :: "Shortcut relation giving the diameter of a canopy as a bare number, in centimetres (quantity kind quantitykind:Length, unit unit:CentiM)."@en
+ - qudt:symbol :: cm
 ** Annotation properties
 :PROPERTIES:
 :ID: umbrella-annotation-property-hierarchy
@@ -206,11 +290,154 @@ Object properties borrowed from the IDO / LIS-14 core, cited with
 *** symbol (qudt:symbol)
  - rdfs:isDefinedBy :: qudt:
 
+*** has quantity kind (qudt:hasQuantityKind)
+ - rdfs:isDefinedBy :: qudt:
+ - skos:definition :: "Relates a quantity, datum or shortcut property to the QUDT quantity kind it concerns."@en
+*** applied pattern (pattern:appliedPattern)
+ - rdfs:isDefinedBy :: pattern:pattern-vocabulary
+ - skos:definition :: "Provenance: the IRI of the modelling pattern a resource was created by applying. Not stripped on instantiation -- it is the audit trail."@en
 ** Individuals
 :PROPERTIES:
 :ID: umbrella-individuals
 :resourcedefs: yes
 :END:
+*** Tim's umbrella individuals                                  :nodeclare:
+Individuals that together contribute to the representation of Tim's
+umbrella (the umbrella itself, its shaft, the shaft's length quality,
+and the corresponding datum), grouped here for convenience.
+**** Tim's Umbrella (umb:tim-s-umbrella)
+ - Types :: umb:umbrella
+ - Facts :: umb:has-umbrella-part umb:tim-s-umbrella-shaft
+ - skos:definition :: "Tim's umbrella, the concrete subject of interest."@en
+ - Types :: umb:umbrellas-are-us-extra-long-wide-umbrella
+**** Tim's Umbrella Shaft (umb:tim-s-umbrella-shaft)
+ - Types :: umb:shaft
+ - Facts :: lis:hasPhysicalQuantity umb:tim-s-umbrella-shaft-length
+ - skos:definition :: "The shaft of Tim's umbrella."@en
+**** Tim's Umbrella Shaft Length (umb:tim-s-umbrella-shaft-length)
+ - Types :: quantitykind:Length
+ - Facts :: lis:physicalQuantityOf umb:tim-s-umbrella-shaft
+ - Facts :: lis:qualityQuantifiedAs umb:tim-s-umbrella-shaft-length-datum
+ - skos:definition :: "The length quality of the shaft of Tim's umbrella."@en
+**** Tim's Umbrella Shaft Length Datum (umb:tim-s-umbrella-shaft-length-datum)
+ - Types :: lis:ScalarQuantityDatum
+ - Facts :: lis:quantifiesQuality umb:tim-s-umbrella-shaft-length
+ - Facts :: lis:datumValue "70"^^xsd:float
+ - Facts :: lis:datumUOM unit:CentiM
+ - skos:definition :: "The scalar quantity datum recording the shaft length of Tim's umbrella as 70 cm."@en
+**** Ursula's Umbrella (umb:X_02B71V8WF)
+ - Types :: umb:umbrella
+ - Facts :: umb:has-handle umb:X_02B7PM7KB
+ - Facts :: umb:has-umbrella-part umb:X_02B7FWK6B
+ - skos:definition :: "Ursula's umbrella, like Tim's but with a wooden handle."@en
+ - rdfs:label :: "Ursula's paraplu"@nl
+ - Facts :: umb:has-canopy umb:ursula-s-umbrella-canopy
+**** Ursula's Umbrella Handle (umb:X_02B7PM7KB)
+ - Types :: umb:handle
+ - Types :: umb:wood
+ - skos:definition :: "The wooden handle of Ursula's umbrella."@en
+ - rdfs:label :: "Handvat van Ursula's paraplu"@nl
+**** Ursula's Umbrella Shaft (umb:X_02B7FWK6B)
+ - Types :: umb:shaft
+ - Facts :: lis:hasPhysicalQuantity umb:X_02B7JZ0T4
+ - skos:definition :: "The shaft of Ursula's umbrella."@en
+ - rdfs:label :: "Stok van Ursula's paraplu"@nl
+**** Ursula's Umbrella Shaft Length (umb:X_02B7JZ0T4)
+ - Types :: quantitykind:Length
+ - Facts :: lis:physicalQuantityOf umb:X_02B7FWK6B
+ - Facts :: lis:qualityQuantifiedAs umb:X_02B7CCZ3N
+ - skos:definition :: "The length quality of the shaft of Ursula's umbrella."@en
+ - rdfs:label :: "Lengte van de stok van Ursula's paraplu"@nl
+**** Ursula's Umbrella Shaft Length Datum (umb:X_02B7CCZ3N)
+ - Types :: lis:ScalarQuantityDatum
+ - Facts :: lis:quantifiesQuality umb:X_02B7JZ0T4
+ - Facts :: lis:datumValue "70"^^xsd:float
+ - Facts :: lis:datumUOM unit:CentiM
+ - skos:definition :: "The scalar quantity datum recording the shaft length of Ursula's umbrella as 70 cm."@en
+ - rdfs:label :: "Lengtegegeven van de stok van Ursula's paraplu"@nl
+**** Ursula's Umbrella Canopy (umb:ursula-s-umbrella-canopy)
+ - Types :: umb:canopy
+ - Types :: umb:polyester
+ - Facts :: lis:hasPhysicalQuantity umb:ursula-s-umbrella-canopy-thickness
+ - Facts :: lis:hasFunction umb:ursula-s-umbrella-canopy-shielding-function
+ - skos:definition :: "The polyester canopy of Ursula's umbrella."@en
+ - rdfs:label :: "Doek van Ursula's paraplu"@nl
+**** Ursula's Umbrella Canopy Thickness (umb:ursula-s-umbrella-canopy-thickness)
+ - Types :: quantitykind:Thickness
+ - Facts :: lis:physicalQuantityOf umb:ursula-s-umbrella-canopy
+ - Facts :: lis:qualityQuantifiedAs umb:ursula-s-umbrella-canopy-thickness-datum
+ - skos:definition :: "The material thickness of the canopy of Ursula's umbrella."@en
+**** Ursula's Umbrella Canopy Thickness Datum (umb:ursula-s-umbrella-canopy-thickness-datum)
+ - Types :: lis:ScalarQuantityDatum
+ - Facts :: lis:quantifiesQuality umb:ursula-s-umbrella-canopy-thickness
+ - Facts :: lis:datumValue "0.25"^^xsd:float
+ - Facts :: lis:datumUOM unit:MilliM
+ - skos:definition :: "The scalar quantity datum recording the canopy thickness of Ursula's umbrella as 0.25 mm."@en
+**** Tim (umb:tim)
+ - Types :: lis:Person
+ - Facts :: umb:height_cm "175"^^xsd:decimal
+ - skos:definition :: "Tim, a person 175 cm tall."@en
+**** Ursula (umb:ursula)
+ - Types :: lis:Person
+ - Facts :: umb:has-head-circumference umb:ursula-s-head-circumference-datum
+ - skos:definition :: "Ursula, the owner of Ursula's umbrella."@en
+ - Facts :: lis:hasCapability umb:ursula-s-umbrella-assembly-capability
+*** Pattern applications                                         :nodeclare:
+Two step-3 pattern applications, kept deliberately small.
+
+*Function pattern* (=pattern:IDO-pattern-function=) applied to the
+canopy of Ursula's umbrella: bearer *bound* (the canopy already
+existed), activity kind =umb:rain-shielding= *minted*, function and
+realizing-activity individuals *minted*.  Constants =lis:Capability=,
+=lis:Function=, =lis:hasCapability=, =lis:hasFunction=,
+=lis:realizedIn= and =lis:hasActiveParticipant= were *not* already
+present in this file and were borrowed for this application;
+=lis:Activity= and =lis:hasParticipant= already were.
+
+*Participation pattern* (=pattern:IDO-pattern-participation=) applied
+to the assembly of Ursula's umbrella: both participants *bound* (handle
+and shaft already existed), activity kind =umb:umbrella-assembly=
+*minted*, activity individual *minted*, plus one repeat leg for the
+canopy as a second passive participant -- the sanctioned route to more
+than two participants.
+
+Neither application surfaced a latent inconsistency.  The
+under-constraint they *do* surface is that nothing forces the canopy
+that bears the shielding function to be the same canopy that is
+assembled into the umbrella; that identity is carried only by using
+the same individual, exactly as with the shaft-length exercise.
+**** Ursula's Umbrella Canopy Shielding Function (umb:ursula-s-umbrella-canopy-shielding-function)
+ - Types :: lis:Function
+ - Facts :: lis:realizedIn umb:ursula-s-umbrella-canopy-shielding
+ - skos:definition :: "The function of the canopy of Ursula's umbrella: to shield from rain."@en
+ - pattern:appliedPattern :: pattern:IDO-pattern-function
+**** Ursula's Umbrella Canopy Shielding (umb:ursula-s-umbrella-canopy-shielding)
+ - Types :: umb:rain-shielding
+ - Facts :: lis:hasActiveParticipant umb:ursula-s-umbrella-canopy
+ - skos:definition :: "An occasion on which the canopy of Ursula's umbrella realized its rain-shielding function."@en
+ - pattern:appliedPattern :: pattern:IDO-pattern-function
+**** Ursula's Umbrella Assembly (umb:ursula-s-umbrella-assembly)
+ - Types :: umb:umbrella-assembly
+ - skos:definition :: "The activity of assembling Ursula's umbrella: the handle is fitted to the shaft, and the canopy is mounted."@en
+ - pattern:appliedPattern :: pattern:IDO-pattern-idef0
+ - Facts :: umb:has-mechanism umb:ursula
+ - Facts :: umb:has-input umb:X_02B7PM7KB
+ - Facts :: umb:has-input umb:X_02B7FWK6B
+ - Facts :: umb:has-input umb:ursula-s-umbrella-canopy
+ - Facts :: umb:has-output umb:X_02B71V8WF
+ - Facts :: umb:has-control umb:ursula-s-umbrella-assembly-specification
+**** Ursula's Umbrella Assembly Specification (umb:ursula-s-umbrella-assembly-specification)
+ - Types :: umb:assembly-specification
+ - skos:definition :: "The assembly specification governing the making of Ursula's umbrella: the order in which handle, shaft and canopy are to be fitted."@en
+**** Ursula's Umbrella Assembly Capability (umb:ursula-s-umbrella-assembly-capability)
+ - Types :: lis:Capability
+ - Facts :: lis:realizedIn umb:ursula-s-umbrella-assembly
+ - skos:definition :: "Ursula's capability to carry out the complicated assembly of an umbrella herself, without assistance: it is borne by Ursula and realized in the assembly activity, which is why she -- and not a tool or a factory -- is the IDEF0 Mechanism of that box."@en
+**** Ursula's Head Circumference Datum (umb:ursula-s-head-circumference-datum)
+ - Types :: lis:ScalarQuantityDatum
+ - Facts :: lis:datumValue "57"^^xsd:float
+ - Facts :: lis:datumUOM unit:CentiM
+ - skos:definition :: "The scalar quantity datum recording Ursula's head circumference as 57 cm (hat size)."@en
 *** Units of measure                                             :nodeclare:
 In an IDO-compliant ontology a unit of measure is an *individual* -- an
 instance of =lis:UnitOfMeasure= (or its subclass =lis:Scale=) -- not a
