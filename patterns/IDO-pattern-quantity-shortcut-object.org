@@ -1,0 +1,304 @@
+#+title: IDO modelling pattern: quantity datum, shortcut object property
+#+subtitle: An OWL ontology
+#+author: johanw
+#+date: Created 2026-07-29 18:37
+#+call: theme-elot()
+
+See [[file:pattern-framework.org][pattern-framework.org]] for the framework, [[file:pattern-vocabulary.org][pattern-vocabulary.org]] for
+the =pattern:= vocabulary, and [[file:README.org][README.org]] for the library index.
+
+* IDO-pattern-quantity-shortcut-object
+:PROPERTIES:
+:ID: IDO-pattern-quantity-shortcut-object
+:ELOT-context-type: ontology
+:ELOT-context-localname: IDO-pattern-quantity-shortcut-object
+:ELOT-default-prefix: var
+:header-args:omn: :tangle ./IDO-pattern-quantity-shortcut-object.omn :noweb yes
+:header-args:emacs-lisp: :tangle no :exports results
+:header-args: :padline yes
+:END:
+
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+
+#+caption: OWL ontology prefixes
+| prefix   | uri                                           |
+|----------+-----------------------------------------------|
+| owl:     | http://www.w3.org/2002/07/owl#                |
+| rdf:     | http://www.w3.org/1999/02/22-rdf-syntax-ns#   |
+| xml:     | http://www.w3.org/XML/1998/namespace          |
+| xsd:     | http://www.w3.org/2001/XMLSchema#             |
+| rdfs:    | http://www.w3.org/2000/01/rdf-schema#         |
+| skos:    | http://www.w3.org/2004/02/skos/core#          |
+| dc:      | http://purl.org/dc/elements/1.1/              |
+| dcterms: | http://purl.org/dc/terms/                     |
+| lis:     | http://rds.posccaesar.org/ontology/lis14/rdl/ |
+| lis-ont: | http://rds.posccaesar.org/ontology/lis14/ont/ |
+| var:     | http://example.org/variable/                  |
+| pattern: | http://example.org/pattern/                   |
+
+** IDO-pattern-quantity-shortcut-object ontology (pattern:IDO-pattern-quantity-shortcut-object pattern:IDO-pattern-quantity-shortcut-object/0.0)
+:PROPERTIES:
+:ID:       IDO-pattern-quantity-shortcut-object-ontology-declaration
+:resourcedefs: yes
+:END:
+ - owl:versionInfo :: 0.0 start of IDO-pattern-quantity-shortcut-object
+ - dcterms:modified ::  {{{time("%Y-%m-%d")}}}^^xsd:date
+ - dcterms:description :: This ontology is an IDO modelling pattern: a physical object is related directly to a quality datum by a shortcut object property whose name states the quality kind, so the quality individual is left implicit. The graph is smaller and simpler to query, but the quality itself can no longer be referred to, qualified or dated.
+ - Import :: pattern:pattern-vocabulary
+ - Import :: lis-ont:core
+
+*** How to apply this pattern                                   :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-quantity-shortcut-object-howto
+:END:
+
+The generic procedure is in [[file:pattern-framework.org::*Applying a pattern: the generic procedure][Applying a pattern: the generic
+procedure]]. Specific to /this/ pattern:
+
+- The one slot that distinguishes this pattern from the full form is
+  ~var:shortcutQuantityProperty~, a *minted object property* nested
+  under ~lis:hasQualityQuantifiedAs~. Its name states the quality
+  kind (~ex:hasMass~, ~ex:hasThickness~), which is what allows the
+  quality individual to be left out: what the fullform pattern says
+  with an individual of a quantity kind, this pattern says with the
+  choice of property.
+- *The property slot is TBox, so it is minted once and bound
+  thereafter* --- hence its ~BIND_OR_MINT~ action. The ABox slots
+  (~var:TheDomainThing~, ~var:TheDomainScalarQuantityDatum~) are fresh
+  on every application; the shortcut property is not. Once ~ex:hasMass~
+  exists, every later mass attribution in the ontology, for any
+  physical object, must reuse it. Minting a second mass shortcut is a
+  modelling error. If the existing property's ~Domain~ is too narrow
+  for the new subject class, widen the domain (or drop it) rather than
+  mint a second property.
+- Correspondingly, ~var:DomainScalarQuantityDatumType~ is ~BIND~: it is
+  a datum kind shared across the ontology, not a per-application type.
+- Because the quality kind is stated in a name rather than in a
+  resource, annotate the minted property: give the intended quantity
+  kind as an *IRI* and any quantification type (measured, nominal,
+  ...). IDO's usage note on ~lis:hasQualityQuantifiedAs~ asks for
+  this. See /Annotating the implied quantity kind/ below for the
+  placeholder annotation property and the vocabulary choice.
+- The datum end is unchanged from the full form:
+  ~var:TheDomainScalarQuantityDatum~ still carries ~lis:datumValue~
+  and ~lis:datumUOM~, so unit and datum-level context survive.
+- The literal to supply is the ~lis:datumValue~ magnitude, e.g.
+  ~"75.0"^^xsd:decimal~.
+- Optional, per the shared ergonomics rules: mint the inverse leg too,
+  nested under ~lis:quantifiesQualityOf~. It is not part of the
+  minimal pattern.
+
+*** Required constants (borrow these first)                     :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-quantity-shortcut-object-constants
+:END:
+
+All from ~lis-ont:core~ (IDO): ~lis:PhysicalObject~,
+~lis:ScalarQuantityDatum~ (and its parent ~lis:QualityDatum~, which is
+the declared range of the shortcut super-property),
+~lis:UnitOfMeasure~, the data property ~lis:datumValue~, the object
+properties ~lis:datumUOM~ and ~lis:hasQualityQuantifiedAs~.
+
+~lis:hasQualityQuantifiedAs~ is the important one: it has ~Domain
+lis:Object~ and ~Range lis:QualityDatum~, so a shortcut property
+minted beneath it inherits both. Check the domain class and the datum
+type against those before instantiating.
+
+*** Annotating the implied quantity kind -- placeholder terms    :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-quantity-shortcut-object-placeholders
+:END:
+
+This pattern leaves out the quality individual, so the quantity kind
+the shortcut property stands for is recorded only as an annotation on
+the property. That annotation needs an annotation property, and the
+library does not yet own a namespace in which to declare one --- that
+is RDL work, not pattern work, and is deferred.
+
+Until then, use the placeholder term
+
+: pat:impliedQuantityKind
+
+(prefix ~pat:~, a temporary namespace declared in the applying
+ontology), with an *IRI* value:
+
+#+begin_example
+,*** hasMass (ex:hasMass)
+ - pat:impliedQuantityKind :: quantitykind:Mass
+   - rdfs:comment :: Shortcut OP; the quantity kind is not recoverable
+     from the graph, hence this annotation.
+#+end_example
+
+Two conventions make later migration cheap:
+
+1. *Values are IRIs, never literals.* A quantity-kind IRI can be
+   replaced, aligned or dereferenced; a string cannot. ELOT's nested
+   description lists allow a comment on the row itself when an
+   explanation is needed.
+2. *The vocabulary is not fixed to QUDT.* ~quantitykind:~ (QUDT) is
+   the default and what the worked example uses, but OM (~om:Mass~),
+   UCUM, or a project RDL are equally admissible. Pick one vocabulary
+   per ontology and say which, in the ontology header.
+
+When the RDL term exists, replacing the placeholder is a prefix swap
+or a single ~elot_rename_resource~.
+
+*** Worked example: mass of a motor                             :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-quantity-shortcut-object-example
+:END:
+
+A concrete instantiation modelling "this motor has a mass of 75 kg",
+without introducing a mass /quality/ individual.
+
+#+caption: Substitution of pattern placeholders for the motor-mass example
+| pattern placeholder               | concrete resource      |
+|-----------------------------------+------------------------|
+| var:DomainClass                   | ex:Motor               |
+| var:DomainScalarQuantityDatumType | ex:MeasuredDatum       |
+| var:shortcutQuantityProperty      | ex:hasMass             |
+| var:TheDomainThing                | ex:motor-101           |
+| var:TheDomainScalarQuantityDatum  | ex:motor-101-massDatum |
+| var:TheUnitOfMeasure              | unit:KiloGM            |
+| lis:datumValue literal            | "75.0"^^xsd:decimal    |
+
+Reading the result: ~ex:motor-101~ (an ~ex:Motor~) ~ex:hasMass~
+~ex:motor-101-massDatum~ (an ~ex:MeasuredDatum~), which carries the
+value ~75.0~ with unit ~unit:KiloGM~. That the datum quantifies a
+mass is recorded only by the name and the annotations of ~ex:hasMass~.
+
+*Second application, same ontology.* To state that ~ex:pump-7~ has a
+mass of 40 kg, only the ABox slots are filled anew: a fresh datum
+individual, a fresh literal, the unit borrowed again. ~ex:hasMass~ is
+bound, not minted -- and if its ~Domain~ was left as ~ex:Motor~, widen
+it (to ~lis:PhysicalObject~, or drop the domain axiom) rather than
+mint an ~ex:pumpHasMass~.
+
+*** Relationship to IDO-pattern-quantity-datum-fullform         :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-quantity-shortcut-object-sibling
+:END:
+
+Sibling: [[file:IDO-pattern-quantity-datum-fullform.org][IDO-pattern-quantity-datum-fullform]].
+
+*What this variant leaves out.* Two individuals of the full form:
+~var:TheDomainQuantity~ (the quality being quantified) and, with it,
+the class placeholder ~var:DomainQuantityKind~. The datum, the unit
+individual and the literal are unchanged, as is the datum end of the
+pattern.
+
+*Explicit -> shortcut is entailed, and not by us.* IDO already
+declares
+
+: lis:hasQualityQuantifiedAs SubPropertyChain: lis:hasQuality o lis:qualityQuantifiedAs
+
+so any fullform instantiation entails the corresponding
+~lis:hasQualityQuantifiedAs~ link from object to datum under a
+reasoner, given the import. It does /not/ entail the more specific
+minted ~var:shortcutQuantityProperty~ link -- for that, the applier
+would have to assert a chain axiom on the minted property itself,
+e.g. ~ex:hasMass SubPropertyChain: ex:hasMassQuality o
+lis:qualityQuantifiedAs~.
+
+*The chain axiom is documented, not asserted.* This pattern does not
+assert a ~SubPropertyChain~ on ~var:shortcutQuantityProperty~.
+Asserting it would presume that the target ontology also applies the
+fullform pattern for the same quality and has minted a quality-kind
+property to chain through. An applier who does use both patterns side
+by side should add the chain axiom at apply time; it is a compatible
+addition.
+
+*Shortcut -> explicit is not available.* Recovering the quality
+individual from a shortcut link requires generating a fresh
+individual, which OWL 2 DL cannot do; it needs SWRL, SHACL-AF rules or
+a construction query. If the quality may later need to be referred to,
+use the full form now.
+
+# LLM: we don't need a Datatypes section. Ignore that lint warning!
+
+** Classes
+:PROPERTIES:
+:ID:       IDO-pattern-quantity-shortcut-object-class-hierarchy
+:resourcedefs: yes
+:END:
+*** lis:PhysicalObject
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+**** var:DomainClass
+ - pattern:action :: BIND
+ - pattern:instruction :: An object type declared in the domain ontology. Examples: Motor, Umbrella, Street. The domain class of the object being described (normally already in the file).
+*** lis:QualityDatum
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+**** lis:ScalarQuantityDatum
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+***** var:DomainScalarQuantityDatumType
+ - pattern:action :: BIND
+ - pattern:instruction :: The datum kind, usually ~lis:ScalarQuantityDatum~ itself or a generic subtype (e.g. "measured", "nominal"); avoid per-use-case datum types.
+*** lis:UnitOfMeasure
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+** Object properties
+:PROPERTIES:
+:ID:       IDO-pattern-quantity-shortcut-object-object-property-hierarchy
+:resourcedefs: yes
+:END:
+*** lis:hasQualityQuantifiedAs
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+**** var:shortcutQuantityProperty
+ - Domain :: var:DomainClass
+ - Range :: var:DomainScalarQuantityDatumType
+ - pattern:action :: BIND_OR_MINT
+ - pattern:instruction :: The shortcut relation from object to datum. FIRST check whether the target ontology already declares a shortcut property for this quality kind -- a sub-property of ~lis:hasQualityQuantifiedAs~ whose quantity-kind annotation matches; if so, BIND it and mint nothing. This property is TBox: it is established once and reused by every later application for the same quality, so a second object needing a mass reuses the existing ~ex:hasMass~. Only if no such property exists, mint it in the domain namespace with a name stating the quality kind, e.g. ~ex:hasMass~, ~ex:hasThickness~ -- that name is the only record of which quality is quantified, since no quality individual is created. Annotate the minted property with the intended quantity kind (a QUDT ~quantitykind:~ IRI) and, where relevant, the quantification type (measured, nominal). Keep it nested under ~lis:hasQualityQuantifiedAs~.
+*** lis:datumUOM
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+** Data properties
+:PROPERTIES:
+:ID:       IDO-pattern-quantity-shortcut-object-data-property-hierarchy
+:resourcedefs: yes
+:END:
+*** lis:datumValue
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+** Annotation properties
+:PROPERTIES:
+:ID:       IDO-pattern-quantity-shortcut-object-annotation-property-hierarchy
+:resourcedefs: yes
+:END:
+*** action (pattern:action)
+ - rdfs:isDefinedBy :: <http://example.org/pattern/pattern-vocabulary>
+*** instruction (pattern:instruction)
+ - rdfs:isDefinedBy :: <http://example.org/pattern/pattern-vocabulary>
+*** value (pattern:value)
+*** owl:versionInfo
+*** dcterms:modified
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dcterms:description
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+** Individuals
+:PROPERTIES:
+:ID:       IDO-pattern-quantity-shortcut-object-individuals
+:resourcedefs: yes
+:END:
+*** var:TheDomainThing
+ - Types :: var:DomainClass
+ - Facts :: var:shortcutQuantityProperty var:TheDomainScalarQuantityDatum
+ - pattern:action :: MINT_OR_BIND
+ - pattern:instruction :: The primary subject of interest, a physical thing whose quality is quantified. Mint a fresh instance, or bind an existing in-file subject individual.
+*** var:TheDomainScalarQuantityDatum
+ - Types :: var:DomainScalarQuantityDatumType
+ - Facts :: lis:datumValue "100"^^xsd:decimal
+   - pattern:value :: xsd:decimal
+ - Facts :: lis:datumUOM var:TheUnitOfMeasure
+ - pattern:action :: MINT
+ - pattern:instruction :: The datum that holds numeric value and unit of measure. Always a fresh datum individual. There is no ~lis:quantifiesQuality~ leg here -- the quality it quantifies is implicit in the shortcut property's name.
+*** var:TheUnitOfMeasure
+ - Types :: lis:UnitOfMeasure
+ - pattern:action :: BORROW_OR_MINT
+ - pattern:instruction :: Typically borrow from QUDT ~unit:~; mint if QUDT lacks the unit.

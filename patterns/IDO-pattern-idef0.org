@@ -1,0 +1,431 @@
+#+title: IDO modelling pattern: IDEF0 (ICOM paradigm)
+#+subtitle: An OWL ontology
+#+author: johanw
+#+date: Created 2026-08-07
+#+call: theme-elot()
+
+See [[file:pattern-framework.org][pattern-framework.org]] for the framework, [[file:pattern-vocabulary.org][pattern-vocabulary.org]] for
+the =pattern:= vocabulary, and [[file:README.org][README.org]] for the library index.
+
+* IDO-pattern-idef0
+:PROPERTIES:
+:ID: IDO-pattern-idef0
+:ELOT-context-type: ontology
+:ELOT-context-localname: IDO-pattern-idef0
+:ELOT-default-prefix: var
+:header-args:omn: :tangle ./IDO-pattern-idef0.omn :noweb yes
+:header-args:emacs-lisp: :tangle no :exports results
+:header-args: :padline yes
+:END:
+
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+
+#+caption: OWL ontology prefixes
+| prefix   | uri                                           |
+|----------+-----------------------------------------------|
+| owl:     | http://www.w3.org/2002/07/owl#                |
+| rdf:     | http://www.w3.org/1999/02/22-rdf-syntax-ns#   |
+| xml:     | http://www.w3.org/XML/1998/namespace          |
+| xsd:     | http://www.w3.org/2001/XMLSchema#             |
+| rdfs:    | http://www.w3.org/2000/01/rdf-schema#         |
+| skos:    | http://www.w3.org/2004/02/skos/core#          |
+| dc:      | http://purl.org/dc/elements/1.1/              |
+| dcterms: | http://purl.org/dc/terms/                     |
+| lis:     | http://rds.posccaesar.org/ontology/lis14/rdl/ |
+| lis-ont: | http://rds.posccaesar.org/ontology/lis14/ont/ |
+| var:     | http://example.org/variable/                  |
+| pattern: | http://example.org/pattern/                   |
+
+** IDO-pattern-idef0 ontology (pattern:IDO-pattern-idef0 pattern:IDO-pattern-idef0/0.0)
+:PROPERTIES:
+:ID:       IDO-pattern-idef0-ontology-declaration
+:resourcedefs: yes
+:END:
+ - owl:versionInfo :: 0.0 start of IDO-pattern-idef0
+ - dcterms:modified ::  {{{time("%Y-%m-%d")}}}^^xsd:date
+ - dcterms:description :: This ontology is an IDO modelling pattern adapting the IDEF0 Box Format (ICOM: Input, Control, Output, Mechanism). The IDEF0 box is an activity that transforms an input into an output, using a mechanism, governed by a control. All four ICOM arrows are participations in the IDO sense, so this is a role-vocabulary variant of IDO-pattern-participation: it keeps that pattern's anchor and its active/passive distinction and refines them into the four IDEF0 roles. Because no reference data library currently supplies the four relations, they are minted in the target ontology's namespace, nested under IDO's participation relations.
+ - Import :: pattern:pattern-vocabulary
+ - Import :: lis-ont:core
+
+*** Relationship to IDO-pattern-participation                   :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-idef0-relationship-participation
+:END:
+
+This pattern and [[file:IDO-pattern-participation.org][patterns/IDO-pattern-participation.org]] share the
+anchor (an ~lis:Activity~ individual), the assertion direction and the
+cardinality treatment; they differ only in how finely the participant
+roles are named.
+
+*The relating axioms are asserted, not merely documented.* The four
+ICOM relations are declared as sub-properties of IDO's participation
+relations, by heading nesting in the Object properties section below:
+
+- ~var:hasMechanism~ under ~lis:hasActiveParticipant~ -- the mechanism
+  is what brings itself to bear, and is the bearer of the
+  ~lis:Function~ the activity realizes.
+- ~var:hasInput~ under ~lis:hasPassiveParticipant~ -- the input is
+  transformed or consumed.
+- ~var:hasOutput~ under ~lis:hasPassiveParticipant~ -- the output is
+  produced or modified; passive in the same sense, but distinguished
+  from input by the direction of the transformation, which IDO does
+  not itself express. That distinction is added by this pattern.
+- ~var:hasControl~ under ~lis:hasParticipant~ only. A control governs
+  the activity without being transformed by it and without acting on
+  it in the sense IDO's active role intends: it is neither clearly
+  active nor clearly passive, so placing it under either role relation
+  would be wrong.
+
+*Assert the ICOM leg only -- do not repeat it generically.* Because
+the four relations are asserted sub-properties, a ~var:hasInput~ fact
+entails the corresponding ~lis:hasPassiveParticipant~ fact. Writing
+both on the same activity states the same thing twice, and a reader
+cannot tell which vocabulary is authoritative. When this pattern is
+applied to an activity that already has generic participation facts,
+replace those facts with the ICOM legs. The generic view remains
+available by reasoning.
+
+*Direction of reduction.* Every application of this pattern reduces to
+an application of the participation pattern: drop the four minted
+sub-properties and the entailed ~lis:hasActiveParticipant~ /
+~lis:hasPassiveParticipant~ legs remain, with the control becoming a
+bare ~lis:hasParticipant~. The reverse is not available -- nothing in
+IDO says whether a passive participant was an input or an output, and
+a bare participant could be a control or anything else. When the ICOM
+roles are not clear, apply the participation pattern instead.
+
+*What this pattern leaves out relative to its sibling.*
+~lis:hasPrimaryParticipant~: IDEF0 has no corresponding arrow, and the
+mechanism is not automatically the primary participant. Add it at
+apply time if the stronger claim holds. Neither pattern gives roles
+their own individuals.
+
+*** How to apply this pattern                                   :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-idef0-howto
+:END:
+
+The generic procedure is in [[file:pattern-framework.org::*Applying a pattern: the generic procedure][Applying a pattern: the generic
+procedure]]. Specific to /this/ pattern:
+
+- *The activity is the anchor.* The four ICOM legs all radiate from
+  this one event (~var:TheActivity~), asserted in IDO's own direction
+  (~lis:hasParticipant~ has ~Domain lis:Activity~, ~Range
+  lis:Object~).
+- *Two forms: class-level and individual-level.* The pattern body
+  below is written with individuals, but the class-level form is what
+  most ontology work needs. See /Class-level form/ below.
+- *The IDEF0 box is an activity, not a function.* In IDO a
+  ~lis:Function~ is a realizable dependent entity; the doing is an
+  ~lis:Activity~. The box maps to the activity. Where the function
+  borne by the mechanism must itself be stated, apply
+  [[file:IDO-pattern-function.org][patterns/IDO-pattern-function.org]] to the mechanism and this pattern
+  to the activity; the two compose on the same activity individual.
+- *Minting the four relations.* No reference data library currently
+  supplies ~hasInput~ / ~hasControl~ / ~hasOutput~ / ~hasMechanism~,
+  so ~BIND_OR_MINT~ them in the *target ontology's* namespace, keeping
+  the heading nesting this pattern shows -- that nesting is what makes
+  them inherit IDO's ~Domain~ and ~Range~ and the participation chain
+  axioms. When an RDL later supplies standard relations, alignment is
+  one ~rdfs:subPropertyOf~ or ~owl:equivalentProperty~ row per
+  relation; no instance data has to move.
+- *The activity kind and the four relations are TBox slots*
+  (~BIND_OR_MINT~, bind-first): established once per ontology and
+  shared by every later application. Minting a second ~hasInput~ for a
+  second activity kind is the common error here. The four participant
+  classes are ~BIND~; the individuals are fresh per application, but
+  participants are usually objects the ontology already describes.
+
+*** Class-level form: ICOM as existential restrictions          :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-idef0-tbox
+:END:
+
+Most ontology building is TBox work: the interesting claim is not that
+/this/ stamping event had a blank as input, but that *every* stamping
+activity does. The ICOM legs then become existential restrictions on
+~var:ActivityKind~:
+
+#+begin_example
+var:ActivityKind SubClassOf: var:hasInput     some var:InputClass
+var:ActivityKind SubClassOf: var:hasControl   some var:ControlClass
+var:ActivityKind SubClassOf: var:hasOutput    some var:OutputClass
+var:ActivityKind SubClassOf: var:hasMechanism some var:MechanismClass
+#+end_example
+
+In ELOT these are four ~SubClassOf ::~ rows on the activity-kind
+heading; each value is an anonymous class expression.
+
+*What the restrictions do and do not say.* ~some~ says an activity of
+this kind has at least one participant of that kind in that role,
+which is the IDEF0 reading of an arrow into or out of a box. It does
+not say the activity has only such participants, nor exactly one. Do
+not strengthen it:
+
+- ~only~ (universal) is almost always wrong -- it forbids the further
+  inputs real activities acquire (lubricant, jigs, consumables).
+- ~exactly 1~ is wrong for the same reason.
+- A closure axiom (~hasInput only (A or B)~) is defensible for a
+  tightly specified manufacturing step, but it is a separate
+  commitment, not part of this pattern.
+
+*The two forms compose.* Assert the restrictions on the class once;
+assert ICOM legs on individuals only where the /specific/ participants
+matter. An individual box need not repeat what its class already says,
+and the class-level restrictions are not entailed by any number of
+individual assertions.
+
+*Which form to apply.* Class-level when modelling a kind of activity --
+a process step in a plant model, a procedure in a standard.
+Individual-level when recording that a particular event happened with
+particular participants. A process library will normally be almost
+entirely class-level.
+
+*** Cardinality: what this pattern commits to                    :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-idef0-cardinality
+:END:
+
+The commitment is one leg of each of the four roles per application --
+a fixed arity of four, so no expansion machinery is needed.
+
+*Not handled:* an activity with /n/ inputs (three components fed to
+one assembly) or /n/ controls. As in the sibling pattern, bind
+~var:TheActivity~ -- which is ~MINT_OR_BIND~ for this reason -- and
+write only the additional leg. In the class-level form the question
+largely goes away: /n/ inputs are /n/ ~SubClassOf :: var:hasInput some
+...~ rows on the same class.
+
+*Scaling.* Two costs grow with model size, and both are reduced by
+working class-level:
+
+1. /Per-box individuals./ The individual form needs an activity
+   individual and up to four participant individuals per box. A
+   fifty-box process model becomes hundreds of individuals asserting
+   nothing a class-level model would not assert better. Use the
+   class-level form by default and reserve individuals for recorded
+   executions.
+2. /Shared controls and mechanisms./ Controls in particular are
+   shared: one specification governs many steps, one machine performs
+   many operations. The ~BIND_OR_MINT~ default is bind-first for this
+   reason, but the worked example below mints -- read the actions, not
+   the example. Minting a fresh control individual per box is the
+   common scaling error here.
+
+A third cost is not the pattern's to solve: the four relations are
+minted per target ontology, so two ontologies applying this pattern
+will not interoperate without alignment. That is the price of the
+missing RDL, and it is one ~owl:equivalentProperty~ row per relation
+when an RDL appears.
+
+*** Required constants (borrow these first)                     :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-idef0-constants
+:END:
+
+All from ~lis-ont:core~ (IDO), verified against IDO 4.2:
+
+- ~lis:Activity~ -- domain of the participation relations.
+- ~lis:Object~ -- their range; ancestor of the four participant
+  classes.
+- ~lis:hasParticipant~ (~Domain lis:Activity~, ~Range lis:Object~,
+  inverse ~lis:participantIn~), carrying the participation chain
+  axioms -- direct parent of ~var:hasControl~.
+- ~lis:hasActiveParticipant~ -- parent of ~var:hasMechanism~.
+- ~lis:hasPassiveParticipant~ -- parent of ~var:hasInput~ and
+  ~var:hasOutput~.
+
+Nesting matters here: the two role relations have no ~Domain~/~Range~
+of their own and inherit both from ~lis:hasParticipant~. Declared at
+top level in a target ontology they would be unconstrained.
+
+*** Participation roles: a scoped limitation                    :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-idef0-roles
+:END:
+
+The four ICOM relations name /how/ something participates. But which
+relation applies is not a property of the participant's kind -- it is a
+property of the participation. A hammer participates in a nail-driving
+activity *as a tool*: that is the Mechanism leg, and only such a
+participation realizes the hammer's function. If instead a nail is
+driven into the hammer's wooden shaft, the hammer participates in a
+nail-driving activity as *Input* -- same object, same kind of activity,
+and no realization of its function.
+
+Two consequences for anyone applying this pattern:
+
+- *Do not infer the leg from the class.* ~var:MechanismClass~ is not
+  "the class of things that are mechanisms"; it is the class to which
+  the mechanism of this activity kind happens to belong. The same
+  class may fill ~var:InputClass~ in another application. Restricting
+  the ~Range~ of ~var:hasMechanism~ to a "tool" class is therefore a
+  modelling error.
+- *Roles have no individuals of their own.* There is no individual
+  standing for "the tool role this hammer had in event 17". The
+  relation gives the role -- enough for IDEF0 and most process
+  modelling, not enough when roles must themselves be dated, qualified
+  or annotated.
+
+When the mechanism's participation is supposed to realize a function
+or capability it bears, say so by composing with
+[[file:IDO-pattern-function.org][patterns/IDO-pattern-function.org]]: the mechanism ~lis:hasFunction~ (or
+~lis:hasCapability~) a realizable that is ~lis:realizedIn~ the
+activity. That composition, not the ~var:hasMechanism~ leg by itself,
+is what distinguishes hammer-as-tool from hammer-as-workpiece.
+
+*Open library-level question.* A general treatment -- roles as
+individuals, borne or assigned, with the participation typed by the
+role rather than by a relation per pattern -- would cover the ICOM
+vocabulary and several others. Out of scope here: this pattern buys
+IDEF0's four familiar roles at the cost of not generalising.
+
+*** Worked example: stamping a metal blank                      :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-idef0-example
+:END:
+
+"A stamping press (Mechanism) stamps a metal blank (Input) into a part
+(Output) according to a design specification (Control)."
+
+#+caption: Substitution of pattern placeholders for the stamping example
+| pattern placeholder | concrete resource                                |
+|---------------------+--------------------------------------------------|
+| var:ActivityKind    | ex:stamping-activity                             |
+| var:InputClass      | ex:metal-blank                                   |
+| var:ControlClass    | ex:design-specification                          |
+| var:OutputClass     | ex:stamped-part                                  |
+| var:MechanismClass  | ex:stamping-press                                |
+| var:hasInput        | ex:hasInput (under lis:hasPassiveParticipant)    |
+| var:hasControl      | ex:hasControl (under lis:hasParticipant)         |
+| var:hasOutput       | ex:hasOutput (under lis:hasPassiveParticipant)   |
+| var:hasMechanism    | ex:hasMechanism (under lis:hasActiveParticipant) |
+| var:TheActivity     | ex:stamping-event-001                            |
+| var:TheInput        | ex:blank-X                                       |
+| var:TheControl      | ex:spec-V2                                       |
+| var:TheOutput       | ex:part-Y                                        |
+| var:TheMechanism    | ex:press-machine-A                               |
+
+Reading the result: one activity individual of kind
+~ex:stamping-activity~ with four asserted ICOM legs -- and, entailed by
+the sub-property nesting, the press as an active participant and both
+blank and part as passive participants.
+
+*Second application, same activity.* To add a lubricant as a further
+input, bind ~ex:stamping-event-001~ (the ~MINT_OR_BIND~ anchor) and
+write only the new leg. See /Cardinality/ above.
+
+*Chaining boxes.* To model the stamped part feeding a downstream
+inspection box, apply the pattern a second time with a fresh activity
+and *bind* ~ex:part-Y~ into its ~var:TheInput~ slot. That shared
+individual is the IDEF0 arrow between the two boxes.
+
+# LLM: we don't need a Datatypes section. Ignore that lint warning!
+
+** Classes
+:PROPERTIES:
+:ID:       IDO-pattern-idef0-class-hierarchy
+:resourcedefs: yes
+:END:
+*** lis:Activity
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+**** var:ActivityKind
+ - pattern:action :: BIND_OR_MINT
+ - pattern:instruction :: The kind of activity -- the IDEF0 box, named as engineers name it (Stamping, Inspection, Heat treatment). The TBox slot of this pattern: established once per ontology and reused by every later application, so FIRST search the target file for an existing activity class before minting. Mint nested under ~lis:Activity~.
+*** lis:Object
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+**** var:InputClass
+ - pattern:action :: BIND
+ - pattern:instruction :: The class of the object that is transformed or consumed by the activity. Normally already declared in the target ontology.
+**** var:ControlClass
+ - pattern:action :: BIND
+ - pattern:instruction :: The class of the object that governs the activity without being transformed by it. Often an information-bearing object (specification, procedure, plan), but not necessarily: a digital process controller emitting control signals, a jig fixing an allowed range of motion, or a regulatory regime are equally IDEF0 Controls. Do NOT constrain the control relation to an information-object range; if the target ontology has no suitable class, borrow or mint one for the specific kind of control at hand.
+**** var:OutputClass
+ - pattern:action :: BIND
+ - pattern:instruction :: The class of the object produced or modified by the activity. May coincide with the input class when the activity modifies rather than consumes; if so, BIND both slots to it.
+**** var:MechanismClass
+ - pattern:action :: BIND
+ - pattern:instruction :: The class of the agent, tool or resource that performs the activity -- the bearer of the function the activity realizes.
+
+** Object properties
+:PROPERTIES:
+:ID:       IDO-pattern-idef0-object-property-hierarchy
+:resourcedefs: yes
+:END:
+*** lis:hasParticipant
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+**** var:hasControl
+ - pattern:action :: BIND_OR_MINT
+ - pattern:instruction :: The IDEF0 Control leg. Deliberately NOT nested under lis:hasActiveParticipant or lis:hasPassiveParticipant -- a control neither acts nor is acted upon, so it hangs directly from lis:hasParticipant. Bind-first: one control relation per ontology, shared by every activity kind. Leave its Range open (inherited lis:Object): controls range from specifications and procedures to process controllers and jigs.
+**** lis:hasActiveParticipant
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+***** var:hasMechanism
+ - pattern:action :: BIND_OR_MINT
+ - pattern:instruction :: The IDEF0 Mechanism leg: the agent, tool or resource performing the activity. Nested under lis:hasActiveParticipant, which is exactly IDO's notion of the participant that acts. Bind-first.
+**** lis:hasPassiveParticipant
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+***** var:hasInput
+ - pattern:action :: BIND_OR_MINT
+ - pattern:instruction :: The IDEF0 Input leg: the object transformed or consumed. Nested under lis:hasPassiveParticipant. Bind-first.
+***** var:hasOutput
+ - pattern:action :: BIND_OR_MINT
+ - pattern:instruction :: The IDEF0 Output leg: the object produced or modified. Also passive, but distinguished from input by the direction of the transformation -- a distinction IDO does not draw and this pattern adds. Bind-first.
+
+** Data properties
+:PROPERTIES:
+:ID:       IDO-pattern-idef0-data-property-hierarchy
+:resourcedefs: yes
+:END:
+
+** Annotation properties
+:PROPERTIES:
+:ID:       IDO-pattern-idef0-annotation-property-hierarchy
+:resourcedefs: yes
+:END:
+*** action (pattern:action)
+ - rdfs:isDefinedBy :: <http://example.org/pattern/pattern-vocabulary>
+*** instruction (pattern:instruction)
+ - rdfs:isDefinedBy :: <http://example.org/pattern/pattern-vocabulary>
+*** owl:versionInfo
+*** dcterms:modified
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dcterms:description
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+
+** Individuals
+:PROPERTIES:
+:ID:       IDO-pattern-idef0-individuals
+:resourcedefs: yes
+:END:
+*** var:TheActivity
+ - Types :: var:ActivityKind
+ - Facts :: var:hasInput var:TheInput
+ - Facts :: var:hasControl var:TheControl
+ - Facts :: var:hasOutput var:TheOutput
+ - Facts :: var:hasMechanism var:TheMechanism
+ - pattern:action :: MINT_OR_BIND
+ - pattern:instruction :: The activity individual -- the IDEF0 box, and the anchor of the pattern. Normally minted fresh; bind an existing activity when adding a further ICOM leg to an activity already described (the route to more than one input -- see the Cardinality block).
+*** var:TheInput
+ - Types :: var:InputClass
+ - pattern:action :: BIND_OR_MINT
+ - pattern:instruction :: The object entering the box. Bind-first: it is usually an object the ontology already describes -- in a chained diagram, the individual bound as the output of the upstream box.
+*** var:TheControl
+ - Types :: var:ControlClass
+ - pattern:action :: BIND_OR_MINT
+ - pattern:instruction :: The governing specification, procedure, plan, controller or fixture. Bind-first: controls are shared across many activities, and minting a fresh one per application is the common scaling error here.
+*** var:TheOutput
+ - Types :: var:OutputClass
+ - pattern:action :: BIND_OR_MINT
+ - pattern:instruction :: The object leaving the box. Mint when the activity genuinely brings a new object into being; bind when it modifies an object the ontology already describes.
+*** var:TheMechanism
+ - Types :: var:MechanismClass
+ - pattern:action :: BIND_OR_MINT
+ - pattern:instruction :: The performing agent, tool or resource. Bind-first: equipment is normally already described in the target ontology.

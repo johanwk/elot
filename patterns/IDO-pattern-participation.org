@@ -1,0 +1,240 @@
+#+title: IDO modelling pattern: participation in an activity, by role
+#+subtitle: An OWL ontology
+#+author: johanw
+#+date: Created 2026-08-07
+#+call: theme-elot()
+
+See [[file:pattern-framework.org][pattern-framework.org]] for the framework, [[file:pattern-vocabulary.org][pattern-vocabulary.org]] for
+the =pattern:= vocabulary, and [[file:README.org][README.org]] for the library index.
+
+* IDO-pattern-participation
+:PROPERTIES:
+:ID: IDO-pattern-participation
+:ELOT-context-type: ontology
+:ELOT-context-localname: IDO-pattern-participation
+:ELOT-default-prefix: var
+:header-args:omn: :tangle ./IDO-pattern-participation.omn :noweb yes
+:header-args:emacs-lisp: :tangle no :exports results
+:header-args: :padline yes
+:END:
+
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+
+#+caption: OWL ontology prefixes
+| prefix   | uri                                           |
+|----------+-----------------------------------------------|
+| owl:     | http://www.w3.org/2002/07/owl#                |
+| rdf:     | http://www.w3.org/1999/02/22-rdf-syntax-ns#   |
+| xml:     | http://www.w3.org/XML/1998/namespace          |
+| xsd:     | http://www.w3.org/2001/XMLSchema#             |
+| rdfs:    | http://www.w3.org/2000/01/rdf-schema#         |
+| skos:    | http://www.w3.org/2004/02/skos/core#          |
+| dc:      | http://purl.org/dc/elements/1.1/              |
+| dcterms: | http://purl.org/dc/terms/                     |
+| lis:     | http://rds.posccaesar.org/ontology/lis14/rdl/ |
+| lis-ont: | http://rds.posccaesar.org/ontology/lis14/ont/ |
+| var:     | http://example.org/variable/                  |
+| pattern: | http://example.org/pattern/                   |
+
+** IDO-pattern-participation ontology (pattern:IDO-pattern-participation pattern:IDO-pattern-participation/0.0)
+:PROPERTIES:
+:ID:       IDO-pattern-participation-ontology-declaration
+:resourcedefs: yes
+:END:
+ - owl:versionInfo :: 0.0 start of IDO-pattern-participation
+ - dcterms:modified ::  {{{time("%Y-%m-%d")}}}^^xsd:date
+ - dcterms:description :: This ontology is an IDO modelling pattern: an activity has two objects participating in it in distinct roles -- an active participant (the one acting) and a passive participant (the one acted upon). The anchor is the activity, not the object, and no quality, datum, unit or literal appears. IDO expresses participant roles as a small fixed set of sub-relations, not as role individuals, so a role cannot itself be dated, qualified or given a provenance; and the set does not cover all thematic roles.
+ - Import :: pattern:pattern-vocabulary
+ - Import :: lis-ont:core
+
+*** Relationship to IDO-pattern-idef0                           :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-participation-relationship-idef0
+:END:
+
+[[file:IDO-pattern-idef0.org][patterns/IDO-pattern-idef0.org]] uses a more detailed role vocabulary: it
+keeps this pattern's anchor, assertion direction and cardinality
+treatment, and replaces the active/passive distinction with IDEF0's
+four roles (Input, Control, Output, Mechanism), declared as
+sub-properties of the relations used here.
+
+Choose that pattern when the domain is a systems-engineering workflow
+and the four roles are clear; choose this one when they are not. Every
+idef0 application reduces to a participation application; the reverse
+does not hold, so the choice is made at authoring time. That file's
+/Relationship to IDO-pattern-participation/ block gives the
+sub-property axioms in full.
+
+*** How to apply this pattern                                   :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-participation-howto
+:END:
+
+The generic procedure is in [[file:pattern-framework.org::*Applying a pattern: the generic procedure][Applying a pattern: the generic
+procedure]]. Specific to /this/ pattern:
+
+- *The activity is the anchor.* Both participation legs are asserted
+  on ~var:TheActivity~, in IDO's asserted direction
+  (~lis:hasParticipant~ has ~Domain lis:Activity~, ~Range
+  lis:Object~). Writing the inverse (~lis:participantIn~) instead is
+  logically equivalent but scatters an activity's participants over
+  several headings.
+- *Roles are sub-relations.* IDO 4.2 provides
+  ~lis:hasActiveParticipant~, ~lis:hasPassiveParticipant~ and
+  ~lis:hasPrimaryParticipant~ under ~lis:hasParticipant~ (each with an
+  inverse). There is no role class and no participation individual:
+  the role is given by the choice of property. If a role outside this
+  set is needed, that is a domain-ontology extension (a further
+  sub-property).
+- ~lis:hasPrimaryParticipant~ is *not* part of the minimal pattern.
+  IDO reserves it for the participant whose disposition or role the
+  activity essentially realizes -- an identity claim about the
+  activity, stronger than "the one acting". Add it at apply time when
+  that stronger claim holds; do not treat it as a synonym for the
+  active participant.
+- *The activity kind is the one bind-first slot.*
+  ~var:ActivityKind~ is ~BIND_OR_MINT~: established once per ontology
+  (Pumping, Umbrella assembly) and shared by every later
+  application. The two participant classes are ~BIND~. All three
+  individuals are fresh per application.
+- *Cardinality: handled concretely, not generally.* See below.
+
+*** Cardinality: what this pattern commits to                    :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-participation-cardinality
+:END:
+
+*Handled:* exactly two participation legs, in two fixed, distinct
+roles. That is a fixed arity, so no expansion machinery is needed --
+the pattern is a two-slot template and each slot's role is given by
+the property it hangs from.
+
+*Not handled:* an activity with /n/ passive participants (a bolting
+activity joining four plates). Apply the pattern again to the same
+~var:TheActivity~ -- bind the activity, mint only the participant.
+This works because the legs are independent: nothing has to be
+correlated across them. It relies on the anchor slot being
+~MINT_OR_BIND~ rather than ~MINT~, which is a deliberate choice here
+and should be made consciously in any future pattern with a repeatable
+leg.
+
+*** Required constants (borrow these first)                     :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-participation-constants
+:END:
+
+All from ~lis-ont:core~ (IDO), verified against IDO 4.2:
+
+- ~lis:Activity~ -- domain of the participation relations.
+- ~lis:Object~ -- their range; ancestor of both participant classes.
+- ~lis:hasParticipant~ (~Domain lis:Activity~, ~Range lis:Object~,
+  inverse ~lis:participantIn~), carrying three property chains,
+  including ~lis:hasActivityPart o lis:hasParticipant~ -- so a
+  participant in a sub-activity is a participant in the whole.
+- ~lis:hasActiveParticipant~ and ~lis:hasPassiveParticipant~, both
+  nested under ~lis:hasParticipant~.
+
+Nesting matters here: the two role relations have no ~Domain~/~Range~
+of their own and inherit both from ~lis:hasParticipant~. Declared at
+top level in a target ontology they would be unconstrained.
+
+*** Worked example: assembling Ursula's umbrella                 :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-participation-example
+:END:
+
+"In the assembly of Ursula's umbrella, the handle is fitted to the
+shaft" -- the shaft is what is acted upon, the handle is what acts.
+
+#+caption: Substitution of pattern placeholders for the umbrella-assembly example
+| pattern placeholder          | concrete resource                    |
+|------------------------------+--------------------------------------|
+| var:ActivityKind             | umb:umbrella-assembly                |
+| var:ActiveParticipantClass   | umb:handle                           |
+| var:PassiveParticipantClass  | umb:shaft                            |
+| var:TheActivity              | umb:ursula-s-umbrella-assembly       |
+| var:TheActiveParticipant     | umb:X_02B7PM7KB (Ursula's handle)    |
+| var:ThePassiveParticipant    | umb:X_02B7FWK6B (Ursula's shaft)     |
+
+Reading the result: one activity individual of kind
+~umb:umbrella-assembly~, with two asserted legs distinguishing what
+acts from what is acted upon. Both participants are *bound*, not
+minted -- they already exist in the target ontology.
+
+*Second application, same activity.* To add the canopy as a further
+passive participant, bind ~umb:ursula-s-umbrella-assembly~ (the
+~MINT_OR_BIND~ anchor) and write only the new leg. See /Cardinality/
+above.
+
+# LLM: we don't need a Datatypes section. Ignore that lint warning!
+
+** Classes
+:PROPERTIES:
+:ID:       IDO-pattern-participation-class-hierarchy
+:resourcedefs: yes
+:END:
+*** lis:Activity
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+**** var:ActivityKind
+ - pattern:action :: BIND_OR_MINT
+ - pattern:instruction :: The kind of activity in which the participation takes place (Pumping, Umbrella assembly, Nail driving). The TBox slot of this pattern: established once per ontology and reused by every later application, so FIRST search the target file for an existing activity class before minting. Mint nested under ~lis:Activity~.
+*** lis:Object
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+**** var:ActiveParticipantClass
+ - pattern:action :: BIND
+ - pattern:instruction :: The class of the object that acts -- the tool, agent or performer. Normally already declared in the target ontology.
+**** var:PassiveParticipantClass
+ - pattern:action :: BIND
+ - pattern:instruction :: The class of the object that is acted upon -- what is shaped, joined, heated, filtered. Normally already declared in the target ontology. May coincide with the active participant class when an activity has two participants of the same kind in different roles; if so, BIND both slots to it rather than minting a distinction IDO does not draw.
+** Object properties
+:PROPERTIES:
+:ID:       IDO-pattern-participation-object-property-hierarchy
+:resourcedefs: yes
+:END:
+*** lis:hasParticipant
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+**** lis:hasActiveParticipant
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+**** lis:hasPassiveParticipant
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+** Annotation properties
+:PROPERTIES:
+:ID:       IDO-pattern-participation-annotation-property-hierarchy
+:resourcedefs: yes
+:END:
+*** action (pattern:action)
+ - rdfs:isDefinedBy :: <http://example.org/pattern/pattern-vocabulary>
+*** instruction (pattern:instruction)
+ - rdfs:isDefinedBy :: <http://example.org/pattern/pattern-vocabulary>
+*** owl:versionInfo
+*** dcterms:modified
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dcterms:description
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+** Individuals
+:PROPERTIES:
+:ID:       IDO-pattern-participation-individuals
+:resourcedefs: yes
+:END:
+*** var:TheActivity
+ - Types :: var:ActivityKind
+ - Facts :: lis:hasActiveParticipant var:TheActiveParticipant
+ - Facts :: lis:hasPassiveParticipant var:ThePassiveParticipant
+ - pattern:action :: MINT_OR_BIND
+ - pattern:instruction :: The activity individual, the anchor of the pattern. Normally minted fresh; bind an existing activity when adding a further participant leg to an activity already described (the route to more than two participants -- see the Cardinality block).
+*** var:TheActiveParticipant
+ - Types :: var:ActiveParticipantClass
+ - pattern:action :: BIND_OR_MINT
+ - pattern:instruction :: The object that acts. Bind-first: the participants of an activity are usually objects the ontology already describes, and minting a fresh one when a described object was meant is the common error here.
+*** var:ThePassiveParticipant
+ - Types :: var:PassiveParticipantClass
+ - pattern:action :: BIND_OR_MINT
+ - pattern:instruction :: The object acted upon. Bind-first, as for the active participant.

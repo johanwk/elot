@@ -1,0 +1,242 @@
+#+title: IDO modelling pattern: quantity datum, full form
+#+subtitle: An OWL ontology
+#+author: johanw
+#+date: Created 2026-07-29 18:37
+#+call: theme-elot()
+
+See [[file:pattern-framework.org][pattern-framework.org]] for the framework, [[file:pattern-vocabulary.org][pattern-vocabulary.org]] for
+the =pattern:= vocabulary, and [[file:README.org][README.org]] for the library index.
+
+* IDO-pattern-quantity-datum-fullform
+:PROPERTIES:
+:ID: IDO-pattern-quantity-datum-fullform
+:ELOT-context-type: ontology
+:ELOT-context-localname: IDO-pattern-quantity-datum-fullform
+:ELOT-default-prefix: var
+:header-args:omn: :tangle ./IDO-pattern-quantity-datum-fullform.omn :noweb yes
+:header-args:emacs-lisp: :tangle no :exports results
+:header-args: :padline yes
+:END:
+
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+
+#+caption: OWL ontology prefixes
+| prefix   | uri                                           |
+|----------+-----------------------------------------------|
+| owl:     | http://www.w3.org/2002/07/owl#                |
+| rdf:     | http://www.w3.org/1999/02/22-rdf-syntax-ns#   |
+| xml:     | http://www.w3.org/XML/1998/namespace          |
+| xsd:     | http://www.w3.org/2001/XMLSchema#             |
+| rdfs:    | http://www.w3.org/2000/01/rdf-schema#         |
+| skos:    | http://www.w3.org/2004/02/skos/core#          |
+| dc:      | http://purl.org/dc/elements/1.1/              |
+| dcterms: | http://purl.org/dc/terms/                     |
+| lis:     | http://rds.posccaesar.org/ontology/lis14/rdl/ |
+| lis-ont: | http://rds.posccaesar.org/ontology/lis14/ont/ |
+| var:     | http://example.org/variable/                  |
+| pattern: | http://example.org/pattern/                   |
+| pat:     | http://example.org/placeholder/               |
+
+** IDO-pattern-quantity-datum-fullform ontology (pattern:IDO-pattern-quantity-datum-fullform pattern:IDO-pattern-quantity-datum-fullform/0.0)
+:PROPERTIES:
+:ID:       IDO-pattern-quantity-datum-fullform-ontology-declaration
+:resourcedefs: yes
+:END:
+ - owl:versionInfo :: 0.0 start of IDO-pattern-quantity-datum-fullform
+ - dcterms:modified ::  {{{time("%Y-%m-%d")}}}^^xsd:date
+ - dcterms:description :: This ontology is an IDO modelling pattern: A physical object has a quality which is quantified as a datum with unit and numerical magnitude. This pattern corresponds to the verbose, but flexible modelling pattern recommended for IDO ontologies/asset models.
+ - Import :: pattern:pattern-vocabulary
+ - Import :: lis-ont:core
+
+*** How to apply this pattern                                   :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-quantity-datum-fullform-howto
+:END:
+
+The generic procedure is in [[file:pattern-framework.org::*Applying a pattern: the generic procedure][Applying a pattern: the generic
+procedure]]. Specific to /this/ pattern:
+
+- The placeholder classes are ~var:DomainClass~ (the kind of object
+  being described), ~var:DomainQuantityKind~ (the quality/quantity kind
+  of interest, typically from QUDT), and
+  ~var:DomainScalarQuantityDatumType~ -- the datum kind, usually
+  ~lis:ScalarQuantityDatum~ itself or a generic subtype such as
+  "measured"/"nominal". Do *not* mint a per-use-case datum type.
+- The placeholder individuals are ~var:TheDomainThing~,
+  ~var:TheDomainQuantity~, ~var:TheDomainScalarQuantityDatum~ and
+  ~var:TheUnitOfMeasure~; the two middle ones are always freshly
+  minted, as they exist only to carry the quantification.
+- The ~Facts~ rows linking object, quality and datum
+  (~hasPhysicalQuantity~, ~qualityQuantifiedAs~, ~quantifiesQuality~,
+  ~datumUOM~, ~datumValue~) are the pattern proper; keep them as
+  shown.
+- The literal to supply is the ~lis:datumValue~ magnitude, e.g.
+  ~"0.4"^^xsd:decimal~.
+
+*** Required constants (borrow these first)                     :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-quantity-datum-fullform-constants
+:END:
+
+All from ~lis-ont:core~ (IDO): the classes ~lis:PhysicalObject~,
+~lis:PhysicalQuantity~, ~lis:ScalarQuantityDatum~,
+~lis:UnitOfMeasure~; the object properties ~lis:hasPhysicalQuantity~ /
+~lis:physicalQuantityOf~, ~lis:qualityQuantifiedAs~ /
+~lis:quantifiesQuality~, ~lis:datumUOM~; and the data property
+~lis:datumValue~. Nest each borrowed property under its correct IDO
+super-property.
+
+*** Worked example: thickness of a piece of fabric              :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-quantity-datum-fullform-example
+:END:
+
+A concrete instantiation modelling "this fabric is 0.4 mm thick".
+The substitutions are:
+
+#+caption: Substitution of pattern placeholders for the fabric-thickness example
+| pattern placeholder               | concrete resource          |
+|-----------------------------------+----------------------------|
+| var:DomainClass                   | ex:Fabric                  |
+| var:DomainQuantityKind            | quantitykind:Thickness     |
+| var:DomainScalarQuantityDatumType | ex:ThicknessDatum          |
+| var:TheDomainThing                | ex:theFabric               |
+| var:TheDomainQuantity             | ex:theFabricThickness      |
+| var:TheDomainScalarQuantityDatum  | ex:theFabricThicknessDatum |
+| var:TheUnitOfMeasure              | unit:MilliM                |
+| lis:datumValue literal            | "0.4"^^xsd:decimal         |
+
+Reading the result: ~ex:theFabric~ (an ~ex:Fabric~) has physical
+quantity ~ex:theFabricThickness~ (an ~ex:Thickness~), which is
+quantified as ~ex:theFabricThicknessDatum~ (an ~ex:ThicknessDatum~)
+carrying the value ~0.4~ with unit ~unit:MilliM~ (millimetre).
+
+*** Relationship to the shortcut patterns                       :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-quantity-datum-fullform-siblings
+:END:
+
+Siblings: [[file:IDO-pattern-quantity-shortcut-object.org][IDO-pattern-quantity-shortcut-object]] (pattern 2) and
+[[file:IDO-pattern-quantity-shortcut-data.org][IDO-pattern-quantity-shortcut-data]] (pattern 3). This is the most
+detailed of the three; the other two omit part of it.
+
+- *Pattern 2* drops the quality individual ~var:TheDomainQuantity~ and
+  its kind ~var:DomainQuantityKind~, linking object to datum directly
+  by a minted sub-property of ~lis:hasQualityQuantifiedAs~ whose name
+  encodes the quality kind.
+- *Pattern 3* drops the quality, the datum /and/ the unit individual,
+  linking object to a bare literal by a minted sub-property of
+  ~lis:qualityQuantityValue~ whose name encodes both quality and unit.
+
+IDO asserts ~lis:hasQualityQuantifiedAs SubPropertyChain:
+lis:hasQuality o lis:qualityQuantifiedAs~, so an application of this
+pattern entails the pattern-2 shortcut link at the level of the IDO
+super-property, given the import. No chain axiom is asserted here or
+in the siblings on the minted shortcut properties; see pattern 2.
+
+The omissions go one way only: recovering a dropped individual would
+mean generating one, which OWL 2 DL cannot do. Choose this pattern
+whenever the quality or the datum may later need to be referred to.
+
+# LLM: we don't need a Datatypes section. Ignore that lint warning!
+
+** Classes
+:PROPERTIES:
+:ID:       IDO-pattern-quantity-datum-fullform-class-hierarchy
+:resourcedefs: yes
+:END:
+*** lis:PhysicalObject
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+**** var:DomainClass
+ - pattern:action :: BIND
+ - pattern:instruction :: An object type declared in domain ontology. Examples: Umbrella, Table, Street. The domain class of the object being described (normally already in the file).
+*** lis:PhysicalQuantity
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+**** var:DomainQuantityKind
+ - pattern:action :: BORROW_OR_MINT
+ - pattern:instruction :: A domain ontology quality. Examples: Length, Mass, Viscosity. Usually a QUDT ~quantitykind:~ borrowed; mint if none fits.
+*** lis:ScalarQuantityDatum
+ - pattern:action :: BORROW
+ - rdfs:isDefinedBy :: lis-ont:core
+**** var:DomainScalarQuantityDatumType
+ - pattern:action :: BIND
+ - pattern:instruction :: The datum kind, usually ~lis:ScalarQuantityDatum~ itself or a generic subtype (e.g. "measured", "nominal"); avoid per-use-case datum types.
+*** lis:UnitOfMeasure
+ - pattern:action :: BORROW
+ - rdfs:isDefinedBy :: lis-ont:core
+** Object properties
+:PROPERTIES:
+:ID:       IDO-pattern-quantity-datum-fullform-object-property-hierarchy
+:resourcedefs: yes
+:END:
+*** lis:hasPhysicalQuantity
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+*** lis:physicalQuantityOf
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+*** lis:qualityQuantifiedAs
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+*** lis:quantifiesQuality
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+*** lis:datumUOM
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+** Data properties
+:PROPERTIES:
+:ID:       IDO-pattern-quantity-datum-fullform-data-property-hierarchy
+:resourcedefs: yes
+:END:
+*** lis:datumValue
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+** Annotation properties
+:PROPERTIES:
+:ID:       IDO-pattern-quantity-datum-fullform-annotation-property-hierarchy
+:resourcedefs: yes
+:END:
+*** action (pattern:action)
+ - rdfs:isDefinedBy :: <http://example.org/pattern/pattern-vocabulary>
+*** instruction (pattern:instruction)
+ - rdfs:isDefinedBy :: <http://example.org/pattern/pattern-vocabulary>
+*** value (pattern:value)
+*** owl:versionInfo
+*** dcterms:modified
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dcterms:description
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+** Individuals
+:PROPERTIES:
+:ID:       IDO-pattern-quantity-datum-fullform-individuals
+:resourcedefs: yes
+:END: 
+*** var:TheDomainThing
+ - Types :: var:DomainClass
+ - Facts :: lis:hasPhysicalQuantity var:TheDomainQuantity
+ - pattern:action :: MINT_OR_BIND
+ - pattern:instruction :: The primary subject of interest, a physical thing that has a quantity with magnitude and unit. Mint a fresh instance, or bind an existing in-file subject individual.
+*** var:TheDomainQuantity
+ - Types :: var:DomainQuantityKind
+ - Facts :: lis:physicalQuantityOf var:TheDomainThing
+ - Facts :: lis:qualityQuantifiedAs var:TheDomainScalarQuantityDatum
+ - pattern:action :: MINT
+ - pattern:instruction :: The quantity of ~var:TheDomainThing~ that is quantified. Always a fresh quality individual.
+*** var:TheDomainScalarQuantityDatum
+ - Types :: var:DomainScalarQuantityDatumType
+ - Facts :: lis:quantifiesQuality var:TheDomainQuantity
+ - Facts :: lis:datumValue "100"^^xsd:decimal
+   - pattern:value :: xsd:decimal
+ - Facts :: lis:datumUOM var:TheUnitOfMeasure
+ - pattern:action :: MINT
+ - pattern:instruction :: The datum that carries numeric value and unit of measure. Always a fresh datum individual.
+*** var:TheUnitOfMeasure
+ - Types :: lis:UnitOfMeasure
+ - pattern:action :: BORROW_OR_MINT
+ - pattern:instruction :: Typically borrow from QUDT ~unit:~; mint if QUDT lacks the unit.

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<catalog prefer="public" xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+    <uri id="User Entered Import Resolution" name="http://example.org/pattern/pattern-vocabulary" uri="pattern-vocabulary.ttl"/>
+    <uri id="User Entered Import Resolution" name="http://rds.posccaesar.org/ontology/lis14/ont/core" uri="IDO-4.2.ttl"/>
+    <uri id="User Entered Import Resolution" name="http://example.org/pattern/IDO-pattern-quantity-datum-fullform" uri="IDO-pattern-quantity-datum-fullform.ttl"/>
+    <uri id="User Entered Import Resolution" name="http://example.org/pattern/IDO-pattern-quantity-shortcut-object" uri="IDO-pattern-quantity-shortcut-object.ttl"/>
+    <uri id="User Entered Import Resolution" name="http://example.org/pattern/IDO-pattern-quantity-shortcut-data" uri="IDO-pattern-quantity-shortcut-data.ttl"/>
+    <uri id="User Entered Import Resolution" name="http://example.org/pattern/IDO-pattern-function" uri="IDO-pattern-function.ttl"/>
+    <uri id="User Entered Import Resolution" name="http://example.org/pattern/IDO-pattern-participation" uri="IDO-pattern-participation.ttl"/>
+    <uri id="User Entered Import Resolution" name="http://www.w3.org/2004/02/skos/core" uri="skos.ttl"/>
+    <uri id="User Entered Import Resolution" name="http://example.org/pattern/SKOS-pattern-broader" uri="SKOS-pattern-broader.ttl"/>
+    <uri id="User Entered Import Resolution" name="http://example.org/pattern/IDO-pattern-idef0" uri="IDO-pattern-idef0.ttl"/>
+    <uri id="User Entered Import Resolution" name="http://www.w3.org/ns/prov-o" uri="prov.ttl"/>
+    <uri id="User Entered Import Resolution" name="http://example.org/pattern/PROV-O-pattern-qualified-activity" uri="PROV-O-pattern-qualified-activity.ttl"/>
+    <group id="Folder Repository, directory=, recursive=true, Auto-Update=true, version=2" prefer="public" xml:base="">
+        <uri id="Automatically generated entry, Timestamp=1786277958764" name="duplicate:http://example.org/measurement-pattern" uri="external/IOF-Core-Pattern-v2/scenarios/multiple-measurement/data/measurement_pattern_general.rdf"/>
+        <uri id="Automatically generated entry, Timestamp=1786277958764" name="duplicate:http://example.org/measurement-pattern" uri="external/IOF-Core-Pattern-v2/scenarios/multiple-measurement/data/measurement_pattern_general1.rdf"/>
+        <uri id="Automatically generated entry, Timestamp=1786277958764" name="http://www.example.com/" uri="external/IOF-Core-Pattern-v2/scenarios/clock-time-calendar-date/data/gps.rdf"/>
+        <uri id="Automatically generated entry, Timestamp=1786277958764" name="http://www.w3.org/2002/07/owl" uri="external/IOF-Core-Pattern-v2/scenarios/multiple-measurement/data/measurement_usecase_multim1.rdf"/>
+        <uri id="Automatically generated entry, Timestamp=1786277958764" name="https://ontogenesis-solutions.com/ontologies/examples/advanced-instances/" uri="external/IOF-Core-Pattern-v2/scenarios/simple-process-sequence/data/advanced-instances.rdf"/>
+        <uri id="Automatically generated entry, Timestamp=1786277958764" name="duplicate:https://ontogenesis-solutions.com/ontologies/examples/classes/" uri="external/IOF-Core-Pattern-v2/scenarios/simple-process-sequence/data/classes.rdf"/>
+        <uri id="Automatically generated entry, Timestamp=1786277958764" name="duplicate:https://ontogenesis-solutions.com/ontologies/examples/classes/" uri="external/IOF-Core-Pattern-v2/scenarios/simple-process-sequence/data/classesrdf.rdf"/>
+        <uri id="Automatically generated entry, Timestamp=1786277958764" name="https://ontogenesis-solutions.com/ontologies/examples/classesexpr/" uri="external/IOF-Core-Pattern-v2/scenarios/simple-process-sequence/data/classexpr.rdf"/>
+        <uri id="Automatically generated entry, Timestamp=1786277958764" name="duplicate:https://ontogenesis-solutions.com/ontologies/examples/instances/" uri="external/IOF-Core-Pattern-v2/scenarios/simple-process-sequence/data/instances.rdf"/>
+        <uri id="Automatically generated entry, Timestamp=1786277958764" name="duplicate:https://ontogenesis-solutions.com/ontologies/examples/instances/" uri="external/IOF-Core-Pattern-v2/scenarios/simple-process-sequence/data/instancesrdf.rdf"/>
+        <uri id="Automatically generated entry, Timestamp=1786277958764" name="shadowed:http://www.w3.org/2002/07/owl" uri="external/IOF-Core-Pattern-v2/scenarios/object-artifact-material/data/buffer.rdf"/>
+        <uri id="Automatically generated entry, Timestamp=1786277958764" name="shadowed:http://www.w3.org/2002/07/owl" uri="external/IOF-Core-Pattern-v2/scenarios/object-artifact-material/data/chrom.rdf"/>
+        <uri id="Automatically generated entry, Timestamp=1786277958764" name="shadowed:http://www.w3.org/2002/07/owl" uri="external/IOF-Core-Pattern-v2/scenarios/object-artifact-material/data/composition.rdf"/>
+    </group>
+</catalog>

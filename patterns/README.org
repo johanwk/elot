@@ -1,0 +1,126 @@
+#+title: ELOT modelling patterns
+#+subtitle: Library index and findings
+#+author: johanw
+#+date: 2026
+#+call: theme-elot()
+
+This is the index of the pattern library: which patterns exist, how to
+choose among them, and what has been learned from writing them.
+
+The library has an ERT integrity suite.  Run it from this directory with
+~make test~, or as part of the repository-wide ~make test~.  It runs the
+composite ~elot_check~ pipeline over every pattern ontology, verifies that
+every row in the cross-pattern index resolves to an existing file, checks
+that no pattern source is omitted from the index, and protects the framework
+and vocabulary files from accidental removal.  With ~ELOT_REQUIRE_ROBOT=1~,
+the ontology checks require ROBOT rather than falling back to lint-only mode.
+
+Two companion files hold the general material:
+
+- [[file:pattern-framework.org][pattern-framework.org]] --- the framework specification: what a pattern
+  is, the template contract, how placeholders are annotated, the
+  catalog and provisioning steps, the generic apply procedure, the
+  shared ergonomics rules, and the deferred design areas and open
+  questions.
+- [[file:pattern-vocabulary.org][pattern-vocabulary.org]] --- the normative =pattern:pattern-vocabulary=
+  ontology that every pattern file imports.  It tangles to
+  =pattern-vocabulary.omn= / =pattern-vocabulary.ttl=, which is the
+  target =catalog-v001.xml= maps the ontology IRI to.
+
+* Cross-pattern index
+
+Choose a pattern before filling in its placeholders.
+
+#+caption: Patterns in this library
+| pattern                              | fidelity       | individuals introduced       | when to choose                                                                                                            |
+|--------------------------------------+----------------+------------------------------+---------------------------------------------------------------------------------------------------------------------------|
+| IDO-pattern-quantity-datum-fullform  | full (verbose) | quality, datum, unit         | the quality or the datum must itself be referenced -- sensor, measuring activity, provenance, qualifier, competing values |
+| IDO-pattern-quantity-shortcut-object | reduced        | datum, unit                  | datum-level context wanted (unit as a resource, qualifier, provenance) but the quality is never referenced                |
+| IDO-pattern-quantity-shortcut-data   | minimal        | none                         | value only; one triple per quantity, smallest graph, most reasoner-friendly; unit recoverable only by property convention |
+| IDO-pattern-function                 | n/a (see note) | function, activity           | what a thing is *for* must be stated, and/or the activity realizing it must be referenced                                   |
+| IDO-pattern-participation            | generic roles  | activity                     | an activity's cast must be recorded with agent/patient roles distinguished                                                |
+| IDO-pattern-idef0                    | ICOM roles     | activity                     | the same cast, in IDEF0's four roles: Input, Control, Output, Mechanism -- systems-engineering workflows                  |
+| SKOS-pattern-broader                 | n/a (see note) | narrower concept             | establishing a taxonomic hierarchy between SKOS concepts via outline nesting                                              |
+| PROV-O-pattern-qualified-activity    | qualified      | activity, usage, association | provenance: what an activity used and generated, who ran it, under what plan -- with the role reified, not name-encoded   |
+| IOF-pattern-information-about        | aboutness modes | information content entities | information denotes, uniquely designates, describes, or prescribes an entity                                               |
+
+The /fidelity/ column compares a pattern with its own variants.  The
+three quantity patterns differ in how much detail they keep.
+Participation and idef0 differ instead in which role vocabulary they
+use: idef0's four ICOM relations are sub-properties of the relations
+participation uses, so an idef0 instantiation entails the participation
+one, but not the other way round.  The remaining patterns have no
+variants and read =n/a=.
+
+Function and participation are not variants but compose: the activity
+that realizes a function is the kind of activity whose participants the
+participation (or idef0) pattern describes.  Apply function first, then
+participation.
+
+=SKOS-pattern-broader= and =PROV-O-pattern-qualified-activity= are
+written for ontologies other than IDO, and use the =pattern:=
+vocabulary, the =var:= convention and the prose blocks unchanged.  The
+only extra step was adding =skos.ttl= and =prov.ttl= to the catalog;
+both are verbatim upstream copies fetched by =patterns/Makefile= (see
+the provisioning rule in [[file:pattern-framework.org][pattern-framework.org]]).
+
+=IDO-pattern-idef0= cannot say that one thing plays different roles in
+one activity; =PROV-O-pattern-qualified-activity= can, using
+=prov:Usage= and =prov:hadRole=.  Whether the framework should
+prescribe reified roles is open question 6 in
+[[file:pattern-framework.org][pattern-framework.org]].
+
+** Choosing among the patterns
+
+The three quantification patterns are not mutually exclusive: one
+ontology may use all three, for different qualities.  The choice is
+made per quality, not per ontology.
+
+The index rows are ordered by decreasing detail; each step down omits
+resources, and with them the questions that can be answered.  A query
+can derive a shortcut form from a full-form instantiation, but not the
+reverse, since that would mean creating the omitted individual.  When
+in doubt, choose the more explicit pattern.
+
+* Shortcut values and full-form values do not check each other
+
+If the same quality of the same thing is written down twice -- once
+with a shortcut pattern (a single number) and once with the full-form
+pattern -- the reasoner will not report a mismatch between the two
+numbers.  They are two unconnected statements, and nothing in the
+patterns says they must agree.  Making the connecting relation
+functional does not help: it forces the two descriptions to be about
+the same shaft, not about the same length.
+
+This is a data-quality question, not a logical contradiction, so
+=elot_consistency= is not the tool for it.  Choose one of:
+
+1. a rule language such as SWRL, to require the numbers to be equal;
+2. an authoring rule that a given quality is recorded either the
+   shortcut way or the full way, never both;
+3. a query, run separately, that lists things having both a shortcut
+   and a full-form value and compares them.
+
+* Findings from writing the library
+
+- The template contract held for every pattern written so far,
+  including patterns about dispositions and events rather than
+  attributes.  No new keyword and no exception was needed.
+- The fourth prose block is not only /Relationship to <sibling>/: the
+  contract is three mandatory blocks plus one that discusses the
+  pattern's own main difficulty, of which the sibling block is one
+  case.
+- The share of TBox and ABox slots varies widely between patterns.  The
+  quantity patterns are mostly TBox; the function pattern has one
+  bind-first slot and is otherwise ABox.
+- A pattern that asserts a fact and also falls under an upper-ontology
+  chain axiom entailing a weaker version of it should say so, and treat
+  the difference as a data-quality question (see the previous section).
+- Repeating a pattern against a bound anchor covers the simple cases of
+  variable cardinality, so a pattern with a repeatable leg should mark
+  its anchor slot =MINT_OR_BIND=, not =MINT=.
+- A check for borrowed terms that do not exist in the named source was
+  considered and not implemented: =rdfs:isDefinedBy= often names a
+  namespace rather than an ontology, and sources are often ingested
+  under a different base IRI or from a subset, so the check would give
+  many false warnings.  Borrowed terms remain a matter for review.

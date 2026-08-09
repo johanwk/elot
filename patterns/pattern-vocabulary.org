@@ -1,0 +1,116 @@
+#+title: The =pattern:= vocabulary
+#+subtitle: Normative annotation vocabulary for ELOT modelling patterns
+#+author: johanw
+#+date: 2026
+#+call: theme-elot()
+
+This file contains the =pattern:pattern-vocabulary= ontology --- the
+normative annotation vocabulary every file in =patterns/= imports.  The
+terms are annotation properties only, they have no effect on reasoning,
+and they are removed when a pattern is instantiated.  The one exception
+is =pattern:appliedPattern=, which is retained as the audit trail.
+
+For what the terms /mean/ in use --- the =pattern:action= keyword
+vocabulary, literal placeholders, the TBox/ABox rule, the apply
+procedure --- see [[file:pattern-framework.org][pattern-framework.org]].
+
+* pattern-vocabulary
+:PROPERTIES:
+:ID:       pattern-vocabulary
+:ELOT-context-type: ontology
+:ELOT-context-localname: pattern-vocabulary
+:ELOT-default-prefix: pattern
+:header-args:omn: :tangle ./pattern-vocabulary.omn :noweb yes
+:header-args:emacs-lisp: :tangle no :exports results
+:header-args: :padline yes
+:END:
+
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+
+#+caption: OWL ontology prefixes
+| prefix   | uri                                         |
+|----------+---------------------------------------------|
+| owl:     | http://www.w3.org/2002/07/owl#              |
+| rdf:     | http://www.w3.org/1999/02/22-rdf-syntax-ns# |
+| xml:     | http://www.w3.org/XML/1998/namespace        |
+| xsd:     | http://www.w3.org/2001/XMLSchema#           |
+| rdfs:    | http://www.w3.org/2000/01/rdf-schema#       |
+| skos:    | http://www.w3.org/2004/02/skos/core#        |
+| dc:      | http://purl.org/dc/elements/1.1/            |
+| dcterms: | http://purl.org/dc/terms/                   |
+| pattern: | http://example.org/pattern/                 |
+| pat:     | http://example.org/placeholder/             |
+
+** pattern-vocabulary ontology (pattern:pattern-vocabulary pattern:pattern-vocabulary/0.0)
+:PROPERTIES:
+:ID:       pattern-vocabulary-ontology-declaration
+:resourcedefs: yes
+:END:
+ - owl:versionInfo :: 0.0 start of pattern-vocabulary
+ - dcterms:description :: The normative annotation vocabulary for ELOT modelling patterns. Terms are annotation properties only, they have no effect on reasoning, and they are removed when a pattern is instantiated. Some terms are reserved: declared to fix the namespace, but not yet in use.
+
+** Datatypes
+:PROPERTIES:
+:ID:       pattern-vocabulary-datatypes
+:resourcedefs: yes
+:END:
+
+** Classes
+:PROPERTIES:
+:ID:       pattern-vocabulary-class-hierarchy
+:resourcedefs: yes
+:END:
+
+** Object properties
+:PROPERTIES:
+:ID:       pattern-vocabulary-object-property-hierarchy
+:resourcedefs: yes
+:END:
+
+** Data properties
+:PROPERTIES:
+:ID:       pattern-vocabulary-data-property-hierarchy
+:resourcedefs: yes
+:END:
+
+** Annotation properties
+:PROPERTIES:
+:ID:       pattern-vocabulary-annotation-property-hierarchy
+:resourcedefs: yes
+:END:
+*** Active in v1                                                  :nodeclare:
+**** action (pattern:action)
+ - rdfs:comment :: "A controlled keyword stating what to do with the annotated resource when applying the pattern: BORROW (reuse from an external ontology), BIND (reuse a resource already in the target file), MINT (create a fresh CURIE), BORROW_OR_MINT, MINT_OR_BIND (mint-first), or BIND_OR_MINT (bind-first: reuse an existing in-file resource that fills the slot, mint only if none does -- the usual marking for a TBox slot that later applications of the same pattern must share). The order in the compound keywords names the default; the second option is the exception that needs a reason. Removed on instantiation."@en
+**** instruction (pattern:instruction)
+ - rdfs:comment :: "Free-text guidance for filling the annotated placeholder slot when applying the pattern. Removed on instantiation."@en
+**** value (pattern:value)
+ - rdfs:comment :: "Marks the literal value of the annotated axiom (typically a lis:datumValue Facts row) as a variable placeholder, and states its datatype (e.g. xsd:decimal). A literal cannot be given a var: CURIE, so the placeholder is marked by annotating the axiom in which the literal occurs. The value is supplied when the pattern is applied, and the annotation is removed on instantiation."@en
+**** appliedPattern (pattern:appliedPattern)
+ - rdfs:comment :: "Provenance: the IRI of the modelling pattern that a resource was created by applying. Unlike the other pattern: terms, this annotation is NOT removed on instantiation; it is the audit trail. Where exactly it attaches (every minted resource, the anchor resource, or a separate application-record individual) is not yet settled."@en
+*** Reserved -- declared, not yet in use                       :nodeclare:
+**** cardinality (pattern:cardinality)
+ - rdfs:comment :: "RESERVED, not yet in use. Intended multiplicity of the annotated placeholder (e.g. optional, many). Declared to fix the namespace; no expansion semantics is defined."@en
+**** default (pattern:default)
+ - rdfs:comment :: "RESERVED, not yet in use. Intended default value for an optional placeholder, in the OTTR sense. Declared to fix the namespace."@en
+**** paramIndex (pattern:paramIndex)
+ - rdfs:comment :: "RESERVED, not yet in use. Intended canonical parameter order for a pattern signature, should a positional call syntax ever be needed. Declared to fix the namespace."@en
+**** group (pattern:group)
+ - rdfs:comment :: "RESERVED, not yet in use. Intended to name the set of roles that vary together and are expanded as one tuple at instantiation. Declared to fix the namespace."@en
+**** correlationKey (pattern:correlationKey)
+ - rdfs:comment :: "RESERVED, not yet in use. Intended join key for relating minted resources across separate groups. Declared to fix the namespace."@en
+**** when (pattern:when)
+ - rdfs:comment :: "RESERVED, not yet in use. Intended condition for a conditionally bound role: a triple pattern over already-bound roles. Declared to fix the namespace."@en
+**** then (pattern:then)
+ - rdfs:comment :: "RESERVED, not yet in use. Intended consequent of a pattern:when condition: what to bind, or whether the role is added at all, when the condition holds. Declared to fix the namespace."@en
+**** owl:versionInfo
+**** dcterms:description
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+
+** Individuals
+:PROPERTIES:
+:ID:       pattern-vocabulary-individuals
+:resourcedefs: yes
+:END:

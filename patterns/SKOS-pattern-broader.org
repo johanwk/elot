@@ -1,0 +1,199 @@
+#+title: SKOS modelling pattern: concept hierarchy by skos:broader
+#+subtitle: An OWL ontology
+#+author: johanw
+#+date: Created 2026-08-07
+#+call: theme-elot()
+
+#+begin_note
+The OWL 2 DL profile violation comes from the imported SKOS ontology, not
+from this pattern: SKOS declares and uses the reserved vocabulary term
+=rdf:List= as a class (including as the range of =skos:memberList=).
+#+end_note
+
+See [[file:pattern-framework.org][pattern-framework.org]] for the framework, [[file:pattern-vocabulary.org][pattern-vocabulary.org]] for
+the =pattern:= vocabulary, and [[file:README.org][README.org]] for the library index.
+
+* SKOS-pattern-broader
+:PROPERTIES:
+:ID:       SKOS-pattern-broader
+:ELOT-context-type: ontology
+:ELOT-context-localname: SKOS-pattern-broader
+:ELOT-default-prefix: var
+:header-args:omn: :tangle ./SKOS-pattern-broader.omn :noweb yes
+:header-args:emacs-lisp: :tangle no :exports results
+:header-args: :padline yes
+:END:
+
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+
+#+caption: OWL ontology prefixes
+| prefix   | uri                                         |
+|----------+---------------------------------------------|
+| owl:     | http://www.w3.org/2002/07/owl#              |
+| rdf:     | http://www.w3.org/1999/02/22-rdf-syntax-ns# |
+| xml:     | http://www.w3.org/XML/1998/namespace        |
+| xsd:     | http://www.w3.org/2001/XMLSchema#           |
+| rdfs:    | http://www.w3.org/2000/01/rdf-schema#       |
+| skos:    | http://www.w3.org/2004/02/skos/core#        |
+| dc:      | http://purl.org/dc/elements/1.1/            |
+| dcterms: | http://purl.org/dc/terms/                   |
+| var:     | http://example.org/variable/                |
+| pattern: | http://example.org/pattern/                 |
+
+** SKOS-pattern-broader ontology (pattern:SKOS-pattern-broader pattern:SKOS-pattern-broader/0.0)
+:PROPERTIES:
+:ID:       SKOS-pattern-broader-ontology-declaration
+:resourcedefs: yes
+:END:
+ - owl:versionInfo :: 0.0 start of SKOS-pattern-broader
+ - dcterms:modified ::  {{{time("%Y-%m-%d")}}}^^xsd:date
+ - dcterms:description :: This ontology is a modelling pattern for a SKOS concept hierarchy: one skos:Concept individual is narrower than another, related by skos:broader. The relation is stated by ELOT outline nesting rather than by a description-list row, using the :ELOT-subheading-relation: drawer property.
+ - Import :: pattern:pattern-vocabulary
+ - Import :: http://www.w3.org/2004/02/skos/core
+
+*** How to apply this pattern                                   :nodeclare:
+:PROPERTIES:
+:ID: SKOS-pattern-broader-howto
+:END:
+
+The generic procedure is in [[file:pattern-framework.org::*Applying a pattern: the generic procedure][Applying a pattern: the generic
+procedure]]. Specific to /this/ pattern:
+
+- *The relation comes from the outline, not from a row.* Setting
+  ~:ELOT-subheading-relation: skos:broader~ in the *broader* concept's
+  property drawer makes every nested subheading assert
+  ~skos:broader~ back to it. Do not also write a ~Facts ::
+  skos:broader ...~ row on the narrower concept: that would state the
+  same thing twice.
+- *Concepts are individuals, not classes.* SKOS is a vocabulary of
+  ~skos:Concept~ *instances*; ~skos:broader~ is an object property
+  between individuals, not ~rdfs:subClassOf~. The declarations
+  therefore belong in the target file's ~Individuals~ section, and
+  every concept needs an explicit ~Types :: skos:Concept~ row.
+- *Both slots are bind-first.* Concept schemes are normally built up
+  incrementally, so a concept being placed under a broader one usually
+  already exists -- and the broader one almost always does. Search
+  before minting.
+- *~skos:broader~ is not transitive.* SKOS deliberately keeps it
+  intransitive and offers ~skos:broaderTransitive~ as the transitive
+  super-property. Assert only the direct link, as the outline nesting
+  does; do not add skip-level rows.
+
+*** Cardinality: what this pattern commits to                    :nodeclare:
+:PROPERTIES:
+:ID: SKOS-pattern-broader-cardinality
+:END:
+
+The commitment is *one broader link* per application. Multiple
+narrower concepts under one broader concept need no repeat
+application: outline nesting takes any number of subheadings.
+Poly-hierarchy (one concept under two broader concepts) does need a
+second application, and
+because a resource may be declared by only one heading, the second
+link must be written as an explicit ~Facts :: skos:broader ...~ row on
+the narrower concept -- the one exception to the rule above.
+
+*** Required constants (borrow these first)                     :nodeclare:
+:PROPERTIES:
+:ID: SKOS-pattern-broader-constants
+:END:
+
+Both from ~http://www.w3.org/2004/02/skos/core~:
+
+- ~skos:Concept~ -- the type of both individuals.
+- ~skos:broader~ -- the relation, asserted by outline nesting.
+
+*** Worked example: an animal concept scheme                    :nodeclare:
+:PROPERTIES:
+:ID: SKOS-pattern-broader-example
+:END:
+
+#+begin_src org
+,** Individuals
+:PROPERTIES:
+:ID:       my-domain-individuals
+:resourcedefs: yes
+:END:
+
+,*** Animal (ex:animal)
+:PROPERTIES:
+:ELOT-subheading-relation: skos:broader
+:END:
+ - Types :: skos:Concept
+
+,**** Mammal (ex:mammal)
+ - Types :: skos:Concept
+#+end_src
+
+#+caption: Substitution of pattern placeholders for the animal example
+| pattern placeholder | concrete resource |
+|---------------------+-------------------|
+| var:broaderConcept  | ex:animal         |
+| var:narrowerConcept | ex:mammal         |
+
+Reading the result: ~ex:mammal skos:broader ex:animal~, asserted
+without either concept carrying a ~skos:broader~ description-list row.
+
+** Classes
+:PROPERTIES:
+:ID:       SKOS-pattern-broader-class-hierarchy
+:resourcedefs: yes
+:END:
+
+*** Concept (skos:Concept)
+ - rdfs:isDefinedBy :: <http://www.w3.org/2004/02/skos/core>
+ - pattern:action :: BORROW
+
+** Object properties
+:PROPERTIES:
+:ID:       SKOS-pattern-broader-object-property-hierarchy
+:resourcedefs: yes
+:END:
+
+*** broader (skos:broader)
+ - pattern:action :: BORROW
+ - rdfs:isDefinedBy :: <http://www.w3.org/2004/02/skos/core>
+
+** Data properties
+:PROPERTIES:
+:ID:       SKOS-pattern-broader-data-property-hierarchy
+:resourcedefs: yes
+:END:
+
+** Annotation properties
+:PROPERTIES:
+:ID:       SKOS-pattern-broader-annotation-property-hierarchy
+:resourcedefs: yes
+:END:
+
+*** action (pattern:action)
+ - rdfs:isDefinedBy :: <http://example.org/pattern/pattern-vocabulary>
+*** instruction (pattern:instruction)
+ - rdfs:isDefinedBy :: <http://example.org/pattern/pattern-vocabulary>
+*** owl:versionInfo
+*** dcterms:modified
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dcterms:description
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+
+** Individuals
+:PROPERTIES:
+:ID:       SKOS-pattern-broader-individuals
+:resourcedefs: yes
+:END:
+
+*** var:broaderConcept
+:PROPERTIES:
+:ELOT-subheading-relation: skos:broader
+:END:
+ - Types :: skos:Concept
+ - pattern:action :: BIND_OR_MINT
+ - pattern:instruction :: The broader concept. Bind-first: in a concept scheme built up over time the broader concept almost always exists already, and minting a second one for the same concept is the common error here. Copy the :ELOT-subheading-relation: drawer property to the new heading; it is what makes the nesting state skos:broader.
+
+**** var:narrowerConcept
+ - Types :: skos:Concept
+ - pattern:action :: BIND_OR_MINT
+ - pattern:instruction :: The narrower concept, declared as a subheading of the broader one. Bind-first: prefer an existing concept. Placing an existing concept under a new broader one means MOVING its heading, not declaring it a second time.

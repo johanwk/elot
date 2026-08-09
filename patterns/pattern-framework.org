@@ -1,0 +1,620 @@
+#+title: The ELOT pattern framework
+#+subtitle: What a pattern is, how it is written, and how it is applied
+#+author: johanw
+#+date: 2026
+#+call: theme-elot()
+
+This file states the rules every ELOT pattern file follows, whichever
+ontology the pattern is written for.  The patterns themselves are
+listed in [[file:README.org][README.org]]; the annotation vocabulary used below is declared
+in [[file:pattern-vocabulary.org][pattern-vocabulary.org]].
+
+The document has four main parts: the framework contract, the authoring
+checklist, the application model and procedure, and deferred design work.
+Pattern consumers can normally go straight to [[*Applying a pattern: the generic procedure][Applying a pattern: the generic
+procedure]] and [[*Tool-assisted application procedure][Tool-assisted application procedure]].
+
+ELOT patterns are intended for both human and LLM-assisted authoring.
+At present, the most complete tool support is exposed through the
+=elot-gptel= read, validation, and editing tools; not every operation
+yet has an equivalent interactive command or menu item. This is an
+implementation gap rather than a restriction of the pattern model:
+human authors and automated agents follow the same application
+contract, although their interfaces currently differ.
+
+* Framework contract
+** What a pattern is
+One pattern = one file = one ontology.  Every file in =patterns/= is an
+ELOT ontology that imports the ontologies it is written for, and whose
+ontology IRI is the identifier of the pattern.
+
+Two prefixes distinguish the two kinds of resource:
+
+- ~lis:~ (or any other external prefix) --- *constants*: resources of an
+  upstream ontology, used unchanged by every application of the
+  pattern.
+- ~var:~ --- *placeholders*: resources that stand for terms of the
+  target ontology and must be replaced when the pattern is applied.
+
+Labels are usually omitted from resource headings in pattern files.
+This is an experiment in keeping the files short.
+
+*** The template contract
+Every file in =patterns/= has:
+
+1. A prefix table and an ontology declaration; the pattern IRI is the
+   ontology id.
+2. ~Import :: pattern:pattern-vocabulary~, and an ~Import~ row for each
+   ontology the pattern is written for.  These imports are required:
+   without them the reasoning stages check nothing.
+3. Four ~:nodeclare:~ prose blocks.  Three are fixed: *How to apply this
+   pattern*, *Required constants (borrow these first)*, and a *Worked
+   example* with a =#+caption='d substitution table.  The fourth names
+   and explains the pattern's main hazard, including when not to apply
+   it or what information the pattern cannot preserve.  For a variant,
+   this may be *Relationship to <sibling>*; in that case it states the
+   relating chain or sub-property axiom, whether the file asserts or
+   only describes it, which resources the variant omits, and the
+   direction of reduction.  The fourth block is mandatory even when no
+   sibling pattern exists.
+5. A consistent body of constants and ~var:~ placeholders, each
+   annotated with ~pattern:action~ and, where useful,
+   ~pattern:instruction~.
+6. Consistency under import: the file must lint, parse and reason
+   consistently with its ~owl:imports~ closure resolved.  Checking a
+   pattern on its own is not enough, because the imported disjointness,
+   domain and range axioms apply only once the imports are loaded.
+   In practice, ~elot_check~ must reach its consistency stage with all
+   imports resolving.
+
+*** Import does not remove the need to declare
+ELOT tangles to OWL Manchester Syntax, which requires an explicit
+signature: every IRI used in a file must be declared in that file with
+its OWL type.  Unlike Turtle, OMN infers nothing from usage and nothing
+from an imported graph.  A file that writes ~pattern:action :: BORROW~
+without a local declaration of ~pattern:action~ will not parse.
+
+So in every pattern file:
+
+- the ~Import :: pattern:pattern-vocabulary~ row stays, and the meaning
+  of the terms is defined there;
+- each ~pattern:~ term used in the file is also declared locally in its
+  Annotation-properties section, as heading + ~rdfs:label~ only.
+
+The local declaration exists for the signature; the definition of each
+~pattern:~ term is in [[file:pattern-vocabulary.org][pattern-vocabulary.org]].  Only terms the file uses
+need this; the reserved terms do not.
+
+*** Resolving the import: =catalog-v001.xml=
+Each ~Import ::~ row names an IRI, not a file.  So that ELOT export,
+Protégé, ROBOT and other OWL API tools load these from this folder
+instead of over HTTP, =patterns/= has an OWL API catalog file with one
+~<uri>~ entry per imported ontology:
+
+#+begin_src xml :tangle no
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<catalog prefer="public" xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+    <uri id="User Entered Import Resolution"
+         name="http://example.org/pattern/pattern-vocabulary"
+         uri="pattern-vocabulary.ttl"/>
+    <uri id="User Entered Import Resolution"
+         name="http://rds.posccaesar.org/ontology/lis14/ont/core"
+         uri="ido.ttl"/>
+    <group id="Folder Repository, directory=, recursive=true, Auto-Update=true, version=2"
+           prefer="public" xml:base=""/>
+</catalog>
+#+end_src
+
+Each entry maps an ontology IRI (~name=~) to a file relative to the
+catalog's directory (~uri=~).  Where the target is itself written in
+ELOT, the file is the tangled artefact (e.g. =pattern-vocabulary.ttl=),
+not the =.org= source, so the tangle must be up to date.  Ontologies
+from elsewhere are placed in =patterns/= in whatever RDF serialisation
+they come in and mapped the same way.
+
+When adding a pattern:
+
+- A pattern that imports only the pattern vocabulary and an
+  already-mapped ontology needs no catalog change.
+- A pattern that imports an ontology not yet in =patterns/= must add
+  that ontology's file and an entry for it.  The same applies to
+  ontologies imported indirectly: the whole import closure must be
+  present and mapped.
+- A pattern that imports a sibling pattern must add an entry mapping
+  that sibling's ontology IRI to its tangled =.ttl=.
+
+~elot_check~ uses the catalog too: its OMN parse stage runs ROBOT,
+which resolves ~Import~ rows through the OWL API.  A missing or wrong
+mapping shows up as a check failure, e.g.
+
+#+begin_example
+== OMN PARSE ==
+ERROR  [robot/unknown]  UnloadableImportException: Could not load
+imported ontology: <http://example.org/pattern/pattern-vocabulary>
+Cause: ...\patterns\pattern-vocabulary.tt (file not found)
+#+end_example
+
+with the later stages skipped.
+
+*** Provisioning upstream ontologies: vendor, do not stub
+Ontologies from elsewhere are kept as verbatim upstream copies.
+=patterns/Makefile= fetches them and converts them to Turtle (=make
+vendor=; =make force= to re-download, =make check= to smoke-test).  Do
+not edit them by hand.
+
+Earlier drafts used small hand-written stubs.  That gave a misleading
+result: a misspelled CURIE resolved against the stub and was not
+reported.  With the real vocabularies present, =elot_check= verifies
+that every referenced upstream term exists.
+
+* Authoring a pattern for another ontology
+Use this checklist to add a pattern for an upper ontology or domain
+vocabulary not yet represented in the library.  The result must be
+usable without private knowledge of the source vocabulary.
+
+1. [ ] *Choose a recurring, structurally distinct idiom.*  Start from a
+   modelling problem that will occur in more than one target fragment.
+   Write down its repeated graph or axiom shape and the questions that
+   shape enables.  Do not make a new pattern for a change of labels,
+   example values or domain alone.  Compare it with the existing index:
+   if substitution into an existing pattern gives the intended
+   structure and preserves the same information, use that pattern.  If
+   one form omits resources, qualified relations or other queryable
+   information, it is a genuine variant; name the direction of
+   information loss.
+
+2. [ ] *Verify the source vocabulary before drafting.*  Register and
+   activate an authoritative, version-appropriate source with
+   ~elot_db_activate_source~.  Search its classes, properties and
+   individuals with ~elot_db_search_label~ and inspect each candidate
+   with ~elot_db_get_attributes~, ~elot_db_supertypes~ or a read-only
+   SPARQL query.  Record the exact CURIE, kind, source ontology IRI,
+   direct parent, Domain, Range, inverse, characteristics and relevant
+   chains or restrictions.  Treat plausible names as unverified: do not
+   invent a term to complete an expected shape.  If the vocabulary is
+   thinner or differently shaped than expected, reduce or change the
+   pattern's scope and say what it cannot express.
+
+3. [ ] *Provision the complete import closure.*  Vendor the real source
+   ontology in =patterns/=; never replace it with a hand-written stub.
+   Add one ~catalog-v001.xml~ ~<uri>~ mapping from its ontology IRI to
+   the local file, and do the same for every transitive import not
+   already mapped.  Add or update the reproducible fetch/convert rule in
+   =patterns/Makefile= and run ~make -C patterns vendor check~.  Activate
+   the source in the ELOT db as well: the catalog serves OWL import
+   resolution, while the db serves term discovery and borrowing.
+
+4. [ ] *Create one ELOT file and ontology.*  Use one pattern file, one
+   ontology declaration and one stable base IRI.  Give it a version IRI
+   and version information, a description of the idiom and its principal
+   limitation, and imports of ~pattern:pattern-vocabulary~ plus every
+   ontology whose terms occur in the pattern.  Copy only the ordinary
+   ELOT skeleton and conventions from a nearby pattern; do not copy its
+   domain assumptions.  Add a catalog mapping for a pattern IRI when
+   another pattern imports it.
+
+5. [ ] *Separate constants from placeholders.*  A source-vocabulary
+   resource used unchanged in every application is a constant: keep its
+   external CURIE, annotate it ~pattern:action :: BORROW~ and
+   ~rdfs:isDefinedBy~, and place it under the verified source parent.
+   A role filled from the target ontology is a ~var:~ placeholder.
+   Declare locally every external and ~pattern:~ term the OMN body uses,
+   because import alone does not satisfy Manchester's explicit
+   signature requirement.
+
+6. [ ] *Choose each slot's layer and action.*  First classify the slot:
+   a shared class or property is normally TBox and bind-first; a
+   situation-specific individual is normally ABox and mint-first.  Then
+   choose the narrowest action whose default is correct:
+   ~BIND~, ~MINT~, ~BORROW~, ~BIND_OR_MINT~, ~MINT_OR_BIND~ or
+   ~BORROW_OR_MINT~.  Search-before-mint for every bind-first slot.  Mark
+   a repeatable leg's anchor ~MINT_OR_BIND~ so a later application can
+   bind the anchor and mint only another leg.  Put instructions on every
+   placeholder, including its expected kind, reuse rule, identity rule
+   and any placement or naming constraint.  Mark literal slots with a
+   nested ~pattern:value~ datatype annotation.
+
+7. [ ] *Write and inspect the pattern body.*  Connect the constants and
+   placeholders with the smallest axiom set that expresses the idiom.
+   Preserve verified property direction, hierarchy, Domain and Range;
+   keep one independently editable part-restriction per axiom.  Check
+   that every placeholder is bound by the body and every body variable
+   has an action and instruction.  State whether inverses or simpler
+   views are asserted, entailed or merely recommended.  Do not add an
+   axiom just to make the worked example convenient.
+
+8. [ ] *Write all four mandatory prose blocks.*
+   - /How to apply this pattern/ gives the pattern-specific binding,
+     minting, repetition and ordering rules, while linking to the generic
+     consumer procedure below.
+   - /Required constants (borrow these first)/ lists exact CURIEs,
+     source ontologies and any hierarchy placement that must be retained.
+   - /Worked example/ contains a concrete expected result and a
+     captioned substitution table from every placeholder to its value.
+   - The fourth block names the main hazard: when not to apply the
+     pattern, an ambiguity, an unvalidated two-route condition, or the
+     information it loses.  Use /Relationship to <sibling>/ only when
+     sibling reduction is the principal hazard; then state the relating
+     axiom, whether it is asserted or documented, omitted resources and
+     direction of reduction.
+
+9. [ ] *Validate with imports demonstrably loaded.*  Tangle any local
+   ELOT dependencies, then run
+   ~make -C patterns elot-check FILES="My-pattern.org"~ (or
+   ~elot_check~ with the same catalog configured).  Acceptance requires
+   clean lint and OMN parse followed by an actual consistency verdict;
+   a report saying ROBOT stages were ~SKIPPED~ is not evidence.  Inspect
+   the report for import warnings or ~UnloadableImportException~, and
+   temporarily point the new catalog mapping at a nonexistent local file
+   to confirm that the same check fails at OMN parse (removing the mapping
+   may merely allow a network fetch).  Restore it and rerun to a clean
+   consistency result.  Where relevant, also query for
+   an entailment supplied only by the imported ontology; this proves
+   more than file availability.
+
+10. [ ] *Apply it once to a real target fragment.*  Follow /Applying a
+    pattern: the generic procedure/ rather than copying the worked
+    example mechanically.  Reuse real target resources, mint only the
+    slots whose actions require it, remove all template annotations and
+    record ~pattern:appliedPattern~.  Run ~elot_check~ on the target and
+    query or inspect the resulting structure.  The acceptance test is
+    that the promised question can be answered and the stated hazard is
+    still visible; if application needs undocumented judgement, repair
+    this guide or the pattern and repeat.
+
+Finally add the pattern to the library index with its selection rule and
+information/fidelity note.  A file that passes reasoning but lacks the
+four prose blocks, source verification or a real application is not a
+completed pattern.
+
+* Pattern application model
+** Placeholder annotations and actions
+Each resource in a pattern has its application metadata as OWL
+annotations, so the instructions stay with the resource and are visible
+to a reader and to a tool call such as =elot_read_resource=:
+
+- ~pattern:action~ --- a keyword saying what to do with the resource:
+  - ~BORROW~ --- reuse a resource from an external ontology, taking it
+    from the ELOT db and declaring it in the target file with
+    ~rdfs:isDefinedBy~.
+  - ~BIND~ --- reuse a resource already declared in the target file.
+  - ~MINT~ --- create a new CURIE under the target ontology's
+    identifier scheme.
+  - ~BORROW_OR_MINT~ --- borrow if a suitable external resource exists,
+    otherwise mint (e.g. a QUDT quantity kind or unit).
+  - ~MINT_OR_BIND~ --- mint by default; an existing subject in the file
+    may be bound instead.
+  - ~BIND_OR_MINT~ --- reuse an existing resource by default; mint only
+    if none fits.  This is used for TBox slots such as a shortcut
+    property or a datum type, where minting a second resource for the
+    same purpose would be a modelling error.
+
+  The order in the compound keywords gives the default; the second
+  option needs a reason.
+- ~pattern:instruction~ --- free text describing how to fill the slot.
+
+Action values are plain strings in v1; there is no SKOS concept scheme.
+
+Both properties are annotation properties and have no effect on
+reasoning, so the reasoner checks the pattern, not its description.
+When a pattern is instantiated, remove all ~pattern:*~ annotations.
+
+*** TBox setup and ABox instantiation
+Most patterns have two kinds of slot:
+
+- *TBox slots* --- the quantity class, the datum type, the unit, the
+  shortcut property.  These are set up once per ontology and shared by
+  every later application.
+- *ABox slots* --- the subject individual, the datum individual, the
+  literal.  These are new on every application.
+
+One pattern file therefore describes both the preparation and the use.
+This works only if the TBox part is reused rather than minted again,
+so that later applications use the same vocabulary.
+
+The keyword order shows which is which: an ABox slot is ~MINT~ or
+~MINT_OR_BIND~, a shared TBox slot is ~BIND~ or ~BIND_OR_MINT~.  For
+every bind-first slot, look for the existing resource before creating
+one; if it almost fits (say its ~Domain~ is too narrow), widen it
+instead of minting a second one.
+
+*** Literal placeholders
+Most placeholders are ~var:~ CURIEs, but a literal cannot have a ~var:~
+name.  To mark a literal as a variable, annotate the axiom it occurs in
+with ~pattern:value~, whose value is the expected datatype:
+
+:  - Facts :: lis:datumValue "100"^^xsd:decimal
+:    - pattern:value :: xsd:decimal
+
+The nested row is an axiom annotation: it belongs to that ~Facts~ row,
+not to the individual, and tool calls report it under the axiom.  The
+literal ~"100"~ is an example; the applier supplies the real value of
+the stated datatype.  Like the other ~pattern:*~ annotations,
+~pattern:value~ has no effect on reasoning and is removed on
+instantiation.
+
+It also serves as the OTTR-style type of a literal parameter: the
+datatype is the type, and the action is "supply a value" rather than
+mint, bind or borrow.
+
+** Provisioning sources and constants
+*** Borrow sources
+The ~rdfs:isDefinedBy~ annotation on a borrowed resource says where the
+resource comes from.  Together the two annotations make a borrow slot
+self-describing: ~pattern:action~ says what to do, ~rdfs:isDefinedBy~
+says from where.
+
+This gives a preparation step before instantiation.  Collect the
+distinct ~rdfs:isDefinedBy~ targets of every ~BORROW~ and
+~BORROW_OR_MINT~ resource: that set lists the source ontologies the
+target project needs.  For each, check whether it is in the ELOT db,
+and if not, locate and register it (=elot_db_activate_source=) before
+editing.  The list can be produced by query:
+
+#+begin_src sparql
+SELECT DISTINCT ?source WHERE {
+  ?slot pattern:action ?action ;
+        rdfs:isDefinedBy ?source .
+  FILTER (?action IN ("BORROW", "BORROW_OR_MINT"))
+}
+#+end_src
+
+One difficulty: ~rdfs:isDefinedBy~ gives ontology IRIs, which is the
+right level for deciding what to provision, but provisioning needs a
+file path or other locator, and an ontology IRI cannot always be
+dereferenced to one.  The ELOT db's source registry is the natural
+place for that mapping.
+
+If a source was ingested from the same resource the pattern's
+~rdfs:isDefinedBy~ points at, the IRIs match and no further matching is
+needed.  This holds only when a source is ingested under its
+authoritative IRI; a local copy registered under a different base IRI
+brings the resolution problem back.
+
+*** Borrow the pattern's constants before instantiating
+Besides its ~var:~ placeholders, a pattern file declares constants:
+resources of an imported ontology that its ~Facts~, ~Types~ and axiom
+rows refer to directly.  They have ~pattern:action :: BORROW~ and an
+~rdfs:isDefinedBy~ row.
+
+Before applying a pattern, each constant must already be borrowed into
+the target ontology, with the same ~rdfs:isDefinedBy~ and nested under
+its parent from the source ontology.  Otherwise the instantiated rows
+refer to undeclared CURIEs and the OMN parse fails.
+
+Where the list of sources says which ontologies must be available, the
+constants say which resources must be present.
+
+** Applying a pattern: the generic procedure
+1. *Provision the sources* --- the source ontologies, then the
+   constants (see the two sections above).
+2. *Read the slot annotations.*  Every placeholder states its
+   ~pattern:action~ and a ~pattern:instruction~; read them with
+   =elot_read_resource= rather than guessing from the name.
+3. *Substitute every ~var:~ resource* with a resource of the target
+   ontology --- bind, borrow or mint as the ~pattern:action~ says.
+
+   A placeholder may be a property as well as a class or individual,
+   and a minted property needs more care.  In the shortcut patterns the
+   property name states the quality kind, and sometimes the unit, and
+   is the only record of what the pattern leaves out.  So when minting
+   a property:
+   - check first whether it already exists.  A slot marked
+     ~BIND_OR_MINT~ means the second object needing a mass attribution
+     must reuse the ~ex:hasMass~ minted by the first.  Search the
+     target file (=elot_resources=, =elot_db_search_label=) for an
+     existing sub-property of the same super-property with the same
+     quantity-kind annotation;
+   - keep the heading nesting used in the pattern, since that gives the
+     property its domain, range and any chain axiom;
+   - check the inherited ~Domain~ and ~Range~ against the intended use;
+   - record the quality kind, quantification type and, where the
+     pattern encodes it, the unit in annotations as well as in the
+     name.
+4. *Supply every literal placeholder* with a value of the datatype
+   named by the ~pattern:value~ annotation.
+5. *Do not change the axioms.*  The ~Types~, ~Facts~ and ~SubClassOf~
+   rows connecting the placeholders are the pattern; replace the names,
+   not the structure.
+6. *Remove the template-control annotations* (~pattern:action~,
+   ~pattern:instruction~, ~pattern:value~ and other slot metadata) from
+   the result.  They describe the template, not the instantiated domain
+   resources.
+7. *Record the application* with ~pattern:appliedPattern~, then
+   re-check the target file.
+
+** Tool-assisted application procedure
+This is the operational form of the generic procedure above.  It does not
+change the substitution contract or introduce a second application method;
+it identifies the checks and tool calls that make each decision inspectable.
+Exact tools may change, but the sequence and its stop conditions apply to
+almost any pattern.
+
+*** Practical workflow
+| Stage       | Practical action                                                                                                                                                                                             | Typical ELOT support                                                                                                   | Result or stop condition                                                                               |
+|-------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------|
+| Select      | Choose the pattern by its stated intent, promised query and fidelity note; read its hazard and negative case.                                                                                                | Library index, pattern prose, worked example                                                                           | Stop if the modelling problem or required information does not match.                                  |
+| Inspect     | Read every constant, placeholder, action, instruction and literal datatype; make a complete binding table.                                                                                                   | ~elot_resources~, ~elot_read_resource~                                                                                     | Every slot has an expected kind and an explicit BORROW/BIND/MINT decision.                             |
+| Provision   | Activate authoritative source ontologies and borrow every required constant before writing instantiated axioms.                                                                                              | ~elot_db_activate_source~, ~elot_db_search_label~, ~elot_db_get_attributes~, borrow/declaration tools                        | All external CURIEs used by the result are declared and traceable.                                     |
+| Reuse first | Search the target and the ELOT db for each bind-first or borrow-first slot; inspect near matches rather than relying on labels alone.                                                                        | ~elot_resources~, ~elot_read_resource~, ~elot_db_search_label~, ~elot_db_get_attributes~                                       | Reuse is chosen where identity and axioms fit; otherwise the slot's action explicitly permits minting. |
+| Plan        | Record the substitution for every resource and literal, including identifiers, placement, source, repetition/grouping and the reason for any compound action's fallback.                                     | Binding table from the pattern's worked-example form; ~elot_verify_identifier~ or ~elot_mint_identifier~ where appropriate | No unbound slot, invented upstream term or unresolved identity decision remains.                       |
+| Preflight   | Check proposed axiom rows against the target signature before committing; check the complete draft when interactions between rows matter.                                                                    | ~elot_axiom_check~, dry-run edit operations, ~elot_check~ with draft content                                               | Stop on an illegal keyword, undeclared CURIE, kind/range error or failed parse.                        |
+| Apply       | Declare or mint the planned resources, reproduce the pattern's axiom structure with substitutions, omit template-control annotations, and add ~pattern:appliedPattern~ to the chosen instantiated resource(s). | Resource insertion/declaration tools, ~elot_edit_axiom~ or ~elot_edit_axioms~                                              | The target contains the intended structure, not a copy of the template metadata.                       |
+| Validate    | Run whole-file lint, OMN parse and reasoning with imports resolved; run any pattern-specific query or postcondition.                                                                                         | ~elot_check~, ~elot_sparql_select~, and when needed ~elot_consistency~ / ~elot_unsatisfiable~                                  | Stop and repair or roll back on failure; a ROBOT-skipped report is not full validation.                |
+| Review      | Compare the result with the worked example and hazard, report minted and reused resources, fallbacks, uncertainties and any approval still required.                                                         | ~elot_read_resource~, targeted SPARQL, structural diff when a baseline exists                                            | The promised question is answerable and no information loss or judgement is hidden.                    |
+
+The binding table is the hand-off between inspection and mutation.  At minimum
+it records the slot, expected kind, action, selected target, mint-or-reuse
+decision and evidence for that decision.  For a literal it records the value
+and datatype.  For a repeated group it records one row per tuple.  Do not begin
+mutation while any required row is unresolved.
+
+Current tools edit declarations and axiom rows rather than applying a whole
+pattern transaction.  Group related rows in the smallest coherent atomic edit
+available, use dry runs where offered, and let post-commit revalidation roll
+back a failing mutation.  A future ~elot_pattern_apply~ may package these steps,
+but it must preserve the same decisions, provenance and validation boundary.
+
+** Shared modelling rules
+These apply to resources borrowed from any imported ontology:
+
+- *Assert both directions of each property* for easier querying, e.g.
+  ~lis:hasPhysicalQuantity~ / ~lis:physicalQuantityOf~.
+- *Nest each borrowed property under its correct super-property*
+  (heading nesting = ~SubPropertyOf~).  Check the super-property in the
+  source ontology first: the wrong parent can bring in a domain or
+  range that makes the ontology inconsistent.
+- *One part-restriction per axiom.*  Where a class restriction combines
+  several independent parts (a shaft of length 90, a canopy of
+  diameter 200), write separate ~SubClassOf ::~ rows rather than one
+  row joined by ~and~.  The OWL meaning is the same, but separate rows
+  can be queried, edited and removed one at a time, parse errors point
+  at one restriction, and diffs stay readable.  Keep ~and~ inside a
+  single part's restriction; do not join unrelated parts with it.
+
+** Application provenance (experimental!)
+When a pattern is applied, record it on the instantiated resources:
+~pattern:appliedPattern :: pattern:IDO-pattern-quantity-datum-fullform~.
+
+This makes it possible to query which parts of an ontology follow a
+pattern and which were written freehand. In review, the pattern
+reference answers the question of why a fragment is believed to
+correctly follow a recommended pattern. The freehand parts are then
+the ones that need expert review.
+
+Pattern application is not automated: an LLM using the ELOT
+read/validate/commit tools applies the pattern.  The provenance
+annotation costs one row per instantiated resource and is worth adding
+now, because it is what makes the manual work auditable afterwards.
+
+Where the annotation should attach is not settled --- see the open
+questions.
+
+* Deferred design and research
+Noted, not resolved.  The corresponding terms are declared as reserved
+in [[file:pattern-vocabulary.org][pattern-vocabulary.org]].
+
+** OTTR signature correspondence
+OTTR (https://ottr.xyz) describes a template's signature as an ordered
+parameter list: variable, optional type, modifiers (~?~ optional, ~!~
+non-blank), optional default.  In ELOT terms:
+
+- *variable* -> a ~var:~ placeholder.
+- *type* -> the placeholder's ~Types ::~ or heading nesting; an untyped
+  ~var:~ is ~owl:Thing~.
+- *optional* -> ~pattern:cardinality :: optional~ (reserved).  The
+  difficulty is the pruning behaviour, not the annotation.
+- *default* -> ~pattern:default~ (reserved).
+- *non-blank* -> reserved for later validation.
+- *order* -> ~pattern:paramIndex~ (reserved), or document order.
+
+OTTR keeps the signature separate from the body; ELOT keeps the
+placeholders in the body with their metadata attached.  The ~var:~ set
+is the signature.
+
+** Recursive expansion and consolidation
+ELOT patterns are meant for single, interactive instantiation, not bulk
+expansion.  Nesting need not require a separate parser: a pattern's IRI
+is its ontology id, so with bindings applied and the imports resolved
+the result is an OWL graph ROBOT can merge and =elot-exporter= can read
+back into an ELOT outline.  But the ~var:~ binding is a substitution
+over the source text, not over the tangled OWL, so merging and
+re-exporting gives a flat file without the annotations.
+
+** Variable cardinality
+Some cases need a variable number of related resources: /n/ cables each
+with a connection point, three guests each with a dish, a car's wheels
+and seats.
+
+Two things are separate: which roles belong to the same tuple, and how
+many tuples there are.  ~pattern:cardinality :: many~ marks roles that
+vary together, ~pattern:group~ says which roles form one tuple.
+
+The difficult part is relating a minted resource in one group to the
+right minted resource in another.  Three approaches are known: nesting
+(where the relation is 1:1), explicit keys
+(~pattern:correlationKey~, for many-to-many), and a shared group scope.
+Variable cardinality is a form of sub-pattern expansion, and per-element
+conditional binding is harder again.
+
+** Conditional binding
+Some slots are filled only under a condition, such as a warning plate
+fitted only on a high-voltage switchboard.  The structured form is
+~pattern:when~ (a triple pattern over already-bound roles) and
+~pattern:then~ (what is bound, or that the role is present, when the
+condition holds).  In v1 this is written as prose in
+~pattern:instruction~.
+
+Grouping and conditions are independent: ~pattern:group~ says which
+tuple, the condition says whether the role is in it.
+
+** Cross-pattern querying: named graphs
+A =patterns/collect.org= importing every pattern does not work:
+importing merges the patterns into one graph, and ~var:quality~,
+~var:datum~ and the rest are deliberately the same identifiers in
+sibling patterns.  Merged, each becomes one individual with the axioms
+of every pattern.
+
+Use one named graph per pattern, with the pattern's ontology IRI as the
+graph IRI; cross-pattern questions are then quad queries.  Not part of
+step 1.
+
+** Prior art for the =pattern:= vocabulary (informative)
+The ~pattern:~ vocabulary covers three concerns:
+
+- *Structure and constraints* --- SHACL (with SHACL-AF) is the closest
+  fit: ~sh:minCount~, ~sh:maxCount~, ~sh:defaultValue~, ~sh:order~,
+  ~sh:condition~, ~sh:rule~, ~sh:class~, ~sh:datatype~.
+- *Template expansion and variables* --- OTTR: the ~var:~ signature,
+  list expansion, nesting.
+- *Provisioning intent* --- ~pattern:action~ has no counterpart in RDF
+  vocabularies; the nearest analogue is Terraform's ~resource~ (mint)
+  vs ~data~ (bind) vs module registry (borrow).
+
+SHACL vocabulary is not adopted directly, for two reasons: ~pattern:*~
+must not affect reasoning, whereas tools that recognise ~sh:~ terms act
+on them; and the two annotations used in almost every pattern
+(~pattern:action~, ~pattern:instruction~) have no external equivalent.
+
+If a pattern later needs enforced constraints, the way to do it is a
+separate SHACL shapes file, not ~sh:~ triples in the pattern ontology.
+
+** Open questions
+1. *Where does ~pattern:appliedPattern~ attach?*  Every minted
+   resource; only the anchor resource; or a separate record individual
+   holding pattern IRI, version, date and bindings.  Step 3's two
+   applications to =examples/umbrella.org= suggest every minted
+   resource: the minted set was small, the bound resources were
+   existing domain terms that should not be annotated, and the anchor
+   was unclear --- the function pattern's natural anchor is the bearer,
+   which was bound.  Not settled, since neither application had a large
+   minted set.
+2. *Version pinning* --- should ~pattern:appliedPattern~ use the
+   versioned ontology IRI (~.../0.0~) rather than the base IRI?
+3. *Ontology IRI to source resolution* --- the ELOT db is the natural
+   resolver; the query above shows the mechanism but does not settle
+   this.
+4. *Namespace* --- ~http://example.org/pattern/~ is a placeholder.
+   Decide before the vocabulary is used outside this repository.
+5. *Annotation properties for implied quantity kind and unit* --- the
+   shortcut patterns record what they leave out by annotating the
+   minted property.  Those annotation properties belong in an RDL, and
+   no such namespace is available, so the patterns use
+   ~pat:impliedQuantityKind~ and ~pat:impliedUnit~ in a temporary
+   ~pat:~ namespace declared by the applying ontology.  Two conventions
+   should be kept: values are IRIs, not literals (any qualifying text
+   goes in a nested description list); and the unit vocabulary is not
+   fixed to QUDT --- ~unit:~ and ~quantitykind:~ are the default in the
+   examples, but OM, UCUM or a project RDL are equally acceptable, and
+   the choice belongs in the applying ontology's header.  When the real
+   terms exist, adoption is a prefix change or one
+   ~elot_rename_resource~ per file.
+6. *Reified participation roles* --- =IDO-pattern-idef0= cannot state
+   that one thing plays different roles in one activity;
+   =PROV-O-pattern-qualified-activity= does so with =prov:Usage= and
+   =prov:hadRole=.  Whether the framework should prescribe a general
+   treatment is open.
+7. *Per-ontology subfolders* --- should patterns written for one
+   ontology be grouped (=patterns/IDO/=, =patterns/PROV/=)?  Deferred:
+   many patterns draw on more than one ontology, so the library is flat
+   for now.

@@ -1,0 +1,252 @@
+#+title: IDO modelling pattern: function, bearer and realizing activity
+#+subtitle: An OWL ontology
+#+author: johanw
+#+date: Created 2026-08-07
+#+call: theme-elot()
+
+See [[file:pattern-framework.org][pattern-framework.org]] for the framework, [[file:pattern-vocabulary.org][pattern-vocabulary.org]] for
+the =pattern:= vocabulary, and [[file:README.org][README.org]] for the library index.
+
+* IDO-pattern-function
+:PROPERTIES:
+:ID: IDO-pattern-function
+:ELOT-context-type: ontology
+:ELOT-context-localname: IDO-pattern-function
+:ELOT-default-prefix: var
+:header-args:omn: :tangle ./IDO-pattern-function.omn :noweb yes
+:header-args:emacs-lisp: :tangle no :exports results
+:header-args: :padline yes
+:END:
+
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+
+#+caption: OWL ontology prefixes
+| prefix   | uri                                           |
+|----------+-----------------------------------------------|
+| owl:     | http://www.w3.org/2002/07/owl#                |
+| rdf:     | http://www.w3.org/1999/02/22-rdf-syntax-ns#   |
+| xml:     | http://www.w3.org/XML/1998/namespace          |
+| xsd:     | http://www.w3.org/2001/XMLSchema#             |
+| rdfs:    | http://www.w3.org/2000/01/rdf-schema#         |
+| skos:    | http://www.w3.org/2004/02/skos/core#          |
+| dc:      | http://purl.org/dc/elements/1.1/              |
+| dcterms: | http://purl.org/dc/terms/                     |
+| lis:     | http://rds.posccaesar.org/ontology/lis14/rdl/ |
+| lis-ont: | http://rds.posccaesar.org/ontology/lis14/ont/ |
+| var:     | http://example.org/variable/                  |
+| pattern: | http://example.org/pattern/                   |
+
+** IDO-pattern-function ontology (pattern:IDO-pattern-function pattern:IDO-pattern-function/0.0)
+:PROPERTIES:
+:ID:       IDO-pattern-function-ontology-declaration
+:resourcedefs: yes
+:END:
+ - owl:versionInfo :: 0.0 start of IDO-pattern-function
+ - dcterms:modified ::  {{{time("%Y-%m-%d")}}}^^xsd:date
+ - dcterms:description :: This ontology is an IDO modelling pattern: an object bears a function -- a capability that meets a design requirement -- and that function is realized in an activity of a stated kind, in which the bearer is the active participant. No datum, unit or literal appears. IDO gives no relation from a function to the activity type that would realize it; the type-level link exists only as a class restriction the applier writes, so a function individual with no realization asserted looks the same as one that is never realized.
+ - Import :: pattern:pattern-vocabulary
+ - Import :: lis-ont:core
+
+*** How to apply this pattern                                   :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-function-howto
+:END:
+
+The generic procedure is in [[file:pattern-framework.org::*Applying a pattern: the generic procedure][Applying a pattern: the generic
+procedure]]. Specific to /this/ pattern:
+
+- *A function is an individual, one per bearer.* IDO is explicit
+  about this: "If the hammer has multiple functions ... each function
+  should be represented with a distinct individual"
+  (~lis:Function~ usage note). So ~var:TheFunction~ is ~MINT~, always
+  -- never bound to a shared "the pumping function" individual.
+- *The TBox half is the activity kind.* ~var:RealizingActivityKind~ is
+  ~BIND_OR_MINT~: the class of activity in which functions of this
+  sort are realized (pumping, shielding, nail-driving). It is
+  established once for the ontology and reused by every later
+  application; a second pump does not need a second
+  ~ex:Pumping~. The bearer's class, ~var:FunctionBearerClass~, is
+  ~BIND~ -- it is normally already in the file.
+- *Realization runs through the potential, not the bearer.* The
+  asserted leg is ~var:TheFunction lis:realizedIn
+  var:TheRealizingActivity~ (~lis:realizedIn~ has ~Domain
+  lis:Potential~, ~Range lis:Activity~). Do not attach the activity
+  to the bearer directly and expect IDO to fill in the function.
+- *The participation leg is asserted, and it is the active one.*
+  ~lis:hasActiveParticipant~ says the bearer is the one doing the
+  thing (IDO's usage note: "a pump's primary function is realized in
+  pumping activities, but only provided the pump is actually doing the
+  pumping"). ~lis:hasParticipant~ has the chain ~lis:realizes o
+  lis:potentialOf~, so plain participation is already entailed from
+  the realization leg; what is not entailed is that the participation
+  is *active*. That is what the asserted row adds. See /Two routes to
+  participation/ below.
+- *Bearer typing is not asserted as ~lis:FunctionalObject~.* IDO
+  notes that any object with a function can be inferred to be a
+  functional object; asserting it would be redundant. The pattern
+  therefore nests ~var:FunctionBearerClass~ under ~lis:Object~ and
+  leaves the ~lis:FunctionalObject~ classification to the reasoner.
+- Optional: assert the inverses (~lis:functionOf~,
+  ~lis:realizes~, ~lis:activeParticipantIn~) per the shared
+  ergonomics rules. They are not part of the minimal pattern.
+
+*** Required constants (borrow these first)                     :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-function-constants
+:END:
+
+All from ~lis-ont:core~ (IDO), verified against IDO 4.2:
+
+- ~lis:Object~ -- the bearer's ancestor class.
+- ~lis:Capability~ and its subclass ~lis:Function~ ("A capability that
+  meets a design requirement").
+- ~lis:Activity~ -- ancestor of the realizing activity kind.
+- ~lis:hasCapability~ and its sub-property ~lis:hasFunction~ (~Range
+  lis:Function~, inverse ~lis:functionOf~).
+- ~lis:realizedIn~ (~Domain lis:Potential~, ~Range lis:Activity~,
+  inverse ~lis:realizes~).
+- ~lis:hasParticipant~ (~Domain lis:Activity~, ~Range lis:Object~) and
+  its sub-property ~lis:hasActiveParticipant~.
+
+Nest each under the parent shown: ~lis:hasFunction~ under
+~lis:hasCapability~, ~lis:hasActiveParticipant~ under
+~lis:hasParticipant~, ~lis:Function~ under ~lis:Capability~.
+Declaring ~lis:hasActiveParticipant~ at top level would silently drop
+the ~Domain~/~Range~ it inherits.
+
+*** Two routes to participation                                  :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-function-two-routes
+:END:
+
+The fact "the bearer participates in the realizing activity" can
+arrive two ways:
+
+1. *Entailed*, via IDO's chain ~lis:hasParticipant SubPropertyChain:
+   lis:realizes o lis:potentialOf~ -- given the realization leg and
+   ~lis:functionOf~, the reasoner derives ~lis:hasParticipant~.
+2. *Asserted*, as this pattern's ~lis:hasActiveParticipant~ row.
+
+Neither checks the other. Asserting the active leg for an object that
+bears no function realized in the activity is consistent: it just adds
+a second participant. Omitting the active leg loses the
+agent/patient distinction without any complaint, because the entailed
+participation is still there. The two are not competing values, so
+nothing can contradict; the failure is a missing or wrong role. A
+post-hoc query (find activities whose realized function's bearer is
+not among the active participants) is the way to catch it. README
+records the same situation for the quantity shortcuts, under /Shortcut
+values and full-form values do not check each other/.
+
+*** Worked example: the canopy's rain-shielding function          :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-function-example
+:END:
+
+"The canopy of Ursula's umbrella has the function of shielding from
+rain, realized in a rain-shielding activity in which the canopy is the
+active participant."
+
+#+caption: Substitution of pattern placeholders for the canopy-function example
+| pattern placeholder        | concrete resource                            |
+|----------------------------+----------------------------------------------|
+| var:FunctionBearerClass    | umb:canopy                                   |
+| var:RealizingActivityKind  | umb:rain-shielding                           |
+| var:TheFunctionBearer      | umb:ursula-s-umbrella-canopy                 |
+| var:TheFunction            | umb:ursula-s-umbrella-canopy-shielding-function |
+| var:TheRealizingActivity   | umb:ursula-s-umbrella-canopy-shielding-2026  |
+
+Reading the result: the canopy bears a ~lis:Function~ individual of its
+own; that function is ~lis:realizedIn~ a ~umb:rain-shielding~ activity;
+and the canopy is that activity's ~lis:hasActiveParticipant~. The
+canopy is thereby inferable as a ~lis:FunctionalObject~ without any
+such assertion.
+
+*Second application, same ontology.* For the shaft's load-bearing
+function, ~umb:rain-shielding~ is not reused -- a different activity
+kind is minted, or bound if already present. Every function individual
+is fresh; the activity kind is the only bind-first slot in this
+pattern.
+
+# LLM: we don't need a Datatypes section. Ignore that lint warning!
+
+** Classes
+:PROPERTIES:
+:ID:       IDO-pattern-function-class-hierarchy
+:resourcedefs: yes
+:END:
+*** lis:Object
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+**** var:FunctionBearerClass
+ - pattern:action :: BIND
+ - pattern:instruction :: The class of the object that bears the function. Normally already declared in the target ontology (Canopy, Pump, Door). Do not assert it as a subclass of ~lis:FunctionalObject~: IDO infers that classification from the function itself.
+*** lis:Capability
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+**** lis:Function
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+*** lis:Activity
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+**** var:RealizingActivityKind
+ - pattern:action :: BIND_OR_MINT
+ - pattern:instruction :: The kind of activity in which functions of this sort are realized (pumping, rain-shielding, nail-driving). This is the TBox slot of the pattern: established once per ontology and reused by every later application for the same kind of function, so FIRST search the target file for an existing activity class before minting. Mint in the domain namespace, nested under ~lis:Activity~. Note that IDO provides no relation from a function to the activity type realizing it, so this class is linked to the pattern only through the individual-level ~lis:realizedIn~ row.
+** Object properties
+:PROPERTIES:
+:ID:       IDO-pattern-function-object-property-hierarchy
+:resourcedefs: yes
+:END:
+*** lis:hasCapability
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+**** lis:hasFunction
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+*** lis:realizedIn
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+*** lis:hasParticipant
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+**** lis:hasActiveParticipant
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+** Annotation properties
+:PROPERTIES:
+:ID:       IDO-pattern-function-annotation-property-hierarchy
+:resourcedefs: yes
+:END:
+*** action (pattern:action)
+ - rdfs:isDefinedBy :: <http://example.org/pattern/pattern-vocabulary>
+*** instruction (pattern:instruction)
+ - rdfs:isDefinedBy :: <http://example.org/pattern/pattern-vocabulary>
+*** owl:versionInfo
+*** dcterms:modified
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dcterms:description
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+** Individuals
+:PROPERTIES:
+:ID:       IDO-pattern-function-individuals
+:resourcedefs: yes
+:END:
+*** var:TheFunctionBearer
+ - Types :: var:FunctionBearerClass
+ - Facts :: lis:hasFunction var:TheFunction
+ - pattern:action :: MINT_OR_BIND
+ - pattern:instruction :: The object that is *for* something. Mint a fresh individual, or bind an existing in-file object individual -- the usual case, since the pattern is normally applied to something the ontology already describes.
+*** var:TheFunction
+ - Types :: lis:Function
+ - Facts :: lis:realizedIn var:TheRealizingActivity
+ - pattern:action :: MINT
+ - pattern:instruction :: The function itself: always a fresh individual, one per bearer per function, per IDO's usage note on ~lis:Function~. Never bind a shared "the pumping function" individual across bearers. Name it after bearer and function together, e.g. ~ex:pump-101-pumping-function~.
+*** var:TheRealizingActivity
+ - Types :: var:RealizingActivityKind
+ - Facts :: lis:hasActiveParticipant var:TheFunctionBearer
+ - pattern:action :: MINT
+ - pattern:instruction :: The activity in which the function is realized. Fresh per application. The ~lis:hasActiveParticipant~ row marks the bearer as the agent rather than merely a participant -- IDO's chain axiom already entails plain participation, so omitting this row loses the role distinction without warning.

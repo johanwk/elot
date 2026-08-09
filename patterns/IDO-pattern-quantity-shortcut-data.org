@@ -1,0 +1,278 @@
+#+title: IDO modelling pattern: quantity value, shortcut data property
+#+subtitle: An OWL ontology
+#+author: johanw
+#+date: Created 2026-07-29 18:37
+#+call: theme-elot()
+
+See [[file:pattern-framework.org][pattern-framework.org]] for the framework, [[file:pattern-vocabulary.org][pattern-vocabulary.org]] for
+the =pattern:= vocabulary, and [[file:README.org][README.org]] for the library index.
+
+* IDO-pattern-quantity-shortcut-data
+:PROPERTIES:
+:ID: IDO-pattern-quantity-shortcut-data
+:ELOT-context-type: ontology
+:ELOT-context-localname: IDO-pattern-quantity-shortcut-data
+:ELOT-default-prefix: var
+:header-args:omn: :tangle ./IDO-pattern-quantity-shortcut-data.omn :noweb yes
+:header-args:emacs-lisp: :tangle no :exports results
+:header-args: :padline yes
+:END:
+
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+
+#+caption: OWL ontology prefixes
+| prefix   | uri                                           |
+|----------+-----------------------------------------------|
+| owl:     | http://www.w3.org/2002/07/owl#                |
+| rdf:     | http://www.w3.org/1999/02/22-rdf-syntax-ns#   |
+| xml:     | http://www.w3.org/XML/1998/namespace          |
+| xsd:     | http://www.w3.org/2001/XMLSchema#             |
+| rdfs:    | http://www.w3.org/2000/01/rdf-schema#         |
+| skos:    | http://www.w3.org/2004/02/skos/core#          |
+| dc:      | http://purl.org/dc/elements/1.1/              |
+| dcterms: | http://purl.org/dc/terms/                     |
+| lis:     | http://rds.posccaesar.org/ontology/lis14/rdl/ |
+| lis-ont: | http://rds.posccaesar.org/ontology/lis14/ont/ |
+| var:     | http://example.org/variable/                  |
+| pattern: | http://example.org/pattern/                   |
+| pat:     | http://example.org/placeholder/               |
+
+** IDO-pattern-quantity-shortcut-data ontology (pattern:IDO-pattern-quantity-shortcut-data pattern:IDO-pattern-quantity-shortcut-data/0.0)
+:PROPERTIES:
+:ID:       IDO-pattern-quantity-shortcut-data-ontology-declaration
+:resourcedefs: yes
+:END:
+ - owl:versionInfo :: 0.0 start of IDO-pattern-quantity-shortcut-data
+ - dcterms:modified ::  {{{time("%Y-%m-%d")}}}^^xsd:date
+ - dcterms:description :: This ontology is an IDO modelling pattern: a physical object is related directly to a literal value by a shortcut data property whose name states both the quality kind and the unit of measure. It is the smallest of the three IDO quantification patterns -- one triple per quantity -- and the one that keeps the least: neither quality, datum nor unit exists as a resource in the graph.
+ - Import :: pattern:pattern-vocabulary
+ - Import :: lis-ont:core
+
+*** How to apply this pattern                                   :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-quantity-shortcut-data-howto
+:END:
+
+The generic procedure is in [[file:pattern-framework.org::*Applying a pattern: the generic procedure][Applying a pattern: the generic procedure]].
+Specific to /this/ pattern:
+
+- There is one axiom of substance: a single ~Facts~ row linking
+  ~var:TheDomainThing~ to a literal via
+  ~var:shortcutQuantityValueProperty~. Everything else is signature.
+- ~var:shortcutQuantityValueProperty~ is a *minted data property*
+  nested under ~lis:qualityQuantityValue~, with an explicit ~Range~
+  (normally ~xsd:decimal~). Its name must state *both* the quality
+  and the unit -- ~ex:mass_Kg~, ~ex:thickness_mm~ -- because neither
+  is recoverable from the graph otherwise.
+- *The property slot is TBox, so it is minted once and bound
+  thereafter* --- hence its ~BIND_OR_MINT~ action. Only the ~Facts~
+  row (and its literal) is fresh on each application. Once ~ex:mass_Kg~
+  exists, every later mass-in-kg statement in the ontology reuses it.
+  A different *unit* for the same quality does need its own property
+  (~ex:mass_g~).
+- Fix the unit *per property*, never per statement. A property named
+  ~ex:mass_Kg~ whose values are sometimes pounds cannot be repaired
+  afterwards.
+- The literal to supply is the value itself, e.g.
+  ~"3.5"^^xsd:decimal~.
+- IDO's usage note on ~lis:qualityQuantityValue~ asks that shortcut
+  subproperties be annotated with the intended quantity type, the
+  quantification type (measured, nominal, ...) and the unit of
+  measure. Do that; see /Recording the unit/ below.
+
+*** Required constants (borrow these first)                     :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-quantity-shortcut-data-constants
+:END:
+
+Only two, both from ~lis-ont:core~ (IDO): the class
+~lis:PhysicalObject~ and the data property ~lis:qualityQuantityValue~
+(~Domain lis:Object~; IDO declares it as "the top node in a taxonomy
+of shortcut relations that combine quality and unit of measure into a
+single, simple data property" -- which is exactly this pattern).
+
+If the chosen unit-recovery option is the annotation one (below), also
+borrow ~lis:UnitOfMeasure~ and the unit individual itself.
+
+*** Recording the unit                                          :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-quantity-shortcut-data-unit
+:END:
+
+The unit is not in the graph, so it must be recorded on the property.
+The pattern uses an annotation on the minted property pointing at a
+unit individual -- e.g. ~pat:impliedUnit :: unit:KiloGM~ on
+~ex:mass_Kg~. It is machine-readable and points at the same unit
+resources the other two patterns use, so a query can join across
+patterns. The property name still states the unit as well, for the
+human reader.
+
+Two alternatives were considered and not taken: the property name
+alone (not machine-readable, and unit conversion becomes
+string-parsing), and ~qudt:hasUnit~ (it would make QUDT a dependency
+of the pattern, and it is declared for quantity values, not for
+properties).
+
+The annotation is not a ~pattern:~ term. The library does not yet own
+a namespace in which to declare the annotation properties this pattern
+needs --- that is RDL work, deferred --- so it uses placeholder terms
+in a temporary ~pat:~ namespace, declared in the applying ontology:
+
+: pat:impliedQuantityKind   -- the quality kind the property name states
+: pat:impliedUnit           -- the unit of measure the property name states
+
+#+begin_example
+,*** mass in kilogram (ex:mass_Kg)
+ - pat:impliedQuantityKind :: quantitykind:Mass
+ - pat:impliedUnit :: unit:KiloGM
+   - rdfs:comment :: Shortcut DP; quality and unit are not recoverable
+     from the datatype, hence these annotations.
+#+end_example
+
+Two conventions make later migration cheap:
+
+1. *Values are IRIs, never literals.* A unit or quantity-kind IRI can
+   be replaced, aligned, converted or dereferenced; ~"kg"~ cannot.
+   Where an explanation is wanted, ELOT's nested description lists
+   allow a comment on the row itself, as above.
+2. *The vocabulary is not fixed to QUDT.* ~unit:~ / ~quantitykind:~
+   (QUDT) is the default and what the worked examples use, but OM
+   (~om:kilogram~), UCUM, or a project RDL are equally admissible.
+   Pick one vocabulary per ontology and record the choice in the
+   ontology header; the pattern requires only that the value be an
+   IRI.
+
+Both are annotation properties, so they have no effect on reasoning.
+When the RDL terms exist, replacing the placeholders is a prefix swap
+or a single ~elot_rename_resource~.
+
+*** Worked example: temperature rating of a valve               :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-quantity-shortcut-data-example
+:END:
+
+A concrete instantiation modelling "this valve is rated to 180 °C",
+with no datum, no quality and no unit individual.
+
+#+caption: Substitution of pattern placeholders for the valve-rating example
+| pattern placeholder               | concrete resource         |
+|-----------------------------------+---------------------------|
+| var:DomainClass                   | ex:Valve                  |
+| var:shortcutQuantityValueProperty | ex:designTemperature_degC |
+| var:TheDomainThing                | ex:valve-77               |
+| literal value                     | "180"^^xsd:decimal        |
+
+Yielding one triple: ~ex:valve-77 ex:designTemperature_degC
+"180"^^xsd:decimal~. The property carries ~pat:impliedUnit ::
+unit:DEG_C~ and ~pat:impliedQuantityKind ::
+quantitykind:Temperature~, plus an annotation recording the
+quantification type (design / nominal rather than measured).
+
+*** Relationship to the sibling patterns                        :nodeclare:
+:PROPERTIES:
+:ID: IDO-pattern-quantity-shortcut-data-sibling
+:END:
+
+Siblings: [[file:IDO-pattern-quantity-datum-fullform.org][IDO-pattern-quantity-datum-fullform]] (pattern 1) and
+[[file:IDO-pattern-quantity-shortcut-object.org][IDO-pattern-quantity-shortcut-object]] (pattern 2). The three differ in
+how much detail they keep.
+
+*What this variant leaves out, relative to pattern 1.* Three
+individuals and two class placeholders: the quality
+(~var:TheDomainQuantity~, ~var:DomainQuantityKind~), the datum
+(~var:TheDomainScalarQuantityDatum~,
+~var:DomainScalarQuantityDatumType~) and the unit individual
+(~var:TheUnitOfMeasure~). What remains is the object, the property and
+the literal.
+
+*What it leaves out, relative to pattern 2.* The datum and the unit
+individual, and with them everything at datum level: per-statement
+provenance, the measuring activity, a qualifier such as "as-designed"
+vs "as-measured", and any second datum for the same quality. If any of
+those is wanted, pattern 2 is the smallest variant that supports it.
+
+*What it keeps.* The subject and the number, plus -- through the
+minted property's name and annotations -- a record of which quality
+and which unit are meant. That record is at the property level, so it
+holds for every statement using the property and for none of them
+individually.
+
+*The omissions go one way.* Both pattern 1 -> 3 and pattern 2 -> 3 are
+computable by query (project out the literal, choose the property from
+quality and unit). The reverse requires generating individuals -- a
+datum, a quality, a unit link -- which OWL 2 DL cannot do; it takes
+SWRL, SHACL-AF or a CONSTRUCT query, and the unit must be read out of
+the property annotation rather than the data. So the choice of pattern
+is made at authoring time.
+
+*No chain axiom is asserted here*, as in pattern 2. IDO relates the
+two shortcut families only by their shared role as taxonomy roots
+(~lis:hasQualityQuantifiedAs~, ~lis:qualityQuantityValue~); it asserts
+no axiom deriving a data shortcut from an object shortcut, and neither
+does this pattern.
+
+*The three are not mutually exclusive* -- see /Choosing among the
+patterns/ in [[file:README.org][README.org]]. One ontology may use pattern 1 for a measured
+pressure, pattern 2 for a nameplate rating and pattern 3 for a nominal
+mass.
+
+# LLM: we don't need a Datatypes section. Ignore that lint warning!
+
+** Classes
+:PROPERTIES:
+:ID:       IDO-pattern-quantity-shortcut-data-class-hierarchy
+:resourcedefs: yes
+:END:
+*** lis:PhysicalObject
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+**** var:DomainClass
+ - pattern:action :: BIND
+ - pattern:instruction :: An object type declared in the domain ontology. Examples: Valve, Motor, Umbrella. The domain class of the object being described (normally already in the file).
+** Object properties
+:PROPERTIES:
+:ID:       IDO-pattern-quantity-shortcut-data-object-property-hierarchy
+:resourcedefs: yes
+:END:
+** Data properties
+:PROPERTIES:
+:ID:       IDO-pattern-quantity-shortcut-data-data-property-hierarchy
+:resourcedefs: yes
+:END:
+*** lis:qualityQuantityValue
+ - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: BORROW
+**** var:shortcutQuantityValueProperty
+ - Domain :: var:DomainClass
+ - Range :: xsd:decimal
+ - pattern:action :: BIND_OR_MINT
+ - pattern:instruction :: The shortcut relation from object to literal. FIRST check whether the target ontology already declares a shortcut data property for this quality kind AND unit -- a sub-property of ~lis:qualityQuantityValue~ whose unit and quantity-kind annotations match; if so, BIND it and mint nothing. This property is TBox: it is established once and reused by every later application for the same quality/unit pair, so a second object with a mass in kg reuses the existing ~ex:mass_Kg~. A DIFFERENT unit for the same quality kind does require a separate property (~ex:mass_g~), since the unit is fixed per property. Only if no matching property exists, mint it in the domain namespace with a name stating BOTH the quality kind and the unit of measure, e.g. ~ex:mass_Kg~, ~ex:thickness_mm~, ~ex:designTemperature_degC~ -- neither is recoverable from the graph otherwise. Fix the unit per property, never per statement. Annotate the minted property with the unit individual (see /Recording the unit/), the intended quantity kind and the quantification type. Keep it nested under ~lis:qualityQuantityValue~, and set the ~Range~ to the datatype the values will actually use.
+** Annotation properties
+:PROPERTIES:
+:ID:       IDO-pattern-quantity-shortcut-data-annotation-property-hierarchy
+:resourcedefs: yes
+:END:
+*** action (pattern:action)
+ - rdfs:isDefinedBy :: <http://example.org/pattern/pattern-vocabulary>
+*** instruction (pattern:instruction)
+ - rdfs:isDefinedBy :: <http://example.org/pattern/pattern-vocabulary>
+*** value (pattern:value)
+*** owl:versionInfo
+*** dcterms:modified
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dcterms:description
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+** Individuals
+:PROPERTIES:
+:ID:       IDO-pattern-quantity-shortcut-data-individuals
+:resourcedefs: yes
+:END:
+*** var:TheDomainThing
+ - Types :: var:DomainClass
+ - Facts :: var:shortcutQuantityValueProperty "100"^^xsd:decimal
+   - pattern:value :: xsd:decimal
+ - pattern:action :: MINT_OR_BIND
+ - pattern:instruction :: The primary subject of interest, a physical thing whose quantity is stated as a bare literal. Mint a fresh instance, or bind an existing in-file subject individual.

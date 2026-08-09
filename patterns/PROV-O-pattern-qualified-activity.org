@@ -1,0 +1,388 @@
+#+title: PROV-O modelling pattern: qualified activity (used / generated / association)
+#+subtitle: An OWL ontology
+#+author: johanw
+#+date: Created 2026-08-07
+#+call: theme-elot()
+
+#+begin_note
+The OWL 2 DL profile violation comes from the imported PROV-O ontology,
+not from this pattern: PROV-O uses =prov:specializationOf= and
+=prov:wasRevisionOf= as both annotation and object properties, a form of
+property punning that OWL 2 DL forbids.
+#+end_note
+
+See [[file:pattern-framework.org][pattern-framework.org]] for the framework, [[file:pattern-vocabulary.org][pattern-vocabulary.org]] for
+the =pattern:= vocabulary, and [[file:README.org][README.org]] for the library index.
+
+* PROV-O-pattern-qualified-activity
+:PROPERTIES:
+:ID:       PROV-O-pattern-qualified-activity
+:ELOT-context-type: ontology
+:ELOT-context-localname: PROV-O-pattern-qualified-activity
+:ELOT-default-prefix: var
+:header-args:omn: :tangle ./PROV-O-pattern-qualified-activity.omn :noweb yes
+:header-args:emacs-lisp: :tangle no :exports results
+:header-args: :padline yes
+:END:
+
+** Prefixes
+:PROPERTIES:
+:prefixdefs: yes
+:END:
+
+#+caption: OWL ontology prefixes
+| prefix   | uri                                         |
+|----------+---------------------------------------------|
+| owl:     | http://www.w3.org/2002/07/owl#              |
+| rdf:     | http://www.w3.org/1999/02/22-rdf-syntax-ns# |
+| xml:     | http://www.w3.org/XML/1998/namespace        |
+| xsd:     | http://www.w3.org/2001/XMLSchema#           |
+| rdfs:    | http://www.w3.org/2000/01/rdf-schema#       |
+| skos:    | http://www.w3.org/2004/02/skos/core#        |
+| dc:      | http://purl.org/dc/elements/1.1/            |
+| dcterms: | http://purl.org/dc/terms/                   |
+| prov:    | http://www.w3.org/ns/prov#                  |
+| var:     | http://example.org/variable/                |
+| pattern: | http://example.org/pattern/                 |
+
+** PROV-O-pattern-qualified-activity ontology (pattern:PROV-O-pattern-qualified-activity pattern:PROV-O-pattern-qualified-activity/0.0)
+:PROPERTIES:
+:ID:       PROV-O-pattern-qualified-activity-ontology-declaration
+:resourcedefs: yes
+:END:
+ - owl:versionInfo :: 0.0 start of PROV-O-pattern-qualified-activity
+ - dcterms:modified ::  {{{time("%Y-%m-%d")}}}^^xsd:date
+ - dcterms:description :: This ontology is a modelling pattern for recording, in PROV-O, what an activity used, what it generated, which agent ran it, and under what plan -- in PROV's qualified form, so that the role an entity or agent played is a resource of its own rather than part of a property name.
+ - Import :: pattern:pattern-vocabulary
+ - Import :: http://www.w3.org/ns/prov-o
+
+*** How to apply this pattern                                   :nodeclare:
+:PROPERTIES:
+:ID: PROV-O-pattern-qualified-activity-howto
+:END:
+
+The generic procedure is in [[file:pattern-framework.org::*Applying a pattern: the generic procedure][Applying a pattern: the generic
+procedure]]. Specific to /this/ pattern:
+
+- *The qualified form is primary.* The unqualified legs
+  (~prov:used~, ~prov:generated~, ~prov:wasAssociatedWith~) are kept
+  in the pattern body because PROV-O entails them from the qualified
+  influences anyway, and because a consumer that only understands the
+  simple form should still see something. But the ~prov:Usage~ and
+  ~prov:Association~ individuals are where the content is: they hold
+  ~prov:hadRole~ and ~prov:hadPlan~.
+- *Roles are resources, not property names.* Do not mint
+  ~ex:usedAsTool~ / ~ex:usedAsWorkpiece~ object properties; mint
+  ~ex:tool~ / ~ex:workpiece~ as ~prov:Role~ individuals and point at
+  them with ~prov:hadRole~ from the relevant ~prov:Usage~. The same
+  entity may be used twice in one activity under two different roles,
+  which a property name cannot express without ambiguity.
+- *One qualified individual per leg.* Each ~prov:Usage~ qualifies
+  exactly one (activity, entity) pair; each ~prov:Association~
+  qualifies exactly one (activity, agent) pair. Repeat the pattern
+  against a bound ~var:TheActivity~ to add further legs.
+- *Plans are not activities.* ~prov:Plan~ is a subclass of
+  ~prov:Entity~: a procedure, script or recipe, not the running of it.
+  The plan is attached to the *association*, not to the activity
+  directly -- PROV's way of saying "this agent acted according to this
+  plan on this occasion".
+- *Naming the qualified individuals takes some care.* They have no
+  natural label. A workable convention:
+  ~<activity-localname>-usage-<entity-localname>~ and
+  ~<activity-localname>-association-<agent-localname>~. Record the
+  convention in the target ontology's header rather than deciding it
+  per application.
+
+*** Required constants (borrow these first)                     :nodeclare:
+:PROPERTIES:
+:ID: PROV-O-pattern-qualified-activity-constants
+:END:
+
+All from ~http://www.w3.org/ns/prov-o~:
+
+- classes: ~prov:Activity~, ~prov:Entity~, ~prov:Agent~, ~prov:Plan~,
+  ~prov:Role~, ~prov:Usage~, ~prov:Association~;
+- properties: ~prov:used~, ~prov:generated~,
+  ~prov:wasAssociatedWith~, ~prov:qualifiedUsage~,
+  ~prov:qualifiedAssociation~, ~prov:entity~, ~prov:agent~,
+  ~prov:hadRole~, ~prov:hadPlan~.
+
+Unlike the IDO patterns, nothing needs minting to make the pattern
+applicable: PROV-O supplies the role and plan vocabulary itself. What
+the target ontology mints is the *values*: its own ~prov:Role~
+individuals.
+
+*** Cardinality: what this pattern commits to                    :nodeclare:
+:PROPERTIES:
+:ID: PROV-O-pattern-qualified-activity-cardinality
+:END:
+
+The commitment is one used entity, one generated entity, one agent and
+one plan per application. Real activities use many entities and may
+involve several agents; add each by applying the pattern again with
+~var:TheActivity~ bound, minting only the new leg and its qualified
+individual.
+
+Here that works well: the qualified individual is a resource per
+(activity, entity) pair, and ~prov:hadRole~ distinguishes the pairs.
+A vocabulary with its own construct for qualified relations does not
+need the framework's ~pattern:group~ / ~pattern:correlationKey~ ideas
+at all.
+
+*** Relationship to IDO-pattern-idef0                            :nodeclare:
+:PROPERTIES:
+:ID: PROV-O-pattern-qualified-activity-relationship
+:END:
+
+This pattern and [[file:IDO-pattern-idef0.org][IDO-pattern-idef0]] describe the same kind of situation
+-- an activity with several differently-roled participants -- in two
+unrelated vocabularies.
+
+Leg correspondence:
+
+#+caption: IDEF0 ICOM legs and their PROV-O counterparts
+| IDEF0 leg | PROV-O                                        |
+|-----------+-----------------------------------------------|
+| Input     | ~prov:used~ / ~prov:qualifiedUsage~             |
+| Output    | ~prov:generated~ / ~prov:qualifiedGeneration~   |
+| Mechanism | ~prov:wasAssociatedWith~ (agent)               |
+| Control   | ~prov:hadPlan~ on the association              |
+
+*No axiom relates the two patterns.* They are written for disjoint
+vocabularies and neither imports the other; the correspondence above
+is documented, not asserted. An alignment would require placing
+~prov:Entity~ (which covers both continuants and occurrents) in an IDO
+category, which is a research question.
+
+Three differences:
+
+1. *Control.* =IDO-pattern-idef0= notes that its C leg assumes
+   vocabulary the pattern does not supply (a target ontology with no
+   information-entity hierarchy had to borrow and mint one before a
+   Control could be stated). PROV-O supplies it: ~prov:Plan~ comes
+   with the vocabulary. So the C-leg gap comes from IDO's scope, not
+   from the IDEF0 idiom.
+2. *Roles.* =IDO-pattern-idef0= records that it does not give
+   participation roles their own individuals -- the hammer that is
+   Mechanism when used as a tool but Input when a nail is driven into
+   its shaft. PROV-O's ~prov:Usage~ + ~prov:hadRole~ expresses the
+   hammer case directly: two ~prov:Usage~ individuals over the same
+   entity with different ~prov:hadRole~ values. A limitation in one
+   library is thus solved in another, which is an argument for a
+   general role pattern at framework level.
+3. *Direction of reduction.* Neither reduces to the other. The ICOM
+   legs are properties and so are queryable in one hop; the PROV
+   qualified form needs two hops but can say things ICOM cannot
+   (role, plan, time, per-leg annotation). ICOM is stronger at
+   class level: =IDO-pattern-idef0='s primary form is six ~SubClassOf
+   ::~ existential restrictions on an activity kind, which the
+   qualified form can only imitate with nested restrictions.
+
+*** Deliberately out of scope                                    :nodeclare:
+:PROPERTIES:
+:ID: PROV-O-pattern-qualified-activity-scope
+:END:
+
+Noted, not modelled:
+
+- ~prov:wasDerivedFrom~ and the other entity-to-entity shortcuts --- a
+  separate pattern.
+- ~prov:Bundle~ and named-graph provenance --- provenance of
+  provenance.
+- Time (~prov:atTime~, ~prov:startedAtTime~,
+  ~prov:InstantaneousEvent~) --- omitted to keep the pattern about
+  participants rather than timing.
+- *The PROV-O / BFO-style alignment question.* ~prov:Entity~ covers
+  both continuants and occurrents, and ~prov:Activity~ is not
+  committed the way an upper-ontology activity class is. Any alignment
+  to IDO would have to resolve this.
+
+*** Worked example: a dataset produced by a script               :nodeclare:
+:PROPERTIES:
+:ID: PROV-O-pattern-qualified-activity-example
+:END:
+
+Deliberately non-IDO and self-contained: a person runs a conversion
+script over a source file, following a documented procedure, to
+produce a dataset.
+
+#+begin_src org
+,*** ex:conversion-run-2026-08-07
+ - Types :: prov:Activity
+ - Facts :: prov:used ex:source-csv
+ - Facts :: prov:generated ex:dataset-v3
+ - Facts :: prov:wasAssociatedWith ex:jo
+ - Facts :: prov:qualifiedUsage ex:conversion-run-usage-source-csv
+ - Facts :: prov:qualifiedAssociation ex:conversion-run-association-jo
+
+,*** ex:conversion-run-usage-source-csv
+ - Types :: prov:Usage
+ - Facts :: prov:entity ex:source-csv
+ - Facts :: prov:hadRole ex:input-file
+
+,*** ex:conversion-run-association-jo
+ - Types :: prov:Association
+ - Facts :: prov:agent ex:jo
+ - Facts :: prov:hadPlan ex:conversion-procedure
+#+end_src
+
+#+caption: Substitution of pattern placeholders for the conversion example
+| pattern placeholder   | concrete resource                       |
+|-----------------------+-----------------------------------------|
+| var:TheActivity       | ex:conversion-run-2026-08-07            |
+| var:TheUsedEntity     | ex:source-csv                           |
+| var:TheGeneratedEntity | ex:dataset-v3                          |
+| var:TheAgent          | ex:jo                                   |
+| var:ThePlan           | ex:conversion-procedure                 |
+| var:TheRole           | ex:input-file                           |
+| var:TheUsage          | ex:conversion-run-usage-source-csv      |
+| var:TheAssociation    | ex:conversion-run-association-jo        |
+
+A second input file is a second application: bind
+~ex:conversion-run-2026-08-07~, mint one further ~prov:Usage~, reuse
+or mint its role.
+
+** Classes
+:PROPERTIES:
+:ID:       PROV-O-pattern-qualified-activity-class-hierarchy
+:resourcedefs: yes
+:END:
+
+*** Activity (prov:Activity)
+ - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
+ - pattern:action :: BORROW
+*** Entity (prov:Entity)
+ - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
+ - pattern:action :: BORROW
+**** Plan (prov:Plan)
+ - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
+ - pattern:action :: BORROW
+*** Agent (prov:Agent)
+ - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
+ - pattern:action :: BORROW
+*** Role (prov:Role)
+ - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
+ - pattern:action :: BORROW
+*** Usage (prov:Usage)
+ - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
+ - pattern:action :: BORROW
+*** Association (prov:Association)
+ - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
+ - pattern:action :: BORROW
+
+** Object properties
+:PROPERTIES:
+:ID:       PROV-O-pattern-qualified-activity-object-property-hierarchy
+:resourcedefs: yes
+:END:
+
+*** used (prov:used)
+ - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
+ - pattern:action :: BORROW
+*** generated (prov:generated)
+ - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
+ - pattern:action :: BORROW
+*** wasAssociatedWith (prov:wasAssociatedWith)
+ - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
+ - pattern:action :: BORROW
+*** qualifiedUsage (prov:qualifiedUsage)
+ - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
+ - pattern:action :: BORROW
+*** qualifiedAssociation (prov:qualifiedAssociation)
+ - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
+ - pattern:action :: BORROW
+*** entity (prov:entity)
+ - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
+ - pattern:action :: BORROW
+*** agent (prov:agent)
+ - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
+ - pattern:action :: BORROW
+*** hadRole (prov:hadRole)
+ - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
+ - pattern:action :: BORROW
+*** hadPlan (prov:hadPlan)
+ - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
+ - pattern:action :: BORROW
+
+** Data properties
+:PROPERTIES:
+:ID:       PROV-O-pattern-qualified-activity-data-property-hierarchy
+:resourcedefs: yes
+:END:
+
+** Annotation properties
+:PROPERTIES:
+:ID:       PROV-O-pattern-qualified-activity-annotation-property-hierarchy
+:resourcedefs: yes
+:END:
+
+*** action (pattern:action)
+ - rdfs:isDefinedBy :: <http://example.org/pattern/pattern-vocabulary>
+*** instruction (pattern:instruction)
+ - rdfs:isDefinedBy :: <http://example.org/pattern/pattern-vocabulary>
+*** owl:versionInfo
+*** dcterms:modified
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+*** dcterms:description
+ - rdfs:isDefinedBy :: http://purl.org/dc/terms/
+
+** Datatypes
+:PROPERTIES:
+:ID:       PROV-O-pattern-qualified-activity-datatypes
+:resourcedefs: yes
+:END:
+
+** Individuals
+:PROPERTIES:
+:ID:       PROV-O-pattern-qualified-activity-individuals
+:resourcedefs: yes
+:END:
+
+*** var:TheActivity
+ - Types :: prov:Activity
+ - Facts :: prov:used var:TheUsedEntity
+ - Facts :: prov:generated var:TheGeneratedEntity
+ - Facts :: prov:wasAssociatedWith var:TheAgent
+ - Facts :: prov:qualifiedUsage var:TheUsage
+ - Facts :: prov:qualifiedAssociation var:TheAssociation
+ - pattern:action :: MINT_OR_BIND
+ - pattern:instruction :: The activity whose provenance is being recorded -- a run, an execution, an occasion of doing. Mint-first: each occasion is a fresh individual. Bind instead when adding a further leg to an activity already recorded; that is the intended way to record several used entities or several agents.
+
+*** var:TheUsedEntity
+ - Types :: prov:Entity
+ - pattern:action :: BIND_OR_MINT
+ - pattern:instruction :: The entity the activity used -- consumed, read, or otherwise drawn upon without necessarily being changed. Bind-first: a used entity was normally generated by some earlier activity and already exists in the graph; minting a second copy is the common error here.
+
+*** var:TheGeneratedEntity
+ - Types :: prov:Entity
+ - pattern:action :: MINT_OR_BIND
+ - pattern:instruction :: The entity the activity produced. Mint-first: it comes into existence with the activity. Bind only when recording, after the fact, that an already-declared entity was produced by this activity.
+
+*** var:TheAgent
+ - Types :: prov:Agent
+ - pattern:action :: BIND_OR_MINT
+ - pattern:instruction :: The agent bearing responsibility for the activity -- a person, an organisation, or a piece of software. Bind-first: agents recur across many activities and are shared vocabulary, not per-activity resources.
+
+*** var:ThePlan
+ - Types :: prov:Plan
+ - pattern:action :: BIND_OR_MINT
+ - pattern:instruction :: The plan, procedure, script or recipe the agent followed on this occasion. Bind-first: one plan typically governs hundreds of activities, and minting a plan per activity is the scaling error this pattern is most prone to. A plan is a prov:Entity, not an activity -- it is the recipe, not the cooking.
+
+*** var:TheRole
+ - Types :: prov:Role
+ - pattern:action :: BIND_OR_MINT
+ - pattern:instruction :: The role the used entity played in the activity -- input file, catalyst, tool, workpiece. Bind-first: roles are a small shared domain vocabulary, given their own individuals so that the same entity can be used twice under two roles. Do not put the role in a property name instead.
+
+*** var:TheUsage
+ - Types :: prov:Usage
+ - Facts :: prov:entity var:TheUsedEntity
+ - Facts :: prov:hadRole var:TheRole
+ - pattern:action :: MINT
+ - pattern:instruction :: Stands for one (activity, used entity) pair. Always minted: it exists only to hold the role (and, outside this pattern's scope, time and further per-leg annotation). Name it systematically from the activity and entity local names; record the naming convention in the target ontology's header.
+
+*** var:TheAssociation
+ - Types :: prov:Association
+ - Facts :: prov:agent var:TheAgent
+ - Facts :: prov:hadPlan var:ThePlan
+ - pattern:action :: MINT
+ - pattern:instruction :: Stands for one (activity, agent) pair. Always minted. It is what holds prov:hadPlan -- PROV's way of saying that this agent acted according to this plan on this occasion, which is why the plan attaches here and not to the activity directly.
