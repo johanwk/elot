@@ -8,6 +8,10 @@
 See [[file:pattern-framework.org][pattern-framework.org]] for the framework, [[file:pattern-vocabulary.org][pattern-vocabulary.org]] for
 the =pattern:= vocabulary, and [[file:README.org][README.org]] for the library index.
 
+The following diagram provides a quick overview of the pattern. It
+shows the four independent information modes—denotation, designation,
+description, and prescription—sharing a common subject. Detailed
+application guidance and semantic commitments follow below.
 #+name: pattern-information-about-all
 #+begin_src sparql :url "./IOF-pattern-information-about.omn" :eval never-export :exports results :format ttl :wrap "src ttl" :cache yes :post kill-prefixes(data=*this*) :eval never-export
   PREFIX puml: <http://plantuml.com/ontology#>
@@ -24,7 +28,7 @@ the =pattern:= vocabulary, and [[file:README.org][README.org]] for the library i
   }
 #+end_src
 
-#+RESULTS[87ae3feeeb0d3311b6f33a650ec46675b3606c7f]: pattern-information-about-all
+#+RESULTS[e851a9af1d132721923f82d90cead2f3c721e2c5]: pattern-information-about-all
 #+begin_src ttl
 
 iof-constr:DescriptiveInformationContentEntity
@@ -35,8 +39,8 @@ iof-constr:DescriptiveInformationContentEntity
 
 var:TheDescriptiveInformation
         a                     owl:NamedIndividual , iof-constr:DescriptiveInformationContentEntity ;
-        rdf:value             "description value" ;
         pattern:action        "MINT" ;
+        prov:value            "description value" ;
         iof-constr:describes  var:TheEntity .
 
 bfo:BFO_0000001  a      owl:Class ;
@@ -53,8 +57,8 @@ rdf:type  puml:arrow  puml:up .
 
 var:TheDenotativeInformation
         a                   owl:NamedIndividual , iof-constr:InformationContentEntity ;
-        rdf:value           "denoter value" ;
         pattern:action      "MINT" ;
+        prov:value          "denoter value" ;
         iof-constr:denotes  var:TheEntity .
 
 iof-constr:Denoter  a    owl:Class ;
@@ -64,8 +68,8 @@ iof-constr:Denoter  a    owl:Class ;
 
 var:TheDesignativeInformation
         a                      owl:NamedIndividual , iof-constr:Identifier ;
-        rdf:value              "identifier value" ;
         pattern:action         "MINT" ;
+        prov:value             "identifier value" ;
         iof-constr:designates  var:TheEntity .
 
 var:TheEntity  a        owl:NamedIndividual , var:EntityKind ;
@@ -88,8 +92,8 @@ iof-constr:InformationContentEntity
 
 var:TheDirectiveInformation
         a                      owl:NamedIndividual , iof-constr:DirectiveInformationContentEntity ;
-        rdf:value              "prescription value" ;
         pattern:action         "MINT" ;
+        prov:value             "prescription value" ;
         iof-constr:prescribes  var:TheEntity .
 
 iof-constr:DesignativeInformationContentEntity
