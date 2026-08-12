@@ -1086,16 +1086,27 @@ The =elot-build-slurp= function flattens the parsed =elot-headline-hierarchy= in
 (defun elot-build-slurp (&optional hierarchy)
   "Build `elot-slurp` entries iteratively from HIERARCHY.
 Defaults to `elot-headline-hierarchy`.
+Heading nesting is materialised as an inferred \"SubClassOf\" /
+\"SubPropertyOf\" attribute naming the nearest declaring ancestor,
+mirroring the OMN tangle path (`elot-omn-resource-frame');
+`:nodeclare:' grouping headings are transparent.
 Returns a list of lists: (URI label (plist of attributes))."
-  (let ((stack (list (or hierarchy (bound-and-true-p elot-headline-hierarchy))))
+  (let ((stack (list (cons (or hierarchy (bound-and-true-p elot-headline-hierarchy)) nil)))
         (result nil))
     (while stack
-      (let* ((node     (pop stack))
-             (uri      (plist-get node :uri))
-             (label    (plist-get node :label))
-             (desc     (plist-get node :descriptions))
-             (children (plist-get node :children)))
-        
+      (let* ((entry      (pop stack))
+             (node       (car entry))
+             (parent-uri (cdr entry))
+             (uri        (plist-get node :uri))
+             (label      (plist-get node :label))
+             (tags       (plist-get node :tags))
+             (desc       (plist-get node :descriptions))
+             (children   (plist-get node :children))
+             (declared   (and uri (stringp uri) (not (member "nodeclare" tags))))
+             ;; `:nodeclare:' grouping headings are transparent: their
+             ;; children inherit the nearest declaring ancestor as parent.
+             (next-parent (if declared uri parent-uri)))
+
         ;; 1. Process the current node
         (when (and uri (stringp uri))
           (let* ((flat-desc (flatten-tree desc))
@@ -1121,13 +1132,36 @@ Returns a list of lists: (URI label (plist of attributes))."
               (when rdf-type
                 (setq attrs (nconc attrs (list "rdf:type" rdf-type))))
               (setq attrs (nconc attrs (nreverse other-props)))
-              
+
+              ;; Materialise the taxonomy carried by heading nesting, in
+              ;; the same shape the OMN tangle path infers it (see
+              ;; `elot-omn-resource-frame').  Without this the ELOT label
+              ;; DB is blind to SubClassOf / SubPropertyOf for
+              ;; Org-ingested sources (`elot-db-supertypes' returns no
+              ;; rows), while TTL-ingested sources carry explicit triples.
+              (when (and declared parent-uri)
+                (let ((key (cond
+                            ((equal rdf-type "owl:Class") "SubClassOf")
+                            ((and rdf-type (string-match-p "Property$" rdf-type))
+                             "SubPropertyOf"))))
+                  (when (and key
+                             ;; do not duplicate an explicitly authored row
+                             (not (let ((p attrs) (found nil))
+                                    (while (and p (not found))
+                                      (when (and (equal (car p) key)
+                                                 (equal (cadr p) parent-uri))
+                                        (setq found t))
+                                      (setq p (cddr p)))
+                                    found)))
+                    (setq attrs (nconc attrs (list key parent-uri))))))
+
               ;; O(1) accumulation
               (push (list uri display-label attrs) result))))
         
         ;; 2. Push children to stack (keeps depth-first pre-order)
         (when children
-          (setq stack (append children stack)))))
+          (setq stack (append (mapcar (lambda (c) (cons c next-parent)) children)
+                              stack)))))
           
     ;; Reverse once at the end for O(N) performance
     (nreverse result)))

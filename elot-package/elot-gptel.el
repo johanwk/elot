@@ -3081,7 +3081,7 @@ candidate for reuse before minting a fresh identifier."
 ;; `:resourcedefs: yes' heading, or as a child of an existing
 ;; resource heading).
 
-(declare-function elot-db-entity-citation "elot-db" (token))
+(declare-function elot-db-entity-citation "elot-db" (token &optional source))
 (declare-function elot-db-list-prefixes "elot-db" (&optional source data-source))
 
 (defun elot-gptel--db-borrow-format-label (label lang)
@@ -3287,7 +3287,10 @@ Reads the same `attributes' rows `elot_db_supertypes' reports
 `SubPropertyOf').  Class expressions and angle-bracketed IRIs
 are skipped conservatively: only a bare `prefix:local' value is
 usable as an `anchor=' in the emitted NEXT: trailer.  Restricted
-to SOURCE when non-nil.  Returns nil on any DB error."
+to SOURCE when non-nil.  Returns nil on any DB error.
+
+See `elot-gptel--borrow-parent-preferring-active', which layers
+active-source preference on top of this primitive."
   (ignore-errors
     (let* ((placeholders
             (mapconcat (lambda (_) "?")
@@ -3319,6 +3322,87 @@ to SOURCE when non-nil.  Returns nil on any DB error."
               (throw 'hit v))))
         nil))))
 
+(defun elot-gptel--borrow-parent-preferring-active (id &optional source)
+  "Return a plain-CURIE parent for ID, preferring the ACTIVE sources.
+
+Resolution order:
+  1. each entry of `elot-active-label-sources', in priority order
+     (the source the user last activated via
+     `elot_db_activate_source' comes first);
+  2. SOURCE -- the source the citation itself was drawn from;
+  3. unrestricted (any source in the DB).
+
+This matters because a term is typically attested by several
+sources at once: a pattern file that merely *names* it (no
+nesting, hence no supertype row) and the upstream ontology the
+user actually activated (which does carry the nesting).  Without
+the preference the citation's own source wins and the NEXT:
+trailer degrades to `anchor=<ANCHOR>' even though the DB knows
+the parent.  Returns nil when no source yields a usable parent."
+  (or (cl-loop for entry in (append
+                             elot-active-label-sources
+                             (default-value 'elot-active-label-sources))
+               for src = (if (consp entry) (nth 0 entry) entry)
+               for hit = (and (stringp src)
+                              (elot-gptel--borrow-source-parent id src))
+               when hit return hit)
+      (and source (elot-gptel--borrow-source-parent id source))
+      (elot-gptel--borrow-source-parent id)))
+
+(defun elot-gptel--active-source-names (&optional exclude-file)
+  "Return the active label-source names, in priority order.
+
+Merges the buffer-local value of `elot-active-label-sources' with
+its global default (the one
+`elot-label-activate-source-for-file' updates), de-duplicates,
+and drops EXCLUDE-FILE when supplied -- the file being authored
+must never be its own citation target, or a term borrowed *into*
+it would end up citing the borrowing ontology."
+  (let ((exclude (and (stringp exclude-file)
+                      (ignore-errors (file-truename exclude-file))))
+        names)
+    (dolist (entry (append elot-active-label-sources
+                           (default-value 'elot-active-label-sources)))
+      (let ((src (if (consp entry) (nth 0 entry) entry)))
+        (when (and (stringp src)
+                   (not (member src names))
+                   (not (and exclude
+                             (ignore-errors
+                               (string= (file-truename src) exclude)))))
+          (push src names))))
+    (nreverse names)))
+
+(defun elot-gptel--citation-preferring-active (token &optional exclude-file)
+  "Return citation metadata for TOKEN, preferring the ACTIVE sources.
+
+`elot-db-entity-citation' with no source returns whichever
+attesting row the DB hands back first.  For a widely-reused term
+that is typically the wrong one: a local pattern file that merely
+*names* the term wins over the upstream ontology the user
+actually activated, and the resulting `rdfs:isDefinedBy' then
+cites the pattern instead of, say,
+<https://spec.industrialontologies.org/ontology/202602/core/Core/>.
+
+Resolution order:
+  1. each active source (see `elot-gptel--active-source-names',
+     EXCLUDE-FILE removed), preferring the first that yields a
+     citation with a non-nil `:ontology-iri' -- i.e. a source
+     that can actually name a citation target;
+  2. failing that, the first active source that yields any
+     citation at all;
+  3. failing that, the unrestricted lookup (previous behaviour).
+
+Returns nil when TOKEN is unknown to the DB."
+  (let ((names (elot-gptel--active-source-names exclude-file))
+        first-any)
+    (or (cl-loop for src in names
+                 for cit = (ignore-errors
+                             (elot-db-entity-citation token src))
+                 do (when (and cit (null first-any)) (setq first-any cit))
+                 when (and cit (plist-get cit :ontology-iri)) return cit)
+        first-any
+        (ignore-errors (elot-db-entity-citation token)))))
+
 (defun elot-gptel--borrow-next-block (citation)
   "Return a `NEXT:' self-chaining trailer for CITATION, or nil.
 
@@ -3332,7 +3416,9 @@ reading the source ontology again.
 The emitted block names `elot_declare_resource' with the CURIE
 and label filled in, `borrow=true' (so the provenance rows are
 written in the same atomic operation), and -- when the DB knows
-a plain-CURIE parent -- suggests `anchor=PARENT as=child',
+a plain-CURIE parent (looked up with the *active* sources
+preferred over the citation's own source) -- suggests
+`anchor=PARENT as=child',
 because heading nesting is how ELOT carries SubClassOf /
 SubPropertyOf.  `file=' is always a placeholder: the borrow
 tools do not know the target file."
@@ -3345,7 +3431,7 @@ tools do not know the target file."
           (elot-gptel--db-borrow-label-missing-p label id))
          (heading-label (if label-missing-p "TODO-label" label))
          (parent (and (stringp id)
-                      (elot-gptel--borrow-source-parent id src)))
+                      (elot-gptel--borrow-parent-preferring-active id src)))
          (rows (delq nil
                      (list (and (or ont src) "rdfs:isDefinedBy")
                            (and def "skos:definition")))))
@@ -3396,7 +3482,7 @@ buffer.  When TOKEN is unknown, returns
         (unless (and (stringp token) (not (string-empty-p token)))
           (user-error "ELOT-gptel: token must be a non-empty string"))
         (elot-gptel--db-ensure-open)
-        (let ((cit (elot-db-entity-citation token)))
+        (let ((cit (elot-gptel--citation-preferring-active token)))
           (if (null cit)
               (format "ERROR: no entity with id %s in the ELOT DB"
                       (if (or (string-prefix-p "<" token)
@@ -3520,7 +3606,7 @@ for any further axiom rows.  Read-only."
            ((= n 1)
             (let* ((row (car rows))
                    (id  (nth 0 row))
-                   (cit (elot-db-entity-citation id)))
+                   (cit (elot-gptel--citation-preferring-active id)))
               (if (null cit)
                   (format
                    "ERROR: candidate %s resolved by search but \
@@ -6680,17 +6766,24 @@ the level-ordered sequence."
                 head
               (concat head "\n\n" block))))))))
 
-(defun elot-gptel--declare-borrow-rows (curie)
+(defun elot-gptel--declare-borrow-rows (curie &optional target-file)
   "Return the provenance rows the DB knows for CURIE, as a list of strings.
 
 Each element is a ready-to-insert description-list row body of
 the form \"KEYWORD :: VALUE\".  Returns `rdfs:isDefinedBy' (the
 source ontology IRI, or a `(source: NAME)' fallback) and, when
 the DB has cached one, `skos:definition'.  Returns nil when the
-DB knows nothing about CURIE."
+DB knows nothing about CURIE.
+
+The citation is resolved with the *active* label sources
+preferred (see `elot-gptel--citation-preferring-active'), so the
+`rdfs:isDefinedBy' value names the upstream ontology the user
+activated rather than whichever local file happens to mention
+the term.  TARGET-FILE, when supplied, is excluded from that
+search: a term borrowed into a file must not cite that file."
   (ignore-errors
     (elot-gptel--db-ensure-open)
-    (let* ((cit (elot-db-entity-citation curie))
+    (let* ((cit (elot-gptel--citation-preferring-active curie target-file))
            (ont (plist-get cit :ontology-iri))
            (src (plist-get cit :source))
            (def (plist-get cit :definition))
@@ -6769,6 +6862,12 @@ nothing about CURIE, BORROW is a silent no-op and the response
 says so.  Without BORROW the tool declares only the heading +
 `rdfs:label'.
 
+Idempotent: when CURIE is already declared in FILE the tool
+returns a benign `OK: ... (no-op; nothing written)' line and
+leaves the buffer untouched, instead of failing partway through
+with a leaky rename-collision error (which previously left the
+throwaway placeholder heading behind).
+
 Gated by `elot-gptel-allow-side-effects'.  On success returns:
 
   OK: declared LABEL (CURIE) under ANCHOR (as AS)[; (declared
@@ -6805,6 +6904,31 @@ On revalidation failure the pre-declaration bytes are restored."
       (unless (memq as-sym '(child sibling))
         (user-error
          "ELOT-gptel: as must be \"child\" or \"sibling\": %S" as))
+      ;; Pre-flight idempotency: when CURIE is ALREADY declared in
+      ;; FILE, return a benign no-op rather than minting a
+      ;; placeholder heading and then failing in
+      ;; `elot-rename-resource' with a leaky
+      ;; "TARGET ... collides with an existing declaration" error --
+      ;; which, worse, left the throwaway placeholder heading behind
+      ;; (e.g. a stray `value (cars:value)' next to the intended
+      ;; `value (prov:value)').  Re-running a borrow / pattern script
+      ;; is therefore safe for an agent.
+      (require 'elot-id-rename)
+      (if (member curie (elot-id-rename--declared-curies))
+          (format
+           (concat "OK: %s is already declared in %s (no-op; nothing written)\n"
+                   "NOTE: use `elot_edit_axioms' to add rows to the existing"
+                   " heading, or `elot_rename_resource' to change its identifier.")
+           curie (file-name-nondirectory file))
+        (elot-gptel--declare-resource-1
+         file anchor label curie iri as-sym borrow)))))
+
+(defun elot-gptel--declare-resource-1 (file anchor label curie iri as-sym borrow)
+  "Do the actual declaration for `elot-gptel-tool-declare-resource'.
+Called only after the caller has validated ANCHOR / LABEL /
+CURIE / AS-SYM and established that CURIE is not already
+declared in the current buffer."
+  (progn
       ;; Pre-flight the prefix check up front (mirrors
       ;; `elot-gptel-tool-rename-resource'): refuse with the
       ;; structured candidate-list ERROR before mutating anything
@@ -6843,7 +6967,7 @@ On revalidation failure the pre-declaration bytes are restored."
                              (list :op 'rename))))
         (let* ((decl (plist-get rename-result :declared-prefix))
                (rows (and borrow
-                          (elot-gptel--declare-borrow-rows curie)))
+                          (elot-gptel--declare-borrow-rows curie file)))
                (n (if rows
                       (elot-gptel--declare-insert-rows curie rows)
                     0)))
@@ -6862,7 +6986,7 @@ On revalidation failure the pre-declaration bytes are restored."
                                 rows ", ")))
             (borrow
              "; borrow=true but the ELOT DB knows no provenance for this CURIE")
-            (t ""))))))))
+            (t "")))))))
 
 (defun elot-gptel-tool-move-resource
     (file source target &optional as)
@@ -9159,6 +9283,11 @@ IRI must be supplied; the prefix row is added inside the same
 atomic operation.  When IRI is omitted in that case, the tool
 refuses with a structured `ERROR:' line listing the `elot-db'
 candidates for that prefix (same shape as `elot_rename_resource').
+
+Idempotent: when CURIE is already declared in FILE the tool
+returns `OK: CURIE is already declared in FILE (no-op; nothing
+written)' and does not touch the buffer -- so re-running a
+borrow / pattern script is safe.
 
 Gated by `elot-gptel-allow-side-effects'.  After the
 declaration the file is saved and re-linted (plus OMN-parsed

@@ -43,7 +43,14 @@
     (should (string-match-p "rdfs:isDefinedBy" text))
     (should (string-match-p ":nodeclare:" text))
     (should (string-match-p "resourcedefs" text))
-    (should (string-match-p "prefixdefs" text))))
+    (should (string-match-p "prefixdefs" text))
+    ;; A terse user prompt must still trigger disciplined pattern use.
+    (should (string-match-p "Mandatory workflow when a modelling pattern may apply" text))
+    (should (string-match-p "The user does not need to name the framework" text))
+    (should (string-match-p "elot_borrow_term" text))
+    (should (string-match-p "A bare[\n ]+external-CURIE declaration is not a borrow" text))
+    (should (string-match-p "complete binding table" text))
+    (should (string-match-p "pattern-specific query/postcondition" text))))
 
 (ert-deftest elot-gptel-conventions-test-matches-file ()
   "Tool output matches the on-disk Markdown file byte-for-byte."

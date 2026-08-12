@@ -1557,12 +1557,23 @@ access path for `elot_db_search_label' (and, in a follow-up,
 ;;;; Entity citation (reuse-before-mint)
 ;;;; --------------------------------------------------------------------
 
-(defun elot-db-entity-citation (token)
+(defun elot-db-entity-citation (token &optional source)
   "Return citation metadata for TOKEN, or nil when unknown.
 
 TOKEN is an entity id as stored in `entities.id' -- typically
 a CURIE like `ex:dog' or a full IRI.  Angle brackets around an
 IRI are stripped.  The match is exact on `entities.id'.
+
+Optional SOURCE restricts the lookup to a single registered
+source (exact `sources.source' string).  This matters for
+`rdfs:isDefinedBy': a widely-reused term is typically attested
+by several sources at once -- a local pattern file that merely
+*names* it, and the upstream ontology it actually comes from --
+and without SOURCE the row returned is whichever the DB happens
+to hand back first, so the citation can point at the wrong
+ontology.  Callers that know which source the user activated
+should pass it.  Returns nil when TOKEN is not attested in
+SOURCE.
 
 Returns a plist with keys
   :id             -- the entity id (as stored)
@@ -1572,9 +1583,18 @@ Returns a plist with keys
   :rdf-type       -- the entity's asserted `rdf:type' CURIE (or nil)
   :source         -- the source name the entity lives in
   :data-source    -- the data_source string
-  :ontology-iri   -- id of the same source's owl:Ontology declaration
-                     (the citation target for `rdfs:isDefinedBy'),
-                     or nil if the source has no such declaration.
+  :ontology-iri   -- the citation target for `rdfs:isDefinedBy'.
+                     An explicit `rdfs:isDefinedBy' row on the entity
+                     itself wins when its value is a full IRI: a
+                     pattern / bridge file that merely *names* a
+                     foreign term (e.g. `prov:value') still records
+                     where the term really comes from, and that beats
+                     the naming file's own ontology IRI.  CURIE-shaped
+                     values (`iof-core:', `:') are ignored -- they are
+                     not resolvable outside their own prefix table.
+                     Otherwise: id of the same source's owl:Ontology
+                     declaration, or nil if the source has no such
+                     declaration.
                      When the ontology heading uses ELOT's composite
                      \"<unversioned-IRI> <versioned-IRI>\" form, only
                      the versionIRI (last whitespace-separated token)
@@ -1592,10 +1612,15 @@ the sole DB access path for `elot_db_borrow_term'."
                       (> (length token) 2))
                  (substring token 1 -1)
                token))
-         (rows (elot-db-execute-readonly
-                "SELECT id, label, source, data_source
-                   FROM entities WHERE id = ? LIMIT 1"
-                (list id))))
+         (rows (if (and (stringp source) (not (string-empty-p source)))
+                   (elot-db-execute-readonly
+                    "SELECT id, label, source, data_source
+                       FROM entities WHERE id = ? AND source = ? LIMIT 1"
+                    (list id source))
+                 (elot-db-execute-readonly
+                  "SELECT id, label, source, data_source
+                     FROM entities WHERE id = ? LIMIT 1"
+                  (list id)))))
     (when rows
       (let* ((row    (car rows))
              (id*    (nth 0 row))
@@ -1624,6 +1649,24 @@ the sole DB access path for `elot_db_borrow_term'."
                           WHERE id = ? AND source = ? AND data_source = ?
                             AND prop = 'skos:definition' LIMIT 1"
                        (list id* source data)))
+             (defined-by
+              (car (delq nil
+                         (mapcar
+                          (lambda (r)
+                            (let ((v (string-trim (or (car r) ""))))
+                              (cond
+                               ((and (string-prefix-p "<" v)
+                                     (string-suffix-p ">" v)
+                                     (> (length v) 2))
+                                (substring v 1 -1))
+                               ((or (string-prefix-p "http://" v)
+                                    (string-prefix-p "https://" v))
+                                v))))
+                          (elot-db-execute-readonly
+                           "SELECT value FROM attributes
+                              WHERE id = ? AND source = ? AND data_source = ?
+                                AND prop = 'rdfs:isDefinedBy'"
+                           (list id* source data))))))
              (ont-iri-raw
               (funcall one
                        "SELECT id FROM attributes
@@ -1641,8 +1684,9 @@ the sole DB access path for `elot_db_borrow_term'."
              ;; Split on whitespace and keep the *last* token (the
              ;; versionIRI when present, else the sole IRI).
              (ont-iri
-              (and ont-iri-raw
-                   (car (last (split-string ont-iri-raw "[ \t]+" t)))))
+              (or defined-by
+                  (and ont-iri-raw
+                       (car (last (split-string ont-iri-raw "[ \t]+" t))))))
              (ont-title
               (and ont-iri-raw
                    (funcall one

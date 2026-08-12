@@ -113,6 +113,23 @@
       (should (stringp (nth 1 e)))
       (should (> (length (nth 1 e)) 0)))))
 
+(ert-deftest test-parse-org-heading-nesting-subclassof ()
+  "Heading nesting is materialised as a SubClassOf attribute row.
+Regression guard: the ELOT label DB was previously blind to the
+taxonomy of Org-ingested sources, so `elot-db-supertypes' returned
+no rows for e.g. `iof-constr:Denoter'."
+  (unless (require 'elot-tangle nil t)
+    (ert-skip "elot-tangle not available"))
+  (let* ((entries (elot-source-parse-org
+                   (elot-sources-test--fx "minimal-ontology.org")))
+         (gadget  (elot-sources-test--find "ex:Gadget" entries))
+         (widget  (elot-sources-test--find "ex:Widget" entries)))
+    (should gadget)
+    (should (equal "ex:Widget" (plist-get (nth 2 gadget) "SubClassOf" #'equal)))
+    ;; A top-level resource gets no inferred parent.
+    (should widget)
+    (should-not (plist-get (nth 2 widget) "SubClassOf" #'equal))))
+
 ;;;; -------------------------------------------------------------------
 ;;;; Dispatcher
 ;;;; -------------------------------------------------------------------
