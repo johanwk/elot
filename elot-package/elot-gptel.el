@@ -3442,9 +3442,11 @@ SubPropertyOf.  `file=' is always a placeholder: the borrow
 tools do not know the target file.
 
 When the DB holds definition-bearing annotation rows for the
-term, the trailer also lists them, so the caller can fill in a
-real `definition_from=[...]' when a local copy of the definition
-is actually wanted (it is not written by default)."
+term, the trailer also lists them -- as a precondition-gated
+option, not a menu: a local definition copy is appropriate only
+when the source ontology is NOT imported into the target.  When
+it is imported, the definition arrives with the import and a
+local copy can go stale.  Nothing is written by default."
   (let* ((id    (plist-get citation :id))
          (label (plist-get citation :label))
          (ont   (plist-get citation :ontology-iri))
@@ -3481,8 +3483,10 @@ SubClassOf / SubPropertyOf)" parent))
          (format "\n      borrow=true writes: %s (no second call needed)"
                  (mapconcat #'identity rows ", ")))
        (when defprops
-         (format "\n      definition APs available (opt in with \
-definition_from=[...]): %s"
+         (format "\n      definition APs available -- opt in with \
+definition_from=[...] ONLY when the source ontology is NOT imported \
+here (if it is imported, the definition arrives with the import and a \
+local copy goes stale): %s"
                  (mapconcat #'identity defprops ", ")))
        "\n      then elot_edit_axioms for any further axiom rows."))))
 
@@ -7209,7 +7213,7 @@ declared in the current buffer."
           (elot-gptel-note-mutation-rows
            (mapcar (lambda (r) (format "%s: - %s" curie r)) rows))
           (format
-           "OK: declared %s (%s) under %s (as %s)%s%s%s%s"
+           "OK: declared %s (%s) under %s (as %s)%s%s%s%s%s"
            label curie anchor (symbol-name as-sym)
            (if decl
                (format " (declared prefix %s: -> <%s>)"
@@ -7232,6 +7236,11 @@ declared in the current buffer."
            (if (and definition-props skipped)
                (format "; also available (not written): %s"
                        (mapconcat #'identity skipped ", "))
+             "")
+           (if (plist-get probe :prop)
+               "\nNOTE: a local definition copy was written; it is \
+correct only while the source ontology is NOT imported here -- re-sync \
+or drop the row if the source is later imported."
              ""))))))
 
 (defun elot-gptel-tool-move-resource
@@ -9508,9 +9517,10 @@ BORROW closes the provenance gap: pass `borrow=true' and the
 ELOT label DB's cached `rdfs:isDefinedBy' (source ontology IRI,
 or a `(source: NAME)' fallback) is written in the SAME atomic
 operation -- no second call.  No definition is copied by
-default: when the source ontology is imported the definition
-arrives with the import, and a local copy can go stale.  Ask for
-one explicitly with `definition_from'.  This makes
+default, and that default is usually right: when the source
+ontology is imported the definition arrives with the import, and
+a local copy goes stale.  Ask for one with `definition_from'
+ONLY when the source is not imported here.  This makes
 `elot_declare_resource' the true add-term
 step of the reuse workflow: `elot_borrow_term' (find + inspect)
 -> `elot_declare_resource ... borrow=true' (declare + cite) ->
@@ -9616,12 +9626,17 @@ about CURIE.  Default false.")
              :description
              "Ordered list of annotation-property CURIEs to probe \
 for a definition of CURIE (first hit wins), e.g. \
-[\"skos:definition\", \"iof-av:naturalLanguageDefinition\"].  The \
-row is written under the property it was actually found with \
-(not normalised).  Requires `borrow=true'.  Each property must \
+[\"skos:definition\", \"iof-av:naturalLanguageDefinition\"].  \
+PRECONDITION: use this ONLY when the source ontology is *not* \
+imported into this file -- i.e. you are borrowing the identifier \
+alone.  When the source IS imported (or is expected to be), omit \
+it: the definition already reaches the reasoner via the import, \
+and a local copy silently goes stale when upstream changes.  \
+Omitting it is the default and the normal case.  The row is \
+written under the property it was actually found with (not \
+normalised).  Requires `borrow=true'.  Each property must \
 already be declared as an annotation property in the file, else \
-the call is refused.  Omit for no definition row (the \
-default)."))))
+the call is refused."))))
 
 (defconst elot-gptel--spec-db-query
   '("elot_db_query"
@@ -10037,8 +10052,9 @@ an ELOT heading + description list ready to embed under the
 target ontology.  The snippet ALWAYS contains an
 `rdfs:isDefinedBy' back-pointer to the source ontology IRI
 (or to a `(source: NAME)' fallback when no `owl:Ontology'
-declaration is recorded), and a `skos:definition' line when
-the DB has cached one.
+declaration is recorded).  No definition line is copied: when
+the source ontology is imported the definition arrives with the
+import, and a local copy goes stale.
 
 The leading `*' in the heading is a placeholder -- callers
 re-level it to match the target ontology's structure
