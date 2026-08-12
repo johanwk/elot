@@ -2547,6 +2547,8 @@ Read-only."
 (declare-function elot-db-remove-source "elot-db"
                   (source &optional data-source like allow-all))
 (declare-function elot-db-expand-curie "elot-db" (curie &optional active-sources))
+(declare-function elot-db--expansion-in-source-only "elot-db"
+                  (prefix source data-source))
 (defvar elot-active-label-sources)      ; from elot-db.el; buffer-local at use sites
 
 (defun elot-gptel--db-iri-from-bracketed (token)
@@ -2759,6 +2761,16 @@ uniformly across ingest paths.")
   "Property names treated as type assertions on individuals.
 `rdf:type' is the RDF-property CURIE form; `Types' is the OMN
 frame-keyword form.")
+
+(defun elot-gptel--db-blank-to-nil (s)
+  "Return S, or nil when S is not a string or is blank.
+
+Filter arguments arriving from an LLM are frequently the empty
+string where `unset' was meant; treating those as real filter
+values can only ever yield an empty result."
+  (and (stringp s)
+       (not (string-match-p "\\`[ \t\n\r]*\\'" s))
+       s))
 
 (defun elot-gptel--db-shim-format (header rows)
   "Render HEADER + ROWS as a TSV report; OK-line when ROWS is empty."
@@ -2982,6 +2994,51 @@ or has no asserted type.  Read-only."
 (defconst elot-gptel--db-search-max-limit 500
   "Hard ceiling on the LIMIT argument of `elot-gptel-tool-db-search-label'.")
 
+(defun elot-gptel--db-search-zero-hint (query lim kind source lang exact-only)
+  "Explain why a filtered search for QUERY returned no rows.
+
+Re-runs the search with each filter relaxed in turn and reports
+the funnel, so an empty result is recoverable rather than a dead
+end.  Returns a string beginning with a newline, or the empty
+string when no filter was in play (a genuine zero-candidate
+result).
+
+The `kind' branch is the important one: several ingest paths
+\(notably TTL) leave `entities.kind' empty, so a `kind=' filter
+silently removes exactly the row the caller wanted."
+  (let ((notes '()))
+    (when exact-only
+      (let ((n (length (elot-db-search-entities query lim kind source lang nil))))
+        (when (> n 0)
+          (push (format "exact_only=t -> dropped %d row(s); \
+re-run without `exact_only' to allow the cross-prefix local-name \
+fallback." n)
+                notes))))
+    (when lang
+      (let ((n (length (elot-db-search-entities query lim kind source nil exact-only))))
+        (when (> n 0)
+          (push (format "lang=%s -> dropped %d row(s); those entities \
+carry no rdfs:label in that language." lang n)
+                notes))))
+    (when source
+      (let ((n (length (elot-db-search-entities query lim kind nil lang exact-only))))
+        (when (> n 0)
+          (push (format "source=%s -> dropped %d row(s); the filter is \
+SQL equality on the exact registered identifier (see \
+`elot_db_list_sources')." source n)
+                notes))))
+    (when kind
+      (let ((n (length (elot-db-search-entities query lim nil source lang exact-only))))
+        (when (> n 0)
+          (push (format "kind=%s -> dropped %d row(s); some sources \
+(notably TTL ingests) record no rdf:type, so a kind filter removes \
+them even when they are the right term.  Re-run without `kind'." kind n)
+                notes))))
+    (if (null notes)
+        ""
+      (concat "\nHINT: candidates existed but were removed by filters:\n"
+              (mapconcat (lambda (s) (concat "  - " s)) (nreverse notes) "\n")))))
+
 (defun elot-gptel-tool-db-search-label (query &optional kind source lang limit exact-only)
   "Search the ELOT label DB for entities matching QUERY.
 
@@ -2990,6 +3047,15 @@ both `entities.label' and `entities.id'.  Bare strings are
 wrapped as `%QUERY%' (substring match); pass a string already
 containing SQL `%' wildcards if you want explicit LIKE
 semantics.
+
+KIND, SOURCE and LANG are normalised: a non-string or an empty /
+whitespace-only string means `no filter' (weak callers routinely
+pass \"\" where they mean \"unset\").
+
+When filters leave the result empty but unfiltered candidates
+exist, the response carries a `HINT:' block naming which filter
+dropped how many rows -- an empty result is then recoverable
+rather than a dead end.
 
 KIND, when non-nil, restricts results to one of:
 `class', `object-property', `data-property',
@@ -3044,22 +3110,23 @@ candidate for reuse before minting a fresh identifier."
                     elot-gptel--db-search-max-limit)
                    ((= limit 0) elot-gptel--db-search-default-limit)
                    (t limit)))
-             (kind* (and (stringp kind) (not (string-empty-p kind))
-                         kind))
-             (source* (and (stringp source) (not (string-empty-p source))
-                           source))
-             (lang* (and (stringp lang) (not (string-empty-p lang))
-                         lang))
+             (kind* (elot-gptel--db-blank-to-nil kind))
+             (source* (elot-gptel--db-blank-to-nil source))
+             (lang* (elot-gptel--db-blank-to-nil lang))
              (exact-only* (and exact-only t)))
         (unless (and (stringp query) (not (string-empty-p query)))
           (user-error "ELOT-gptel: query must be a non-empty string"))
         (elot-gptel--db-ensure-open)
         (let ((rows (elot-db-search-entities
                      query lim kind* source* lang* exact-only*)))
-          (elot-gptel--db-shim-format
-           '("id" "label" "kind" "ontology_iri"
-             "source" "data_source" "via")
-           rows)))
+          (if rows
+              (elot-gptel--db-format-rows
+               '("id" "label" "kind" "ontology_iri"
+                 "source" "data_source" "via")
+               rows nil)
+            (concat "OK: no rows"
+                    (elot-gptel--db-search-zero-hint
+                     query lim kind* source* lang* exact-only*)))))
     (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
 
@@ -3763,6 +3830,56 @@ case-insensitively)."
         (let ((ln (elot-gptel--borrow-local-name id)))
           (and ln (string= (downcase ln) q))))))
 
+(defun elot-gptel--borrow-row-namespace (row)
+  "Return the namespace IRI ROW's entity id expands to, or nil.
+The prefix is resolved through ROW's *own* source's prefix rows
+\(`elot-db--expansion-in-source-only'), never through
+`global_prefixes': one project's binding for a prefix must not
+answer for another's."
+  (let* ((id (nth 0 row))
+         (src (nth 4 row))
+         (ds  (or (nth 5 row) "")))
+    (when (and (stringp id) (stringp src)
+               (string-match "\\`\\([^ \t:]*\\):\\([^ \t]*\\)\\'" id)
+               (not (string-prefix-p "http" id)))
+      (ignore-errors
+        (elot-db--expansion-in-source-only (match-string 1 id) src ds)))))
+
+(defun elot-gptel--borrow-collision-note (rows)
+  "Return a namespace-collision NOTE for ROWS, or nil.
+Fires when two or more candidates share a local name and their
+prefixes expand -- each through its own source's prefix table --
+to the SAME namespace.  Such rows are the same entity seen
+through two sources; borrowing the wrong one yields a file that
+lints and reasons cleanly while citing the wrong ontology."
+  (let (buckets notes)
+    (dolist (row rows)
+      (let ((ln (elot-gptel--borrow-local-name (nth 0 row)))
+            (ns (elot-gptel--borrow-row-namespace row)))
+        (when (and ln ns)
+          (let* ((key (cons (downcase ln) ns))
+                 (cell (assoc key buckets)))
+            (if cell
+                (setcdr cell (append (cdr cell) (list (nth 0 row))))
+              (push (cons key (list (nth 0 row))) buckets))))))
+    (dolist (cell (nreverse buckets))
+      (let ((ids (delete-dups (copy-sequence (cdr cell)))))
+        (when (> (length ids) 1)
+          (push (format "NOTE: %d candidates share the local name `%s' \
+under different prefixes (%s) that expand to the same namespace <%s>.\n\
+      These are the SAME entity seen through two sources; pick the \
+source you import."
+                        (length ids)
+                        (elot-gptel--borrow-local-name (car ids))
+                        (mapconcat (lambda (i)
+                                     (if (string-match "\\`\\([^:]*\\):" i)
+                                         (concat (match-string 1 i) ":")
+                                       i))
+                                   ids ", ")
+                        (cdr (car cell)))
+                notes))))
+    (when notes (mapconcat #'identity (nreverse notes) "\n"))))
+
 (defun elot-gptel-tool-borrow-term (label &optional kind source lang)
   "Composite reuse-before-mint: search + borrow in one call.
 
@@ -3811,15 +3928,14 @@ for any further axiom rows.  Read-only."
       (let* ((label* (and (stringp label) label))
              (kind*  (cond
                       ((null kind) "class")
-                      ((and (stringp kind) (string-empty-p kind))
+                      ((and (stringp kind)
+                            (null (elot-gptel--db-blank-to-nil kind)))
                        "class")
                       ((stringp kind) kind)
                       (t (user-error
                           "ELOT-gptel: kind must be a string"))))
-             (source* (and (stringp source) (not (string-empty-p source))
-                           source))
-             (lang*   (and (stringp lang) (not (string-empty-p lang))
-                           lang)))
+             (source* (elot-gptel--db-blank-to-nil source))
+             (lang*   (elot-gptel--db-blank-to-nil lang)))
         (unless (and (stringp label*) (not (string-empty-p label*)))
           (user-error "ELOT-gptel: label must be a non-empty string"))
         (elot-gptel--db-ensure-open)
@@ -3855,7 +3971,10 @@ set aside in favour of the exact match on `%s'."
            ((= n 0)
             (concat
              "OK: no candidates -- fall through to "
-             "elot_mint_identifier"))
+             "elot_mint_identifier"
+             (elot-gptel--db-search-zero-hint
+              label* elot-gptel--borrow-default-limit
+              kind* source* lang* nil)))
            ;; Exactly one candidate: auto-borrow.
            ((= n 1)
             (let* ((row (car rows))
@@ -3878,14 +3997,25 @@ elot-db-entity-citation returned nil (data inconsistency)"
                             snippet))))))
            ;; Multiple candidates: hand the choice back to the caller.
            (t
-            (concat
-             (elot-gptel--borrow-format-candidates rows)
-             "\n\n"
-             (format "SELECT: %d candidates match `%s'.  Re-call with \
+            (let ((collision (elot-gptel--borrow-collision-note rows))
+                  (capped (>= (length all)
+                              elot-gptel--borrow-default-limit)))
+              (concat
+               (elot-gptel--borrow-format-candidates rows)
+               "\n\n"
+               (format "SELECT: %d candidates match `%s'.  Re-call with \
 `source=NAME' (and optionally `lang=LANG') narrowed to one row; the \
 composite will then auto-borrow.  Or call `elot_db_borrow_term \
 token=ID' directly with the chosen id."
-                     n label*))))))
+                       n label*)
+               (if capped
+                   (format "\n... result capped at %d row(s); \
+more candidates may exist -- narrow with `source=NAME' / `lang=LANG', \
+or use `elot_db_search_label' with a larger `limit'.  Exact matches are \
+ranked first and are never truncated away."
+                           elot-gptel--borrow-default-limit)
+                 "")
+               (if collision (concat "\n" collision) "")))))))
     (user-error (format "ERROR: %s" (error-message-string err)))
     (error      (format "ERROR: %s" (error-message-string err)))))
 
