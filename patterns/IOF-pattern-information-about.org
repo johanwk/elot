@@ -13,7 +13,7 @@ shows the four independent information modes—denotation, designation,
 description, and prescription—sharing a common subject. Detailed
 application guidance and semantic commitments follow below.
 #+name: pattern-information-about-all
-#+begin_src sparql :url "./IOF-pattern-information-about.omn" :eval never-export :exports results :format ttl :wrap "src ttl" :cache yes :post kill-prefixes(data=*this*) :eval never-export
+#+begin_src sparql :url "./IOF-pattern-information-about.omn" :eval never-export :exports results :format ttl :wrap "src ttl" :cache no :post kill-prefixes(data=*this*) :eval never-export
   PREFIX puml: <http://plantuml.com/ontology#>
   construct {
     ?x ?y ?z .
@@ -43,10 +43,6 @@ var:TheDescriptiveInformation
         prov:value            "description value" ;
         iof-constr:describes  var:TheEntity .
 
-bfo:BFO_0000001  a      owl:Class ;
-        rdfs:label      "Entity" ;
-        pattern:action  "BORROW" .
-
 iof-constr:DirectiveInformationContentEntity
         a                owl:Class ;
         rdfs:label       "Directive information content entity" ;
@@ -75,9 +71,8 @@ var:TheDesignativeInformation
 var:TheEntity  a        owl:NamedIndividual , var:EntityKind ;
         pattern:action  "BIND_OR_MINT" .
 
-var:EntityKind  a        owl:Class ;
-        rdfs:subClassOf  bfo:BFO_0000001 ;
-        pattern:action   "BIND" .
+var:EntityKind  a       owl:Class ;
+        pattern:action  "BIND" .
 
 iof-constr:Identifier
         a                owl:Class ;
@@ -173,6 +168,7 @@ iof-constr:DesignativeInformationContentEntity
 The generic procedure is in [[file:pattern-framework.org::*Applying a pattern: the generic procedure][Applying a pattern: the generic
 procedure]]. Specific to /this/ pattern:
 
+- *Use the preferred source for IOF Core.* Make sure to consult =patterns/iof-core.org= as the preferred source for IOF Core terms. This makes a big difference to the quality of the result.
 - *Start with the aboutness mode, not the text.* Choose the IOF
   relation according to how the information refers to its subject:
   ~iof-constr:denotes~ distinguishes one or more entities;
@@ -180,6 +176,11 @@ procedure]]. Specific to /this/ pattern:
   ~iof-constr:describes~ characterizes an entity; and
   ~iof-constr:prescribes~ provides rules, guidance, or a model that its
   subject is expected to follow or conform to.
+- *Mapping Cheat Sheet:*
+  - *Unique codes* (VIN, Serial No, UUID, Part ID) ➔ =iof-constr:Identifier= + =iof-constr:designates=
+  - *Non-unique names* (Model Name, Brand, Category) ➔ =iof-constr:Denoter= + =iof-constr:denotes=
+  - *Characterizations* (Tagline, Condition Report, Summary) ➔ =iof-constr:DescriptiveInformationContentEntity= + =iof-constr:describes=
+  - *Rules, Guidance, or Models* (Specification, Manual, Plan, Purpose) ➔ =iof-constr:DirectiveInformationContentEntity= + =iof-constr:prescribes=
 - *Do not use ~designates~ merely because a value looks like a name.*
   It is functional and therefore commits each designative information
   content entity to one subject. Use it for a VIN, serial number, URI,
@@ -196,6 +197,8 @@ procedure]]. Specific to /this/ pattern:
   aboutness relation says what the information is about; ~prov:value~
   merely carries its lexical content. Do not interpret ~prov:value~ as
   denotation, description, or prescription.
+- *NEVER import the PROV-O ontology.* It isn't DL compliant. Only
+  borrow the ~prov:value~ data property.
 - *Bind the subject before minting information resources.* The same
   entity may be the subject of several information content entities.
   Search for and reuse it; do not mint a duplicate merely to apply this
@@ -233,10 +236,9 @@ From IOF Core:
 - properties: ~iof-constr:denotes~, ~iof-constr:designates~,
   ~iof-constr:describes~, and ~iof-constr:prescribes~.
 
-The common range is ~bfo:BFO_0000001~ (entity). The value carrier is
-~prov:value~, defined by PROV-O as an ~owl:DatatypeProperty~ that provides
-a value directly representing an entity. This pattern uses it with literal
-values.
+The value carrier is ~prov:value~, defined by PROV-O as an
+~owl:DatatypeProperty~ that provides a value directly representing an
+entity. This pattern uses it with literal values.
 
 *** Cardinality and inference commitments                        :nodeclare:
 :PROPERTIES:
@@ -338,10 +340,7 @@ the meaning of the four IOF aboutness relations.
 :resourcedefs: yes
 :END:
 
-*** Entity (bfo:BFO_0000001)
- - rdfs:isDefinedBy :: <http://purl.obolibrary.org/obo/bfo.owl>
- - pattern:action :: BORROW
-**** var:EntityKind
+*** var:EntityKind
  - pattern:action :: BIND
  - pattern:instruction :: The class of entity about which the information is conveyed. It must already be declared in the target ontology. Examples include a material artifact, process, quality, organisation, or information resource.
 
@@ -439,7 +438,7 @@ the meaning of the four IOF aboutness relations.
  - pattern:action :: BIND_OR_MINT
  - pattern:instruction :: The entity about which the information is conveyed. Bind-first: search the target ontology for the intended entity and reuse it. Mint only when the subject genuinely has not yet been declared.
 
-*** var:TheDesignativeInformation
+**** var:TheDesignativeInformation
  - Types :: iof-constr:Identifier
  - Facts :: iof-constr:designates var:TheEntity
  - Facts :: prov:value "identifier value"
@@ -447,7 +446,7 @@ the meaning of the four IOF aboutness relations.
  - pattern:action :: MINT
  - pattern:instruction :: An identifier or other designative information content entity that uniquely distinguishes TheEntity in the relevant context. Always mint the information resource, not its subject. Supply its literal structured value on prov:value. Do not use this leg for a non-unique name.
 
-*** var:TheDenotativeInformation
+**** var:TheDenotativeInformation
  - Types :: iof-constr:InformationContentEntity
  - Facts :: iof-constr:denotes var:TheEntity
  - Facts :: prov:value "denoter value"
@@ -455,7 +454,7 @@ the meaning of the four IOF aboutness relations.
  - pattern:action :: MINT
  - pattern:instruction :: A non-unique denoter that distinguishes TheEntity, such as a model name. Supply its lexical content on prov:value. If it uniquely identifies one entity in context, use the designative leg instead.
 
-*** var:TheDescriptiveInformation
+**** var:TheDescriptiveInformation
  - Types :: iof-constr:DescriptiveInformationContentEntity
  - Facts :: iof-constr:describes var:TheEntity
  - Facts :: prov:value "description value"
@@ -463,7 +462,7 @@ the meaning of the four IOF aboutness relations.
  - pattern:action :: MINT
  - pattern:instruction :: Information that characterizes TheEntity without uniquely identifying it, such as descriptive or marketing text. Supply the description on prov:value.
 
-*** var:TheDirectiveInformation
+**** var:TheDirectiveInformation
  - Types :: iof-constr:DirectiveInformationContentEntity
  - Facts :: iof-constr:prescribes var:TheEntity
  - Facts :: prov:value "prescription value"
