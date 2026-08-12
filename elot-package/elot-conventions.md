@@ -1,342 +1,175 @@
 # ELOT authoring conventions
 
-A concise cheat sheet for authors -- human or LLM -- of ELOT `.org`
-ontology files.  Exposed verbatim to LLMs through the
-`elot_conventions` gptel tool.
+A cheat sheet for authors -- human or LLM -- of ELOT `.org` ontology
+files.  Exposed verbatim to LLMs through the `elot_conventions` gptel
+tool.
 
 ELOT is a *literate* ontology authoring format: an Org-mode document
 *is* the ontology source.  Headings declare resources; description
-lists carry their axioms and annotations; the outline structure
-encodes the taxonomy.  Read the rules below before composing any
-edit.
+lists carry axioms and annotations; the outline encodes the taxonomy.
+Read this before composing any edit.
 
-## 0. Mandatory workflow when a modelling pattern may apply
+## 0. Hard constraint: workspace tools vs. elot-gptel mutators
 
-This workflow is **non-negotiable**. The user does not need to name the
-framework, prescribe tools, or provide a careful step-by-step prompt. A request
-to "use", "apply", "follow", or "base this on" a modelling pattern -- or a
-request whose domain matches a pattern in a supplied pattern library -- is
-enough to trigger it.
+Workspace tools (Macher's `edit_file_in_workspace`,
+`write_file_in_workspace`, `multi_edit_file_in_workspace`,
+`move_file_in_workspace`, `delete_file_in_workspace`) stage edits in
+memory for later review; elot-gptel mutators write to disk immediately.
+Mixing them on one file silently loses edits.
 
-Before the first declaration or mutation:
+**Rule:** once a workspace tool has *written* to a file, stop editing
+that file -- with any tool -- and hand the patch back to the user.
 
-1. Locate and read the pattern library's application entry point (for this
-   repository, `patterns/README.org`), then read the selected pattern's **How to
-   apply**, **Required constants (borrow these first)**, main hazard/negative
-   case, and worked example. Do not infer the procedure from the pattern title
-   or diagram alone.
-2. Inspect every constant and `var:` placeholder, including nested
-   `pattern:value` annotations. Record a complete binding table: expected kind,
-   action, selected target, source/provenance, hierarchy placement, and literal
-   datatype/value. **Do not mutate while any required binding is unresolved.**
-3. Treat `pattern:action :: BORROW` literally. For each BORROW constant, first
-   activate the preferred source, then call `elot_borrow_term` with the correct
-   label and kind, then inspect/borrow its source parent and preserve that
-   hierarchy. Keep the returned `rdfs:isDefinedBy` and definition. A bare
-   external-CURIE declaration is not a borrow. Do not replace this sequence with
-   `elot_declare_resource`, and do not inspect the target as an excuse to skip
-   source activation and borrowing.
-4. Apply the template by substituting bindings without changing its axiom
-   structure. Remove template-control annotations from the instance and add
-   `pattern:appliedPattern` as directed by the framework.
-   As a *loose default* (advice, not a rule): where the pattern's own outline
-   nests headings -- e.g. the information individuals sitting under the entity
-   they are about -- reproduce that nesting in the target, anchoring each new
-   heading as a child of the heading it was nested under in the template.  Note
-   that under `Individuals` such nesting is presentational only (OWL carries no
-   sub-relation between named individuals), so it is a readability choice, not a
-   semantic one.  Give way to the target ontology's own conventions when they
-   conflict -- for instance a house style that groups all resources of a kind
-   under a `:nodeclare:` heading, an existing flat section, or an explicit
-   instruction from the user or the pattern.  Do not contort the target file to
-   mirror the template, and never let this override section-kind placement rules.
-5. Dry-run coherent edits where supported; then run `elot_check` and the
-   pattern-specific query/postcondition. Parsing alone does not prove that the
-   pattern was applied correctly. Stop and report a blocker rather than silently
-   inventing a term, flattening source hierarchy, dropping provenance, or
-   weakening the pattern.
+Still fine: any number of elot-gptel mutations on files no workspace
+tool has touched (save + revalidate + rollback keeps them safe);
+read-only inspection at any time; work on other files.
 
-If no relevant library or required source can be found, ask or report that
-blocker; do not improvise a look-alike pattern. Instructions attached to the
-pattern override generic examples in this document.
+## 1. Mandatory workflow when a modelling pattern may apply
 
-## 1. The cardinal rule: heading nesting carries `SubClassOf`
+**Non-negotiable.** Triggered by any request that names, implies, or
+matches a pattern in a supplied library -- the user need not name the
+framework or prescribe tools.  Before the first declaration or mutation:
 
-Heading nesting under a `:resourcedefs: yes` section is the *primary*
-way to express the class taxonomy.  A class declared under another
-class heading is automatically a `SubClassOf` of its parent.  Likewise
-for property hierarchies (`SubPropertyOf`).
+1. **READ** the library entry point (here `patterns/README.org`), then
+   the pattern's *How to apply*, *Required constants*, main
+   hazard/negative case, and worked example.  Never infer the procedure
+   from the title or diagram.
+2. **BIND** every constant and `var:` placeholder, including nested
+   `pattern:value` annotations: kind, action, selected target,
+   source/provenance, placement, literal datatype/value.  **Do not
+   mutate while any binding is unresolved.**
+3. **BORROW** -- `pattern:action :: BORROW` is literal: activate the
+   preferred source, call `elot_borrow_term` (correct label *and* kind),
+   then borrow the source parent too and preserve that hierarchy.  Keep
+   the returned `rdfs:isDefinedBy`.  A bare `elot_declare_resource` with
+   an external CURIE is **not** a borrow.
+4. **APPLY** the template by substituting bindings, without altering its
+   axiom structure.  Drop template-control annotations; add
+   `pattern:appliedPattern` as the framework directs.
+   *Advice (not a rule):* mirror the template's heading nesting in the
+   target -- but yield to the target's house style (`:nodeclare:`
+   grouping, an existing flat section, an explicit instruction), and
+   never override section-kind placement rules.  Under `Individuals`
+   nesting is presentational only.
+5. **CHECK** -- dry-run where supported, then `elot_check` *and* the
+   pattern's own postcondition query.  Parsing is not proof.  Report a
+   blocker rather than inventing a term, flattening source hierarchy,
+   dropping provenance, or weakening the pattern.
+
+If no relevant library or source can be found, ask -- do not improvise a
+look-alike pattern.  Instructions attached to a pattern override generic
+examples in this document.
+
+## 2. The cardinal rule: heading nesting carries `SubClassOf`
+
+Nesting under a `:resourcedefs: yes` section *is* the taxonomy; the same
+holds for `SubPropertyOf` in property sections.
 
 ```org
 *** Animal (ex:animal)
 **** Dog (ex:dog)             ; ex:dog SubClassOf ex:animal
 ***** Puppy (ex:puppy)        ; ex:puppy SubClassOf ex:dog
-**** Cat (ex:cat)             ; ex:cat SubClassOf ex:animal
 ```
 
-Do **not** express `SubClassOf` to a named class via a description
-list (`- SubClassOf :: ex:animal`).  ROBOT accepts it, but it
-duplicates information the outline already carries and breaks tools
-that rely on the outline (lint, navigation, future
-`elot/subclass-in-description-list` checker).
+A description-list `SubClassOf ::` row is correct **only** for
 
-Description-list `SubClassOf ::` is appropriate *only* for multiple
-inheritance, or anonymous class expressions (`some`, `only`, `and`,
-`or`, restrictions), e.g. `- SubClassOf :: ex:hasPart some ex:Wheel`.
+- anonymous class expressions -- `- SubClassOf :: ex:hasPart some ex:Wheel`;
+- *additional* named parents (multiple inheritance): nest under one
+  parent, declare the rest as rows.  The
+  `elot/subclass-in-description-list` warning may fire; keep the row.
 
-**Multiple inheritance.** When a class or property has more than one
-*named* superclass/superproperty, nest it under one parent in the
-outline and declare the additional parent(s) with description-list
-`SubClassOf ::` / `SubPropertyOf ::` rows. Do **not** create a
-second heading for the same resource to avoid the description-list
-form -- a resource must be declared by exactly one heading. The
-`elot/subclass-in-description-list` lint warning may fire in this
-case; keep the description-list row anyway, it is the correct
-spelling for multi-parent resources.
+Never duplicate the outline with a row, and never declare one resource
+with two headings.
 
-## 2. Heading shape: `Label (curie)`
-
-Every resource heading reads:
+## 3. Heading shape: `Label (curie)`
 
 ```
 *** Dog (ex:dog)
 ```
 
-The text before the parens becomes `rdfs:label`; the CURIE inside
-the parens is the identifier.  Use the project's declared prefixes
-(see Prefixes section).
+Text before the parens becomes `rdfs:label`; the CURIE is the
+identifier, using a prefix declared in the prefix table.
 
-## 3. Description-list entries carry annotations and axioms
+## 4. Description lists carry annotations and axioms
 
-Under a resource heading, a description list (`- key :: value`) holds
-both annotations and OMN axioms.  
+`- key :: value` rows under a resource heading.  Nested description
+lists express meta-annotations (axiom annotations).
 
-Nested description lists for meta-annotations are permitted.
-
-Common annotation keys:
-
-| Key                       | Purpose                                                            |
-|---------------------------|--------------------------------------------------------------------|
-| `rdfs:label`              | Alternative or language-tagged labels (heading already gives one). |
-| `rdfs:comment`            | Free-text comment.                                                 |
-| `skos:definition`         | Formal definition.                                                 |
-| `rdfs:isDefinedBy`        | Origin pointer for *reused* terms (see section 5).                 |
-
-Common keys for restrictions in OWL Manchester syntax:
-
-| `Domain ::`               | Object/data property domain (Manchester axiom).                    |
-| `Range ::`                | Property range.                                                    |
-| `Characteristics ::`      | `Functional`, `Transitive`, `Symmetric`, ...                       |
-| `InverseOf ::`            | Inverse property.                                                  |
-| `DisjointWith ::`         | Class disjointness.                                                |
-| `EquivalentTo ::`         | Class/property equivalence.                                        |
-| `Types ::`                | For individuals: class membership (incl. anonymous expressions).   |
-| `Facts ::`                | For individuals: property assertions.                              |
-| `SubClassOf ::`           | Anonymous class expressions only -- see section 1.                 |
-
-## 4. Ontology file structure
-
-A typical ELOT ontology document has this skeleton:
-
-```org
-* my-ontology
-:PROPERTIES:
-:ID: my-ontology
-:ELOT-context-type: ontology
-:ELOT-id-scheme: slug
-:ELOT-context-localname: my-ontology
-:ELOT-default-prefix: ex
-:header-args:omn: :tangle ./my-ontology.omn :noweb yes
-:END:
-
-** Prefixes
-:PROPERTIES:
-:prefixdefs: yes
-:END:
-#+name: prefix-table
-| prefix | uri                            |
-|--------+--------------------------------|
-| ex:    | http://example.org/resource/   |
-| ont:   | http://example.org/ont/        |
-| owl:   | http://www.w3.org/2002/07/owl# |
-| ...    | ...                            |
-
-** my-ontology ontology (ont:my-ontology ont:my-ontology/0.1)
-:PROPERTIES:
-:ID: my-ontology-ontology-declaration
-:resourcedefs: yes
-:END:
- - dcterms:title :: "My ontology"@en
- - owl:versionInfo :: 0.1
-
-** Datatypes
-:PROPERTIES:
-:ID: my-ontology-datatypes
-:resourcedefs: yes
-:END:
-
-** Classes
-:PROPERTIES:
-:ID: my-ontology-class-hierarchy
-:resourcedefs: yes
-:END:
-*** Animal (ex:animal)
-**** Dog (ex:dog)
-...
-
-** Object properties
-:PROPERTIES:
-:ID: my-ontology-object-property-hierarchy
-:resourcedefs: yes
-:END:
-*** hasOwner (ex:hasOwner)
- - Domain :: ex:dog        << NOTE. declared in a heading under Classes
- - Range :: ex:person
-
-** Data properties
-:PROPERTIES:
-:ID: my-ontology-data-property-hierarchy
-:resourcedefs: yes
-:END:
-
-** Annotation properties
-:PROPERTIES:
-:ID: my-ontology-annotation-property-hierarchy
-:resourcedefs: yes
-:END:
-
-** Individuals
-:PROPERTIES:
-:ID: my-ontology-individuals
-:resourcedefs: yes
-:END:
-```
-
-The `:resourcedefs: yes` drawer marks a section as a resource-
-declaration section; the `:prefixdefs: yes` drawer marks the prefix
-table.  Section ordering is conventional, not enforced.  Empty
-sections (e.g. `Datatypes` with no children) are still preferred by
-the standard structural lint.
+| Key | Kind | Purpose |
+|-----|------|---------|
+| `rdfs:label` | annotation | Alternative / language-tagged labels. |
+| `rdfs:comment` | annotation | Free text. |
+| `skos:definition` | annotation | Formal definition. |
+| `rdfs:isDefinedBy` | annotation | Origin pointer for reused terms (§5). |
+| `Domain ::` / `Range ::` | OMN | Property domain / range. |
+| `Characteristics ::` | OMN | `Functional`, `Transitive`, `Symmetric`, ... |
+| `InverseOf ::` | OMN | Inverse property. |
+| `DisjointWith ::` | OMN | Class disjointness (symmetric -- state once). |
+| `EquivalentTo ::` | OMN | Class / property equivalence. |
+| `Types ::` | OMN | Individual class membership. |
+| `Facts ::` | OMN | Individual property assertions. |
+| `SubClassOf ::` | OMN | Anonymous expressions / extra parents -- see §2. |
 
 ## 5. Reusing terms from another ontology
 
-To use a term from a different ontology while citing its origin,
-declare it as a normal heading and add an `rdfs:isDefinedBy` row:
-
-```org
-*** Vehicle (transport:Vehicle)
- - rdfs:isDefinedBy :: <https://example.org/vocab/transport>
- - skos:definition :: "A means of carrying or transporting ..."
-```
-
-The CURIE prefix (`transport:` above) must be declared in the
-project's prefix table.  After this declaration, the term is locally
-known to lint, ROBOT, and the LLM tools, and the `isDefinedBy` entry
-gives downstream consumers the attribution.
-
-The `elot_db_borrow_term` tool emits exactly this shape, ready to be
-re-leveled and pasted under a `:resourcedefs: yes` heading.
+Declare the term as a normal heading with an `rdfs:isDefinedBy` row
+pointing at the origin; the prefix must exist in the prefix table.
+`elot_db_borrow_term` emits exactly this shape, ready to be re-levelled
+under a `:resourcedefs: yes` heading.
 
 ### 5.1 Do not re-axiomatise imported resources
 
-**Advisory (not lint-enforced).** Before adding a semantic restriction
--- `Domain ::`, `Range ::`, `SubClassOf ::`, `Characteristics ::`,
-`EquivalentTo ::`, etc. -- to a resource that carries an
-`rdfs:isDefinedBy` pointing at another ontology, consider *where that
-ontology sits relative to yours*:
+Advisory, not lint-enforced.  Before adding `Domain`, `Range`,
+`SubClassOf`, `Characteristics`, `EquivalentTo`, ... to a term that
+carries `rdfs:isDefinedBy`:
 
-- **The source is imported** (its axioms already reach your reasoner
-  via `owl:imports`, directly or transitively): **do not** add local
-  semantic restrictions. Redefining a term declared higher up the
-  imports hierarchy is bad practice -- it silently strengthens, and can
-  contradict, the owner's axioms, producing surprising inferences or an
-  inconsistency that only the reasoner (`elot_check`'s consistency
-  stage) will catch. Cite the term with `rdfs:isDefinedBy` and use it
-  as-is; annotations (labels, definitions, comments) are fine, logical
-  axioms are not.
+- **Source imported** (its axioms reach your reasoner via `owl:imports`):
+  add **no** local logical axioms -- redefining an upstream term
+  silently strengthens or contradicts it, and only the reasoner will
+  notice.  Annotations are fine.
+- **Source not imported** (identifier reuse only): local constraints are
+  normally needed, and should mirror the source's own axioms as closely
+  as possible.
 
-- **The source is *not* imported** (you are borrowing the identifier
-  only, without pulling in its axioms): local semantic constraints
-  *are* normally needed for the term to behave -- and should mirror the
-  source ontology's own axioms **as closely as possible**. Before
-  asserting Domain/Range, check what the source already says, e.g.
-  `elot_db_get_attributes id=<curie> source=<the source file>`, and
-  reproduce those constraints rather than inventing narrower ones.
+Either way, run `elot_db_get_attributes id=<curie> source=<file>` first
+-- the cheap pre-flight against accidental over-constraint.
 
-In both cases, checking the source's existing axioms first (via
-`elot_db_get_attributes`) is the cheap pre-flight step that avoids
-accidental over-constraint.
+## 6. The `:nodeclare:` tag
 
-## 6. The `:nodeclare:` tag is for informative purposes
-
-A heading tagged `:nodeclare:` is **suppressed from declaration**.
-It is meant for *narrative* sub-headings interleaved between resource
-declarations -- a section header that explains the following block of
-classes, say, without itself becoming an OWL entity.
-
-```org
-*** Living things                                              :nodeclare:
-The classes below cover the biological side of the domain.
-
-**** Animal (ex:animal)
-**** Plant (ex:plant)
-```
+A heading tagged `:nodeclare:` declares no OWL entity: it is a narrative
+divider between resource declarations.  Heading nesting skips it, so
+children still attach to the nearest declaring ancestor.
 
 ## 7. Default-prefix mechanics
 
-The `:ELOT-default-prefix:` property on the top-level ontology
-heading names the prefix used for unprefixed CURIEs (e.g. `:Dog`
-expands to `ex:Dog` when the default prefix is `ex`).  The same
-prefix should still have an explicit row (`ex:`) in the prefix table.
+`:ELOT-default-prefix:` on the ontology heading names the prefix for
+unprefixed CURIEs (`:Dog` -> `ex:Dog`).  That prefix still needs its own
+row in the prefix table.
 
-## 8. Tooling cheat sheet
+## 8. The default authoring loop
 
-| Task                                       | Tool                                                      |
-|--------------------------------------------|-----------------------------------------------------------|
-| Find an existing term across all DBs       | `elot_db_search_label`                                    |
-| Produce a borrow snippet for reuse         | `elot_db_borrow_term`                                     |
-| Lint the file                              | `elot_lint`                                               |
-| Parse + DL-profile check the OMN export    | `elot_omn_validate` (with `profile=DL`)                   |
-| SPARQL query (read-only)                   | `elot_sparql_select`                                      |
-| Consistency / unsatisfiability             | `elot_consistency`, `elot_unsatisfiable`                  |
-| Explain an entailment                      | `elot_explain`                                            |
-| Structural diff vs. a baseline snapshot    | `elot_diff`                                               |
+Ordering matters more than tool choice:
 
-When in doubt, run `elot_lint` first -- it catches the bulk of
-structural mistakes (missing required sections, undeclared CURIEs in
-axioms, malformed prefix table) before ROBOT ever sees the file.
+```
+elot_conventions -> elot_resources / elot_read_resource (orient)
+  -> elot_borrow_term / elot_db_borrow_term   (reuse before minting)
+  -> elot_declare_resource | elot_insert_*    (declare)
+  -> elot_axiom_check -> elot_edit_axioms     (axioms; dry_run first)
+  -> elot_check                               (lint + parse + reason)
+```
 
-## 9. Workspace/patch-review tools (e.g. macher): stop and let the patch be applied
+`elot_lint` catches most structural mistakes before ROBOT is invoked;
+`elot_explain`, `elot_sparql_select`, `elot_diff`, `elot_metrics` are
+the diagnostic follow-ups.
 
-**The rule:** as soon as you use a *workspace* tool that **writes** to a
-file (e.g. Macher's `edit_file_in_workspace`, `write_file_in_workspace`,
-`multi_edit_file_in_workspace`, `move_file_in_workspace`,
-`delete_file_in_workspace`), stop editing that file and hand the patch
-back to the user. Do not make further changes to it -- with workspace
-tools *or* elot-gptel mutators -- until the patch has been applied.
+## 9. Worked exemplar
 
-**Why:** workspace tools stage edits in memory and never touch disk;
-the user reviews and applies a patch afterwards. Elot-gptel mutators
-write to disk immediately. If both touch the same file, edits can be
-silently lost (an elot-gptel rollback discarding a pending workspace
-edit, or a patch computed against text that has since changed).
-
-**What is still fine:**
-- Ordinary elot-gptel mutations -- as many as you like, on any file --
-  as long as no workspace tool has written to that file. Elot-gptel's
-  own save + revalidate + rollback keeps these safe.
-- Read-only inspection at any time, including `elot_check` / `elot_lint`
-  against the pending draft (a sanity check on the *unapplied* draft --
-  re-validate after the user applies the patch).
-- Continuing to work on *other* files.
-
-## 10. Worked exemplar
-
-The following is a single self-contained ELOT ontology that
-demonstrates every idiom covered above.  Inline comments
-(`;; ...` in the heading line, or narrative paragraphs between
-sections) point at the convention being illustrated.  Paste it
-into a scratch `.org` file if you want to experiment.
+A self-contained ontology demonstrating every idiom above.  Note the
+file skeleton it exhibits: an ontology heading with `:ELOT-*:`
+properties, a `:prefixdefs: yes` prefix table, and the six standard
+`:resourcedefs: yes` sections -- each with an `:ID:`, and preferably all
+present even when empty.  Section ordering is conventional, not
+enforced.
 
 ````org
 #+title: Pets -- a minimal worked exemplar for ELOT idioms
@@ -348,6 +181,7 @@ into a scratch `.org` file if you want to experiment.
 :ID: pets
 :ELOT-context-type: ontology
 :ELOT-context-localname: pets
+:ELOT-id-scheme: slug
 :ELOT-default-prefix: ex
 :header-args:omn: :tangle ./pets.omn :noweb yes
 :END:
@@ -376,7 +210,6 @@ into a scratch `.org` file if you want to experiment.
 :END:
  - dcterms:title :: "Pets ontology (worked exemplar)"@en
  - owl:versionInfo :: 0.1
- - rdfs:comment :: "Demonstrates ELOT authoring idioms."@en
 
 ** Datatypes
 :PROPERTIES:
@@ -390,34 +223,27 @@ into a scratch `.org` file if you want to experiment.
 :ID: pets-class-hierarchy
 :END:
 *** Living things                                              :nodeclare:
-The heading above is tagged :nodeclare: -- it is a *narrative*
-divider, not a class declaration.  No OWL entity is produced for
-"Living things". This heading and narrative will appear in HTML output.
+A narrative divider -- no OWL entity is produced, and the classes below
+still attach to nothing above them.  Appears in HTML output.
 **** Animal (ex:animal)
  - skos:definition :: "A living organism with sensory perception."@en
  - DisjointWith :: ex:plant
 ***** Dog (ex:dog)
-# Heading nesting carries `SubClassOf`: `ex:dog` is a subclass of
-# `ex:animal` by virtue of being nested under it.  No description-list
-# `SubClassOf ::` entry is needed (and would duplicate information).
+# Nesting alone makes ex:dog SubClassOf ex:animal -- no row needed.
  - skos:definition :: "A domesticated carnivorous mammal."@en
  - skos:example :: "Fido, Rex"
 ****** Puppy (ex:puppy)
+# The legitimate description-list SubClassOf: an anonymous expression.
  - skos:definition :: "A young dog."@en
  - SubClassOf :: ex:hasAge some xsd:integer[< 2]
 ***** Cat (ex:cat)
-# DisjointWith is symmetric; stating it once is enough -- no need to
-# repeat `DisjointWith :: ex:cat` on the `ex:dog` heading.
  - skos:definition :: "A small domesticated carnivorous mammal."@en
  - DisjointWith :: ex:dog
 **** Plant (ex:plant)
  - skos:definition :: "A photosynthetic organism."@en
 *** Person (foaf:Person)
-# Reusing a term from another ontology: declare it as a normal heading
-# and add an `rdfs:isDefinedBy` row pointing at the origin.  Local code
-# can refer to `foaf:Person` thereafter.
+# Reuse: a normal heading plus an origin pointer, not a redeclaration.
  - rdfs:isDefinedBy :: <http://xmlns.com/foaf/0.1/>
- - skos:definition :: "A human being."@en
 
 ** Object properties
 :PROPERTIES:
@@ -467,22 +293,3 @@ divider, not a class declaration.  No OWL entity is produced for
  - Types :: foaf:Person
  - Facts :: ex:owns ex:fido
 ````
-
-Things to notice in the exemplar above:
-
-- Each `resourcedefs` section has `:ID:` and `:resourcedefs: yes` drawers.
-- The class taxonomy (`ex:animal` > `ex:dog` > `ex:puppy`) is carried
-  entirely by heading nesting; no `SubClassOf ::` rows duplicate it.
-- The one `SubClassOf ::` row on `ex:puppy` carries an *anonymous*
-  class expression (`ex:hasAge some xsd:integer[< 2]`) -- the legitimate
-  use of the description-list form.
-- `foaf:Person` is reused with `rdfs:isDefinedBy`, not redeclared from
-  scratch.
-- The "Living things" heading is `:nodeclare:` because it's a narrative
-  divider, not a class.  The two animal-subclass declarations under it
-  still attach to `ex:animal` correctly because heading nesting skips
-  `:nodeclare:` headings.
-- The `Datatypes` section is empty but still declared -- the structural
-  lint prefers all six standard sections (`Datatypes`, `Classes`,
-  `Object properties`, `Data properties`, `Annotation properties`,
-  `Individuals`) present even when one of them carries no children.
