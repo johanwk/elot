@@ -3582,6 +3582,82 @@ ROW is the seven-tuple returned by `elot-db-search-entities':
             (or source "?")
             (or via "?"))))
 
+(defun elot-gptel--borrow-normalise-label (s)
+  "Return S stripped of literal quoting, language tag and datatype.
+\"denoter\"@en-us -> denoter.  Returns nil for a non-string."
+  (when (stringp s)
+    (let ((v (string-trim s)))
+      ;; "lexical"@lang  /  "lexical"^^dt  /  "lexical"
+      (when (string-match
+             "\\`\"\\(\\(?:[^\"\\\\]\\|\\\\.\\)*\\)\"\\(?:@[[:alnum:]-]+\\|\\^\\^[^ \t]+\\)?\\'"
+             v)
+        (setq v (match-string 1 v)))
+      (string-trim v))))
+
+(defun elot-gptel--borrow-local-name (id)
+  "Return the local name of ID (after the last `:', `/' or `#')."
+  (when (stringp id)
+    (if (string-match "\\`.*[:/#]\\([^:/#]+\\)\\'" id)
+        (match-string 1 id)
+      id)))
+
+(defun elot-gptel--borrow-entity-key (id)
+  "Return a de-duplication key for entity ID.
+Prefers the expanded full IRI, so that two different prefixes
+bound to the same namespace collapse, and two same-local-name
+CURIEs under *different* namespaces (e.g. `iof-constr:designates'
+vs `iof-construct:designates') do NOT."
+  (or (and (stringp id)
+           (string-match-p "\\`[^ \t:]+:[^ \t]*\\'" id)
+           (not (string-prefix-p "http" id))
+           (ignore-errors (elot-db-expand-curie id)))
+      id))
+
+(defun elot-gptel--borrow-row-preference (row source)
+  "Return a sort rank for ROW; lower is better.
+Rows from SOURCE (when supplied) rank first, then rows from an
+active label source, then the rest."
+  (let ((src (nth 4 row))
+        (active (ignore-errors (elot-gptel--active-source-names))))
+    (cond
+     ((and source (equal src source)) 0)
+     ((and (stringp src) (member src active)) 1)
+     (t 2))))
+
+(defun elot-gptel--borrow-collapse (rows source)
+  "Collapse ROWS to one row per distinct entity.
+Returns a list of (BEST-ROW . ALL-ROWS) pairs in first-seen order;
+BEST-ROW is the preferred attestation per
+`elot-gptel--borrow-row-preference'."
+  (let (groups)
+    (dolist (row rows)
+      (let* ((key (elot-gptel--borrow-entity-key (nth 0 row)))
+             (cell (assoc key groups)))
+        (if cell
+            (setcdr cell (append (cdr cell) (list row)))
+          (push (cons key (list row)) groups))))
+    (mapcar (lambda (cell)
+              (let ((rs (cdr cell)))
+                (cons (car (sort (copy-sequence rs)
+                                 (lambda (a b)
+                                   (< (elot-gptel--borrow-row-preference a source)
+                                      (elot-gptel--borrow-row-preference b source)))))
+                      rs)))
+            (nreverse groups))))
+
+(defun elot-gptel--borrow-exact-p (row query)
+  "Non-nil when ROW is an *exact* hit for QUERY.
+Exact means: the normalised label equals QUERY, or the entity id
+equals QUERY, or the id's local name equals QUERY (all
+case-insensitively)."
+  (let ((q (downcase (string-trim query)))
+        (lab (elot-gptel--borrow-normalise-label (nth 1 row)))
+        (id  (nth 0 row)))
+    (or (and lab (string= (downcase lab) q))
+        (and (stringp id) (string= (downcase id) q))
+        (let ((ln (elot-gptel--borrow-local-name id)))
+          (and ln (string= (downcase ln) q))))))
+
 (defun elot-gptel-tool-borrow-term (label &optional kind source lang)
   "Composite reuse-before-mint: search + borrow in one call.
 
@@ -3609,8 +3685,16 @@ Pipeline:
   SOURCE / LANG narrowed, or call `elot_db_borrow_term' with
   the chosen id).
 
-The composite never silently picks among candidates;
-disambiguation stays with the caller.
+The composite never silently picks among *distinct* candidates;
+disambiguation stays with the caller.  It does, however, resolve
+two kinds of spurious ambiguity automatically:
+- multiple attestations of the SAME entity (same expanded IRI)
+  from different sources are collapsed to one, preferring SOURCE
+  when given, else an active label source;
+- when exactly one candidate matches LABEL *exactly* (normalised
+  label, entity id, or local name -- case-insensitively), that
+  one wins over mere substring hits.
+Both cases auto-borrow, with a NOTE explaining what was set aside.
 
 Next step: the auto-borrow response ends with a pre-filled
 `NEXT:' trailer naming the follow-up `elot_declare_resource'
@@ -3634,10 +3718,33 @@ for any further axiom rows.  Read-only."
         (unless (and (stringp label*) (not (string-empty-p label*)))
           (user-error "ELOT-gptel: label must be a non-empty string"))
         (elot-gptel--db-ensure-open)
-        (let* ((rows (elot-db-search-entities
-                      label* elot-gptel--borrow-default-limit
-                      kind* source* lang* nil))
-               (n (length rows)))
+        (let* ((all (elot-db-search-entities
+                     label* elot-gptel--borrow-default-limit
+                     kind* source* lang* nil))
+               ;; (b) collapse multiple attestations of the SAME entity.
+               (groups (elot-gptel--borrow-collapse all source*))
+               ;; (a) prefer exact label / id / local-name hits.
+               (exact (cl-remove-if-not
+                       (lambda (g)
+                         (cl-some (lambda (r)
+                                    (elot-gptel--borrow-exact-p r label*))
+                                  (cdr g)))
+                       groups))
+               (chosen (if (= (length exact) 1) exact groups))
+               (rows (mapcar #'car chosen))
+               (n (length rows))
+               (note
+                (cond
+                 ((and (= n 1)
+                       (> (length (cdr (car chosen))) 1))
+                  (format "\nNOTE: %d attestations of this entity were \
+collapsed; the preferred source was used for the citation."
+                          (length (cdr (car chosen)))))
+                 ((and (= n 1) (= (length exact) 1) (> (length groups) 1))
+                  (format "\nNOTE: %d other substring candidate(s) were \
+set aside in favour of the exact match on `%s'."
+                          (1- (length groups)) label*))
+                 (t ""))))
           (cond
            ;; Zero candidates: stable fall-through signal.
            ((= n 0)
@@ -3655,6 +3762,7 @@ for any further axiom rows.  Read-only."
 elot-db-entity-citation returned nil (data inconsistency)"
                    id)
                 (concat (elot-gptel--borrow-provenance-line row)
+                        note
                         "\n\n"
                         (let ((snippet (elot-gptel--db-borrow-format cit))
                               (next (elot-gptel--borrow-next-block cit)))
