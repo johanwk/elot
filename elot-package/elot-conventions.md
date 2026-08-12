@@ -39,6 +39,17 @@ Before the first declaration or mutation:
 4. Apply the template by substituting bindings without changing its axiom
    structure. Remove template-control annotations from the instance and add
    `pattern:appliedPattern` as directed by the framework.
+   As a *loose default* (advice, not a rule): where the pattern's own outline
+   nests headings -- e.g. the information individuals sitting under the entity
+   they are about -- reproduce that nesting in the target, anchoring each new
+   heading as a child of the heading it was nested under in the template.  Note
+   that under `Individuals` such nesting is presentational only (OWL carries no
+   sub-relation between named individuals), so it is a readability choice, not a
+   semantic one.  Give way to the target ontology's own conventions when they
+   conflict -- for instance a house style that groups all resources of a kind
+   under a `:nodeclare:` heading, an existing flat section, or an explicit
+   instruction from the user or the pattern.  Do not contort the target file to
+   mirror the template, and never let this override section-kind placement rules.
 5. Dry-run coherent edits where supported; then run `elot_check` and the
    pattern-specific query/postcondition. Parsing alone does not prove that the
    pattern was applied correctly. Stop and report a blocker rather than silently
