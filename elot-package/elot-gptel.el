@@ -2970,7 +2970,8 @@ or has no asserted type.  Read-only."
 ;;
 ;; The second borrow-term tool (`elot_db_borrow_term') will produce an
 ;; ELOT description-list snippet -- including the `rdfs:isDefinedBy'
-;; back-pointer -- to be embedded under a heading via `elot_add_term'.
+;; back-pointer -- to be embedded under a heading via
+;; `elot_declare_resource'.
 
 (declare-function elot-db-search-entities "elot-db"
                   (query &optional limit kind source lang exact-only))
@@ -3068,7 +3069,7 @@ candidate for reuse before minting a fresh identifier."
 ;;
 ;; Given an entity TOKEN (CURIE or IRI) known to the ELOT DB,
 ;; return a plain-text ELOT description-list snippet that the
-;; LLM (or `elot_add_term') can embed under a heading.
+;; LLM (or `elot_declare_resource') can embed under a heading.
 ;; The snippet ALWAYS carries an `rdfs:isDefinedBy' back-pointer
 ;; to the source ontology IRI -- the citation is part of the
 ;; tool's output shape, not an instruction in its docstring, so
@@ -3290,9 +3291,13 @@ mechanical reuse always carries the attribution.
 
 When the source ontology has no `owl:Ontology' declaration in
 the DB, `rdfs:isDefinedBy' falls back to a `(source: NAME)'
-note.  The leading `*' is a placeholder -- callers (`elot_add_term',
-or the user) re-level it to match the target
-ontology's structure.
+note.  The leading `*' is a placeholder -- callers
+(`elot_declare_resource', or the user) re-level it to match the
+target ontology's structure.
+
+Next step: `elot_declare_resource' (declares the heading under
+the chosen anchor with this CURIE), then `elot_edit_axioms' to
+attach the annotation / axiom rows.
 
 Returns a plain-text snippet (no JSON, no escaping beyond ELOT
 conventions) so it can be quoted directly back into an Org
@@ -3387,7 +3392,11 @@ Pipeline:
   the chosen id).
 
 The composite never silently picks among candidates;
-disambiguation stays with the caller.  Read-only."
+disambiguation stays with the caller.
+
+Next step: `elot_declare_resource' (declares the heading under
+the chosen anchor with the borrowed CURIE), then
+`elot_edit_axioms' for the annotation rows.  Read-only."
   (condition-case err
       (let* ((label* (and (stringp label) label))
              (kind*  (cond
@@ -3484,6 +3493,13 @@ Quick reference for the LLM:
   `Classes', `Object properties', `Data properties',
   `Annotation properties', `Individuals' (all
   `:resourcedefs: yes').
+- When a modelling pattern may apply, read the library entry point and
+  the pattern's application, constants, hazard, and worked-example
+  sections before editing.  Resolve every slot first.  `BORROW' means
+  activate the preferred source, use `elot_borrow_term', preserve the
+  returned provenance and source parent, and only then instantiate the
+  pattern.  A bare external-CURIE declaration is not a borrow.  Validate
+  with `elot_check' and the pattern-specific postcondition.
 
 For the full document, see `elot-conventions.md' in the package
 source tree."
@@ -7923,13 +7939,24 @@ annotations and OMN axioms; reuse of external terms goes via a
 heading plus `rdfs:isDefinedBy'.
 
 Call this tool once at the start of any LLM-driven authoring
-session before composing edits to an ELOT .org file.  The
-returned document covers the cardinal idioms (heading nesting,
-heading shape `Label (curie)', description-list keys, file
-skeleton, reuse via `rdfs:isDefinedBy', the often-misunderstood
-`:nodeclare:' tag, default-prefix mechanics) and embeds a self-
-contained worked exemplar (a small `pets' ontology in a fenced
-`org' code block) demonstrating every idiom inline.
+session before composing edits to an ELOT .org file.  This is
+mandatory even when the user's request is terse and does not prescribe
+tools or a workflow: the instructions, not user prompt precision, must
+carry the authoring discipline.  When a modelling pattern is named,
+requested, or plausibly applicable from a supplied library, follow the
+document's mandatory pattern workflow before the first declaration or
+mutation: read the library entry point and pattern guidance, resolve a
+complete binding table, execute every BORROW through the preferred
+source and borrow tools while retaining provenance and hierarchy, and
+validate both the ontology and the pattern-specific postcondition.  A
+bare external-CURIE declaration is not a borrow.
+
+The returned document also covers the cardinal idioms (heading nesting,
+heading shape `Label (curie)', description-list keys, file skeleton,
+reuse via `rdfs:isDefinedBy', the often-misunderstood `:nodeclare:' tag,
+default-prefix mechanics) and embeds a self-contained worked exemplar
+(a small `pets' ontology in a fenced `org' code block) demonstrating
+every idiom inline.
 
 Read-only; takes no arguments.
 
@@ -9439,8 +9466,12 @@ re-level it to match the target ontology's structure
 child of an existing resource heading).
 
 Use this AFTER `elot_db_search_label' has produced a
-matching CURIE, BEFORE `elot_add_term' embeds the
-borrowed term into the target ontology.  Read-only."
+matching CURIE, BEFORE `elot_declare_resource' embeds the
+borrowed term into the target ontology.
+
+Next step: `elot_declare_resource' (declares the heading under
+the chosen anchor with this CURIE), then `elot_edit_axioms' for
+the annotation rows.  Read-only."
      :args
      ((:name "token"
              :type string
@@ -9487,7 +9518,11 @@ as the default `borrow a term' entry point; reach for the
 atomic tools (`elot_db_search_label', `elot_db_borrow_term')
 only when you need an open-ended substring search,
 cross-source comparison, or a non-class kind with idiosyncratic
-shaping.  Read-only."
+shaping.
+
+Next step: `elot_declare_resource' (declares the heading under
+the chosen anchor with the borrowed CURIE), then
+`elot_edit_axioms' for the annotation rows.  Read-only."
      :args
      ((:name "label"
              :type string
@@ -9558,8 +9593,8 @@ identifier.
 Returns a single line:
   OK: minted CURIE (scheme=NAME, label=...)
 or an `ERROR:' line.  Read-only with respect to the .org file --
-this tool only chooses a string.  Compose with `elot_add_term'
-to actually introduce the term."
+this tool only chooses a string.  Compose with
+`elot_declare_resource' to actually introduce the term."
      :args
      ((:name "file"
              :type string
