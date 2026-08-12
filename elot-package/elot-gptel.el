@@ -6716,6 +6716,14 @@ restores the pre-insert bytes."
                      t (length labels) labels t)
                   (elot-id-insert--do-insert
                    nil (length labels) labels t)))))
+      ;; Echo the headings we just wrote, so a revalidation rollback
+      ;; reports what was attempted rather than an empty ROWS block.
+      (apply #'elot-gptel-note-mutation-rows
+             (cl-mapcar (lambda (curie label)
+                          (format "insert %s: heading \"%s (%s)\" under %s (as %s)"
+                                  curie label curie anchor
+                                  (if child-p "child" "sibling")))
+                        curies labels))
       (let* ((n (length curies))
              (head
               (format
@@ -6836,6 +6844,11 @@ the level-ordered sequence."
               (atomic-change-group
                 (elot-insert-labels-tree lisp-tree as-sym))))
           (let* ((n (length collected))
+                 (_ (apply #'elot-gptel-note-mutation-rows
+                           (mapcar (lambda (p)
+                                     (format "insert %s: heading \"%s (%s)\""
+                                             (car p) (cdr p) (car p)))
+                                   collected)))
                  (head (format
                         "OK: inserted %d heading%s under %s (as %s)"
                         n (if (= n 1) "" "s")
@@ -7160,6 +7173,13 @@ declared in the current buffer."
               tgt-prefix candidates)))))
       (let ((tiri (and (stringp iri) (not (string-empty-p iri)) iri))
             placeholder rename-result)
+        ;; Record the heading we are about to write *before* any
+        ;; mutation, so a rollback caused by the heading itself (bad
+        ;; label / CURIE / anchor placement) still echoes something
+        ;; rather than an empty ROWS block.
+        (elot-gptel-note-mutation-rows
+         (format "declare %s: heading \"%s (%s)\" under %s (as %s)"
+                 curie label curie anchor (symbol-name as-sym)))
         (save-excursion
           (elot-gptel--insert-goto-anchor anchor)
           (atomic-change-group
