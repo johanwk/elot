@@ -4,28 +4,36 @@
 #+date: 2026
 #+call: theme-elot()
 
-This is the index of the pattern library: which patterns exist, how to
-choose among them, and what has been learned from writing them.
+Pattern index and application entry point.
 
-The library has an ERT integrity suite.  Run it from this directory with
-~make test~, or as part of the repository-wide ~make test~.  It runs the
-composite ~elot_check~ pipeline over every pattern ontology, verifies that
-every row in the cross-pattern index resolves to an existing file, checks
-that no pattern source is omitted from the index, and protects the framework
-and vocabulary files from accidental removal.  With ~ELOT_REQUIRE_ROBOT=1~,
-the ontology checks require ROBOT rather than falling back to lint-only mode.
+* Applying a pattern: mandatory checklist
 
-Two companion files hold the general material:
+1. Read *How to apply* and *Required constants (borrow these first)*.
+2. For each =BORROW= constant, the first tool sequence is:
+   1. =elot_db_activate_source= for the preferred source;
+   2. =elot_borrow_term= with the constant's label and kind;
+   3. =elot_db_supertypes=, then borrow and preserve its source parent.
+3. On the first borrow attempt, *omit =lang=* and usually =source=; either
+   filter can turn an existing term into a false “no candidates”. Narrow only
+   to disambiguate, using the exact registered source string.
+4. Do not call =elot_read_resource=, =elot_axiom_check=,
+   =elot_db_search_label=, declaration, or mutation tools for that constant
+   before step 2. Search manually only if =elot_borrow_term= returns multiple
+   or no candidates.
+5. Keep the borrow snippet's =rdfs:isDefinedBy= and definition. Never replace
+   it with bare =elot_declare_resource=; declare only after borrow has failed,
+   and add provenance explicitly.
+6. Then bind or mint =var:= slots, reproduce the axioms, remove template
+   annotations, add =pattern:appliedPattern=, dry-run, and run =elot_check=.
 
-- [[file:pattern-framework.org][pattern-framework.org]] --- the framework specification: what a pattern
-  is, the template contract, how placeholders are annotated, the
-  catalog and provisioning steps, the generic apply procedure, the
-  shared ergonomics rules, and the deferred design areas and open
-  questions.
-- [[file:pattern-vocabulary.org][pattern-vocabulary.org]] --- the normative =pattern:pattern-vocabulary=
-  ontology that every pattern file imports.  It tangles to
-  =pattern-vocabulary.omn= / =pattern-vocabulary.ttl=, which is the
-  target =catalog-v001.xml= maps the ontology IRI to.
+*BORROW means borrow first, with provenance and source hierarchy; it never
+means merely declaring an external CURIE.*
+
+Run library checks with =make test=; set =ELOT_REQUIRE_ROBOT=1= to forbid
+lint-only success.
+
+See [[file:pattern-framework.org][pattern-framework.org]] for the contract and procedure, and
+[[file:pattern-vocabulary.org][pattern-vocabulary.org]] for the annotation vocabulary.
 
 * Cross-pattern index
 
