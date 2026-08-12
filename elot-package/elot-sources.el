@@ -40,6 +40,7 @@
 (require 'json)
 
 (declare-function elot-build-slurp "elot-tangle" (&optional hierarchy))
+(declare-function elot-slurp-for-db "elot-tangle" (slurp))
 (declare-function elot-update-headline-hierarchy "elot-tangle" ())
 (defvar elot-robot-jar-path)
 
@@ -127,8 +128,11 @@ for the extension."
 (defun elot-source-parse-org (file)
   "Parse an ELOT Org FILE into slurp entries.
 Visits FILE in a temporary buffer in `org-mode', runs
-`elot-update-headline-hierarchy', and returns
-`elot-build-slurp''s output."
+`elot-update-headline-hierarchy', and returns `elot-build-slurp''s
+output passed through `elot-slurp-for-db', so that ELOT-style
+language literals (`\"denoter\"@en-us') are split into
+(LEXICAL-FORM LANG) pairs -- the same shape the Turtle parser
+emits, so DB rows agree regardless of source format."
   (require 'elot-tangle)
   (with-temp-buffer
     (insert-file-contents file)
@@ -137,7 +141,7 @@ Visits FILE in a temporary buffer in `org-mode', runs
           (enable-local-variables nil))
       (delay-mode-hooks (org-mode))
       (elot-update-headline-hierarchy)
-      (elot-build-slurp))))
+      (elot-slurp-for-db (elot-build-slurp)))))
 
 ;;;; ------------------------------------------------------------------
 ;;;; CSV / TSV

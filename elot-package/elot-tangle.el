@@ -1017,6 +1017,67 @@ Keys are compared with `equal'.  Pure built-in, no external deps."
       (puthash (car pair) (cdr pair) ht))
     ht))
 
+(defconst elot--language-literal-regexp
+  "\\`\"\\(\\(?:[^\"\\\\]\\|\\\\.\\)*\\)\"@\\([A-Za-z]+\\(?:-[A-Za-z0-9]+\\)*\\)\\'"
+  "Regexp matching a complete language-tagged RDF literal.
+Group 1 is the lexical form (without the surrounding quotes), group
+2 the language tag.  Escaped characters inside the lexical form are
+allowed, so an embedded \\\" does not terminate the match: the
+closing quote is anchored to the `\"@TAG' suffix at end of string.
+
+Datatype literals (`\"3.5\"^^xsd:decimal') deliberately do NOT match
+-- splitting those would lose the datatype, which the DB has no
+column for.")
+
+(defun elot-split-language-literal (value)
+  "Split VALUE into (LEXICAL-FORM LANG) when it is a language-tagged literal.
+Return nil when VALUE is not a string or does not carry a language
+tag, so callers can pass the original value through unchanged.
+
+This is the ELOT-org counterpart of what the Turtle ingest path
+gets for free: an ELOT heading or description-list row spells a
+tagged literal as the single string `\"denoter\"@en-us', whereas
+`elot-db-update-source' wants the pair (\"denoter\" \"en-us\") so
+that `attributes.lang' is populated and `entities.label' can be
+picked by `elot-preferred-languages'."
+  (when (and (stringp value)
+             (string-match elot--language-literal-regexp value))
+    (list (match-string 1 value) (match-string 2 value))))
+
+(defun elot--slurp-plist-for-db (plist)
+  "Return PLIST with language-tagged literal values split into (LEX LANG)."
+  (let (result)
+    (while plist
+      (let ((key (car plist))
+            (val (cadr plist)))
+        (push key result)
+        (push (or (elot-split-language-literal val) val) result))
+      (setq plist (cddr plist)))
+    (nreverse result)))
+
+(defun elot-slurp-for-db (slurp)
+  "Return SLURP with language-tagged literals split for the ELOT label DB.
+Each row is (CURIE LABEL PLIST).  Every plist value that is a
+complete language-tagged literal becomes the two-element list
+\(LEXICAL-FORM LANG) understood by `elot-db-update-source'; the
+row's display LABEL is reduced to its bare lexical form.  All other
+values -- plain strings, datatype literals, non-strings -- are
+passed through untouched.
+
+Applied on the DB-sync boundaries only -- `elot-slurp-to-vars' (the
+tangle-time sync) and `elot-source-parse-org' (register / refresh).
+The in-buffer `elot-slurp' keeps its verbatim strings, so codelist /
+attriblist consumers are unaffected."
+  (mapcar (lambda (row)
+            (let* ((curie (nth 0 row))
+                   (label (nth 1 row))
+                   (plist (nth 2 row))
+                   (split (elot-split-language-literal label)))
+              (list curie
+                    (if split (car split) label)
+                    (elot--slurp-plist-for-db plist))))
+          slurp))
+
 (defun elot-slurp-to-vars ()
   "Read resources declared in ELOT buffer into local variables.
 The variables are ELOT-SLURP (list), ELOT-CODELIST-HT and
@@ -1052,7 +1113,8 @@ during sync are reported but do not break the local HT population."
         (condition-case err
             (progn
               (when (fboundp 'elot-db-init) (elot-db-init))
-              (elot-db-update-source buffer-file-name nil "org" slurp
+              (elot-db-update-source buffer-file-name nil "org"
+                                     (elot-slurp-for-db slurp)
                                      (float-time
                                       (file-attribute-modification-time
                                        (file-attributes buffer-file-name)))))
