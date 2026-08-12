@@ -9,10 +9,20 @@ ontology the pattern is written for.  The patterns themselves are
 listed in [[file:README.org][README.org]]; the annotation vocabulary used below is declared
 in [[file:pattern-vocabulary.org][pattern-vocabulary.org]].
 
-The document has four main parts: the framework contract, the authoring
-checklist, the application model and procedure, and deferred design work.
-Pattern consumers can normally go straight to [[*Applying a pattern: the generic procedure][Applying a pattern: the generic
-procedure]] and [[*Tool-assisted application procedure][Tool-assisted application procedure]].
+The document begins with rules for reliable LLM use, followed by four main
+parts: the framework contract, the authoring checklist, the application model
+and procedure, and deferred design work.
+Pattern consumers should begin with the short mandatory checklist in
+[[file:README.org::*Applying a pattern: short mandatory checklist][README.org]], then consult [[*Applying a pattern: the generic procedure][Applying a pattern: the generic procedure]] and
+[[*Tool-assisted application procedure][Tool-assisted application procedure]] only for details.
+
+#+begin_quote
+*Non-negotiable consumer rule:* A constant marked =BORROW= must be obtained
+with =elot_borrow_term= (or search plus =elot_db_borrow_term=), retained with
+=rdfs:isDefinedBy=, and placed under its source parent. A bare external-CURIE
+declaration is not a borrow, and a valid but flat or provenance-free result is
+incomplete.
+#+end_quote
 
 ELOT patterns are intended for both human and LLM-assisted authoring.
 At present, the most complete tool support is exposed through the
@@ -21,6 +31,68 @@ yet has an equivalent interactive command or menu item. This is an
 implementation gap rather than a restriction of the pattern model:
 human authors and automated agents follow the same application
 contract, although their interfaces currently differ.
+
+** Designing rules for reliable LLM use
+Getting the rules right for LLM use is a core concern of this framework, not a
+later usability improvement.  An ontology pattern succeeds only when different
+agents are likely to select it for the right problem, preserve its modelling
+commitments, and stop rather than improvise when required evidence is missing.
+Logical correctness of the template is necessary, but it is not sufficient.
+
+This is an exploratory engineering problem.  The framework does not assume
+that a rule which is clear to its authors will be followed reliably by an LLM,
+or that success with one model and one prompt generalises to other models.  Its
+rules are therefore hypotheses to be exercised on realistic editing tasks,
+including negative cases, ambiguous matches and incomplete source material.
+Observed failures must be used to revise the rule, metadata, example or tool
+boundary rather than explained away as model error.
+
+Rules intended for reliable application follow these principles:
+
+1. *Make the required action explicit and ordered.*  Use numbered, imperative
+   steps with prerequisites before mutations.  Do not rely on an agent to infer
+   an operation from background explanation.
+2. *Give one preferred path.*  State the normal action first and name the
+   limited conditions for a fallback.  Ordered actions such as
+   ~BIND_OR_MINT~ encode a default; alternatives are not equivalent choices.
+3. *Put decisions next to the resource they govern.*  Use machine-visible
+   ~pattern:action~, ~pattern:instruction~, expected kinds, datatypes and
+   provenance rather than depending only on distant prose.
+4. *Require observation before invention.*  Inspect the pattern and target,
+   verify source terms, borrow or bind before minting, and record a complete
+   binding table before editing.  A plausible label or CURIE is not evidence.
+5. *Define stop conditions.*  Missing sources, unresolved identity, an
+   unbound required slot, kind mismatch, forbidden information loss or failed
+   validation means stop and report the blocker.  The agent must not silently
+   guess, flatten a hierarchy or omit a leg.
+6. *Make intermediate results inspectable.*  The selected pattern, binding
+   table, provenance, fallback reasons and planned edits must be reviewable
+   before or alongside mutation.  Prefer small coherent atomic edits and
+   preserve rollback boundaries.
+7. *Show both a positive example and the important negative case.*  A worked
+   example demonstrates the substitution shape; the mandatory hazard block
+   states when that shape must not be used.  Examples illustrate rules and do
+   not override them.
+8. *Validate at more than one level.*  Check local row syntax before commit,
+   then the complete ontology with imports and reasoning, followed by any
+   pattern-specific query or postcondition.  Parsing alone does not establish
+   correct pattern use.
+9. *Use deliberate redundancy at critical boundaries.*  Brief repetition of
+   a high-cost rule, such as borrow-with-provenance, is acceptable at the entry
+   checklist and point of action.  Elsewhere keep one normative source and link
+   to it so duplicated instructions do not drift.
+10. *Prefer model-independent contracts.*  Rules describe observable inputs,
+    outputs, evidence and refusal conditions, not a particular model's prompt
+    tricks.  Tool names may document the current implementation, but the
+    semantic contract must remain usable by humans and other interfaces.
+
+Changes to these rules should be evaluated with a small, versioned task set
+covering pattern selection, slot filling, reuse versus minting, application,
+validation and refusal.  Record the model and framework version, whether the
+result was correct without repair, the kind of repair required, and any unsafe
+silent deviation.  Compare failures across more than one model where possible.
+A rule earns normative status through repeated successful use; unresolved
+behaviour remains marked experimental or becomes an approval boundary.
 
 * Framework contract
 ** What a pattern is
@@ -168,12 +240,17 @@ usable without private knowledge of the source vocabulary.
    ~elot_db_activate_source~.  Search its classes, properties and
    individuals with ~elot_db_search_label~ and inspect each candidate
    with ~elot_db_get_attributes~, ~elot_db_supertypes~ or a read-only
-   SPARQL query.  Record the exact CURIE, kind, source ontology IRI,
-   direct parent, Domain, Range, inverse, characteristics and relevant
-   chains or restrictions.  Treat plausible names as unverified: do not
-   invent a term to complete an expected shape.  If the vocabulary is
-   thinner or differently shaped than expected, reduce or change the
-   pattern's scope and say what it cannot express.
+   SPARQL query.  *Use Emacs regular-expression syntax* for the
+   ~match~ parameter of ELOT tools such as ~elot_resources~ (this does
+   NOT apply to SPARQL query strings themselves, which remain
+   standard SPARQL/PCRE-style regex): alternation is ~\|~, grouping is
+   ~\(...\)~, and repetition is ~\{...\}~ / ~\+~ / ~\?~.  Record the
+   exact CURIE, kind, source
+   ontology IRI, direct parent, Domain, Range, inverse, characteristics
+   and relevant chains or restrictions.  Treat plausible names as
+   unverified: do not invent a term to complete an expected shape.  If
+   the vocabulary is thinner or differently shaped than expected,
+   reduce or change the pattern's scope and say what it cannot express.
 
 3. [ ] *Provision the complete import closure.*  Vendor the real source
    ontology in =patterns/=; never replace it with a hand-written stub.
@@ -430,12 +507,16 @@ it identifies the checks and tool calls that make each decision inspectable.
 Exact tools may change, but the sequence and its stop conditions apply to
 almost any pattern.
 
+The mandatory borrow-first rules are summarized at the top of this file and
+in the README checklist. Remember that =elot_borrow_term= defaults to classes;
+pass the actual kind for object, data, or annotation properties.
+
 *** Practical workflow
 | Stage       | Practical action                                                                                                                                                                                             | Typical ELOT support                                                                                                   | Result or stop condition                                                                               |
 |-------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------|
 | Select      | Choose the pattern by its stated intent, promised query and fidelity note; read its hazard and negative case.                                                                                                | Library index, pattern prose, worked example                                                                           | Stop if the modelling problem or required information does not match.                                  |
 | Inspect     | Read every constant, placeholder, action, instruction and literal datatype; make a complete binding table.                                                                                                   | ~elot_resources~, ~elot_read_resource~                                                                                     | Every slot has an expected kind and an explicit BORROW/BIND/MINT decision.                             |
-| Provision   | Activate authoritative source ontologies and borrow every required constant before writing instantiated axioms.                                                                                              | ~elot_db_activate_source~, ~elot_db_search_label~, ~elot_db_get_attributes~, borrow/declaration tools                        | All external CURIEs used by the result are declared and traceable.                                     |
+| Provision   | Activate authoritative sources; borrow every required constant with provenance; inspect its direct parent and preserve that hierarchy before writing instantiated axioms.                                                                 | ~elot_db_activate_source~, ~elot_borrow_term~, ~elot_db_borrow_term~, ~elot_db_supertypes~, ~elot_move_resource~             | Every external CURIE is traceable and nested under the correct borrowed parent.                         |
 | Reuse first | Search the target and the ELOT db for each bind-first or borrow-first slot; inspect near matches rather than relying on labels alone.                                                                        | ~elot_resources~, ~elot_read_resource~, ~elot_db_search_label~, ~elot_db_get_attributes~                                       | Reuse is chosen where identity and axioms fit; otherwise the slot's action explicitly permits minting. |
 | Plan        | Record the substitution for every resource and literal, including identifiers, placement, source, repetition/grouping and the reason for any compound action's fallback.                                     | Binding table from the pattern's worked-example form; ~elot_verify_identifier~ or ~elot_mint_identifier~ where appropriate | No unbound slot, invented upstream term or unresolved identity decision remains.                       |
 | Preflight   | Check proposed axiom rows against the target signature before committing; check the complete draft when interactions between rows matter.                                                                    | ~elot_axiom_check~, dry-run edit operations, ~elot_check~ with draft content                                               | Stop on an illegal keyword, undeclared CURIE, kind/range error or failed parse.                        |
