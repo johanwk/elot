@@ -1456,6 +1456,12 @@ appears only when QUERY looks like `prefix:local' and
 EXACT-ONLY is nil.  Rows found by both passes are reported
 once with their primary-pass VIA value (no duplication).
 
+Rows are RANKED BEFORE LIMIT is applied: exact hits (id, label
+or local name equal to QUERY) first, then whole-token label
+matches, then the remaining substring hits.  An exact match can
+therefore never be truncated away by a flood of weak substring
+matches.
+
 Read-only over the entire database; runs through the
 `elot-db-execute-readonly' gate.  Designed as the sole DB
 access path for `elot_db_search_label' (and, in a follow-up,
@@ -1514,7 +1520,30 @@ access path for `elot_db_search_label' (and, in a follow-up,
    END AS via
  FROM entities e
 ")
-           (order " ORDER BY e.source, e.label, e.id")
+           ;; Rank BEFORE the LIMIT is applied, so an exact hit can
+           ;; never be truncated away by a flood of weak substring
+           ;; matches (the `prov:value' failure mode).  Tier 0: id,
+           ;; label or local name equals the bare query.  Tier 1:
+           ;; whole-token match inside the label.  Tier 2: the rest.
+           (order " ORDER BY
+   CASE
+     WHEN LOWER(e.id) = LOWER(?) THEN 0
+     WHEN LOWER(e.label) = LOWER(?) THEN 0
+     WHEN LOWER(substr(e.id, instr(e.id, ':')+1)) = LOWER(?) THEN 0
+     WHEN LOWER(e.label) LIKE LOWER(?) THEN 1
+     WHEN LOWER(e.label) LIKE LOWER(?) THEN 1
+     WHEN LOWER(e.label) LIKE LOWER(?) THEN 1
+     ELSE 2
+   END,
+   e.source, e.label, e.id")
+           ;; Parameters consumed by ORDER BY, in order: three
+           ;; equality probes then three token-boundary probes
+           ;; (`q ', ` q', ` q ') -- a poor man's word-boundary test.
+           (order-params
+            (list q-bare q-bare q-bare
+                  (concat q-bare " %")
+                  (concat "% " q-bare)
+                  (concat "% " q-bare " %")))
            (limit-clause (when lim (format " LIMIT %d" lim)))
            ;; Primary pass: substring on label OR id.
            (primary-sql
@@ -1524,7 +1553,7 @@ access path for `elot_db_search_label' (and, in a follow-up,
                     extra
                     order limit-clause))
            (primary-params
-            (append (list q-bare q q) extra-params))
+            (append (list q-bare q q) extra-params order-params))
            (primary (elot-db-execute-readonly primary-sql primary-params))
            (localname (and (not exact-only)
                            (elot-db--search-curie-localname q-bare))))
@@ -1544,7 +1573,8 @@ access path for `elot_db_search_label' (and, in a follow-up,
                         extra
                         order limit-clause))
                (fallback-params
-                (append (list q-bare local-q local-q) extra-params))
+                (append (list q-bare local-q local-q)
+                        extra-params order-params))
                (fallback (elot-db-execute-readonly
                           fallback-sql fallback-params))
                ;; Build a set of primary-pass keys so we can dedupe.

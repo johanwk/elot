@@ -438,5 +438,87 @@ supplies the unrestricted-lookup answer."
                      (elot-gptel--borrow-parent-preferring-active
                       "iof-constr:Denoter" "cit-src"))))))
 
+(ert-deftest test-elot-gptel-borrow-collision-note-fires ()
+  "Two prefixes expanding to the same namespace produce a NOTE."
+  (cl-letf (((symbol-function 'elot-db--expansion-in-source-only)
+             (lambda (prefix _src _ds)
+               (cond ((equal prefix "iof-constr")  "https://ex.org/construct/")
+                     ((equal prefix "iof-construct") "https://ex.org/construct/")
+                     ((equal prefix "other")       "https://ex.org/other/")))))
+    (let* ((rows '(("iof-constr:ICE" "ice" "owl:Class" nil "a.org" "" "x")
+                   ("iof-construct:ICE" "ice" "owl:Class" nil "b.org" "" "x")))
+           (note (elot-gptel--borrow-collision-note rows)))
+      (should (stringp note))
+      (should (string-match-p "same namespace" note))
+      (should (string-match-p "iof-constr:" note))
+      (should (string-match-p "iof-construct:" note)))
+    ;; Different namespaces: no note.
+    (should-not
+     (elot-gptel--borrow-collision-note
+      '(("iof-constr:ICE" "ice" "owl:Class" nil "a.org" "" "x")
+        ("other:ICE" "ice" "owl:Class" nil "b.org" "" "x"))))
+    ;; Single row: no note.
+    (should-not
+     (elot-gptel--borrow-collision-note
+      '(("iof-constr:ICE" "ice" "owl:Class" nil "a.org" "" "x"))))))
+
+(ert-deftest test-elot-gptel-borrow-row-namespace-unresolvable ()
+  "An unresolvable prefix yields nil rather than a guess."
+  (cl-letf (((symbol-function 'elot-db--expansion-in-source-only)
+             (lambda (&rest _) nil)))
+    (should-not
+     (elot-gptel--borrow-row-namespace
+      '("zz:Thing" "thing" "owl:Class" nil "a.org" "" "x"))))
+  ;; A full IRI id is not a CURIE; no lookup attempted.
+  (should-not
+   (elot-gptel--borrow-row-namespace
+    '("http://ex.org/Thing" "thing" "owl:Class" nil "a.org" "" "x"))))
+
+;;; Guardrail 1: blank filter arguments are treated as "unset".
+
+(ert-deftest test-elot-gptel-db-blank-to-nil ()
+  "Empty / whitespace-only / non-string filter values normalise to nil."
+  (should-not (elot-gptel--db-blank-to-nil ""))
+  (should-not (elot-gptel--db-blank-to-nil "   "))
+  (should-not (elot-gptel--db-blank-to-nil "\t\n"))
+  (should-not (elot-gptel--db-blank-to-nil nil))
+  (should-not (elot-gptel--db-blank-to-nil 42))
+  (should (equal (elot-gptel--db-blank-to-nil "en") "en"))
+  (should (equal (elot-gptel--db-blank-to-nil " en ") " en ")))
+
+;;; Guardrail 2: a zero-row result names the filter that emptied it.
+
+(ert-deftest test-elot-gptel-db-search-zero-hint-blames-kind ()
+  "A kind filter that removed rows is reported, with a re-run hint."
+  (cl-letf (((symbol-function 'elot-db-search-entities)
+             (lambda (_q _lim kind _src _lang _exact)
+               ;; Rows exist, but none of them has a recorded kind.
+               (if kind nil '(("prov:value" "value" nil nil "p.ttl" "" "exact"))))))
+    (let ((hint (elot-gptel--db-search-zero-hint
+                 "value" 50 "data-property" nil nil nil)))
+      (should (string-match-p "HINT:" hint))
+      (should (string-match-p "kind=data-property" hint))
+      (should (string-match-p "dropped 1 row" hint)))))
+
+(ert-deftest test-elot-gptel-db-search-zero-hint-blames-exact-only ()
+  "exact_only is reported when relaxing it would have produced rows."
+  (cl-letf (((symbol-function 'elot-db-search-entities)
+             (lambda (_q _lim _kind _src _lang exact)
+               (if exact nil '(("ex:x" "x" "owl:Class" nil "a.org" "" "local-name"))))))
+    (let ((hint (elot-gptel--db-search-zero-hint "ex:x" 50 nil nil nil t)))
+      (should (string-match-p "exact_only" hint)))))
+
+(ert-deftest test-elot-gptel-db-search-zero-hint-silent-when-unfiltered ()
+  "A genuine zero-candidate result carries no HINT block."
+  (cl-letf (((symbol-function 'elot-db-search-entities)
+             (lambda (&rest _) nil)))
+    (should (equal (elot-gptel--db-search-zero-hint
+                    "nothing" 50 "class" "s.org" "en" t)
+                   ""))
+    ;; No filters at all: nothing to blame.
+    (should (equal (elot-gptel--db-search-zero-hint
+                    "nothing" 50 nil nil nil nil)
+                   ""))))
+
 (provide 'elot-gptel-borrow-tests)
 ;;; elot-gptel-borrow-tests.el ends here

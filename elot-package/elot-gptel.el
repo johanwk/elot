@@ -7541,10 +7541,21 @@ declared in the current buffer."
         ;; Adopt the external identifier.  `elot-rename-resource'
         ;; runs its own `atomic-change-group'; on any failure the
         ;; outer mutation wrapper rolls the whole buffer back.
+        ;;
+        ;; Special case: the minting scheme may derive a placeholder
+        ;; that is ALREADY the requested CURIE (e.g. anchor
+        ;; `cars:fleet-car-1' + label "Fleet car 1 VIN" mints
+        ;; `cars:fleet-car-1-vin' under the `slug' scheme).  The
+        ;; adoption is then a no-op, and calling `elot-rename-resource'
+        ;; would raise "SOURCE equals TARGET" *after* the placeholder
+        ;; heading had been committed -- an ERROR response that
+        ;; nevertheless mutated the file.  Skip the rename instead.
         (setq rename-result
-              (apply #'elot-rename-resource placeholder curie
-                     (append (and tiri (list :target-iri tiri))
-                             (list :op 'rename))))
+              (if (string= placeholder curie)
+                  nil
+                (apply #'elot-rename-resource placeholder curie
+                       (append (and tiri (list :target-iri tiri))
+                               (list :op 'rename)))))
         (let* ((decl (plist-get rename-result :declared-prefix))
                (borrowed (and borrow
                               (elot-gptel--declare-borrow-rows
