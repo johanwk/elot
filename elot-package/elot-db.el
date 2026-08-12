@@ -1705,6 +1705,73 @@ the sole DB access path for `elot_db_borrow_term'."
               :ontology-title ont-title)))))
 
 
+(defconst elot-db-structural-props
+  '("rdf:type" "rdfs:label" "rdfs:isDefinedBy"
+    ;; OMN spellings (ELOT .org ingest)
+    "SubClassOf" "SubPropertyOf" "EquivalentTo" "DisjointWith"
+    "DisjointUnionOf" "HasKey" "Domain" "Range" "Types" "Facts"
+    "SameAs" "DifferentFrom" "Characteristics" "InverseOf"
+    "SubPropertyChain"
+    ;; RDF spellings (TTL / SPARQL ingest)
+    "rdfs:subClassOf" "rdfs:subPropertyOf" "rdfs:domain" "rdfs:range"
+    "owl:equivalentClass" "owl:equivalentProperty" "owl:disjointWith"
+    "owl:inverseOf" "owl:sameAs" "owl:differentFrom"
+    "owl:propertyChainAxiom" "owl:hasKey")
+  "Predicates that are structural, not annotation-like.
+Used by `elot-db-entity-annotation-rows' to filter out typing and
+axiom rows so only genuine annotation properties are reported.")
+
+(defun elot-db-entity-annotation-rows (token &optional source)
+  "Return TOKEN's annotation rows as an alist of (PROP . VALUE).
+
+TOKEN is an entity id as stored in `entities.id' (a CURIE or a
+full IRI; surrounding angle brackets are stripped).  Optional
+SOURCE restricts the lookup to a single registered source
+\(exact `sources.source' string) -- pass it for the same reason
+`elot-db-entity-citation' wants it: a widely-reused term is
+attested by several sources at once.
+
+Rows whose `prop' is in `elot-db-structural-props' are omitted,
+so the result holds only annotation-like predicates
+\(`skos:definition', `iof-av:naturalLanguageDefinition',
+`rdfs:comment', `skos:example', ...).  Order is the DB row
+order, which for Org-ingested sources is the
+description-list order.  Angle brackets around a value are
+stripped.  Returns nil when TOKEN is unknown or has no
+annotation rows.  Read-only; runs through the
+`elot-db-execute-readonly' gate."
+  (unless (and (stringp token) (not (string-empty-p token)))
+    (user-error "ELOT-db: token must be a non-empty string"))
+  (let* ((id (if (and (string-prefix-p "<" token)
+                      (string-suffix-p ">" token)
+                      (> (length token) 2))
+                 (substring token 1 -1)
+               token))
+         (rows (if (and (stringp source) (not (string-empty-p source)))
+                   (elot-db-execute-readonly
+                    "SELECT prop, value FROM attributes
+                       WHERE id = ? AND source = ?"
+                    (list id source))
+                 (elot-db-execute-readonly
+                  "SELECT prop, value FROM attributes WHERE id = ?"
+                  (list id)))))
+    (delq nil
+          (mapcar
+           (lambda (r)
+             (let ((prop (string-trim (or (nth 0 r) "")))
+                   (val  (string-trim (or (nth 1 r) ""))))
+               (when (and (not (string-empty-p prop))
+                          (not (string-empty-p val))
+                          (not (member prop elot-db-structural-props)))
+                 (cons prop
+                       (if (and (string-prefix-p "<" val)
+                                (string-suffix-p ">" val)
+                                (> (length val) 2))
+                           (substring val 1 -1)
+                         val)))))
+           rows))))
+
+
 (provide 'elot-db)
 
 ;;; elot-db.el ends here
