@@ -10,6 +10,45 @@ lists carry their axioms and annotations; the outline structure
 encodes the taxonomy.  Read the rules below before composing any
 edit.
 
+## 0. Mandatory workflow when a modelling pattern may apply
+
+This workflow is **non-negotiable**. The user does not need to name the
+framework, prescribe tools, or provide a careful step-by-step prompt. A request
+to "use", "apply", "follow", or "base this on" a modelling pattern -- or a
+request whose domain matches a pattern in a supplied pattern library -- is
+enough to trigger it.
+
+Before the first declaration or mutation:
+
+1. Locate and read the pattern library's application entry point (for this
+   repository, `patterns/README.org`), then read the selected pattern's **How to
+   apply**, **Required constants (borrow these first)**, main hazard/negative
+   case, and worked example. Do not infer the procedure from the pattern title
+   or diagram alone.
+2. Inspect every constant and `var:` placeholder, including nested
+   `pattern:value` annotations. Record a complete binding table: expected kind,
+   action, selected target, source/provenance, hierarchy placement, and literal
+   datatype/value. **Do not mutate while any required binding is unresolved.**
+3. Treat `pattern:action :: BORROW` literally. For each BORROW constant, first
+   activate the preferred source, then call `elot_borrow_term` with the correct
+   label and kind, then inspect/borrow its source parent and preserve that
+   hierarchy. Keep the returned `rdfs:isDefinedBy` and definition. A bare
+   external-CURIE declaration is not a borrow. Do not replace this sequence with
+   `elot_declare_resource`, and do not inspect the target as an excuse to skip
+   source activation and borrowing.
+4. Apply the template by substituting bindings without changing its axiom
+   structure. Remove template-control annotations from the instance and add
+   `pattern:appliedPattern` as directed by the framework.
+5. Dry-run coherent edits where supported; then run `elot_check` and the
+   pattern-specific query/postcondition. Parsing alone does not prove that the
+   pattern was applied correctly. Stop and report a blocker rather than silently
+   inventing a term, flattening source hierarchy, dropping provenance, or
+   weakening the pattern.
+
+If no relevant library or required source can be found, ask or report that
+blocker; do not improvise a look-alike pattern. Instructions attached to the
+pattern override generic examples in this document.
+
 ## 1. The cardinal rule: heading nesting carries `SubClassOf`
 
 Heading nesting under a `:resourcedefs: yes` section is the *primary*
