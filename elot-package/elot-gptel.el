@@ -3082,6 +3082,8 @@ candidate for reuse before minting a fresh identifier."
 ;; resource heading).
 
 (declare-function elot-db-entity-citation "elot-db" (token &optional source))
+(declare-function elot-db-entity-annotation-rows "elot-db"
+                  (token &optional source))
 (declare-function elot-db-list-prefixes "elot-db" (&optional source data-source))
 
 (defun elot-gptel--db-borrow-format-label (label lang)
@@ -3159,15 +3161,31 @@ the common snippet stays compact."
       (_ nil))))
 
 (defun elot-gptel--db-borrow-format-definition (def)
-  "Quote DEF (a skos:definition value) for an ELOT description list.
-DEF may already be wrapped in quotes; this function ensures
-exactly one pair of surrounding quotes."
-  (let* ((s (or def "")))
-    (when (and (>= (length s) 2)
-               (string-prefix-p "\"" s)
-               (string-suffix-p "\"" s))
-      (setq s (substring s 1 -1)))
-    (concat "\"" s "\"")))
+  "Quote DEF (a definition value) for an ELOT description list.
+
+DEF may arrive in three shapes:
+  - bare text                      -> wrapped in one pair of quotes;
+  - already quoted (\"...\")         -> requoted (idempotent);
+  - a complete RDF literal, i.e. a quoted lexical form followed by a
+    language tag (\"...\"@en-us) or a datatype
+    (\"...\"^^xsd:string)           -> passed through VERBATIM.
+
+The third case is the one that used to break: values cached from
+IOF-style sources carry a language tag, so the string does not end
+in a quote and the old code wrapped the whole literal again,
+producing \"\"...\"@en-us\" -- which is not valid OMN and made the
+whole file fail to parse."
+  (let* ((s (string-trim (or def ""))))
+    (cond
+     ;; Complete literal with language tag or datatype: leave alone.
+     ((string-match-p "\\`\"\\(?:[^\"\\\\]\\|\\\\.\\)*\"\\(?:@[A-Za-z]+\\(?:-[A-Za-z0-9]+\\)*\\|\\^\\^[^ \t]+\\)\\'" s)
+      s)
+     (t
+      (when (and (>= (length s) 2)
+                 (string-prefix-p "\"" s)
+                 (string-suffix-p "\"" s))
+        (setq s (substring s 1 -1)))
+      (concat "\"" s "\"")))))
 
 (defun elot-gptel--db-borrow-format (citation)
   "Render CITATION as an ELOT heading + description list snippet.
@@ -3421,10 +3439,14 @@ preferred over the citation's own source) -- suggests
 `anchor=PARENT as=child',
 because heading nesting is how ELOT carries SubClassOf /
 SubPropertyOf.  `file=' is always a placeholder: the borrow
-tools do not know the target file."
+tools do not know the target file.
+
+When the DB holds definition-bearing annotation rows for the
+term, the trailer also lists them, so the caller can fill in a
+real `definition_from=[...]' when a local copy of the definition
+is actually wanted (it is not written by default)."
   (let* ((id    (plist-get citation :id))
          (label (plist-get citation :label))
-         (def   (plist-get citation :definition))
          (ont   (plist-get citation :ontology-iri))
          (src   (plist-get citation :source))
          (label-missing-p
@@ -3433,8 +3455,18 @@ tools do not know the target file."
          (parent (and (stringp id)
                       (elot-gptel--borrow-parent-preferring-active id src)))
          (rows (delq nil
-                     (list (and (or ont src) "rdfs:isDefinedBy")
-                           (and def "skos:definition")))))
+                     (list (and (or ont src) "rdfs:isDefinedBy"))))
+         (defprops
+          (and (stringp id)
+               (cl-remove-if-not
+                (lambda (p)
+                  (string-match-p
+                   "\\(definition\\|comment\\|description\\|elucidation\\)"
+                   p))
+                (delete-dups
+                 (mapcar #'car
+                         (ignore-errors
+                           (elot-db-entity-annotation-rows id src))))))))
     (when (and (stringp id) (not (string-empty-p id)))
       (concat
        (format "NEXT: elot_declare_resource file=<TARGET.org> anchor=%s%s \
@@ -3448,6 +3480,10 @@ SubClassOf / SubPropertyOf)" parent))
        (when rows
          (format "\n      borrow=true writes: %s (no second call needed)"
                  (mapconcat #'identity rows ", ")))
+       (when defprops
+         (format "\n      definition APs available (opt in with \
+definition_from=[...]): %s"
+                 (mapconcat #'identity defprops ", ")))
        "\n      then elot_edit_axioms for any further axiom rows."))))
 
 (defun elot-gptel-tool-db-borrow-term (token)
@@ -3468,8 +3504,10 @@ target ontology's structure.
 
 Next step: the snippet is followed by a pre-filled `NEXT:'
 trailer naming the follow-up `elot_declare_resource' call --
-CURIE, label, `borrow=true' (which writes `rdfs:isDefinedBy' /
-`skos:definition' in the same atomic operation), and a
+CURIE, label, `borrow=true' (which writes `rdfs:isDefinedBy'
+in the same atomic operation), a list of the definition-bearing
+annotation properties the DB holds (opt in with
+`definition_from'), and a
 suggested `anchor=PARENT as=child' when the DB knows the
 source's parent.
 
@@ -5292,6 +5330,33 @@ the file on disk -- used by `dry_run' batches."
                      (when omn
                        (concat "\n\n== OMN PARSE ==\n" omn))))))))
 
+(defvar elot-gptel--mutation-rows nil
+  "Description-list rows a mutation in flight is about to write.
+Bound afresh by `elot-gptel--apply-mutation' around each
+CALLBACK.  Mutators may push human-readable `SUBJECT: - KEY ::
+VALUE' strings here via `elot-gptel-note-mutation-rows'; on a
+revalidation failure they are echoed back under a
+`== ROWS WRITTEN (rolled back) ==' header, so the LLM sees WHICH
+row ROBOT choked on instead of only a generic
+`INVALID ONTOLOGY FILE ERROR'.")
+
+(defun elot-gptel-note-mutation-rows (&rest rows)
+  "Record ROWS as part of the mutation currently in flight.
+Each element is a string (or a list of strings); nil elements are
+ignored.  See `elot-gptel--mutation-rows'."
+  (dolist (r (flatten-tree rows))
+    (when (and (stringp r) (not (string-empty-p r)))
+      (push r elot-gptel--mutation-rows))))
+
+(defun elot-gptel--mutation-rows-block ()
+  "Render `elot-gptel--mutation-rows' as a diagnostic block, or nil."
+  (when elot-gptel--mutation-rows
+    (concat "== ROWS WRITTEN (rolled back) ==\n"
+            (mapconcat (lambda (r) (concat "  " r))
+                       (reverse elot-gptel--mutation-rows)
+                       "\n")
+            "\n\n")))
+
 (defun elot-gptel--apply-mutation (file dry-run callback)
   "Execute a side-effecting mutation on FILE via CALLBACK.
 DRY-RUN, when non-nil, previews the change without committing it.
@@ -5322,6 +5387,7 @@ or ERROR/FAIL line)."
                 (org-mode)))
             (let ((before-text (buffer-substring-no-properties (point-min) (point-max)))
                   (before-modified-p (buffer-modified-p))
+                  (elot-gptel--mutation-rows nil)
                   (success-header nil))
               (setq success-header (funcall callback))
               (unless (stringp success-header)
@@ -5344,7 +5410,9 @@ or ERROR/FAIL line)."
                         (ignore-errors (elot-headline-hierarchy-mark-stale)))
                       (cond
                        ((not ok)
-                        (concat "FAIL: dry-run revalidation failed (no file written)\n\n" report))
+                        (concat "FAIL: dry-run revalidation failed (no file written)\n\n"
+                                (or (elot-gptel--mutation-rows-block) "")
+                                report))
                        (t
                         (let ((dry-note "  (dry_run: file unchanged on disk)"))
                           (concat (if (string-match "\n" success-header)
@@ -5368,7 +5436,9 @@ or ERROR/FAIL line)."
                         (set-buffer-modified-p before-modified-p)
                         (when (fboundp 'elot-headline-hierarchy-mark-stale)
                           (ignore-errors (elot-headline-hierarchy-mark-stale)))
-                        (concat "ERROR: revalidation failed -- changes rolled back\n\n" report))
+                        (concat "ERROR: revalidation failed -- changes rolled back\n\n"
+                                (or (elot-gptel--mutation-rows-block) "")
+                                report))
                        (t
                         (concat success-header
                                 (if (and report (not (string-empty-p report)))
@@ -5857,6 +5927,10 @@ supply `match_fragment'; matching rows: %s"
                                   op-sym keyword fragment match-row))
                            (draft (plist-get edit :draft))
                            (nested (plist-get edit :nested-count)))
+                      (elot-gptel-note-mutation-rows
+                       (format "%s %s: - %s :: %s"
+                               (symbol-name op-sym) curie keyword
+                               (or fragment "")))
                       (let ((inhibit-read-only t))
                         (erase-buffer)
                         (insert draft))
@@ -6157,6 +6231,13 @@ a real commit, but FILE on disk is unchanged."
                 ;; here aborts the whole batch before any save.
                 (dolist (edit normalised)
                   (cl-incf i)
+                  (unless (eq (plist-get edit :op) 'delete-empty)
+                    (elot-gptel-note-mutation-rows
+                     (format "edits[%d] %s %s: - %s :: %s"
+                             i (symbol-name (plist-get edit :op))
+                             (plist-get edit :subject)
+                             (or (plist-get edit :keyword) "(any)")
+                             (or (plist-get edit :fragment) ""))))
                   (let ((res (elot-gptel--axioms-apply-one
                               draft slurp edit i)))
                     (setq draft (plist-get res :draft))
@@ -6766,13 +6847,87 @@ the level-ordered sequence."
                 head
               (concat head "\n\n" block))))))))
 
-(defun elot-gptel--declare-borrow-rows (curie &optional target-file)
+(defun elot-gptel--declared-annotation-properties (&optional file)
+  "Return the annotation-property CURIEs declared in FILE.
+
+When FILE is nil the current buffer's `elot-slurp' is used (the
+mutation wrapper has already made the target file current), which
+avoids re-opening and re-slurping the buffer mid-mutation.  The
+enumeration is the same one `elot_axiom_keywords' renders under
+\"== Universal annotation rows ==\": entries whose `rdf:type' is
+`owl:AnnotationProperty'."
+  (let ((slurp (if file
+                   (elot-gptel--axiom-slurp-for-file file)
+                 (progn
+                   (when (fboundp 'elot-update-headline-hierarchy)
+                     (condition-case _ (elot-update-headline-hierarchy)
+                       (error nil)))
+                   (when (fboundp 'elot-slurp-to-vars)
+                     (condition-case _ (elot-slurp-to-vars) (error nil)))
+                   (and (boundp 'elot-slurp) elot-slurp)))))
+    (mapcar #'car
+            (elot-gptel--axiom-collect-by-kind
+             slurp "owl:AnnotationProperty"))))
+
+(defun elot-gptel--declare-definition-probe (curie props &optional target-file)
+  "Probe the ELOT DB for a definition row for CURIE among PROPS.
+
+PROPS is an ORDERED list of annotation-property CURIEs; the first
+one the DB actually holds for CURIE wins (\"first hit wins\").
+The row is reported *as found* -- under the property it was
+actually stored with -- never normalised to `skos:definition'.
+
+The lookup is restricted to the same source
+`elot-gptel--citation-preferring-active' picked for the
+`rdfs:isDefinedBy' citation (TARGET-FILE excluded), so citation
+and definition cannot disagree about which upstream they
+describe.
+
+Returns a plist:
+  :prop      -- the AP the definition was found under, or nil;
+  :value     -- its value, or nil;
+  :available -- every annotation property the DB holds for CURIE
+                (in row order), minus the one written.
+Callers must test `:prop', not the plist itself: a term with
+annotation rows but no PROPS hit yields `:prop nil' with a
+non-nil `:available'."
+  (elot-gptel--db-ensure-open)
+  (let* ((cit (elot-gptel--citation-preferring-active curie target-file))
+         (src (plist-get cit :source))
+         (rows (elot-db-entity-annotation-rows curie src))
+         (hit (cl-loop for p in props
+                       for cell = (assoc p rows)
+                       when cell return cell)))
+    (list :prop (car hit)
+          :value (cdr hit)
+          :available (delete-dups
+                      (delq nil
+                            (mapcar (lambda (c)
+                                      (unless (equal (car c) (car hit))
+                                        (car c)))
+                                    rows))))))
+
+(defun elot-gptel--declare-borrow-rows (curie &optional target-file
+                                              definition-props)
   "Return the provenance rows the DB knows for CURIE, as a list of strings.
 
 Each element is a ready-to-insert description-list row body of
-the form \"KEYWORD :: VALUE\".  Returns `rdfs:isDefinedBy' (the
-source ontology IRI, or a `(source: NAME)' fallback) and, when
-the DB has cached one, `skos:definition'.  Returns nil when the
+the form \"KEYWORD :: VALUE\".
+
+By default the ONLY row returned is `rdfs:isDefinedBy' (the
+source ontology IRI, or a `(source: NAME)' fallback).  Copying an
+upstream definition into the borrowing file is deliberately
+opt-in: when the source ontology is imported, the definition
+already arrives via the import and a local copy can go stale.
+
+DEFINITION-PROPS, when non-nil, is an ORDERED list of annotation
+property CURIEs to probe for a definition; the first hit wins and
+is emitted *as found* (see
+`elot-gptel--declare-definition-probe').
+
+Returns (ROWS . PROBE) where PROBE is the probe plist (nil when
+DEFINITION-PROPS is nil), so the caller can report what was
+written and what was available but skipped.  ROWS is nil when the
 DB knows nothing about CURIE.
 
 The citation is resolved with the *active* label sources
@@ -6781,22 +6936,26 @@ preferred (see `elot-gptel--citation-preferring-active'), so the
 activated rather than whichever local file happens to mention
 the term.  TARGET-FILE, when supplied, is excluded from that
 search: a term borrowed into a file must not cite that file."
-  (ignore-errors
-    (elot-gptel--db-ensure-open)
-    (let* ((cit (elot-gptel--citation-preferring-active curie target-file))
-           (ont (plist-get cit :ontology-iri))
-           (src (plist-get cit :source))
-           (def (plist-get cit :definition))
-           rows)
-      (when cit
-        (cond
-         (ont (push (format "rdfs:isDefinedBy :: %s" ont) rows))
-         (src (push (format "rdfs:isDefinedBy :: (source: %s)" src) rows)))
-        (when def
-          (push (format "skos:definition :: %s"
-                        (elot-gptel--db-borrow-format-definition def))
-                rows))
-        (nreverse rows)))))
+  (elot-gptel--db-ensure-open)
+  (let* ((cit (ignore-errors
+                (elot-gptel--citation-preferring-active curie target-file)))
+         (ont (plist-get cit :ontology-iri))
+         (src (plist-get cit :source))
+         (probe (and definition-props
+                     (elot-gptel--declare-definition-probe
+                      curie definition-props target-file)))
+         rows)
+    (when cit
+      (cond
+       (ont (push (format "rdfs:isDefinedBy :: %s" ont) rows))
+       (src (push (format "rdfs:isDefinedBy :: (source: %s)" src) rows))))
+    (when (plist-get probe :prop)
+      (push (format "%s :: %s"
+                    (plist-get probe :prop)
+                    (elot-gptel--db-borrow-format-definition
+                     (plist-get probe :value)))
+            rows))
+    (cons (nreverse rows) probe)))
 
 (defun elot-gptel--declare-insert-rows (curie rows)
   "Insert ROWS as description-list rows under CURIE's heading.
@@ -6819,7 +6978,7 @@ the number of rows inserted."
   (length rows))
 
 (defun elot-gptel-tool-declare-resource
-    (file anchor label curie &optional iri as borrow)
+    (file anchor label curie &optional iri as borrow definition-from)
   "Implementation of the `elot_declare_resource' tool.
 
 Declare a NEW resource heading whose identifier is an
@@ -6853,14 +7012,28 @@ there is exactly one save and one revalidation.
 BORROW, when non-nil, additionally pulls the ELOT label DB's
 cached provenance for CURIE into the SAME atomic write: an
 `rdfs:isDefinedBy' row (the source ontology IRI, or a
-`(source: NAME)' fallback) and a `skos:definition' row when one
-is cached.  This closes the provenance gap that previously
+`(source: NAME)' fallback).  No definition row is written by
+default -- when the source ontology is imported the definition
+arrives with the import, and a local copy can go stale.  This
+closes the provenance gap that previously
 required a second `elot_edit_axioms' call after every borrow,
 making this tool a true add-term step for the
 `elot_borrow_term' -> declare workflow.  When the DB knows
 nothing about CURIE, BORROW is a silent no-op and the response
 says so.  Without BORROW the tool declares only the heading +
 `rdfs:label'.
+
+DEFINITION-FROM makes the definition copy opt-in: an ORDERED
+list of annotation-property CURIEs (a list of strings, or a
+comma-separated string) to probe in the DB for CURIE.  The first
+hit wins and is written *as found* -- under the property it was
+actually stored with (e.g.
+`iof-av:naturalLanguageDefinition'), never normalised to
+`skos:definition'.  Every named property must already be
+declared as an `owl:AnnotationProperty' in FILE; otherwise the
+tool refuses with an actionable `ERROR:' naming the missing
+property, because introducing an annotation property into an
+ontology must be a deliberate choice.  Requires BORROW.
 
 Idempotent: when CURIE is already declared in FILE the tool
 returns a benign `OK: ... (no-op; nothing written)' line and
@@ -6914,16 +7087,54 @@ On revalidation failure the pre-declaration bytes are restored."
       ;; `value (prov:value)').  Re-running a borrow / pattern script
       ;; is therefore safe for an agent.
       (require 'elot-id-rename)
-      (if (member curie (elot-id-rename--declared-curies))
+      ;; Normalise DEFINITION-FROM (JSON array or comma-separated
+      ;; string) and refuse up front when a named AP is not declared
+      ;; in FILE.
+      (let ((defs (elot-gptel--declare-normalise-props definition-from)))
+        (when (and defs (not borrow))
+          (user-error
+           "ELOT-gptel: definition_from requires borrow=true"))
+        (when defs
+          (let* ((declared (elot-gptel--declared-annotation-properties))
+                 (missing (cl-remove-if (lambda (p) (member p declared)) defs)))
+            (when missing
+              (user-error
+               (concat "ELOT-gptel: annotation propert%s %s not declared in %s;"
+                       " declaring an annotation property must be a deliberate"
+                       " choice -- declare %s in the file's Annotation"
+                       " properties section first (e.g. with"
+                       " `elot_declare_resource'), then retry")
+               (if (cdr missing) "ies" "y")
+               (mapconcat #'identity missing ", ")
+               (file-name-nondirectory file)
+               (if (cdr missing) "them" "it")))))
+        (if (member curie (elot-id-rename--declared-curies))
           (format
            (concat "OK: %s is already declared in %s (no-op; nothing written)\n"
                    "NOTE: use `elot_edit_axioms' to add rows to the existing"
                    " heading, or `elot_rename_resource' to change its identifier.")
-           curie (file-name-nondirectory file))
-        (elot-gptel--declare-resource-1
-         file anchor label curie iri as-sym borrow)))))
+             curie (file-name-nondirectory file))
+          (elot-gptel--declare-resource-1
+           file anchor label curie iri as-sym borrow defs))))))
 
-(defun elot-gptel--declare-resource-1 (file anchor label curie iri as-sym borrow)
+(defun elot-gptel--declare-normalise-props (value)
+  "Normalise VALUE into an ordered list of CURIE strings.
+VALUE may be nil, a list / vector of strings, or a
+comma-separated string.  Empty entries are dropped."
+  (let ((items (cond ((null value) nil)
+                     ((vectorp value) (append value nil))
+                     ((listp value) value)
+                     ((stringp value) (split-string value "[,[:space:]]+" t))
+                     (t (user-error
+                         "ELOT-gptel: definition_from must be a list or \
+comma-separated string: %S" value)))))
+    (delq nil (mapcar (lambda (s)
+                        (let ((s (string-trim (format "%s" s))))
+                          (unless (string-empty-p s) s)))
+                      items))))
+
+(defun elot-gptel--declare-resource-1 (file anchor label curie iri as-sym borrow
+                                            &optional definition-props)
   "Do the actual declaration for `elot-gptel-tool-declare-resource'.
 Called only after the caller has validated ANCHOR / LABEL /
 CURIE / AS-SYM and established that CURIE is not already
@@ -6966,13 +7177,19 @@ declared in the current buffer."
                      (append (and tiri (list :target-iri tiri))
                              (list :op 'rename))))
         (let* ((decl (plist-get rename-result :declared-prefix))
-               (rows (and borrow
-                          (elot-gptel--declare-borrow-rows curie file)))
+               (borrowed (and borrow
+                              (elot-gptel--declare-borrow-rows
+                               curie file definition-props)))
+               (rows (car borrowed))
+               (probe (cdr borrowed))
+               (skipped (plist-get probe :available))
                (n (if rows
                       (elot-gptel--declare-insert-rows curie rows)
                     0)))
+          (elot-gptel-note-mutation-rows
+           (mapcar (lambda (r) (format "%s: - %s" curie r)) rows))
           (format
-           "OK: declared %s (%s) under %s (as %s)%s%s"
+           "OK: declared %s (%s) under %s (as %s)%s%s%s%s"
            label curie anchor (symbol-name as-sym)
            (if decl
                (format " (declared prefix %s: -> <%s>)"
@@ -6986,7 +7203,16 @@ declared in the current buffer."
                                 rows ", ")))
             (borrow
              "; borrow=true but the ELOT DB knows no provenance for this CURIE")
-            (t "")))))))
+            (t ""))
+           (cond
+            ((and definition-props (null (plist-get probe :prop)))
+             (format "; no definition row written (none of %s cached for %s)"
+                     (mapconcat #'identity definition-props ", ") curie))
+            (t ""))
+           (if (and definition-props skipped)
+               (format "; also available (not written): %s"
+                       (mapconcat #'identity skipped ", "))
+             ""))))))
 
 (defun elot-gptel-tool-move-resource
     (file source target &optional as)
@@ -9260,9 +9486,12 @@ needs (`SubClassOf', `Domain', ...).
 
 BORROW closes the provenance gap: pass `borrow=true' and the
 ELOT label DB's cached `rdfs:isDefinedBy' (source ontology IRI,
-or a `(source: NAME)' fallback) and `skos:definition' rows for
-CURIE are written in the SAME atomic operation -- no second
-call.  This makes `elot_declare_resource' the true add-term
+or a `(source: NAME)' fallback) is written in the SAME atomic
+operation -- no second call.  No definition is copied by
+default: when the source ontology is imported the definition
+arrives with the import, and a local copy can go stale.  Ask for
+one explicitly with `definition_from'.  This makes
+`elot_declare_resource' the true add-term
 step of the reuse workflow: `elot_borrow_term' (find + inspect)
 -> `elot_declare_resource ... borrow=true' (declare + cite) ->
 `elot_edit_axioms' (only for further axioms).  When the DB knows
@@ -9277,6 +9506,17 @@ attaches to (CURIE preferred, or heading title, or section
 `:ID:' / `:CUSTOM_ID:').  AS is `sibling' (default) or `child'.
 LABEL is the plain rdfs:label (not a `Label (curie)' heading).
 CURIE is the external identifier to adopt.
+
+DEFINITION_FROM (optional, requires `borrow=true') is an ORDERED
+list of annotation-property CURIEs to probe in the DB for this
+entity -- e.g. ["skos:definition",
+"iof-av:naturalLanguageDefinition", "rdfs:comment"].  First hit
+wins, and the row is written *as found* (under the property it
+was actually stored with), not normalised to `skos:definition'.
+Every property named must ALREADY be declared as an annotation
+property in the file; otherwise the call is refused with an
+`ERROR:' naming it, since introducing an annotation property
+must be a deliberate choice.
 
 When CURIE's prefix is not declared in the file's prefix table,
 IRI must be supplied; the prefix row is added inside the same
@@ -9342,11 +9582,26 @@ placed after ANCHOR's subtree, at ANCHOR's level) or `child' \
              :optional t
              :description
              "When true, also write the ELOT label DB's cached \
-provenance for CURIE -- an `rdfs:isDefinedBy' row and, when \
-available, a `skos:definition' row -- in the same atomic \
-operation.  Use this whenever the CURIE came from \
-`elot_borrow_term' / `elot_db_borrow_term'.  Silent no-op when \
-the DB knows nothing about CURIE.  Default false."))))
+provenance for CURIE -- an `rdfs:isDefinedBy' row -- in the same \
+atomic operation.  No definition row is copied unless \
+`definition_from' names one (a local copy of an upstream \
+definition can go stale, and arrives with the import anyway).  \
+Use this whenever the CURIE came from `elot_borrow_term' / \
+`elot_db_borrow_term'.  Silent no-op when the DB knows nothing \
+about CURIE.  Default false.")
+      (:name "definition_from"
+             :type array
+             :items (:type string)
+             :optional t
+             :description
+             "Ordered list of annotation-property CURIEs to probe \
+for a definition of CURIE (first hit wins), e.g. \
+[\"skos:definition\", \"iof-av:naturalLanguageDefinition\"].  The \
+row is written under the property it was actually found with \
+(not normalised).  Requires `borrow=true'.  Each property must \
+already be declared as an annotation property in the file, else \
+the call is refused.  Omit for no definition row (the \
+default)."))))
 
 (defconst elot-gptel--spec-db-query
   '("elot_db_query"
@@ -9776,8 +10031,9 @@ borrowed term into the target ontology.
 
 The response ends with a pre-filled `NEXT:' trailer naming the
 follow-up call -- `elot_declare_resource' with this CURIE, the
-label, `borrow=true' (so `rdfs:isDefinedBy' / `skos:definition'
-are written in the same atomic operation), and, when the DB
+label, `borrow=true' (so `rdfs:isDefinedBy' is written in the
+same atomic operation; definitions are opt-in via
+`definition_from'), and, when the DB
 knows a plain-CURIE parent, a suggested `anchor=PARENT
 as=child' (heading nesting carries SubClassOf /
 SubPropertyOf).  Chain on it rather than re-deriving placement
@@ -10538,10 +10794,10 @@ is truthy in Elisp) is correctly treated as nil."
      (lambda (file anchor tree &optional as)
        (elot-gptel-tool-insert-resource-tree file anchor tree as)))
     ('elot-gptel-tool-declare-resource
-     (lambda (file anchor label curie &optional iri as borrow)
+     (lambda (file anchor label curie &optional iri as borrow definition-from)
        (elot-gptel-tool-declare-resource
         file anchor label curie iri as
-        (elot-gptel--truthy borrow))))
+        (elot-gptel--truthy borrow) definition-from)))
     (_ (error "ELOT-gptel: no dispatcher for %S" fn))))
 
 (defun elot-gptel--confirm-effective-p (spec-confirm)
