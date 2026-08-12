@@ -13,7 +13,7 @@ shows the four independent information modes—denotation, designation,
 description, and prescription—sharing a common subject. Detailed
 application guidance and semantic commitments follow below.
 #+name: pattern-information-about-all
-#+begin_src sparql :url "./IOF-pattern-information-about.omn" :eval never-export :exports results :format ttl :wrap "src ttl" :cache no :post kill-prefixes(data=*this*) :eval never-export
+#+begin_src sparql :url "./IOF-pattern-information-about.omn" :eval never-export :exports results :format ttl :wrap "src ttl" :cache yes :post kill-prefixes(data=*this*) :eval never-export
   PREFIX puml: <http://plantuml.com/ontology#>
   construct {
     ?x ?y ?z .
