@@ -101,8 +101,9 @@
   ;; elot-build-slurp requires elot-tangle; skip if not loadable in batch.
   (unless (require 'elot-tangle nil t)
     (ert-skip "elot-tangle not available"))
-  (let* ((entries (elot-source-parse-org
-                   (elot-sources-test--fx "minimal-ontology.org")))
+  (let* ((entries (car (elot-source--entries-and-prefixes
+                        (elot-source-parse-org
+                         (elot-sources-test--fx "minimal-ontology.org")))))
          (ids     (mapcar #'car entries)))
     (should (>= (length entries) 3))
     (should (cl-some (lambda (id) (string-match-p "Widget\\'" id)) ids))
@@ -120,8 +121,9 @@ taxonomy of Org-ingested sources, so `elot-db-supertypes' returned
 no rows for e.g. `iof-constr:Denoter'."
   (unless (require 'elot-tangle nil t)
     (ert-skip "elot-tangle not available"))
-  (let* ((entries (elot-source-parse-org
-                   (elot-sources-test--fx "minimal-ontology.org")))
+  (let* ((entries (car (elot-source--entries-and-prefixes
+                        (elot-source-parse-org
+                         (elot-sources-test--fx "minimal-ontology.org")))))
          (gadget  (elot-sources-test--find "ex:Gadget" entries))
          (widget  (elot-sources-test--find "ex:Widget" entries)))
     (should gadget)
@@ -130,10 +132,28 @@ no rows for e.g. `iof-constr:Denoter'."
     (should widget)
     (should-not (plist-get (nth 2 widget) "SubClassOf" #'equal))))
 
+(ert-deftest test-parse-org-returns-prefix-table ()
+  "The org parser reports the document's prefix table.
+Regression: `prefixes' held zero rows for every `.org' source, so
+source-scoped CURIE resolution (`elot-db--expansion-in-source-only')
+could never resolve a borrowed term's CURIE-form `rdfs:isDefinedBy'."
+  (unless (require 'elot-tangle nil t)
+    (ert-skip "elot-tangle not available"))
+  (let* ((raw (elot-source-parse-org
+               (elot-sources-test--fx "minimal-ontology.org")))
+         (pair (elot-source--entries-and-prefixes raw))
+         (prefixes (cdr pair)))
+    (should (car pair))
+    (should prefixes)
+    ;; keys carry no trailing colon, matching the `prefixes' table
+    (should-not (cl-some (lambda (p) (string-suffix-p ":" (car p))) prefixes))
+    ;; the header row is not a prefix
+    (should-not (assoc "prefix" prefixes))
+    (should (cl-some (lambda (p) (string-prefix-p "http" (cdr p))) prefixes))))
+
 ;;;; -------------------------------------------------------------------
 ;;;; Dispatcher
 ;;;; -------------------------------------------------------------------
-
 (ert-deftest test-parse-dispatcher ()
   "Dispatcher selects the correct parser by extension."
   ;; CSV

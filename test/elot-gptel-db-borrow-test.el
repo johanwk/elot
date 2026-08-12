@@ -65,7 +65,8 @@ borrowing from it should fall back to a `(source: minimal)'
 citation."
   (elot-db-update-source
    "transport" nil "org"
-   '(("transport-ont" "Transport ontology"
+   '(("http://example.org/transport/ http://example.org/transport/1.0"
+      "Transport ontology"
       ("rdf:type" "owl:Ontology"
        "dcterms:title" "Transport Vocabulary"))
      ("trn:vehicle" "Vehicle"
@@ -92,7 +93,9 @@ citation."
       (should (equal "en"             (plist-get c :label-lang)))
       (should (equal "owl:Class"      (plist-get c :rdf-type)))
       (should (equal "transport"      (plist-get c :source)))
-      (should (equal "transport-ont"  (plist-get c :ontology-iri)))
+      ;; Composite "IRI VERSIONIRI" form -> the unversioned IRI.
+      (should (equal "http://example.org/transport/"
+                     (plist-get c :ontology-iri)))
       (should (equal "Transport Vocabulary"
                      (plist-get c :ontology-title)))
       (should (string-match-p "carrying or transporting"
@@ -127,6 +130,94 @@ citation."
     (should-error (elot-db-entity-citation "") :type 'user-error)
     (should-error (elot-db-entity-citation nil) :type 'user-error)))
 
+;;;; Provenance: CURIE isDefinedBy, unversioned IRI, :ontology-iri-from -
+
+(defun elot-gptel-db-borrow-test--seed-pattern ()
+  "Seed a pattern-style source that merely *names* a foreign term.
+
+`patternsrc' declares its own versioned ontology heading (ELOT's
+composite \"IRI VERSIONIRI\" form) and carries `iof-core:Denoter'
+with a bare-prefix `rdfs:isDefinedBy :: iof-core:' row -- the
+exact shape that used to yield the pattern file's own version
+IRI as the citation."
+  (elot-db-update-source
+   "patternsrc" nil "org"
+   '(("http://example.org/pattern/p http://example.org/pattern/p/0.0"
+      "Pattern ontology"
+      ("rdf:type" "owl:Ontology"))
+     ("iof-core:Denoter" "Denoter"
+      ("rdf:type" "owl:Class"
+       "rdfs:isDefinedBy" "iof-core:"))
+     ("bad:Term" "Bad"
+      ("rdf:type" "owl:Class"
+       "rdfs:isDefinedBy" "nosuch:"))))
+  (elot-db-add-prefix "patternsrc" nil "iof-core"
+                      "https://example.org/ontology/core/Core/"))
+
+(ert-deftest test-elot-db-citation-curie-defined-by-resolved ()
+  (elot-gptel-db-borrow-test--with-fresh-db
+    (elot-gptel-db-borrow-test--seed-pattern)
+    (let ((c (elot-db-entity-citation "iof-core:Denoter")))
+      (should (equal "https://example.org/ontology/core/Core/"
+                     (plist-get c :ontology-iri)))
+      (should (eq 'explicit (plist-get c :ontology-iri-from))))))
+
+(ert-deftest test-elot-db-citation-curie-defined-by-unresolvable ()
+  ;; Unknown prefix -> treat as absent, fall back to the source's own
+  ;; ontology declaration (unversioned).
+  (elot-gptel-db-borrow-test--with-fresh-db
+    (elot-gptel-db-borrow-test--seed-pattern)
+    (let ((c (elot-db-entity-citation "bad:Term")))
+      (should (equal "http://example.org/pattern/p"
+                     (plist-get c :ontology-iri)))
+      (should (eq 'source-declaration (plist-get c :ontology-iri-from))))))
+
+(ert-deftest test-elot-db-citation-prefix-scoped-to-source ()
+  ;; `iof-core:' must not be answered by another source's prefix table.
+  (elot-gptel-db-borrow-test--with-fresh-db
+    (elot-gptel-db-borrow-test--seed-pattern)
+    (should-not (elot-db--expansion-in-source-only "iof-core" "minimal" nil))
+    (should (equal "https://example.org/ontology/core/Core/"
+                   (elot-db--expansion-in-source-only
+                    "iof-core" "patternsrc" nil)))))
+
+(ert-deftest test-elot-db-unversioned-ontology-iri ()
+  ;; Token normalisation may consult the source's prefix rows (CURIE
+  ;; branch), so an open connection is required even though `nosuch'
+  ;; has none.
+  (elot-gptel-db-borrow-test--with-fresh-db
+    (should (equal "http://example.org/o"
+                   (elot-db--unversioned-ontology-iri
+                    "http://example.org/o http://example.org/o/1.2" "nosuch" nil)))
+    (should (equal "http://example.org/o"
+                   (elot-db--unversioned-ontology-iri
+                    "http://example.org/o" "nosuch" nil)))
+    ;; Angle-bracketed tokens are unwrapped; an unresolvable leading
+    ;; token (here the default-prefix `:') is skipped, not emitted.
+    (should (equal "https://example.org/ontology/core/Core/"
+                   (elot-db--unversioned-ontology-iri
+                    ": <https://example.org/ontology/core/Core/>" "nosuch" nil)))
+    (should-not (elot-db--unversioned-ontology-iri nil "nosuch" nil))))
+
+(ert-deftest test-elot-db-citation-absolute-iri-normalisation ()
+  (elot-gptel-db-borrow-test--with-fresh-db
+    (elot-gptel-db-borrow-test--seed-pattern)
+    ;; Quoted / typed literal.
+    (should (equal "https://example.org/x/"
+                   (elot-db--citation-absolute-iri
+                    "\"https://example.org/x/\"^^xsd:anyURI" "patternsrc" nil)))
+    ;; Angle brackets, bare IRI.
+    (should (equal "https://example.org/x/"
+                   (elot-db--citation-absolute-iri
+                    "<https://example.org/x/>" "patternsrc" nil)))
+    ;; CURIE resolved through the source's own prefix rows.
+    (should (equal "https://example.org/ontology/core/Core/"
+                   (elot-db--citation-absolute-iri
+                    "iof-core:" "patternsrc" nil)))
+    ;; Unresolvable CURIE -> nil, NEVER the CURIE itself.
+    (should-not (elot-db--citation-absolute-iri "bad:Term" "patternsrc" nil))
+    (should-not (elot-db--citation-absolute-iri "" "patternsrc" nil))))
+
 ;;;; Pure formatters ---------------------------------------------------
 
 (ert-deftest test-elot-gptel-db-borrow-format-label-with-lang ()
@@ -156,7 +247,7 @@ citation."
       (should (string-match-p "^\\* \"Vehicle\"@en (trn:vehicle)" out))
       ;; rdfs:isDefinedBy points at the ontology id.
       (should (string-match-p
-               "^ - rdfs:isDefinedBy :: transport-ont$"
+               "^ - rdfs:isDefinedBy :: http://example.org/transport/$"
                out))
       ;; skos:definition appears in quoted form.
       (should (string-match-p
@@ -314,6 +405,47 @@ and the stored label equals the id (no human label)."
     (let ((out (elot-gptel-tool-db-borrow-term "trn:drives")))
       (should (string-match-p "SubPropertyOf" out))
       (should (string-match-p "object-property headings" out)))))
+
+;;;; Work item 5: advisory provenance NOTE ------------------------------
+
+(ert-deftest test-elot-gptel-borrow-namespace-mismatch-p ()
+  (elot-gptel-db-borrow-test--with-fresh-db
+    (elot-gptel-db-borrow-test--seed-pattern)
+    ;; iof-core: expands outside the pattern file's own ontology IRI.
+    (should (elot-gptel--db-borrow-namespace-mismatch-p
+             "iof-core:Denoter" "http://example.org/pattern/p"
+             "patternsrc" nil))
+    ;; Same namespace -> no mismatch.
+    (should-not (elot-gptel--db-borrow-namespace-mismatch-p
+                 "iof-core:Denoter"
+                 "https://example.org/ontology/core/Core/"
+                 "patternsrc" nil))
+    ;; Unresolvable prefix -> no signal (never guess).
+    (should-not (elot-gptel--db-borrow-namespace-mismatch-p
+                 "nosuch:Term" "http://example.org/pattern/p"
+                 "patternsrc" nil))))
+
+(ert-deftest test-elot-gptel-borrow-provenance-note-fires ()
+  (elot-gptel-db-borrow-test--with-fresh-db
+    (elot-gptel-db-borrow-test--seed-pattern)
+    (let ((note (elot-gptel--db-borrow-provenance-note
+                 (list :id "iof-core:Denoter"
+                       :ontology-iri "http://example.org/pattern/p"
+                       :ontology-iri-from 'source-declaration
+                       :source "patternsrc"))))
+      (should (stringp note))
+      (should (string-match-p "NOTE:" note))
+      (should (string-match-p "merely NAME" note)))))
+
+(ert-deftest test-elot-gptel-borrow-provenance-note-silent-when-explicit ()
+  (elot-gptel-db-borrow-test--with-fresh-db
+    (elot-gptel-db-borrow-test--seed-pattern)
+    ;; Explicit rdfs:isDefinedBy -> never warn, whatever the namespace.
+    (should-not (elot-gptel--db-borrow-provenance-note
+                 (list :id "iof-core:Denoter"
+                       :ontology-iri "http://example.org/pattern/p"
+                       :ontology-iri-from 'explicit
+                       :source "patternsrc")))))
 
 (provide 'elot-gptel-db-borrow-test)
 ;;; elot-gptel-db-borrow-test.el ends here

@@ -561,10 +561,15 @@ Each returned element is a list (SOURCE DATA-SOURCE PREFIX EXPANSION)."
      "SELECT source, data_source, prefix, expansion FROM prefixes
        ORDER BY source, data_source, prefix"))))
 
-(defun elot-db--expansion-in-sources (prefix active-sources)
+(defun elot-db--expansion-in-active-sources (prefix active-sources)
   "Look up PREFIX's expansion in ACTIVE-SOURCES (in priority order).
 Return the first match or nil.  ACTIVE-SOURCES entries are
-\(SOURCE DATA-SOURCE) pairs."
+\(SOURCE DATA-SOURCE) pairs.
+
+This is the active-preference half of a pair: its caller
+`elot-db-expand-curie' falls through to `global_prefixes' when no
+active source binds PREFIX.  Cf. `elot-db--expansion-in-source-only',
+which resolves against exactly one source and never falls through."
   (cl-loop
    for entry in active-sources
    for src = (nth 0 entry)
@@ -576,6 +581,22 @@ Return the first match or nil.  ACTIVE-SOURCES entries are
                 LIMIT 1"
               (list prefix src ds))
    when row return (caar row)))
+
+(defun elot-db--expansion-in-source-only (prefix source data-source)
+  "Look up PREFIX's expansion in SOURCE / DATA-SOURCE only.
+Return the expansion string, or nil.  Deliberately does *not*
+fall through to `global_prefixes': a CURIE written in one
+source's file must be read with that source's prefix table, else
+another project's binding for the same prefix can answer.
+
+Cf. `elot-db--expansion-in-active-sources', which consults a
+priority list and *does* (via `elot-db-expand-curie') fall
+through to `global_prefixes'."
+  (caar (elot-db-execute-readonly
+         "SELECT expansion FROM prefixes
+            WHERE prefix = ? AND source = ? AND data_source = ?
+            LIMIT 1"
+         (list prefix source (elot-db--normalize-ds data-source)))))
 
 (defun elot-db--expansion-global (prefix)
   "Look up PREFIX's expansion in `global_prefixes', or return nil."
@@ -594,7 +615,7 @@ return nil."
              (string-match "\\`\\([^:]*\\):\\(.*\\)\\'" curie))
     (let* ((prefix (match-string 1 curie))
            (local  (match-string 2 curie))
-           (exp    (or (elot-db--expansion-in-sources prefix active-sources)
+           (exp    (or (elot-db--expansion-in-active-sources prefix active-sources)
                        (elot-db--expansion-global prefix))))
       (and exp (concat exp local)))))
 
@@ -1557,6 +1578,68 @@ access path for `elot_db_search_label' (and, in a follow-up,
 ;;;; Entity citation (reuse-before-mint)
 ;;;; --------------------------------------------------------------------
 
+(defun elot-db--resolve-curie-in-source (curie source data-source)
+  "Resolve CURIE against SOURCE / DATA-SOURCE's own prefix rows.
+Accepts the bare-prefix ELOT spelling (`iof-core:', empty local
+name) and the default-prefix spelling (`:', `:Foo').  Returns the
+full IRI, or nil when CURIE is not CURIE-shaped or its prefix is
+unknown *in that source*."
+  (when (and (stringp curie)
+             (string-match "\\`\\([^:[:space:]]*\\):\\([^[:space:]]*\\)\\'" curie))
+    (let* ((prefix (match-string 1 curie))
+           (local  (match-string 2 curie))
+           (exp    (elot-db--expansion-in-source-only prefix source data-source)))
+      (and exp (not (string-empty-p exp)) (concat exp local)))))
+
+(defun elot-db--citation-absolute-iri (raw source data-source)
+  "Normalise RAW to an absolute IRI, or nil.
+
+RAW is a single token as stored in the DB.  Handled shapes:
+  - a quoted literal, optionally with a datatype suffix:
+    \"\"https://x/\"^^xsd:anyURI\" -> \"https://x/\";
+  - an angle-bracketed IRI: \"<https://x/>\" -> \"https://x/\";
+  - a bare http(s) IRI -> itself;
+  - a CURIE (including the bare-prefix `iof-core:' and
+    default-prefix `:' spellings), resolved through SOURCE /
+    DATA-SOURCE's own prefix rows.
+
+Returns nil when RAW cannot be turned into an absolute IRI.  A
+citation must never be emitted as a source-local CURIE: the
+borrowing file's prefix table is a different one, so the CURIE
+would silently re-point at the wrong namespace."
+  (let ((v (string-trim (or raw ""))))
+    ;; Strip a datatype / language suffix on a quoted literal.
+    (when (string-match "\\`\\(\"\\(?:[^\"]\\|\\\\\"\\)*\"\\)\\(?:\\^\\^[^ \t]*\\|@[^ \t]*\\)?\\'" v)
+      (setq v (match-string 1 v)))
+    ;; Strip surrounding quotes.
+    (when (and (> (length v) 1)
+               (string-prefix-p "\"" v) (string-suffix-p "\"" v))
+      (setq v (substring v 1 -1)))
+    (setq v (string-trim v))
+    (cond
+     ((string-empty-p v) nil)
+     ((and (string-prefix-p "<" v) (string-suffix-p ">" v) (> (length v) 2))
+      (substring v 1 -1))
+     ((or (string-prefix-p "http://" v) (string-prefix-p "https://" v)) v)
+     (t (elot-db--resolve-curie-in-source v source data-source)))))
+
+(defun elot-db--unversioned-ontology-iri (raw source data-source)
+  "Return the unversioned ontology IRI from RAW, as an absolute IRI.
+
+RAW may be ELOT's composite \"IRI VERSIONIRI\" heading form, and
+either token may be a CURIE or an angle-bracketed IRI -- the org
+ingest stores e.g. \": <https://example.org/Core/>\" for an
+ontology declared under the default prefix.  Each token is
+normalised via `elot-db--citation-absolute-iri' (scoped to SOURCE
+/ DATA-SOURCE) and the *first* one that yields an absolute IRI is
+returned: a versionIRI names a snapshot, not the ontology a term
+belongs to.  Returns nil when no token resolves."
+  (and raw
+       (car (delq nil
+                  (mapcar (lambda (tok)
+                            (elot-db--citation-absolute-iri tok source data-source))
+                          (split-string raw "[ \t]+" t))))))
+
 (defun elot-db-entity-citation (token &optional source)
   "Return citation metadata for TOKEN, or nil when unknown.
 
@@ -1590,16 +1673,27 @@ Returns a plist with keys
                      foreign term (e.g. `prov:value') still records
                      where the term really comes from, and that beats
                      the naming file's own ontology IRI.  CURIE-shaped
-                     values (`iof-core:', `:') are ignored -- they are
-                     not resolvable outside their own prefix table.
+                     values (`iof-core:', `:') are resolved through
+                     *that source's* prefix rows (never
+                     `global_prefixes'), and quoted / typed
+                     literals (`\"https://x/\"^^xsd:anyURI') are
+                     unwrapped; an unresolvable value is treated as
+                     absent.  The value is ALWAYS an absolute IRI --
+                     never a source-local CURIE, which would
+                     re-point at the borrowing file's namespace.
                      Otherwise: id of the same source's owl:Ontology
                      declaration, or nil if the source has no such
                      declaration.
                      When the ontology heading uses ELOT's composite
-                     \"<unversioned-IRI> <versioned-IRI>\" form, only
-                     the versionIRI (last whitespace-separated token)
-                     is returned here, per the convention of citing
-                     the versionIRI alone when one is recorded.
+                     \"<unversioned-IRI> <versioned-IRI>\" form, the
+                     *unversioned* IRI is returned: a versionIRI names
+                     a snapshot, not the ontology a term belongs to.
+  :ontology-iri-from -- `explicit' when :ontology-iri came from an
+                     `rdfs:isDefinedBy' row on the entity itself,
+                     `source-declaration' when it fell back to the
+                     source file's own owl:Ontology id, nil when there
+                     is no citation target.  Downstream code should
+                     branch on this rather than pattern-match strings.
   :ontology-title -- `dcterms:title' of the ontology id (or nil)
 
 Returns nil when TOKEN does not name a known entity.  Read-only;
@@ -1653,15 +1747,7 @@ the sole DB access path for `elot_db_borrow_term'."
               (car (delq nil
                          (mapcar
                           (lambda (r)
-                            (let ((v (string-trim (or (car r) ""))))
-                              (cond
-                               ((and (string-prefix-p "<" v)
-                                     (string-suffix-p ">" v)
-                                     (> (length v) 2))
-                                (substring v 1 -1))
-                               ((or (string-prefix-p "http://" v)
-                                    (string-prefix-p "https://" v))
-                                v))))
+                            (elot-db--citation-absolute-iri (car r) source data))
                           (elot-db-execute-readonly
                            "SELECT value FROM attributes
                               WHERE id = ? AND source = ? AND data_source = ?
@@ -1678,15 +1764,15 @@ the sole DB access path for `elot_db_borrow_term'."
              ;; "<unversioned-IRI> <versioned-IRI>" form (ELOT's
              ;; "iri version-iri" heading convention -- see
              ;; `elot-entity-from-header').  `rdfs:isDefinedBy'
-             ;; wants a single value, and the accepted convention is
-             ;; to cite the versionIRI alone when one is recorded,
-             ;; falling back to the plain ontology IRI otherwise.
-             ;; Split on whitespace and keep the *last* token (the
-             ;; versionIRI when present, else the sole IRI).
+             ;; wants a single value, and the ontology a term belongs
+             ;; to is the *unversioned* IRI -- a versionIRI names one
+             ;; snapshot and goes stale.  Keep the *first* token.
              (ont-iri
               (or defined-by
-                  (and ont-iri-raw
-                       (car (last (split-string ont-iri-raw "[ \t]+" t))))))
+                  (elot-db--unversioned-ontology-iri ont-iri-raw source data)))
+             (ont-iri-from
+              (cond (defined-by 'explicit)
+                    (ont-iri 'source-declaration)))
              (ont-title
               (and ont-iri-raw
                    (funcall one
@@ -1702,6 +1788,7 @@ the sole DB access path for `elot_db_borrow_term'."
               :source        source
               :data-source   data
               :ontology-iri  ont-iri
+              :ontology-iri-from ont-iri-from
               :ontology-title ont-title)))))
 
 

@@ -363,5 +363,80 @@ step with `wrong-number-of-arguments'."
        (wrong-number-of-arguments t)
        (error nil)))))
 
+;;;; prefer-source plumbing (work item 4) --------------------------------
+
+(defun elot-gptel-borrow-tests--citation-table (table)
+  "Return a stub `elot-db-entity-citation' driven by TABLE.
+TABLE is an alist of (SOURCE . ONTOLOGY-IRI); a nil SOURCE key
+supplies the unrestricted-lookup answer."
+  (lambda (token &optional source)
+    (let ((hit (assoc source table)))
+      (when hit
+        (list :id token :label "denoter"
+              :ontology-iri (cdr hit)
+              :ontology-iri-from 'explicit
+              :source (or source "any"))))))
+
+(ert-deftest test-elot-gptel-citation-prefer-source-wins ()
+  "PREFER-SOURCE beats an active source that also attests the id."
+  (cl-letf (((symbol-function 'elot-gptel--active-source-names)
+             (lambda (&optional _exclude) '("active-src")))
+            ((symbol-function 'elot-db-entity-citation)
+             (elot-gptel-borrow-tests--citation-table
+              '(("chosen"     . "<https://example.org/core/Core/>")
+                ("active-src" . "<https://example.org/pattern/0.0>")
+                (nil          . "<https://example.org/anything>")))))
+    (let ((cit (elot-gptel--citation-preferring-active
+                "iof-constr:Denoter" nil "chosen")))
+      (should (equal "<https://example.org/core/Core/>"
+                     (plist-get cit :ontology-iri)))
+      (should (equal "chosen" (plist-get cit :source))))))
+
+(ert-deftest test-elot-gptel-citation-prefer-source-miss-falls-back ()
+  "A PREFER-SOURCE that knows nothing of the id must not swallow the result."
+  (cl-letf (((symbol-function 'elot-gptel--active-source-names)
+             (lambda (&optional _exclude) '("active-src")))
+            ((symbol-function 'elot-db-entity-citation)
+             (elot-gptel-borrow-tests--citation-table
+              '(("active-src" . "<https://example.org/active/>")
+                (nil          . "<https://example.org/anything>")))))
+    (let ((cit (elot-gptel--citation-preferring-active
+                "x:a" nil "knows-nothing")))
+      (should (equal "<https://example.org/active/>"
+                     (plist-get cit :ontology-iri)))
+      (should (equal "active-src" (plist-get cit :source))))))
+
+(ert-deftest test-elot-gptel-citation-exclusion-beats-prefer-source ()
+  "When PREFER-SOURCE names EXCLUDE-FILE, exclusion wins."
+  (cl-letf (((symbol-function 'elot-gptel--active-source-names)
+             (lambda (&optional _exclude) '("active-src")))
+            ((symbol-function 'elot-db-entity-citation)
+             (elot-gptel-borrow-tests--citation-table
+              '(("target.org"  . "<https://example.org/target/>")
+                ("active-src"  . "<https://example.org/active/>")
+                (nil           . "<https://example.org/anything>")))))
+    (let ((cit (elot-gptel--citation-preferring-active
+                "x:a" "target.org" "target.org")))
+      ;; The borrowing file is never its own citation target.
+      (should-not (equal "target.org" (plist-get cit :source)))
+      (should (equal "<https://example.org/active/>"
+                     (plist-get cit :ontology-iri))))))
+
+(ert-deftest test-elot-gptel-borrow-parent-prefer-source-wins ()
+  "The parent lookup honours PREFER-SOURCE before the active list."
+  (let ((elot-active-label-sources '("active-src")))
+    (cl-letf (((symbol-function 'elot-gptel--borrow-source-parent)
+               (lambda (_id &optional source)
+                 (cond ((equal source "chosen")     "iof-constr:Parent")
+                       ((equal source "active-src") "other:Parent")
+                       ((null source)               "any:Parent")))))
+      (should (equal "iof-constr:Parent"
+                     (elot-gptel--borrow-parent-preferring-active
+                      "iof-constr:Denoter" "cit-src" "chosen")))
+      ;; Without PREFER-SOURCE the active list still wins (no regression).
+      (should (equal "other:Parent"
+                     (elot-gptel--borrow-parent-preferring-active
+                      "iof-constr:Denoter" "cit-src"))))))
+
 (provide 'elot-gptel-borrow-tests)
 ;;; elot-gptel-borrow-tests.el ends here

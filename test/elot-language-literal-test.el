@@ -129,7 +129,8 @@ transformer must be applied there too."
                     ":END:\n"
                     "*** \"denoter\"@en-us (ex:denoter)\n"
                     " - rdfs:comment :: \"a comment\"@en\n"))
-          (let* ((slurp (elot-source-parse-org file))
+          (let* ((slurp (car (elot-source--entries-and-prefixes
+                              (elot-source-parse-org file))))
                  (row (assoc "ex:denoter" slurp)))
             (should row)
             ;; display label reduced to the bare lexical form

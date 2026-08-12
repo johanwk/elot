@@ -18,7 +18,8 @@
 ;;
 ;; Supported formats:
 ;;
-;;   org   -- ELOT Org document, via `elot-build-slurp'
+;;   org   -- ELOT Org document, via `elot-build-slurp' (also
+;;            harvests the document's prefix table)
 ;;   csv   -- header-row-aware flat dict
 ;;   tsv   -- header-row-aware flat dict
 ;;   json  -- flat ({"id": "label"}) or nested
@@ -42,6 +43,8 @@
 (declare-function elot-build-slurp "elot-tangle" (&optional hierarchy))
 (declare-function elot-slurp-for-db "elot-tangle" (slurp))
 (declare-function elot-update-headline-hierarchy "elot-tangle" ())
+(declare-function elot-update-link-abbrev "elot-tangle" ())
+(defvar org-link-abbrev-alist-local)
 (defvar elot-robot-jar-path)
 
 (require 'elot-robot)  ; shared ROBOT process layer
@@ -125,6 +128,25 @@ for the extension."
 ;;;; Org
 ;;;; ------------------------------------------------------------------
 
+(defun elot-source--org-prefixes ()
+  "Return the current Org buffer's prefix table as ((PREFIX . EXPANSION) ...).
+Assumes `elot-update-headline-hierarchy' has already run in this
+buffer.  Delegates to `elot-update-link-abbrev', so the harvesting
+rules (first appearance wins, header row skipped, trailing colon
+stripped) are exactly the ones ELOT applies when tangling.  The
+default prefix is returned with the empty string as key, matching
+`elot-source--harvest-prefixes' and the `prefixes' table
+convention."
+  (elot-update-link-abbrev)
+  (delq nil
+        (mapcar (lambda (cell)
+                  (let ((prefix (car cell))
+                        (uri    (if (listp (cdr cell)) (cadr cell) (cdr cell))))
+                    (when (stringp uri)
+                      (cons (replace-regexp-in-string ":\\'" "" (or prefix ""))
+                            uri))))
+                org-link-abbrev-alist-local)))
+
 (defun elot-source-parse-org (file)
   "Parse an ELOT Org FILE into slurp entries.
 Visits FILE in a temporary buffer in `org-mode', runs
@@ -132,7 +154,15 @@ Visits FILE in a temporary buffer in `org-mode', runs
 output passed through `elot-slurp-for-db', so that ELOT-style
 language literals (`\"denoter\"@en-us') are split into
 (LEXICAL-FORM LANG) pairs -- the same shape the Turtle parser
-emits, so DB rows agree regardless of source format."
+emits, so DB rows agree regardless of source format.
+
+Returns the extended shape `(:entries ENTRIES :prefixes PREFIXES)',
+where PREFIXES is the file's own prefix table (see
+`elot-source--org-prefixes').  Without those rows the `prefixes'
+table holds nothing for `.org' sources, and source-scoped CURIE
+resolution -- notably `elot-db--expansion-in-source-only', used
+when a borrowed term's `rdfs:isDefinedBy' is written in CURIE
+form -- can never resolve anything."
   (require 'elot-tangle)
   (with-temp-buffer
     (insert-file-contents file)
@@ -141,7 +171,8 @@ emits, so DB rows agree regardless of source format."
           (enable-local-variables nil))
       (delay-mode-hooks (org-mode))
       (elot-update-headline-hierarchy)
-      (elot-slurp-for-db (elot-build-slurp)))))
+      (list :entries  (elot-slurp-for-db (elot-build-slurp))
+            :prefixes (elot-source--org-prefixes)))))
 
 ;;;; ------------------------------------------------------------------
 ;;;; CSV / TSV

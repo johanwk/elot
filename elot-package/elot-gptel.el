@@ -3124,6 +3124,61 @@ prefix string (the default-prefix declaration).  Read-only."
           (when (equal "" (nth 2 row))
             (throw 'hit (nth 3 row))))))))
 
+(defun elot-gptel--db-borrow-namespace-mismatch-p (id ont-iri source data-source)
+  "Return non-nil when ID's namespace is not covered by ONT-IRI.
+
+ID is a CURIE (or full IRI); its prefix is expanded through
+SOURCE's own prefix rows (see `elot-db--expansion-in-source-only').
+The test is deliberately weak -- it only asks whether the expanded
+namespace starts with ONT-IRI, or vice versa.  A mismatch is
+common and legitimate (OBO-style ontologies mint terms under
+`obo:' while the ontology IRI ends in `.owl'), so callers must
+treat the result as advisory only, never as grounds for refusal."
+  (when (and (stringp id) (stringp ont-iri) (not (string-empty-p ont-iri)))
+    (let* ((ns (cond
+                ((string-match "\\`<?\\(https?://.*\\)\\'" id)
+                 (match-string 1 id))
+                ((string-match "\\`\\([^:]*\\):" id)
+                 (and (fboundp 'elot-db--expansion-in-source-only)
+                      (ignore-errors
+                        (elot-db--expansion-in-source-only
+                         (match-string 1 id) source data-source))))
+                (t nil))))
+      (and (stringp ns)
+           (not (string-empty-p ns))
+           (not (string-prefix-p ont-iri ns))
+           (not (string-prefix-p ns ont-iri))))))
+
+(defun elot-gptel--db-borrow-provenance-note (citation)
+  "Return an advisory NOTE about CITATION's provenance, or nil.
+
+Work item 5, downgraded from a refusal to a NOTE.  Fires only
+when `:ontology-iri-from' is `source-declaration' -- i.e. the
+cited ontology IRI is the *source file's own* `owl:Ontology'
+declaration rather than an explicit `rdfs:isDefinedBy' row on the
+entity -- AND the entity's namespace is not covered by that IRI.
+That combination is the signature of a bridge / pattern / example
+file that merely *names* a foreign term.  Since a namespace
+mismatch is normal in many ontologies, this only warns; the
+caller may keep the row, replace it with the source ontology's
+real IRI, or fall back to the `(source: NAME)' form."
+  (let ((id      (plist-get citation :id))
+        (ont-iri (plist-get citation :ontology-iri))
+        (source  (plist-get citation :source))
+        (data    (plist-get citation :data-source)))
+    (when (and (eq 'source-declaration
+                   (plist-get citation :ontology-iri-from))
+               (elot-gptel--db-borrow-namespace-mismatch-p
+                id ont-iri source data))
+      (format
+       "NOTE: the `rdfs:isDefinedBy' value above is the ontology \
+declared by the source file `%s', not an explicit statement about \
+`%s' -- and `%s' is outside that ontology's namespace.  The source \
+may merely NAME this term rather than define it.  Verify the \
+defining ontology before inserting; if in doubt, cite \
+`(source: %s)' instead."
+       (or source "?") id id (or source "?")))))
+
 (defun elot-gptel--db-borrow-kind-note (rdf-type)
   "Return a NOTE line for RDF-TYPE describing its nesting role, or nil.
 
@@ -3264,6 +3319,12 @@ snippet output."
       (when kind-note
         (push "" lines)
         (push kind-note lines)))
+    ;; Work item 5 contingent NOTE: citation came from the source
+    ;; file's own ontology declaration and the namespaces disagree.
+    (let ((prov-note (elot-gptel--db-borrow-provenance-note citation)))
+      (when prov-note
+        (push "" lines)
+        (push prov-note lines)))
     ;; Step 7.5.7 contingent NOTE: default-prefix source.
     (when default-prefix-p
       (let* ((localname (substring id 1))
@@ -3340,10 +3401,17 @@ active-source preference on top of this primitive."
               (throw 'hit v))))
         nil))))
 
-(defun elot-gptel--borrow-parent-preferring-active (id &optional source)
+(defun elot-gptel--borrow-parent-preferring-active (id &optional source
+                                                       prefer-source)
   "Return a plain-CURIE parent for ID, preferring the ACTIVE sources.
 
 Resolution order:
+  0. PREFER-SOURCE, when supplied -- the source the caller
+     explicitly asked for (e.g. the `source=' argument of
+     `elot_borrow_term').  Tried before the active list so that
+     the NEXT: `anchor=' suggestion and the `rdfs:isDefinedBy'
+     citation cannot disagree about which ontology we are
+     borrowing from;
   1. each entry of `elot-active-label-sources', in priority order
      (the source the user last activated via
      `elot_db_activate_source' comes first);
@@ -3357,7 +3425,10 @@ user actually activated (which does carry the nesting).  Without
 the preference the citation's own source wins and the NEXT:
 trailer degrades to `anchor=<ANCHOR>' even though the DB knows
 the parent.  Returns nil when no source yields a usable parent."
-  (or (cl-loop for entry in (append
+  (or (and (stringp prefer-source)
+           (not (string-empty-p prefer-source))
+           (elot-gptel--borrow-source-parent id prefer-source))
+      (cl-loop for entry in (append
                              elot-active-label-sources
                              (default-value 'elot-active-label-sources))
                for src = (if (consp entry) (nth 0 entry) entry)
@@ -3366,6 +3437,18 @@ the parent.  Returns nil when no source yields a usable parent."
                when hit return hit)
       (and source (elot-gptel--borrow-source-parent id source))
       (elot-gptel--borrow-source-parent id)))
+
+(defun elot-gptel--same-source-p (a b)
+  "Return non-nil when source names A and B denote the same file.
+
+Compares `file-truename' when both expansions succeed (so
+`./foo.org' and an absolute path agree), else falls back to
+string equality -- source names may be IRIs, which have no
+truename."
+  (and (stringp a) (stringp b)
+       (let ((ta (ignore-errors (file-truename a)))
+             (tb (ignore-errors (file-truename b))))
+         (if (and ta tb) (equal ta tb) (equal a b)))))
 
 (defun elot-gptel--active-source-names (&optional exclude-file)
   "Return the active label-source names, in priority order.
@@ -3390,7 +3473,8 @@ it would end up citing the borrowing ontology."
           (push src names))))
     (nreverse names)))
 
-(defun elot-gptel--citation-preferring-active (token &optional exclude-file)
+(defun elot-gptel--citation-preferring-active (token &optional exclude-file
+                                                     prefer-source)
   "Return citation metadata for TOKEN, preferring the ACTIVE sources.
 
 `elot-db-entity-citation' with no source returns whichever
@@ -3402,6 +3486,10 @@ cites the pattern instead of, say,
 <https://spec.industrialontologies.org/ontology/202602/core/Core/>.
 
 Resolution order:
+  0. PREFER-SOURCE, when supplied -- the source the caller
+     explicitly restricted the search to (e.g. the `source='
+     argument of `elot_borrow_term').  An explicit request must
+     not be silently overridden by the active list.
   1. each active source (see `elot-gptel--active-source-names',
      EXCLUDE-FILE removed), preferring the first that yields a
      citation with a non-nil `:ontology-iri' -- i.e. a source
@@ -3410,10 +3498,21 @@ Resolution order:
      citation at all;
   3. failing that, the unrestricted lookup (previous behaviour).
 
+EXCLUDE-FILE wins over PREFER-SOURCE: a term borrowed INTO a
+file must never cite that file, so when the two name the same
+source PREFER-SOURCE is dropped and resolution starts at step 1.
+
 Returns nil when TOKEN is unknown to the DB."
-  (let ((names (elot-gptel--active-source-names exclude-file))
-        first-any)
-    (or (cl-loop for src in names
+  (let* ((names (elot-gptel--active-source-names exclude-file))
+         (prefer (and (stringp prefer-source)
+                      (not (string-empty-p prefer-source))
+                      (not (and (stringp exclude-file)
+                                (elot-gptel--same-source-p
+                                 prefer-source exclude-file)))
+                      prefer-source))
+         first-any)
+    (or (and prefer (ignore-errors (elot-db-entity-citation token prefer)))
+        (cl-loop for src in names
                  for cit = (ignore-errors
                              (elot-db-entity-citation token src))
                  do (when (and cit (null first-any)) (setq first-any cit))
@@ -3421,8 +3520,13 @@ Returns nil when TOKEN is unknown to the DB."
         first-any
         (ignore-errors (elot-db-entity-citation token)))))
 
-(defun elot-gptel--borrow-next-block (citation)
+(defun elot-gptel--borrow-next-block (citation &optional prefer-source)
   "Return a `NEXT:' self-chaining trailer for CITATION, or nil.
+
+PREFER-SOURCE, when supplied, is the source the caller explicitly
+restricted the borrow to; the parent lookup tries it before the
+active list, so the suggested `anchor=' and the citation cannot
+disagree about which ontology we are borrowing from.
 
 Step: make the borrow tools self-chaining.  The borrow result
 already knows the CURIE, the label, the source's parent
@@ -3455,7 +3559,8 @@ local copy can go stale.  Nothing is written by default."
           (elot-gptel--db-borrow-label-missing-p label id))
          (heading-label (if label-missing-p "TODO-label" label))
          (parent (and (stringp id)
-                      (elot-gptel--borrow-parent-preferring-active id src)))
+                      (elot-gptel--borrow-parent-preferring-active
+                       id src prefer-source)))
          (rows (delq nil
                      (list (and (or ont src) "rdfs:isDefinedBy"))))
          (defprops
@@ -3755,7 +3860,8 @@ set aside in favour of the exact match on `%s'."
            ((= n 1)
             (let* ((row (car rows))
                    (id  (nth 0 row))
-                   (cit (elot-gptel--citation-preferring-active id)))
+                   (cit (elot-gptel--citation-preferring-active
+                         id nil source)))
               (if (null cit)
                   (format
                    "ERROR: candidate %s resolved by search but \
@@ -3765,7 +3871,8 @@ elot-db-entity-citation returned nil (data inconsistency)"
                         note
                         "\n\n"
                         (let ((snippet (elot-gptel--db-borrow-format cit))
-                              (next (elot-gptel--borrow-next-block cit)))
+                              (next (elot-gptel--borrow-next-block
+                                     cit source)))
                           (if next
                               (concat snippet "\n\n" next)
                             snippet))))))
