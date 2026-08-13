@@ -1,136 +1,93 @@
 #+title: ELOT modelling patterns
-#+subtitle: Library index and findings
+#+subtitle: Library index and application entry point
 #+author: johanw
 #+date: 2026
 #+call: theme-elot()
 
-Pattern index and application entry point.
+This directory contains ELOT pattern files. Each pattern is an ontology and an
+executable template.
 
-* Applying a pattern: mandatory checklist
+* Apply a pattern
 
-1. Read *How to apply* and *Required constants (borrow these first)*.
-2. For each =BORROW= constant, the first tool sequence is:
-   1. =elot_db_activate_source= for the preferred source;
-   2. =elot_borrow_term= with the constant's label and kind;
-   3. =elot_db_supertypes=, then borrow and preserve its source parent.
-3. On the first borrow attempt, *omit =lang=* and usually =source=; either
-   filter can turn an existing term into a false “no candidates”. Narrow only
-   to disambiguate, using the exact registered source string.
-4. Do not call =elot_read_resource=, =elot_axiom_check=,
-   =elot_db_search_label=, declaration, or mutation tools for that constant
-   before step 2. Search manually only if =elot_borrow_term= returns multiple
-   or no candidates.
-5. Keep the borrow snippet's =rdfs:isDefinedBy= and definition. Never replace
-   it with bare =elot_declare_resource=; declare only after borrow has failed,
-   and add provenance explicitly.
-6. Resolve any explicit leg-selection step. Then bind or mint every =var:=
-   slot in the selected scope, reproduce each selected leg intact, prune whole
-   unselected legs, remove template annotations, add =pattern:appliedPattern=,
-   dry-run, and run =elot_check=.
+1. Read the pattern's /How to apply/ section, leg-selection rules, required
+   constants, worked example, and warning section.
+2. Inspect the target ontology. Decide which existing resources to reuse and
+   which selected slots need new resources. Do not invent missing source data.
+3. Add each required pattern constant to the target by exact CURIE, label, and
+   kind. Copy its =rdfs:isDefinedBy= value from the pattern:
+   - resolve the value with the pattern's prefix table when needed;
+   - call =elot_declare_resource= with =borrow=false= and =defined_by= set to
+     that value;
+   - do not use the database to rediscover a constant already fixed by the
+     pattern.
+4. Preserve only useful local hierarchy:
+   - if the constant's pattern parent is also required, declare the parent
+     first and place the child below it;
+   - if that parent already exists in the target, place the child below it;
+   - otherwise place the constant at the root of its resource section;
+   - do not add an unused chain of source parents.
+5. Use the ELOT database only when a resource must be discovered, such as a
+   =BORROW_OR_MINT= slot. A label search may find candidates, but select the
+   final resource by identity and kind.
+6. Resolve any leg-selection step. Bind or mint every =var:= slot in each
+   selected leg. Keep a selected leg complete and omit each unselected leg.
+7. Reproduce the selected axioms, remove template annotations, add
+   =pattern:appliedPattern= where the pattern requires it, and run
+   =elot_check=.
 
-*BORROW means borrow first, with provenance and source hierarchy; it never
-means merely declaring an external CURIE.*
+For a constant copied from a pattern, use =defined_by=. Do not use
+=borrow=true=: that asks the database to choose provenance.
 
-Run library checks with =make test=; set =ELOT_REQUIRE_ROBOT=1= to forbid
-lint-only success.
+See [[file:pattern-framework.org][pattern-framework.org]] for the full rules and
+[[file:pattern-vocabulary.org][pattern-vocabulary.org]] for the annotation
+properties.
 
-See [[file:pattern-framework.org][pattern-framework.org]] for the contract and procedure, and
-[[file:pattern-vocabulary.org][pattern-vocabulary.org]] for the annotation vocabulary.
+Run library checks with =make test=. Set =ELOT_REQUIRE_ROBOT=1= to require
+ROBOT-backed checks.
 
-* Cross-pattern index
+* Pattern index
 
-Choose a pattern before filling in its placeholders.
+Choose a pattern before filling its placeholders.
 
 #+caption: Patterns in this library
-| pattern                              | fidelity       | individuals introduced       | when to choose                                                                                                            |
+| pattern                              | detail level   | individuals introduced       | choose it when                                                                                                            |
 |--------------------------------------+----------------+------------------------------+---------------------------------------------------------------------------------------------------------------------------|
-| IDO-pattern-quantity-datum-fullform  | full (verbose) | quality, datum, unit         | the quality or the datum must itself be referenced -- sensor, measuring activity, provenance, qualifier, competing values |
-| IDO-pattern-quantity-shortcut-object | reduced        | datum, unit                  | datum-level context wanted (unit as a resource, qualifier, provenance) but the quality is never referenced                |
-| IDO-pattern-quantity-shortcut-data   | minimal        | none                         | value only; one triple per quantity, smallest graph, most reasoner-friendly; unit recoverable only by property convention |
-| IDO-pattern-function                 | n/a (see note) | function, activity           | what a thing is *for* must be stated, and/or the activity realizing it must be referenced                                   |
-| IDO-pattern-participation            | generic roles  | activity                     | an activity's cast must be recorded with agent/patient roles distinguished                                                |
-| IDO-pattern-idef0                    | ICOM roles     | activity                     | the same cast, in IDEF0's four roles: Input, Control, Output, Mechanism -- systems-engineering workflows                  |
-| SKOS-pattern-broader                 | n/a (see note) | narrower concept             | establishing a taxonomic hierarchy between SKOS concepts via outline nesting                                              |
-| PROV-O-pattern-qualified-activity    | qualified      | activity, usage, association | provenance: what an activity used and generated, who ran it, under what plan -- with the role reified, not name-encoded   |
-| IOF-pattern-information-about        | aboutness modes | information content entities | information denotes, uniquely designates, describes, or prescribes an entity                                               |
+| IDO-pattern-quantity-datum-fullform  | full           | quality, datum, unit         | the quality or datum must be referenced for sensing, provenance, qualifiers, or competing values                         |
+| IDO-pattern-quantity-shortcut-object | reduced        | datum, unit                  | datum context is needed, but the quality is never referenced                                                              |
+| IDO-pattern-quantity-shortcut-data   | minimal        | none                         | only the value is needed; the unit is known from the property convention                                                  |
+| IDO-pattern-function                 | not applicable | function, activity           | what a thing is for, or the activity that realizes the function, must be stated                                           |
+| IDO-pattern-participation            | generic roles  | activity                     | participants in an activity need agent and patient roles                                                                  |
+| IDO-pattern-idef0                    | ICOM roles     | activity                     | participants need the IDEF0 Input, Control, Output, and Mechanism roles                                                    |
+| SKOS-pattern-broader                 | not applicable | narrower concept             | a SKOS concept hierarchy is needed                                                                                        |
+| PROV-O-pattern-qualified-activity    | qualified      | activity, usage, association | provenance must state what was used and generated, who acted, the plan, and the role                                     |
+| IOF-pattern-information-about        | selectable legs | information content entities | information denotes, uniquely designates, describes, or prescribes an entity                                              |
 
-The /fidelity/ column compares a pattern with its own variants.  The
-three quantity patterns differ in how much detail they keep.
-Participation and idef0 differ instead in which role vocabulary they
-use: idef0's four ICOM relations are sub-properties of the relations
-participation uses, so an idef0 instantiation entails the participation
-one, but not the other way round.  The remaining patterns have no
-variants and read =n/a=.
+The three quantity patterns keep different amounts of information. A reduced
+form can be derived from a fuller form, but omitted individuals cannot be
+recovered. Choose the fuller form when those individuals may need to be
+referenced.
 
-Function and participation are not variants but compose: the activity
-that realizes a function is the kind of activity whose participants the
-participation (or idef0) pattern describes.  Apply function first, then
-participation.
+The participation and IDEF0 patterns use different role vocabularies. IDEF0's
+relations are more specific. The function and participation patterns can be
+combined: apply function first, then participation.
 
-=SKOS-pattern-broader= and =PROV-O-pattern-qualified-activity= are
-written for ontologies other than IDO, and use the =pattern:=
-vocabulary, the =var:= convention and the prose blocks unchanged.  The
-only extra step was adding =skos.ttl= and =prov.ttl= to the catalog;
-both are verbatim upstream copies fetched by =patterns/Makefile= (see
-the provisioning rule in [[file:pattern-framework.org][pattern-framework.org]]).
+The IOF information-about pattern may use one or more legs. There is no
+preference for using all four. Select only the legs supported by the available
+information.
 
-=IDO-pattern-idef0= cannot say that one thing plays different roles in
-one activity; =PROV-O-pattern-qualified-activity= can, using
-=prov:Usage= and =prov:hadRole=.  Whether the framework should
-prescribe reified roles is open question 6 in
-[[file:pattern-framework.org][pattern-framework.org]].
+* Quantity values written in two forms
 
-** Choosing among the patterns
+A reasoner will not compare a shortcut value with a full-form value unless the
+ontology contains an explicit rule that connects them. If both forms are
+allowed, use a rule or a query to check agreement. Otherwise require authors to
+use only one form for each quality.
 
-The three quantification patterns are not mutually exclusive: one
-ontology may use all three, for different qualities.  The choice is
-made per quality, not per ontology.
+* Notes for pattern authors
 
-The index rows are ordered by decreasing detail; each step down omits
-resources, and with them the questions that can be answered.  A query
-can derive a shortcut form from a full-form instantiation, but not the
-reverse, since that would mean creating the omitted individual.  When
-in doubt, choose the more explicit pattern.
-
-* Shortcut values and full-form values do not check each other
-
-If the same quality of the same thing is written down twice -- once
-with a shortcut pattern (a single number) and once with the full-form
-pattern -- the reasoner will not report a mismatch between the two
-numbers.  They are two unconnected statements, and nothing in the
-patterns says they must agree.  Making the connecting relation
-functional does not help: it forces the two descriptions to be about
-the same shaft, not about the same length.
-
-This is a data-quality question, not a logical contradiction, so
-=elot_consistency= is not the tool for it.  Choose one of:
-
-1. a rule language such as SWRL, to require the numbers to be equal;
-2. an authoring rule that a given quality is recorded either the
-   shortcut way or the full way, never both;
-3. a query, run separately, that lists things having both a shortcut
-   and a full-form value and compares them.
-
-* Findings from writing the library
-
-- The template contract held for every pattern written so far,
-  including patterns about dispositions and events rather than
-  attributes.  No new keyword and no exception was needed.
-- The fourth prose block is not only /Relationship to <sibling>/: the
-  contract is three mandatory blocks plus one that discusses the
-  pattern's own main difficulty, of which the sibling block is one
-  case.
-- The share of TBox and ABox slots varies widely between patterns.  The
-  quantity patterns are mostly TBox; the function pattern has one
-  bind-first slot and is otherwise ABox.
-- A pattern that asserts a fact and also falls under an upper-ontology
-  chain axiom entailing a weaker version of it should say so, and treat
-  the difference as a data-quality question (see the previous section).
-- Repeating a pattern against a bound anchor covers the simple cases of
-  variable cardinality, so a pattern with a repeatable leg should mark
-  its anchor slot =MINT_OR_BIND=, not =MINT=.
-- A check for borrowed terms that do not exist in the named source was
-  considered and not implemented: =rdfs:isDefinedBy= often names a
-  namespace rather than an ontology, and sources are often ingested
-  under a different base IRI or from a subset, so the check would give
-  many false warnings.  Borrowed terms remain a matter for review.
+- Use one file and one ontology for each pattern.
+- Include the required prose sections and one worked substitution table.
+- Give every constant its exact external CURIE, kind, and =rdfs:isDefinedBy=.
+- Give every placeholder a clear action and instruction.
+- State how optional or repeatable legs are selected.
+- Test with the real imported ontologies, not small substitute files.
+- Apply the pattern once to a real target before adding it to this index.

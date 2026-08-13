@@ -3499,7 +3499,7 @@ Reads the same `attributes' rows `elot_db_supertypes' reports
 \(`rdfs:subClassOf' / `SubClassOf' / `rdfs:subPropertyOf' /
 `SubPropertyOf').  Class expressions and angle-bracketed IRIs
 are skipped conservatively: only a bare `prefix:local' value is
-usable as an `anchor=' in the emitted NEXT: trailer.  Restricted
+usable as an `anchor=' in the emitted INFO: trailer.  Restricted
 to SOURCE when non-nil.  Returns nil on any DB error.
 
 See `elot-gptel--borrow-parent-preferring-active', which layers
@@ -3543,7 +3543,7 @@ Resolution order:
   0. PREFER-SOURCE, when supplied -- the source the caller
      explicitly asked for (e.g. the `source=' argument of
      `elot_borrow_term').  Tried before the active list so that
-     the NEXT: `anchor=' suggestion and the `rdfs:isDefinedBy'
+     the INFO: `anchor=' suggestion and the `rdfs:isDefinedBy'
      citation cannot disagree about which ontology we are
      borrowing from;
   1. each entry of `elot-active-label-sources', in priority order
@@ -3556,7 +3556,7 @@ This matters because a term is typically attested by several
 sources at once: a pattern file that merely *names* it (no
 nesting, hence no supertype row) and the upstream ontology the
 user actually activated (which does carry the nesting).  Without
-the preference the citation's own source wins and the NEXT:
+the preference the citation's own source wins and the INFO:
 trailer degrades to `anchor=<ANCHOR>' even though the DB knows
 the parent.  Returns nil when no source yields a usable parent."
   (or (and (stringp prefer-source)
@@ -3655,14 +3655,14 @@ Returns nil when TOKEN is unknown to the DB."
         (ignore-errors (elot-db-entity-citation token)))))
 
 (defun elot-gptel--borrow-next-block (citation &optional prefer-source)
-  "Return a `NEXT:' self-chaining trailer for CITATION, or nil.
+  "Return an `INFO:' follow-up hint for CITATION, or nil.
 
 PREFER-SOURCE, when supplied, is the source the caller explicitly
 restricted the borrow to; the parent lookup tries it before the
 active list, so the suggested `anchor=' and the citation cannot
 disagree about which ontology we are borrowing from.
 
-Step: make the borrow tools self-chaining.  The borrow result
+Step: give borrow results a non-directive follow-up hint.  The borrow result
 already knows the CURIE, the label, the source's parent
 \(`rdfs:subClassOf' / `rdfs:subPropertyOf'), and which annotation
 rows the snippet carries -- so it can hand the LLM a pre-filled
@@ -3710,7 +3710,7 @@ local copy can go stale.  Nothing is written by default."
                            (elot-db-entity-annotation-rows id src))))))))
     (when (and (stringp id) (not (string-empty-p id)))
       (concat
-       (format "NEXT: elot_declare_resource file=<TARGET.org> anchor=%s%s \
+       (format "INFO: elot_declare_resource file=<TARGET.org> anchor=%s%s \
 curie=%s label=\"%s\" borrow=true"
                (if parent parent "<ANCHOR>")
                (if parent " as=child" "")
@@ -3745,8 +3745,8 @@ note.  The leading `*' is a placeholder -- callers
 (`elot_declare_resource', or the user) re-level it to match the
 target ontology's structure.
 
-Next step: the snippet is followed by a pre-filled `NEXT:'
-trailer naming the follow-up `elot_declare_resource' call --
+The snippet is followed by a pre-filled `INFO:' hint showing a possible
+`elot_declare_resource' call --
 CURIE, label, `borrow=true' (which writes `rdfs:isDefinedBy'
 in the same atomic operation), a list of the definition-bearing
 annotation properties the DB holds (opt in with
@@ -3985,10 +3985,9 @@ two kinds of spurious ambiguity automatically:
   one wins over mere substring hits.
 Both cases auto-borrow, with a NOTE explaining what was set aside.
 
-Next step: the auto-borrow response ends with a pre-filled
-`NEXT:' trailer naming the follow-up `elot_declare_resource'
-call (CURIE, label, `borrow=true', and a suggested
-`anchor=PARENT as=child' when the DB knows the source's
+The auto-borrow response ends with a pre-filled `INFO:' hint showing a
+possible `elot_declare_resource' call (CURIE, label, `borrow=true', and a 
+suggested `anchor=PARENT as=child' when the DB knows the source's
 parent).  Chain on that trailer; use `elot_edit_axioms' only
 for any further axiom rows.  Read-only."
   (condition-case err
@@ -4097,8 +4096,8 @@ ranked first and are never truncated away."
 ;; resolver + a tool wrapper, mirroring how `elot-db.el' handles
 ;; its sibling `schema.sql'.
 ;;
-;; The LLM is expected to call this once at the start of any
-;; authoring session; the document covers heading-nesting,
+;; The LLM is expected to call this once per long-running session before
+;; its first authoring task; the document covers heading-nesting,
 ;; description-list semantics, reuse via `rdfs:isDefinedBy', and
 ;; the (frequently misunderstood) `:nodeclare:' tag.
 
@@ -7407,7 +7406,7 @@ the number of rows inserted."
   (length rows))
 
 (defun elot-gptel-tool-declare-resource
-    (file anchor label curie &optional iri as borrow definition-from)
+    (file anchor label curie &optional iri as borrow definition-from defined-by)
   "Implementation of the `elot_declare_resource' tool.
 
 Declare a NEW resource heading whose identifier is an
@@ -7449,8 +7448,17 @@ required a second `elot_edit_axioms' call after every borrow,
 making this tool a true add-term step for the
 `elot_borrow_term' -> declare workflow.  When the DB knows
 nothing about CURIE, BORROW is a silent no-op and the response
-says so.  Without BORROW the tool declares only the heading +
-`rdfs:label'.
+says so.  Without BORROW or DEFINED-BY the tool declares only the
+heading + `rdfs:label'.
+
+DEFINED-BY, when supplied, writes that value verbatim as the
+`rdfs:isDefinedBy' provenance row.  This is the direct pattern
+application path: the pattern has already fixed the external
+resource and its provenance, so no label-DB lookup is needed.
+DEFINED-BY may be a CURIE, IRI, or other value valid in an ELOT
+annotation row; this tool deliberately does not require an
+absolute ontology IRI.  It is mutually exclusive with BORROW,
+which obtains provenance from the DB.
 
 DEFINITION-FROM makes the definition copy opt-in: an ORDERED
 list of annotation-property CURIEs (a list of strings, or a
@@ -7473,7 +7481,8 @@ throwaway placeholder heading behind).
 Gated by `elot-gptel-allow-side-effects'.  On success returns:
 
   OK: declared LABEL (CURIE) under ANCHOR (as AS)[; (declared
-  prefix p: -> <IRI>)][; borrowed N provenance row(s)]
+  prefix p: -> <IRI>)][; borrowed N provenance row(s) | wrote
+  pattern-supplied provenance row]
   == LINT ==
   ...
   [== OMN PARSE ==
@@ -7519,7 +7528,11 @@ On revalidation failure the pre-declaration bytes are restored."
       ;; Normalise DEFINITION-FROM (JSON array or comma-separated
       ;; string) and refuse up front when a named AP is not declared
       ;; in FILE.
-      (let ((defs (elot-gptel--declare-normalise-props definition-from)))
+      (let* ((defs (elot-gptel--declare-normalise-props definition-from))
+             (defined-by* (elot-gptel--declare-normalise-defined-by defined-by)))
+        (when (and borrow defined-by*)
+          (user-error
+           "ELOT-gptel: defined_by and borrow=true are mutually exclusive; use defined_by for pattern-supplied provenance or borrow=true for DB-supplied provenance"))
         (when (and defs (not borrow))
           (user-error
            "ELOT-gptel: definition_from requires borrow=true"))
@@ -7544,7 +7557,19 @@ On revalidation failure the pre-declaration bytes are restored."
                    " heading, or `elot_rename_resource' to change its identifier.")
              curie (file-name-nondirectory file))
           (elot-gptel--declare-resource-1
-           file anchor label curie iri as-sym borrow defs))))))
+           file anchor label curie iri as-sym borrow defs defined-by*))))))
+
+(defun elot-gptel--declare-normalise-defined-by (value)
+  "Return VALUE trimmed for a direct `rdfs:isDefinedBy' row.
+Nil and the empty string mean no direct provenance.  VALUE is not
+required to be an absolute IRI: validity and intended identity are
+the pattern author's responsibility."
+  (cond
+   ((null value) nil)
+   ((stringp value)
+    (let ((v (string-trim value)))
+      (unless (string-empty-p v) v)))
+   (t (user-error "ELOT-gptel: defined_by must be a string: %S" value))))
 
 (defun elot-gptel--declare-normalise-props (value)
   "Normalise VALUE into an ordered list of CURIE strings.
@@ -7563,7 +7588,7 @@ comma-separated string: %S" value)))))
                       items))))
 
 (defun elot-gptel--declare-resource-1 (file anchor label curie iri as-sym borrow
-                                            &optional definition-props)
+                                            &optional definition-props defined-by)
   "Do the actual declaration for `elot-gptel-tool-declare-resource'.
 Called only after the caller has validated ANCHOR / LABEL /
 CURIE / AS-SYM and established that CURIE is not already
@@ -7627,7 +7652,9 @@ declared in the current buffer."
                (borrowed (and borrow
                               (elot-gptel--declare-borrow-rows
                                curie file definition-props)))
-               (rows (car borrowed))
+               (rows (if defined-by
+                         (list (format "rdfs:isDefinedBy :: %s" defined-by))
+                       (car borrowed)))
                (probe (cdr borrowed))
                (skipped (plist-get probe :available))
                (n (if rows
@@ -7643,6 +7670,8 @@ declared in the current buffer."
                        (car decl) (cdr decl))
              "")
            (cond
+            (defined-by
+             "; wrote pattern-supplied provenance row (rdfs:isDefinedBy)")
             ((and borrow (> n 0))
              (format "; borrowed %d provenance row%s (%s)"
                      n (if (= n 1) "" "s")
@@ -8904,8 +8933,9 @@ SubPropertyOf; description-list `- key :: value' rows carry
 annotations and OMN axioms; reuse of external terms goes via a
 heading plus `rdfs:isDefinedBy'.
 
-Call this tool at the start of an LLM-driven authoring session before
-composing edits to an ELOT .org file.  When the user chooses a
+Call this tool at most once per long-running LLM session, when its
+conventions are not already available in the session context.  Do not call
+it again for every file or request.  When the user chooses a
 modelling-pattern library, follow that library's own selection and
 application guide.
 
@@ -9943,6 +9973,14 @@ step of the reuse workflow: `elot_borrow_term' (find + inspect)
 nothing about CURIE, `borrow=true' is a silent no-op and the
 response says so.
 
+For a pattern constant, prefer DEFINED_BY instead: pass the
+`rdfs:isDefinedBy' value already supplied by the pattern and the
+tool writes it verbatim without consulting the label DB.  CURIE
+and full-IRI values are both accepted; checking that the value
+identifies the intended source is the pattern author's
+responsibility.  `defined_by' and `borrow=true' are mutually
+exclusive.
+
 Distinct from the insert tools, which always MINT a fresh local
 identifier -- here you supply the CURIE.
 
@@ -9979,7 +10017,7 @@ declaration the file is saved and re-linted (plus OMN-parsed
 when ROBOT is configured); revalidation failure rolls the
 buffer back.  On success returns:
 
-  OK: declared LABEL (CURIE) under ANCHOR (as AS)[; (declared prefix p: -> <IRI>)][; borrowed N provenance row(s)]
+  OK: declared LABEL (CURIE) under ANCHOR (as AS)[; (declared prefix p: -> <IRI>)][; borrowed N provenance row(s) | wrote pattern-supplied provenance row]
   == LINT ==
   ...
   [== OMN PARSE ==
@@ -10051,7 +10089,16 @@ Omitting it is the default and the normal case.  The row is \
 written under the property it was actually found with (not \
 normalised).  Requires `borrow=true'.  Each property must \
 already be declared as an annotation property in the file, else \
-the call is refused."))))
+the call is refused.")
+      (:name "defined_by"
+             :type string
+             :optional t
+             :description
+             "Pattern-supplied `rdfs:isDefinedBy' value.  Written \
+verbatim in the same atomic declaration, without a label-DB \
+lookup.  CURIE and IRI values are accepted; the pattern author is \
+responsible for correctness, and no absolute-IRI requirement is \
+imposed.  Mutually exclusive with `borrow=true'."))))
 
 (defconst elot-gptel--spec-db-query
   '("elot_db_query"
@@ -10480,7 +10527,7 @@ Use this AFTER `elot_db_search_label' has produced a
 matching CURIE, BEFORE `elot_declare_resource' embeds the
 borrowed term into the target ontology.
 
-The response ends with a pre-filled `NEXT:' trailer naming the
+The response ends with a pre-filled `INFO:' hint showing a possible
 follow-up call -- `elot_declare_resource' with this CURIE, the
 label, `borrow=true' (so `rdfs:isDefinedBy' is written in the
 same atomic operation; definitions are opt-in via
@@ -10537,9 +10584,8 @@ only when you need an open-ended substring search,
 cross-source comparison, or a non-class kind with idiosyncratic
 shaping.
 
-Next step: the auto-borrow response ends with a pre-filled
-`NEXT:' trailer naming the follow-up `elot_declare_resource'
-call (CURIE, label, `borrow=true', and a suggested
+The auto-borrow response ends with a pre-filled `INFO:' hint showing a
+possible `elot_declare_resource' call (CURIE, label, `borrow=true', and a suggested
 `anchor=PARENT as=child' when the DB knows the source's
 parent).  Chain on that trailer; use `elot_edit_axioms' only
 for any further axiom rows.  Read-only."
@@ -11245,10 +11291,10 @@ is truthy in Elisp) is correctly treated as nil."
      (lambda (file anchor tree &optional as)
        (elot-gptel-tool-insert-resource-tree file anchor tree as)))
     ('elot-gptel-tool-declare-resource
-     (lambda (file anchor label curie &optional iri as borrow definition-from)
+     (lambda (file anchor label curie &optional iri as borrow definition-from defined-by)
        (elot-gptel-tool-declare-resource
         file anchor label curie iri as
-        (elot-gptel--truthy borrow) definition-from)))
+        (elot-gptel--truthy borrow) definition-from defined-by)))
     (_ (error "ELOT-gptel: no dispatcher for %S" fn))))
 
 (defun elot-gptel--confirm-effective-p (spec-confirm)

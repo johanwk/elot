@@ -7,10 +7,10 @@
 ;;     de-duplication, source preference);
 ;;   - `definition_from' plumbing (arg normalisation, ordered
 ;;     first-hit-wins probe, declared-AP enumeration);
-;;   - the `NEXT:' trailer wording (precondition-gated, no
+;;   - the `INFO:' hint wording (precondition-gated, no
 ;;     `skos:definition');
 ;;   - the `== ROWS WRITTEN (rolled back) ==' diagnostic echo;
-;;   - tool-spec / dispatcher arity for the new `definition_from' arg.
+;;   - tool-spec / dispatcher arity for `definition_from' and `defined_by'.
 ;;
 ;; Pure Elisp: no ROBOT, no reasoner, no on-disk ontology mutation.
 
@@ -171,6 +171,17 @@
 
 ;;;; definition_from argument normalisation ------------------------------
 
+(ert-deftest test-elot-gptel-declare-normalise-defined-by ()
+  (should-not (elot-gptel--declare-normalise-defined-by nil))
+  (should-not (elot-gptel--declare-normalise-defined-by "  "))
+  (should (equal "iof-core:"
+                 (elot-gptel--declare-normalise-defined-by " iof-core: ")))
+  (should (equal "https://example.org/source"
+                 (elot-gptel--declare-normalise-defined-by
+                  "https://example.org/source")))
+  (should-error (elot-gptel--declare-normalise-defined-by 42)
+                :type 'user-error))
+
 (ert-deftest test-elot-gptel-declare-normalise-props ()
   (should-not (elot-gptel--declare-normalise-props nil))
   (should (equal '("skos:definition")
@@ -272,7 +283,7 @@
     (elot-gptel-note-mutation-rows (list "a" nil "") "b" nil)
     (should (equal '("a" "b") (reverse elot-gptel--mutation-rows)))))
 
-;;;; NEXT: trailer wording ----------------------------------------------
+;;;; INFO: hint wording -------------------------------------------------
 
 (ert-deftest test-elot-gptel-borrow-next-block-wording ()
   (cl-letf (((symbol-function 'elot-gptel--borrow-parent-preferring-active)
@@ -286,7 +297,8 @@
                       :ontology-iri "<https://example.org/core/>"
                       :source "iof-core"))))
       (should (stringp out))
-      (should (string-match-p "^NEXT: elot_declare_resource" out))
+      (should (string-match-p "^INFO: elot_declare_resource" out))
+      (should-not (string-match-p "^NEXT:" out))
       (should (string-match-p "curie=iof-constr:Denoter" out))
       (should (string-match-p
                "anchor=iof-constr:InformationContentEntity as=child" out))
@@ -329,26 +341,34 @@
 
 ;;;; Tool spec + dispatcher arity ---------------------------------------
 
-(ert-deftest test-elot-gptel-declare-resource-spec-has-definition-from ()
+(ert-deftest test-elot-gptel-declare-resource-spec-has-provenance-args ()
   (let* ((spec (assoc "elot_declare_resource" elot-gptel--tool-specs))
          (args (plist-get (cdr spec) :args)))
     (should spec)
     (let ((names (mapcar (lambda (a) (plist-get a :name)) args)))
       (should (member "borrow" names))
       (should (member "definition_from" names))
-      ;; definition_from is positionally last, matching the function
+      (should (member "defined_by" names))
+      ;; defined_by is positionally last, matching the function
       ;; signature the dispatcher applies.
-      (should (equal "definition_from" (car (last names)))))
+      (should (equal "defined_by" (car (last names)))))
     (let ((df (cl-find "definition_from" args
                        :key (lambda (a) (plist-get a :name))
                        :test #'equal)))
       (should (eq 'array (plist-get df :type)))
       (should (plist-get df :optional))
       ;; The description states the precondition, not a menu.
-      (should (string-match-p "PRECONDITION" (plist-get df :description))))))
+      (should (string-match-p "PRECONDITION" (plist-get df :description))))
+    (let ((db (cl-find "defined_by" args
+                       :key (lambda (a) (plist-get a :name))
+                       :test #'equal)))
+      (should (eq 'string (plist-get db :type)))
+      (should (plist-get db :optional))
+      (should (string-match-p "no absolute-IRI requirement"
+                              (plist-get db :description))))))
 
 (ert-deftest test-elot-gptel-declare-resource-dispatcher-arity ()
-  "The dispatcher lambda must accept all 8 spec arguments.
+  "The dispatcher lambda must accept all 9 spec arguments.
 Regression: it was written with 7 parameters after `definition_from'
 was added to the spec, so every borrow chain died at its terminal
 step with `wrong-number-of-arguments'."
@@ -358,7 +378,8 @@ step with `wrong-number-of-arguments'."
     (should-not
      (condition-case _
          (progn (funcall thunk "no-such-file.org" "anchor" "label"
-                         "ex:thing" nil "child" nil ["skos:definition"])
+                         "ex:thing" nil "child" nil ["skos:definition"]
+                         "ex-source:")
                 nil)
        (wrong-number-of-arguments t)
        (error nil)))))

@@ -7,7 +7,8 @@ tool.
 ELOT is a *literate* ontology authoring format: an Org-mode document
 *is* the ontology source.  Headings declare resources; description
 lists carry axioms and annotations; the outline encodes the taxonomy.
-Read this before composing any edit.
+Consult this once when these conventions are not already available in the
+current long-running session.
 
 ## 1. The cardinal rule: heading nesting carries `SubClassOf`
 
@@ -100,7 +101,8 @@ row in the prefix table.
 Ordering matters more than tool choice:
 
 ```
-elot_conventions -> elot_resources / elot_read_resource (orient)
+[elot_conventions once per session, if needed]
+  -> elot_resources / elot_read_resource      (orient)
   -> elot_borrow_term / elot_db_borrow_term   (reuse before minting)
   -> elot_declare_resource | elot_insert_*    (declare)
   -> elot_axiom_check -> elot_edit_axioms     (axioms; dry_run first)
