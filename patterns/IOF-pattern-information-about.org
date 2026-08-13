@@ -9,7 +9,6 @@ See [[file:pattern-framework.org][pattern-framework.org]] for the framework, [[f
 the =pattern:= vocabulary, and [[file:README.org][README.org]] for the library index.
 
 
-
 * IOF-pattern-information-about
 :PROPERTIES:
 :ID:       IOF-pattern-information-about
@@ -52,7 +51,7 @@ the =pattern:= vocabulary, and [[file:README.org][README.org]] for the library i
  - owl:versionInfo :: 0.0 start of IOF-pattern-information-about
  - dcterms:creator :: https://orcid.org/0000-0002-7167-7321
  - dcterms:modified :: {{{time("%Y-%m-%d")}}}^^xsd:date
- - dcterms:description :: This ontology is an IOF modelling pattern for information about an entity. It distinguishes information that denotes an entity, designates one entity uniquely, describes an entity, or prescribes rules, guidance, or a model for an entity. Each information content entity may carry its structured literal with prov:value.
+ - dcterms:description :: This ontology is an IOF modelling pattern for information about an entity. It distinguishes information that denotes an entity, designates one entity uniquely, describes an entity, or prescribes rules and regulations for an entity. Each information content entity may carry a structured literal with prov:value.
  - Import :: pattern:pattern-vocabulary
  - Import :: iof-core:
  - dcterms:source :: https://github.com/iofoundry/IOF-Core-Pattern-v2
@@ -71,85 +70,80 @@ the =pattern:= vocabulary, and [[file:README.org][README.org]] for the library i
 The generic procedure is in [[file:pattern-framework.org::*Applying a pattern: the generic procedure][Applying a pattern: the generic
 procedure]]. Specific to /this/ pattern:
 
-- *Use the preferred source for IOF Core.* Make sure to consult =patterns/iof-core.org= as the preferred source for IOF Core terms. This makes a big difference to the quality of the result.
-- *Start with the aboutness mode, not the text.* Choose the IOF
-  relation according to how the information refers to its subject:
-  ~iof-constr:denotes~ distinguishes one or more entities;
-  ~iof-constr:designates~ uniquely distinguishes one entity;
-  ~iof-constr:describes~ characterizes an entity; and
-  ~iof-constr:prescribes~ provides rules, guidance, or a model that its
-  subject is expected to follow or conform to.
-- *Mapping Cheat Sheet:*
-  - *Unique codes* (VIN, Serial No, UUID, Part ID) ➔ =iof-constr:Identifier= + =iof-constr:designates=
-  - *Non-unique names* (Model Name, Brand, Category) ➔ =iof-constr:Denoter= + =iof-constr:denotes=
-  - *Characterizations* (Tagline, Condition Report, Summary) ➔ =iof-constr:DescriptiveInformationContentEntity= + =iof-constr:describes=
-  - *Rules, Guidance, or Models* (Specification, Manual, Plan, Purpose) ➔ =iof-constr:DirectiveInformationContentEntity= + =iof-constr:prescribes=
+- *First select one or more aboutness legs.* Use the table in
+  [[*Required constants (borrow these first)][Required constants (borrow these first)]]. A leg is selected only when its
+  stated mode is present. The four legs are independent and complementary:
+  choose any non-empty subset, and do not create resources merely to fill
+  unused legs.
 - *Do not use ~designates~ merely because a value looks like a name.*
   It is functional and therefore commits each designative information
   content entity to one subject. Use it for a VIN, serial number, URI,
   or another identifier that is unique in the relevant context. Use
   ~denotes~ for a model name or other non-unique denoter.
-- *The relation is semantically primary.* IOF defines descriptive,
-  designative, and directive information-content classes using these
-  relations. The class may therefore be inferred when the corresponding
-  relation is asserted. The explicit types retained in this template
-  mirror the source scenario and make the intended mode visible to
-  consumers that do not reason.
+- *Assert the defined class as well as the relation.* This gives an
+  explicit useful type when the target is queried without an inference
+  engine. For each selected leg, assert both the forward aboutness fact
+  and its inverse; omit both facts for every unselected leg.
 - *Use ~prov:value~ only for the structured value itself.* PROV-O defines
   it as providing a value that directly represents an entity. The
   aboutness relation says what the information is about; ~prov:value~
-  merely carries its lexical content. Do not interpret ~prov:value~ as
-  denotation, description, or prescription.
+  only carries the value.
 - *NEVER import the PROV-O ontology.* It isn't DL compliant. Only
   borrow the ~prov:value~ data property.
-- *Bind the subject before minting information resources.* The same
-  entity may be the subject of several information content entities.
-  Search for and reuse it; do not mint a duplicate merely to apply this
-  pattern.
+- *Bind the subject (var:TheEntity) before minting information
+  resources.* The same entity may be the subject of several information
+  content entities. Search for and reuse it; do not mint a duplicate
+  merely to apply this pattern.
 
 *** Arity and optional legs                                      :nodeclare:
 :PROPERTIES:
 :ID: IOF-pattern-information-about-arity
 :END:
 
-The complete template has four independent information legs sharing one
-subject. Use all four when all four modes are present, as in the worked
-car example. When source material supplies only some modes, instantiate
-only those legs; do not invent an identifier, description, denoter, or
-directive to fill the skeleton.
+The template presents four independent, complementary information legs
+sharing one subject. An application MUST select one or more legs, but there
+is no preference or pressure to use all four. Use all four only when all
+four modes are actually present, as in the worked car example. Otherwise
+instantiate exactly the selected subset and omit every resource, forward
+fact, inverse fact, and literal belonging to an unselected leg.
 
 The current pattern vocabulary has no active optional-cardinality
-semantics, so this selection is an application instruction rather than a
-machine-expanded ~pattern:cardinality~ declaration. Repeated information
-of one mode is handled by binding ~var:TheEntity~ and applying that leg
-again with a newly minted information resource.
+semantics; selection and pruning are therefore stated explicitly here and
+on the inverse rows. Repeated information of one mode is handled by binding
+~var:TheEntity~ and applying that leg again with a newly minted information
+resource.
 
 *** Required constants (borrow these first)                     :nodeclare:
 :PROPERTIES:
 :ID: IOF-pattern-information-about-constants
 :END:
 
-From IOF Core:
+Select legs with this table. Borrow the constants in the selected rows,
+including both relation directions. The defined class is asserted explicitly
+so the result remains informative without inference.
 
-- classes: ~iof-constr:InformationContentEntity~,
-  ~iof-constr:Identifier~,
-  ~iof-constr:DescriptiveInformationContentEntity~, and
-  ~iof-constr:DirectiveInformationContentEntity~;
-- the inferred class ~iof-constr:DesignativeInformationContentEntity~;
-- properties: ~iof-constr:denotes~, ~iof-constr:designates~,
-  ~iof-constr:describes~, and ~iof-constr:prescribes~.
+#+caption: Leg selection and required constants
+| leg          | select when the information ...                  | required defined class                 | forward relation | inverse relation |
+|--------------+--------------------------------------------------+----------------------------------------+------------------+------------------|
+| designation  | uniquely distinguishes one entity in context     | ~iof-constr:DesignativeInformationContentEntity~ | ~iof-constr:designates~       | ~iof-constr:designatedBy~    |
+| denotation   | distinguishes one or more entities, not uniquely | ~iof-constr:Denoter~                                | ~iof-constr:denotes~          | ~iof-constr:denotedBy~       |
+| description  | characterizes an entity                          | ~iof-constr:DescriptiveInformationContentEntity~ | ~iof-constr:describes~        | ~iof-constr:describedBy~     |
+| prescription | states rules and regulations for an entity       | ~iof-constr:DirectiveInformationContentEntity~   | ~iof-constr:prescribes~       | ~iof-constr:prescribedBy~    |
 
-The value carrier is ~prov:value~, defined by PROV-O as an
-~owl:DatatypeProperty~ that provides a value directly representing an
-entity. This pattern uses it with literal values.
+For any selected leg also borrow ~iof-constr:InformationContentEntity~ and
+the source parents needed to retain the class and property hierarchy:
+~iof-constr:isAbout~ for forward relations and ~iof-constr:isSubjectOf~ for
+inverse relations. Borrow ~prov:value~ for the shared literal-value carrier.
+PROV-O defines it as an ~owl:DatatypeProperty~ that provides a value directly
+representing an entity. Borrow this property without importing PROV-O.
 
 *** Cardinality and inference commitments                        :nodeclare:
 :PROPERTIES:
 :ID: IOF-pattern-information-about-cardinality
 :END:
 
-Each instantiated leg creates one information content entity, one
-aboutness assertion, and one literal ~prov:value~ assertion.
+Each instantiated leg creates one information content entity, a paired
+forward and inverse aboutness assertion, and one literal ~prov:value~ assertion.
 ~iof-constr:designates~ is functional: one identifier cannot designate
 two different entities. The other three relations are not made
 functional by this pattern.
@@ -167,15 +161,21 @@ pattern does not add duplicate ~iof-constr:isAbout~ facts.
 Adapted from “Information about some entity(s)” by Arkopaul Sarkar in the IOF Core Pattern v2 repository.
 
 The example follows the IOF information-and-aboutness scenario. One car
-is referred to by a VIN, a model name, a marketing description, and a
-passenger-vehicle specification.
+is referred to by a VIN, a model name, a description, and a set of
+passenger-vehicle rules and regulations. It deliberately selects all four
+legs to demonstrate their composition; selecting all four is not the normal
+or preferred outcome.
 
 #+begin_src org
 ,*** Car 1 (ex:car1)
  - Types :: iof-constr:MaterialArtifact
+ - Facts :: iof-constr:designatedBy ex:car1-vin-number
+ - Facts :: iof-constr:denotedBy ex:car1-model-name
+ - Facts :: iof-constr:describedBy ex:car1-tagline
+ - Facts :: iof-constr:prescribedBy ex:passenger-vehicle-specification
 
 ,*** Car 1 VIN number (ex:car1-vin-number)
- - Types :: iof-constr:Identifier
+ - Types :: iof-constr:DesignativeInformationContentEntity
  - Facts :: iof-constr:designates ex:car1
  - Facts :: prov:value "1HGCM82633A123456"
 
@@ -253,9 +253,6 @@ the meaning of the four IOF aboutness relations.
 **** Denoter (iof-constr:Denoter)
  - rdfs:isDefinedBy :: iof-core:
  - pattern:action :: BORROW
-***** Identifier (iof-constr:Identifier)
- - rdfs:isDefinedBy :: iof-core:
- - pattern:action :: BORROW
 **** Descriptive information content entity (iof-constr:DescriptiveInformationContentEntity)
  - rdfs:isDefinedBy :: iof-core:
  - pattern:action :: BORROW
@@ -287,6 +284,21 @@ the meaning of the four IOF aboutness relations.
 **** prescribes (iof-constr:prescribes)
  - rdfs:isDefinedBy :: iof-core:
  - pattern:action :: BORROW
+*** is subject of (iof-constr:isSubjectOf)
+ - rdfs:isDefinedBy :: iof-core:
+ - pattern:action :: BORROW
+**** denoted by (iof-constr:denotedBy)
+ - rdfs:isDefinedBy :: iof-core:
+ - pattern:action :: BORROW
+***** designated by (iof-constr:designatedBy)
+ - rdfs:isDefinedBy :: iof-core:
+ - pattern:action :: BORROW
+**** described by (iof-constr:describedBy)
+ - rdfs:isDefinedBy :: iof-core:
+ - pattern:action :: BORROW
+**** prescribed by (iof-constr:prescribedBy)
+ - rdfs:isDefinedBy :: iof-core:
+ - pattern:action :: BORROW
 
 ** Data properties
 :PROPERTIES:
@@ -294,7 +306,7 @@ the meaning of the four IOF aboutness relations.
 :resourcedefs: yes
 :END:
 
-*** value (prov:value)
+*** PROV value (prov:value)
  - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o#>
  - rdfs:comment :: Borrowed from PROV-O without importing PROV-O; only the prov:value identifier is reused here.
  - pattern:action :: BORROW
@@ -309,7 +321,7 @@ the meaning of the four IOF aboutness relations.
  - rdfs:isDefinedBy :: <http://example.org/pattern/pattern-vocabulary>
 *** instruction (pattern:instruction)
  - rdfs:isDefinedBy :: <http://example.org/pattern/pattern-vocabulary>
-*** value (pattern:value)
+*** placeholder value datatype (pattern:value)
  - rdfs:isDefinedBy :: <http://example.org/pattern/pattern-vocabulary>
 *** appliedPattern (pattern:appliedPattern)
  - rdfs:isDefinedBy :: <http://example.org/pattern/pattern-vocabulary>
@@ -340,22 +352,30 @@ the meaning of the four IOF aboutness relations.
  - Types :: var:EntityKind
  - pattern:action :: BIND_OR_MINT
  - pattern:instruction :: The entity about which the information is conveyed. Bind-first: search the target ontology for the intended entity and reuse it. Mint only when the subject genuinely has not yet been declared.
+ - Facts :: iof-constr:designatedBy var:TheDesignativeInformation
+   - pattern:instruction :: Add this inverse fact only when the designation leg is selected; otherwise omit the row.
+ - Facts :: iof-constr:denotedBy var:TheDenotativeInformation
+   - pattern:instruction :: Add this inverse fact only when the denotation leg is selected; otherwise omit the row.
+ - Facts :: iof-constr:describedBy var:TheDescriptiveInformation
+   - pattern:instruction :: Add this inverse fact only when the description leg is selected; otherwise omit the row.
+ - Facts :: iof-constr:prescribedBy var:TheDirectiveInformation
+   - pattern:instruction :: Add this inverse fact only when the prescription leg is selected; otherwise omit the row.
 
 **** var:TheDesignativeInformation
- - Types :: iof-constr:Identifier
+ - Types :: iof-constr:DesignativeInformationContentEntity
  - Facts :: iof-constr:designates var:TheEntity
  - Facts :: prov:value "identifier value"
    - pattern:value :: xsd:string
  - pattern:action :: MINT
- - pattern:instruction :: An identifier or other designative information content entity that uniquely distinguishes TheEntity in the relevant context. Always mint the information resource, not its subject. Supply its literal structured value on prov:value. Do not use this leg for a non-unique name.
+ - pattern:instruction :: Designative information that uniquely distinguishes TheEntity in the relevant context. Always mint the information resource, not its subject. Assert the defined class, both relation directions, and its structured value on prov:value. Do not use this leg for a non-unique name.
 
 **** var:TheDenotativeInformation
- - Types :: iof-constr:InformationContentEntity
+ - Types :: iof-constr:Denoter
  - Facts :: iof-constr:denotes var:TheEntity
  - Facts :: prov:value "denoter value"
    - pattern:value :: xsd:string
  - pattern:action :: MINT
- - pattern:instruction :: A non-unique denoter that distinguishes TheEntity, such as a model name. Supply its lexical content on prov:value. If it uniquely identifies one entity in context, use the designative leg instead.
+ - pattern:instruction :: A non-unique denoter that distinguishes TheEntity, such as a model name. Assert the defined class, both relation directions, and its value on prov:value. If it uniquely identifies one entity in context, use the designative leg instead.
 
 **** var:TheDescriptiveInformation
  - Types :: iof-constr:DescriptiveInformationContentEntity
@@ -363,7 +383,7 @@ the meaning of the four IOF aboutness relations.
  - Facts :: prov:value "description value"
    - pattern:value :: xsd:string
  - pattern:action :: MINT
- - pattern:instruction :: Information that characterizes TheEntity without uniquely identifying it, such as descriptive or marketing text. Supply the description on prov:value.
+ - pattern:instruction :: Information that characterizes TheEntity without uniquely identifying it, such as a condition report or summary. Assert the defined class, both relation directions, and its value on prov:value.
 
 **** var:TheDirectiveInformation
  - Types :: iof-constr:DirectiveInformationContentEntity
@@ -371,4 +391,4 @@ the meaning of the four IOF aboutness relations.
  - Facts :: prov:value "prescription value"
    - pattern:value :: xsd:string
  - pattern:action :: MINT
- - pattern:instruction :: Information that provides rules, guidance, or a model for TheEntity, including a future entity expected to conform to it. Supply the prescription on prov:value. Do not use describes when conformity or guidance is intended.
+ - pattern:instruction :: Information that states rules and regulations for TheEntity. Assert the defined class, both relation directions, and its value on prov:value. Do not use describes when rules or regulations are intended.
