@@ -23,8 +23,10 @@ Pattern index and application entry point.
 5. Keep the borrow snippet's =rdfs:isDefinedBy= and definition. Never replace
    it with bare =elot_declare_resource=; declare only after borrow has failed,
    and add provenance explicitly.
-6. Then bind or mint =var:= slots, reproduce the axioms, remove template
-   annotations, add =pattern:appliedPattern=, dry-run, and run =elot_check=.
+6. Resolve any explicit leg-selection step. Then bind or mint every =var:=
+   slot in the selected scope, reproduce each selected leg intact, prune whole
+   unselected legs, remove template annotations, add =pattern:appliedPattern=,
+   dry-run, and run =elot_check=.
 
 *BORROW means borrow first, with provenance and source hierarchy; it never
 means merely declaring an external CURIE.*

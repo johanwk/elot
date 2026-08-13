@@ -1395,12 +1395,72 @@ an Org table by `elot-gptel--sparql-format-result'.")
 (defconst elot-gptel--sparql-limit-max 5000
   "Hard upper bound on the `limit' argument to `elot_sparql'.")
 
+(defun elot-gptel--sparql-mask (query)
+  "Return QUERY with comments, IRIs and literals blanked out.
+The result has the same length as QUERY, but every character
+inside a `#' line comment, an angle-bracketed IRI, or a quoted
+string literal is replaced by a space.  Keyword scanning then
+sees only genuine SPARQL syntax, so an IRI such as
+`<http://example.org/onto#add>' or a literal \"delete me\" can no
+longer masquerade as an Update keyword -- and a prefix IRI ending
+in `#>' no longer swallows the rest of the line."
+  (let* ((s (or query ""))
+         (n (length s))
+         (out (copy-sequence s))
+         (i 0))
+    (while (< i n)
+      (let ((c (aref s i)))
+        (cond
+         ;; Line comment: blank through end of line.
+         ((eq c ?#)
+          (while (and (< i n) (not (eq (aref s i) ?\n)))
+            (aset out i ?\s)
+            (setq i (1+ i))))
+         ;; IRI reference: blank through the closing `>' (no
+         ;; newline may occur inside an IRIREF).
+         ((eq c ?<)
+          (let ((j (1+ i)))
+            (while (and (< j n)
+                        (not (memq (aref s j) '(?> ?\n ?\s ?\t))))
+              (setq j (1+ j)))
+            (if (and (< j n) (eq (aref s j) ?>))
+                (progn
+                  (while (<= i j) (aset out i ?\s) (setq i (1+ i))))
+              ;; Not an IRI after all (a `<' comparison operator).
+              (setq i (1+ i)))))
+         ;; String literal, short or long form.
+         ((memq c '(?\" ?'))
+          (let* ((q (char-to-string c))
+                 (long (and (<= (+ i 3) n)
+                            (string= (substring s i (+ i 3))
+                                     (concat q q q))))
+                 (delim (if long (concat q q q) q))
+                 (dlen (length delim))
+                 (j (+ i dlen))
+                 (done nil))
+            (while (and (< j n) (not done))
+              (cond
+               ((eq (aref s j) ?\\) (setq j (+ j 2)))
+               ((and (<= (+ j dlen) n)
+                     (string= (substring s j (+ j dlen)) delim))
+                (setq j (+ j dlen) done t))
+               ((and (not long) (eq (aref s j) ?\n))
+                (setq done t))
+               (t (setq j (1+ j)))))
+            (setq j (min j n))
+            (while (< i j)
+              (unless (eq (aref s i) ?\n) (aset out i ?\s))
+              (setq i (1+ i)))))
+         (t (setq i (1+ i))))))
+    out))
+
 (defun elot-gptel--sparql-mutating-p (query)
   "Return non-nil when QUERY has an UPDATE keyword.
 Recognises the SPARQL 1.1 Update operations (INSERT, DELETE,
 LOAD, CLEAR, CREATE, DROP, COPY, MOVE, ADD).  The check is
-deliberately lexical -- a `# DELETE...' comment will be a false
-positive, but that errs on the side of safety.
+lexical, but runs over `elot-gptel--sparql-mask'ed text, so
+keywords appearing inside comments, IRIs or string literals are
+not false positives.
 
 Note: CONSTRUCT and DESCRIBE are read-only query forms (they
 shape a result graph but do not modify the dataset) and are
@@ -1408,7 +1468,7 @@ intentionally /not/ flagged by this predicate."
   (let ((case-fold-search t))
     (string-match-p
      "\\_<\\(?:INSERT\\|DELETE\\|LOAD\\|CLEAR\\|CREATE\\|DROP\\|COPY\\|MOVE\\|ADD\\)\\_>"
-     (or query ""))))
+     (elot-gptel--sparql-mask query))))
 
 (defun elot-gptel--sparql-query-form (query)
   "Return the first SPARQL query form keyword in QUERY as a lowercase string.
@@ -1418,8 +1478,12 @@ one of \"select\", \"ask\", \"construct\", \"describe\", or any
 SPARQL 1.1 Update keyword in lowercase; nil if no recognised
 form keyword is found."
   (let* ((raw (or query ""))
-         ;; Strip line comments.
-         (no-comments (replace-regexp-in-string "#[^\n]*" "" raw))
+         ;; Blank out comments, IRIs and literals.  Masking (rather
+         ;; than deleting) keeps offsets stable and, crucially, keeps
+         ;; a prefix IRI ending in `#>' from eating the rest of the
+         ;; line -- the classic `PREFIX ex: <...#> SELECT ...'
+         ;; false rejection.
+         (no-comments (elot-gptel--sparql-mask raw))
          ;; Drop the prologue: zero or more PREFIX / BASE lines.
          (case-fold-search t)
          (body
@@ -1431,10 +1495,13 @@ form keyword is found."
             ;; at end-of-line -- a one-line query like
             ;; `PREFIX p: <iri> SELECT ...' must not have its
             ;; SELECT keyword swallowed by `[^\n]*'.
+            ;; IRIs are already blanked by the mask, so a prologue
+            ;; clause is `PREFIX name: <blanks>' -- match it without
+            ;; relying on the angle brackets still being present.
             (let ((case-fold-search t))
               (while (looking-at
-                      "[ \t\n\r]*\\(?:PREFIX[ \t\n\r]+[^<]*<[^>]*>\
-\\|BASE[ \t\n\r]+<[^>]*>\\)")
+                      "[ \t\n\r]*\\(?:PREFIX[ \t\n\r]+[^ \t\n\r]*[ \t\n\r]+\
+\\|BASE[ \t\n\r]+\\)")
                 (goto-char (match-end 0))))
             (buffer-substring-no-properties (point) (point-max)))))
     (when (string-match
@@ -8837,18 +8904,10 @@ SubPropertyOf; description-list `- key :: value' rows carry
 annotations and OMN axioms; reuse of external terms goes via a
 heading plus `rdfs:isDefinedBy'.
 
-Call this tool once at the start of any LLM-driven authoring
-session before composing edits to an ELOT .org file.  This is
-mandatory even when the user's request is terse and does not prescribe
-tools or a workflow: the instructions, not user prompt precision, must
-carry the authoring discipline.  When a modelling pattern is named,
-requested, or plausibly applicable from a supplied library, follow the
-document's mandatory pattern workflow before the first declaration or
-mutation: read the library entry point and pattern guidance, resolve a
-complete binding table, execute every BORROW through the preferred
-source and borrow tools while retaining provenance and hierarchy, and
-validate both the ontology and the pattern-specific postcondition.  A
-bare external-CURIE declaration is not a borrow.
+Call this tool at the start of an LLM-driven authoring session before
+composing edits to an ELOT .org file.  When the user chooses a
+modelling-pattern library, follow that library's own selection and
+application guide.
 
 The returned document also covers the cardinal idioms (heading nesting,
 heading shape `Label (curie)', description-list keys, file skeleton,

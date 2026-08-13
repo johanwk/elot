@@ -64,7 +64,7 @@ Rules intended for reliable application follow these principles:
 5. *Define stop conditions.*  Missing sources, unresolved identity, an
    unbound required slot, kind mismatch, forbidden information loss or failed
    validation means stop and report the blocker.  The agent must not silently
-   guess, flatten a hierarchy or omit a leg.
+   guess, flatten a hierarchy, omit a selected leg, or invent an unselected one.
 6. *Make intermediate results inspectable.*  The selected pattern, binding
    table, provenance, fallback reasons and planned edits must be reviewable
    before or alongside mutation.  Prefer small coherent atomic edits and
@@ -468,8 +468,11 @@ constants say which resources must be present.
 2. *Read the slot annotations.*  Every placeholder states its
    ~pattern:action~ and a ~pattern:instruction~; read them with
    =elot_read_resource= rather than guessing from the name.
-3. *Substitute every ~var:~ resource* with a resource of the target
-   ontology --- bind, borrow or mint as the ~pattern:action~ says.
+3. *Resolve the pattern's explicit selection step, if any, then substitute
+   every ~var:~ resource in the selected scope* with a resource of the target
+   ontology --- bind, borrow or mint as the ~pattern:action~ says. A pattern
+   with independent legs must define how they are selected and pruned; omit a
+   whole unselected leg, never an arbitrary row within a selected leg.
 
    A placeholder may be a property as well as a class or individual,
    and a minted property needs more care.  In the shortcut patterns the
@@ -490,9 +493,10 @@ constants say which resources must be present.
      name.
 4. *Supply every literal placeholder* with a value of the datatype
    named by the ~pattern:value~ annotation.
-5. *Do not change the axioms.*  The ~Types~, ~Facts~ and ~SubClassOf~
-   rows connecting the placeholders are the pattern; replace the names,
-   not the structure.
+5. *Do not change the axioms in the selected scope.*  The ~Types~, ~Facts~
+   and ~SubClassOf~ rows connecting its placeholders are the pattern; replace
+   the names, not the structure. Explicitly unselected legs are pruned as whole
+   units according to the pattern's own selection instructions.
 6. *Remove the template-control annotations* (~pattern:action~,
    ~pattern:instruction~, ~pattern:value~ and other slot metadata) from
    the result.  They describe the template, not the instantiated domain
@@ -524,8 +528,10 @@ pass the actual kind for object, data, or annotation properties.
 | Validate    | Run whole-file lint, OMN parse and reasoning with imports resolved; run any pattern-specific query or postcondition.                                                                                         | ~elot_check~, ~elot_sparql_select~, and when needed ~elot_consistency~ / ~elot_unsatisfiable~                                  | Stop and repair or roll back on failure; a ROBOT-skipped report is not full validation.                |
 | Review      | Compare the result with the worked example and hazard, report minted and reused resources, fallbacks, uncertainties and any approval still required.                                                         | ~elot_read_resource~, targeted SPARQL, structural diff when a baseline exists                                            | The promised question is answerable and no information loss or judgement is hidden.                    |
 
-The binding table is the hand-off between inspection and mutation.  At minimum
-it records the slot, expected kind, action, selected target, mint-or-reuse
+The binding table is the hand-off between inspection and mutation. For a
+multi-leg pattern it first records each leg as selected or unselected and the
+reason; only selected legs require slot bindings. At minimum it records the
+slot, expected kind, action, selected target, mint-or-reuse
 decision and evidence for that decision.  For a literal it records the value
 and datatype.  For a repeated group it records one row per tuple.  Do not begin
 mutation while any required row is unresolved.

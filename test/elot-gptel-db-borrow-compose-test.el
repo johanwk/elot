@@ -59,7 +59,7 @@
   "Seed one source with a unique-by-label class `Food'."
   (elot-db-update-source
    "pizza" nil "org"
-   '(("pizza-ont" "Pizza ontology"
+   '(("https://example.org/pizza/" "Pizza ontology"
       ("rdf:type" "owl:Ontology"
        "dcterms:title" "Pizza Ontology"))
      ("pizza:Food" "Food"
@@ -128,7 +128,10 @@
       (should (string-match-p "source=pizza" out))
       ;; Borrowed snippet body.
       (should (string-match-p "^\\* \"Food\"@en (pizza:Food)" out))
-      (should (string-match-p "rdfs:isDefinedBy :: pizza-ont" out))
+      ;; Citation target is always an absolute IRI, never a bare
+      ;; source-local token (absolute-IRI citation behaviour).
+      (should (string-match-p
+               "rdfs:isDefinedBy :: https://example\\.org/pizza/" out))
       (should (string-match-p "skos:definition :: \"An edible"
                               out)))))
 

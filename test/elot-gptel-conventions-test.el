@@ -44,13 +44,13 @@
     (should (string-match-p ":nodeclare:" text))
     (should (string-match-p "resourcedefs" text))
     (should (string-match-p "prefixdefs" text))
-    ;; A terse user prompt must still trigger disciplined pattern use.
-    (should (string-match-p "Mandatory workflow when a modelling pattern may apply" text))
-    (should (string-match-p "The user does not need to name the framework" text))
-    (should (string-match-p "elot_borrow_term" text))
-    (should (string-match-p "A bare[\n ]+external-CURIE declaration is not a borrow" text))
-    (should (string-match-p "complete binding table" text))
-    (should (string-match-p "pattern-specific query/postcondition" text))))
+    ;; Experimental pattern policy and tool-local workspace safety do not
+    ;; belong in the universal ELOT authoring conventions.
+    (should-not
+     (string-match-p "Mandatory workflow when a modelling pattern may apply"
+                     text))
+    (should-not (string-match-p "workspace tools vs\\. elot-gptel" text))
+    (should-not (string-match-p "complete binding table" text))))
 
 (ert-deftest elot-gptel-conventions-test-matches-file ()
   "Tool output matches the on-disk Markdown file byte-for-byte."
@@ -73,6 +73,12 @@
     (should spec)
     (should (eq (plist-get (cdr spec) :function)
                 'elot-gptel-tool-conventions))
+    (let ((description (plist-get (cdr spec) :description)))
+      (should (string-match-p
+               "follow that library's own selection[[:space:]]+and[[:space:]]+application guide"
+               description))
+      (should-not (string-match-p "mandatory pattern workflow" description))
+      (should-not (string-match-p "complete binding table" description)))
     ;; Zero-arg.
     (should (null (plist-get (cdr spec) :args)))))
 
