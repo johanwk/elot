@@ -9,58 +9,7 @@ ELOT is a *literate* ontology authoring format: an Org-mode document
 lists carry axioms and annotations; the outline encodes the taxonomy.
 Read this before composing any edit.
 
-## 0. Hard constraint: workspace tools vs. elot-gptel mutators
-
-Workspace tools (Macher's `edit_file_in_workspace`,
-`write_file_in_workspace`, `multi_edit_file_in_workspace`,
-`move_file_in_workspace`, `delete_file_in_workspace`) stage edits in
-memory for later review; elot-gptel mutators write to disk immediately.
-Mixing them on one file silently loses edits.
-
-**Rule:** once a workspace tool has *written* to a file, stop editing
-that file -- with any tool -- and hand the patch back to the user.
-
-Still fine: any number of elot-gptel mutations on files no workspace
-tool has touched (save + revalidate + rollback keeps them safe);
-read-only inspection at any time; work on other files.
-
-## 1. Mandatory workflow when a modelling pattern may apply
-
-**Non-negotiable.** Triggered by any request that names, implies, or
-matches a pattern in a supplied library -- the user need not name the
-framework or prescribe tools.  Before the first declaration or mutation:
-
-1. **READ** the library entry point (here `patterns/README.org`), then
-   the pattern's *How to apply*, *Required constants*, main
-   hazard/negative case, and worked example.  Never infer the procedure
-   from the title or diagram.
-2. **BIND** every constant and `var:` placeholder, including nested
-   `pattern:value` annotations: kind, action, selected target,
-   source/provenance, placement, literal datatype/value.  **Do not
-   mutate while any binding is unresolved.**
-3. **BORROW** -- `pattern:action :: BORROW` is literal: activate the
-   preferred source, call `elot_borrow_term` (correct label *and* kind),
-   then borrow the source parent too and preserve that hierarchy.  Keep
-   the returned `rdfs:isDefinedBy`.  A bare `elot_declare_resource` with
-   an external CURIE is **not** a borrow.
-4. **APPLY** the template by substituting bindings, without altering its
-   axiom structure.  Drop template-control annotations; add
-   `pattern:appliedPattern` as the framework directs.
-   *Advice (not a rule):* mirror the template's heading nesting in the
-   target -- but yield to the target's house style (`:nodeclare:`
-   grouping, an existing flat section, an explicit instruction), and
-   never override section-kind placement rules.  Under `Individuals`
-   nesting is presentational only.
-5. **CHECK** -- dry-run where supported, then `elot_check` *and* the
-   pattern's own postcondition query.  Parsing is not proof.  Report a
-   blocker rather than inventing a term, flattening source hierarchy,
-   dropping provenance, or weakening the pattern.
-
-If no relevant library or source can be found, ask -- do not improvise a
-look-alike pattern.  Instructions attached to a pattern override generic
-examples in this document.
-
-## 2. The cardinal rule: heading nesting carries `SubClassOf`
+## 1. The cardinal rule: heading nesting carries `SubClassOf`
 
 Nesting under a `:resourcedefs: yes` section *is* the taxonomy; the same
 holds for `SubPropertyOf` in property sections.
@@ -81,7 +30,7 @@ A description-list `SubClassOf ::` row is correct **only** for
 Never duplicate the outline with a row, and never declare one resource
 with two headings.
 
-## 3. Heading shape: `Label (curie)`
+## 2. Heading shape: `Label (curie)`
 
 ```
 *** Dog (ex:dog)
@@ -90,7 +39,7 @@ with two headings.
 Text before the parens becomes `rdfs:label`; the CURIE is the
 identifier, using a prefix declared in the prefix table.
 
-## 4. Description lists carry annotations and axioms
+## 3. Description lists carry annotations and axioms
 
 `- key :: value` rows under a resource heading.  Nested description
 lists express meta-annotations (axiom annotations).
@@ -100,7 +49,7 @@ lists express meta-annotations (axiom annotations).
 | `rdfs:label` | annotation | Alternative / language-tagged labels. |
 | `rdfs:comment` | annotation | Free text. |
 | `skos:definition` | annotation | Formal definition. |
-| `rdfs:isDefinedBy` | annotation | Origin pointer for reused terms (§5). |
+| `rdfs:isDefinedBy` | annotation | Origin pointer for reused terms (§4). |
 | `Domain ::` / `Range ::` | OMN | Property domain / range. |
 | `Characteristics ::` | OMN | `Functional`, `Transitive`, `Symmetric`, ... |
 | `InverseOf ::` | OMN | Inverse property. |
@@ -108,16 +57,16 @@ lists express meta-annotations (axiom annotations).
 | `EquivalentTo ::` | OMN | Class / property equivalence. |
 | `Types ::` | OMN | Individual class membership. |
 | `Facts ::` | OMN | Individual property assertions. |
-| `SubClassOf ::` | OMN | Anonymous expressions / extra parents -- see §2. |
+| `SubClassOf ::` | OMN | Anonymous expressions / extra parents -- see §1. |
 
-## 5. Reusing terms from another ontology
+## 4. Reusing terms from another ontology
 
 Declare the term as a normal heading with an `rdfs:isDefinedBy` row
 pointing at the origin; the prefix must exist in the prefix table.
 `elot_db_borrow_term` emits exactly this shape, ready to be re-levelled
 under a `:resourcedefs: yes` heading.
 
-### 5.1 Do not re-axiomatise imported resources
+### 4.1 Do not re-axiomatise imported resources
 
 Advisory, not lint-enforced.  Before adding `Domain`, `Range`,
 `SubClassOf`, `Characteristics`, `EquivalentTo`, ... to a term that
@@ -134,19 +83,19 @@ carries `rdfs:isDefinedBy`:
 Either way, run `elot_db_get_attributes id=<curie> source=<file>` first
 -- the cheap pre-flight against accidental over-constraint.
 
-## 6. The `:nodeclare:` tag
+## 5. The `:nodeclare:` tag
 
 A heading tagged `:nodeclare:` declares no OWL entity: it is a narrative
 divider between resource declarations.  Heading nesting skips it, so
 children still attach to the nearest declaring ancestor.
 
-## 7. Default-prefix mechanics
+## 6. Default-prefix mechanics
 
 `:ELOT-default-prefix:` on the ontology heading names the prefix for
 unprefixed CURIEs (`:Dog` -> `ex:Dog`).  That prefix still needs its own
 row in the prefix table.
 
-## 8. The default authoring loop
+## 7. The default authoring loop
 
 Ordering matters more than tool choice:
 
@@ -162,7 +111,7 @@ elot_conventions -> elot_resources / elot_read_resource (orient)
 `elot_explain`, `elot_sparql_select`, `elot_diff`, `elot_metrics` are
 the diagnostic follow-ups.
 
-## 9. Worked exemplar
+## 8. Worked exemplar
 
 A self-contained ontology demonstrating every idiom above.  Note the
 file skeleton it exhibits: an ontology heading with `:ELOT-*:`
