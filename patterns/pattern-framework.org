@@ -28,7 +28,8 @@ Each pattern must contain:
 5. A worked example with a substitution table.
 6. A warning section that states the main limit or reason not to use the
    pattern.
-7. Constants and placeholders with =pattern:action= annotations.
+7. A =CONSTANT= action on every fixed pattern input, and actions and
+   instructions on =var:= resources.
 8. A clean lint, OWL parse, and consistency result with imports loaded.
 
 Manchester Syntax requires every used resource to be declared in the file.
@@ -37,23 +38,24 @@ used =pattern:= annotation property locally.
 
 * Actions
 
-=pattern:action= tells the user what to do with a resource:
+=pattern:action= marks resources that participate in instantiation. A resource
+without it is scaffolding needed to express or annotate the pattern ontology;
+it is not a pattern input merely because OWL reports an implicit declaration.
 
-- =BORROW=: use the external resource named by the pattern constant.
-- =BIND=: use a resource already declared in the target.
+- =CONSTANT=: preserve this fixed resource's identity in every application.
+- =BORROW=: select an external resource for a =var:= resource.
+- =BIND=: select a resource already declared in the target.
 - =MINT=: create a new target resource.
-- =BORROW_OR_MINT=: look for a suitable external resource; mint one if none
-  exists.
-- =BIND_OR_MINT=: prefer an existing target resource; mint only when needed.
-- =MINT_OR_BIND=: normally mint, but allow an existing target resource.
+- =BORROW_OR_MINT=: prefer an external resource; mint if none is suitable.
+- =BIND_OR_MINT=: prefer a target resource; mint if none is suitable.
+- =MINT_OR_BIND=: normally mint, but allow a target resource.
 
-The order in a combined action states the preferred choice.
+The first word in a combined action is the normal choice. =CONSTANT= applies
+only to a non-=var:= resource. Every other action applies only to a =var:=
+resource.
 
-=pattern:instruction= gives any further rule for the resource. It should state
-its expected kind, when reuse is valid, and any naming or placement rule.
-
-These annotations guide application. They do not affect OWL reasoning. Remove
-them from instantiated target resources.
+=pattern:instruction= gives further rules for a variable or conditional axiom.
+These annotations do not affect OWL reasoning. Remove them from the target.
 
 * Constants and provenance
 
@@ -61,15 +63,21 @@ A pattern constant fixes the resource identity. Its declaration must include:
 
 - the exact CURIE;
 - the correct OWL kind;
-- its =rdfs:isDefinedBy= value;
-- =pattern:action :: BORROW=.
+- its =rdfs:isDefinedBy= value.
 
-When copying a constant to a target:
+It must have exactly one =pattern:action :: CONSTANT= row.
 
-1. Read the constant declaration from the pattern.
+Add every resource marked =CONSTANT= to the target. This explicit marker avoids
+mistaking annotation vocabulary, datatypes used in metadata, and other OWL
+scaffolding for pattern constants. The rule also applies to constants used only
+by optional legs. Unused constants may be removed later.
+
+For each constant:
+
+1. Read its declaration from the pattern.
 2. Resolve any prefixes using the pattern's prefix table.
 3. Call =elot_declare_resource= with the exact CURIE, label, and kind.
-4. Pass the pattern's =rdfs:isDefinedBy= value as =defined_by=.
+4. Pass its =rdfs:isDefinedBy= value as =defined_by=.
 5. Set =borrow=false=.
 
 This writes the declaration and provenance in one edit. It does not consult the
@@ -84,21 +92,32 @@ common for =BORROW_OR_MINT= slots, such as a unit or quantity kind. Label search
 is suitable for finding candidates. After selection, use exact identity and
 kind.
 
+Discover pattern inputs by their explicit action, not by querying every OWL
+declaration. OWL serializations can contain implicit declarations for annotation
+properties, metadata datatypes, and other scaffolding. A suitable inventory is:
+
+#+begin_example
+SELECT ?resource ?action ?instruction
+WHERE {
+  ?resource pattern:action ?action .
+  OPTIONAL { ?resource pattern:instruction ?instruction }
+}
+ORDER BY ?action ?resource
+#+end_example
+
+ROBOT SPARQL does not query imports by default. The explicit action filter is
+still required to distinguish pattern inputs from declarations in the pattern
+ontology itself.
+
 * Constant placement
 
-Do not copy the complete source hierarchy by default.
+Preserve the hierarchy among constants declared in the pattern. Declare a
+parent before its child and place the child below it. Place a constant with no
+pattern parent at the root of its resource section.
 
-For a constant with a parent in the pattern:
-
-1. If the parent is also required by the selected pattern part, declare the
-   parent first and place the child below it.
-2. If the parent already exists in the target with the right identity and kind,
-   place the child below it.
-3. Otherwise place the child at the root of its resource section.
-
-Do not add a parent only to reproduce the source outline. If a resource has
-more than one required parent, use one for heading placement and write the
-others as explicit =SubClassOf= or =SubPropertyOf= rows.
+Do not add source ancestors that the pattern does not declare. If a constant
+has more than one required parent, use one for heading placement and write the
+others as =SubClassOf= or =SubPropertyOf= rows.
 
 * Placeholders and literals
 
@@ -144,8 +163,8 @@ shared anchor when the pattern says it may be bound.
 2. Inspect the target ontology.
 3. Select the applicable pattern parts.
 4. Make a binding table for every selected placeholder and literal.
-5. Add required constants with =elot_declare_resource=, =defined_by=, and
-   =borrow=false=.
+5. Add all resources marked =CONSTANT= with =elot_declare_resource=,
+   =defined_by=, and =borrow=false=.
 6. Reuse or mint target resources according to each action.
 7. Check proposed axiom rows before committing them.
 8. Reproduce the selected pattern axioms with the chosen substitutions.
@@ -177,8 +196,9 @@ available.
    replace it with a small hand-written file.
 5. Add missing import mappings to =catalog-v001.xml=.
 6. Create one pattern file with a stable ontology IRI and version information.
-7. Mark external constants with =BORROW= and =rdfs:isDefinedBy=.
-8. Mark placeholders with the narrowest suitable action and a clear
+7. Give external constants an exact CURIE, kind, =rdfs:isDefinedBy=, and a
+   =CONSTANT= action.
+8. Mark each =var:= resource with the narrowest suitable non-=CONSTANT= action and a clear
    instruction.
 9. Write the smallest axiom set that expresses the intended structure.
 10. State whether inverse facts are asserted or only inferred.
