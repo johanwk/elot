@@ -38,10 +38,11 @@
      "^[ \t]*:ELOT-context-type:[ \t]+ontology[ \t]*$" nil t)))
 
 (defun elot-patterns-test--ontology-files ()
-  "Return all ELOT ontology Org files in the pattern library."
+  "Return ELOT ontology Org files whose names contain `-pattern-'."
   (cl-remove-if-not
    #'elot-patterns-test--ontology-p
-   (sort (directory-files elot-patterns-test--dir t "\\.org\\'")
+   (sort (directory-files elot-patterns-test--dir t
+                          "\\`.+-pattern-.+\\.org\\'")
          #'string<)))
 
 (defun elot-patterns-test--pattern-files ()
@@ -112,6 +113,51 @@
   (should (equal (sort (elot-patterns-test--index-entries) #'string<)
                  (elot-patterns-test--pattern-files))))
 
+(ert-deftest elot-patterns-test-actions-explicitly-identify-inputs ()
+  "Pattern inputs have one action; fixed inputs use CONSTANT explicitly."
+  (let ((supported '("CONSTANT" "BORROW" "BIND" "MINT"
+                     "BORROW_OR_MINT" "BIND_OR_MINT" "MINT_OR_BIND")))
+    (dolist (name (elot-patterns-test--pattern-files))
+      (with-temp-buffer
+        (insert-file-contents (elot-patterns-test--file name))
+        (org-mode)
+        (let ((constant-count 0))
+          ;; Every explicit action agrees with the resource namespace.
+          (goto-char (point-min))
+          (while (re-search-forward
+                  "^[ ]- pattern:action ::[ \t]+\\([^ \t\n]+\\)[ \t]*$"
+                  nil t)
+            (let ((action (match-string-no-properties 1)))
+              (should (member action supported))
+              (save-excursion
+                (org-back-to-heading t)
+                (let ((variable-p
+                       (string-match-p
+                        "\\(?:[(]\\)?var:[[:alnum:]_-]+"
+                        (org-get-heading t t t t))))
+                  (if variable-p
+                      (should-not (string= action "CONSTANT"))
+                    (should (string= action "CONSTANT"))
+                    (cl-incf constant-count))))))
+          (should (> constant-count 0))
+          ;; Every var: resource heading is an input and has exactly one action.
+          (org-map-entries
+           (lambda ()
+             (when (string-match-p
+                    "\\(?:[(]\\)?var:[[:alnum:]_-]+"
+                    (org-get-heading t t t t))
+               (let ((end (save-excursion
+                            (outline-next-heading)
+                            (point)))
+                     (count 0))
+                 (save-excursion
+                   (forward-line 1)
+                   (while (re-search-forward
+                           "^[ ]- pattern:action ::[ \t]+[^ \t\n]+[ \t]*$"
+                           end t)
+                     (cl-incf count)))
+                 (should (= count 1)))))))))))
+
 (ert-deftest elot-patterns-test-all-ontologies-pass-elot-check ()
   "Run the composite elot_check pipeline over every pattern ontology."
   ;; In the ROBOT CI job, do not permit an accidentally missing ROBOT to turn
@@ -120,6 +166,7 @@
   (when (and (fboundp 'elot-test-require-robot-p)
              (elot-test-require-robot-p))
     (elot-test-robot-skip-unless-available))
+  (message "WARNING: only pattern files with -pattern- in the filename will be considered")
   (let ((files (elot-patterns-test--ontology-files))
         (elot-gptel-robot-catalog
          (elot-patterns-test--file "catalog-v001.xml")))
