@@ -9,34 +9,26 @@ executable template.
 
 * Apply a pattern
 
-1. Read the pattern's /How to apply/ section, leg-selection rules, required
-   constants, worked example, and warning section.
-2. Inspect the target ontology. Decide which existing resources to reuse and
-   which selected slots need new resources. Do not invent missing source data.
-3. Add each required pattern constant to the target by exact CURIE, label, and
-   kind. Copy its =rdfs:isDefinedBy= value from the pattern:
-   - resolve the value with the pattern's prefix table when needed;
-   - call =elot_declare_resource= with =borrow=false= and =defined_by= set to
-     that value;
-   - do not use the database to rediscover a constant already fixed by the
-     pattern.
-4. Preserve only useful local hierarchy:
-   - if the constant's pattern parent is also required, declare the parent
-     first and place the child below it;
-   - if that parent already exists in the target, place the child below it;
-   - otherwise place the constant at the root of its resource section;
-   - do not add an unused chain of source parents.
-5. Use the ELOT database only when a resource must be discovered, such as a
-   =BORROW_OR_MINT= slot. A label search may find candidates, but select the
-   final resource by identity and kind.
-6. Resolve any leg-selection step. Bind or mint every =var:= slot in each
-   selected leg. Keep a selected leg complete and omit each unselected leg.
+1. Read the pattern's application rules, example, and warning.
+2. Inspect the target. Do not invent missing data.
+3. Add every resource marked =pattern:action :: CONSTANT=, even when an
+   optional leg does not use it. Use its exact CURIE, label, kind, and
+   =rdfs:isDefinedBy=. Call =elot_declare_resource= with =borrow=false= and
+   =defined_by= set from the pattern. Do not search the database for a constant.
+4. Preserve hierarchy between constants declared in the pattern. Do not add
+   source ancestors that the pattern does not declare.
+5. Select any optional legs. Resolve the =var:= resources in selected legs by
+   their actions. Keep selected legs complete and omit unselected legs.
+6. Use the database only when a variable action requires discovery, such as
+   =BORROW_OR_MINT=. Confirm the selected resource's identity and kind.
 7. Reproduce the selected axioms, remove template annotations, add
-   =pattern:appliedPattern= where the pattern requires it, and run
-   =elot_check=.
+   =pattern:appliedPattern= where directed, and run =elot_check=.
 
-For a constant copied from a pattern, use =defined_by=. Do not use
-=borrow=true=: that asks the database to choose provenance.
+=CONSTANT= applies only to fixed resources; all other actions apply only to
+=var:= resources. A declaration without an action is pattern scaffolding and is
+not copied merely because OWL reports it as declared. For a pattern constant,
+use =defined_by= rather than =borrow=true=. =borrow=true= asks the database to
+choose provenance.
 
 See [[file:pattern-framework.org][pattern-framework.org]] for the full rules and
 [[file:pattern-vocabulary.org][pattern-vocabulary.org]] for the annotation
@@ -86,8 +78,9 @@ use only one form for each quality.
 
 - Use one file and one ontology for each pattern.
 - Include the required prose sections and one worked substitution table.
-- Give every constant its exact external CURIE, kind, and =rdfs:isDefinedBy=.
-- Give every placeholder a clear action and instruction.
+- Give every constant its exact external CURIE, kind, =rdfs:isDefinedBy=, and
+  =pattern:action :: CONSTANT=.
+- Give every =var:= resource a clear non-=CONSTANT= action and instruction.
 - State how optional or repeatable legs are selected.
 - Test with the real imported ontologies, not small substitute files.
 - Apply the pattern once to a real target before adding it to this index.
