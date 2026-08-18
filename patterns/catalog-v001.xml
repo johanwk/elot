@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <catalog prefer="public" xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+    <uri id="User Entered Import Resolution" name="https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/" uri="file:/C:/Data/elot/IOF-ontologies/core/meta/AnnotationVocabulary.rdf"/>
     <uri id="User Entered Import Resolution" name="http://example.org/pattern/pattern-vocabulary" uri="pattern-vocabulary.ttl"/>
+    <uri id="User Entered Import Resolution" name="https://spec.industrialontologies.org/ontology/core/Core/" uri="../IOF-ontologies/core/Core.rdf"/>
+    <uri id="User Entered Import Resolution" name="https://spec.industrialontologies.org/ontology/202602/core/Core/" uri="../IOF-ontologies/core/Core.rdf"/>
     <uri id="User Entered Import Resolution" name="http://rds.posccaesar.org/ontology/lis14/ont/core" uri="IDO-4.2.ttl"/>
     <uri id="User Entered Import Resolution" name="http://example.org/pattern/IDO-pattern-quantity-datum-fullform" uri="IDO-pattern-quantity-datum-fullform.ttl"/>
     <uri id="User Entered Import Resolution" name="http://example.org/pattern/IDO-pattern-quantity-shortcut-object" uri="IDO-pattern-quantity-shortcut-object.ttl"/>
