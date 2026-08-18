@@ -7452,13 +7452,12 @@ says so.  Without BORROW or DEFINED-BY the tool declares only the
 heading + `rdfs:label'.
 
 DEFINED-BY, when supplied, writes that value verbatim as the
-`rdfs:isDefinedBy' provenance row.  This is the direct pattern
-application path: the pattern has already fixed the external
-resource and its provenance, so no label-DB lookup is needed.
-DEFINED-BY may be a CURIE, IRI, or other value valid in an ELOT
-annotation row; this tool deliberately does not require an
-absolute ontology IRI.  It is mutually exclusive with BORROW,
-which obtains provenance from the DB.
+`rdfs:isDefinedBy' provenance row without consulting the label DB.
+Use it whenever the caller already knows the intended provenance,
+including fixed pattern constants.  DEFINED-BY may be a CURIE, IRI,
+or other value valid in an ELOT annotation row; this tool deliberately
+does not require an absolute ontology IRI.  It is mutually exclusive
+with BORROW, which obtains provenance from the DB.
 
 DEFINITION-FROM makes the definition copy opt-in: an ORDERED
 list of annotation-property CURIEs (a list of strings, or a
@@ -7482,7 +7481,7 @@ Gated by `elot-gptel-allow-side-effects'.  On success returns:
 
   OK: declared LABEL (CURIE) under ANCHOR (as AS)[; (declared
   prefix p: -> <IRI>)][; borrowed N provenance row(s) | wrote
-  pattern-supplied provenance row]
+  explicit provenance row]
   == LINT ==
   ...
   [== OMN PARSE ==
@@ -7532,7 +7531,7 @@ On revalidation failure the pre-declaration bytes are restored."
              (defined-by* (elot-gptel--declare-normalise-defined-by defined-by)))
         (when (and borrow defined-by*)
           (user-error
-           "ELOT-gptel: defined_by and borrow=true are mutually exclusive; use defined_by for pattern-supplied provenance or borrow=true for DB-supplied provenance"))
+           "ELOT-gptel: defined_by and borrow=true are mutually exclusive; use defined_by for explicit provenance or borrow=true for DB-supplied provenance"))
         (when (and defs (not borrow))
           (user-error
            "ELOT-gptel: definition_from requires borrow=true"))
@@ -7563,7 +7562,7 @@ On revalidation failure the pre-declaration bytes are restored."
   "Return VALUE trimmed for a direct `rdfs:isDefinedBy' row.
 Nil and the empty string mean no direct provenance.  VALUE is not
 required to be an absolute IRI: validity and intended identity are
-the pattern author's responsibility."
+the caller's responsibility."
   (cond
    ((null value) nil)
    ((stringp value)
@@ -7671,7 +7670,7 @@ declared in the current buffer."
              "")
            (cond
             (defined-by
-             "; wrote pattern-supplied provenance row (rdfs:isDefinedBy)")
+             "; wrote explicit provenance row (rdfs:isDefinedBy)")
             ((and borrow (> n 0))
              (format "; borrowed %d provenance row%s (%s)"
                      n (if (= n 1) "" "s")
@@ -9973,13 +9972,13 @@ step of the reuse workflow: `elot_borrow_term' (find + inspect)
 nothing about CURIE, `borrow=true' is a silent no-op and the
 response says so.
 
-For a pattern constant, prefer DEFINED_BY instead: pass the
-`rdfs:isDefinedBy' value already supplied by the pattern and the
-tool writes it verbatim without consulting the label DB.  CURIE
-and full-IRI values are both accepted; checking that the value
-identifies the intended source is the pattern author's
-responsibility.  `defined_by' and `borrow=true' are mutually
-exclusive.
+When provenance is already known, prefer DEFINED_BY instead: pass
+the intended `rdfs:isDefinedBy' value and the tool writes it verbatim
+without consulting the label DB.  This includes fixed pattern
+constants, whose provenance is supplied by the pattern.  CURIE and
+full-IRI values are both accepted; checking that the value identifies
+the intended source is the caller's responsibility.  `defined_by' and
+`borrow=true' are mutually exclusive.
 
 Distinct from the insert tools, which always MINT a fresh local
 identifier -- here you supply the CURIE.
@@ -10017,7 +10016,7 @@ declaration the file is saved and re-linted (plus OMN-parsed
 when ROBOT is configured); revalidation failure rolls the
 buffer back.  On success returns:
 
-  OK: declared LABEL (CURIE) under ANCHOR (as AS)[; (declared prefix p: -> <IRI>)][; borrowed N provenance row(s) | wrote pattern-supplied provenance row]
+  OK: declared LABEL (CURIE) under ANCHOR (as AS)[; (declared prefix p: -> <IRI>)][; borrowed N provenance row(s) | wrote explicit provenance row]
   == LINT ==
   ...
   [== OMN PARSE ==
@@ -10094,10 +10093,11 @@ the call is refused.")
              :type string
              :optional t
              :description
-             "Pattern-supplied `rdfs:isDefinedBy' value.  Written \
-verbatim in the same atomic declaration, without a label-DB \
-lookup.  CURIE and IRI values are accepted; the pattern author is \
-responsible for correctness, and no absolute-IRI requirement is \
+             "Explicit `rdfs:isDefinedBy' value supplied by the caller.  \
+Written verbatim in the same atomic declaration, without a label-DB \
+lookup.  Use this when provenance is already known, including for a \
+fixed pattern constant.  CURIE and IRI values are accepted; the caller \
+is responsible for correctness, and no absolute-IRI requirement is \
 imposed.  Mutually exclusive with `borrow=true'."))))
 
 (defconst elot-gptel--spec-db-query
