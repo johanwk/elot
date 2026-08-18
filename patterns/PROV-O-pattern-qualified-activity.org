@@ -93,7 +93,7 @@ procedure]]. Specific to /this/ pattern:
   convention in the target ontology's header rather than deciding it
   per application.
 
-*** Required constants (borrow these first)                     :nodeclare:
+*** Required constants                                          :nodeclare:
 :PROPERTIES:
 :ID: PROV-O-pattern-qualified-activity-constants
 :END:
@@ -158,7 +158,7 @@ Three differences:
 
 1. *Control.* =IDO-pattern-idef0= notes that its C leg assumes
    vocabulary the pattern does not supply (a target ontology with no
-   information-entity hierarchy had to borrow and mint one before a
+   information-entity hierarchy had to add or create one before a
    Control could be stated). PROV-O supplies it: ~prov:Plan~ comes
    with the vocabulary. So the C-leg gap comes from IDO's scope, not
    from the IDEF0 idiom.
@@ -250,25 +250,25 @@ or mint its role.
 
 *** Activity (prov:Activity)
  - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 *** Entity (prov:Entity)
  - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** Plan (prov:Plan)
  - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 *** Agent (prov:Agent)
  - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 *** Role (prov:Role)
  - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 *** Usage (prov:Usage)
  - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 *** Association (prov:Association)
  - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 
 ** Object properties
 :PROPERTIES:
@@ -278,31 +278,31 @@ or mint its role.
 
 *** used (prov:used)
  - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 *** generated (prov:generated)
  - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 *** wasAssociatedWith (prov:wasAssociatedWith)
  - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 *** qualifiedUsage (prov:qualifiedUsage)
  - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 *** qualifiedAssociation (prov:qualifiedAssociation)
  - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 *** entity (prov:entity)
  - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 *** agent (prov:agent)
  - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 *** hadRole (prov:hadRole)
  - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 *** hadPlan (prov:hadPlan)
  - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o>
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 
 ** Data properties
 :PROPERTIES:

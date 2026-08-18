@@ -93,7 +93,7 @@ procedure]]. Specific to /this/ pattern:
   ~lis:realizes~, ~lis:activeParticipantIn~) per the shared
   ergonomics rules. They are not part of the minimal pattern.
 
-*** Required constants (borrow these first)                     :nodeclare:
+*** Required constants                                          :nodeclare:
 :PROPERTIES:
 :ID: IDO-pattern-function-constants
 :END:
@@ -180,19 +180,19 @@ pattern.
 :END:
 *** lis:Object
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** var:FunctionBearerClass
  - pattern:action :: BIND
  - pattern:instruction :: The class of the object that bears the function. Normally already declared in the target ontology (Canopy, Pump, Door). Do not assert it as a subclass of ~lis:FunctionalObject~: IDO infers that classification from the function itself.
 *** lis:Capability
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** lis:Function
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 *** lis:Activity
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** var:RealizingActivityKind
  - pattern:action :: BIND_OR_MINT
  - pattern:instruction :: The kind of activity in which functions of this sort are realized (pumping, rain-shielding, nail-driving). This is the TBox slot of the pattern: established once per ontology and reused by every later application for the same kind of function, so FIRST search the target file for an existing activity class before minting. Mint in the domain namespace, nested under ~lis:Activity~. Note that IDO provides no relation from a function to the activity type realizing it, so this class is linked to the pattern only through the individual-level ~lis:realizedIn~ row.
@@ -203,19 +203,19 @@ pattern.
 :END:
 *** lis:hasCapability
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** lis:hasFunction
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 *** lis:realizedIn
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 *** lis:hasParticipant
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** lis:hasActiveParticipant
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 ** Annotation properties
 :PROPERTIES:
 :ID:       IDO-pattern-function-annotation-property-hierarchy

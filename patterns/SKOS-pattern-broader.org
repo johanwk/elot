@@ -96,7 +96,7 @@ because a resource may be declared by only one heading, the second
 link must be written as an explicit ~Facts :: skos:broader ...~ row on
 the narrower concept -- the one exception to the rule above.
 
-*** Required constants (borrow these first)                     :nodeclare:
+*** Required constants                                          :nodeclare:
 :PROPERTIES:
 :ID: SKOS-pattern-broader-constants
 :END:
@@ -145,7 +145,7 @@ without either concept carrying a ~skos:broader~ description-list row.
 
 *** Concept (skos:Concept)
  - rdfs:isDefinedBy :: <http://www.w3.org/2004/02/skos/core>
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 
 ** Object properties
 :PROPERTIES:
@@ -154,8 +154,8 @@ without either concept carrying a ~skos:broader~ description-list row.
 :END:
 
 *** broader (skos:broader)
- - pattern:action :: BORROW
  - rdfs:isDefinedBy :: <http://www.w3.org/2004/02/skos/core>
+ - pattern:action :: CONSTANT
 
 ** Data properties
 :PROPERTIES:

@@ -8,7 +8,6 @@
 See [[file:pattern-framework.org][pattern-framework.org]] for the framework, [[file:pattern-vocabulary.org][pattern-vocabulary.org]] for
 the =pattern:= vocabulary, and [[file:README.org][README.org]] for the library index.
 
-
 * IOF-pattern-information-about
 :PROPERTIES:
 :ID:       IOF-pattern-information-about
@@ -71,10 +70,10 @@ The generic procedure is in [[file:pattern-framework.org::*Applying a pattern: t
 procedure]]. Specific to /this/ pattern:
 
 - *First select one or more aboutness legs.* Use the table in
-  [[*Required constants (borrow these first)][Required constants (borrow these first)]]. A leg is selected only when its
+  [[*Required constants][Required constants]]. A leg is selected only when its
   stated mode is present. The four legs are independent and complementary:
-  choose any non-empty subset, and do not create resources merely to fill
-  unused legs.
+  choose any non-empty subset, and do not create variable resources merely to
+  fill unused legs. Add every resource marked =pattern:action :: CONSTANT=.
 - *Do not use ~designates~ merely because a value looks like a name.*
   It is functional and therefore commits each designative information
   content entity to one subject. Use it for a VIN, serial number, URI,
@@ -88,8 +87,8 @@ procedure]]. Specific to /this/ pattern:
   it as providing a value that directly represents an entity. The
   aboutness relation says what the information is about; ~prov:value~
   only carries the value.
-- *NEVER import the PROV-O ontology.* It isn't DL compliant. Only
-  borrow the ~prov:value~ data property.
+- *NEVER import the PROV-O ontology.* It isn't DL compliant. Add or
+  reuse only the ~prov:value~ data property declared by this pattern.
 - *Bind the subject (var:TheEntity) before minting information
   resources.* The same entity may be the subject of several information
   content entities. Search for and reuse it; do not mint a duplicate
@@ -113,14 +112,16 @@ on the inverse rows. Repeated information of one mode is handled by binding
 ~var:TheEntity~ and applying that leg again with a newly minted information
 resource.
 
-*** Required constants (borrow these first)                     :nodeclare:
+*** Required constants                                          :nodeclare:
 :PROPERTIES:
 :ID: IOF-pattern-information-about-constants
 :END:
 
-Select legs with this table. Borrow the constants in the selected rows,
-including both relation directions. The defined class is asserted explicitly
-so the result remains informative without inference.
+Add every resource marked =pattern:action :: CONSTANT=. Declarations without
+that marker are ontology scaffolding, not pattern inputs. Use this table only to
+select the variable instance legs. For each selected leg, assert the defined
+class and both relation directions so the result remains informative without
+inference.
 
 #+caption: Leg selection and required constants
 | leg          | select when the information ...                  | required defined class                 | forward relation | inverse relation |
@@ -130,12 +131,12 @@ so the result remains informative without inference.
 | description  | characterizes an entity                          | ~iof-constr:DescriptiveInformationContentEntity~ | ~iof-constr:describes~        | ~iof-constr:describedBy~     |
 | prescription | states rules and regulations for an entity       | ~iof-constr:DirectiveInformationContentEntity~   | ~iof-constr:prescribes~       | ~iof-constr:prescribedBy~    |
 
-For any selected leg also borrow ~iof-constr:InformationContentEntity~ and
-the source parents needed to retain the class and property hierarchy:
-~iof-constr:isAbout~ for forward relations and ~iof-constr:isSubjectOf~ for
-inverse relations. Borrow ~prov:value~ for the shared literal-value carrier.
-PROV-O defines it as an ~owl:DatatypeProperty~ that provides a value directly
-representing an entity. Borrow this property without importing PROV-O.
+The fixed constants also include ~iof-constr:InformationContentEntity~,
+~iof-constr:isAbout~, ~iof-constr:isSubjectOf~, and ~prov:value~. Preserve the
+hierarchy declared in this pattern. Do not add source ancestors that the
+pattern does not declare. PROV-O defines ~prov:value~ as an
+~owl:DatatypeProperty~ that provides a value directly representing an entity.
+Reuse this property without importing PROV-O.
 
 *** Cardinality and inference commitments                        :nodeclare:
 :PROPERTIES:
@@ -249,19 +250,22 @@ the meaning of the four IOF aboutness relations.
 
 *** Information content entity (iof-constr:InformationContentEntity)
  - rdfs:isDefinedBy :: iof-core:
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** Denoter (iof-constr:Denoter)
  - rdfs:isDefinedBy :: iof-core:
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
+***** Identifier (iof-constr:Identifier)
+ - rdfs:isDefinedBy :: iof-core:
+ - pattern:action :: CONSTANT
 **** Descriptive information content entity (iof-constr:DescriptiveInformationContentEntity)
  - rdfs:isDefinedBy :: iof-core:
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** Designative information content entity (iof-constr:DesignativeInformationContentEntity)
  - rdfs:isDefinedBy :: iof-core:
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** Directive information content entity (iof-constr:DirectiveInformationContentEntity)
  - rdfs:isDefinedBy :: iof-core:
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 
 ** Object properties
 :PROPERTIES:
@@ -271,34 +275,34 @@ the meaning of the four IOF aboutness relations.
 
 *** is about (iof-constr:isAbout)
  - rdfs:isDefinedBy :: iof-core:
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** denotes (iof-constr:denotes)
  - rdfs:isDefinedBy :: iof-core:
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 ***** designates (iof-constr:designates)
  - rdfs:isDefinedBy :: iof-core:
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** describes (iof-constr:describes)
  - rdfs:isDefinedBy :: iof-core:
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** prescribes (iof-constr:prescribes)
  - rdfs:isDefinedBy :: iof-core:
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 *** is subject of (iof-constr:isSubjectOf)
  - rdfs:isDefinedBy :: iof-core:
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** denoted by (iof-constr:denotedBy)
  - rdfs:isDefinedBy :: iof-core:
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 ***** designated by (iof-constr:designatedBy)
  - rdfs:isDefinedBy :: iof-core:
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** described by (iof-constr:describedBy)
  - rdfs:isDefinedBy :: iof-core:
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** prescribed by (iof-constr:prescribedBy)
  - rdfs:isDefinedBy :: iof-core:
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 
 ** Data properties
 :PROPERTIES:
@@ -308,8 +312,8 @@ the meaning of the four IOF aboutness relations.
 
 *** PROV value (prov:value)
  - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o#>
- - rdfs:comment :: Borrowed from PROV-O without importing PROV-O; only the prov:value identifier is reused here.
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
+ - rdfs:comment :: Reused from PROV-O without importing PROV-O; only the prov:value identifier is used here.
 
 ** Annotation properties
 :PROPERTIES:
@@ -375,7 +379,7 @@ the meaning of the four IOF aboutness relations.
  - Facts :: prov:value "denoter value"
    - pattern:value :: xsd:string
  - pattern:action :: MINT
- - pattern:instruction :: A non-unique denoter that distinguishes TheEntity, such as a model name. Assert the defined class, both relation directions, and its value on prov:value. If it uniquely identifies one entity in context, use the designative leg instead.
+ - pattern:instruction :: A not necessarily unique denoter that distinguishes TheEntity, such as a model name. Assert the defined class, both relation directions, and its value on prov:value. If it uniquely identifies one entity in context, use the designative leg instead.
 
 **** var:TheDescriptiveInformation
  - Types :: iof-constr:DescriptiveInformationContentEntity

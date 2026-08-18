@@ -121,7 +121,7 @@ correlated across them. It relies on the anchor slot being
 and should be made consciously in any future pattern with a repeatable
 leg.
 
-*** Required constants (borrow these first)                     :nodeclare:
+*** Required constants                                          :nodeclare:
 :PROPERTIES:
 :ID: IDO-pattern-participation-constants
 :END:
@@ -178,13 +178,13 @@ above.
 :END:
 *** lis:Activity
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** var:ActivityKind
  - pattern:action :: BIND_OR_MINT
  - pattern:instruction :: The kind of activity in which the participation takes place (Pumping, Umbrella assembly, Nail driving). The TBox slot of this pattern: established once per ontology and reused by every later application, so FIRST search the target file for an existing activity class before minting. Mint nested under ~lis:Activity~.
 *** lis:Object
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** var:ActiveParticipantClass
  - pattern:action :: BIND
  - pattern:instruction :: The class of the object that acts -- the tool, agent or performer. Normally already declared in the target ontology.
@@ -198,13 +198,13 @@ above.
 :END:
 *** lis:hasParticipant
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** lis:hasActiveParticipant
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** lis:hasPassiveParticipant
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 ** Annotation properties
 :PROPERTIES:
 :ID:       IDO-pattern-participation-annotation-property-hierarchy

@@ -76,7 +76,7 @@ procedure]]. Specific to /this/ pattern:
 - The literal to supply is the ~lis:datumValue~ magnitude, e.g.
   ~"0.4"^^xsd:decimal~.
 
-*** Required constants (borrow these first)                     :nodeclare:
+*** Required constants                                          :nodeclare:
 :PROPERTIES:
 :ID: IDO-pattern-quantity-datum-fullform-constants
 :END:
@@ -86,7 +86,7 @@ All from ~lis-ont:core~ (IDO): the classes ~lis:PhysicalObject~,
 ~lis:UnitOfMeasure~; the object properties ~lis:hasPhysicalQuantity~ /
 ~lis:physicalQuantityOf~, ~lis:qualityQuantifiedAs~ /
 ~lis:quantifiesQuality~, ~lis:datumUOM~; and the data property
-~lis:datumValue~. Nest each borrowed property under its correct IDO
+~lis:datumValue~. Nest each property under its correct IDO
 super-property.
 
 *** Worked example: thickness of a piece of fabric              :nodeclare:
@@ -150,25 +150,25 @@ whenever the quality or the datum may later need to be referred to.
 :END:
 *** lis:PhysicalObject
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** var:DomainClass
  - pattern:action :: BIND
  - pattern:instruction :: An object type declared in domain ontology. Examples: Umbrella, Table, Street. The domain class of the object being described (normally already in the file).
 *** lis:PhysicalQuantity
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** var:DomainQuantityKind
  - pattern:action :: BORROW_OR_MINT
  - pattern:instruction :: A domain ontology quality. Examples: Length, Mass, Viscosity. Usually a QUDT ~quantitykind:~ borrowed; mint if none fits.
 *** lis:ScalarQuantityDatum
- - pattern:action :: BORROW
  - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: CONSTANT
 **** var:DomainScalarQuantityDatumType
  - pattern:action :: BIND
  - pattern:instruction :: The datum kind, usually ~lis:ScalarQuantityDatum~ itself or a generic subtype (e.g. "measured", "nominal"); avoid per-use-case datum types.
 *** lis:UnitOfMeasure
- - pattern:action :: BORROW
  - rdfs:isDefinedBy :: lis-ont:core
+ - pattern:action :: CONSTANT
 ** Object properties
 :PROPERTIES:
 :ID:       IDO-pattern-quantity-datum-fullform-object-property-hierarchy
@@ -176,19 +176,19 @@ whenever the quality or the datum may later need to be referred to.
 :END:
 *** lis:hasPhysicalQuantity
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 *** lis:physicalQuantityOf
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 *** lis:qualityQuantifiedAs
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 *** lis:quantifiesQuality
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 *** lis:datumUOM
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 ** Data properties
 :PROPERTIES:
 :ID:       IDO-pattern-quantity-datum-fullform-data-property-hierarchy
@@ -196,7 +196,7 @@ whenever the quality or the datum may later need to be referred to.
 :END:
 *** lis:datumValue
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 ** Annotation properties
 :PROPERTIES:
 :ID:       IDO-pattern-quantity-datum-fullform-annotation-property-hierarchy

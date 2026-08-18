@@ -91,7 +91,7 @@ procedure]]. Specific to /this/ pattern:
   nested under ~lis:quantifiesQualityOf~. It is not part of the
   minimal pattern.
 
-*** Required constants (borrow these first)                     :nodeclare:
+*** Required constants                                          :nodeclare:
 :PROPERTIES:
 :ID: IDO-pattern-quantity-shortcut-object-constants
 :END:
@@ -172,7 +172,7 @@ mass is recorded only by the name and the annotations of ~ex:hasMass~.
 
 *Second application, same ontology.* To state that ~ex:pump-7~ has a
 mass of 40 kg, only the ABox slots are filled anew: a fresh datum
-individual, a fresh literal, the unit borrowed again. ~ex:hasMass~ is
+individual, a fresh literal, and the same unit resolved again. ~ex:hasMass~ is
 bound, not minted -- and if its ~Domain~ was left as ~ex:Motor~, widen
 it (to ~lis:PhysicalObject~, or drop the domain axiom) rather than
 mint an ~ex:pumpHasMass~.
@@ -226,22 +226,22 @@ use the full form now.
 :END:
 *** lis:PhysicalObject
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** var:DomainClass
  - pattern:action :: BIND
  - pattern:instruction :: An object type declared in the domain ontology. Examples: Motor, Umbrella, Street. The domain class of the object being described (normally already in the file).
 *** lis:QualityDatum
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** lis:ScalarQuantityDatum
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 ***** var:DomainScalarQuantityDatumType
  - pattern:action :: BIND
  - pattern:instruction :: The datum kind, usually ~lis:ScalarQuantityDatum~ itself or a generic subtype (e.g. "measured", "nominal"); avoid per-use-case datum types.
 *** lis:UnitOfMeasure
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 ** Object properties
 :PROPERTIES:
 :ID:       IDO-pattern-quantity-shortcut-object-object-property-hierarchy
@@ -249,7 +249,7 @@ use the full form now.
 :END:
 *** lis:hasQualityQuantifiedAs
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** var:shortcutQuantityProperty
  - Domain :: var:DomainClass
  - Range :: var:DomainScalarQuantityDatumType
@@ -257,7 +257,7 @@ use the full form now.
  - pattern:instruction :: The shortcut relation from object to datum. FIRST check whether the target ontology already declares a shortcut property for this quality kind -- a sub-property of ~lis:hasQualityQuantifiedAs~ whose quantity-kind annotation matches; if so, BIND it and mint nothing. This property is TBox: it is established once and reused by every later application for the same quality, so a second object needing a mass reuses the existing ~ex:hasMass~. Only if no such property exists, mint it in the domain namespace with a name stating the quality kind, e.g. ~ex:hasMass~, ~ex:hasThickness~ -- that name is the only record of which quality is quantified, since no quality individual is created. Annotate the minted property with the intended quantity kind (a QUDT ~quantitykind:~ IRI) and, where relevant, the quantification type (measured, nominal). Keep it nested under ~lis:hasQualityQuantifiedAs~.
 *** lis:datumUOM
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 ** Data properties
 :PROPERTIES:
 :ID:       IDO-pattern-quantity-shortcut-object-data-property-hierarchy
@@ -265,7 +265,7 @@ use the full form now.
 :END:
 *** lis:datumValue
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 ** Annotation properties
 :PROPERTIES:
 :ID:       IDO-pattern-quantity-shortcut-object-annotation-property-hierarchy

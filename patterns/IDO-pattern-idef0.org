@@ -221,7 +221,7 @@ will not interoperate without alignment. That is the price of the
 missing RDL, and it is one ~owl:equivalentProperty~ row per relation
 when an RDL appears.
 
-*** Required constants (borrow these first)                     :nodeclare:
+*** Required constants                                          :nodeclare:
 :PROPERTIES:
 :ID: IDO-pattern-idef0-constants
 :END:
@@ -332,13 +332,13 @@ individual is the IDEF0 arrow between the two boxes.
 :END:
 *** lis:Activity
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** var:ActivityKind
  - pattern:action :: BIND_OR_MINT
  - pattern:instruction :: The kind of activity -- the IDEF0 box, named as engineers name it (Stamping, Inspection, Heat treatment). The TBox slot of this pattern: established once per ontology and reused by every later application, so FIRST search the target file for an existing activity class before minting. Mint nested under ~lis:Activity~.
 *** lis:Object
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** var:InputClass
  - pattern:action :: BIND
  - pattern:instruction :: The class of the object that is transformed or consumed by the activity. Normally already declared in the target ontology.
@@ -359,19 +359,19 @@ individual is the IDEF0 arrow between the two boxes.
 :END:
 *** lis:hasParticipant
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** var:hasControl
  - pattern:action :: BIND_OR_MINT
  - pattern:instruction :: The IDEF0 Control leg. Deliberately NOT nested under lis:hasActiveParticipant or lis:hasPassiveParticipant -- a control neither acts nor is acted upon, so it hangs directly from lis:hasParticipant. Bind-first: one control relation per ontology, shared by every activity kind. Leave its Range open (inherited lis:Object): controls range from specifications and procedures to process controllers and jigs.
 **** lis:hasActiveParticipant
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 ***** var:hasMechanism
  - pattern:action :: BIND_OR_MINT
  - pattern:instruction :: The IDEF0 Mechanism leg: the agent, tool or resource performing the activity. Nested under lis:hasActiveParticipant, which is exactly IDO's notion of the participant that acts. Bind-first.
 **** lis:hasPassiveParticipant
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 ***** var:hasInput
  - pattern:action :: BIND_OR_MINT
  - pattern:instruction :: The IDEF0 Input leg: the object transformed or consumed. Nested under lis:hasPassiveParticipant. Bind-first.

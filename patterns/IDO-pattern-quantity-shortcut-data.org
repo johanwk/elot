@@ -83,7 +83,7 @@ Specific to /this/ pattern:
   quantification type (measured, nominal, ...) and the unit of
   measure. Do that; see /Recording the unit/ below.
 
-*** Required constants (borrow these first)                     :nodeclare:
+*** Required constants                                          :nodeclare:
 :PROPERTIES:
 :ID: IDO-pattern-quantity-shortcut-data-constants
 :END:
@@ -95,7 +95,7 @@ of shortcut relations that combine quality and unit of measure into a
 single, simple data property" -- which is exactly this pattern).
 
 If the chosen unit-recovery option is the annotation one (below), also
-borrow ~lis:UnitOfMeasure~ and the unit individual itself.
+add ~lis:UnitOfMeasure~ and resolve the unit individual itself.
 
 *** Recording the unit                                          :nodeclare:
 :PROPERTIES:
@@ -228,7 +228,7 @@ mass.
 :END:
 *** lis:PhysicalObject
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** var:DomainClass
  - pattern:action :: BIND
  - pattern:instruction :: An object type declared in the domain ontology. Examples: Valve, Motor, Umbrella. The domain class of the object being described (normally already in the file).
@@ -244,7 +244,7 @@ mass.
 :END:
 *** lis:qualityQuantityValue
  - rdfs:isDefinedBy :: lis-ont:core
- - pattern:action :: BORROW
+ - pattern:action :: CONSTANT
 **** var:shortcutQuantityValueProperty
  - Domain :: var:DomainClass
  - Range :: xsd:decimal
