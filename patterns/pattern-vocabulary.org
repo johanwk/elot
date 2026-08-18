@@ -83,9 +83,9 @@ procedure --- see [[file:pattern-framework.org][pattern-framework.org]].
 :END:
 *** Active in v1                                                  :nodeclare:
 **** action (pattern:action)
- - rdfs:comment :: "A controlled keyword stating what to do with the annotated resource when applying the pattern: BORROW (reuse from an external ontology), BIND (reuse a resource already in the target file), MINT (create a fresh CURIE), BORROW_OR_MINT, MINT_OR_BIND (mint-first), or BIND_OR_MINT (bind-first: reuse an existing in-file resource that fills the slot, mint only if none does -- the usual marking for a TBox slot that later applications of the same pattern must share). The order in the compound keywords names the default; the second option is the exception that needs a reason. Removed on instantiation."@en
+ - rdfs:comment :: "A controlled keyword stating the instantiation role of a pattern resource. CONSTANT marks a fixed resource whose identity is preserved. On a var: resource, BORROW selects an external resource, BIND selects a resource already in the target, and MINT creates a fresh target resource; BORROW_OR_MINT, BIND_OR_MINT, and MINT_OR_BIND state the normal choice first and the fallback second. Resources without an action are pattern scaffolding, not inputs to instantiation. Removed on instantiation."@en
 **** instruction (pattern:instruction)
- - rdfs:comment :: "Free-text guidance for filling the annotated placeholder slot when applying the pattern. Removed on instantiation."@en
+ - rdfs:comment :: "Plain guidance for replacing a var: resource or applying a conditional axiom. Removed on instantiation."@en
 **** value (pattern:value)
  - rdfs:comment :: "Marks the literal value of the annotated axiom (typically a lis:datumValue Facts row) as a variable placeholder, and states its datatype (e.g. xsd:decimal). A literal cannot be given a var: CURIE, so the placeholder is marked by annotating the axiom in which the literal occurs. The value is supplied when the pattern is applied, and the annotation is removed on instantiation."@en
 **** appliedPattern (pattern:appliedPattern)
