@@ -7,16 +7,6 @@ authors:
     orcid: https://orcid.org/0000-0002-7167-7321
     email: johan.w.kluwer@gmail.com
     affiliation: DNV
-  - family-names: Alexiev
-    given-names: Vladimir
-    orcid: https://orcid.org/0000-0001-7508-7428
-    email: vladimir.alexiev@graphwise.ai
-    affiliation: Graphwise
-  - family-names: Melinda
-    given-names: Hodkiewicz
-    orcid: https://orcid.org/0000-0002-7336-3932
-    email: melinda.hodkiewicz@uwa.edu.au
-    affiliation: The University of Western Australia
 version: 2.0.0
 date-released: 2026-04-04
 license: GPL-3.0
@@ -34,9 +24,3 @@ keywords:
   - Documentation
   - Software Tool
   - Lisp
-references:
-  - type: conference-paper
-    title: "ELOT: Literate Ontology and Standards Authoring"
-    year: "2025"
-    status: "in preparation"
-    
