@@ -311,7 +311,7 @@ the meaning of the four IOF aboutness relations.
 :END:
 
 *** PROV value (prov:value)
- - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov-o#>
+ - rdfs:isDefinedBy :: <http://www.w3.org/ns/prov#>
  - pattern:action :: CONSTANT
  - rdfs:comment :: Reused from PROV-O without importing PROV-O; only the prov:value identifier is used here.
 
