@@ -162,6 +162,15 @@ pipeline.
   This will return \"ontology\" if point is under a heading that
   declares an ontology."
     (org-entry-get-with-inheritance "ELOT-context-type"))
+  (defun elot-in-ontology-p (&optional pos)
+    "Return non-nil when POS (default point) sits inside an ontology heading.
+  This is the positive test used by readers, writers and lint to
+  decide whether a heading is ontology source.  It is false inside
+  any subtree whose `ELOT-context-type' is something else, such as
+  a pattern tracker, and false outside any ELOT context."
+    (save-excursion
+      (when pos (goto-char pos))
+      (equal (elot-context-type) "ontology")))
   (defun elot-context-localname ()
     "Retrieve value of property ELOT-context-localname for a governing heading.
   This will return the localname of the ontology
@@ -716,10 +725,25 @@ Functions that take an ontology AST node and extract specific components (prefix
     "Iteratively parse headlines from org-element TREE into a nested AST.
   Creates a dummy root at level 0 to handle multiple top-level ontologies."
     (let* ((dummy-root (list :level 0 :title "ROOT" :descriptions nil :children nil))
-           (stack (list dummy-root)))
+           (stack (list dummy-root))
+           ;; Level of a heading whose `:ELOT-context-type:' is set to
+           ;; something other than "ontology" (for instance a pattern
+           ;; tracker).  Such a heading and everything under it is not
+           ;; ontology source, so it is skipped entirely.
+           (skip-level nil))
       (org-element-map tree 'headline
         (lambda (hl)
-          (let ((level (org-element-property :level hl)))
+          (let ((level (org-element-property :level hl))
+                (own-context (org-element-property :ELOT-CONTEXT-TYPE hl)))
+            ;; Leave a skipped subtree once we are back at its level or above.
+            (when (and skip-level (<= level skip-level))
+              (setq skip-level nil))
+            (cond
+             (skip-level nil)
+             ((and own-context (not (equal own-context "ontology")))
+              (setq skip-level level)
+              nil)
+             (t
             ;; Pop the stack until the top node's level is strictly less than current level
             (while (>= (plist-get (car stack) :level) level)
               (pop stack))
@@ -833,7 +857,7 @@ Functions that take an ontology AST node and extract specific components (prefix
                 (plist-put parent :children (cons node (plist-get parent :children))))
               
               ;; Push current node onto stack
-              (push node stack))))
+              (push node stack))))))
         ;; NO-RECURSION is nil, so it maps depth-first over all headlines
         nil nil nil)
 
@@ -1005,7 +1029,11 @@ conventional suffix.  Only the first match per name is patched."
             (unless (gethash name seen)
               (let ((hl (org-element-at-point)))
                 (when (and (eq (org-element-type hl) 'headline)
-                           (= (org-element-property :level hl) 2))
+                           (= (org-element-property :level hl) 2)
+                           ;; Only patch sections that belong to an
+                           ;; ontology.  A section heading inside, say, a
+                           ;; pattern tracker is not ontology source.
+                           (elot-in-ontology-p))
                   ;; Find the ontology context prefix for the ID
                   (let* ((parent-id
                           (or (org-entry-get-with-inheritance "ELOT-context-localname")

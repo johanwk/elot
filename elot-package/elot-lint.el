@@ -66,6 +66,18 @@ under a heading with :ELOT-context-type: ontology that also inherit
   (and (elot--inside-ontology-context-p)
        (elot--inside-resourcedefs-p)))
 
+(defun elot--lint-in-ontology-p (&optional pos)
+  "Return non-nil when POS (default point) is inside an ontology heading.
+Uses the positive predicate `elot-in-ontology-p' from `elot-tangle',
+so headings inside a pattern tracker (or any other non-ontology
+context) are not linted as ontology source.  Degrades to t when
+`elot-tangle' is not loaded."
+  (save-excursion
+    (when pos (goto-char pos))
+    (if (fboundp 'elot-in-ontology-p)
+        (elot-in-ontology-p)
+      t)))
+
 (defun elot--heading-nodeclare-p ()
   "Return t when the heading at point or any ancestor has tag :nodeclare:.
 Walks up the outline tree checking each ancestor's tags."
@@ -87,6 +99,7 @@ Checks the immediately enclosing headline and its ancestors."
       (or (member "nodeclare" (org-get-tags nil t))
           (elot--heading-nodeclare-p)))))
 
+(declare-function elot-in-ontology-p "elot-tangle")
 (declare-function elot-entity-from-header "elot-tangle")
 (declare-function elot-unprefix-uri "elot-tangle")
 (declare-function elot-context-type "elot-tangle")
@@ -302,7 +315,7 @@ need to declare custom datatypes."
             (let ((id (org-entry-get nil "ID"))
                   (resourcedefs (org-entry-get nil "resourcedefs"))
                   (pos (point)))
-              (when id
+              (when (and id (elot--lint-in-ontology-p))
                 (push (cons id (list resourcedefs pos))
                       headline-alist)))))
 
@@ -347,7 +360,8 @@ catches that class of typo at lint time."
       (lambda (hl)
         (goto-char (org-element-property :begin hl))
         (let ((id (org-entry-get nil "ID")))
-          (when (and id (string-suffix-p "-ontology-declaration" id))
+          (when (and id (string-suffix-p "-ontology-declaration" id)
+                     (elot--lint-in-ontology-p))
             (let* ((title (org-get-heading nil t t t))
                    (entity (condition-case nil
                                (elot-entity-from-header title 'noerror)
@@ -1545,6 +1559,7 @@ https://oops.linkeddata.es/catalogue.jsp#P08."
                          (org-element-interpret-data title-raw)))))
           (when (and (stringp title)
                      (string-match elot--oops-resource-curie-re title)
+                     (elot--lint-in-ontology-p begin)
                      (not (member "nodeclare"
                                   (org-element-property :tags hl)))
                      (not (elot--oops-in-ranges-p begin nodeclare-ranges)))

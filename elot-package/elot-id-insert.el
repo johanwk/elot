@@ -686,10 +686,11 @@ must have a string head; its tail is the list of child nodes."
   "Move point to the heading line whose title ends in `(CURIE)'.
 Searches the whole buffer.  Signals an error if not found."
   (goto-char (point-min))
-  (unless (re-search-forward
-           (elot-id-heading-curie-regexp curie) nil t)
-    (error "ELOT-insert-labels-tree: cannot locate inserted heading for %s"
-           curie))
+  (let ((pos (elot-id-search-heading-curie curie)))
+    (unless pos
+      (error "ELOT-insert-labels-tree: cannot locate inserted heading for %s"
+             curie))
+    (goto-char pos))
   (beginning-of-line))
 
 ;;;###autoload

@@ -10,19 +10,31 @@ executable template.
 * Apply a pattern
 
 1. Read the pattern's application rules, example, and warning.
-2. Inspect the target. Do not invent missing data.
-3. Add every resource marked =pattern:action :: CONSTANT=, even when an
-   optional leg does not use it. Use its exact CURIE, label, kind, and
+2. Inspect the target with =elot_resources=. Do not invent missing data.
+3. Select any optional legs. Create a progress checklist with
+   =elot_pattern_tracker action=create=, naming the pattern file and listing
+   the resources of unselected legs in =dropped_legs=. Its reply is your
+   worklist: a resource already present and cited starts DONE, present but
+   uncited starts STARTED, the rest start TODO. Do not re-declare a resource
+   reported as DONE.
+4. Add every outstanding resource marked =pattern:action :: CONSTANT=, even when
+   an optional leg does not use it. Use its exact CURIE, label, kind, and
    =rdfs:isDefinedBy=. Call =elot_declare_resource= with =borrow=false= and
    =defined_by= set from the pattern. Do not search the database for a constant.
-4. Preserve hierarchy between constants declared in the pattern. Do not add
+   This also sets that constant's tracker heading DONE.
+5. Preserve hierarchy between constants declared in the pattern. Do not add
    source ancestors that the pattern does not declare.
-5. Select any optional legs. Resolve the =var:= resources in selected legs by
-   their actions. Keep selected legs complete and omit unselected legs.
-6. Use the database only when a variable action requires discovery, such as
+6. Resolve the =var:= resources in selected legs by their actions. Keep
+   selected legs complete and omit unselected legs. When minting a resource for
+   a =var:= slot, pass =tracker_started= with that slot's heading.
+7. Use the database only when a variable action requires discovery, such as
    =BORROW_OR_MINT=. Confirm the selected resource's identity and kind.
-7. Reproduce the selected axioms, remove template annotations, add
-   =pattern:appliedPattern= where directed, and run =elot_check=.
+8. Reproduce the selected axioms with =elot_edit_axioms=, passing
+   =tracker_done= with the headings that batch finishes. A leg is not done
+   until its axioms are in place.
+9. Remove template annotations, add =pattern:appliedPattern= where directed,
+   run =elot_check=, then remove the checklist with
+   =elot_pattern_tracker action=delete=.
 
 =CONSTANT= applies only to fixed resources; all other actions apply only to
 =var:= resources. A declaration without an action is pattern scaffolding and is

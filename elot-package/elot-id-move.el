@@ -193,9 +193,8 @@ heading line."
   (let (markers)
     (save-excursion
       (goto-char (point-min))
-      (let ((re (elot-id-heading-curie-regexp curie)))
-        (while (re-search-forward re nil t)
-          (push (copy-marker (line-beginning-position)) markers))))
+      (dolist (pos (elot-id-heading-curie-positions curie))
+        (push (copy-marker pos) markers)))
     (nreverse markers)))
 
 (defun elot-id-move--resolve-source-marker (source)

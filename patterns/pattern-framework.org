@@ -156,22 +156,72 @@ complete a part.
 For repeated parts, record one set of bindings for each repetition. Reuse a
 shared anchor when the pattern says it may be bound.
 
+* The pattern tracker
+
+=elot_pattern_tracker= keeps a small checklist inside the target file while one
+pattern is applied to it. It lists one heading per pattern resource, each TODO,
+STARTED, DONE, or DONE with the =:cancelled:= tag. Use it for every application.
+It survives an interruption and it prevents rework when a pattern is applied a
+second time.
+
+Create it after inspecting the target and after selecting the parts to apply:
+
+#+begin_example
+elot_pattern_tracker action=create target_file=TARGET.org
+  pattern_file=THE-PATTERN.org
+  dropped_legs=[ ... CURIEs of resources in unselected parts ... ]
+#+end_example
+
+The reply is the worklist. A resource already declared in the target does not
+start at TODO: it starts DONE when its declaration carries an
+=rdfs:isDefinedBy= row, and STARTED when it does not. STARTED means the heading
+exists but its axioms or provenance are still missing, so it counts as
+outstanding work. Resources named in =dropped_legs= start DONE and cancelled.
+
+Do not re-declare a resource the tracker reports as DONE.
+
+The headings then move on by themselves as the work is done:
+
+- =elot_declare_resource= with =defined_by= sets a constant's own heading DONE.
+  The heading is matched by its CURIE, so nothing extra is needed.
+- =elot_declare_resource= for a minted resource cannot match a =var:= heading,
+  so pass =tracker_started= with the =var:= heading it fills. The heading goes
+  to STARTED, because a declaration alone does not finish a leg.
+- =elot_edit_axioms= (or =elot_edit_axiom=) with =tracker_done= sets those
+  headings DONE, but only after the batch is committed and revalidated. This is
+  the call that finishes a leg, so name the leg's heading here.
+- =elot_pattern_tracker action=set_state= is the fallback for anything the
+  automatic flips cannot express.
+
+=action=status= reports the remaining work at any time. When the last heading
+is done, remove the checklist with =action=delete=; it refuses while TODO or
+STARTED headings remain.
+
+The tracker records progress only. It does not check that a declaration agrees
+with the pattern. Consult the pattern file for the rules.
+
 * Application procedure
 
 1. Read the pattern's application, selection, constants, example, and warning
    sections.
-2. Inspect the target ontology.
+2. Inspect the target ontology with =elot_resources=.
 3. Select the applicable pattern parts.
-4. Make a binding table for every selected placeholder and literal.
-5. Add all resources marked =CONSTANT= with =elot_declare_resource=,
-   =defined_by=, and =borrow=false=.
-6. Reuse or mint target resources according to each action.
-7. Check proposed axiom rows before committing them.
-8. Reproduce the selected pattern axioms with the chosen substitutions.
-9. Remove =pattern:action=, =pattern:instruction=, =pattern:value=, and other
-   template-only annotations.
-10. Add =pattern:appliedPattern= where the pattern directs.
-11. Run =elot_check= and any pattern-specific query.
+4. Create the tracker with =elot_pattern_tracker action=create=, listing the
+   resources of unselected parts in =dropped_legs=. Use its reply as the
+   worklist.
+5. Make a binding table for every selected placeholder and literal.
+6. Add the outstanding resources marked =CONSTANT= with
+   =elot_declare_resource=, =defined_by=, and =borrow=false=.
+7. Reuse or mint target resources according to each action, passing
+   =tracker_started= for each =var:= heading filled.
+8. Check proposed axiom rows before committing them.
+9. Reproduce the selected pattern axioms with the chosen substitutions, passing
+   =tracker_done= for each leg the batch finishes.
+10. Remove =pattern:action=, =pattern:instruction=, =pattern:value=, and other
+    template-only annotations.
+11. Add =pattern:appliedPattern= where the pattern directs.
+12. Run =elot_check= and any pattern-specific query.
+13. Remove the tracker with =elot_pattern_tracker action=delete=.
 
 Stop instead of guessing when:
 

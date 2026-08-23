@@ -400,6 +400,42 @@ anchor)."
           "\\(?:[ \t]+:[[:alnum:]_@#%:]+:\\)?"
           "[ \t]*$"))
 
+(declare-function elot-in-ontology-p "elot-tangle" (&optional pos))
+
+(defun elot-id-heading-in-ontology-p (&optional pos)
+  "Return non-nil when the heading at POS is ontology source.
+Thin wrapper over `elot-in-ontology-p' that degrades to t when
+`elot-tangle' is not loaded, so this file stays usable on its own."
+  (if (fboundp 'elot-in-ontology-p)
+      (elot-in-ontology-p pos)
+    t))
+
+(defun elot-id-search-heading-curie (curie &optional bound)
+  "Search forward for a heading declaring CURIE inside an ontology.
+Skips matches that are not ontology source, for instance headings
+of a pattern tracker.  On success point is left at the end of the
+matching heading line and its beginning position is returned;
+otherwise point is unchanged and nil is returned.  BOUND limits
+the search as for `re-search-forward'."
+  (let ((start (point))
+        (re (elot-id-heading-curie-regexp curie))
+        found)
+    (while (and (not found) (re-search-forward re bound t))
+      (when (elot-id-heading-in-ontology-p (line-beginning-position))
+        (setq found (line-beginning-position))))
+    (unless found (goto-char start))
+    found))
+
+(defun elot-id-heading-curie-positions (curie)
+  "Return the positions of all ontology headings declaring CURIE."
+  (let (positions)
+    (save-excursion
+      (goto-char (point-min))
+      (let (pos)
+        (while (setq pos (elot-id-search-heading-curie curie))
+          (push pos positions))))
+    (nreverse positions)))
+
 (defun elot-id--curie-split (curie)
   "Split CURIE into (PREFIX . LOCAL).  Signals on malformed input."
   (unless (string-match "\\`\\([A-Za-z_][A-Za-z0-9_-]*\\)?:\\(.+\\)\\'" curie)

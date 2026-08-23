@@ -974,6 +974,7 @@ variable so they can set a binding if they want one."
 ;; (e.g. when sqlite support is unavailable).
 (require 'elot-db nil t)
 (require 'elot-sources nil t)
+(require 'elot-pattern-tracker nil t)
 ;; src-load-entry-point ends here
 
 ;;; elot.el ends here

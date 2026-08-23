@@ -270,9 +270,8 @@ Searches the buffer for a heading shaped `* Label (CURIE)' (the
 ELOT convention)."
   (save-excursion
     (goto-char (point-min))
-    (when (re-search-forward
-           (elot-id-heading-curie-regexp curie) nil t)
-      (copy-marker (line-beginning-position)))))
+    (let ((pos (elot-id-search-heading-curie curie)))
+      (when pos (copy-marker pos)))))
 
 (defun elot-id-rename--rewrite-heading-label (curie new-label)
   "Rewrite the label portion of the heading declaring CURIE to NEW-LABEL.
@@ -286,8 +285,7 @@ trailing whitespace) is preserved verbatim.  Returns non-nil on
 success; signals `user-error' when the heading cannot be found."
   (save-excursion
     (goto-char (point-min))
-    (unless (re-search-forward
-             (elot-id-heading-curie-regexp curie) nil t)
+    (unless (elot-id-search-heading-curie curie)
       (user-error
        "ELOT-id-rename: cannot locate heading for %s to rewrite label"
        curie))
@@ -493,6 +491,9 @@ rewrites), `:iri-count' (full-IRI rewrites), `:prose-skipped'
             (when has-source
               (let ((class (elot-id-rename--line-class)))
                 (cond
+                 ;; Never touch a line that is not ontology source, for
+                 ;; instance a heading of a pattern tracker.
+                 ((not (elot-id-heading-in-ontology-p bol)) nil)
                  ((memq class '(desc-list desc-list-nested heading
                                           src-rewrite))
                   (cl-incf curie-count

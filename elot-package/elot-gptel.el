@@ -5416,6 +5416,9 @@ Applied to the synthesised draft, in addition to the OMN parse.")
 (defvar elot-omn-all-keywords) ; from elot-tangle.el (used opportunistically)
 (declare-function elot-omn-keywords-for-kind "elot-lint" (kind))
 (declare-function elot-id-heading-curie-regexp "elot-id" (curie))
+(declare-function elot-id-search-heading-curie "elot-id"
+                  (curie &optional bound))
+(declare-function elot-id-heading-in-ontology-p "elot-id" (&optional pos))
 
 (defun elot-gptel--axiom-check-declared-aps (slurp)
   "Return the list of declared annotation-property CURIEs from SLURP."
@@ -5440,17 +5443,21 @@ Signals `user-error' when neither matches."
   (require 'elot-id)
   (or (save-excursion
         (goto-char (point-min))
-        (and (re-search-forward
-              (elot-id-heading-curie-regexp curie) nil t)
-             (line-beginning-position)))
+        (elot-id-search-heading-curie curie))
       (save-excursion
         (goto-char (point-min))
         (and label
-             (re-search-forward
-              (concat "^\\*+ " (regexp-quote label) "[ \t]*$") nil t)
-             (line-beginning-position)))
+             (let (found)
+               (while (and (not found)
+                           (re-search-forward
+                            (concat "^\\*+ " (regexp-quote label) "[ \t]*$")
+                            nil t))
+                 (when (elot-id-heading-in-ontology-p
+                        (line-beginning-position))
+                   (setq found (line-beginning-position))))
+               found)))
       (user-error
-       "ELOT-gptel: cannot locate heading for %s in buffer" curie)))
+       "ELOT-gptel: cannot locate heading for %s in an ontology heading" curie)))
 
 (defun elot-gptel--axiom-synthesise-draft
     (file-contents subject-curie subject-label keyword fragment)
@@ -6192,10 +6199,32 @@ the sweep."
     (list :draft draft
           :deleted-keywords deleted-keywords)))
 
+(declare-function elot-gptel-pattern-axiom-flip "elot-gptel-pattern"
+                  (file curies))
+
+(defun elot-gptel--axiom-tracker-note (file result tracker-done dry-run)
+  "Return RESULT with a pattern-tracker note appended, when due.
+The tracker is moved on only when RESULT reports a committed,
+revalidated edit: DRY-RUN is nil and RESULT begins with `OK:'.
+A rolled-back or failed edit changes no tracker state."
+  (let ((curies (and (not dry-run)
+                     (stringp result)
+                     (string-prefix-p "OK:" result)
+                     tracker-done)))
+    (if (null curies)
+        result
+      (let ((note (ignore-errors
+                    (elot-gptel-pattern-axiom-flip
+                     (elot-gptel--resolve-file file) curies))))
+        (if note (concat result "\n" note) result)))))
+
 (defun elot-gptel-tool-edit-axiom
-    (file subject keyword &optional fragment op match-fragment)
+    (file subject keyword &optional fragment op match-fragment tracker-done)
   "Commit a single description-list row `- KEYWORD :: FRAGMENT' on SUBJECT in FILE.
 MATCH-FRAGMENT, when supplied, selects which existing row to act on.
+TRACKER-DONE names pattern-tracker headings this edit finishes;
+they are set DONE only after the edit is committed and
+revalidated.
 
 Implementation of the `elot_edit_axiom' tool.  Side-effecting -- gated by
 `elot-gptel-allow-side-effects'.
@@ -6229,7 +6258,9 @@ checkers.  Post-commit revalidation runs `elot_lint' (and
 `elot_omn_validate' when ROBOT is configured); failure rolls
 the buffer back to its pre-edit contents and returns the
 diagnostic under a `FAIL:' header."
-  (condition-case err
+  (elot-gptel--axiom-tracker-note
+   file
+   (condition-case err
       (let* ((op-sym
               (cond
                ((or (null op)
@@ -6371,7 +6402,8 @@ supply `match_fragment'; matching rows: %s"
                           (if (= nested 1) "" "s")
                           curie))))))))))))
     (user-error (format "ERROR: %s" (error-message-string err)))
-    (error      (format "ERROR: %s" (error-message-string err)))))
+    (error      (format "ERROR: %s" (error-message-string err))))
+   tracker-done nil))
 
 ;;;; ---------------------------------------------------------------------------
 ;;;; elot_edit_axioms batch tool
@@ -6585,8 +6617,12 @@ supply `match_fragment'; matching rows: %s"
                        (format " [%d nested]" n) "")))))))
    summaries "\n"))
 
-(defun elot-gptel-tool-edit-axioms (file edits &optional dry-run)
+(defun elot-gptel-tool-edit-axioms (file edits &optional dry-run tracker-done)
   "Commit a batch of description-list-row edits to FILE atomically.
+
+TRACKER-DONE names pattern-tracker headings the batch finishes.
+They are set DONE only after the batch is committed and
+revalidated; see `elot-gptel-pattern-axiom-flip'.
 
 Implementation of the `elot_edit_axioms' tool.  Side-effecting -- gated by
 `elot-gptel-allow-side-effects' unless DRY-RUN is non-nil.
@@ -6621,7 +6657,9 @@ edit pipeline still runs in memory and the revalidate stage runs
 against the draft via the read-only `content=' code path; the
 LLM gets back the same OK / FAIL envelope it would have got from
 a real commit, but FILE on disk is unchanged."
-  (condition-case err
+  (elot-gptel--axiom-tracker-note
+   file
+   (condition-case err
       (let* ((coerced (elot-gptel--axioms-coerce-edits edits)))
         (unless (and (listp coerced) coerced)
           (user-error "Edits must be a non-empty array"))
@@ -6674,7 +6712,8 @@ a real commit, but FILE on disk is unchanged."
                  (if (= (length summaries) 1) "" "s")
                  (elot-gptel--axioms-format-summary summaries)))))))
     (user-error (format "ERROR: %s" (error-message-string err)))
-    (error      (format "ERROR: %s" (error-message-string err)))))
+    (error      (format "ERROR: %s" (error-message-string err))))
+   tracker-done dry-run))
 
 ;;;; ---------------------------------------------------------------------------
 ;;;; elot_rename_resource tool
@@ -6885,6 +6924,9 @@ or an `ERROR:' line on refusal / failure."
 (declare-function elot-id-insert--do-insert "elot-id-insert"
                   (child-p n &optional labels no-blank-desc))
 (declare-function elot-id-heading-curie-regexp "elot-id" (curie))
+(declare-function elot-id-search-heading-curie "elot-id"
+                  (curie &optional bound))
+(declare-function elot-id-heading-in-ontology-p "elot-id" (&optional pos))
 
 (defun elot-gptel--insert-curie-shape-p (s)
   "Return non-nil when S resembles a CURIE (`prefix:local')."
@@ -6928,7 +6970,8 @@ heading."
                        (regexp-quote label)
                        "[ \t]+(")
                nil t)
-         (push (line-beginning-position) matches)))
+         (when (elot-id-heading-in-ontology-p (line-beginning-position))
+           (push (line-beginning-position) matches))))
      (cond
       ((null matches) nil)
       ((= 1 (length matches)) (car matches))
@@ -6948,7 +6991,8 @@ heading."
            (when (or (and id    (string= label (string-trim id)))
                      (and cusid (string= label (string-trim cusid)))
                      (and title (string= label (string-trim title))))
-             (push (line-beginning-position) matches)))))
+             (when (elot-id-heading-in-ontology-p (line-beginning-position))
+               (push (line-beginning-position) matches))))))
      (setq matches (delete-dups matches))
      (cond
       ((null matches) nil)
@@ -7405,9 +7449,23 @@ the number of rows inserted."
             (insert (format " - %s\n" r)))))))
   (length rows))
 
+(declare-function elot-gptel-pattern--seq "elot-gptel-pattern" (v))
+(declare-function elot-gptel-pattern-declare-flip "elot-gptel-pattern"
+                  (file curie extra &optional provenance))
+(declare-function elot-gptel-pattern-axiom-flip "elot-gptel-pattern"
+                  (file curies))
+
 (defun elot-gptel-tool-declare-resource
-    (file anchor label curie &optional iri as borrow definition-from defined-by)
+    (file anchor label curie &optional iri as borrow definition-from defined-by
+          tracker-done tracker-started)
   "Implementation of the `elot_declare_resource' tool.
+
+TRACKER-STARTED names pattern-tracker headings this declaration
+begins; TRACKER-DONE is an accepted alias for it.  A declaration
+that also writes provenance (DEFINED-BY given, or BORROW found a
+citation) completes the heading and sets it DONE; otherwise the
+heading is set STARTED and its axiom rows finish it.  See
+`elot-gptel-pattern-declare-flip'.
 
 Declare a NEW resource heading whose identifier is an
 ALREADY-KNOWN external CURIE (not a freshly-minted local one),
@@ -7555,8 +7613,24 @@ On revalidation failure the pre-declaration bytes are restored."
                    "NOTE: use `elot_edit_axioms' to add rows to the existing"
                    " heading, or `elot_rename_resource' to change its identifier.")
              curie (file-name-nondirectory file))
-          (elot-gptel--declare-resource-1
-           file anchor label curie iri as-sym borrow defs defined-by*))))))
+          (let* ((header (elot-gptel--declare-resource-1
+                          file anchor label curie iri as-sym borrow defs
+                          defined-by*))
+                 ;; Provenance means the leg is complete at
+                 ;; declaration: the `rdfs:isDefinedBy' row is written
+                 ;; in the same atomic operation and the term's own
+                 ;; axioms live upstream.
+                 (provenance
+                  (or (and defined-by* t)
+                      (and borrow
+                           (string-match-p "provenance row" header)
+                           t)))
+                 (note (elot-gptel-pattern-declare-flip
+                        (buffer-file-name) curie
+                        (append (elot-gptel-pattern--seq tracker-started)
+                                (elot-gptel-pattern--seq tracker-done))
+                        provenance)))
+            (if note (concat header "\n" note) header)))))))
 
 (defun elot-gptel--declare-normalise-defined-by (value)
   "Return VALUE trimmed for a direct `rdfs:isDefinedBy' row.
@@ -7940,6 +8014,7 @@ Pure read -- never mutates the buffer.  Public-by-convention
 for reuse by a future `elot_rename_resource --safe' mode."
   (when (fboundp 'elot-headline-hierarchy-ensure-fresh)
     (ignore-errors (elot-headline-hierarchy-ensure-fresh)))
+  (require 'elot-id nil 'noerror)
   (require 'elot-id-rename nil 'noerror)
   (let* ((node (and subject
                     (elot-gptel--delete--node-for-curie subject)))
@@ -7969,6 +8044,10 @@ for reuse by a future `elot_rename_resource --safe' mode."
                             'desc-list)
                            (t 'prose)))))
             (cond
+             ;; Lines outside an ontology heading (for instance a
+             ;; pattern tracker) are not ontology source; skip them.
+             ((not (elot-id-heading-in-ontology-p bol))
+              (setq current-curie nil))
              ((eq class 'heading)
               ;; Update the enclosing-resource tracker.  Headings
               ;; without a CURIE parenthetical (section roots,
@@ -9989,6 +10068,25 @@ attaches to (CURIE preferred, or heading title, or section
 LABEL is the plain rdfs:label (not a `Label (curie)' heading).
 CURIE is the external identifier to adopt.
 
+PATTERN TRACKER: when the file holds a pattern tracker, this
+call moves the matching tracker heading on.  A declaration that
+also writes provenance (`defined_by' given, or `borrow=true'
+found a citation) completes the heading and sets it DONE: that
+is the normal case for a fixed pattern constant, whose own
+axioms live upstream.  A declaration with no provenance row
+sets the heading STARTED instead -- the heading exists but its
+axioms are still missing -- and the following
+`elot_edit_axioms' call finishes it with its own
+`tracker_done'.  A fixed pattern constant is matched by its own
+CURIE and needs nothing from you.  For a variable resource,
+whose minted CURIE cannot be matched to a `var:' heading, pass
+`tracker_started' with the tracker CURIE (or a short list);
+`tracker_done' is still accepted as an alias for it.  The flip
+never affects the declaration: no tracker, an unknown heading,
+or a heading already DONE or cancelled is reported as a NOTE
+only.  The reply ends with how many headings are still TODO, so
+it doubles as the worklist.
+
 DEFINITION_FROM (optional, requires `borrow=true') is an ORDERED
 list of annotation-property CURIEs to probe in the DB for this
 entity -- e.g. ["skos:definition",
@@ -10098,7 +10196,34 @@ Written verbatim in the same atomic declaration, without a label-DB \
 lookup.  Use this when provenance is already known, including for a \
 fixed pattern constant.  CURIE and IRI values are accepted; the caller \
 is responsible for correctness, and no absolute-IRI requirement is \
-imposed.  Mutually exclusive with `borrow=true'."))))
+imposed.  Mutually exclusive with `borrow=true'.")
+      (:name "tracker_done"
+             :type array
+             :items (:type string)
+             :optional t
+             :description
+             "Accepted alias for `tracker_started'; prefer that \
+name.  A declaration only begins a variable resource's leg -- \
+the axiom rows finish it -- so the heading is set STARTED, or \
+DONE when the same call also writes provenance.")
+      (:name "tracker_started"
+             :type array
+             :items (:type string)
+             :optional t
+             :description
+             "CURIEs of pattern-tracker headings this declaration \
+begins.  Needed only for a variable resource, whose minted \
+CURIE cannot be matched to a `var:' heading; a fixed pattern \
+constant is matched by its own CURIE and needs nothing here.  \
+The heading is set STARTED, meaning it exists but its axioms \
+are still missing; pass the same CURIE as `tracker_done' on the \
+following `elot_edit_axioms' call to finish it.  When this \
+declaration also writes provenance (`defined_by' or a \
+successful `borrow'), the heading goes straight to DONE.  The \
+tracker flip never affects the declaration: a missing tracker, \
+an unknown heading, or a heading already DONE or cancelled is \
+reported as a NOTE only.  The reply ends with how many headings \
+are still TODO."))))
 
 (defconst elot-gptel--spec-db-query
   '("elot_db_query"
@@ -11015,7 +11140,18 @@ the row to target.  Match is ASCII-normalised (whitespace \
 runs collapsed, ends trimmed).  Pass the empty string to \
 target a row whose value is empty / whitespace-only.  Omit \
 when KEYWORD alone is unique on SUBJECT.  Ignored for \
-`delete-empty'."))))
+`delete-empty'.")
+      (:name "tracker_done"
+             :type array
+             :items (:type string)
+             :optional t
+             :description
+             "CURIEs of pattern-tracker headings this edit \
+finishes.  They are set DONE only after the edit is committed \
+and revalidated, so a rolled-back edit changes no tracker \
+state.  A missing tracker, an unknown heading, or a heading \
+already DONE or cancelled is reported as a NOTE only and never \
+affects the edit."))))
 
 (defconst elot-gptel--spec-edit-axioms
   `("elot_edit_axioms"
@@ -11078,7 +11214,24 @@ shape as `elot_edit_axiom' minus `file'.")
              :description
              "When true, run the full pipeline (apply + revalidate \
 via `content=') but skip the actual save.  File on disk \
-unchanged; useful for try-before-commit.  Default false."))))
+unchanged; useful for try-before-commit.  Default false.")
+      (:name "tracker_done"
+             :type array
+             :items (:type string)
+             :optional t
+             :description
+             "CURIEs of pattern-tracker headings this batch \
+finishes.  This is the call that completes a pattern leg, so \
+name the leg's tracker heading here rather than on the \
+declaration.  They are set DONE only after the batch is \
+committed and revalidated, so a rolled-back or dry-run batch \
+changes no tracker state.  A missing tracker, an unknown \
+heading, or a heading already DONE or cancelled is reported as \
+a NOTE only and never affects the edits."))))
+
+;; The pattern-tracker tool lives in its own file to keep this one
+;; smaller; its spec is added to the list below like any other.
+(require 'elot-gptel-pattern)
 
 (defconst elot-gptel--tool-specs
   (list elot-gptel--spec-conventions
@@ -11121,7 +11274,8 @@ unchanged; useful for try-before-commit.  Default false."))))
         elot-gptel--spec-read-resource
         elot-gptel--spec-axiom-check
         elot-gptel--spec-edit-axiom
-        elot-gptel--spec-edit-axioms)
+        elot-gptel--spec-edit-axioms
+        elot-gptel--spec-pattern-tracker)
   "List of tool specs, each entry (NAME . PLIST).
 PLIST is forwarded to `gptel-make-tool' after light translation.")
 
@@ -11260,12 +11414,14 @@ is truthy in Elisp) is correctly treated as nil."
        (elot-gptel-tool-axiom-check file subject keyword fragment
                                     (elot-gptel--truthy consistency))))
     ('elot-gptel-tool-edit-axiom
-     (lambda (file subject keyword &optional fragment op match-fragment)
+     (lambda (file subject keyword &optional fragment op match-fragment
+                   tracker-done)
        (elot-gptel-tool-edit-axiom file subject keyword fragment
-                                   op match-fragment)))
+                                   op match-fragment tracker-done)))
     ('elot-gptel-tool-edit-axioms
-     (lambda (file edits &optional dry-run)
-       (elot-gptel-tool-edit-axioms file edits (elot-gptel--truthy dry-run))))
+     (lambda (file edits &optional dry-run tracker-done)
+       (elot-gptel-tool-edit-axioms file edits (elot-gptel--truthy dry-run)
+                                    tracker-done)))
     ('elot-gptel-tool-rename-resource
      (lambda (file source target &optional ontology target-iri new-label op)
        (elot-gptel-tool-rename-resource
@@ -11290,11 +11446,19 @@ is truthy in Elisp) is correctly treated as nil."
     ('elot-gptel-tool-insert-resource-tree
      (lambda (file anchor tree &optional as)
        (elot-gptel-tool-insert-resource-tree file anchor tree as)))
+    ('elot-gptel-tool-pattern-tracker
+     (lambda (action target-file &optional pattern-file pattern-target
+                     dropped-legs todo done cancelled force started)
+       (elot-gptel-tool-pattern-tracker
+        action target-file pattern-file pattern-target dropped-legs
+        todo done cancelled (elot-gptel--truthy force) started)))
     ('elot-gptel-tool-declare-resource
-     (lambda (file anchor label curie &optional iri as borrow definition-from defined-by)
+     (lambda (file anchor label curie &optional iri as borrow definition-from
+                   defined-by tracker-done tracker-started)
        (elot-gptel-tool-declare-resource
         file anchor label curie iri as
-        (elot-gptel--truthy borrow) definition-from defined-by)))
+        (elot-gptel--truthy borrow) definition-from defined-by tracker-done
+        tracker-started)))
     (_ (error "ELOT-gptel: no dispatcher for %S" fn))))
 
 (defun elot-gptel--confirm-effective-p (spec-confirm)
