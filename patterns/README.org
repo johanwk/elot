@@ -8,23 +8,22 @@ executable template.
 
 * Apply a pattern
 
-1. Read the pattern source: actions, instructions, application rules, example.
-2. Inspect the target with =elot_resources=. Do not invent missing data.
-3. Add a checklist with =elot_pattern_tracker=.
-4. Add all CONSTANT resources:  =elot_declare_resource= with =borrow=false= and
-   =defined_by= from the pattern.
-5. Check which optional legs, if any, are needed for the user's request.
-6. Resolve the =var:= resources in selected legs by their actions.
+1. Read the pattern file: actions, instructions, application rules, example.
+2. Inspect the target with =elot_resources=.
+3. Get a temporary TODO task list with =elot_pattern_tracker=.
+4. Add all resources marked CONSTANT: =elot_declare_resource= with
+   =borrow=false= and =defined_by= from the pattern.
+5. Check which optional legs, if any, are needed to fulfil the user's request.
+6. Declare the =var:= resources according to their actions.
    1. For ordered actions such as =BIND_OR_MINT=, try the actions left to
       right.
-   2. Use the database when a variable action requires discovery, such as
-      =BORROW_OR_MINT=. Confirm the selected resource's identity and OWL
-      type when using =elot_borrow_term=.
-7. Reproduce the selected axioms, skipping template annotations.
-   Commit related rows with one =elot_edit_axioms= dry run and one
-   committed call.
+   2. Use the database when a variable action requires discovery, such
+      as =BORROW_OR_MINT=. Make sure the resource has correct OWL type
+      when using =elot_borrow_term=.
+7. Write axioms according to the pattern. With set of interdependent
+   row edits, use one =elot_edit_axioms= dry run then one committed call.
 8. Pass =tracker_done= for every resource completed (declared + axioms).
-9. Run =elot_check=.
+9. Run =elot_check= when all is done.
 10. Remove the tracker if successful.
 
 See [[file:pattern-framework.org][pattern-framework.org]] for the full rules and

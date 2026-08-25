@@ -2,7 +2,6 @@
 #+subtitle: Rules for writing and applying ELOT patterns
 #+author: johanw
 #+date: 2026
-#+call: theme-elot()
 
 This file defines the common rules for ELOT patterns. See
 [[file:README.org][README.org]] for the pattern index and short application checklist. See
@@ -18,25 +17,17 @@ A pattern contains two kinds of resource:
 - A constant has an external CURIE and is used unchanged in every application.
 - A placeholder has a =var:= CURIE and is replaced when the pattern is applied.
 
-Each pattern must contain:
+The pattern ontology is the template and the source of truth. Its
+headings, nesting, description-list rows, and axiom annotations define
+the output. It contains a prefix table, and usually OWL imports.
 
-1. A prefix table and ontology declaration.
-2. An import of =pattern:pattern-vocabulary= and imports of the ontologies whose
-   terms it uses.
-3. A /How to apply/ section.
-4. A /Required constants/ section.
-5. A worked example with a substitution table.
-6. A warning section that states the main limit or reason not to use the
-   pattern.
-7. A =CONSTANT= action on every fixed pattern input, and actions and
-   instructions on =var:= resources.
-8. A clean lint, OWL parse, and consistency result with imports loaded.
+Shared classes and properties should normally be reused in later applications.
+Situation-specific individuals should normally be minted for each application.
+The action and instruction on each placeholder decide the case.
 
-Manchester Syntax requires every used resource to be declared in the file.
-Imports do not remove this requirement. Declare every external term and every
-used =pattern:= annotation property locally.
+The pattern ontology may be annotated with optional "leg" subpatterns. 
 
-* Actions
+* =pattern:action= types
 
 =pattern:action= marks resources that participate in instantiation. A resource
 without it is scaffolding needed to express or annotate the pattern ontology;
@@ -87,44 +78,18 @@ value. The value may be a CURIE, an IRI, or another value accepted by ELOT.
 Do not use =borrow=true= for a constant copied from a pattern. That option asks
 the database to choose provenance and may select a different ontology version.
 
-Use the database when identity or provenance is not already fixed. This is
-common for =BORROW_OR_MINT= slots, such as a unit or quantity kind. Label search
-is suitable for finding candidates. After selection, use exact identity and
-kind.
+** Constant placement
 
-Discover pattern inputs by their explicit action, not by querying every OWL
-declaration. OWL serializations can contain implicit declarations for annotation
-properties, metadata datatypes, and other scaffolding. A suitable inventory is:
+Preserve the hierarchy among constants declared in the pattern. Place
+a constant with no pattern parent at the root of its resource section.
+Declare a parent before its child.
 
-#+begin_example
-SELECT ?resource ?action ?instruction
-WHERE {
-  ?resource pattern:action ?action .
-  OPTIONAL { ?resource pattern:instruction ?instruction }
-}
-ORDER BY ?action ?resource
-#+end_example
+If a constant has more than one required parent, use one for heading
+placement and write the others as =SubClassOf= or =SubPropertyOf= rows.
 
-ROBOT SPARQL does not query imports by default. The explicit action filter is
-still required to distinguish pattern inputs from declarations in the pattern
-ontology itself.
+* Placeholders for literals
 
-* Constant placement
-
-Preserve the hierarchy among constants declared in the pattern. Declare a
-parent before its child and place the child below it. Place a constant with no
-pattern parent at the root of its resource section.
-
-Do not add source ancestors that the pattern does not declare. If a constant
-has more than one required parent, use one for heading placement and write the
-others as =SubClassOf= or =SubPropertyOf= rows.
-
-* Placeholders and literals
-
-Replace every =var:= resource in the selected part of a pattern. The replacement
-must have the expected OWL kind.
-
-A literal placeholder is marked by a nested =pattern:value= row:
+A *literal* placeholder is marked by a nested =pattern:value= row:
 
 #+begin_example
  - Facts :: lis:datumValue "100"^^xsd:decimal
@@ -133,10 +98,6 @@ A literal placeholder is marked by a nested =pattern:value= row:
 
 Replace the example literal with a real value of the stated datatype. Remove
 the =pattern:value= annotation from the result.
-
-Shared classes and properties should normally be reused in later applications.
-Situation-specific individuals should normally be minted for each application.
-The action and instruction on each placeholder decide the case.
 
 * Optional and repeated parts
 
@@ -156,89 +117,123 @@ complete a part.
 For repeated parts, record one set of bindings for each repetition. Reuse a
 shared anchor when the pattern says it may be bound.
 
+** Legs
+
+A /leg/ is one selectable shape. Most patterns have no legs. Select legs
+per pattern application, not once for the whole target file.
+
+A pattern that has legs declares them on its ontology heading, one
+=pattern:hasLeg= annotation per leg.
+
+A resource, or an axiom or annotation row, that is needed only for some legs
+carries one =pattern:onlyForLeg= row per leg.
+
 * The pattern tracker
 
-=elot_pattern_tracker= keeps a small checklist inside the target file while one
-pattern is applied to it. It lists one heading per pattern resource, each TODO,
-STARTED, DONE, or DONE with the =:cancelled:= tag. Use it for every application.
-It survives an interruption and it prevents rework when a pattern is applied a
-second time.
+=elot_pattern_tracker= is a temporary checklist in the target file. It
+contains one heading for each pattern resource, with state =TODO=,
+=STARTED=, =DONE=, or =DONE= plus the =:cancelled:= tag. It is progress
+bookkeeping, not ontology content: the tracker is inert and is
+excluded from tangling and ontology checks. At most one tracker per
+target file, to be removed when the application is complete.
 
-Create it after inspecting the target and after selecting the parts to apply:
+First inspect the target and select the pattern parts to apply. Then create the
+tracker:
 
 #+begin_example
 elot_pattern_tracker action=create target_file=TARGET.org
   pattern_file=THE-PATTERN.org
-  dropped_legs=[ ... CURIEs of resources in unselected parts ... ]
+  dropped_legs=[ ... CURIEs in unselected parts ... ]
 #+end_example
 
-The reply is the worklist. A resource already declared in the target does not
-start at TODO: it starts DONE when its declaration carries an
-=rdfs:isDefinedBy= row, and STARTED when it does not. STARTED means the heading
-exists but its axioms or provenance are still missing, so it counts as
-outstanding work. Resources named in =dropped_legs= start DONE and cancelled.
+Resources already declared in the target start =DONE= when their
+declaration has =rdfs:isDefinedBy=, and =STARTED= otherwise. A =var:=
+resource that is not already declared starts =TODO=. Resources in
+=dropped_legs= start =DONE= with =:cancelled:=. Cancellation is per
+resource; it does not cancel descendants. Never re-declare a resource
+already marked =DONE=.
 
-Do not re-declare a resource the tracker reports as DONE.
+Keep the tracker in sync with completed operations:
 
-The headings then move on by themselves as the work is done:
+- A constant declaration with =defined_by= marks its matching heading =DONE=.
+- A declaration for a minted variable marks the named =tracker_started= heading
+  =STARTED=; a declaration alone does not complete the leg.
+- An =elot_edit_axiom= or =elot_edit_axioms= call marks its
+  =tracker_done= headings =DONE=, but only after the edit is committed and
+  revalidated. With repeated applications, mark a shared slot DONE only after
+  all planned repetitions are complete.
+- Use =action=set_state= for corrections, cancellations, or headings that need
+  no declaration of their own.
 
-- =elot_declare_resource= with =defined_by= sets a constant's own heading DONE.
-  The heading is matched by its CURIE, so nothing extra is needed.
-- =elot_declare_resource= for a minted resource cannot match a =var:= heading,
-  so pass =tracker_started= with the =var:= heading it fills. The heading goes
-  to STARTED, because a declaration alone does not finish a leg.
-- =elot_edit_axioms= (or =elot_edit_axiom=) with =tracker_done= sets those
-  headings DONE, but only after the batch is committed and revalidated. This is
-  the call that finishes a leg, so name the leg's heading here.
-- =elot_pattern_tracker action=set_state= is the fallback for anything the
-  automatic flips cannot express.
-
-=action=status= reports the remaining work at any time. When the last heading
-is done, remove the checklist with =action=delete=; it refuses while TODO or
-STARTED headings remain.
-
-The tracker records progress only. It does not check that a declaration agrees
-with the pattern. Consult the pattern file for the rules.
+=action=status= reports all states; its incomplete count includes both
+=TODO= and =STARTED=. An =action=delete= call is refused while either state
+remains, unless =force= is requested.
 
 * Application procedure
 
-1. Read the pattern's application, selection, constants, example, and warning
-   sections.
-2. Inspect the target ontology with =elot_resources=.
+1. Inspect the pattern's application, selection, constants, example,
+   and warning sections.
+2. Inspect the target ontology.
 3. Select the applicable pattern parts.
-4. Create the tracker with =elot_pattern_tracker action=create=, listing the
-   resources of unselected parts in =dropped_legs=. Use its reply as the
-   worklist.
-5. Make a binding table for every selected placeholder and literal.
-6. Add the outstanding resources marked =CONSTANT= with
-   =elot_declare_resource=, =defined_by=, and =borrow=false=.
-7. Reuse or mint target resources according to each action, passing
-   =tracker_started= for each =var:= heading filled.
-8. Check proposed axiom rows before committing them.
-9. Reproduce the selected pattern axioms with the chosen substitutions, passing
-   =tracker_done= for each leg the batch finishes.
-10. Remove =pattern:action=, =pattern:instruction=, =pattern:value=, and other
-    template-only annotations.
-11. Add =pattern:appliedPattern= where the pattern directs.
-12. Run =elot_check= and any pattern-specific query.
-13. Remove the tracker with =elot_pattern_tracker action=delete=.
+4. Make a binding table for every selected placeholder and literal.
+5. Add all resources marked =CONSTANT=.
+6. Reuse or mint target resources according to each action.
+7. Check proposed axiom rows before committing them.
+8. Reproduce the selected pattern axioms with the chosen substitutions.
+9. Never add =pattern:action=, =pattern:instruction=, =pattern:value=, or other
+   template-only annotations to the target.
+10. Run =elot_check= and any pattern-specific query.
 
 Stop instead of guessing when:
+ - required information is missing;
+ - a resource identity is unclear;
+ - the OWL kind is wrong;
+ - a required slot cannot be filled;
+ - a proposed row fails validation;
+ - the pattern's warning applies.
 
-- required information is missing;
-- a resource identity is unclear;
-- the OWL kind is wrong;
-- a required slot cannot be filled;
-- a proposed row fails validation;
-- the pattern's warning applies.
+** Pattern application tools
 
-The current ELOT tools edit declarations and axiom rows. They do not apply a
-whole pattern in one transaction. Use small related edits and dry runs when
-available.
+- Inspect with =elot_resources= and =elot_read_resource=.
+- Manage progress with =elot_pattern_tracker=.
+- For a =CONSTANT=, use =elot_declare_resource= with the exact CURIE and
+  =defined_by= from the pattern, and =borrow=false=. Do not use an
+  =elot_insert_*= tool: it would mint a different IRI.
+- For =BORROW=, use =elot_borrow_term= and the label database. Do not use
+  database discovery for constants already identified by the pattern.
+- For =BIND=, reuse the inspected target resource. Declare nothing. If the
+  pattern requires an existing heading to move, use =elot_move_resource=.
+- For =MINT=, normally use =elot_insert_child_resource= for resources
+  sharing a parent, =elot_insert_sibling_resource= for siblings, or
+  =elot_insert_resource_tree= for a new local hierarchy. These tools
+  mint /and/ declare; do not call =elot_mint_identifier= first. After
+  insertion, set the corresponding variable tracker headings =STARTED=
+  because the insert tools do not do that automatically.
+- Use =elot_declare_resource= for a =var:= only when its exact CURIE is
+  user supplied, or when the insertion tools cannot secure the
+  required placement in the outline.
+- Validate candidate rows with =elot_axiom_check=. Add related rows with one
+  =elot_edit_axioms= dry run and then one committed call; finish variables with
+  =tracker_done= on the committed call.
+- Finish with =elot_check=, tracker =status=, and tracker =delete=.
+
+Do not edit an ontology through workspace file-editing tools, except:
+Stop rather than guess when identity, OWL kind, required information,
+slot values, or axiom validation is unclear. A clean ontology check
+does not prove that the pattern was fully applied; the tracker and its
+postcondition provide that evidence. The current tools edit
+declarations and axiom rows separately, so use related edits and dry
+runs where available.
+
+* Tracker and application safety
+
+The tracker is only temporary, a TODO list for one pattern application.
+
+The tracker does not verify conformance to the pattern. 
 
 * Authoring a pattern
 
-1. Choose a recurring ontology structure, not a change of label or example.
+1. Choose a recurring ontology structure.
 2. Check whether an existing pattern already provides the same structure.
 3. Inspect the source ontology and verify every external resource, property
    direction, kind, parent, domain, range, inverse, and restriction used.
@@ -299,18 +294,12 @@ where ROBOT stages are skipped is not full validation.
 - Do not copy definitions from an imported ontology unless a local copy is
   explicitly needed.
 
-* Application record
-
-=pattern:appliedPattern= records which pattern was used. The best attachment
-point is still under review. Follow the rule stated by the selected pattern.
-Do not annotate unrelated resources merely because they were already present in
-the target.
-
 * Open work
 
 The following points are not settled:
 
-1. The standard attachment point for =pattern:appliedPattern=.
+1. The standard attachment point for recording which pattern was used,
+   with =pattern:appliedPattern=.
 2. Whether application records should use a versioned pattern IRI.
 3. A single tool that plans and applies a complete pattern.
 4. Structured support for complex conditions and repeated groups.

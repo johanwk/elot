@@ -226,8 +226,8 @@ whenever the quality or the datum may later need to be referred to.
  - Types :: var:DomainQuantityKind
  - Facts :: lis:physicalQuantityOf var:TheDomainThing
  - Facts :: lis:qualityQuantifiedAs var:TheDomainScalarQuantityDatum
- - pattern:action :: MINT
- - pattern:instruction :: The quantity of ~var:TheDomainThing~ that is quantified. Always a fresh quality individual.
+ - pattern:action :: BIND_OR_MINT
+ - pattern:instruction :: The quantity of ~var:TheDomainThing~ that is quantified. Reuse (bind) if it already exists.
 *** var:TheDomainScalarQuantityDatum
  - Types :: var:DomainScalarQuantityDatumType
  - Facts :: lis:quantifiesQuality var:TheDomainQuantity
