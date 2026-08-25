@@ -2,91 +2,66 @@
 #+subtitle: Library index and application entry point
 #+author: johanw
 #+date: 2026
-#+call: theme-elot()
 
 This directory contains ELOT pattern files. Each pattern is an ontology and an
 executable template.
 
 * Apply a pattern
 
-1. Read the pattern's application rules, example, and warning.
+1. Read the pattern source: actions, instructions, application rules, example.
 2. Inspect the target with =elot_resources=. Do not invent missing data.
-3. Select any optional legs. Create a progress checklist with
-   =elot_pattern_tracker action=create=, naming the pattern file and listing
-   the resources of unselected legs in =dropped_legs=. Its reply is your
-   worklist: a resource already present and cited starts DONE, present but
-   uncited starts STARTED, the rest start TODO. Do not re-declare a resource
-   reported as DONE.
-4. Add every outstanding resource marked =pattern:action :: CONSTANT=, even when
-   an optional leg does not use it. Use its exact CURIE, label, kind, and
-   =rdfs:isDefinedBy=. Call =elot_declare_resource= with =borrow=false= and
-   =defined_by= set from the pattern. Do not search the database for a constant.
-   This also sets that constant's tracker heading DONE.
-5. Preserve hierarchy between constants declared in the pattern. Do not add
-   source ancestors that the pattern does not declare.
-6. Resolve the =var:= resources in selected legs by their actions. Keep
-   selected legs complete and omit unselected legs. When minting a resource for
-   a =var:= slot, pass =tracker_started= with that slot's heading.
-7. Use the database only when a variable action requires discovery, such as
-   =BORROW_OR_MINT=. Confirm the selected resource's identity and kind.
-8. Reproduce the selected axioms with =elot_edit_axioms=, passing
-   =tracker_done= with the headings that batch finishes. A leg is not done
-   until its axioms are in place.
-9. Remove template annotations, add =pattern:appliedPattern= where directed,
-   run =elot_check=, then remove the checklist with
-   =elot_pattern_tracker action=delete=.
-
-=CONSTANT= applies only to fixed resources; all other actions apply only to
-=var:= resources. A declaration without an action is pattern scaffolding and is
-not copied merely because OWL reports it as declared. For a pattern constant,
-use =defined_by= rather than =borrow=true=. =borrow=true= asks the database to
-choose provenance.
+3. Add a checklist with =elot_pattern_tracker=.
+4. Add all CONSTANT resources:  =elot_declare_resource= with =borrow=false= and
+   =defined_by= from the pattern.
+5. Check which optional legs, if any, are needed for the user's request.
+6. Resolve the =var:= resources in selected legs by their actions.
+   1. For ordered actions such as =BIND_OR_MINT=, try the actions left to
+      right.
+   2. Use the database when a variable action requires discovery, such as
+      =BORROW_OR_MINT=. Confirm the selected resource's identity and OWL
+      type when using =elot_borrow_term=.
+7. Reproduce the selected axioms, skipping template annotations.
+   Commit related rows with one =elot_edit_axioms= dry run and one
+   committed call.
+8. Pass =tracker_done= for every resource completed (declared + axioms).
+9. Run =elot_check=.
+10. Remove the tracker if successful.
 
 See [[file:pattern-framework.org][pattern-framework.org]] for the full rules and
 [[file:pattern-vocabulary.org][pattern-vocabulary.org]] for the annotation
 properties.
 
-Run library checks with =make test=. Set =ELOT_REQUIRE_ROBOT=1= to require
-ROBOT-backed checks.
-
 * Pattern index
 
-Choose a pattern before filling its placeholders.
-
 #+caption: Patterns in this library
-| pattern                              | detail level   | individuals introduced       | choose it when                                                                                                            |
-|--------------------------------------+----------------+------------------------------+---------------------------------------------------------------------------------------------------------------------------|
-| IDO-pattern-quantity-datum-fullform  | full           | quality, datum, unit         | the quality or datum must be referenced for sensing, provenance, qualifiers, or competing values                         |
-| IDO-pattern-quantity-shortcut-object | reduced        | datum, unit                  | datum context is needed, but the quality is never referenced                                                              |
-| IDO-pattern-quantity-shortcut-data   | minimal        | none                         | only the value is needed; the unit is known from the property convention                                                  |
-| IDO-pattern-function                 | not applicable | function, activity           | what a thing is for, or the activity that realizes the function, must be stated                                           |
-| IDO-pattern-participation            | generic roles  | activity                     | participants in an activity need agent and patient roles                                                                  |
-| IDO-pattern-idef0                    | ICOM roles     | activity                     | participants need the IDEF0 Input, Control, Output, and Mechanism roles                                                    |
-| SKOS-pattern-broader                 | not applicable | narrower concept             | a SKOS concept hierarchy is needed                                                                                        |
-| PROV-O-pattern-qualified-activity    | qualified      | activity, usage, association | provenance must state what was used and generated, who acted, the plan, and the role                                     |
-| IOF-pattern-information-about        | selectable legs | information content entities | information denotes, uniquely designates, describes, or prescribes an entity                                              |
+| pattern                              | detail level    | individuals introduced       | choose it when                                                                                   |
+|--------------------------------------+-----------------+------------------------------+--------------------------------------------------------------------------------------------------|
+| IDO-pattern-quantity-datum-fullform  | full            | quality, datum, unit         | the quality or datum must be referenced for sensing, provenance, qualifiers, or competing values |
+| IDO-pattern-quantity-shortcut-object | reduced         | datum, unit                  | datum context is needed, but the quality is never referenced                                     |
+| IDO-pattern-quantity-shortcut-data   | minimal         | none                         | only the value is needed; the unit is known from the property convention                         |
+| IDO-pattern-function                 | not applicable  | function, activity           | what a thing is for, or the activity that realizes the function, must be stated                  |
+| IDO-pattern-participation            | generic roles   | activity                     | participants in an activity need agent and patient roles                                         |
+| IDO-pattern-idef0                    | ICOM roles      | activity                     | participants need the IDEF0 Input, Control, Output, and Mechanism roles                          |
+| SKOS-pattern-broader                 | not applicable  | narrower concept             | a SKOS concept hierarchy is needed                                                               |
+| PROV-O-pattern-qualified-activity    | qualified       | activity, usage, association | provenance must state what was used and generated, who acted, the plan, and the role             |
+| IOF-pattern-information-about        | selectable legs | information content entities | information denotes, uniquely designates, describes, or prescribes an entity                     |
 
-The three quantity patterns keep different amounts of information. A reduced
-form can be derived from a fuller form, but omitted individuals cannot be
-recovered. Choose the fuller form when those individuals may need to be
-referenced.
+The three IDO quantity patterns keep different amounts of information.
+A reduced form can be derived from a fuller form, but omitted
+individuals cannot be recovered. Choose the fuller form when those
+individuals may need to be referenced.
 
-The participation and IDEF0 patterns use different role vocabularies. IDEF0's
+The IDO participation and IDEF0 patterns use different role vocabularies. IDEF0's
 relations are more specific. The function and participation patterns can be
 combined: apply function first, then participation.
 
-The IOF information-about pattern may use one or more legs. There is no
-preference for using all four. Select only the legs supported by the available
-information.
-
-* Quantity values written in two forms
-
-A reasoner will not compare a shortcut value with a full-form value unless the
-ontology contains an explicit rule that connects them. If both forms are
-allowed, use a rule or a query to check agreement. Otherwise require authors to
-use only one form for each quality.
+The IOF information-about pattern may use one or more legs. Select
+only the legs supported by the available information.
 
 * Notes for pattern authors
+
+Run library checks with =make test=. Set =ELOT_REQUIRE_ROBOT=1= to require
+ROBOT-backed checks.
 
 - Use one file and one ontology for each pattern.
 - Include the required prose sections and one worked substitution table.
