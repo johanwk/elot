@@ -116,6 +116,16 @@ export interface ElotNode {
   /** :ELOT-default-prefix: value */
   elotDefaultPrefix?: string;
 
+  /**
+   * :ELOT-subheading-relation: value -- an object property CURIE.
+   *
+   * When set on a heading, every `owl:NamedIndividual` descendant gets a
+   * `Facts: <relation> <parent-uri>` axiom relating it to its *immediate*
+   * parent heading.  The value is inherited down the subtree; a nested
+   * heading's own value overrides it for that heading's subtree.
+   */
+  elotSubheadingRelation?: string;
+
   /** :resourcedefs: "yes" if this heading defines OWL resources */
   resourcedefs?: boolean;
 

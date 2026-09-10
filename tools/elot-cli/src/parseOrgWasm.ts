@@ -27,6 +27,7 @@ interface RawNode {
   elotContextType?: string;
   elotContextLocalname?: string;
   elotDefaultPrefix?: string;
+  elotSubheadingRelation?: string;
   resourcedefs: boolean;
   prefixdefs: boolean;
   tangleTargetOmn?: string;
@@ -134,6 +135,8 @@ function mapRawNode(
   if (raw.elotContextType) result.elotContextType = raw.elotContextType;
   if (raw.elotContextLocalname) result.elotContextLocalname = raw.elotContextLocalname;
   if (raw.elotDefaultPrefix) result.elotDefaultPrefix = raw.elotDefaultPrefix;
+  if (raw.elotSubheadingRelation)
+    result.elotSubheadingRelation = raw.elotSubheadingRelation;
   if (raw.resourcedefs) result.resourcedefs = true;
   if (raw.prefixdefs) result.prefixdefs = true;
   if (raw.tangleTargetOmn) result.tangleTargetOmn = raw.tangleTargetOmn;

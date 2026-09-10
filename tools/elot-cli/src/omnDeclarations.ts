@@ -15,6 +15,12 @@ import { omnResourceFrame, omnMiscFrames } from "./omnFrame.js";
  * @param nodes     - Array of ElotNode children to process
  * @param parentUri - The parent's URI (for implicit SubClassOf/SubPropertyOf)
  * @param prefixMap - Prefix map for CURIE expansion
+ *
+ * For individuals, the object property from an ancestor's
+ * :ELOT-subheading-relation: drawer property is inherited down the tree and
+ * emitted as a `Facts:` axiom to the immediate parent; a node's own value
+ * overrides it for that node's subtree.
+ *
  * @returns A single string with all frames separated by blank lines
  */
 export function omnResourceDeclarations(
@@ -28,24 +34,32 @@ export function omnResourceDeclarations(
   // push a sentinel after pushing children so we know when all children of a node
   // have been processed — but for flat frame collection a simple ordered stack suffices.
 
-  type StackEntry = { node: ElotNode; parentUri: string | null };
+  type StackEntry = {
+    node: ElotNode;
+    parentUri: string | null;
+    parentRelation: string | null;
+  };
   const stack: StackEntry[] = [];
 
   // Seed in reverse so first node is processed first
   for (let i = rootNodes.length - 1; i >= 0; i--) {
-    stack.push({ node: rootNodes[i]!, parentUri: rootParentUri });
+    stack.push({
+      node: rootNodes[i]!,
+      parentUri: rootParentUri,
+      parentRelation: null,
+    });
   }
 
   const frames: string[] = [];
 
   while (stack.length > 0) {
-    const { node, parentUri } = stack.pop()!;
+    const { node, parentUri, parentRelation } = stack.pop()!;
     const uri = node.uri;
     const children = node.children ?? [];
     const isNodeclare = (node.tags ?? []).includes("nodeclare");
 
     // 1. Try to generate a resource frame
-    const resFrame = omnResourceFrame(node, parentUri, prefixMap);
+    const resFrame = omnResourceFrame(node, parentUri, prefixMap, parentRelation);
     if (resFrame) {
       frames.push(resFrame);
     }
@@ -64,8 +78,16 @@ export function omnResourceDeclarations(
       // - Wrapper nodes without URI (like "Classes", "Datatypes") pass parentUri through
       const effectiveParent =
         !isNodeclare && uri && typeof uri === "string" ? uri : parentUri;
+      // A node's own :ELOT-subheading-relation: overrides the inherited one
+      // for its whole subtree.
+      const effectiveRelation =
+        node.elotSubheadingRelation ?? parentRelation;
       for (let i = children.length - 1; i >= 0; i--) {
-        stack.push({ node: children[i]!, parentUri: effectiveParent });
+        stack.push({
+          node: children[i]!,
+          parentUri: effectiveParent,
+          parentRelation: effectiveRelation,
+        });
       }
     }
   }

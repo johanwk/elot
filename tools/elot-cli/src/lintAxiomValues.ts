@@ -83,6 +83,13 @@ const CURIE_REGEX = /^[-_./:\w]*:[-_./:\w]*$/;
  * Ported from `elot-omn-keywords-by-section` in elot-lint.el.
  */
 export const KEYWORDS_BY_SECTION: Record<string, string[]> = {
+  // Ontology declaration: `Import' is the one and only frame keyword.
+  // Mirrors the "-ontology" entry added to `elot-omn-keywords-by-section'
+  // in elot-lint.el (commit ef7e14a).  ELOT's section :ID: suffix on the
+  // TS side is "-ontology-declaration"; both spellings are accepted so
+  // the table stays readable against the Elisp original.
+  "-ontology": ["Import"],
+  "-ontology-declaration": ["Import"],
   "-datatypes": ["EquivalentTo"],
   "-class-hierarchy": [
     "SubClassOf",
@@ -117,6 +124,8 @@ export const KEYWORDS_BY_SECTION: Record<string, string[]> = {
  * Human-readable names for section suffixes, for diagnostic messages.
  */
 const SECTION_NAMES: Record<string, string> = {
+  "-ontology": "Ontology declaration",
+  "-ontology-declaration": "Ontology declaration",
   "-datatypes": "Datatypes",
   "-class-hierarchy": "Classes",
   "-object-property-hierarchy": "Object properties",
@@ -283,7 +292,7 @@ export function checkOmnKeywordAppropriateness(
 
       // Look up allowed keywords for this section
       const allowed = KEYWORDS_BY_SECTION[suffix];
-      if (!allowed) continue; // Section has no keyword restrictions (e.g. -ontology-declaration)
+      if (!allowed) continue; // Section has no keyword restrictions
 
       // Check if the keyword is in the allowed list
       if (!allowed.includes(tag)) {

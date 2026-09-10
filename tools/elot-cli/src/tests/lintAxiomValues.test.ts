@@ -679,7 +679,7 @@ function testCheckOmnKeywordAppropriateness() {
     passed++;
   }
 
-  // ── -ontology-declaration — no keyword restrictions ────────────
+  // ── -ontology-declaration — Import is allowed (ef7e14a) ────────
   {
     const root = makeOntologyTree(
       [
@@ -690,8 +690,30 @@ function testCheckOmnKeywordAppropriateness() {
       "pizza-ontology-declaration",
     );
     const diags = checkOmnKeywordAppropriateness(root);
-    assertCount(diags, 0, "ontology-declaration");
-    console.log("  -ontology-declaration (no keyword restrictions): OK");
+    assertCount(diags, 0, "ontology-declaration Import");
+    console.log("  -ontology-declaration (Import allowed): OK");
+    passed++;
+  }
+
+  // ── -ontology-declaration — Import is the ONLY allowed keyword ─
+  {
+    const root = makeOntologyTree(
+      [
+        makeEntity("pizza:X", [
+          { tag: "SubClassOf", value: "pizza:Y" },
+        ]),
+      ],
+      "pizza-ontology-declaration",
+    );
+    const diags = checkOmnKeywordAppropriateness(root);
+    assertCount(diags, 1, "ontology-declaration SubClassOf");
+    assertHas(
+      diags,
+      "error",
+      '"SubClassOf" is not valid in Ontology declaration',
+      "ontology-declaration SubClassOf",
+    );
+    console.log("  -ontology-declaration (only Import allowed): OK");
     passed++;
   }
 

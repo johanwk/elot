@@ -177,12 +177,16 @@ export function formatRestrictions(
  * @param node       - The ElotNode to generate a frame for
  * @param parentUri  - The parent resource URI (for implicit SubClassOf/SubPropertyOf)
  * @param prefixMap  - Prefix map for CURIE expansion
+ * @param parentRelation - Object property inherited from an ancestor's
+ *   :ELOT-subheading-relation: drawer property.  For an individual, emits
+ *   `Facts: <parentRelation> <parentUri>`.
  * @returns OMN frame string, or null if the node doesn't declare a resource
  */
 export function omnResourceFrame(
   node: ElotNode,
   parentUri: string | null,
-  prefixMap: Map<string, string> | null
+  prefixMap: Map<string, string> | null,
+  parentRelation?: string | null
 ): string | null {
   const uri = node.uri;
   const desc = node.descriptions ?? [];
@@ -239,6 +243,16 @@ export function omnResourceFrame(
       );
       if (!hasExplicit) {
         restrictions.push({ tag: "SubPropertyOf", value: parentUri });
+      }
+    } else if (rdfType === "owl:NamedIndividual" && parentRelation) {
+      // :ELOT-subheading-relation: -- relate this individual to the
+      // individual declared by its immediate parent heading.
+      const value = `${parentRelation} ${parentUri}`;
+      const hasExplicit = restrictions.some(
+        (r) => r.tag === "Facts" && r.value === value
+      );
+      if (!hasExplicit) {
+        restrictions.push({ tag: "Facts", value });
       }
     }
   }

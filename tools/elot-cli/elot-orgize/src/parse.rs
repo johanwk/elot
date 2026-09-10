@@ -63,6 +63,7 @@ pub fn parse_to_elot(org_text: &str) -> ElotNode {
             elot_context_type: props.get("elot-context-type").cloned(),
             elot_context_localname: props.get("elot-context-localname").cloned(),
             elot_default_prefix: props.get("elot-default-prefix").cloned(),
+            elot_subheading_relation: props.get("elot-subheading-relation").cloned(),
             resourcedefs: props.get("resourcedefs").map_or(false, |v| v == "yes"),
             prefixdefs: props.get("prefixdefs").map_or(false, |v| v == "yes"),
             tangle_target_omn,

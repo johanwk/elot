@@ -47,6 +47,11 @@ pub struct ElotNode {
     pub elot_context_localname: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub elot_default_prefix: Option<String>,
+    /// :ELOT-subheading-relation: -- object property used to relate an
+    /// individual to its immediate parent heading's individual.
+    /// Inherited by the whole subtree; a nested value overrides it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub elot_subheading_relation: Option<String>,
 
     pub resourcedefs: bool,
     pub prefixdefs: bool,
@@ -80,6 +85,7 @@ impl Default for ElotNode {
             elot_context_type: None,
             elot_context_localname: None,
             elot_default_prefix: None,
+            elot_subheading_relation: None,
             resourcedefs: false,
             prefixdefs: false,
             tangle_target_omn: None,

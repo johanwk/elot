@@ -14,6 +14,7 @@ import { parseOrg } from "./parseOrgWasm.js";
 import { generateFullOmn } from "./generateOmn.js";
 import { findPandoc, exportOrgToHtml } from "./exportHtml.js";
 import { buildDbCommand } from "./dbCli.js";
+import { collectAllLintErrors } from "./collectLintErrors.js";
 import { elotNodeKind } from "./types.js";
 import type { ElotNode } from "./types.js";
 
@@ -43,19 +44,59 @@ program
   .argument("[input.org]", "Input Org-mode ontology file")
   .argument("[output]", "Output file path (default: tangle target or stdout for OMN; input.html for HTML)")
   .option("--html", "Export to styled HTML via Pandoc (requires Pandoc on PATH)")
+  .option("--lint", "Report ELOT lint diagnostics; exit 1 if any error is found")
   .addHelpText("after", `
 Examples:
   $ elot-cli ontology.org                  Generate OMN (tangle target or stdout)
   $ elot-cli ontology.org output.omn       Generate OMN to explicit file
   $ elot-cli ontology.org -                Generate OMN to stdout
   $ elot-cli --html ontology.org           Export to HTML (requires Pandoc)
-  $ elot-cli --html ontology.org out.html  Export to HTML with explicit output`)
-  .action(async (input: string | undefined, output: string | undefined, opts: { html?: boolean }) => {
+  $ elot-cli --html ontology.org out.html  Export to HTML with explicit output
+  $ elot-cli --lint ontology.org           Report lint diagnostics`)
+  .action(async (input: string | undefined, output: string | undefined, opts: { html?: boolean; lint?: boolean }) => {
     if (!input) {
       program.help();
       return;
     }
     const inputPath = resolve(input);
+
+    // --html and --lint do different jobs and produce different exit
+    // semantics; combining them is always a mistake, so say so rather
+    // than silently letting one win.
+    if (opts.html && opts.lint) {
+      fail("--html and --lint are mutually exclusive");
+    }
+
+    if (opts.lint) {
+      // -- Lint only: no output file is produced --
+      let orgText: string;
+      try {
+        orgText = readFileSync(inputPath, "utf-8");
+      } catch (err: any) {
+        fail(`cannot read ${inputPath}: ${err.message}`);
+      }
+
+      let root: ElotNode;
+      try {
+        root = parseOrg(orgText);
+      } catch (err: any) {
+        fail(`failed to parse ${inputPath}: ${err.message}`);
+      }
+
+      const diagnostics = collectAllLintErrors(root);
+      for (const d of diagnostics) {
+        // No byte offsets from the WASM parser, so a diagnostic is
+        // located by its heading unless a checker supplied a line.
+        const where = d.line !== undefined ? `:${d.line}` : "";
+        const heading = d.node.title ? ` [${d.node.title}]` : "";
+        console.log(`${inputPath}${where}: ${d.severity}:${heading} ${d.message}`);
+      }
+
+      const errors = diagnostics.filter((d) => d.severity === "error").length;
+      const warnings = diagnostics.length - errors;
+      console.error(`elot-cli: ${errors} error(s), ${warnings} warning(s)`);
+      process.exit(errors > 0 ? 1 : 0);
+    }
 
     if (opts.html) {
       // ── HTML export via Pandoc ──
