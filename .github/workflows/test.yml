@@ -9,7 +9,8 @@ name: CI
 #               ROBOT-gated tests execute (and fail loudly if ROBOT is
 #               broken) rather than skipping.
 #   - `lint`  : package-lint, stripping the two documented
-#               with-eval-after-load warnings.
+#               with-eval-after-load warnings and the false-positive
+#               `any' findings in the generated elot-owl-grammar.el.
 #
 # Windows CI is deliberately deferred to post-v1 (MSYS2 is the
 # supported Windows path; a bare windows-latest runner lacks the Unix
@@ -132,13 +133,21 @@ jobs:
           findings=$(grep -E '^[^ ]+\.el:[0-9]+:[0-9]+:' lint.out || true)
           # Strip the two intentional `with-eval-after-load' warnings
           # documented at the source (Milestone 5 Step 5.6).
+          #
+          # Also strip the `any' findings in elot-owl-grammar.el: that
+          # file is generated from syntax/owl-manchester.peggy and `any'
+          # there is the peg.el PEX operator inside `define-peg-ruleset',
+          # not a function call.  Emacs 31.1 introduced a *function*
+          # named `any', so package-lint mistakes the grammar symbol for
+          # it and demands a 31.1 dependency.  ELOT targets Emacs 30.1.
           remaining=$(echo "$findings" \
             | grep -vE "with-eval-after-load' is for use in configurations" \
+            | grep -vE "^elot-owl-grammar\.el:[0-9]+:[0-9]+: error: You should depend on \(emacs \"31\.1\"\) or the compat package if you need .any'" \
             || true)
           if [ -n "$remaining" ]; then
             echo "=== unexpected lint findings ==="
             echo "$remaining"
             exit 1
           fi
-          echo "OK: only the two documented with-eval-after-load warnings present."
+          echo "OK: only documented, known-acceptable lint findings present."
           exit 0
