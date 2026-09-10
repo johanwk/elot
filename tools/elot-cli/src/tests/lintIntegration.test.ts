@@ -1,7 +1,7 @@
 // src/tests/lintIntegration.test.ts
 //
 // Stage 7 integration tests: verify that collectAllLintErrors aggregates
-// diagnostics from all 8 checkers correctly.
+// diagnostics from all 9 checkers correctly.
 //
 // These tests construct ElotNode trees with known issues and verify
 // the combined output.
@@ -74,7 +74,7 @@ const STANDARD_PREFIXES: PrefixEntry[] = [
 ];
 
 /**
- * Build a well-formed ontology tree with all 7 required sections
+ * Build a well-formed ontology tree with all required sections
  * and a prefix table. Optionally inject entity nodes into the
  * class hierarchy section.
  */
@@ -265,15 +265,16 @@ function testMissingSections() {
   };
   const root = makeRoot([ontology]);
   const diags = collectAllLintErrors(root);
-  // Should get 7 warnings for missing sections
+  // Should get 6 warnings for missing sections (-datatypes is optional)
   const sectionWarnings = diags.filter(
     (d) => d.severity === "warning" && d.message.includes("Missing section"),
   );
   assert(
-    sectionWarnings.length === 7,
-    `missing sections: expected 7 warnings, got ${sectionWarnings.length}`,
+    sectionWarnings.length === 6,
+    `missing sections: expected 6 warnings, got ${sectionWarnings.length}`,
   );
-  console.log("  missing all 7 sections (checker #4): OK");
+  assertNotHas(diags, "pizza-datatypes", "datatypes not required");
+  console.log("  missing all 6 required sections (checker #4): OK");
 }
 
 function testHeadingWithNoUri() {
@@ -410,8 +411,7 @@ function testDiagnosticsFromAllCheckers() {
   // #1: skip (we have an ontology heading)
   // #2: missing tangle target
   // #3: empty prefix table
-  // #4: missing sections (only 1 section provided)
-  // #5: heading with no URI
+  // #4: missing sections (only 1 section provided)  // #5: heading with no URI
   // #6: unknown annotation property
   // #7: unknown CURIE in axiom
   // #8: wrong keyword for section
@@ -456,7 +456,7 @@ function testDiagnosticsFromAllCheckers() {
           },
         ],
       },
-      // Only 1 of 7 sections → 6 missing section warnings from checker #4
+      // Only 1 of the 6 required sections -> 5 missing section warnings
     ],
   };
   const root = makeRoot([ontology]);
@@ -466,13 +466,13 @@ function testDiagnosticsFromAllCheckers() {
   assertHas(diags, "error", ":tangle missing or invalid", "all-checkers #2");
   // Checker #3: empty prefix table
   assertHas(diags, "error", "Prefix table is empty", "all-checkers #3");
-  // Checker #4: missing sections (6 of 7)
+  // Checker #4: missing sections (5 of 6 required)
   const sectionWarnings = diags.filter(
     (d) => d.message.includes("Missing section"),
   );
   assert(
-    sectionWarnings.length === 6,
-    `all-checkers #4: expected 6 missing-section warnings, got ${sectionWarnings.length}`,
+    sectionWarnings.length === 5,
+    `all-checkers #4: expected 5 missing-section warnings, got ${sectionWarnings.length}`,
   );
   // Checker #5: no URI
   assertHas(diags, "error", "No identifier found", "all-checkers #5");
@@ -484,6 +484,51 @@ function testDiagnosticsFromAllCheckers() {
   assertHas(diags, "error", '"Domain" is not valid in Classes', "all-checkers #8");
 
   console.log("  diagnostics from all checkers combined: OK");
+}
+
+function testImportRowSkipsCurieCheck() {
+  // `Import' names an external ontology, which by definition is not in
+  // the local signature -- checker #7 must not flag it (commit 1e4adc2).
+  const root = makeValidOntology([], [
+    {
+      level: 2,
+      title: "Imports",
+      id: "pizza-imports",
+      resourcedefs: true,
+      children: [
+        {
+          level: 3,
+          title: "Imported ontology",
+          uri: "pizza:importer",
+          label: "importer",
+          rdfType: "owl:Ontology",
+          descriptions: [{ tag: "Import", value: "obo:bfo.owl" }],
+        },
+      ],
+    },
+  ]);
+  const diags = collectAllLintErrors(root);
+  assertNotHas(diags, "Unknown CURIE in axiom", "Import row exempt");
+  console.log("  Import row skips CURIE check (checker #7): OK");
+}
+
+function testPunnedClassInFacts() {
+  const root = makeValidOntology([
+    makeEntity("pizza:Margherita", [], "owl:Class"),
+    makeEntity(
+      "pizza:myLunch",
+      [{ tag: "Facts", value: "pizza:Margherita" }],
+      "owl:NamedIndividual",
+    ),
+  ]);
+  const diags = collectAllLintErrors(root);
+  assertHas(
+    diags,
+    "error",
+    "used as an individual must be explicitly declared",
+    "punning",
+  );
+  console.log("  punned class in Facts (checker #9): OK");
 }
 
 // ─── Main ───────────────────────────────────────────────────────
@@ -507,6 +552,8 @@ function main() {
   testKnownAnnotationPropertyPasses(); passed++;
   testBuiltinCuriesInAxiom(); passed++;
   testDiagnosticsFromAllCheckers(); passed++;
+  testImportRowSkipsCurieCheck(); passed++;
+  testPunnedClassInFacts(); passed++;
 
   console.log(`\n${passed} passed, 0 failed`);
 }

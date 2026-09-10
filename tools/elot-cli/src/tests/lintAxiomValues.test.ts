@@ -166,7 +166,11 @@ function testUtilities() {
     assert(BUILTIN_RESOURCES.has("xsd:string"), "xsd:string is builtin");
     assert(BUILTIN_RESOURCES.has("rdf:PlainLiteral"), "rdf:PlainLiteral is builtin");
     assert(!BUILTIN_RESOURCES.has("pizza:Food"), "pizza:Food not builtin");
-    assert(BUILTIN_RESOURCES.size === 26, `builtin size is ${BUILTIN_RESOURCES.size}, expected 26`);
+    // No hard-coded count: the set grows as OWL 2 datatypes/facets are added.
+    // Assert only that it is non-trivial and covers the facet additions.
+    assert(BUILTIN_RESOURCES.size >= 26, `builtin size is ${BUILTIN_RESOURCES.size}, expected >= 26`);
+    assert(BUILTIN_RESOURCES.has("xsd:pattern"), "xsd:pattern facet is builtin");
+    assert(BUILTIN_RESOURCES.has("rdf:langRange"), "rdf:langRange facet is builtin");
     console.log("  BUILTIN_RESOURCES: OK");
     passed++;
   }

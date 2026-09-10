@@ -186,6 +186,12 @@ export function checkAxiomValueCuries(
       // Only check descriptions whose tag is an OMN keyword
       if (!isOmnKeyword(tag)) continue;
 
+      // Exclude `Import': the identifier of an imported ontology is by
+      // nature external and will not appear in the local signature, so a
+      // "known CURIE" check is never appropriate there.
+      // Mirrors elot-lint.el (commit 1e4adc2).
+      if (tag === "Import") continue;
+
       const value = desc.value;
 
       // Determine if we're in an annotation-property section

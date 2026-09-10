@@ -229,8 +229,13 @@ export function annotationStringOrUri(
     if (/^"(?:.*\n)*.*"@[a-z]+/.test(str)) {
       return ` ${str}`;
     }
-    // Otherwise, wrap in quotes (escaping internal quotes)
-    const escaped = str.replace(/"/g, '\\"');
+    // Otherwise, wrap in quotes.  Backslash must be escaped BEFORE the
+    // quote, otherwise the backslash we insert for `"` would itself be
+    // doubled.  Note: the Elisp original escapes only `"`, so a value
+    // containing a backslash (e.g. a Windows path) produces an invalid
+    // Manchester string literal there.  This is a deliberate divergence
+    // -- a fix, not a parity break; no golden fixture contains one.
+    const escaped = str.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
     return `  "${escaped}"`;
   }
 

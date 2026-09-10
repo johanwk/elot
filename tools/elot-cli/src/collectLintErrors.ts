@@ -23,13 +23,14 @@ import {
   checkAxiomValueCuries,
   checkOmnKeywordAppropriateness,
 } from "./lintAxiomValues.js";
+import { checkFactsPunning } from "./lintFactsPunning.js";
 
 /**
- * Run all 8 ELOT lint checkers on the parsed ElotNode tree and
+ * Run all 9 ELOT lint checkers on the parsed ElotNode tree and
  * return the merged diagnostics.
  *
  * The slurp map is built once and shared between checkers that need it
- * (checkers #6 and #7).
+ * (checkers #6, #7 and #9).
  *
  * @param root - The parsed ElotNode root (level 0)
  * @returns All lint diagnostics from all checkers
@@ -53,6 +54,8 @@ export function collectAllLintErrors(root: ElotNode): LintDiagnostic[] {
     ...checkAxiomValueCuries(root, slurpMap),
     // OMN keyword appropriateness (#8)
     ...checkOmnKeywordAppropriateness(root),
+    // Facts/SameAs/DifferentFrom punning (#9)
+    ...checkFactsPunning(root, slurpMap),
   ];
 
   return diagnostics;

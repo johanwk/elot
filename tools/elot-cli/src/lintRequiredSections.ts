@@ -10,13 +10,16 @@ import { findOntologyRoots } from "./elotLintHelpers.js";
 // ─── Required section suffixes ───────────────────────────────────
 
 /**
- * The 7 required section :ID: suffixes for any ELOT ontology.
+ * The 6 required section :ID: suffixes for any ELOT ontology.
  * Each ontology with localname L must have sections with IDs:
- *   L-ontology-declaration, L-datatypes, L-class-hierarchy, etc.
+ *   L-ontology-declaration, L-class-hierarchy, etc.
+ *
+ * `-datatypes` is deliberately absent: most ontologies declare no custom
+ * datatypes, so a missing Datatypes outline is not a defect.  Mirrors
+ * `elot-check-required-sections' in elot-lint.el (commit 1c94cb4).
  */
 const REQUIRED_SUFFIXES: string[] = [
   "-ontology-declaration",
-  "-datatypes",
   "-class-hierarchy",
   "-object-property-hierarchy",
   "-data-property-hierarchy",
@@ -57,7 +60,7 @@ function collectHeadlineIds(root: ElotNode): Map<string, HeadlineEntry> {
 // ─── Checker #4: Required sections ──────────────────────────────
 
 /**
- * Check that all 7 required section IDs exist under each ontology
+ * Check that all 6 required section IDs exist under each ontology
  * heading and have `:resourcedefs: yes`.
  *
  * For each ontology root with `elotContextLocalname` L:

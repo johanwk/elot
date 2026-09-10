@@ -59,7 +59,6 @@ function assertNotHas(
 
 const ALL_SUFFIXES = [
   "-ontology-declaration",
-  "-datatypes",
   "-class-hierarchy",
   "-object-property-hierarchy",
   "-data-property-hierarchy",
@@ -67,8 +66,14 @@ const ALL_SUFFIXES = [
   "-individuals",
 ];
 
+// Present in ELOT documents but deliberately NOT required.
+const OPTIONAL_SUFFIXES = ["-datatypes"];
+
 function makeFullOntologyRoot(): ElotNode {
-  const sectionChildren: ElotNode[] = ALL_SUFFIXES.map((suffix) => ({
+  const sectionChildren: ElotNode[] = [
+    ...ALL_SUFFIXES,
+    ...OPTIONAL_SUFFIXES,
+  ].map((suffix) => ({
     level: 2,
     title: `Section ${suffix}`,
     id: `pizza${suffix}`,
@@ -105,7 +110,7 @@ function main() {
     passed++;
   }
 
-  // ── Missing one section (-datatypes) ──────────────────────────
+  // ── Missing the optional -datatypes section is not reported ───
   {
     const root = makeFullOntologyRoot();
     const onto = root.children![0];
@@ -114,14 +119,8 @@ function main() {
       (c) => c.id !== "pizza-datatypes",
     );
     const diags = checkRequiredSections(root);
-    assertCount(diags, 1, "missing -datatypes");
-    assertHas(
-      diags,
-      "warning",
-      "Missing section with ID pizza-datatypes",
-      "missing -datatypes",
-    );
-    console.log("  checkRequiredSections (missing -datatypes): OK");
+    assertCount(diags, 0, "missing -datatypes is allowed");
+    console.log("  checkRequiredSections (-datatypes optional): OK");
     passed++;
   }
 
@@ -152,7 +151,7 @@ function main() {
   {
     const root = makeFullOntologyRoot();
     const onto = root.children![0];
-    // Remove three sections
+    // Remove three sections (only two of them are required)
     onto.children = onto.children!.filter(
       (c) =>
         c.id !== "pizza-datatypes" &&
@@ -160,8 +159,8 @@ function main() {
         c.id !== "pizza-ontology-declaration",
     );
     const diags = checkRequiredSections(root);
-    assertCount(diags, 3, "three missing sections");
-    assertHas(diags, "warning", "pizza-datatypes", "missing datatypes");
+    assertCount(diags, 2, "two missing required sections");
+    assertNotHas(diags, "pizza-datatypes", "datatypes not required");
     assertHas(diags, "warning", "pizza-individuals", "missing individuals");
     assertHas(
       diags,
@@ -300,7 +299,7 @@ function main() {
     const root = makeFullOntologyRoot();
     const onto = root.children![0];
     onto.children = onto.children!.filter(
-      (c) => c.id !== "pizza-datatypes",
+      (c) => c.id !== "pizza-individuals",
     );
     const diags = checkRequiredSections(root);
     assert(
@@ -332,7 +331,7 @@ function main() {
     passed++;
   }
 
-  // ── All sections missing → 7 warnings ─────────────────────────
+  // ── All sections missing → 6 warnings ─────────────────────────
   {
     const root: ElotNode = {
       level: 0,
@@ -349,7 +348,7 @@ function main() {
       ],
     };
     const diags = checkRequiredSections(root);
-    assertCount(diags, 7, "all sections missing");
+    assertCount(diags, 6, "all sections missing");
     for (const suffix of ALL_SUFFIXES) {
       assertHas(
         diags,
@@ -358,7 +357,7 @@ function main() {
         `all missing: ${suffix}`,
       );
     }
-    console.log("  checkRequiredSections (all sections missing → 7): OK");
+    console.log("  checkRequiredSections (all sections missing → 6): OK");
     passed++;
   }
 
@@ -393,8 +392,8 @@ function main() {
       ],
     };
     const diags = checkRequiredSections(root);
-    // Pizza should be fine (0 warnings), wine should have 7
-    assertCount(diags, 7, "wine missing all sections");
+    // Pizza should be fine (0 warnings), wine should have 6
+    assertCount(diags, 6, "wine missing all sections");
     for (const suffix of ALL_SUFFIXES) {
       assertHas(diags, "warning", `wine${suffix}`, `wine: ${suffix}`);
       assertNotHas(diags, `pizza${suffix}`, `pizza should be fine: ${suffix}`);
