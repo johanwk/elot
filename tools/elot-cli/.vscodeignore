@@ -40,3 +40,13 @@ elot-elisp/
 # Other dev/doc files
 gemini-orga-20260328.org
 # README.md is required by the VS Code Marketplace — do NOT exclude it
+
+# Large docs/assets not needed at runtime or in the Marketplace page
+*-INSTRUCTIONS.md
+Makefile
+images/*.pdf
+images/*.org
+images/elot-poster-vertikal.png
+images/elot-poster.png
+images/elot-poster-codeedit.svg
+images/elot-poster-vertikal.svg
