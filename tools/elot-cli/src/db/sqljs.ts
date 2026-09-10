@@ -67,7 +67,7 @@ export type AttrValue =
 export interface EntityTriple {
   id: string;
   label: string | null;
-  /** Written to entities.kind; defaults to 'unknown'. */
+  /** Written to entities.kind; derived from the id form when absent. */
   kind?: string;
   /** Ordered [prop, value] pairs; values may be tagged (see AttrValue). */
   attrs?: Array<[string, AttrValue]>;
@@ -75,6 +75,21 @@ export interface EntityTriple {
 
 function normDs(ds: string | null | undefined): string {
   return ds ?? "";
+}
+
+/**
+ * Derive the identifier *form* recorded in entities.kind when an
+ * ingest path does not supply one.  Mirrors elot-db.el (see the
+ * `kind' binding in elot-db-update-source and
+ * `elot-db--looks-like-uri-p' / `elot-db--looks-like-curie-p'):
+ * "uri" when the id contains "://", "curie" when it contains ":"
+ * but is not a URI, else "unknown".  This is the identifier form,
+ * not the resource category (that lives in attributes as rdf:type).
+ */
+function deriveKind(id: string): string {
+  if (id.includes("://")) return "uri";
+  if (id.includes(":")) return "curie";
+  return "unknown";
 }
 
 /**
@@ -888,7 +903,7 @@ export class ElotDb {
       let n = 0;
       for (const id of order) {
         const cell = merged.get(id)!;
-        const kind = cell.kind ?? "unknown";
+        const kind = cell.kind ?? deriveKind(id);
         // rdfs:label variants drive the denormalised entities.label.
         const labelVariants: LangRow[] = [];
         for (const [prop, val] of cell.attrs) {
