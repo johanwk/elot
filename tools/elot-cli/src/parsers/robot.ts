@@ -26,6 +26,10 @@ export interface RobotResolution {
   java?: string;
 }
 
+function joinPath(dir: string, leaf: string): string {
+  return dir.endsWith(sep) ? `${dir}${leaf}` : `${dir}${sep}${leaf}`;
+}
+
 function isExecutableOnPath(name: string): string | null {
   const p = process.env.PATH ?? "";
   const exts =
@@ -35,9 +39,26 @@ function isExecutableOnPath(name: string): string | null {
   for (const dir of p.split(delimiter)) {
     if (!dir) continue;
     for (const ext of exts) {
-      const candidate = dir.endsWith(sep) ? `${dir}${name}${ext}` : `${dir}${sep}${name}${ext}`;
+      const candidate = joinPath(dir, `${name}${ext}`);
       if (existsSync(candidate)) return candidate;
     }
+  }
+  return null;
+}
+
+/**
+ * MSYS2/Git-Bash installs commonly ship an extensionless shell wrapper
+ * (e.g. ~/bin/robot) next to robot.jar.  Windows cannot spawn the
+ * wrapper directly (ENOENT), so locate the sibling jar instead and let
+ * the caller run it via `java -jar`.
+ */
+function jarBesideWrapperOnPath(name: string): string | null {
+  if (process.platform !== "win32") return null;
+  for (const dir of (process.env.PATH ?? "").split(delimiter)) {
+    if (!dir) continue;
+    if (!existsSync(joinPath(dir, name))) continue;
+    const jar = joinPath(dir, `${name}.jar`);
+    if (existsSync(jar)) return jar;
   }
   return null;
 }
@@ -56,6 +77,13 @@ export function resolveRobot(): RobotResolution | null {
   }
   const onPath = isExecutableOnPath("robot");
   if (onPath) return { kind: "exe", path: onPath };
+  const siblingJar = jarBesideWrapperOnPath("robot");
+  if (siblingJar) {
+    const java =
+      (process.env.JAVA && isExecutableOnPath(process.env.JAVA)) ||
+      isExecutableOnPath("java");
+    if (java) return { kind: "jar", path: siblingJar, java };
+  }
   return null;
 }
 
