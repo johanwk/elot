@@ -42,7 +42,8 @@ async function run(): Promise<void> {
     console.log(
       "ttlRobot tests: skipped (ROBOT not available; set $ELOT_ROBOT_JAR or install `robot` on PATH)",
     );
-    process.exit(0);
+    process.exitCode = 0;
+    return;
   }
 
   const tmp = mkdtempSync(join(tmpdir(), "elot-ttl-"));
@@ -127,10 +128,14 @@ async function run(): Promise<void> {
     /* ignore */
   }
   console.log(`ttlRobot tests: ${passed} passed, ${failed} failed`);
-  process.exit(failed > 0 ? 1 : 0);
+  // Do not call process.exit() here: forcing teardown while libuv still
+  // holds handles from spawnSync (ROBOT) plus the sql.js WASM module
+  // aborts on Windows/Node 24 (uv async.c:94 assertion).  Setting
+  // exitCode lets the loop drain naturally.
+  process.exitCode = failed > 0 ? 1 : 0;
 }
 
 run().catch((e) => {
   console.error(e);
-  process.exit(1);
+  process.exitCode = 1;
 });
