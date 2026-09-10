@@ -13,5 +13,8 @@
   "include": [
     "src/tests/electron/runTests.ts",
     "src/tests/electron/suite/**/*.ts"
-  ]
+  ],
+  // The base config excludes src/tests/electron/**/*; that exclusion would
+  // otherwise win here and leave this project with no inputs (TS18003).
+  "exclude": []
 }

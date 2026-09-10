@@ -15,8 +15,8 @@ import { generateFullOmn } from "./generateOmn.js";
 import { findPandoc, exportOrgToHtml } from "./exportHtml.js";
 import { buildDbCommand } from "./dbCli.js";
 
-// Read version from package.json at build time (inlined by esbuild)
-const VERSION = "0.3.4";
+// Keep in sync with the "version" field of package.json.
+const VERSION = "0.4.2";
 
 const program = new Command();
 
