@@ -31,8 +31,19 @@ function fail(message: string): never {
   process.exit(1);
 }
 
-// Keep in sync with the "version" field of package.json.
-const VERSION = "0.4.2";
+// Single source of truth is the "version" field of package.json.
+//
+// In the bundle, esbuild replaces __ELOT_VERSION__ with that value via
+// `define` (see esbuild.mjs), and folds away the fallback branch.  When
+// running from source (tsx src/cli.ts) the identifier is undefined, so
+// we read package.json directly.  Either way the constant is never
+// hand-maintained.
+declare const __ELOT_VERSION__: string | undefined;
+
+const VERSION =
+  typeof __ELOT_VERSION__ !== "undefined"
+    ? __ELOT_VERSION__
+    : (require("../package.json").version as string);
 
 const program = new Command();
 

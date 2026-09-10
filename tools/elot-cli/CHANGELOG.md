@@ -8,6 +8,62 @@ reaches 1.0.
 
 ## [Unreleased]
 
+## [0.4.3] - 2027-09-10
+
+### Added
+
+- **`--lint` option for `elot-cli`.** Runs the full lint checker set
+  over one or more `.org` files and prints
+  `<file>[:<line>]: <severity>: [heading] <message>`; exits non-zero if
+  any diagnostic has severity `error`, so it is usable in CI. Mutually
+  exclusive with `--html`.
+- **`:ELOT-subheading-relation:` drawer property.** When set on an
+  ancestor heading, each `owl:NamedIndividual` descendant emits
+  `Facts: <relation> <immediate-parent-uri>`. The relation is inherited
+  down the subtree; a node's own property overrides it for its children.
+  Ports the Emacs-side feature; required a new field in the
+  `elot-orgize` WASM crate (run `npm run build:wasm` after pulling).
+- **Lint checker: punned classes.** A CURIE declared `owl:Class` and
+  used in `Facts` / `SameAs` / `DifferentFrom` must also be declared
+  `owl:NamedIndividual`.
+- **Grammar.** Faceted datatype fillers (`ex:hasAge some xsd:integer[< 2]`)
+  and comma-separated `Facts` rows
+  (`ex:hasPart ex:a, ex:hasAge 33`).
+- **Aggregate test scripts** `test:all` and `test:lint`; the syntax and
+  lint suites were previously in no chain.
+
+### Changed
+
+- **Lint.** The `-datatypes` section is no longer required; CURIE checks
+  are skipped on `Import` rows; `Import` is now the sole OMN keyword
+  allowed under ontology declaration sections.
+- **Dependencies.** All Dependabot advisories resolved (js-yaml,
+  brace-expansion, esbuild). esbuild 0.28 (deduped to a single copy),
+  glob 13, `@types/node` pinned to `^24` to match the Node 24 runtime.
+- **Packaging.** `.vscodeignore` trimmed: the `.vsix` went from 2.46 MB
+  to about 605 KB. The version string is now injected into the bundle
+  from `package.json` rather than hand-maintained in `cli.ts`.
+
+### Fixed
+
+- **CLI error handling.** Missing files, unparseable input, a document
+  with no ontology heading, and write failures now produce a single
+  `elot-cli: ...` line on stderr and exit 1, instead of a Node stack
+  trace or a silent empty output file.
+- **`dbCli` dev entrypoint hijacked the bundle.** esbuild inlines
+  `dbCli.ts` into `dist/cli.js`, making its `require.main === module`
+  guard true, so `elot-cli foo.org` reported `unknown command`.
+- **Entity `kind` in the DB** is now derived from the identifier form
+  (`uri` / `curie` / `unknown`), matching `elot-db.el`.
+- **ROBOT resolution on Windows.** A bare `robot` wrapper on `PATH` is
+  no longer spawned directly (which cannot work for a shell script);
+  a sibling `robot.jar` is used via `java -jar` instead.
+- **Backslashes in annotation string literals** are now escaped.
+- **`tsconfig.test.json`** inherited the base `exclude`, leaving the
+  test project with no inputs (TS18003).
+
+## [0.4.2] - 2026-04-26
+
 ### Fixed
 
 - **Bundle `schema.sql` in the `.vsix`.** `ElotDb.applySchema()` reads

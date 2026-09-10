@@ -19,6 +19,12 @@ import { dirname, join } from "path";
 
 const require = createRequire(import.meta.url);
 
+// Single source of truth for the version string: package.json.  It is
+// injected into the bundles as __ELOT_VERSION__ so that src/cli.ts (and
+// any future entry point, e.g. the slim src/cli-omn.ts) never has to
+// hand-maintain a copy.  See the fallback in cli.ts for the tsx path.
+const PKG_VERSION = require("./package.json").version;
+
 // Copy .wasm files from src/wasm/ to dist/
 function copyWasmFiles() {
   const wasmDir = "src/wasm";
@@ -106,6 +112,9 @@ const sharedOptions = {
   // (e.g. './parseOrgWasm.js'). Tell esbuild to try .ts first so it can
   // resolve these to the actual source files.
   resolveExtensions: [".ts", ".js", ".json"],
+  define: {
+    __ELOT_VERSION__: JSON.stringify(PKG_VERSION),
+  },
 };
 
 async function build() {
@@ -128,7 +137,7 @@ async function build() {
     // Make CLI executable by prepending shebang via banner
     banner: { js: "#!/usr/bin/env node" },
   });
-  console.log("Built dist/cli.js");
+  console.log(`Built dist/cli.js (version ${PKG_VERSION})`);
 }
 
 build().catch((err) => {
