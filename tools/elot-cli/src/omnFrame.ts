@@ -13,21 +13,33 @@ import {
   isMiscKeyword,
   isOmnKeyword,
 } from "./omnKeywords.js";
-import { annotationStringOrUri } from "./annotationValue.js";
+import { annotationStringOrUri, unprefixUri } from "./annotationValue.js";
 
 /**
  * Ensure a URI string is wrapped in angle brackets.
  * If it already has them, return as-is.  If it's a bare http(s) URI, wrap it.
- * For CURIEs or other values, return as-is (they don't need brackets).
+ * A CURIE is expanded against the prefix table; if it cannot be expanded,
+ * throw -- Manchester Syntax requires a full IRI here.
  */
-function ensureAngleBrackets(val: string): string {
+function ensureAngleBrackets(
+  val: string,
+  prefixMap: Map<string, string> | null
+): string {
   const trimmed = val.trim();
   // Already wrapped
   if (trimmed.startsWith("<") && trimmed.endsWith(">")) return trimmed;
-  // Bare URI — wrap it
+  // Bare URI -- wrap it
   if (/^https?:\/\/\S+$/.test(trimmed)) return `<${trimmed}>`;
-  // Anything else (CURIE, complex expression) — pass through
-  return trimmed;
+  // A CURIE -- Manchester Syntax `Import:` requires a full IRI in angle
+  // brackets, so expand it against the prefix table (as elot-tangle.el does).
+  const expanded = unprefixUri(trimmed, prefixMap);
+  if (expanded && expanded !== trimmed) return expanded;
+  // Unresolvable: emitting a bare CURIE here would produce an OMN file that
+  // parses but whose import silently fails to resolve, so fail loudly.
+  throw new Error(
+    `Import: cannot resolve "${trimmed}" to a full IRI -- ` +
+      `declare its prefix in the prefix table, or write the IRI in <angle brackets>`
+  );
 }
 
 /**
@@ -122,7 +134,7 @@ export function formatRestrictions(
       // EXCEPT for Import, where we wrap bare URIs in <...> for user convenience.
       let formattedVal: string;
       if (key === "Import") {
-        formattedVal = ensureAngleBrackets(val);
+        formattedVal = ensureAngleBrackets(val, prefixMap);
       } else if (isOmnKeyword(key)) {
         formattedVal = val;
       } else {

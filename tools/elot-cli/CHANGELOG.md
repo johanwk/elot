@@ -8,6 +8,25 @@ reaches 1.0.
 
 ## [Unreleased]
 
+## [0.4.4] - 2027-09-10
+
+### Fixed
+
+- **`Import:` emitted a CURIE instead of a full IRI.** Manchester
+  Syntax requires an IRI in angle brackets, so an import written as
+  `Import: itxm-ont:itxm-generic-components` was accepted by the
+  tangler but never resolved. CURIEs are now expanded against the
+  prefix table and wrapped, matching the Emacs tangler's output.
+- **Unresolvable import values now fail loudly.** A CURIE whose prefix
+  is not declared (or a missing prefix table) raises an error naming
+  the value, instead of silently emitting invalid OMN.
+
+### Added
+
+- `test:omn-import` suite (7 cases) covering CURIE expansion, bare-URI
+  wrapping, already-bracketed passthrough, and the two error cases;
+  wired into `test:all`.
+
 ## [0.4.3] - 2027-09-10
 
 ### Added
