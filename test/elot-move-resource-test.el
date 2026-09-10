@@ -393,6 +393,15 @@ calls explicitly before walking the cached structure."
                             "*** Plant (ex:plant) [0/0]    :flora:"))
     ;; Plain shape still matches (no decoration).
     (should (string-match-p re-dog "**** Dog (ex:dog)"))
+    ;; Bare-CURIE shape: whole title is the CURIE, no parenthetical
+    ;; (minimal borrowed-term heading, e.g. `* lis:PhysicalArtefact').
+    (should (string-match-p re-dog "**** ex:dog"))
+    ;; ... with TODO keyword and tag decorations.
+    (should (string-match-p re-snake "**** TODO ex:snake"))
+    (should (string-match-p re-cat "**** ex:cat :pet:fluffy:"))
+    ;; Negative: bare shape must match the whole CURIE token -- a
+    ;; longer local name must not match.
+    (should-not (string-match-p re-dog "**** ex:doggish"))
     ;; Negative: the CURIE must be a whole parenthetical -- a
     ;; longer-local-name CURIE that happens to share the prefix
     ;; must not match.

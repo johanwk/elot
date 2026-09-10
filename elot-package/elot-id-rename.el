@@ -294,13 +294,27 @@ success; signals `user-error' when the heading cannot be found."
     ;; captured non-greedily so the rightmost `(CURIE)' on the line
     ;; is the one that anchors the split.
     (let ((line-re (concat "^\\(\\*+ \\)\\(.*?\\)\\([ \t]+("
-                           (regexp-quote curie) ")\\)")))
-      (unless (re-search-forward line-re (line-end-position) t)
+                           (regexp-quote curie) ")\\)"))
+          ;; Bare-CURIE shape: the whole title is the CURIE with no
+          ;; parenthetical (minimal borrowed-term heading).  Rewriting
+          ;; the label upgrades it to `NEW-LABEL (CURIE)'.
+          (bare-re (concat "^\\(\\*+ \\)"
+                           "\\(\\(?:[A-Z]+[ \t]+\\)?"
+                           "\\(?:\\[#[A-Za-z0-9]\\][ \t]+\\)?\\)"
+                           (regexp-quote curie))))
+      (cond
+       ((re-search-forward line-re (line-end-position) t)
+        (replace-match (concat (match-string 1) new-label (match-string 3))
+                       t t))
+       ((progn (beginning-of-line)
+               (re-search-forward bare-re (line-end-position) t))
+        (replace-match (concat (match-string 1) (match-string 2)
+                               new-label " (" curie ")")
+                       t t))
+       (t
         (user-error
          "ELOT-id-rename: heading for %s has unexpected shape; label not rewritten"
-         curie))
-      (replace-match (concat (match-string 1) new-label (match-string 3))
-                     t t))))
+         curie))))))
 
 ;;;; ---------------------------------------------------------------------------
 ;;;; Region classification + rewriters

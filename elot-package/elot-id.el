@@ -386,14 +386,31 @@ heading lines, all of which trail the title proper:
     end of line,
   - trailing whitespace.
 
+Two heading shapes are recognised:
+
+  - `* Label (CURIE)' -- the normal authored shape, and
+  - `* CURIE'         -- the minimal borrowed-term shape, where
+    the whole title is the bare CURIE with no parenthetical
+    (common for reused external terms declared with only an
+    `rdfs:isDefinedBy' row).
+
 TODO keywords (TODO, DONE, etc.) and priority cookies
 \(`[#A]') at the /start/ of the title are handled implicitly by
-the `^\\*+ .*' prefix.  Group 0 covers the whole line; no
-sub-groups are exposed (callers use the regex purely as an
-anchor)."
-  (concat "^\\*+ .*("
+the `.*' prefix in the parenthetical shape, and by an explicit
+optional keyword/priority prefix in the bare shape.  Group 0
+covers the whole line; no sub-groups are exposed (callers use
+the regex purely as an anchor)."
+  (concat "^\\*+ "
+          "\\(?:"
+          ;; Shape 1: `Label (CURIE)' -- CURIE in a parenthetical.
+          ".*(" (regexp-quote curie) ")"
+          "\\|"
+          ;; Shape 2: bare `CURIE' as the whole title, optionally
+          ;; preceded by a TODO keyword and/or priority cookie.
+          "\\(?:[A-Z]+[ \t]+\\)?"
+          "\\(?:\\[#[A-Za-z0-9]\\][ \t]+\\)?"
           (regexp-quote curie)
-          ")"
+          "\\)"
           ;; Zero or more statistics cookies like [1/4] or [25%].
           "\\(?:[ \t]+\\[[0-9]+\\(?:/[0-9]+\\|%\\)\\]\\)*"
           ;; Optional Org tag string like ":foo:bar:".
