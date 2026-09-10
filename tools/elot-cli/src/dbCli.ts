@@ -493,7 +493,15 @@ export function buildDbCommand(): Command {
 
 // Stand-alone entry so `tsx src/dbCli.ts ...` works during dev.
 // The main cli.ts wires this under the `db` sub-command too.
-if (require.main === module) {
+//
+// NOTE: esbuild inlines this module into dist/cli.js, so there
+// `require.main === module` is *also* true and this block would hijack
+// the real CLI (printing "elot-cli-db" usage / "unknown command").
+// Require the entry script to actually be dbCli.* as well.
+if (
+  require.main === module &&
+  /[\\/]dbCli\.(ts|js)$/.test(require.main?.filename ?? "")
+) {
   const program = new Command()
     .name("elot-cli-db")
     .description("Elot DB management (dev entrypoint)")

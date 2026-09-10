@@ -14,6 +14,21 @@ import { parseOrg } from "./parseOrgWasm.js";
 import { generateFullOmn } from "./generateOmn.js";
 import { findPandoc, exportOrgToHtml } from "./exportHtml.js";
 import { buildDbCommand } from "./dbCli.js";
+import { elotNodeKind } from "./types.js";
+import type { ElotNode } from "./types.js";
+
+/**
+ * Fail with a message on stderr and a nonzero exit status.
+ *
+ * The conversion pipeline has no notion of source positions (the WASM
+ * parser does not return byte offsets), so messages name the file and
+ * the offending heading rather than a line number.  See the briefing:
+ * adding offsets to the Rust crate is Phase 4 work.
+ */
+function fail(message: string): never {
+  console.error(`elot-cli: ${message}`);
+  process.exit(1);
+}
 
 // Keep in sync with the "version" field of package.json.
 const VERSION = "0.4.2";
@@ -61,24 +76,62 @@ Examples:
       }
     } else {
       // ── OMN export ──
-      const orgText = readFileSync(inputPath, "utf-8");
-      const root = parseOrg(orgText);
-      const omn = generateFullOmn(root);
+      let orgText: string;
+      try {
+        orgText = readFileSync(inputPath, "utf-8");
+      } catch (err: any) {
+        fail(`cannot read ${inputPath}: ${err.message}`);
+      }
+
+      let root: ElotNode;
+      try {
+        root = parseOrg(orgText);
+      } catch (err: any) {
+        fail(`failed to parse ${inputPath}: ${err.message}`);
+      }
+
+      // A file with no ontology heading is a user error, not an empty
+      // document: silently emitting nothing hides a typo in the :ID:
+      // property or a missing top-level heading.
+      const ontologies = (root.children ?? []).filter(
+        (n) => elotNodeKind(n) === "ontology"
+      );
+      if (ontologies.length === 0) {
+        fail(
+          `no ELOT ontology heading found in ${inputPath} ` +
+            `(expected a top-level heading with an :ID: property ending in ` +
+            `"-ontology-declaration" under it)`
+        );
+      }
+
+      let omn: string;
+      try {
+        omn = generateFullOmn(root);
+      } catch (err: any) {
+        fail(`failed to generate OMN from ${inputPath}: ${err.message}`);
+      }
+
+      if (omn.trim() === "") {
+        fail(`generated OMN for ${inputPath} is empty`);
+      }
+
+      const write = (outputPath: string) => {
+        try {
+          writeFileSync(outputPath, omn, "utf-8");
+        } catch (err: any) {
+          fail(`cannot write ${outputPath}: ${err.message}`);
+        }
+        console.error(`Written to ${outputPath}`);
+      };
 
       if (output && output !== "-" && output !== "/dev/stdout") {
-        const outputPath = resolve(output);
-        writeFileSync(outputPath, omn, "utf-8");
-        console.error(`Written to ${outputPath}`);
+        write(resolve(output));
       } else if (output === "-" || output === "/dev/stdout") {
         process.stdout.write(omn);
       } else {
-        const firstOntology = (root.children ?? [])[0];
-        const tangleTarget = firstOntology?.tangleTargetOmn;
-
+        const tangleTarget = ontologies[0]?.tangleTargetOmn;
         if (tangleTarget) {
-          const outputPath = resolve(dirname(inputPath), tangleTarget);
-          writeFileSync(outputPath, omn, "utf-8");
-          console.error(`Written to ${outputPath}`);
+          write(resolve(dirname(inputPath), tangleTarget));
         } else {
           process.stdout.write(omn);
         }
@@ -86,4 +139,7 @@ Examples:
     }
   });
 
-program.parseAsync(process.argv);
+program.parseAsync(process.argv).catch((err: any) => {
+  console.error(`elot-cli: ${err?.message ?? err}`);
+  process.exit(1);
+});

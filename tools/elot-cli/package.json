@@ -474,6 +474,7 @@
     "watch": "tsc -w",
     "test": "tsx src/tests/golden.test.ts",
     "test:syntax": "tsx src/tests/omnSyntaxCheck.test.ts",
+    "test:node-kind": "tsx src/tests/nodeKind.test.ts",
     "test:html": "tsx src/tests/exportHtml.test.ts",
     "test:html-post": "tsx src/tests/exportHtmlPostprocess.test.ts",
     "test:html-integration": "tsx src/tests/exportHtmlIntegration.test.ts",
@@ -520,7 +521,7 @@
     "test:lint-facts-punning": "tsx src/tests/lintFactsPunning.test.ts",
     "test:lint-integration": "tsx src/tests/lintIntegration.test.ts",
     "test:lint": "npm run test:lint-helpers && npm run test:lint-structural && npm run test:lint-required-sections && npm run test:lint-heading-identity && npm run test:lint-description-curies && npm run test:lint-axiom-values && npm run test:lint-facts-punning && npm run test:lint-integration",
-    "test:all": "npm test && npm run test:syntax && npm run test:lint && npm run test:html-all && npm run test:db",
+    "test:all": "npm test && npm run test:node-kind && npm run test:syntax && npm run test:lint && npm run test:html-all && npm run test:db",
     "test:electron": "node ./dist-test/runTests.js",
     "elot": "tsx src/cli.ts"
   },

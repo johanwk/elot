@@ -47,11 +47,39 @@ export interface EntityInfo {
 }
 
 /**
+ * The four roles an `ElotNode` can play.  The field is not stored on the
+ * node; it is derived by `elotNodeKind()` below.  In practice every node
+ * is exactly one of these, and the optional fields of `ElotNode` are only
+ * meaningful for the kind named here:
+ *
+ * - "root"     the synthetic level-0 node: only `level` and `children`
+ * - "ontology" the ontology heading: `elotContextType`, `elotContextLocalname`,
+ *              `elotDefaultPrefix`, `tangleTargetOmn`, `descriptions`
+ * - "section"  a wrapper heading: `resourcedefs` or `prefixdefs`, plus
+ *              `prefixes` when `prefixdefs` is set; never has `uri`.
+ *              May have `rdfType`: a resourcedefs heading is where the
+ *              ancestor type context originates, and entities inherit it
+ * - "entity"   a heading that declares an OWL entity: `uri` and `rdfType`
+ *              are both present; `label`, `descriptions`, `omnSrcBlocks`
+ *              are optional
+ *
+ * A Rust port should model this as an enum with per-variant payloads
+ * rather than a struct of options; see Phase 4 of the briefing.
+ */
+export type ElotNodeKind = "root" | "ontology" | "section" | "entity";
+
+/**
  * A node in the parsed ELOT hierarchy.
  *
  * Mirrors the Elisp plist returned by `elot-parse-headline-hierarchy`.
  * Each node corresponds to one Org headline and carries all information
  * needed to generate its OMN frame.
+ *
+ * The interface is deliberately "everything optional": it is produced by a
+ * single tree walk in `parseOrgWasm.ts` and consumed by both the generator
+ * and the nine lint checkers, which look at different subsets.  The real
+ * structure is the tagged union described by `ElotNodeKind` -- see the
+ * invariants documented there before adding a field.
  */
 export interface ElotNode {
   /** Org headline level (1, 2, 3, ...). The dummy root is level 0. */
@@ -110,6 +138,27 @@ export interface ElotNode {
 
   /** Child nodes (sub-headings) */
   children?: ElotNode[];
+}
+
+/**
+ * Classify a node according to `ElotNodeKind`.
+ *
+ * This is the single place that states the shape invariants of `ElotNode`.
+ * Ordering matters: the ontology heading also carries `resourcedefs` in
+ * some documents, so it is tested first, and an entity is recognised by
+ * having a `uri`.
+ */
+export function elotNodeKind(node: ElotNode): ElotNodeKind {
+  if (node.level === 0) {
+    return "root";
+  }
+  if (node.elotContextType !== undefined) {
+    return "ontology";
+  }
+  if (node.uri !== undefined) {
+    return "entity";
+  }
+  return "section";
 }
 
 /**
