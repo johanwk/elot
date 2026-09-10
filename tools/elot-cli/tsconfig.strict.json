@@ -1,0 +1,38 @@
+// tsconfig.strict.json
+//
+// Scoped strictness pass over the org -> OMN dependency cone only (the ten
+// modules that will make up the slim `omn.js` CLI).  The base tsconfig.json
+// includes src/**/*, so enabling these flags there would flood the build with
+// errors from the ~40 extension modules that are out of scope for this work.
+//
+// This project is type-check only (noEmit): run it with
+//   npx tsc -p tsconfig.strict.json --noEmit
+// It is not part of `npm run bundle`.
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "declaration": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true
+  },
+  // The base config's exclude does not apply here; these files pull in only
+  // each other, so the closure stays inside the cone.
+  "include": [
+    "src/types.ts",
+    "src/parseOrgWasm.ts",
+    "src/entityFromHeader.ts",
+    "src/prefixes.ts",
+    "src/generateOmn.ts",
+    "src/omnPrefix.ts",
+    "src/omnDeclarations.ts",
+    "src/omnFrame.ts",
+    "src/omnKeywords.ts",
+    "src/annotationValue.ts"
+  ],
+  "exclude": []
+}

@@ -51,13 +51,13 @@ export function entityFromHeader(str: string): EntityInfo | null {
   // 3. CURIE at beginning of line
   m = str.match(new RegExp(String.raw`^(${ CURIE_PATTERN })`));
   if (m) {
-    return { id: m[1], label: extractLabel(str, m[0]) };
+    return { id: m[1]!, label: extractLabel(str, m[0]) };
   }
 
   // 4. CURIE in parentheses
   m = str.match(new RegExp(String.raw`\((${ CURIE_PATTERN })\)`));
   if (m) {
-    return { id: m[1], label: extractLabel(str, m[0]) };
+    return { id: m[1]!, label: extractLabel(str, m[0]) };
   }
 
   // 5. Two full URIs in parentheses (ontology + version)
@@ -91,13 +91,13 @@ export function entityFromHeader(str: string): EntityInfo | null {
   // 8. URN at start of string
   m = str.match(new RegExp(String.raw`^(${ URN_PATTERN })$`));
   if (m) {
-    return { id: m[1], label: null };
+    return { id: m[1]!, label: null };
   }
 
   // 9. URN in parentheses
   m = str.match(new RegExp(String.raw`\((${ URN_PATTERN })\)`));
   if (m) {
-    return { id: m[1], label: extractLabel(str, m[0]) };
+    return { id: m[1]!, label: extractLabel(str, m[0]) };
   }
 
   // No match

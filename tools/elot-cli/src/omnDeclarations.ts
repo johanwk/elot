@@ -33,7 +33,7 @@ export function omnResourceDeclarations(
 
   // Seed in reverse so first node is processed first
   for (let i = rootNodes.length - 1; i >= 0; i--) {
-    stack.push({ node: rootNodes[i], parentUri: rootParentUri });
+    stack.push({ node: rootNodes[i]!, parentUri: rootParentUri });
   }
 
   const frames: string[] = [];
@@ -65,7 +65,7 @@ export function omnResourceDeclarations(
       const effectiveParent =
         !isNodeclare && uri && typeof uri === "string" ? uri : parentUri;
       for (let i = children.length - 1; i >= 0; i--) {
-        stack.push({ node: children[i], parentUri: effectiveParent });
+        stack.push({ node: children[i]!, parentUri: effectiveParent });
       }
     }
   }

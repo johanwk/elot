@@ -4,7 +4,7 @@
 //
 // Formats prefix definitions as OMN Prefix: lines.
 
-import type { ElotNode, PrefixEntry } from "./types.js";
+import type { ElotNode } from "./types.js";
 
 /**
  * Find the prefix-defining descendant node and format the OMN prefix block.

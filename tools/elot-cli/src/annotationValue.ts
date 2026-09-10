@@ -6,8 +6,6 @@
 // Classifies an annotation value string and formats it for OMN output.
 // The result always starts with whitespace (1-2 spaces) for alignment.
 
-import type { PrefixEntry } from "./types.js";
-
 /**
  * Remove common leading whitespace from continuation lines in a single
  * paragraph (no blank-line separators).
@@ -26,7 +24,7 @@ import type { PrefixEntry } from "./types.js";
 function stripContinuationIndentParagraph(lines: string[]): string[] {
   if (lines.length <= 1) return lines;
 
-  const firstLine = lines[0];
+  const firstLine = lines[0]!;
   const restLines = lines.slice(1);
 
   // Find the minimum indent among continuation lines that have leading spaces
@@ -34,7 +32,7 @@ function stripContinuationIndentParagraph(lines: string[]): string[] {
   for (const line of restLines) {
     const m = line.match(/^( +)/);
     if (m) {
-      minIndent = Math.min(minIndent, m[1].length);
+      minIndent = Math.min(minIndent, m[1]!.length);
     }
   }
   // If no continuation line had leading spaces, or min is 0, return unchanged
@@ -96,7 +94,7 @@ export function stripContinuationIndent(str: string): string {
     } else {
       const stripped = stripContinuationIndentParagraph(para);
       if (!isFirstParagraph && stripped.length > 0) {
-        stripped[0] = stripped[0].trimStart();
+        stripped[0] = stripped[0]!.trimStart();
       }
       result.push(...stripped);
       isFirstParagraph = false;
@@ -135,8 +133,8 @@ export function unprefixUri(
   const m = puri.match(CURIE_RE);
   if (!m) return puri;
 
-  const thisPrefix = m[1];   // e.g. "obo" or "" for default prefix
-  const thisLocalname = m[2]; // e.g. "BFO_0000001"
+  const thisPrefix = m[1]!;   // e.g. "obo" or "" for default prefix
+  const thisLocalname = m[2]!; // e.g. "BFO_0000001"
 
   const thisNs = prefixes.get(thisPrefix);
   if (thisNs) {

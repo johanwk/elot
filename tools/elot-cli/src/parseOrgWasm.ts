@@ -185,7 +185,7 @@ export function getPrefixMap(root: ElotNode): Map<string, string> | null {
     }
     const children = node.children ?? [];
     for (let i = children.length - 1; i >= 0; i--) {
-      stack.push(children[i]);
+      stack.push(children[i]!);
     }
   }
   return null;
@@ -206,7 +206,7 @@ export function collectOmnSrcBlocks(root: ElotNode): string[] {
     // Push children in reverse so we get document order
     const children = node.children ?? [];
     for (let i = children.length - 1; i >= 0; i--) {
-      stack.push(children[i]);
+      stack.push(children[i]!);
     }
   }
   return blocks;
