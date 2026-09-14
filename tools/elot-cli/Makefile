@@ -1,9 +1,9 @@
 # Makefile for elot-cli — friendly aliases for npm commands.
 # Run "make help" to see available targets.
 
-.PHONY: help all install bundle build watch test test-syntax test-html test-html-post test-html-integration test-html-all test-db test-db-lang test-db-read test-db-write test-db-paths test-db-parsers test-db-prefixes test-db-rq-cache test-db-ttl-robot test-db-rq-live test-db-roundtrip test-db-org test-db-cli-e2e test-db-golden test-db-bridge test-db-hover-token test-db-hover-render test-db-decorations test-db-decorations-scan test-db-resolve test-settings test-settings-active-sources test-settings-reorder test-settings-cli-runner test-settings-persist test-label-lookup test-label-lookup-items test-views test-views-source-items test-electron compile-test clean package cli
+.PHONY: help all install bundle build watch test test-lint test-subheading-relation test-syntax test-html test-html-post test-html-integration test-html-all test-db test-db-lang test-db-read test-db-write test-db-paths test-db-parsers test-db-prefixes test-db-rq-cache test-db-ttl-robot test-db-rq-live test-db-roundtrip test-db-org test-db-cli-e2e test-db-golden test-db-bridge test-db-hover-token test-db-hover-render test-db-decorations test-db-decorations-scan test-db-resolve test-settings test-settings-active-sources test-settings-reorder test-settings-cli-runner test-settings-persist test-label-lookup test-label-lookup-items test-views test-views-source-items test-electron compile-test clean package cli
 
-all: install bundle test test-html-all package ## Full build from scratch: install → bundle → test → package
+all: install bundle test test-lint test-subheading-relation test-html-all package ## Full build from scratch: install → bundle → test → package
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
@@ -26,6 +26,12 @@ watch: ## Watch mode — recompile TypeScript on every file change
 
 test: ## Run the golden-file test suite
 	npm test
+
+test-lint: ## Run all ontology lint tests, including Facts punning and integration
+	npm run test:lint
+
+test-subheading-relation: ## Test individual relationships inherited from ELOT-subheading-relation
+	npm run test:subheading-relation
 
 test-syntax: ## Run the OMN syntax-checking tests (Peggy grammar)
 	npm run test:syntax
