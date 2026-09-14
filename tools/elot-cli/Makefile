@@ -15,6 +15,10 @@ install: ## Install Node dependencies (run once after cloning)
 bundle: ## Full build: compile Rust→WASM, generate Peggy parser, then bundle TypeScript→dist/
 	npm run bundle
 
+.PHONY: upstream
+upstream: bundle ## Rebuild CLI and generate dist/UPSTREAM.org and dist/SHA256SUMS
+	node generate-upstream.mjs
+
 build-parser: ## Regenerate the Peggy parser from owl-manchester.peggy
 	npm run build:parser
 
