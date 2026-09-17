@@ -202,10 +202,12 @@ The context INFO is ignored."
 ;; src-puri-expand ends here
 
 ;; [[file:../elot-defs.org::src-robot-query][src-robot-query]]
-(defun elot-robot-execute-query (query inputfile format)
+(defun elot-robot-execute-query (query inputfile format &optional use-graphs)
   "Execute SPARQL query QUERY with ROBOT on ontology file INPUTFILE.
 Result FORMAT is the symbol `csv' or `ttl'.  Insert the result into
-the current buffer.
+the current buffer.  Non-nil USE-GRAPHS adds `--use-graphs true',
+exposing the import closure as named graphs.  Nil omits the switch
+and preserves ROBOT's default behaviour.
 
 Signals a `user-error' when ROBOT is not configured
 \(see `elot-robot-jar-path'\) or when INPUTFILE does not exist.
@@ -245,14 +247,15 @@ non-zero.  Query and result I/O are forced to UTF-8 end-to-end."
       (unwind-protect
           (progn
             (setq exit-code
-                  (call-process "java" nil (list nil stderr-file) nil
-                                "-Dfile.encoding=UTF-8"
+                  (apply #'call-process "java" nil (list nil stderr-file) nil
+                         (append
+                          (list "-Dfile.encoding=UTF-8"
                                 "-jar" elot-robot-jar-path
                                 "query"
                                 "--input"  abs-input
-                                "--format" (symbol-name format)
-                                "--query"  query-file
-                                result-file))
+                                "--format" (symbol-name format))
+                          (when use-graphs '("--use-graphs" "true"))
+                          (list "--query" query-file result-file))))
             (unless (and (integerp exit-code) (zerop exit-code))
               (let ((stderr (with-temp-buffer
                               (when (file-exists-p stderr-file)
@@ -447,6 +450,26 @@ cannot parse.")
          :warning)
         'csv)))
 
+  ;; Declare the ELOT extension for Org's header completion and lint.
+  ;; ob-sparql need not define this variable; elot-lint adds other keys.
+  (defvar org-babel-header-args:sparql nil)
+  (unless (assq 'use-graphs org-babel-header-args:sparql)
+    (push '(use-graphs . :any) org-babel-header-args:sparql))
+
+  (defun elot--sparql-resolve-use-graphs (raw)
+    "Return a boolean for the :use-graphs header value RAW.
+  Accept yes/true/t and no/false/nil (strings or symbols), ignoring
+  case and surrounding whitespace.  Nil or an empty string disables
+  graph mode.  Signal `user-error' for any other value."
+    (let ((value (cond ((stringp raw) (downcase (string-trim raw)))
+                       ((symbolp raw) (downcase (symbol-name raw))))))
+      (cond
+       ((member value '("yes" "true" "t")) t)
+       ((member value '("no" "false" "nil" "")) nil)
+       (t (user-error
+           "ELOT SPARQL: invalid :use-graphs %S (use yes/true or no/false)"
+           raw)))))
+
   (defun elot--sparql-classify-url (url)
     "Classify URL as the symbol `endpoint' or `local-file'.
   URL is the value of the :url header argument.  Signals a
@@ -496,6 +519,8 @@ cannot parse.")
     \(via `elot--sparql-classify-url'\);
   - normalises :format to one of the symbols `csv' or `ttl'
     \(via `elot--sparql-resolve-format'\);
+  - honours :use-graphs yes/true for local ROBOT queries, rejecting
+    enabled graph mode for HTTP endpoints;
   - merges and de-duplicates prefix declarations from
     `org-link-abbrev-alist-local' and the query body
     \(via `elot--sparql-merge-prefixes'\);
@@ -512,6 +537,8 @@ cannot parse.")
              (raw-format    (cdr (assoc :format params)))
              (kind          (elot--sparql-classify-url raw-url))
              (format-symbol (elot--sparql-resolve-format raw-format))
+             (use-graphs    (elot--sparql-resolve-use-graphs
+                             (cdr (assoc :use-graphs params))))
              (expanded      (org-babel-expand-body:sparql body params))
              (computed      (elot--sparql-compute-merged-prefixes
                              org-link-abbrev-alist-local expanded))
@@ -530,14 +557,19 @@ cannot parse.")
                 (concat prefix-block "\n" query-body)))
              (coding-system-for-read  'utf-8)
              (coding-system-for-write 'utf-8))
-        (message "ELOT SPARQL: %s, format=%s" kind format-symbol)
+        (when (and use-graphs (eq kind 'endpoint))
+          (user-error "ELOT SPARQL: :use-graphs is only supported for local ontology files"))
+        (message "ELOT SPARQL: %s, format=%s, use-graphs=%s"
+                 kind format-symbol (if use-graphs "true" "false"))
         (with-temp-buffer
           (set-buffer-file-coding-system 'utf-8)
           (pcase kind
             ('endpoint
              (sparql-execute-query final-query raw-url raw-format t))
             ('local-file
-             (elot-robot-execute-query final-query raw-url format-symbol)))
+             (if use-graphs
+                 (elot-robot-execute-query final-query raw-url format-symbol t)
+               (elot-robot-execute-query final-query raw-url format-symbol))))
           (org-babel-result-cond
               (cdr (assoc :result-params params))
             (buffer-string)
